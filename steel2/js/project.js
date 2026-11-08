@@ -1,5 +1,4 @@
 
-
 /* SAHROUD STEEL - Project Manager */
 (function () {
     "use strict";
@@ -12,7 +11,7 @@
     }
 
     function getData() {
-        return {
+        const data = {
             projectName: $("projectName").value.trim(),
             owner: $("owner").value.trim(),
             designer: $("designer").value.trim(),
@@ -29,8 +28,15 @@
             snow: getNumber("snow"),
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
-            version: "2.0"
+            version: "2.1"
         };
+
+        // ذخیره مشخصات مصالح و مقاطع
+        if (window.SteelSections) {
+            data.sections = window.SteelSections.read();
+        }
+
+        return data;
     }
 
     function setStatus(message) {
@@ -45,7 +51,7 @@
         if (!Number.isFinite(length) ||
             !Number.isFinite(spacing) ||
             length <= 0 || spacing <= 0) {
-            $("frames").value = "";
+            if ($("frames")) $("frames").value = "";
             return;
         }
 
@@ -101,6 +107,7 @@
         }
 
         const data = getData();
+
         const blob = new Blob(
             [JSON.stringify(data, null, 2)],
             { type: "application/json;charset=utf-8" }
@@ -111,15 +118,21 @@
 
         a.href = url;
         a.download = "Sahroud_Steel_Project.json";
+
         document.body.appendChild(a);
         a.click();
         a.remove();
 
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        setStatus("پروژه با موفقیت ذخیره شد.");
+
+        setStatus("پروژه و مشخصات مقاطع ذخیره شدند.");
     }
 
     function loadData(data) {
+        if (!data || typeof data !== "object") {
+            throw new Error("ساختار اطلاعات پروژه معتبر نیست.");
+        }
+
         const fields = [
             "projectName", "owner", "designer", "city",
             "span", "length", "spacing", "height", "rise",
@@ -133,7 +146,13 @@
         });
 
         updateFrameCount();
-        setStatus("اطلاعات پروژه بارگذاری شد.");
+
+        // بازیابی مصالح و مقاطع
+        if (data.sections && window.SteelSections) {
+            window.SteelSections.setData(data.sections);
+        }
+
+        setStatus("اطلاعات پروژه و مقاطع بارگذاری شدند.");
     }
 
     function loadFile(file) {
@@ -144,14 +163,12 @@
         reader.onload = function () {
             try {
                 const data = JSON.parse(reader.result);
-
-                if (!data || typeof data !== "object") {
-                    throw new Error("ساختار فایل نامعتبر است.");
-                }
-
                 loadData(data);
             } catch (error) {
-                alert("خطا در بازکردن فایل پروژه: " + error.message);
+                alert(
+                    "خطا در بازکردن فایل پروژه: " +
+                    error.message
+                );
             }
         };
 
@@ -176,7 +193,10 @@
         updateFrameCount();
 
         ["length", "spacing"].forEach(id => {
-            $(id).addEventListener("input", updateFrameCount);
+            const el = $(id);
+            if (el) {
+                el.addEventListener("input", updateFrameCount);
+            }
         });
     });
 
