@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123b52">
+<title>SAHROUD STEEL | پروژه چندفایلی</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header><h1>SAHROUD STEEL</h1><p>سامانه مرحله‌ای مدل‌سازی و طراحی سوله</p></header>
+<main>
+<div class="notice"><b>نسخه توسعه:</b> این بسته اسکلت چندفایلی و مدیریت ورودی‌هاست. نتایج تحلیل و طراحی هنوز تأیید مهندسی نشده‌اند؛ از خروجی آن برای ساخت استفاده نکنید.</div>
+<section class="card">
+<h2>۱. شناسنامه پروژه</h2>
+<div class="grid">
+<label>نام پروژه<input id="projectName" value="پروژه سوله"></label>
+<label>کارفرما<input id="owner" value=""></label>
+<label>طراح<input id="designer" value=""></label>
+<label>ناظر<input id="inspector" value=""></label>
+<label>شهر<select id="city"><option value="shahrud">شاهرود</option><option value="tehran">تهران</option><option value="mashhad">مشهد</option><option value="other">سایر / ورود دستی</option></select></label>
+<label>نسخه مبنای ضوابط<input id="codeVersion" value="نیازمند تأیید مهندس و نسخه رسمی"></label>
+</div>
+</section>
+<section class="card">
+<h2>۲. هندسه اولیه (متر)</h2>
+<div class="grid">
+<label>دهانه<input id="span" type="number" min="1" step="0.1" value="20"></label>
+<label>طول<input id="length" type="number" min="1" step="0.1" value="36"></label>
+<label>فاصله قاب‌ها<input id="spacing" type="number" min="0.1" step="0.1" value="6"></label>
+<label>ارتفاع ستون<input id="height" type="number" min="1" step="0.1" value="6"></label>
+<label>ارتفاع تاج<input id="ridge" type="number" min="1" step="0.1" value="8"></label>
+</div>
+<div class="buttons">
+<button id="saveProject">ذخیره پروژه JSON</button><button id="drawPreview" class="secondary">ترسیم پیش‌نمایش</button>
+</div>
+<div id="status" role="status">اطلاعات پروژه را وارد کنید.</div>
+</section>
+<section class="card">
+<h2>۳. پیش‌نمایش هندسی</h2><div id="drawing" class="drawing"></div>
+</section>
+<section class="card">
+<h2>۴. وضعیت توسعه</h2>
+<ul><li>مدیریت ورودی‌ها و ذخیره JSON: آماده</li><li>پیش‌نمایش هندسی ساده: آماده</li><li>تحلیل ماتریسی: در مرحله بعد</li><li>طراحی اعضا، اتصالات و فونداسیون: هنوز پیاده‌سازی/اعتبارسنجی نشده</li><li>DXF و دفترچه PDF اجرایی: هنوز پیاده‌سازی نشده</li></ul>
+</section>
+</main>
+<footer>sahroud game · SAHROUD STEEL</footer>
+<script src="js/project.js"></script>
+<script src="js/drawing.js"></script>
+<script src="js/analysis.js"></script>
+<script src="js/app.js"></script>
+</body></html>
