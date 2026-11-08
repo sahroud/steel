@@ -1,641 +1,260 @@
 
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <meta name="theme-color" content="#123b52">
-
 <title>Sahroud Steel | تحلیل مقدماتی سوله</title>
-
 <link rel="stylesheet" href="style.css">
-
 </head>
-
 <body>
 
 <header class="header">
-
     <div class="brand">
         <div class="logo">S</div>
-
         <div>
             <h1>SAHROUD STEEL</h1>
             <p>نرم‌افزار مهندسی سازه فولادی</p>
         </div>
     </div>
-
-    <div class="version">
-        نسخه 2.0
-    </div>
-
+    <div class="version">نسخه 2.0</div>
 </header>
-
 
 <main class="container">
 
     <section class="welcome">
-
         <h2>طراحی و تحلیل مقدماتی سوله</h2>
-
-        <p>
-            ورود مشخصات هندسی، بارگذاری اولیه،
-            ترسیم قاب و بررسی نتایج تحلیل
-        </p>
-
+        <p>ورود مشخصات هندسی، بارگذاری اولیه، ترسیم قاب و بررسی نتایج تحلیل</p>
     </section>
 
-
     <section class="panel">
-
         <div class="panel-title">
-
             <h3>۱ ـ مشخصات پروژه</h3>
-
-            <span class="status">
-                آماده ورود اطلاعات
-            </span>
-
+            <span class="status">آماده ورود اطلاعات</span>
         </div>
 
-
         <div class="form-grid">
-
             <div class="field">
-
-                <label for="projectName">
-                    نام پروژه
-                </label>
-
-                <input
-                    id="projectName"
-                    type="text"
-                    value="سوله صنعتی"
-                >
-
+                <label for="projectName">نام پروژه</label>
+                <input id="projectName" type="text" value="سوله صنعتی">
             </div>
 
-
             <div class="field">
-
-                <label for="owner">
-                    کارفرما
-                </label>
-
-                <input
-                    id="owner"
-                    type="text"
-                    placeholder="نام کارفرما"
-                >
-
+                <label for="owner">کارفرما</label>
+                <input id="owner" type="text" placeholder="نام کارفرما">
             </div>
 
-
             <div class="field">
-
-                <label for="designer">
-                    طراح
-                </label>
-
-                <input
-                    id="designer"
-                    type="text"
-                    placeholder="نام مهندس"
-                >
-
+                <label for="designer">طراح</label>
+                <input id="designer" type="text" placeholder="نام مهندس">
             </div>
 
-
             <div class="field">
-
-                <label for="city">
-                    شهر پروژه
-                </label>
-
+                <label for="city">شهر پروژه</label>
                 <select id="city">
-
-                    <option value="custom">
-                        ورود بارگذاری توسط کاربر
-                    </option>
-
-                    <option value="shahroud">
-                        شاهرود
-                    </option>
-
-                    <option value="semnan">
-                        سمنان
-                    </option>
-
-                    <option value="tehran">
-        تهران
-                    </option>
-
-                    <option value="mashhad">
-        مشهد
-                    </option>
-
-                    <option value="other">
-        سایر شهرها
-                    </option>
-
+                    <option value="custom">ورود بارگذاری توسط کاربر</option>
+                    <option value="shahroud">شاهرود</option>
+                    <option value="semnan">سمنان</option>
+                    <option value="tehran">تهران</option>
+                    <option value="mashhad">مشهد</option>
+                    <option value="other">سایر شهرها</option>
                 </select>
-
             </div>
-
         </div>
-
     </section>
 
-
-
     <section class="panel">
-
         <div class="panel-title">
-
             <h3>۲ ـ مشخصات هندسی</h3>
-
         </div>
-
 
         <div class="form-grid">
-
             <div class="field">
-
-                <label for="span">
-                    دهانه سوله (متر)
-                </label>
-
-                <input
-                    id="span"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    value="20"
-                >
-
+                <label for="span">دهانه سوله (متر)</label>
+                <input id="span" type="number" min="1" step="0.1" value="20">
             </div>
 
-
             <div class="field">
-
-                <label for="length">
-                    طول سوله (متر)
-                </label>
-
-                <input
-                    id="length"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    value="30"
-                >
-
+                <label for="length">طول سوله (متر)</label>
+                <input id="length" type="number" min="1" step="0.1" value="30">
             </div>
 
-
             <div class="field">
-
-                <label for="spacing">
-                    فاصله قاب‌ها (متر)
-                </label>
-
-                <input
-                    id="spacing"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    value="5"
-                >
-
+                <label for="spacing">فاصله قاب‌ها (متر)</label>
+                <input id="spacing" type="number" min="1" step="0.1" value="5">
             </div>
 
-
             <div class="field">
-
-                <label for="height">
-                    ارتفاع ستون (متر)
-                </label>
-
-                <input
-                    id="height"
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    value="6"
-            >
-
+                <label for="height">ارتفاع ستون (متر)</label>
+                <input id="height" type="number" min="1" step="0.1" value="6">
             </div>
 
-
             <div class="field">
-
-                <label for="rise">
-                    ارتفاع تاج از تراز ستون (متر)
-                </label>
-
-                <input
-                    id="rise"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value="2"
-            >
-
+                <label for="rise">ارتفاع تاج از تراز ستون (متر)</label>
+                <input id="rise" type="number" min="0" step="0.1" value="2">
             </div>
 
-
             <div class="field">
-
-                <label for="frames">
-                    تعداد قاب‌ها
-                </label>
-
-                <input
-                    id="frames"
-                    type="number"
-                    readonly
-                    value="7"
-            >
-
+                <label for="frames">تعداد قاب‌ها</label>
+                <input id="frames" type="number" readonly value="7">
             </div>
-
         </div>
-
     </section>
 
-
-
     <section class="panel">
-
         <div class="panel-title">
-
-
-  
-<section class="panel">
-
-    <div class="panel-title">
-        <h3>۳ ـ شرایط تکیه‌گاهی قاب</h3>
-    </div>
-
-    <div class="form-grid">
-        <div class="field">
-            <label for="baseConnection">
-                نوع اتصال پای ستون
-            </label>
-
-            <select id="baseConnection">
-                <option value="pinned" selected>
-                    مفصلی (پیش‌فرض)
-                </option>
-                <option value="fixed">
-                    گیردار
-                </option>
-            </select>
+            <h3>۳ ـ شرایط تکیه‌گاهی قاب</h3>
         </div>
-    </div>
-
-    <div class="notice">
-        در حالت مفصلی، دوران پای ستون آزاد و
-        جابه‌جایی افقی و قائم مهار است.
-        در حالت گیردار، هر سه درجه آزادی پای ستون مهار می‌شود.
-        انتخاب این گزینه باید با جزئیات واقعی صفحه‌ستون،
-        انکربولت و فونداسیون مطابقت داشته باشد.
-    </div>
-
-</section>
-
-          <h3>۳ ـ بارگذاری مقدماتی</h3>
-
-        </div>
-
 
         <div class="form-grid">
-
             <div class="field">
-
-                <label for="dead">
-                    بار مرده سقف (kN/m²)
-                </label>
-
-                <input
-                    id="dead"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                value="0.50">
-
+                <label for="baseConnection">نوع اتصال پای ستون</label>
+                <select id="baseConnection">
+                    <option value="pinned" selected>مفصلی (پیش‌فرض)</option>
+                    <option value="fixed">گیردار</option>
+                </select>
             </div>
-
-
-            <div class="field">
-
-                <label for="live">
-                    بار زنده سقف (kN/m²)
-                </label>
-
-                <input
-                    id="live"
-                    type="number"
-                    min="0"
-                    step="0.01"
-            value="0.75">
-
-            </div>
-
-
-            <div class="field">
-
-                <label for="wind">
-                    فشار باد ورودی (kN/m²)
-                </label>
-
-                <input
-                    id="wind"
-                    type="number"
-                    min="0"
-                    step="0.01"
-            value="0">
-
-            </div>
-
-
-            <div class="field">
-
-                <label for="snow">
-                    بار برف ورودی (kN/m²)
-                </label>
-
-                <input
-                    id="snow"
-                    type="number"
-            min="0"
-            step="0.01"
-            value="0">
-
-            </div>
-
         </div>
-
 
         <div class="notice">
-
-            ⚠️ مقادیر بار باد و برف باید از مبانی
-            معتبر طراحی و شرایط واقعی محل پروژه تعیین شوند.
-            انتخاب شهر به‌تنهایی بار آیین‌نامه‌ای معتبر
-            تولید نمی‌کند.
-
+            در حالت مفصلی، دوران پای ستون آزاد و جابه‌جایی افقی و قائم مهار است.
+            در حالت گیردار، هر سه درجه آزادی پای ستون مهار می‌شود.
+            انتخاب این گزینه باید با جزئیات واقعی صفحه‌ستون، انکربولت و فونداسیون مطابقت داشته باشد.
         </div>
-
     </section>
 
-
-
     <section class="panel">
-
         <div class="panel-title">
-
-            <h3>۴ ـ نمایش قاب</h3>
-
+            <h3>۴ ـ بارگذاری مقدماتی</h3>
         </div>
 
+        <div class="form-grid">
+            <div class="field">
+                <label for="dead">بار مرده سقف (kN/m²)</label>
+                <input id="dead" type="number" min="0" step="0.01" value="0.50">
+            </div>
+
+            <div class="field">
+                <label for="live">بار زنده سقف (kN/m²)</label>
+                <input id="live" type="number" min="0" step="0.01" value="0.75">
+            </div>
+
+            <div class="field">
+                <label for="wind">فشار باد ورودی (kN/m²)</label>
+                <input id="wind" type="number" min="0" step="0.01" value="0">
+            </div>
+
+            <div class="field">
+                <label for="snow">بار برف ورودی (kN/m²)</label>
+                <input id="snow" type="number" min="0" step="0.01" value="0">
+            </div>
+        </div>
+
+        <div class="notice">
+            ⚠️ مقادیر بار باد و برف باید از مبانی معتبر طراحی و شرایط واقعی محل پروژه تعیین شوند.
+            انتخاب شهر به‌تنهایی بار آیین‌نامه‌ای معتبر تولید نمی‌کند.
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-title">
+            <h3>۵ ـ نمایش قاب</h3>
+        </div>
 
         <div class="drawing-area">
-
-            <svg
-                id="frameDrawing"
-                viewBox="0 0 600 300"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-
-                <rect
-                    x="0"
-                    y="0"
-                    width="600"
-                    height="300"
-                    fill="#f8fafc"
-                />
-
-                <line
-                    x1="50"
-                    y1="250"
-                    x2="550"
-                    y2="250"
-                    stroke="#64748b"
-                    stroke-width="2"
-                />
-
-                <text
-                    x="300"
-                    y="150"
-                    text-anchor="middle"
-                    fill="#64748b"
-                    font-size="18"
-                >
-
+            <svg id="frameDrawing"
+                 viewBox="0 0 600 300"
+                 xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="600" height="300" fill="#f8fafc"/>
+                <line x1="50" y1="250" x2="550" y2="250"
+                      stroke="#64748b" stroke-width="2"/>
+                <text x="300" y="150" text-anchor="middle"
+                      fill="#64748b" font-size="18">
                     قاب پس از اتصال فایل ترسیم نمایش داده می‌شود
-
                 </text>
-
             </svg>
-
         </div>
-
 
         <div class="drawing-info">
-
-            <span>
-                نمای قاب دوبعدی
-            </span>
-
-            <span>
-                واحد طول: متر
-            </span>
-
+            <span>نمای قاب دوبعدی</span>
+            <span>واحد طول: متر</span>
         </div>
-
     </section>
 
-
-
     <section class="panel">
-
         <div class="panel-title">
-
-            <h3>۵ ـ عملیات پروژه</h3>
-
+            <h3>۶ ـ عملیات پروژه</h3>
         </div>
-
 
         <div class="button-grid">
-
-            <button
-                id="btnDraw"
-                class="btn primary"
-                type="button"
-            >
-
+            <button id="btnDraw" class="btn primary" type="button">
                 ترسیم قاب
-
             </button>
 
-
-            <button
-                id="btnCalculate"
-                class="btn success"
-                type="button"
-            >
-
+            <button id="btnCalculate" class="btn success" type="button">
                 تحلیل مقدماتی
-
             </button>
 
-
-            <button
-                id="btnSave"
-                class="btn secondary"
-                type="button"
-            >
-
+            <button id="btnSave" class="btn secondary" type="button">
                 ذخیره پروژه
-
             </button>
 
-
-            <button
-                id="btnLoad"
-                class="btn secondary"
-                type="button"
-            >
-
+            <button id="btnLoad" class="btn secondary" type="button">
                 بازکردن پروژه
-
             </button>
 
-
-            <input
-                id="projectFile"
-                type="file"
-                accept=".json"
-                hidden
-            >
-
+            <input id="projectFile" type="file" accept=".json" hidden>
         </div>
-
     </section>
 
-
-
     <section class="panel">
-
         <div class="panel-title">
-
-            <h3>۶ ـ نتایج تحلیل</h3>
-
+            <h3>۷ ـ نتایج تحلیل</h3>
         </div>
-
 
         <div id="results">
-
             <div class="result-card">
-
-                <span>
-                    جابه‌جایی گره
-                </span>
-
-                <strong id="displacement">
-                    --
-                </strong>
-
+                <span>جابه‌جایی گره</span>
+                <strong id="displacement">--</strong>
             </div>
 
-
             <div class="result-card">
-
-                <span>
-                    واکنش تکیه‌گاهی
-                </span>
-
-                <strong id="reaction">
-                    --
-                </strong>
-
+                <span>واکنش تکیه‌گاهی</span>
+                <strong id="reaction">--</strong>
             </div>
 
-
             <div class="result-card">
-
-                <span>
-                    تعداد اعضا
-                </span>
-
-                <strong id="memberCount">
-                    4
-                </strong>
-
+                <span>تعداد اعضا</span>
+                <strong id="memberCount">4</strong>
             </div>
-
         </div>
 
-
-        <div
-            id="analysisMessage"
-            class="notice"
-        >
-
+        <div id="analysisMessage" class="notice">
             ابتدا مشخصات پروژه را وارد کنید.
-
         </div>
-
     </section>
-
-
 
     <section class="panel">
-
-        <h3>۷ ـ وضعیت پروژه</h3>
-
-        <div id="projectStatus">
-
-            پروژه جدید
-
-        </div>
-
+        <h3>۸ ـ وضعیت پروژه</h3>
+        <div id="projectStatus">پروژه جدید</div>
     </section>
 
-
     <footer>
-
+        <p>SAHROUD STEEL</p>
+        <p>ابزار تحلیل مقدماتی سازه فولادی</p>
         <p>
-            SAHROUD STEEL
+            نتایج این نسخه جایگزین محاسبات و تأیید مهندس محاسب برای اجرای ساختمان نیست.
         </p>
-
-        <p>
-            ابزار تحلیل مقدماتی سازه فولادی
-        </p>
-
-        <p>
-            نتایج این نسخه جایگزین محاسبات و تأیید
-            مهندس محاسب برای اجرای ساختمان نیست.
-        </p>
-
     </footer>
-
 
 </main>
 
-
 <script src="js/project.js"></script>
-
-<script src="js/drawing.js"></script>
-
+<script src="js/drawing.js?v=20261109"></script>
 <script src="js/analysis.js"></script>
-
 <script src="js/sections.js"></script>
-
 <script src="js/app.js"></script>
-
 
 </body>
 </html>
