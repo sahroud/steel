@@ -1,1 +1,296 @@
 
+/* Sahroud Steel - Stage 2
+   Responsive engineering interface
+*/
+
+:root {
+  --navy: #123047;
+  --blue: #176b87;
+  --cyan: #20a4b8;
+  --bg: #eef3f6;
+  --panel: #ffffff;
+  --text: #20313d;
+  --muted: #647783;
+  --border: #d7e1e7;
+  --green: #16845b;
+  --orange: #d98220;
+  --red: #c74747;
+  --shadow: 0 4px 16px rgba(20, 48, 65, .08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+header,
+.header,
+.topbar {
+  background: linear-gradient(135deg, var(--navy), var(--blue));
+  color: white;
+  padding: 18px 16px;
+  box-shadow: var(--shadow);
+}
+
+h1, h2, h3 {
+  line-height: 1.5;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 21px;
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 17px;
+  color: var(--navy);
+}
+
+h3 {
+  font-size: 15px;
+  margin: 12px 0 8px;
+}
+
+main {
+  width: min(1100px, 96%);
+  margin: 18px auto;
+}
+
+section,
+.card,
+.panel,
+fieldset {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 16px;
+  margin: 14px 0;
+  box-shadow: var(--shadow);
+}
+
+fieldset {
+  min-width: 0;
+}
+
+legend {
+  padding: 0 8px;
+  color: var(--blue);
+  font-weight: bold;
+}
+
+label {
+  display: block;
+  margin: 9px 0 4px;
+  font-weight: bold;
+  color: #344d5c;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #cbd8df;
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: #fff;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(32, 164, 184, .13);
+}
+
+button {
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 17px;
+  margin: 5px 3px;
+  min-height: 42px;
+  background: var(--blue);
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: .2s;
+}
+
+button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: scale(.98);
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+button.success {
+  background: var(--green);
+}
+
+button.warning {
+  background: var(--orange);
+}
+
+button.danger {
+  background: var(--red);
+}
+
+.grid,
+.form-grid,
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.actions,
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+#drawingArea,
+#drawing,
+.drawing-area,
+svg {
+  max-width: 100%;
+}
+
+#drawingArea,
+#drawing,
+.drawing-area {
+  min-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: #fbfdfe;
+  background-image:
+    linear-gradient(rgba(30, 90, 110, .06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 90, 110, .06) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+#result,
+.results,
+.result-box {
+  background: #f3f8fa;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px;
+  margin-top: 12px;
+}
+
+#status,
+.status {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px;
+}
+
+small,
+.hint,
+.note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+footer {
+  text-align: center;
+  padding: 18px 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+th,
+td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background: #eaf2f6;
+  color: var(--navy);
+}
+
+@media (max-width: 650px) {
+  body {
+    font-size: 13px;
+  }
+
+  main {
+    width: 94%;
+    margin: 10px auto;
+  }
+
+  section,
+  .card,
+  .panel,
+  fieldset {
+    padding: 12px;
+    margin: 10px 0;
+  }
+
+  .grid,
+  .form-grid,
+  .input-grid {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  button {
+    flex: 1 1 140px;
+  }
+
+  #drawingArea,
+  #drawing,
+  .drawing-area {
+    min-height: 200px;
+  }
+}
