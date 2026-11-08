@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Project Manager */
+/* SAHROUD STEEL - Project Manager 2.2 */
 (function () {
     "use strict";
 
@@ -10,25 +10,40 @@
         return el ? Number(el.value) : NaN;
     }
 
+    // نوع اتصال پیش‌فرض پای ستون
+    function getBaseConnection() {
+        const el = $("baseConnection");
+
+        if (!el) return "pinned";
+
+        return el.value === "fixed" ? "fixed" : "pinned";
+    }
+
     function getData() {
         const data = {
             projectName: $("projectName").value.trim(),
             owner: $("owner").value.trim(),
             designer: $("designer").value.trim(),
             city: $("city").value,
+
+            // ذخیره نوع اتصال پای ستون
+            baseConnection: getBaseConnection(),
+
             span: getNumber("span"),
             length: getNumber("length"),
             spacing: getNumber("spacing"),
             height: getNumber("height"),
             rise: getNumber("rise"),
             frames: getNumber("frames"),
+
             dead: getNumber("dead"),
             live: getNumber("live"),
             wind: getNumber("wind"),
             snow: getNumber("snow"),
+
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
-            version: "2.1"
+            version: "2.2"
         };
 
         // ذخیره مشخصات مصالح و مقاطع
@@ -41,21 +56,31 @@
 
     function setStatus(message) {
         const el = $("projectStatus");
-        if (el) el.textContent = message;
+
+        if (el) {
+            el.textContent = message;
+        }
     }
 
     function updateFrameCount() {
         const length = getNumber("length");
         const spacing = getNumber("spacing");
 
-        if (!Number.isFinite(length) ||
+        if (
+            !Number.isFinite(length) ||
             !Number.isFinite(spacing) ||
-            length <= 0 || spacing <= 0) {
-            if ($("frames")) $("frames").value = "";
+            length <= 0 ||
+            spacing <= 0
+        ) {
+            if ($("frames")) {
+                $("frames").value = "";
+            }
+
             return;
         }
 
-        $("frames").value = Math.ceil(length / spacing) + 1;
+        $("frames").value =
+            Math.ceil(length / spacing) + 1;
     }
 
     function validate() {
@@ -73,12 +98,19 @@
         ];
 
         for (const item of positive) {
-            if (!Number.isFinite(item[1]) || item[1] <= 0) {
-                return item[0] + " باید بزرگ‌تر از صفر باشد.";
+            if (
+                !Number.isFinite(item[1]) ||
+                item[1] <= 0
+            ) {
+                return item[0] +
+                    " باید بزرگ‌تر از صفر باشد.";
             }
         }
 
-        if (!Number.isFinite(d.rise) || d.rise < 0) {
+        if (
+            !Number.isFinite(d.rise) ||
+            d.rise < 0
+        ) {
             return "ارتفاع تاج نمی‌تواند منفی باشد.";
         }
 
@@ -90,9 +122,19 @@
         ];
 
         for (const item of loads) {
-            if (!Number.isFinite(item[1]) || item[1] < 0) {
+            if (
+                !Number.isFinite(item[1]) ||
+                item[1] < 0
+            ) {
                 return item[0] + " نامعتبر است.";
             }
+        }
+
+        if (
+            d.baseConnection !== "pinned" &&
+            d.baseConnection !== "fixed"
+        ) {
+            return "نوع اتصال پای ستون معتبر نیست.";
         }
 
         return "";
@@ -110,7 +152,9 @@
 
         const blob = new Blob(
             [JSON.stringify(data, null, 2)],
-            { type: "application/json;charset=utf-8" }
+            {
+                type: "application/json;charset=utf-8"
+            }
         );
 
         const url = URL.createObjectURL(blob);
@@ -123,36 +167,74 @@
         a.click();
         a.remove();
 
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 1000);
 
-        setStatus("پروژه و مشخصات مقاطع ذخیره شدند.");
+        setStatus(
+            "پروژه، نوع اتصال و مشخصات مقاطع ذخیره شدند."
+        );
     }
 
     function loadData(data) {
-        if (!data || typeof data !== "object") {
-            throw new Error("ساختار اطلاعات پروژه معتبر نیست.");
+        if (
+            !data ||
+            typeof data !== "object"
+        ) {
+            throw new Error(
+                "ساختار اطلاعات پروژه معتبر نیست."
+            );
         }
 
         const fields = [
-            "projectName", "owner", "designer", "city",
-            "span", "length", "spacing", "height", "rise",
-            "dead", "live", "wind", "snow"
+            "projectName",
+            "owner",
+            "designer",
+            "city",
+            "span",
+            "length",
+            "spacing",
+            "height",
+            "rise",
+            "dead",
+            "live",
+            "wind",
+            "snow"
         ];
 
-        fields.forEach(id => {
-            if (data[id] !== undefined && $(id)) {
+        fields.forEach(function (id) {
+            if (
+                data[id] !== undefined &&
+                $(id)
+            ) {
                 $(id).value = data[id];
             }
         });
 
+        // بازیابی نوع اتصال پای ستون
+        // پروژه‌های قدیمی به‌صورت مفصلی در نظر گرفته می‌شوند
+        if ($("baseConnection")) {
+            $("baseConnection").value =
+                data.baseConnection === "fixed"
+                    ? "fixed"
+                    : "pinned";
+        }
+
         updateFrameCount();
 
         // بازیابی مصالح و مقاطع
-        if (data.sections && window.SteelSections) {
-            window.SteelSections.setData(data.sections);
+        if (
+            data.sections &&
+            window.SteelSections
+        ) {
+            window.SteelSections.setData(
+                data.sections
+            );
         }
 
-        setStatus("اطلاعات پروژه و مقاطع بارگذاری شدند.");
+        setStatus(
+            "اطلاعات پروژه، نوع اتصال و مقاطع بارگذاری شدند."
+        );
     }
 
     function loadFile(file) {
@@ -162,8 +244,12 @@
 
         reader.onload = function () {
             try {
-                const data = JSON.parse(reader.result);
+                const data = JSON.parse(
+                    reader.result
+                );
+
                 loadData(data);
+
             } catch (error) {
                 alert(
                     "خطا در بازکردن فایل پروژه: " +
@@ -173,7 +259,9 @@
         };
 
         reader.onerror = function () {
-            alert("خواندن فایل با خطا مواجه شد.");
+            alert(
+                "خواندن فایل با خطا مواجه شد."
+            );
         };
 
         reader.readAsText(file, "UTF-8");
@@ -186,19 +274,39 @@
         loadFile,
         loadData,
         updateFrameCount,
-        setStatus
+        setStatus,
+        getBaseConnection
     };
 
-    document.addEventListener("DOMContentLoaded", function () {
-        updateFrameCount();
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
 
-        ["length", "spacing"].forEach(id => {
-            const el = $(id);
-            if (el) {
-                el.addEventListener("input", updateFrameCount);
+            updateFrameCount();
+
+            ["length", "spacing"].forEach(
+                function (id) {
+                    const el = $(id);
+
+                    if (el) {
+                        el.addEventListener(
+                            "input",
+                            updateFrameCount
+                        );
+                    }
+                }
+            );
+
+            // اگر گزینه اتصال موجود نبود،
+            // مقدار پیش‌فرض مفصلی حفظ می‌شود
+            if ($("baseConnection")) {
+                $("baseConnection").value =
+                    $("baseConnection").value === "fixed"
+                        ? "fixed"
+                        : "pinned";
             }
-        });
-    });
+        }
+    );
 
     updateFrameCount();
 
