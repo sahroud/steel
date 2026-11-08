@@ -1,5 +1,4 @@
 
-
 /* SAHROUD STEEL - Material and Section Properties */
 (function () {
     "use strict";
@@ -19,9 +18,8 @@
             </div>
 
             <div class="notice">
-                مشخصات را از نقشه اجرایی، جدول اشتال یا مدارک معتبر
-                کارخانه سازنده وارد کنید. مقادیر اولیه فولاد فقط
-                برای شروع ورود اطلاعات هستند و تأیید طراحی محسوب نمی‌شوند.
+                مشخصات را از نقشه اجرایی یا مدارک معتبر کارخانه وارد کنید.
+                مقادیر اولیه نمونه هستند و تأیید طراحی محسوب نمی‌شوند.
             </div>
 
             <h4>الف ـ مشخصات فولاد</h4>
@@ -47,8 +45,8 @@
             </div>
 
             <div class="notice">
-                مقدار ۲۳۵ مگاپاسکال برای Fy صرفاً مقدار نمونه اولیه
-                است. مقدار واقعی باید با توجه به استاندارد محصول،
+                مقدار ۲۳۵ مگاپاسکال صرفاً مقدار نمونه اولیه است.
+                مقدار واقعی باید با توجه به استاندارد محصول،
                 ضخامت ورق و گواهی مصالح تعیین شود.
             </div>
 
@@ -70,7 +68,7 @@
                 </div>
 
                 <div class="field">
-                    <label for="columnIx">ممان اینرسی خمشی Ix (cm⁴)</label>
+                    <label for="columnIx">ممان اینرسی Ix (cm⁴)</label>
                     <input id="columnIx" type="number"
                         min="0" step="0.01" value="0">
                 </div>
@@ -94,18 +92,16 @@
                 </div>
 
                 <div class="field">
-                    <label for="rafterIx">ممان اینرسی خمشی Ix (cm⁴)</label>
+                    <label for="rafterIx">ممان اینرسی Ix (cm⁴)</label>
                     <input id="rafterIx" type="number"
                         min="0" step="0.01" value="0">
                 </div>
             </div>
 
             <div class="notice">
-                برای تحلیل دوبعدی قاب، مساحت A و ممان اینرسی حول
-                محور خمشی قاب لازم است. برای کنترل کامل مقاطع،
-                مشخصات دیگری مانند مدول مقطع، شعاع ژیراسیون،
-                ضخامت اجزا و مشخصات محور ضعیف نیز در مراحل بعد
-                اضافه خواهند شد.
+                برای تحلیل دوبعدی قاب، مساحت A و ممان اینرسی
+                حول محور خمشی قاب لازم است. مشخصات تکمیلی
+                مقاطع در مراحل بعد اضافه خواهند شد.
             </div>
 
             <div class="button-grid">
@@ -190,6 +186,33 @@
         };
     }
 
+    // بازیابی مشخصات مصالح و مقاطع از فایل پروژه
+    function setData(data) {
+        if (!data || typeof data !== "object") return;
+
+        const fields = {
+            steelGrade: data.material?.grade,
+            steelE: data.material?.E_GPa,
+            steelFy: data.material?.Fy_MPa,
+
+            columnProfile: data.column?.profile,
+            columnA: data.column?.A_cm2,
+            columnIx: data.column?.Ix_cm4,
+
+            rafterProfile: data.rafter?.profile,
+            rafterA: data.rafter?.A_cm2,
+            rafterIx: data.rafter?.Ix_cm4
+        };
+
+        Object.entries(fields).forEach(([id, value]) => {
+            const element = $(id);
+
+            if (element && value !== undefined && value !== null) {
+                element.value = value;
+            }
+        });
+    }
+
     function validate() {
         const d = read();
         const errors = [];
@@ -243,11 +266,13 @@
                 message.textContent =
                     "اطلاعات ناقص یا نامعتبر است: " +
                     errors.join(" ");
+
                 message.style.color = "#b45309";
             } else {
                 message.textContent =
                     "اطلاعات اولیه مصالح و مقاطع کامل است. " +
                     "صحت مقادیر باید با مدارک فنی کنترل شود.";
+
                 message.style.color = "#15803d";
             }
         }
@@ -262,6 +287,7 @@
     window.SteelSections = {
         read,
         getDataSI,
+        setData,
         validate,
         init
     };
