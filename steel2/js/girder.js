@@ -1,10 +1,10 @@
 
-/* SAHROUD STEEL - Welded Plate Girder Calculator 1.0 */
+/* SAHROUD STEEL - Welded Plate Girder Calculator 2.0 */
 (function () {
     "use strict";
 
     const $ = id => document.getElementById(id);
-    const DENSITY = 7850; // kg/m3
+    const DENSITY = 7850;
 
     function createPanel() {
         if ($("girderPanel")) return;
@@ -81,6 +81,11 @@
                     class="btn primary" type="button">
                     محاسبه مشخصات تیرورق
                 </button>
+
+                <button id="btnTransferGirder"
+                    class="btn success" type="button">
+                    انتقال مشخصات به رفتر
+                </button>
             </div>
 
             <div id="girderMessage" class="notice">
@@ -91,12 +96,13 @@
             <div id="girderResults"></div>
 
             <div class="notice">
-                توجه: جوش، شعاع گوشه، سخت‌کننده‌ها، کمانش موضعی،
+                توجه: جوش، سخت‌کننده‌ها، کمانش موضعی،
                 تنش‌های پسماند و اثرات ساخت در این محاسبه منظور نشده‌اند.
             </div>
         `;
 
         const main = document.querySelector("main");
+
         const drawingPanel = Array.from(
             main.querySelectorAll(".panel")
         ).find(item => {
@@ -113,6 +119,11 @@
         $("btnCalculateGirder").addEventListener(
             "click",
             calculate
+        );
+
+        $("btnTransferGirder").addEventListener(
+            "click",
+            transferToRafter
         );
     }
 
@@ -131,14 +142,17 @@
         const values = Object.values(d);
 
         if (values.some(v => !Number.isFinite(v) || v <= 0)) {
-            throw new Error("تمام ابعاد باید بزرگ‌تر از صفر باشند.");
+            throw new Error(
+                "تمام ابعاد باید بزرگ‌تر از صفر باشند."
+            );
         }
 
         if (d.tw > d.bb || d.tw > d.bt) {
-            throw new Error("ضخامت جان نباید از عرض بال‌ها بیشتر باشد.");
+            throw new Error(
+                "ضخامت جان نباید از عرض بال‌ها بیشتر باشد."
+            );
         }
 
-        // ابعاد از میلی‌متر به متر
         const hw = d.hw / 1000;
         const tw = d.tw / 1000;
         const bb = d.bb / 1000;
@@ -146,14 +160,12 @@
         const bt = d.bt / 1000;
         const tt = d.tt / 1000;
 
-        // مساحت اجزای مقطع
         const Ab = bb * tb;
         const Aw = tw * hw;
         const At = bt * tt;
 
         const A = Ab + Aw + At;
 
-        // مختصات مرکز هر جزء از پایین مقطع
         const yb = tb / 2;
         const yw = tb + hw / 2;
         const yt = tb + hw + tt / 2;
@@ -164,7 +176,6 @@
             At * yt
         ) / A;
 
-        // ممان اینرسی حول محور افقی گذرنده از مرکز سطح
         const IxBottom = bb * Math.pow(tb, 3) / 12;
         const IxWeb = tw * Math.pow(hw, 3) / 12;
         const IxTop = bt * Math.pow(tt, 3) / 12;
@@ -174,7 +185,6 @@
             IxWeb + Aw * Math.pow(yw - yBar, 2) +
             IxTop + At * Math.pow(yt - yBar, 2);
 
-        // ممان اینرسی حول محور قائم
         const Iy =
             tb * Math.pow(bb, 3) / 12 +
             hw * Math.pow(tw, 3) / 12 +
@@ -206,7 +216,7 @@
             const p = calculateProperties(d);
 
             $("girderMessage").textContent =
-                "محاسبه هندسی با موفقیت انجام شد.";
+                "محاسبه هندسی با موفقیت انجام شد. اکنون می‌توانید مشخصات را به رفتر منتقل کنید.";
 
             $("girderMessage").style.color = "#15803d";
 
@@ -255,22 +265,87 @@
 
             $("girderMessage").style.color = "#b45309";
             $("girderResults").innerHTML = "";
+
+            window.SteelGirder.lastResult = null;
         }
+    }
+
+    function transferToRafter() {
+        try {
+            const result = window.SteelGirder.lastResult;
+
+            if (!result || !result.properties) {
+                throw new Error(
+                    "ابتدا محاسبه مشخصات تیرورق را انجام دهید."
+                );
+            }
+
+            if (!window.SteelSections) {
+                throw new Error(
+                    "ماژول مشخصات مقاطع بارگذاری نشده است."
+                );
+            }
+
+            const p = result.properties;
+
+            const areaCm2 = p.A * 1e4;
+            const ixCm4 = p.Ix * 1e8;
+
+            const profile = $("rafterProfile");
+            const area = $("rafterA");
+            const inertia = $("rafterIx");
+
+            if (!profile || !area || !inertia) {
+                throw new Error(
+                    "فیلدهای مقطع رفتر در صفحه پیدا نشدند."
+                );
+            }
+
+            profile.value = "تیرورق محاسبه‌شده";
+            area.value = areaCm2.toFixed(2);
+            inertia.value = ixCm4.toFixed(2);
+
+            if (typeof window.SteelSections.validate === "function") {
+                window.SteelSections.validate();
+            }
+
+            $("girderMessage").textContent =
+                "مشخصات هندسی تیرورق به مقطع رفتر منتقل شد. " +
+                "اکنون می‌توانید اطلاعات مقاطع را بررسی کنید.";
+
+            $("girderMessage").style.color = "#15803d";
+
+            window.SteelGirder.transferred = {
+                profile: profile.value,
+                A_cm2: areaCm2,
+                Ix_cm4: ixCm4
+            };
+
+        } catch (error) {
+            $("girderMessage").textContent =
+                "خطا در انتقال: " + error.message;
+
+            $("girderMessage").style.color = "#b45309";
+        }
+    }
+
+    function init() {
+        createPanel();
     }
 
     window.SteelGirder = {
         readDimensions,
         calculateProperties,
-        calculate
+        calculate,
+        transferToRafter,
+        lastResult: null,
+        transferred: null
     };
-
-    function init() {
-        createPanel();
-    }
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", init);
     } else {
         init();
     }
+
 })();
