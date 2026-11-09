@@ -1,5 +1,4 @@
-
-/* SAHROUD STEEL - Material and Section Properties 2.2 */
+/* SAHROUD STEEL - Material and Section Properties 3.0 */
 (function () {
     "use strict";
 
@@ -12,6 +11,50 @@
         panel.className = "panel";
         panel.id = "steelSectionsPanel";
 
+        function memberFields(prefix, title) {
+            return `
+                <hr>
+                <h4>${title}</h4>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="${prefix}Profile">نام مقطع</label>
+                        <input id="${prefix}Profile" type="text"
+                            placeholder="تیرورق یا IPE">
+                    </div>
+                    <div class="field">
+                        <label for="${prefix}A">مساحت A (cm²)</label>
+                        <input id="${prefix}A" type="number"
+                            min="0" step="0.01" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="${prefix}Ix">ممان اینرسی Ix (cm⁴)</label>
+                        <input id="${prefix}Ix" type="number"
+                            min="0" step="0.01" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="${prefix}Iy">ممان اینرسی Iy (cm⁴)</label>
+                        <input id="${prefix}Iy" type="number"
+                            min="0" step="0.01" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="${prefix}SxTop">مدول مقطع بالا Sx (cm³)</label>
+                        <input id="${prefix}SxTop" type="number"
+                            min="0" step="0.01" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="${prefix}SxBottom">مدول مقطع پایین Sx (cm³)</label>
+                        <input id="${prefix}SxBottom" type="number"
+                            min="0" step="0.01" value="0">
+                    </div>
+                    <div class="field">
+                        <label for="${prefix}Sy">مدول مقطع محور ضعیف Sy (cm³)</label>
+                        <input id="${prefix}Sy" type="number"
+                            min="0" step="0.01" value="0">
+                    </div>
+                </div>
+            `;
+        }
+
         panel.innerHTML = `
             <div class="panel-title">
                 <h3>۴ ـ مشخصات مصالح و مقاطع فولادی</h3>
@@ -23,20 +66,17 @@
             </div>
 
             <h4>الف ـ مشخصات فولاد</h4>
-
             <div class="form-grid">
                 <div class="field">
                     <label for="steelGrade">نوع فولاد</label>
                     <input id="steelGrade" type="text"
                         value="ST37 / مقدار نیازمند تأیید">
                 </div>
-
                 <div class="field">
                     <label for="steelE">مدول الاستیسیته E (GPa)</label>
                     <input id="steelE" type="number"
                         min="1" step="1" value="200">
                 </div>
-
                 <div class="field">
                     <label for="steelFy">تنش تسلیم Fy (MPa)</label>
                     <input id="steelFy" type="number"
@@ -50,68 +90,13 @@
                 ضخامت ورق و گواهی مصالح تعیین شود.
             </div>
 
-            <hr>
-
-            <h4>ب ـ مقطع ستون‌ها</h4>
-
-            <div class="form-grid">
-                <div class="field">
-                    <label for="columnProfile">نام مقطع ستون</label>
-                    <input id="columnProfile" type="text"
-                        placeholder="تیرورق یا IPE">
-                </div>
-
-                <div class="field">
-                    <label for="columnA">مساحت A (cm²)</label>
-                    <input id="columnA" type="number"
-                        min="0" step="0.01" value="0">
-                </div>
-
-                <div class="field">
-                    <label for="columnIx">ممان اینرسی Ix (cm⁴)</label>
-                    <input id="columnIx" type="number"
-                        min="0" step="0.01" value="0">
-                </div>
-
-                <div class="field">
-                    <label for="columnIy">ممان اینرسی Iy (cm⁴)</label>
-                    <input id="columnIy" type="number"
-                        min="0" step="0.01" value="0">
-                </div>
-            </div>
-
-            <hr>
-
-            <h4>ج ـ مقطع تیرهای سقف (رفتر)</h4>
-
-            <div class="form-grid">
-                <div class="field">
-                    <label for="rafterProfile">نام مقطع رفتر</label>
-                    <input id="rafterProfile" type="text"
-                        placeholder="تیرورق یا IPE">
-                </div>
-
-                <div class="field">
-                    <label for="rafterA">مساحت A (cm²)</label>
-                    <input id="rafterA" type="number"
-                        min="0" step="0.01" value="0">
-                </div>
-
-                <div class="field">
-                    <label for="rafterIx">ممان اینرسی Ix (cm⁴)</label>
-                    <input id="rafterIx" type="number"
-                        min="0" step="0.01" value="0">
-                </div>
-
-                <div class="field">
-                    <label for="rafterIy">ممان اینرسی Iy (cm⁴)</label>
-                    <input id="rafterIy" type="number"
-                        min="0" step="0.01" value="0">
-                </div>
-            </div>
+            ${memberFields("column", "ب ـ مشخصات مقطع ستون‌ها")}
+            ${memberFields("rafter", "ج ـ مشخصات مقطع رفترها")}
 
             <div class="notice">
-                مشخصات هندسی حول هر دو محور برای کنترل‌های بعدی لازم است.
+                برای تیرورق جوشی، مدول‌های مقطع به‌صورت خودکار
+                از ابعاد ورق‌ها محاسبه و منتقل می‌شوند.
+                برای مقاطع آماده باید مشخصات معتبر آن‌ها وارد شود.
             </div>
 
             <div class="button-grid">
@@ -147,6 +132,18 @@
         $("btnCheckSections").addEventListener("click", validate);
     }
 
+    function readMember(prefix) {
+        return {
+            profile: $(prefix + "Profile").value.trim(),
+            A_cm2: Number($(prefix + "A").value),
+            Ix_cm4: Number($(prefix + "Ix").value),
+            Iy_cm4: Number($(prefix + "Iy").value),
+            SxTop_cm3: Number($(prefix + "SxTop").value),
+            SxBottom_cm3: Number($(prefix + "SxBottom").value),
+            Sy_cm3: Number($(prefix + "Sy").value)
+        };
+    }
+
     function read() {
         return {
             material: {
@@ -154,20 +151,20 @@
                 E_GPa: Number($("steelE").value),
                 Fy_MPa: Number($("steelFy").value)
             },
+            column: readMember("column"),
+            rafter: readMember("rafter")
+        };
+    }
 
-            column: {
-                profile: $("columnProfile").value.trim(),
-                A_cm2: Number($("columnA").value),
-                Ix_cm4: Number($("columnIx").value),
-                Iy_cm4: Number($("columnIy").value)
-            },
-
-            rafter: {
-                profile: $("rafterProfile").value.trim(),
-                A_cm2: Number($("rafterA").value),
-                Ix_cm4: Number($("rafterIx").value),
-                Iy_cm4: Number($("rafterIy").value)
-            }
+    function convertMemberToSI(member) {
+        return {
+            profile: member.profile,
+            A: member.A_cm2 * 1e-4,
+            Ix: member.Ix_cm4 * 1e-8,
+            Iy: member.Iy_cm4 * 1e-8,
+            SxTop: member.SxTop_cm3 * 1e-6,
+            SxBottom: member.SxBottom_cm3 * 1e-6,
+            Sy: member.Sy_cm3 * 1e-6
         };
     }
 
@@ -180,20 +177,8 @@
                 E: d.material.E_GPa * 1e9,
                 Fy: d.material.Fy_MPa * 1e6
             },
-
-            column: {
-                profile: d.column.profile,
-                A: d.column.A_cm2 * 1e-4,
-                Ix: d.column.Ix_cm4 * 1e-8,
-                Iy: d.column.Iy_cm4 * 1e-8
-            },
-
-            rafter: {
-                profile: d.rafter.profile,
-                A: d.rafter.A_cm2 * 1e-4,
-                Ix: d.rafter.Ix_cm4 * 1e-8,
-                Iy: d.rafter.Iy_cm4 * 1e-8
-            }
+            column: convertMemberToSI(d.column),
+            rafter: convertMemberToSI(d.rafter)
         };
     }
 
@@ -209,11 +194,17 @@
             columnA: data.column?.A_cm2,
             columnIx: data.column?.Ix_cm4,
             columnIy: data.column?.Iy_cm4,
+            columnSxTop: data.column?.SxTop_cm3,
+            columnSxBottom: data.column?.SxBottom_cm3,
+            columnSy: data.column?.Sy_cm3,
 
             rafterProfile: data.rafter?.profile,
             rafterA: data.rafter?.A_cm2,
             rafterIx: data.rafter?.Ix_cm4,
-            rafterIy: data.rafter?.Iy_cm4
+            rafterIy: data.rafter?.Iy_cm4,
+            rafterSxTop: data.rafter?.SxTop_cm3,
+            rafterSxBottom: data.rafter?.SxBottom_cm3,
+            rafterSy: data.rafter?.Sy_cm3
         };
 
         Object.entries(fields).forEach(([id, value]) => {
@@ -234,10 +225,7 @@
             if (condition) return;
 
             errors.push(message);
-
-            if (!firstInvalid) {
-                firstInvalid = $(id);
-            }
+            if (!firstInvalid) firstInvalid = $(id);
         }
 
         check("steelGrade", !!d.material.grade,
@@ -253,56 +241,42 @@
             d.material.Fy_MPa > 0,
             "تنش تسلیم معتبر نیست.");
 
-        check("columnProfile", !!d.column.profile,
-            "نام مقطع ستون را وارد کنید.");
+        function validateMember(prefix, member, title) {
+            check(prefix + "Profile", !!member.profile,
+                "نام مقطع " + title + " را وارد کنید.");
 
-        check("columnA",
-            Number.isFinite(d.column.A_cm2) &&
-            d.column.A_cm2 > 0,
-            "مساحت مقطع ستون معتبر نیست.");
+            const properties = [
+                ["A_cm2", "A", "مساحت"],
+                ["Ix_cm4", "Ix", "ممان اینرسی Ix"],
+                ["Iy_cm4", "Iy", "ممان اینرسی Iy"],
+                ["SxTop_cm3", "SxTop", "مدول مقطع بالایی Sx"],
+                ["SxBottom_cm3", "SxBottom", "مدول مقطع پایینی Sx"],
+                ["Sy_cm3", "Sy", "مدول مقطع محور ضعیف Sy"]
+            ];
 
-        check("columnIx",
-            Number.isFinite(d.column.Ix_cm4) &&
-            d.column.Ix_cm4 > 0,
-            "ممان اینرسی Ix ستون معتبر نیست.");
+            properties.forEach(([key, suffix, label]) => {
+                check(
+                    prefix + suffix,
+                    Number.isFinite(member[key]) && member[key] > 0,
+                    label + " " + title + " معتبر نیست."
+                );
+            });
+        }
 
-        check("columnIy",
-            Number.isFinite(d.column.Iy_cm4) &&
-            d.column.Iy_cm4 > 0,
-            "ممان اینرسی Iy ستون معتبر نیست.");
-
-        check("rafterProfile", !!d.rafter.profile,
-            "نام مقطع رفتر را وارد کنید.");
-
-        check("rafterA",
-            Number.isFinite(d.rafter.A_cm2) &&
-            d.rafter.A_cm2 > 0,
-            "مساحت مقطع رفتر معتبر نیست.");
-
-        check("rafterIx",
-            Number.isFinite(d.rafter.Ix_cm4) &&
-            d.rafter.Ix_cm4 > 0,
-            "ممان اینرسی Ix رفتر معتبر نیست.");
-
-        check("rafterIy",
-            Number.isFinite(d.rafter.Iy_cm4) &&
-            d.rafter.Iy_cm4 > 0,
-            "ممان اینرسی Iy رفتر معتبر نیست.");
+        validateMember("column", d.column, "ستون");
+        validateMember("rafter", d.rafter, "رفتر");
 
         const message = $("sectionMessage");
 
         if (message) {
             if (errors.length) {
                 message.textContent =
-                    "اطلاعات ناقص یا نامعتبر است: " +
-                    errors.join(" ");
-
+                    "اطلاعات ناقص یا نامعتبر است: " + errors.join(" ");
                 message.style.color = "#b45309";
             } else {
                 message.textContent =
-                    "اطلاعات مصالح و مقاطع از نظر عددی کامل است. " +
-                    "صحت مشخصات باید با مدارک واقعی مقطع تطبیق داده شود.";
-
+                    "اطلاعات مصالح و مشخصات هندسی مقاطع کامل است. " +
+                    "صحت مقادیر باید با مدارک واقعی مقطع تطبیق داده شود.";
                 message.style.color = "#15803d";
             }
         }
@@ -318,7 +292,6 @@
         return errors.length === 0;
     }
 
-    // جلوگیری از اجرای تحلیل در صورت ناقص بودن مقاطع
     function installAnalysisChecks() {
         const buttonIds = [
             "btnCalculate",
@@ -358,5 +331,4 @@
     } else {
         init();
     }
-
 })();
