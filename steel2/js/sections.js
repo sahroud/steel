@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Material and Section Properties 2.1 */
+/* SAHROUD STEEL - Material and Section Properties 2.2 */
 (function () {
     "use strict";
 
@@ -111,8 +111,7 @@
             </div>
 
             <div class="notice">
-                برای کنترل پایداری اعضا، مشخصات هندسی حول هر دو محور
-                لازم است. این مقادیر باید از هندسه واقعی مقطع محاسبه شوند.
+                مشخصات هندسی حول هر دو محور برای کنترل‌های بعدی لازم است.
             </div>
 
             <div class="button-grid">
@@ -229,48 +228,66 @@
     function validate() {
         const d = read();
         const errors = [];
+        let firstInvalid = null;
 
-        if (!d.material.grade) {
-            errors.push("نوع فولاد را وارد کنید.");
+        function check(id, condition, message) {
+            if (condition) return;
+
+            errors.push(message);
+
+            if (!firstInvalid) {
+                firstInvalid = $(id);
+            }
         }
 
-        if (!Number.isFinite(d.material.E_GPa) ||
-            d.material.E_GPa <= 0) {
-            errors.push("مدول الاستیسیته معتبر نیست.");
-        }
+        check("steelGrade", !!d.material.grade,
+            "نوع فولاد را وارد کنید.");
 
-        if (!Number.isFinite(d.material.Fy_MPa) ||
-            d.material.Fy_MPa <= 0) {
-            errors.push("تنش تسلیم معتبر نیست.");
-        }
+        check("steelE",
+            Number.isFinite(d.material.E_GPa) &&
+            d.material.E_GPa > 0,
+            "مدول الاستیسیته معتبر نیست.");
 
-        if (!d.column.profile) {
-            errors.push("نام مقطع ستون را وارد کنید.");
-        }
+        check("steelFy",
+            Number.isFinite(d.material.Fy_MPa) &&
+            d.material.Fy_MPa > 0,
+            "تنش تسلیم معتبر نیست.");
 
-        if (!Number.isFinite(d.column.A_cm2) ||
-            d.column.A_cm2 <= 0) {
-            errors.push("مساحت مقطع ستون معتبر نیست.");
-        }
+        check("columnProfile", !!d.column.profile,
+            "نام مقطع ستون را وارد کنید.");
 
-        if (!Number.isFinite(d.column.Ix_cm4) ||
-            d.column.Ix_cm4 <= 0) {
-            errors.push("ممان اینرسی Ix ستون معتبر نیست.");
-        }
+        check("columnA",
+            Number.isFinite(d.column.A_cm2) &&
+            d.column.A_cm2 > 0,
+            "مساحت مقطع ستون معتبر نیست.");
 
-        if (!d.rafter.profile) {
-            errors.push("نام مقطع رفتر را وارد کنید.");
-        }
+        check("columnIx",
+            Number.isFinite(d.column.Ix_cm4) &&
+            d.column.Ix_cm4 > 0,
+            "ممان اینرسی Ix ستون معتبر نیست.");
 
-        if (!Number.isFinite(d.rafter.A_cm2) ||
-            d.rafter.A_cm2 <= 0) {
-            errors.push("مساحت مقطع رفتر معتبر نیست.");
-        }
+        check("columnIy",
+            Number.isFinite(d.column.Iy_cm4) &&
+            d.column.Iy_cm4 > 0,
+            "ممان اینرسی Iy ستون معتبر نیست.");
 
-        if (!Number.isFinite(d.rafter.Ix_cm4) ||
-            d.rafter.Ix_cm4 <= 0) {
-            errors.push("ممان اینرسی Ix رفتر معتبر نیست.");
-        }
+        check("rafterProfile", !!d.rafter.profile,
+            "نام مقطع رفتر را وارد کنید.");
+
+        check("rafterA",
+            Number.isFinite(d.rafter.A_cm2) &&
+            d.rafter.A_cm2 > 0,
+            "مساحت مقطع رفتر معتبر نیست.");
+
+        check("rafterIx",
+            Number.isFinite(d.rafter.Ix_cm4) &&
+            d.rafter.Ix_cm4 > 0,
+            "ممان اینرسی Ix رفتر معتبر نیست.");
+
+        check("rafterIy",
+            Number.isFinite(d.rafter.Iy_cm4) &&
+            d.rafter.Iy_cm4 > 0,
+            "ممان اینرسی Iy رفتر معتبر نیست.");
 
         const message = $("sectionMessage");
 
@@ -283,18 +300,49 @@
                 message.style.color = "#b45309";
             } else {
                 message.textContent =
-                    "اطلاعات اولیه مصالح و مقاطع کامل است. " +
-                    "ممان اینرسی Iy نیز برای کنترل پایداری باید تکمیل شود.";
+                    "اطلاعات مصالح و مقاطع از نظر عددی کامل است. " +
+                    "صحت مشخصات باید با مدارک واقعی مقطع تطبیق داده شود.";
 
                 message.style.color = "#15803d";
             }
         }
 
+        if (firstInvalid) {
+            firstInvalid.focus();
+            firstInvalid.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+
         return errors.length === 0;
+    }
+
+    // جلوگیری از اجرای تحلیل در صورت ناقص بودن مقاطع
+    function installAnalysisChecks() {
+        const buttonIds = [
+            "btnCalculate",
+            "btnCombinations"
+        ];
+
+        buttonIds.forEach(id => {
+            const button = $(id);
+            if (!button || button.dataset.sectionCheckInstalled) return;
+
+            button.dataset.sectionCheckInstalled = "true";
+
+            button.addEventListener("click", function (event) {
+                if (!validate()) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }, true);
+        });
     }
 
     function init() {
         createPanel();
+        installAnalysisChecks();
     }
 
     window.SteelSections = {
