@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Column Longitudinal Ties 1.0 */
+/* SAHROUD STEEL - Wall Ties Manager 2.0 */
 (function () {
     "use strict";
 
@@ -8,8 +8,7 @@
 
     const COLORS = {
         upper: "#15803d",
-        lower: "#7c3aed",
-        warning: "#b45309"
+        lower: "#7c3aed"
     };
 
     function number(id) {
@@ -26,8 +25,10 @@
         }
 
         return {
-            left: { enabled: false, width: 0, position: 0 },
-            right: { enabled: false, width: 0, position: 0 }
+            front: { enabled: true, width: 5, height: 5, position: 0 },
+            rear: { enabled: false, width: 3, height: 3, position: 0 },
+            left: { enabled: false, width: 3, height: 3, position: 5 },
+            right: { enabled: false, width: 3, height: 3, position: 5 }
         };
     }
 
@@ -46,17 +47,17 @@
     }
 
     function addText(svg, x, y, value, color) {
-        const text = document.createElementNS(NS, "text");
+        const el = document.createElementNS(NS, "text");
 
-        text.setAttribute("x", x);
-        text.setAttribute("y", y);
-        text.setAttribute("fill", color);
-        text.setAttribute("font-size", "11");
-        text.setAttribute("font-family", "Tahoma, Arial");
-        text.setAttribute("text-anchor", "middle");
+        el.setAttribute("x", x);
+        el.setAttribute("y", y);
+        el.setAttribute("fill", color);
+        el.setAttribute("font-size", "11");
+        el.setAttribute("font-family", "Tahoma, Arial");
+        el.setAttribute("text-anchor", "middle");
 
-        text.textContent = value;
-        svg.appendChild(text);
+        el.textContent = value;
+        svg.appendChild(el);
     }
 
     function overlaps(a1, a2, b1, b2) {
@@ -71,35 +72,53 @@
         return Math.max(2, Math.ceil(length / spacing) + 1);
     }
 
-    function lowerTieBlocked(opening, start, end, lowerHeight) {
+    function openingBlocksTie(opening, tieHeight) {
         if (!opening || !opening.enabled) return false;
 
-        const position = Number(opening.position);
-        const width = Number(opening.width);
         const openingHeight = Number(opening.height);
 
-        if (
-            !Number.isFinite(position) ||
-            !Number.isFinite(width) ||
-            !Number.isFinite(openingHeight)
-        ) {
-            return true;
-        }
+        if (!Number.isFinite(openingHeight)) return true;
 
-        // اگر بازشو به ارتفاع قید دوم برسد، قید در آن دهانه حذف می‌شود.
-        const verticalConflict = openingHeight >= lowerHeight - 0.001;
-
-        if (!verticalConflict) return false;
-
-        return overlaps(
-            start,
-            end,
-            position,
-            position + width
-        );
+        return openingHeight >= tieHeight - 0.001;
     }
 
-    function drawWallTies(svgId, opening, length, height, frameCount, lowerEnabled) {
+    function drawHorizontalWithOpening(
+        svg,
+        x0,
+        x1,
+        y,
+        openingStart,
+        openingEnd,
+        blocked,
+        color,
+        width
+    ) {
+        if (!blocked) {
+            addLine(svg, x0, y, x1, y, color, width);
+            return;
+        }
+
+        const start = Math.max(x0, Math.min(x1, openingStart));
+        const end = Math.max(x0, Math.min(x1, openingEnd));
+
+        if (start > x0) {
+            addLine(svg, x0, y, start, y, color, width);
+        }
+
+        if (end < x1) {
+            addLine(svg, end, y, x1, y, color, width);
+        }
+    }
+
+    // قیدهای دیوارهای طولی چپ و راست
+    function drawSideTies(
+        svgId,
+        opening,
+        length,
+        height,
+        frameCount,
+        lowerEnabled
+    ) {
         const svg = $(svgId);
         if (!svg) return { skipped: 0 };
 
@@ -109,16 +128,25 @@
 
         const sx = (x1 - x0) / length;
         const sy = 175 / height;
-
         const topY = ground - height * sy;
 
-        // قید بالایی در تراز انتهای ستون
-        addLine(
+        const openingStart = opening && opening.enabled
+            ? x0 + Number(opening.position) * sx
+            : 0;
+
+        const openingEnd = opening && opening.enabled
+            ? openingStart + Number(opening.width) * sx
+            : 0;
+
+        // قید بالایی
+        drawHorizontalWithOpening(
             svg,
             x0,
-            topY,
             x1,
             topY,
+            openingStart,
+            openingEnd,
+            openingBlocksTie(opening, height),
             COLORS.upper,
             5
         );
@@ -146,17 +174,19 @@
 
         let skipped = 0;
 
-        // قید دوم به صورت قطعه‌ای بین قاب‌ها ترسیم می‌شود.
+        // قید دوم در هر دهانه بین دو قاب
         for (let i = 0; i < bayCount; i++) {
             const start = length * i / bayCount;
             const end = length * (i + 1) / bayCount;
 
-            const blocked = lowerTieBlocked(
-                opening,
-                start,
-                end,
-                lowerHeight
-            );
+            const blocked =
+                openingBlocksTie(opening, lowerHeight) &&
+                overlaps(
+                    start,
+                    end,
+                    Number(opening.position),
+                    Number(opening.position) + Number(opening.width)
+                );
 
             if (blocked) {
                 skipped++;
@@ -188,6 +218,118 @@
         return { skipped };
     }
 
+    // قیدهای دیوارهای انتهایی جلو و عقب
+    function drawEndTies(
+        svgId,
+        opening,
+        span,
+        height,
+        rise,
+        lowerEnabled,
+        side
+    ) {
+        const svg = $(svgId);
+        if (!svg) return { skipped: 0 };
+
+        const x0 = 105;
+        const x1 = 535;
+        const ground = 245;
+
+        const sx = (x1 - x0) / span;
+        const sy = 175 / (height + rise);
+
+        const eaveY = ground - height * sy;
+
+        let openingStart = 0;
+        let openingEnd = 0;
+
+        if (opening && opening.enabled) {
+            const openingWidth = Number(opening.width);
+
+            if (side === "front") {
+                openingStart =
+                    (x0 + x1) / 2 - openingWidth * sx / 2;
+            } else {
+                openingStart =
+                    x0 + Number(opening.position) * sx;
+            }
+
+            openingEnd = openingStart + openingWidth * sx;
+        }
+
+        // قید بالایی دیوار انتهایی
+        drawHorizontalWithOpening(
+            svg,
+            x0,
+            x1,
+            eaveY,
+            openingStart,
+            openingEnd,
+            openingBlocksTie(opening, height),
+            COLORS.upper,
+            5
+        );
+
+        addText(
+            svg,
+            320,
+            eaveY - 9,
+            "قید بالایی",
+            COLORS.upper
+        );
+
+        if (!lowerEnabled) {
+            return { skipped: 0 };
+        }
+
+        const lowerHeight = height - 1.5;
+
+        if (lowerHeight <= 0) {
+            return { skipped: 0, invalid: true };
+        }
+
+        const lowerY = ground - lowerHeight * sy;
+
+        const blocked = openingBlocksTie(
+            opening,
+            lowerHeight
+        );
+
+        if (blocked) {
+            drawHorizontalWithOpening(
+                svg,
+                x0,
+                x1,
+                lowerY,
+                openingStart,
+                openingEnd,
+                true,
+                COLORS.lower,
+                4
+            );
+        } else {
+            addLine(
+                svg,
+                x0,
+                lowerY,
+                x1,
+                lowerY,
+                COLORS.lower,
+                4
+            );
+        }
+
+        addText(
+            svg,
+            320,
+            lowerY - 9,
+            "قید دوم: ۱٫۵ متر پایین‌تر",
+            COLORS.lower
+        );
+
+        return { skipped: blocked ? 1 : 0 };
+    }
+
     function addPanel() {
         if ($("tiesPanel")) return;
 
@@ -199,7 +341,7 @@
         heading.className = "panel-title";
 
         const title = document.createElement("h3");
-        title.textContent = "۱۱ ـ قیدهای طولی ستون‌ها";
+        title.textContent = "۱۱ ـ قیدهای افقی دیوارهای سوله";
 
         const status = document.createElement("span");
         status.className = "status";
@@ -212,7 +354,7 @@
         const note = document.createElement("div");
         note.className = "notice";
         note.textContent =
-            "قید بالایی به صورت پیش‌فرض نمایش داده می‌شود. قید دوم در فاصله ۱٫۵ متر پایین‌تر از انتهای ستون، با توجه به بازشوهای دیوار طولی بررسی می‌شود.";
+            "قید بالایی و قید دوم در چهار دیوار جلو، عقب، چپ و راست نمایش داده می‌شوند. قید دوم در فاصله ۱٫۵ متر پایین‌تر از بالای ستون قرار می‌گیرد و در محدوده بازشوهای متداخل حذف می‌شود.";
 
         panel.appendChild(note);
 
@@ -272,18 +414,20 @@
 
     function drawAll() {
         const length = number("length");
+        const span = number("span");
         const height = number("height");
+        const rise = number("rise");
         const spacing = number("spacing");
         const frames = number("frames");
 
         const result = $("tiesStatus");
 
         if (
-            !Number.isFinite(length) ||
-            !Number.isFinite(height) ||
-            !Number.isFinite(spacing) ||
+            ![length, span, height, rise, spacing].every(Number.isFinite) ||
             length <= 0 ||
+            span <= 0 ||
             height <= 0 ||
+            rise < 0 ||
             spacing <= 0
         ) {
             if (result) {
@@ -304,7 +448,7 @@
             frames
         );
 
-        // بازسازی نماها و مهاربندها پیش از رسم قیدها
+        // ابتدا بازسازی نماها و مهاربندها
         if (
             window.SteelBracing &&
             typeof window.SteelBracing.drawAll === "function"
@@ -319,7 +463,7 @@
 
         const openings = getOpenings();
 
-        const left = drawWallTies(
+        const left = drawSideTies(
             "viewLeft",
             openings.left,
             length,
@@ -328,7 +472,7 @@
             lowerEnabled
         );
 
-        const right = drawWallTies(
+        const right = drawSideTies(
             "viewRight",
             openings.right,
             length,
@@ -337,8 +481,29 @@
             lowerEnabled
         );
 
+        const front = drawEndTies(
+            "viewFront",
+            openings.front,
+            span,
+            height,
+            rise,
+            lowerEnabled,
+            "front"
+        );
+
+        const rear = drawEndTies(
+            "viewRear",
+            openings.rear,
+            span,
+            height,
+            rise,
+            lowerEnabled,
+            "rear"
+        );
+
         if (result) {
-            let message = "قید بالایی در دو دیوار طولی نمایش داده شد.";
+            let message =
+                "قید بالایی در چهار دیوار جلو، عقب، چپ و راست نمایش داده شد.";
 
             if (lowerEnabled) {
                 if (height <= 1.5) {
@@ -346,14 +511,18 @@
                         " ارتفاع ستون برای قرارگیری قید دوم کافی نیست.";
                 } else {
                     message +=
-                        " قید دوم در فاصله ۱٫۵ متر پایین‌تر بررسی و ترسیم شد.";
+                        " قید دوم در هر چهار نما بررسی و ترسیم شد.";
 
-                    const skipped = left.skipped + right.skipped;
+                    const skipped =
+                        left.skipped +
+                        right.skipped +
+                        front.skipped +
+                        rear.skipped;
 
                     if (skipped > 0) {
                         message +=
                             " در " + skipped +
-                            " دهانه به علت تداخل با بازشو، قید دوم حذف شد.";
+                            " بخش به علت تداخل با بازشو، قید دوم حذف شد.";
                     } else {
                         message +=
                             " تداخلی با بازشوهای ثبت‌شده مشاهده نشد.";
@@ -380,13 +549,25 @@
 
         [
             "length",
+            "span",
             "height",
+            "rise",
             "spacing",
             "frames",
+
+            "openingFrontWidth",
+            "openingFrontHeight",
+
+            "openingRearEnabled",
+            "openingRearWidth",
+            "openingRearHeight",
+            "openingRearPosition",
+
             "openingLeftEnabled",
             "openingLeftWidth",
             "openingLeftHeight",
             "openingLeftPosition",
+
             "openingRightEnabled",
             "openingRightWidth",
             "openingRightHeight",
