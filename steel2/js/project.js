@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Project Manager 2.3 */
+/* SAHROUD STEEL - Project Manager 2.4 */
 (function () {
     "use strict";
 
@@ -42,8 +42,13 @@
 
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
-            version: "2.3"
+            version: "2.4"
         };
+
+        // ذخیره بارگذاری پیشرفته
+        if (window.SteelLoads) {
+            data.loads = window.SteelLoads.getData();
+        }
 
         // ذخیره مشخصات مصالح و مقاطع
         if (window.SteelSections) {
@@ -83,11 +88,25 @@
             return;
         }
 
-        $("frames").value =
-            Math.ceil(length / spacing) + 1;
+        $("frames").value = Math.ceil(length / spacing) + 1;
     }
 
     function validate() {
+
+        // هماهنگ‌سازی بارهای جدید با فیلدهای قدیمی
+        if (window.SteelLoads) {
+            window.SteelLoads.syncLegacyInputs();
+        }
+
+        // اعتبارسنجی خود پنل بارگذاری جدید
+        if (window.SteelLoads) {
+            const loadError = window.SteelLoads.validate();
+
+            if (loadError) {
+                return loadError;
+            }
+        }
+
         const d = getData();
 
         if (!d.projectName) {
@@ -106,8 +125,7 @@
                 !Number.isFinite(item[1]) ||
                 item[1] <= 0
             ) {
-                return item[0] +
-                    " باید بزرگ‌تر از صفر باشد.";
+                return item[0] + " باید بزرگ‌تر از صفر باشد.";
             }
         }
 
@@ -143,8 +161,7 @@
 
         // کنترل ابعاد و موقعیت بازشوها
         if (window.SteelOpenings) {
-            const openingError =
-                window.SteelOpenings.validate();
+            const openingError = window.SteelOpenings.validate();
 
             if (openingError) {
                 return openingError;
@@ -186,7 +203,7 @@
         }, 1000);
 
         setStatus(
-            "پروژه، مقاطع، اتصالات و بازشوها ذخیره شدند."
+            "پروژه، بارگذاری، مقاطع، اتصالات و بازشوها ذخیره شدند."
         );
     }
 
@@ -235,14 +252,25 @@
 
         updateFrameCount();
 
+        // بازیابی بارگذاری پیشرفته
+        if (
+            data.loads &&
+            window.SteelLoads
+        ) {
+            window.SteelLoads.setData(data.loads);
+        }
+
+        // هماهنگ‌سازی مقادیر قدیمی با بارهای بازیابی‌شده
+        if (window.SteelLoads) {
+            window.SteelLoads.syncLegacyInputs();
+        }
+
         // بازیابی مصالح و مقاطع
         if (
             data.sections &&
             window.SteelSections
         ) {
-            window.SteelSections.setData(
-                data.sections
-            );
+            window.SteelSections.setData(data.sections);
         }
 
         // بازیابی بازشوها
@@ -250,15 +278,12 @@
             data.openings &&
             window.SteelOpenings
         ) {
-            window.SteelOpenings.setData(
-                data.openings
-            );
-
+            window.SteelOpenings.setData(data.openings);
             window.SteelOpenings.check();
         }
 
         setStatus(
-            "اطلاعات پروژه، مقاطع، اتصالات و بازشوها بازیابی شدند."
+            "اطلاعات پروژه، بارگذاری، مقاطع، اتصالات و بازشوها بازیابی شدند."
         );
     }
 
@@ -269,10 +294,7 @@
 
         reader.onload = function () {
             try {
-                const data = JSON.parse(
-                    reader.result
-                );
-
+                const data = JSON.parse(reader.result);
                 loadData(data);
 
             } catch (error) {
@@ -284,9 +306,7 @@
         };
 
         reader.onerror = function () {
-            alert(
-                "خواندن فایل با خطا مواجه شد."
-            );
+            alert("خواندن فایل با خطا مواجه شد.");
         };
 
         reader.readAsText(file, "UTF-8");
