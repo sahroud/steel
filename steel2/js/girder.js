@@ -1,5 +1,4 @@
-
-/* SAHROUD STEEL - Welded Plate Girder Calculator 3.1 */
+/* SAHROUD STEEL - Welded Plate Girder Calculator 3.2 */
 (function () {
     "use strict";
 
@@ -24,65 +23,48 @@
             </div>
 
             <h4>۱ ـ مشخصات جان تیرورق</h4>
-
             <div class="form-grid">
                 <div class="field">
                     <label for="girderWebH">ارتفاع خالص جان (mm)</label>
-                    <input id="girderWebH" type="number"
-                        min="1" step="1" value="500">
+                    <input id="girderWebH" type="number" min="1" step="1" value="500">
                 </div>
-
                 <div class="field">
                     <label for="girderWebT">ضخامت جان (mm)</label>
-                    <input id="girderWebT" type="number"
-                        min="1" step="0.5" value="8">
+                    <input id="girderWebT" type="number" min="1" step="0.5" value="8">
                 </div>
             </div>
 
             <hr>
-
             <h4>۲ ـ بال پایینی</h4>
-
             <div class="form-grid">
                 <div class="field">
                     <label for="girderBottomB">عرض بال پایینی (mm)</label>
-                    <input id="girderBottomB" type="number"
-                        min="1" step="1" value="200">
+                    <input id="girderBottomB" type="number" min="1" step="1" value="200">
                 </div>
-
                 <div class="field">
                     <label for="girderBottomT">ضخامت بال پایینی (mm)</label>
-                    <input id="girderBottomT" type="number"
-                        min="1" step="0.5" value="12">
+                    <input id="girderBottomT" type="number" min="1" step="0.5" value="12">
                 </div>
             </div>
 
             <hr>
-
             <h4>۳ ـ بال بالایی</h4>
-
             <div class="form-grid">
                 <div class="field">
                     <label for="girderTopB">عرض بال بالایی (mm)</label>
-                    <input id="girderTopB" type="number"
-                        min="1" step="1" value="200">
+                    <input id="girderTopB" type="number" min="1" step="1" value="200">
                 </div>
-
                 <div class="field">
                     <label for="girderTopT">ضخامت بال بالایی (mm)</label>
-                    <input id="girderTopT" type="number"
-                        min="1" step="0.5" value="12">
+                    <input id="girderTopT" type="number" min="1" step="0.5" value="12">
                 </div>
             </div>
 
             <div class="button-grid">
-                <button id="btnCalculateGirder"
-                    class="btn primary" type="button">
+                <button id="btnCalculateGirder" class="btn primary" type="button">
                     محاسبه مشخصات تیرورق
                 </button>
-
-                <button id="btnTransferGirder"
-                    class="btn success" type="button">
+                <button id="btnTransferGirder" class="btn success" type="button">
                     انتقال به رفتر و ستون‌ها
                 </button>
             </div>
@@ -90,40 +72,29 @@
             <div id="girderMessage" class="notice">
                 برای شروع، محاسبه مشخصات تیرورق را انتخاب کنید.
             </div>
-
             <div id="girderResults"></div>
 
             <div class="notice">
                 این ابزار مشخصات هندسی اولیه را محاسبه می‌کند.
-                جوش، سخت‌کننده، کمانش موضعی و کنترل مقاومت
-                در این مرحله محاسبه نمی‌شوند.
+                کنترل جوش، سخت‌کننده، کمانش موضعی و مقاومت اعضا
+                در مراحل بعدی انجام خواهد شد.
             </div>
         `;
 
         const main = document.querySelector("main");
-
-        if (!main) {
-            throw new Error("بخش اصلی صفحه پیدا نشد.");
-        }
+        if (!main) throw new Error("بخش اصلی صفحه پیدا نشد.");
 
         const panels = Array.from(main.querySelectorAll(".panel"));
-
         const drawingPanel = panels.find(item => {
             const h = item.querySelector("h3");
             return h && h.textContent.includes("۵");
         });
 
-        if (drawingPanel) {
-            main.insertBefore(panel, drawingPanel);
-        } else {
-            main.appendChild(panel);
-        }
+        if (drawingPanel) main.insertBefore(panel, drawingPanel);
+        else main.appendChild(panel);
 
         $("btnCalculateGirder").addEventListener("click", calculate);
-        $("btnTransferGirder").addEventListener(
-            "click",
-            transferToMembers
-        );
+        $("btnTransferGirder").addEventListener("click", transferToMembers);
     }
 
     function readDimensions() {
@@ -139,7 +110,6 @@
 
     function calculateProperties(d) {
         const values = Object.values(d);
-
         if (values.some(v => !Number.isFinite(v) || v <= 0)) {
             throw new Error("تمام ابعاد باید بزرگ‌تر از صفر باشند.");
         }
@@ -158,7 +128,6 @@
         const Ab = bb * tb;
         const Aw = tw * hw;
         const At = bt * tt;
-
         const A = Ab + Aw + At;
 
         const yb = tb / 2;
@@ -166,9 +135,7 @@
         const yt = tb + hw + tt / 2;
 
         const yBar = (
-            Ab * yb +
-            Aw * yw +
-            At * yt
+            Ab * yb + Aw * yw + At * yt
         ) / A;
 
         const Ix =
@@ -179,20 +146,31 @@
             bt * Math.pow(tt, 3) / 12 +
             At * Math.pow(yt - yBar, 2);
 
-        // ممان اینرسی حول محور ضعیف
-        // شامل سهم هر دو بال و جان
         const Iy =
             tb * Math.pow(bb, 3) / 12 +
             hw * Math.pow(tw, 3) / 12 +
             tt * Math.pow(bt, 3) / 12;
 
         const totalHeight = hw + tb + tt;
+
+        // مدول‌های مقطع الاستیک
+        const SxTop = Ix / (totalHeight - yBar);
+        const SxBottom = Ix / yBar;
+        const Sy = Iy / (Math.max(bb, bt) / 2);
+
+        const rx = Math.sqrt(Ix / A);
+        const ry = Math.sqrt(Iy / A);
         const massPerMeter = A * DENSITY;
 
         return {
             A,
             Ix,
             Iy,
+            SxTop,
+            SxBottom,
+            Sy,
+            rx,
+            ry,
             yBar,
             totalHeight,
             massPerMeter
@@ -218,50 +196,59 @@
 
             $("girderMessage").textContent =
                 "محاسبه مشخصات هندسی با موفقیت انجام شد.";
-
             $("girderMessage").style.color = "#15803d";
 
             $("girderResults").innerHTML = `
                 <h4>نتایج محاسبه مقطع</h4>
-
                 <div class="result-card">
                     <span>مساحت مقطع A</span>
                     <strong>${format(p.A * 1e4)} cm²</strong>
                 </div>
-
                 <div class="result-card">
                     <span>ممان اینرسی محور قوی Ix</span>
                     <strong>${format(p.Ix * 1e8)} cm⁴</strong>
                 </div>
-
                 <div class="result-card">
                     <span>ممان اینرسی محور ضعیف Iy</span>
                     <strong>${format(p.Iy * 1e8)} cm⁴</strong>
                 </div>
-
+                <div class="result-card">
+                    <span>مدول مقطع بالا Sx بالا</span>
+                    <strong>${format(p.SxTop * 1e6)} cm³</strong>
+                </div>
+                <div class="result-card">
+                    <span>مدول مقطع پایین Sx پایین</span>
+                    <strong>${format(p.SxBottom * 1e6)} cm³</strong>
+                </div>
+                <div class="result-card">
+                    <span>مدول مقطع محور ضعیف Sy</span>
+                    <strong>${format(p.Sy * 1e6)} cm³</strong>
+                </div>
+                <div class="result-card">
+                    <span>شعاع ژیراسیون محور قوی rx</span>
+                    <strong>${format(p.rx * 100)} cm</strong>
+                </div>
+                <div class="result-card">
+                    <span>شعاع ژیراسیون محور ضعیف ry</span>
+                    <strong>${format(p.ry * 100)} cm</strong>
+                </div>
                 <div class="result-card">
                     <span>ارتفاع کل مقطع</span>
                     <strong>${format(p.totalHeight * 1000, 1)} mm</strong>
                 </div>
-
                 <div class="result-card">
                     <span>مرکز سطح از زیر بال پایینی</span>
                     <strong>${format(p.yBar * 1000)} mm</strong>
                 </div>
-
                 <div class="result-card">
                     <span>وزن تقریبی هر متر</span>
                     <strong>${format(p.massPerMeter)} kg/m</strong>
                 </div>
             `;
-
         } catch (error) {
-            $("girderMessage").textContent =
-                "خطا: " + error.message;
-
+            $("girderMessage").textContent = "خطا: " + error.message;
             $("girderMessage").style.color = "#b45309";
             $("girderResults").innerHTML = "";
-
             window.SteelGirder.lastResult = null;
         }
     }
@@ -269,84 +256,75 @@
     function transferToMembers() {
         try {
             const result = window.SteelGirder.lastResult;
-
             if (!result || !result.properties) {
-                throw new Error(
-                    "ابتدا محاسبه مشخصات تیرورق را انجام دهید."
-                );
+                throw new Error("ابتدا محاسبه مشخصات تیرورق را انجام دهید.");
             }
 
             if (!window.SteelSections) {
-                throw new Error(
-                    "ماژول مشخصات مقاطع بارگذاری نشده است."
-                );
+                throw new Error("ماژول مشخصات مقاطع بارگذاری نشده است.");
             }
 
             const p = result.properties;
 
-            const areaCm2 = p.A * 1e4;
-            const ixCm4 = p.Ix * 1e8;
-            const iyCm4 = p.Iy * 1e8;
+            const values = {
+                A: p.A * 1e4,
+                Ix: p.Ix * 1e8,
+                Iy: p.Iy * 1e8,
+                SxTop: p.SxTop * 1e6,
+                SxBottom: p.SxBottom * 1e6,
+                Sy: p.Sy * 1e6
+            };
 
             const targets = [
-                {
-                    name: "رفتر",
-                    profile: "rafterProfile",
-                    area: "rafterA",
-                    ix: "rafterIx",
-                    iy: "rafterIy"
-                },
-                {
-                    name: "ستون",
-                    profile: "columnProfile",
-                    area: "columnA",
-                    ix: "columnIx",
-                    iy: "columnIy"
-                }
+                { name: "رفتر", prefix: "rafter" },
+                { name: "ستون", prefix: "column" }
             ];
 
-            // ابتدا وجود تمام فیلدها بررسی می‌شود
             for (const item of targets) {
-                if (
-                    !$(item.profile) ||
-                    !$(item.area) ||
-                    !$(item.ix) ||
-                    !$(item.iy)
-                ) {
+                const ids = [
+                    item.prefix + "Profile",
+                    item.prefix + "A",
+                    item.prefix + "Ix",
+                    item.prefix + "Iy",
+                    item.prefix + "SxTop",
+                    item.prefix + "SxBottom",
+                    item.prefix + "Sy"
+                ];
+
+                if (ids.some(id => !$(id))) {
                     throw new Error(
-                        "فیلدهای مقطع " + item.name +
-                        " پیدا نشدند. sections.js را بررسی کنید."
+                        "فیلدهای مشخصات مقطع " + item.name +
+                        " پیدا نشدند. فایل sections.js را به‌روزرسانی کنید."
                     );
                 }
             }
 
-            // انتقال مشخصات به هر دو عضو
             for (const item of targets) {
-                $(item.profile).value = "تیرورق محاسبه‌شده";
-                $(item.area).value = areaCm2.toFixed(2);
-                $(item.ix).value = ixCm4.toFixed(2);
-                $(item.iy).value = iyCm4.toFixed(2);
+                const pre = item.prefix;
+                $(pre + "Profile").value = "تیرورق محاسبه‌شده";
+                $(pre + "A").value = values.A.toFixed(2);
+                $(pre + "Ix").value = values.Ix.toFixed(2);
+                $(pre + "Iy").value = values.Iy.toFixed(2);
+                $(pre + "SxTop").value = values.SxTop.toFixed(2);
+                $(pre + "SxBottom").value = values.SxBottom.toFixed(2);
+                $(pre + "Sy").value = values.Sy.toFixed(2);
             }
 
             window.SteelSections.validate();
 
             window.SteelGirder.transferred = {
                 profile: "تیرورق محاسبه‌شده",
-                A_cm2: areaCm2,
-                Ix_cm4: ixCm4,
-                Iy_cm4: iyCm4,
+                ...values,
                 appliedTo: ["rafter", "column"]
             };
 
             $("girderMessage").textContent =
-                "انتقال موفق: مشخصات A ، Ix و Iy به ستون و رفتر منتقل شد.";
-
+                "انتقال موفق: مشخصات هندسی و مدول‌های مقطع به ستون و رفتر منتقل شد.";
             $("girderMessage").style.color = "#15803d";
 
         } catch (error) {
             $("girderMessage").textContent =
                 "خطا در انتقال: " + error.message;
-
             $("girderMessage").style.color = "#b45309";
         }
     }
@@ -369,5 +347,4 @@
     } else {
         init();
     }
-
 })();
