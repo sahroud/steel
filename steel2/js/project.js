@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Project Manager 2.2 */
+/* SAHROUD STEEL - Project Manager 2.3 */
 (function () {
     "use strict";
 
@@ -26,7 +26,6 @@
             designer: $("designer").value.trim(),
             city: $("city").value,
 
-            // ذخیره نوع اتصال پای ستون
             baseConnection: getBaseConnection(),
 
             span: getNumber("span"),
@@ -43,12 +42,17 @@
 
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
-            version: "2.2"
+            version: "2.3"
         };
 
         // ذخیره مشخصات مصالح و مقاطع
         if (window.SteelSections) {
             data.sections = window.SteelSections.read();
+        }
+
+        // ذخیره اطلاعات بازشوها
+        if (window.SteelOpenings) {
+            data.openings = window.SteelOpenings.getData();
         }
 
         return data;
@@ -137,6 +141,16 @@
             return "نوع اتصال پای ستون معتبر نیست.";
         }
 
+        // کنترل ابعاد و موقعیت بازشوها
+        if (window.SteelOpenings) {
+            const openingError =
+                window.SteelOpenings.validate();
+
+            if (openingError) {
+                return openingError;
+            }
+        }
+
         return "";
     }
 
@@ -172,7 +186,7 @@
         }, 1000);
 
         setStatus(
-            "پروژه، نوع اتصال و مشخصات مقاطع ذخیره شدند."
+            "پروژه، مقاطع، اتصالات و بازشوها ذخیره شدند."
         );
     }
 
@@ -212,7 +226,6 @@
         });
 
         // بازیابی نوع اتصال پای ستون
-        // پروژه‌های قدیمی به‌صورت مفصلی در نظر گرفته می‌شوند
         if ($("baseConnection")) {
             $("baseConnection").value =
                 data.baseConnection === "fixed"
@@ -232,8 +245,20 @@
             );
         }
 
+        // بازیابی بازشوها
+        if (
+            data.openings &&
+            window.SteelOpenings
+        ) {
+            window.SteelOpenings.setData(
+                data.openings
+            );
+
+            window.SteelOpenings.check();
+        }
+
         setStatus(
-            "اطلاعات پروژه، نوع اتصال و مقاطع بارگذاری شدند."
+            "اطلاعات پروژه، مقاطع، اتصالات و بازشوها بازیابی شدند."
         );
     }
 
@@ -297,8 +322,6 @@
                 }
             );
 
-            // اگر گزینه اتصال موجود نبود،
-            // مقدار پیش‌فرض مفصلی حفظ می‌شود
             if ($("baseConnection")) {
                 $("baseConnection").value =
                     $("baseConnection").value === "fixed"
