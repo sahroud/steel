@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Material and Section Properties */
+/* SAHROUD STEEL - Material and Section Properties 2.1 */
 (function () {
     "use strict";
 
@@ -26,7 +26,7 @@
 
             <div class="form-grid">
                 <div class="field">
-                    <label for="steelGrade">نوع یا گرید فولاد</label>
+                    <label for="steelGrade">نوع فولاد</label>
                     <input id="steelGrade" type="text"
                         value="ST37 / مقدار نیازمند تأیید">
                 </div>
@@ -45,7 +45,7 @@
             </div>
 
             <div class="notice">
-                مقدار ۲۳۵ مگاپاسکال صرفاً مقدار نمونه اولیه است.
+                مقدار ۲۳۵ مگاپاسکال نمونه اولیه است.
                 مقدار واقعی باید با توجه به استاندارد محصول،
                 ضخامت ورق و گواهی مصالح تعیین شود.
             </div>
@@ -56,13 +56,13 @@
 
             <div class="form-grid">
                 <div class="field">
-                    <label for="columnProfile">نام یا نوع مقطع ستون</label>
+                    <label for="columnProfile">نام مقطع ستون</label>
                     <input id="columnProfile" type="text"
-                        placeholder="مثلاً تیرورق یا IPE">
+                        placeholder="تیرورق یا IPE">
                 </div>
 
                 <div class="field">
-                    <label for="columnA">مساحت مقطع A (cm²)</label>
+                    <label for="columnA">مساحت A (cm²)</label>
                     <input id="columnA" type="number"
                         min="0" step="0.01" value="0">
                 </div>
@@ -70,6 +70,12 @@
                 <div class="field">
                     <label for="columnIx">ممان اینرسی Ix (cm⁴)</label>
                     <input id="columnIx" type="number"
+                        min="0" step="0.01" value="0">
+                </div>
+
+                <div class="field">
+                    <label for="columnIy">ممان اینرسی Iy (cm⁴)</label>
+                    <input id="columnIy" type="number"
                         min="0" step="0.01" value="0">
                 </div>
             </div>
@@ -80,13 +86,13 @@
 
             <div class="form-grid">
                 <div class="field">
-                    <label for="rafterProfile">نام یا نوع مقطع رفتر</label>
+                    <label for="rafterProfile">نام مقطع رفتر</label>
                     <input id="rafterProfile" type="text"
-                        placeholder="مثلاً تیرورق یا IPE">
+                        placeholder="تیرورق یا IPE">
                 </div>
 
                 <div class="field">
-                    <label for="rafterA">مساحت مقطع A (cm²)</label>
+                    <label for="rafterA">مساحت A (cm²)</label>
                     <input id="rafterA" type="number"
                         min="0" step="0.01" value="0">
                 </div>
@@ -96,12 +102,17 @@
                     <input id="rafterIx" type="number"
                         min="0" step="0.01" value="0">
                 </div>
+
+                <div class="field">
+                    <label for="rafterIy">ممان اینرسی Iy (cm⁴)</label>
+                    <input id="rafterIy" type="number"
+                        min="0" step="0.01" value="0">
+                </div>
             </div>
 
             <div class="notice">
-                برای تحلیل دوبعدی قاب، مساحت A و ممان اینرسی
-                حول محور خمشی قاب لازم است. مشخصات تکمیلی
-                مقاطع در مراحل بعد اضافه خواهند شد.
+                برای کنترل پایداری اعضا، مشخصات هندسی حول هر دو محور
+                لازم است. این مقادیر باید از هندسه واقعی مقطع محاسبه شوند.
             </div>
 
             <div class="button-grid">
@@ -134,10 +145,7 @@
             if (main) main.appendChild(panel);
         }
 
-        const button = $("btnCheckSections");
-        if (button) {
-            button.addEventListener("click", validate);
-        }
+        $("btnCheckSections").addEventListener("click", validate);
     }
 
     function read() {
@@ -151,13 +159,15 @@
             column: {
                 profile: $("columnProfile").value.trim(),
                 A_cm2: Number($("columnA").value),
-                Ix_cm4: Number($("columnIx").value)
+                Ix_cm4: Number($("columnIx").value),
+                Iy_cm4: Number($("columnIy").value)
             },
 
             rafter: {
                 profile: $("rafterProfile").value.trim(),
                 A_cm2: Number($("rafterA").value),
-                Ix_cm4: Number($("rafterIx").value)
+                Ix_cm4: Number($("rafterIx").value),
+                Iy_cm4: Number($("rafterIy").value)
             }
         };
     }
@@ -175,18 +185,19 @@
             column: {
                 profile: d.column.profile,
                 A: d.column.A_cm2 * 1e-4,
-                Ix: d.column.Ix_cm4 * 1e-8
+                Ix: d.column.Ix_cm4 * 1e-8,
+                Iy: d.column.Iy_cm4 * 1e-8
             },
 
             rafter: {
                 profile: d.rafter.profile,
                 A: d.rafter.A_cm2 * 1e-4,
-                Ix: d.rafter.Ix_cm4 * 1e-8
+                Ix: d.rafter.Ix_cm4 * 1e-8,
+                Iy: d.rafter.Iy_cm4 * 1e-8
             }
         };
     }
 
-    // بازیابی مشخصات مصالح و مقاطع از فایل پروژه
     function setData(data) {
         if (!data || typeof data !== "object") return;
 
@@ -198,10 +209,12 @@
             columnProfile: data.column?.profile,
             columnA: data.column?.A_cm2,
             columnIx: data.column?.Ix_cm4,
+            columnIy: data.column?.Iy_cm4,
 
             rafterProfile: data.rafter?.profile,
             rafterA: data.rafter?.A_cm2,
-            rafterIx: data.rafter?.Ix_cm4
+            rafterIx: data.rafter?.Ix_cm4,
+            rafterIy: data.rafter?.Iy_cm4
         };
 
         Object.entries(fields).forEach(([id, value]) => {
@@ -237,12 +250,12 @@
 
         if (!Number.isFinite(d.column.A_cm2) ||
             d.column.A_cm2 <= 0) {
-            errors.push("مساحت مقطع ستون باید بزرگ‌تر از صفر باشد.");
+            errors.push("مساحت مقطع ستون معتبر نیست.");
         }
 
         if (!Number.isFinite(d.column.Ix_cm4) ||
             d.column.Ix_cm4 <= 0) {
-            errors.push("ممان اینرسی ستون باید بزرگ‌تر از صفر باشد.");
+            errors.push("ممان اینرسی Ix ستون معتبر نیست.");
         }
 
         if (!d.rafter.profile) {
@@ -251,12 +264,12 @@
 
         if (!Number.isFinite(d.rafter.A_cm2) ||
             d.rafter.A_cm2 <= 0) {
-            errors.push("مساحت مقطع رفتر باید بزرگ‌تر از صفر باشد.");
+            errors.push("مساحت مقطع رفتر معتبر نیست.");
         }
 
         if (!Number.isFinite(d.rafter.Ix_cm4) ||
             d.rafter.Ix_cm4 <= 0) {
-            errors.push("ممان اینرسی رفتر باید بزرگ‌تر از صفر باشد.");
+            errors.push("ممان اینرسی Ix رفتر معتبر نیست.");
         }
 
         const message = $("sectionMessage");
@@ -271,7 +284,7 @@
             } else {
                 message.textContent =
                     "اطلاعات اولیه مصالح و مقاطع کامل است. " +
-                    "صحت مقادیر باید با مدارک فنی کنترل شود.";
+                    "ممان اینرسی Iy نیز برای کنترل پایداری باید تکمیل شود.";
 
                 message.style.color = "#15803d";
             }
