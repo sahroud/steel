@@ -34,7 +34,6 @@
         return true;
     }
 
-    // کنترل مستقیم مصالح و مقاطع پیش از تحلیل
     function validateSections() {
         if (!window.SteelSections ||
             typeof window.SteelSections.validate !== "function") {
@@ -210,6 +209,7 @@
         return unique;
     }
 
+    // بیشینه نیروها در کل قاب
     function getEndForceEnvelope(result) {
         const envelope = {
             N: { value: 0, member: "", end: "" },
@@ -242,6 +242,47 @@
         });
 
         return envelope;
+    }
+
+    // بیشینه نیروها برای هر عضو به صورت مستقل
+    function getMemberEnvelopes(result) {
+        const output = {};
+
+        (result.members || []).forEach(member => {
+            const name = member.name;
+
+            if (!output[name]) {
+                output[name] = {
+                    N: { value: 0, signedValue: 0, end: "" },
+                    V: { value: 0, signedValue: 0, end: "" },
+                    M: { value: 0, signedValue: 0, end: "" }
+                };
+            }
+
+            const values = [
+                { key: "N", value: member.axialStart, end: "ابتدا" },
+                { key: "N", value: member.axialEnd, end: "انتها" },
+                { key: "V", value: member.shearStart, end: "ابتدا" },
+                { key: "V", value: member.shearEnd, end: "انتها" },
+                { key: "M", value: member.momentStart, end: "ابتدا" },
+                { key: "M", value: member.momentEnd, end: "انتها" }
+            ];
+
+            values.forEach(item => {
+                const signed = Number(item.value) || 0;
+                const magnitude = Math.abs(signed);
+
+                if (magnitude > output[name][item.key].value) {
+                    output[name][item.key] = {
+                        value: magnitude,
+                        signedValue: signed,
+                        end: item.end
+                    };
+                }
+            });
+        });
+
+        return output;
     }
 
     function calculateCombinations() {
@@ -280,6 +321,7 @@
                 results.push({
                     name: item.name,
                     envelope: getEndForceEnvelope(raw),
+                    memberEnvelopes: getMemberEnvelopes(raw),
                     maxDisplacement: raw.maxDisplacement || 0,
                     reactions: raw.reactions || [],
                     members: raw.members || []
@@ -354,6 +396,22 @@
             </tr>
         `).join("");
 
+        // ساخت ردیف‌های جدول تفکیکی اعضا
+        const memberRows = results.flatMap(item =>
+            Object.entries(item.memberEnvelopes || {}).map(([member, forces]) => `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>${member}</td>
+                    <td>${fmt(forces.N.value)}</td>
+                    <td>${fmt(forces.N.signedValue)}</td>
+                    <td>${forces.N.end}</td>
+                    <td>${fmt(forces.V.value)}</td>
+                    <td>${fmt(forces.M.value)}</td>
+                    <td>${forces.M.end}</td>
+                </tr>
+            `)
+        ).join("");
+
         const message = $("analysisMessage");
 
         if (message) {
@@ -408,6 +466,27 @@
                             </tr>
                         </thead>
                         <tbody>${rows}</tbody>
+                    </table>
+                </div>
+
+                <h4>جدول تفکیکی نیروهای چهار عضو در ترکیبات بار</h4>
+
+                <div style="overflow-x:auto">
+                    <table style="width:100%;
+                    border-collapse:collapse;min-width:850px">
+                        <thead>
+                            <tr>
+                                <th>ترکیب بار</th>
+                                <th>عضو</th>
+                                <th>بیشینه |N| (kN)</th>
+                                <th>N با علامت (kN)</th>
+                                <th>محل N</th>
+                                <th>بیشینه |V| (kN)</th>
+                                <th>بیشینه |M| (kN.m)</th>
+                                <th>محل M</th>
+                            </tr>
+                        </thead>
+                        <tbody>${memberRows}</tbody>
                     </table>
                 </div>
 
