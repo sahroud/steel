@@ -1,7 +1,6 @@
 
 /* SAHROUD STEEL - Application Controller
-   Preliminary LRFD combinations aligned to Mabhas 6 (1398) wind factors
-   Applicable inputs: D, Lr, S, W (rain, seismic and temperature excluded)
+   Preliminary LRFD combinations aligned to Mabhas 6 (1398)
 */
 (function () {
     "use strict";
@@ -29,6 +28,25 @@
         if (error) {
             alert(error);
             setStatus("خطا: " + error);
+            return false;
+        }
+
+        return true;
+    }
+
+    // کنترل مستقیم مصالح و مقاطع پیش از تحلیل
+    function validateSections() {
+        if (!window.SteelSections ||
+            typeof window.SteelSections.validate !== "function") {
+            alert("ماژول کنترل مصالح و مقاطع بارگذاری نشده است.");
+            setStatus("خطا: ماژول کنترل مقاطع در دسترس نیست.");
+            return false;
+        }
+
+        const valid = window.SteelSections.validate();
+
+        if (!valid) {
+            setStatus("تحلیل متوقف شد: اطلاعات مصالح یا مقاطع ناقص است.");
             return false;
         }
 
@@ -433,6 +451,7 @@
     // تحلیل تک‌حالته بارهای فعلی
     function calculate() {
         if (!validateProject()) return;
+        if (!validateSections()) return;
 
         if (!window.SteelAnalysis ||
             typeof window.SteelAnalysis.calculate !== "function") {
@@ -456,6 +475,7 @@
     // تحلیل مستقل ترکیبات بار
     function calculateCombinationsButton() {
         if (!validateProject()) return;
+        if (!validateSections()) return;
 
         if (!window.SteelAnalysis ||
             typeof window.SteelAnalysis.calculate !== "function") {
