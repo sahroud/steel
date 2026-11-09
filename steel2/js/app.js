@@ -1,5 +1,6 @@
+
 /* SAHROUD STEEL - Application Controller
-   Automatic preliminary LRFD load-combination analysis
+   Preliminary LRFD combinations aligned to Mabhas 6 (1398) wind factors
    Applicable inputs: D, Lr, S, W (rain, seismic and temperature excluded)
 */
 (function () {
@@ -80,16 +81,17 @@
         data.deadLeft = original.deadLeft * deadFactor;
         data.deadRight = original.deadRight * deadFactor;
 
-        // Lr و S به‌صورت حالت‌های جایگزین تحلیل می‌شوند، نه همزمان.
+        // Lr و S به‌صورت حالت‌های جایگزین تحلیل می‌شوند.
         data.liveLeft = original.liveLeft * liveFactor;
         data.liveRight = original.liveRight * liveFactor;
         data.snowLeft = original.snowLeft * snowFactor;
         data.snowRight = original.snowRight * snowFactor;
 
-        // W شامل باد سقف و باد دیوار است؛ هر دو جهت بررسی می‌شوند.
+        // باد سقف و دیوار با ضرایب ترکیب بار
         data.windLeft = original.windLeft * windFactor * windSign;
         data.windRight = original.windRight * windFactor * windSign;
         data.windWall = Math.abs(Number(original.windWall) || 0) * windFactor;
+
         data.windDirection = windSign < 0
             ? oppositeDirection(original.windDirection)
             : original.windDirection;
@@ -101,7 +103,7 @@
         const cases = [];
         const signs = hasWind(original) ? [1, -1] : [1];
 
-        // 1) 1.4D
+        // ترکیب ۱: 1.4D
         cases.push({
             name: "ترکیب ۱ ـ 1.4D",
             data: makeCombinationData(original, {
@@ -109,13 +111,13 @@
             })
         });
 
-        // Lr و S در روابط دارای عبارت «یا» جداگانه بررسی می‌شوند.
+        // Lr و S به‌صورت حالت‌های جایگزین بررسی می‌شوند.
         const roofActions = [
             { key: "live", title: "بار زنده بام Lr" },
             { key: "snow", title: "بار برف S" }
         ];
 
-        // 2) 1.2D + 0.5(Lr or S)
+        // ترکیب ۲: 1.2D + 0.5(Lr یا S)
         roofActions.forEach(action => {
             cases.push({
                 name: "ترکیب ۲ ـ 1.2D + 0.5(" + action.title + ")",
@@ -127,54 +129,57 @@
             });
         });
 
-        // 3) 1.2D + 1.6(Lr or S) + 0.7W
+        // ترکیب ۳: 1.2D + 1.6(Lr یا S) + 0.5(1.6W)
+        // چون بار زنده طبقات L در مدل وجود ندارد، شاخه 0.8W اجرا می‌شود.
         roofActions.forEach(action => {
             signs.forEach(sign => {
                 cases.push({
-                    name: "ترکیب ۳ ـ 1.2D + 1.6(" + action.title + ") + 0.7W، " +
+                    name: "ترکیب ۳ ـ 1.2D + 1.6(" +
+                        action.title + ") + 0.8W، " +
                         (sign > 0 ? "جهت اول باد" : "جهت معکوس باد"),
                     data: makeCombinationData(original, {
                         deadFactor: 1.2,
                         liveFactor: action.key === "live" ? 1.6 : 0,
                         snowFactor: action.key === "snow" ? 1.6 : 0,
-                        windFactor: 0.7,
+                        windFactor: 0.8,
                         windSign: sign
                     })
                 });
             });
         });
 
-        // 4) 1.2D + 1.4W + 0.5(Lr or S)
+        // ترکیب ۴: 1.2D + 1.6W + 0.5(Lr یا S)
         roofActions.forEach(action => {
             signs.forEach(sign => {
                 cases.push({
-                    name: "ترکیب ۴ ـ 1.2D + 1.4W + 0.5(" + action.title + ")، " +
+                    name: "ترکیب ۴ ـ 1.2D + 1.6W + 0.5(" +
+                        action.title + ")، " +
                         (sign > 0 ? "جهت اول باد" : "جهت معکوس باد"),
                     data: makeCombinationData(original, {
                         deadFactor: 1.2,
                         liveFactor: action.key === "live" ? 0.5 : 0,
                         snowFactor: action.key === "snow" ? 0.5 : 0,
-                        windFactor: 1.4,
+                        windFactor: 1.6,
                         windSign: sign
                     })
                 });
             });
         });
 
-        // 6) 0.9D + 1.4W
+        // ترکیب ۶: 0.9D + 1.6W
         signs.forEach(sign => {
             cases.push({
-                name: "ترکیب ۶ ـ 0.9D + 1.4W، " +
+                name: "ترکیب ۶ ـ 0.9D + 1.6W، " +
                     (sign > 0 ? "جهت اول باد" : "جهت معکوس باد"),
                 data: makeCombinationData(original, {
                     deadFactor: 0.9,
-                    windFactor: 1.4,
+                    windFactor: 1.6,
                     windSign: sign
                 })
             });
         });
 
-        // حذف حالت‌های کاملاً تکراری، بدون حذف نام حالت‌های متفاوت.
+        // حذف حالت‌های کاملاً تکراری
         const unique = [];
         const signatures = new Set();
 
@@ -216,6 +221,7 @@
 
             values.forEach(item => {
                 const magnitude = Math.abs(Number(item.value) || 0);
+
                 if (magnitude > envelope[item.key].value) {
                     envelope[item.key] = {
                         value: magnitude,
@@ -251,7 +257,9 @@
                 window.SteelLoads.setData(item.data);
 
                 const run = window.SteelAnalysis.calculate();
-                if (!run || !run.success || !window.SteelAnalysis.lastResult) {
+
+                if (!run || !run.success ||
+                    !window.SteelAnalysis.lastResult) {
                     throw new Error(
                         "تحلیل این حالت انجام نشد: " + item.name +
                         (run && run.error ? " ـ " + run.error : "")
@@ -259,6 +267,7 @@
                 }
 
                 const raw = window.SteelAnalysis.lastResult;
+
                 results.push({
                     name: item.name,
                     envelope: getEndForceEnvelope(raw),
@@ -271,19 +280,24 @@
             failure = error;
         }
 
-        // بازگرداندن دقیق بارهای ورودی کاربر پس از پایان همه تحلیل‌ها
+        // بازگرداندن بارهای اولیه کاربر
         window.SteelLoads.setData(original);
         const restored = window.SteelAnalysis.calculate();
+
         if (restored && restored.success) {
             baselineResult = window.SteelAnalysis.lastResult;
         }
 
         if (failure) {
             const message = $("analysisMessage");
+
             if (message) {
-                message.innerHTML = "<b>خطا در تحلیل ترکیبات بار:</b><p>" +
-                    failure.message + "</p><p>بارهای ورودی اولیه بازگردانده شدند.</p>";
+                message.innerHTML =
+                    "<b>خطا در تحلیل ترکیبات بار:</b><p>" +
+                    failure.message +
+                    "</p><p>بارهای ورودی اولیه بازگردانده شدند.</p>";
             }
+
             setStatus("خطا در تحلیل ترکیبات بار: " + failure.message);
             return { success: false, error: failure.message };
         }
@@ -302,6 +316,7 @@
         results.forEach(item => {
             ["N", "V", "M"].forEach(key => {
                 const current = item.envelope[key];
+
                 if (current.value > governing[key].value) {
                     governing[key] = {
                         value: current.value,
@@ -316,6 +331,7 @@
 
         window.SteelAnalysis.combinationResults = results;
         window.SteelAnalysis.governingCombinationResults = governing;
+
         if (baselineResult) {
             window.SteelAnalysis.lastResult = baselineResult;
         }
@@ -331,33 +347,53 @@
         `).join("");
 
         const message = $("analysisMessage");
+
         if (message) {
             message.innerHTML = `
                 <h4>گزارش تحلیل ترکیبات بار مقدماتی LRFD</h4>
-                <p>تعداد حالت‌های تحلیل‌شده: <b>${fmt(results.length, 0)}</b></p>
-                <p>مبنای ترکیبات: مبحث ششم، ویرایش ۱۳۹۸، بند ۶-۲-۳-۲؛ بار زنده ورودی به‌عنوان بار زنده بام Lr در نظر گرفته شده است.</p>
+
+                <p>تعداد حالت‌های تحلیل‌شده:
+                <b>${fmt(results.length, 0)}</b></p>
+
+                <p>مبنای ترکیبات: مبحث ششم، ویرایش ۱۳۹۸،
+                بند ۶-۲-۳-۲؛ بار زنده ورودی به‌عنوان
+                بار زنده بام Lr در نظر گرفته شده است.</p>
 
                 <div class="notice">
                     <b>نتایج بحرانی نیروهای انتهایی اعضا</b>
-                    <p><b>بیشینه قدرمطلق N:</b> ${fmt(governing.N.value)} kN</p>
+
+                    <p><b>بیشینه قدرمطلق N:</b>
+                    ${fmt(governing.N.value)} kN</p>
                     <p>حالت: ${governing.N.name}</p>
-                    <p>عضو و محل: ${governing.N.member} ـ ${governing.N.end}</p>
+                    <p>عضو و محل: ${governing.N.member}
+                    ـ ${governing.N.end}</p>
+
                     <hr>
-                    <p><b>بیشینه قدرمطلق V:</b> ${fmt(governing.V.value)} kN</p>
+
+                    <p><b>بیشینه قدرمطلق V:</b>
+                    ${fmt(governing.V.value)} kN</p>
                     <p>حالت: ${governing.V.name}</p>
-                    <p>عضو و محل: ${governing.V.member} ـ ${governing.V.end}</p>
+                    <p>عضو و محل: ${governing.V.member}
+                    ـ ${governing.V.end}</p>
+
                     <hr>
-                    <p><b>بیشینه قدرمطلق M:</b> ${fmt(governing.M.value)} kN.m</p>
+
+                    <p><b>بیشینه قدرمطلق M:</b>
+                    ${fmt(governing.M.value)} kN.m</p>
                     <p>حالت: ${governing.M.name}</p>
-                    <p>عضو و محل: ${governing.M.member} ـ ${governing.M.end}</p>
+                    <p>عضو و محل: ${governing.M.member}
+                    ـ ${governing.M.end}</p>
                 </div>
 
                 <h4>جدول خلاصه همه حالت‌ها</h4>
+
                 <div style="overflow-x:auto">
-                    <table style="width:100%;border-collapse:collapse;min-width:560px">
+                    <table style="width:100%;
+                    border-collapse:collapse;min-width:560px">
                         <thead>
                             <tr>
-                                <th>ردیف</th><th>ترکیب بار</th>
+                                <th>ردیف</th>
+                                <th>ترکیب بار</th>
                                 <th>بیشینه N (kN)</th>
                                 <th>بیشینه V (kN)</th>
                                 <th>بیشینه M (kN.m)</th>
@@ -369,16 +405,34 @@
 
                 <div class="notice">
                     <b>محدودیت‌ها و هشدارهای این مرحله</b>
-                    <p>۱. مقادیر N، V و M در این گزارش، نیروهای انتهایی اعضا هستند؛ بیشینه نیروی داخلی در طول عضو و نمودارهای نیرو هنوز محاسبه نشده‌اند.</p>
-                    <p>۲. بار باران، زلزله و حرارت به دلیل نبود ورودی مربوط، در این مرحله وارد نشده‌اند.</p>
-                    <p>۳. اثر کاهش‌دهنده بار زنده برای تک‌تک اعضا و مقاطع هنوز به‌صورت الگوی بارگذاری جداگانه کنترل نشده است.</p>
-                    <p>۴. باد دیوار در این مدل فقط به‌صورت بار افقی روی ستون‌های قاب دوبعدی اعمال می‌شود؛ تحلیل طولی و باد دیوارهای جلو و عقب انجام نمی‌شود.</p>
-                    <p>۵. این گزارش تحلیل مقدماتی است و جایگزین کنترل طراحی اعضا، پایداری، کمانش، اثرات مرتبه دوم، اتصالات، صفحه‌ستون و فونداسیون نیست.</p>
+
+                    <p>۱. مقادیر N، V و M در این گزارش،
+                    نیروهای انتهایی اعضا هستند؛ بیشینه نیروی داخلی
+                    در طول عضو و نمودارهای نیرو هنوز محاسبه نشده‌اند.</p>
+
+                    <p>۲. بار باران، زلزله و حرارت به دلیل نبود
+                    ورودی مربوط، در این مرحله وارد نشده‌اند.</p>
+
+                    <p>۳. این نسخه برای قاب سوله فقط Lr یا S را
+                    در حالت‌های جایگزین وارد می‌کند؛ بار زنده طبقات L،
+                    بار باران R، زلزله E و خودکرنشی T ورودی مستقل
+                    ندارند و در این تحلیل نیستند.</p>
+
+                    <p>۴. باد دیوار در این مدل فقط به‌صورت بار افقی
+                    روی ستون‌های قاب دوبعدی اعمال می‌شود؛ تحلیل طولی
+                    و باد دیوارهای جلو و عقب انجام نمی‌شود.</p>
+
+                    <p>۵. این گزارش تحلیل مقدماتی است و جایگزین
+                    کنترل طراحی اعضا، پایداری، کمانش، اثرات مرتبه دوم،
+                    اتصالات، صفحه‌ستون و فونداسیون نیست.
+                    ضرایب باد این نسخه 1.6W و در حالت
+                    0.5(1.6W)=0.8W هستند.</p>
                 </div>
             `;
         }
 
         setStatus("تحلیل مقدماتی همه ترکیبات بار موجود انجام شد.");
+
         return {
             success: true,
             cases: results,
@@ -395,7 +449,6 @@
             return;
         }
 
-        // ابتدا قاب هندسی به‌روز می‌شود
         if (window.SteelDrawing) {
             window.SteelDrawing.drawFrame();
         }
@@ -409,12 +462,12 @@
 
     function save() {
         if (!validateProject()) return;
-
         window.SteelProject.save();
     }
 
     function openFile() {
         const input = $("projectFile");
+
         if (input) {
             input.value = "";
             input.click();
@@ -434,7 +487,6 @@
 
         window.SteelProject.loadFile(file);
 
-        // پس از خواندن فایل، ترسیم قاب به‌روز می‌شود
         setTimeout(function () {
             if (window.SteelProject.validate() === "") {
                 if (window.SteelDrawing) {
@@ -471,7 +523,6 @@
             fileInput.addEventListener("change", loadSelectedFile);
         }
 
-        // به‌روزرسانی تعداد قاب‌ها با تغییر ابعاد
         ["length", "spacing"].forEach(id => {
             const field = $(id);
 
@@ -482,7 +533,6 @@
             }
         });
 
-        // ترسیم اولیه قاب هنگام باز شدن صفحه
         if (window.SteelDrawing) {
             window.SteelDrawing.drawFrame();
         }
