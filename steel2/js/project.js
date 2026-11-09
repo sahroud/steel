@@ -1,5 +1,4 @@
-
-/* SAHROUD STEEL - Project Manager 2.4 */
+/* SAHROUD STEEL - Project Manager 2.5 */
 (function () {
     "use strict";
 
@@ -10,12 +9,9 @@
         return el ? Number(el.value) : NaN;
     }
 
-    // نوع اتصال پیش‌فرض پای ستون
     function getBaseConnection() {
         const el = $("baseConnection");
-
         if (!el) return "pinned";
-
         return el.value === "fixed" ? "fixed" : "pinned";
     }
 
@@ -25,7 +21,6 @@
             owner: $("owner").value.trim(),
             designer: $("designer").value.trim(),
             city: $("city").value,
-
             baseConnection: getBaseConnection(),
 
             span: getNumber("span"),
@@ -42,22 +37,24 @@
 
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
-            version: "2.4"
+            version: "2.5"
         };
 
-        // ذخیره بارگذاری پیشرفته
         if (window.SteelLoads) {
             data.loads = window.SteelLoads.getData();
         }
 
-        // ذخیره مشخصات مصالح و مقاطع
         if (window.SteelSections) {
             data.sections = window.SteelSections.read();
         }
 
-        // ذخیره اطلاعات بازشوها
         if (window.SteelOpenings) {
             data.openings = window.SteelOpenings.getData();
+        }
+
+        // ذخیره ابعاد مستقل تیرورق ستون و رفتر
+        if (window.SteelGirder) {
+            data.girders = window.SteelGirder.getData();
         }
 
         return data;
@@ -65,10 +62,7 @@
 
     function setStatus(message) {
         const el = $("projectStatus");
-
-        if (el) {
-            el.textContent = message;
-        }
+        if (el) el.textContent = message;
     }
 
     function updateFrameCount() {
@@ -81,10 +75,7 @@
             length <= 0 ||
             spacing <= 0
         ) {
-            if ($("frames")) {
-                $("frames").value = "";
-            }
-
+            if ($("frames")) $("frames").value = "";
             return;
         }
 
@@ -92,19 +83,11 @@
     }
 
     function validate() {
-
-        // هماهنگ‌سازی بارهای جدید با فیلدهای قدیمی
         if (window.SteelLoads) {
             window.SteelLoads.syncLegacyInputs();
-        }
 
-        // اعتبارسنجی خود پنل بارگذاری جدید
-        if (window.SteelLoads) {
             const loadError = window.SteelLoads.validate();
-
-            if (loadError) {
-                return loadError;
-            }
+            if (loadError) return loadError;
         }
 
         const d = getData();
@@ -121,18 +104,12 @@
         ];
 
         for (const item of positive) {
-            if (
-                !Number.isFinite(item[1]) ||
-                item[1] <= 0
-            ) {
+            if (!Number.isFinite(item[1]) || item[1] <= 0) {
                 return item[0] + " باید بزرگ‌تر از صفر باشد.";
             }
         }
 
-        if (
-            !Number.isFinite(d.rise) ||
-            d.rise < 0
-        ) {
+        if (!Number.isFinite(d.rise) || d.rise < 0) {
             return "ارتفاع تاج نمی‌تواند منفی باشد.";
         }
 
@@ -144,10 +121,7 @@
         ];
 
         for (const item of loads) {
-            if (
-                !Number.isFinite(item[1]) ||
-                item[1] < 0
-            ) {
+            if (!Number.isFinite(item[1]) || item[1] < 0) {
                 return item[0] + " نامعتبر است.";
             }
         }
@@ -159,13 +133,9 @@
             return "نوع اتصال پای ستون معتبر نیست.";
         }
 
-        // کنترل ابعاد و موقعیت بازشوها
         if (window.SteelOpenings) {
             const openingError = window.SteelOpenings.validate();
-
-            if (openingError) {
-                return openingError;
-            }
+            if (openingError) return openingError;
         }
 
         return "";
@@ -183,9 +153,7 @@
 
         const blob = new Blob(
             [JSON.stringify(data, null, 2)],
-            {
-                type: "application/json;charset=utf-8"
-            }
+            { type: "application/json;charset=utf-8" }
         );
 
         const url = URL.createObjectURL(blob);
@@ -203,18 +171,13 @@
         }, 1000);
 
         setStatus(
-            "پروژه، بارگذاری، مقاطع، اتصالات و بازشوها ذخیره شدند."
+            "پروژه، بارگذاری، مقاطع، تیرورق‌ها، اتصالات و بازشوها ذخیره شدند."
         );
     }
 
     function loadData(data) {
-        if (
-            !data ||
-            typeof data !== "object"
-        ) {
-            throw new Error(
-                "ساختار اطلاعات پروژه معتبر نیست."
-            );
+        if (!data || typeof data !== "object") {
+            throw new Error("ساختار اطلاعات پروژه معتبر نیست.");
         }
 
         const fields = [
@@ -234,56 +197,42 @@
         ];
 
         fields.forEach(function (id) {
-            if (
-                data[id] !== undefined &&
-                $(id)
-            ) {
+            if (data[id] !== undefined && $(id)) {
                 $(id).value = data[id];
             }
         });
 
-        // بازیابی نوع اتصال پای ستون
         if ($("baseConnection")) {
             $("baseConnection").value =
-                data.baseConnection === "fixed"
-                    ? "fixed"
-                    : "pinned";
+                data.baseConnection === "fixed" ? "fixed" : "pinned";
         }
 
         updateFrameCount();
 
-        // بازیابی بارگذاری پیشرفته
-        if (
-            data.loads &&
-            window.SteelLoads
-        ) {
+        if (data.loads && window.SteelLoads) {
             window.SteelLoads.setData(data.loads);
         }
 
-        // هماهنگ‌سازی مقادیر قدیمی با بارهای بازیابی‌شده
         if (window.SteelLoads) {
             window.SteelLoads.syncLegacyInputs();
         }
 
-        // بازیابی مصالح و مقاطع
-        if (
-            data.sections &&
-            window.SteelSections
-        ) {
+        if (data.sections && window.SteelSections) {
             window.SteelSections.setData(data.sections);
         }
 
-        // بازیابی بازشوها
-        if (
-            data.openings &&
-            window.SteelOpenings
-        ) {
+        if (data.openings && window.SteelOpenings) {
             window.SteelOpenings.setData(data.openings);
             window.SteelOpenings.check();
         }
 
+        // بازیابی ابعاد تیرورق ستون و رفتر
+        if (data.girders && window.SteelGirder) {
+            window.SteelGirder.setData(data.girders);
+        }
+
         setStatus(
-            "اطلاعات پروژه، بارگذاری، مقاطع، اتصالات و بازشوها بازیابی شدند."
+            "اطلاعات پروژه، بارگذاری، مقاطع، تیرورق‌ها، اتصالات و بازشوها بازیابی شدند."
         );
     }
 
@@ -296,12 +245,8 @@
             try {
                 const data = JSON.parse(reader.result);
                 loadData(data);
-
             } catch (error) {
-                alert(
-                    "خطا در بازکردن فایل پروژه: " +
-                    error.message
-                );
+                alert("خطا در بازکردن فایل پروژه: " + error.message);
             }
         };
 
@@ -323,34 +268,22 @@
         getBaseConnection
     };
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        function () {
+    document.addEventListener("DOMContentLoaded", function () {
+        updateFrameCount();
 
-            updateFrameCount();
+        ["length", "spacing"].forEach(function (id) {
+            const el = $(id);
 
-            ["length", "spacing"].forEach(
-                function (id) {
-                    const el = $(id);
-
-                    if (el) {
-                        el.addEventListener(
-                            "input",
-                            updateFrameCount
-                        );
-                    }
-                }
-            );
-
-            if ($("baseConnection")) {
-                $("baseConnection").value =
-                    $("baseConnection").value === "fixed"
-                        ? "fixed"
-                        : "pinned";
+            if (el) {
+                el.addEventListener("input", updateFrameCount);
             }
+        });
+
+        if ($("baseConnection")) {
+            $("baseConnection").value =
+                $("baseConnection").value === "fixed" ? "fixed" : "pinned";
         }
-    );
+    });
 
     updateFrameCount();
-
 })();
