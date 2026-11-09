@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Welded Plate Girder Calculator 2.0 */
+/* SAHROUD STEEL - Welded Plate Girder Calculator 3.0 */
 (function () {
     "use strict";
 
@@ -84,20 +84,20 @@
 
                 <button id="btnTransferGirder"
                     class="btn success" type="button">
-                    انتقال مشخصات به رفتر
+                    انتقال مشخصات به رفتر و ستون‌ها
                 </button>
             </div>
 
             <div id="girderMessage" class="notice">
-                ابعاد اولیه نمونه هستند. برای محاسبه،
-                دکمه بالا را انتخاب کنید.
+                برای محاسبه، دکمه محاسبه مشخصات تیرورق را انتخاب کنید.
             </div>
 
             <div id="girderResults"></div>
 
             <div class="notice">
-                توجه: جوش، سخت‌کننده‌ها، کمانش موضعی،
-                تنش‌های پسماند و اثرات ساخت در این محاسبه منظور نشده‌اند.
+                این محاسبه فقط مشخصات هندسی اولیه را ارائه می‌دهد.
+                جوش، سخت‌کننده‌ها، کمانش موضعی و کنترل مقاومت
+                و پایداری در آن منظور نشده‌اند.
             </div>
         `;
 
@@ -116,15 +116,8 @@
             main.appendChild(panel);
         }
 
-        $("btnCalculateGirder").addEventListener(
-            "click",
-            calculate
-        );
-
-        $("btnTransferGirder").addEventListener(
-            "click",
-            transferToRafter
-        );
+        $("btnCalculateGirder").addEventListener("click", calculate);
+        $("btnTransferGirder").addEventListener("click", transferToMembers);
     }
 
     function readDimensions() {
@@ -142,15 +135,11 @@
         const values = Object.values(d);
 
         if (values.some(v => !Number.isFinite(v) || v <= 0)) {
-            throw new Error(
-                "تمام ابعاد باید بزرگ‌تر از صفر باشند."
-            );
+            throw new Error("تمام ابعاد باید بزرگ‌تر از صفر باشند.");
         }
 
         if (d.tw > d.bb || d.tw > d.bt) {
-            throw new Error(
-                "ضخامت جان نباید از عرض بال‌ها بیشتر باشد."
-            );
+            throw new Error("ضخامت جان نباید از عرض بال‌ها بیشتر باشد.");
         }
 
         const hw = d.hw / 1000;
@@ -176,14 +165,13 @@
             At * yt
         ) / A;
 
-        const IxBottom = bb * Math.pow(tb, 3) / 12;
-        const IxWeb = tw * Math.pow(hw, 3) / 12;
-        const IxTop = bt * Math.pow(tt, 3) / 12;
-
         const Ix =
-            IxBottom + Ab * Math.pow(yb - yBar, 2) +
-            IxWeb + Aw * Math.pow(yw - yBar, 2) +
-            IxTop + At * Math.pow(yt - yBar, 2);
+            bb * Math.pow(tb, 3) / 12 +
+            Ab * Math.pow(yb - yBar, 2) +
+            tw * Math.pow(hw, 3) / 12 +
+            Aw * Math.pow(yw - yBar, 2) +
+            bt * Math.pow(tt, 3) / 12 +
+            At * Math.pow(yt - yBar, 2);
 
         const Iy =
             tb * Math.pow(bb, 3) / 12 +
@@ -216,7 +204,7 @@
             const p = calculateProperties(d);
 
             $("girderMessage").textContent =
-                "محاسبه هندسی با موفقیت انجام شد. اکنون می‌توانید مشخصات را به رفتر منتقل کنید.";
+                "محاسبه هندسی با موفقیت انجام شد.";
 
             $("girderMessage").style.color = "#15803d";
 
@@ -260,65 +248,72 @@
             };
 
         } catch (error) {
-            $("girderMessage").textContent =
-                "خطا: " + error.message;
-
+            $("girderMessage").textContent = "خطا: " + error.message;
             $("girderMessage").style.color = "#b45309";
             $("girderResults").innerHTML = "";
-
             window.SteelGirder.lastResult = null;
         }
     }
 
-    function transferToRafter() {
+    function transferToMembers() {
         try {
             const result = window.SteelGirder.lastResult;
 
             if (!result || !result.properties) {
-                throw new Error(
-                    "ابتدا محاسبه مشخصات تیرورق را انجام دهید."
-                );
+                throw new Error("ابتدا محاسبه مشخصات تیرورق را انجام دهید.");
             }
 
             if (!window.SteelSections) {
-                throw new Error(
-                    "ماژول مشخصات مقاطع بارگذاری نشده است."
-                );
+                throw new Error("ماژول مشخصات مقاطع بارگذاری نشده است.");
             }
 
             const p = result.properties;
-
             const areaCm2 = p.A * 1e4;
             const ixCm4 = p.Ix * 1e8;
 
-            const profile = $("rafterProfile");
-            const area = $("rafterA");
-            const inertia = $("rafterIx");
+            const targets = [
+                {
+                    name: "رفتر",
+                    profile: "rafterProfile",
+                    area: "rafterA",
+                    inertia: "rafterIx"
+                },
+                {
+                    name: "ستون",
+                    profile: "columnProfile",
+                    area: "columnA",
+                    inertia: "columnIx"
+                }
+            ];
 
-            if (!profile || !area || !inertia) {
-                throw new Error(
-                    "فیلدهای مقطع رفتر در صفحه پیدا نشدند."
-                );
+            for (const item of targets) {
+                const profile = $(item.profile);
+                const area = $(item.area);
+                const inertia = $(item.inertia);
+
+                if (!profile || !area || !inertia) {
+                    throw new Error(
+                        "فیلدهای مقطع " + item.name + " پیدا نشدند."
+                    );
+                }
+
+                profile.value = "تیرورق محاسبه‌شده";
+                area.value = areaCm2.toFixed(2);
+                inertia.value = ixCm4.toFixed(2);
             }
 
-            profile.value = "تیرورق محاسبه‌شده";
-            area.value = areaCm2.toFixed(2);
-            inertia.value = ixCm4.toFixed(2);
-
-            if (typeof window.SteelSections.validate === "function") {
-                window.SteelSections.validate();
-            }
+            window.SteelSections.validate();
 
             $("girderMessage").textContent =
-                "مشخصات هندسی تیرورق به مقطع رفتر منتقل شد. " +
-                "اکنون می‌توانید اطلاعات مقاطع را بررسی کنید.";
+                "موفقیت: مشخصات تیرورق به هر دو عضو رفتر و ستون منتقل شد.";
 
             $("girderMessage").style.color = "#15803d";
 
             window.SteelGirder.transferred = {
-                profile: profile.value,
+                profile: "تیرورق محاسبه‌شده",
                 A_cm2: areaCm2,
-                Ix_cm4: ixCm4
+                Ix_cm4: ixCm4,
+                appliedTo: ["rafter", "column"]
             };
 
         } catch (error) {
@@ -337,7 +332,7 @@
         readDimensions,
         calculateProperties,
         calculate,
-        transferToRafter,
+        transferToMembers,
         lastResult: null,
         transferred: null
     };
