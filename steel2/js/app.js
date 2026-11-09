@@ -81,13 +81,11 @@
         data.deadLeft = original.deadLeft * deadFactor;
         data.deadRight = original.deadRight * deadFactor;
 
-        // Lr و S به‌صورت حالت‌های جایگزین تحلیل می‌شوند.
         data.liveLeft = original.liveLeft * liveFactor;
         data.liveRight = original.liveRight * liveFactor;
         data.snowLeft = original.snowLeft * snowFactor;
         data.snowRight = original.snowRight * snowFactor;
 
-        // باد سقف و دیوار با ضرایب ترکیب بار
         data.windLeft = original.windLeft * windFactor * windSign;
         data.windRight = original.windRight * windFactor * windSign;
         data.windWall = Math.abs(Number(original.windWall) || 0) * windFactor;
@@ -103,7 +101,6 @@
         const cases = [];
         const signs = hasWind(original) ? [1, -1] : [1];
 
-        // ترکیب ۱: 1.4D
         cases.push({
             name: "ترکیب ۱ ـ 1.4D",
             data: makeCombinationData(original, {
@@ -111,13 +108,11 @@
             })
         });
 
-        // Lr و S به‌صورت حالت‌های جایگزین بررسی می‌شوند.
         const roofActions = [
             { key: "live", title: "بار زنده بام Lr" },
             { key: "snow", title: "بار برف S" }
         ];
 
-        // ترکیب ۲: 1.2D + 0.5(Lr یا S)
         roofActions.forEach(action => {
             cases.push({
                 name: "ترکیب ۲ ـ 1.2D + 0.5(" + action.title + ")",
@@ -129,8 +124,6 @@
             });
         });
 
-        // ترکیب ۳: 1.2D + 1.6(Lr یا S) + 0.5(1.6W)
-        // چون بار زنده طبقات L در مدل وجود ندارد، شاخه 0.8W اجرا می‌شود.
         roofActions.forEach(action => {
             signs.forEach(sign => {
                 cases.push({
@@ -148,7 +141,6 @@
             });
         });
 
-        // ترکیب ۴: 1.2D + 1.6W + 0.5(Lr یا S)
         roofActions.forEach(action => {
             signs.forEach(sign => {
                 cases.push({
@@ -166,7 +158,6 @@
             });
         });
 
-        // ترکیب ۶: 0.9D + 1.6W
         signs.forEach(sign => {
             cases.push({
                 name: "ترکیب ۶ ـ 0.9D + 1.6W، " +
@@ -179,7 +170,6 @@
             });
         });
 
-        // حذف حالت‌های کاملاً تکراری
         const unique = [];
         const signatures = new Set();
 
@@ -240,7 +230,8 @@
         if (!window.SteelLoads ||
             typeof window.SteelLoads.getData !== "function" ||
             typeof window.SteelLoads.setData !== "function") {
-            return window.SteelAnalysis.calculate();
+            alert("ماژول بارگذاری برای تحلیل ترکیبات در دسترس نیست.");
+            return { success: false };
         }
 
         const original = JSON.parse(
@@ -280,7 +271,6 @@
             failure = error;
         }
 
-        // بازگرداندن بارهای اولیه کاربر
         window.SteelLoads.setData(original);
         const restored = window.SteelAnalysis.calculate();
 
@@ -440,12 +430,36 @@
         };
     }
 
+    // تحلیل تک‌حالته بارهای فعلی
     function calculate() {
         if (!validateProject()) return;
 
         if (!window.SteelAnalysis ||
             typeof window.SteelAnalysis.calculate !== "function") {
-            alert("ماژول محاسبات بارگذاری بارگذاری نشده است.");
+            alert("ماژول تحلیل سازه بارگذاری نشده است.");
+            return;
+        }
+
+        if (window.SteelDrawing) {
+            window.SteelDrawing.drawFrame();
+        }
+
+        const result = window.SteelAnalysis.calculate();
+
+        if (result && result.success) {
+            setStatus("تحلیل مقدماتی بارهای فعلی انجام شد.");
+        } else {
+            setStatus("تحلیل مقدماتی انجام نشد.");
+        }
+    }
+
+    // تحلیل مستقل ترکیبات بار
+    function calculateCombinationsButton() {
+        if (!validateProject()) return;
+
+        if (!window.SteelAnalysis ||
+            typeof window.SteelAnalysis.calculate !== "function") {
+            alert("ماژول تحلیل سازه بارگذاری نشده است.");
             return;
         }
 
@@ -456,7 +470,7 @@
         const result = calculateCombinations();
 
         if (result && result.success) {
-            setStatus("تحلیل مقدماتی ترکیبات بار انجام شد.");
+            setStatus("تحلیل ترکیبات بار با موفقیت انجام شد.");
         }
     }
 
@@ -499,6 +513,7 @@
     function connectButtons() {
         const drawButton = $("btnDraw");
         const calculateButton = $("btnCalculate");
+        const combinationsButton = $("btnCombinations");
         const saveButton = $("btnSave");
         const loadButton = $("btnLoad");
         const fileInput = $("projectFile");
@@ -509,6 +524,13 @@
 
         if (calculateButton) {
             calculateButton.addEventListener("click", calculate);
+        }
+
+        if (combinationsButton) {
+            combinationsButton.addEventListener(
+                "click",
+                calculateCombinationsButton
+            );
         }
 
         if (saveButton) {
