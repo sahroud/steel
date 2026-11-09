@@ -1,4 +1,4 @@
-/* SAHROUD STEEL - Independent Column and Rafter Girders */
+/* SAHROUD STEEL - Independent Girders and Stability Inputs */
 (function () {
     "use strict";
 
@@ -9,6 +9,34 @@
         column: { title: "ستون", result: null },
         rafter: { title: "رفتر", result: null }
     };
+
+    function stabilityFields(prefix, title) {
+        return `
+            <h4>مشخصات پایداری ${title}</h4>
+            <div class="form-grid">
+                <div class="field">
+                    <label>طول مهارنشده محور قوی Lx (m)</label>
+                    <input id="${prefix}Lx" type="number"
+                        min="0.01" step="0.01" placeholder="مثلاً 3">
+                </div>
+                <div class="field">
+                    <label>طول مهارنشده محور ضعیف Ly (m)</label>
+                    <input id="${prefix}Ly" type="number"
+                        min="0.01" step="0.01" placeholder="مثلاً 3">
+                </div>
+                <div class="field">
+                    <label>ضریب طول مؤثر Kx</label>
+                    <input id="${prefix}Kx" type="number"
+                        min="0.01" step="0.01" placeholder="ورود ضریب">
+                </div>
+                <div class="field">
+                    <label>ضریب طول مؤثر Ky</label>
+                    <input id="${prefix}Ky" type="number"
+                        min="0.01" step="0.01" placeholder="ورود ضریب">
+                </div>
+            </div>
+        `;
+    }
 
     function fields(prefix, title, defaults) {
         return `
@@ -39,6 +67,9 @@
                     <input id="${prefix}TopT" type="number" min="1" value="${defaults[5]}">
                 </div>
             </div>
+
+            ${stabilityFields(prefix, title)}
+
             <div class="button-grid">
                 <button id="${prefix}Calculate" class="btn primary" type="button">
                     محاسبه تیرورق ${title}
@@ -65,14 +96,23 @@
             <div class="panel-title">
                 <h3>محاسبه مستقل تیرورق ستون و رفتر</h3>
             </div>
+
             <div class="notice">
                 مشخصات ستون و رفتر کاملاً مستقل است.
-                محاسبه یا انتقال هرکدام، اطلاعات دیگری را تغییر نمی‌دهد.
-                تمام ابعاد بر حسب میلی‌متر هستند.
+                تمام ابعاد تیرورق بر حسب میلی‌متر و طول‌های مهارنشده بر حسب متر هستند.
             </div>
+
             ${fields("colGirder", "۱ ـ تیرورق ستون", [500, 8, 200, 12, 200, 12])}
+
             <hr>
+
             ${fields("rafGirder", "۲ ـ تیرورق رفتر", [400, 8, 180, 10, 180, 10])}
+
+            <div class="notice">
+                طول مهارنشده و ضرایب K باید بر اساس وضعیت واقعی مهاربندی،
+                شرایط اتصال و رفتار قاب تعیین شوند.
+                وارد کردن این اطلاعات به‌تنهایی به معنی تأیید پایداری عضو نیست.
+            </div>
         `;
 
         const main = document.querySelector("main");
@@ -100,6 +140,25 @@
             tb: Number($(prefix + "BottomT").value),
             bt: Number($(prefix + "TopB").value),
             tt: Number($(prefix + "TopT").value)
+        };
+    }
+
+    function readStability(member) {
+        const prefix = member === "column" ? "colGirder" : "rafGirder";
+
+        function readOptional(id) {
+            const el = $(id);
+            if (!el || el.value.trim() === "") return null;
+
+            const value = Number(el.value);
+            return Number.isFinite(value) ? value : null;
+        }
+
+        return {
+            Lx: readOptional(prefix + "Lx"),
+            Ly: readOptional(prefix + "Ly"),
+            Kx: readOptional(prefix + "Kx"),
+            Ky: readOptional(prefix + "Ky")
         };
     }
 
@@ -202,11 +261,11 @@
 
     function transfer(member) {
         const prefix = member === "column" ? "colGirder" : "rafGirder";
-        const target = member;
         const title = members[member].title;
 
         try {
             const result = members[member].result;
+
             if (!result) {
                 throw new Error("ابتدا تیرورق " + title + " را محاسبه کنید.");
             }
@@ -216,7 +275,9 @@
             }
 
             const p = result.properties;
+
             const values = {
+                Profile: "تیرورق " + title,
                 A: p.A * 1e4,
                 Ix: p.Ix * 1e8,
                 Iy: p.Iy * 1e8,
@@ -225,22 +286,15 @@
                 Sy: p.Sy * 1e6
             };
 
-            const fields = {
-                Profile: "تیرورق " + title,
-                A: values.A,
-                Ix: values.Ix,
-                Iy: values.Iy,
-                SxTop: values.SxTop,
-                SxBottom: values.SxBottom,
-                Sy: values.Sy
-            };
+            for (const [suffix, value] of Object.entries(values)) {
+                const element = $(member + suffix);
 
-            for (const [suffix, value] of Object.entries(fields)) {
-                const element = $(target + suffix);
                 if (!element) {
                     throw new Error("فیلد " + suffix + " برای " + title + " پیدا نشد.");
                 }
-                element.value = typeof value === "number" ? value.toFixed(2) : value;
+
+                element.value =
+                    typeof value === "number" ? value.toFixed(2) : value;
             }
 
             members[member].transferred = true;
@@ -250,46 +304,89 @@
             $(prefix + "Message").style.color = "#15803d";
 
         } catch (error) {
-            $(prefix + "Message").textContent = "خطا در انتقال: " + error.message;
+            $(prefix + "Message").textContent =
+                "خطا در انتقال: " + error.message;
             $(prefix + "Message").style.color = "#b45309";
         }
     }
 
-    // اطلاعات ابعاد هر دو تیرورق برای ذخیره پروژه
+    // ذخیره ابعاد و اطلاعات پایداری
     function getData() {
         return {
             column: readDimensions("column"),
-            rafter: readDimensions("rafter")
+            rafter: readDimensions("rafter"),
+            stability: {
+                column: readStability("column"),
+                rafter: readStability("rafter")
+            }
         };
     }
 
-    // بازیابی ابعاد و محاسبه مجدد نتایج
+    // بازیابی ابعاد و اطلاعات پایداری
     function setData(data) {
         if (!data || typeof data !== "object") return;
 
         ["column", "rafter"].forEach(member => {
             const dimensions = data[member];
-            if (!dimensions || typeof dimensions !== "object") return;
 
-            const prefix = member === "column" ? "colGirder" : "rafGirder";
-            const mapping = {
-                hw: "WebH",
-                tw: "WebT",
-                bb: "BottomB",
-                tb: "BottomT",
-                bt: "TopB",
-                tt: "TopT"
-            };
+            if (dimensions && typeof dimensions === "object") {
+                const prefix = member === "column" ? "colGirder" : "rafGirder";
 
-            Object.entries(mapping).forEach(([key, suffix]) => {
-                const el = $(prefix + suffix);
-                if (el && dimensions[key] !== undefined) {
-                    el.value = dimensions[key];
-                }
-            });
+                const mapping = {
+                    hw: "WebH",
+                    tw: "WebT",
+                    bb: "BottomB",
+                    tb: "BottomT",
+                    bt: "TopB",
+                    tt: "TopT"
+                };
 
-            calculate(member);
+                Object.entries(mapping).forEach(([key, suffix]) => {
+                    const el = $(prefix + suffix);
+
+                    if (el && dimensions[key] !== undefined) {
+                        el.value = dimensions[key];
+                    }
+                });
+
+                calculate(member);
+            }
+
+            const stability = data.stability?.[member];
+
+            if (stability && typeof stability === "object") {
+                const prefix = member === "column" ? "colGirder" : "rafGirder";
+
+                ["Lx", "Ly", "Kx", "Ky"].forEach(key => {
+                    const el = $(prefix + key);
+
+                    if (el && stability[key] !== undefined &&
+                        stability[key] !== null) {
+                        el.value = stability[key];
+                    }
+                });
+            }
         });
+    }
+
+    function validateStability(member) {
+        const values = readStability(member);
+
+        const labels = {
+            Lx: "طول مهارنشده محور قوی",
+            Ly: "طول مهارنشده محور ضعیف",
+            Kx: "ضریب طول مؤثر محور قوی",
+            Ky: "ضریب طول مؤثر محور ضعیف"
+        };
+
+        for (const key of Object.keys(labels)) {
+            if (values[key] === null || values[key] <= 0) {
+                return labels[key] + " " + members[member].title +
+                    " وارد نشده یا نامعتبر است.";
+            }
+        }
+
+        return "";
     }
 
     function init() {
@@ -298,11 +395,13 @@
 
     window.SteelGirder = {
         readDimensions,
+        readStability,
         calculateProperties,
         calculate,
         transfer,
         getData,
         setData,
+        validateStability,
         members
     };
 
