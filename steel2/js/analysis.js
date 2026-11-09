@@ -1,6 +1,5 @@
-
 /* SAHROUD STEEL - 2D Portal Frame Matrix Analysis
-   Version 2.0 - Separate roof loads + longitudinal side-wall wind
+   Version 2.1 - Roof wind pressure and suction added
    Linear elastic first-order analysis
    Units: N, m, Pa
 */
@@ -13,7 +12,9 @@
         const el = $(id);
         if (!el) throw new Error("فیلد " + id + " پیدا نشد.");
         const n = Number(el.value);
-        if (!Number.isFinite(n)) throw new Error("مقدار فیلد " + id + " معتبر نیست.");
+        if (!Number.isFinite(n)) {
+            throw new Error("مقدار فیلد " + id + " معتبر نیست.");
+        }
         return n;
     }
 
@@ -25,7 +26,10 @@
     }
 
     function matrix(rows, cols) {
-        return Array.from({ length: rows }, () => Array(cols).fill(0));
+        return Array.from(
+            { length: rows },
+            () => Array(cols).fill(0)
+        );
     }
 
     function transpose(A) {
@@ -34,6 +38,7 @@
 
     function multiply(A, B) {
         const C = matrix(A.length, B[0].length);
+
         for (let i = 0; i < A.length; i++) {
             for (let j = 0; j < B[0].length; j++) {
                 for (let k = 0; k < B.length; k++) {
@@ -41,6 +46,7 @@
                 }
             }
         }
+
         return C;
     }
 
@@ -59,7 +65,8 @@
 
             if (Math.abs(M[pivot][k]) < 1e-12) {
                 throw new Error(
-                    "ماتریس سختی ناپایدار یا تکین است. هندسه، تکیه‌گاه‌ها و مقاطع را بررسی کنید."
+                    "ماتریس سختی ناپایدار یا تکین است. " +
+                    "هندسه، تکیه‌گاه‌ها و مقاطع را بررسی کنید."
                 );
             }
 
@@ -67,10 +74,13 @@
 
             const divisor = M[k][k];
 
-            for (let j = k; j <= n; j++) M[k][j] /= divisor;
+            for (let j = k; j <= n; j++) {
+                M[k][j] /= divisor;
+            }
 
             for (let i = 0; i < n; i++) {
                 if (i === k) continue;
+
                 const factor = M[i][k];
 
                 for (let j = k; j <= n; j++) {
@@ -142,14 +152,18 @@
 
         try {
             if (!window.SteelProject || !window.SteelSections) {
-                throw new Error("ماژول پروژه یا مشخصات مقاطع بارگذاری نشده است.");
+                throw new Error(
+                    "ماژول پروژه یا مشخصات مقاطع بارگذاری نشده است."
+                );
             }
 
             const projectError = window.SteelProject.validate();
             if (projectError) throw new Error(projectError);
 
             if (!window.SteelSections.validate()) {
-                throw new Error("ابتدا مشخصات مصالح و مقاطع را کامل و کنترل کنید.");
+                throw new Error(
+                    "ابتدا مشخصات مصالح و مقاطع را کامل و کنترل کنید."
+                );
             }
 
             if (window.SteelLoads) {
@@ -162,7 +176,8 @@
             const rise = number("rise");
             const spacing = number("spacing");
 
-            if (span <= 0 || height <= 0 || spacing <= 0 || rise < 0) {
+            if (span <= 0 || height <= 0 ||
+                spacing <= 0 || rise < 0) {
                 throw new Error("ابعاد هندسی قاب معتبر نیستند.");
             }
 
@@ -182,20 +197,35 @@
                 };
 
             const leftRoofPressure =
-                loads.deadLeft + loads.liveLeft + loads.snowLeft;
+                loads.deadLeft +
+                loads.liveLeft +
+                loads.snowLeft;
 
             const rightRoofPressure =
-                loads.deadRight + loads.liveRight + loads.snowRight;
+                loads.deadRight +
+                loads.liveRight +
+                loads.snowRight;
 
-            const connection = window.SteelProject.getBaseConnection();
-            const section = window.SteelSections.getDataSI();
+            // فشار باد سقف؛ مثبت = فشار به داخل
+            // منفی = مکش به خارج
+            const windRoofLeft = Number(loads.windLeft) || 0;
+            const windRoofRight = Number(loads.windRight) || 0;
+
+            const connection =
+                window.SteelProject.getBaseConnection();
+
+            const section =
+                window.SteelSections.getDataSI();
 
             const E = section.material.E;
             const column = section.column;
             const rafter = section.rafter;
 
-            if (!(E > 0 && column.A > 0 && column.Ix > 0 &&
-                rafter.A > 0 && rafter.Ix > 0)) {
+            if (!(E > 0 &&
+                column.A > 0 &&
+                column.Ix > 0 &&
+                rafter.A > 0 &&
+                rafter.Ix > 0)) {
                 throw new Error("مشخصات مقاطع معتبر نیستند.");
             }
 
@@ -210,10 +240,30 @@
 
             // چهار عضو قاب
             const definitions = [
-                { start: 0, end: 1, section: column, type: "ستون چپ" },
-                { start: 1, end: 2, section: rafter, type: "رفتر چپ" },
-                { start: 2, end: 3, section: rafter, type: "رفتر راست" },
-                { start: 3, end: 4, section: column, type: "ستون راست" }
+                {
+                    start: 0,
+                    end: 1,
+                    section: column,
+                    type: "ستون چپ"
+                },
+                {
+                    start: 1,
+                    end: 2,
+                    section: rafter,
+                    type: "رفتر چپ"
+                },
+                {
+                    start: 2,
+                    end: 3,
+                    section: rafter,
+                    type: "رفتر راست"
+                },
+                {
+                    start: 3,
+                    end: 4,
+                    section: column,
+                    type: "ستون راست"
+                }
             ];
 
             const dofCount = nodes.length * 3;
@@ -225,11 +275,17 @@
             const windSign =
                 loads.windDirection === "right-to-left" ? -1 : 1;
 
-            // بار سطحی دیوار به بار خطی روی هر قاب تبدیل می‌شود.
-            // این مدل، فشار خالص افقی وارد بر قاب عرضی را در نظر می‌گیرد.
+            // بار خطی باد دیوار
             const wallWindLineLoad =
                 Math.abs(Number(loads.windWall) || 0) *
                 spacing * 1000 * windSign;
+
+            // تبدیل فشار باد سقف به بار خطی
+            const roofWindLeftLine =
+                windRoofLeft * spacing * 1000;
+
+            const roofWindRightLine =
+                windRoofRight * spacing * 1000;
 
             for (const definition of definitions) {
                 const p1 = nodes[definition.start];
@@ -255,8 +311,15 @@
 
                 const indices = [];
 
-                for (const node of [definition.start, definition.end]) {
-                    indices.push(node * 3, node * 3 + 1, node * 3 + 2);
+                for (const node of [
+                    definition.start,
+                    definition.end
+                ]) {
+                    indices.push(
+                        node * 3,
+                        node * 3 + 1,
+                        node * 3 + 2
+                    );
                 }
 
                 addMatrix(K, indices, kg);
@@ -275,7 +338,7 @@
                         -rightRoofPressure * spacing * c * 1000;
                 }
 
-                // باد دیوارهای طولی روی ستون‌های قاب عرضی
+                // باد دیوارهای طولی روی ستون‌ها
                 if (
                     definition.type === "ستون چپ" ||
                     definition.type === "ستون راست"
@@ -283,11 +346,29 @@
                     qGlobalX = wallWindLineLoad;
                 }
 
-                // تبدیل بار گسترده از محورهای جهانی به محلی
-                const qLocalX = qGlobalX * c + qGlobalY * s;
-                const qLocalY = -qGlobalX * s + qGlobalY * c;
+                // تبدیل بار جهانی به محورهای محلی عضو
+                const qLocalX =
+                    qGlobalX * c + qGlobalY * s;
 
-                const fl = elementLoad(qLocalX, qLocalY, L);
+                let qLocalY =
+                    -qGlobalX * s + qGlobalY * c;
+
+                // باد سقف عمود بر سطح رفتر
+                // محور محلی y در هر دو رفتر رو به خارج سقف است.
+                // بنابراین فشار مثبت (به داخل) با علامت منفی اعمال می‌شود.
+                if (definition.type === "رفتر چپ") {
+                    qLocalY -= roofWindLeftLine;
+                }
+
+                if (definition.type === "رفتر راست") {
+                    qLocalY -= roofWindRightLine;
+                }
+
+                const fl = elementLoad(
+                    qLocalX,
+                    qLocalY,
+                    L
+                );
 
                 const fg = multiply(
                     transpose(T),
@@ -322,13 +403,20 @@
             const free = [];
 
             for (let i = 0; i < dofCount; i++) {
-                if (!restrained.has(i)) free.push(i);
+                if (!restrained.has(i)) {
+                    free.push(i);
+                }
             }
 
-            const Kff = free.map(i => free.map(j => K[i][j]));
+            const Kff = free.map(
+                i => free.map(j => K[i][j])
+            );
+
             const Ff = free.map(i => F[i]);
 
-            const displacementFree = solveLinearSystem(Kff, Ff);
+            const displacementFree =
+                solveLinearSystem(Kff, Ff);
+
             const D = Array(dofCount).fill(0);
 
             free.forEach((index, i) => {
@@ -337,10 +425,15 @@
 
             // واکنش‌های تکیه‌گاهی
             const KD = K.map(row =>
-                row.reduce((sum, value, j) => sum + value * D[j], 0)
+                row.reduce(
+                    (sum, value, j) => sum + value * D[j],
+                    0
+                )
             );
 
-            const R = KD.map((value, i) => value - F[i]);
+            const R = KD.map(
+                (value, i) => value - F[i]
+            );
 
             // بیشینه جابه‌جایی گره‌ای
             let maxDisplacement = 0;
@@ -349,6 +442,7 @@
             nodes.forEach((_, i) => {
                 const ux = D[i * 3];
                 const uy = D[i * 3 + 1];
+
                 const value = Math.hypot(ux, uy);
 
                 if (value > maxDisplacement) {
@@ -361,7 +455,9 @@
             const memberResults = [];
 
             for (const element of elements) {
-                const dg = element.indices.map(i => D[i]);
+                const dg = element.indices.map(
+                    i => D[i]
+                );
 
                 const dl = multiply(
                     element.T,
@@ -430,7 +526,9 @@
                 connection === "fixed" ? "گیردار" : "مفصلی";
 
             const windDirectionText =
-                windSign > 0 ? "از چپ به راست" : "از راست به چپ";
+                windSign > 0
+                    ? "از چپ به راست"
+                    : "از راست به چپ";
 
             if (message) {
                 message.innerHTML = `
@@ -444,11 +542,30 @@
                     <hr>
 
                     <h4>بارهای اعمال‌شده</h4>
-                    <p>بار ثقلی سقف چپ: ${fmt(leftRoofPressure)} kN/m²</p>
-                    <p>بار ثقلی سقف راست: ${fmt(rightRoofPressure)} kN/m²</p>
-                    <p>بار باد دیوار طولی: ${fmt(Math.abs(Number(loads.windWall) || 0))} kN/m²</p>
-                    <p>جهت باد: ${windDirectionText}</p>
-                    <p>بار خطی افقی وارد بر هر ستون: ${fmt(wallWindLineLoad / 1000)} kN/m</p>
+
+                    <p>بار ثقلی سقف چپ:
+                    ${fmt(leftRoofPressure)} kN/m²</p>
+
+                    <p>بار ثقلی سقف راست:
+                    ${fmt(rightRoofPressure)} kN/m²</p>
+
+                    <p>باد سقف چپ:
+                    ${fmt(windRoofLeft)} kN/m²</p>
+
+                    <p>باد سقف راست:
+                    ${fmt(windRoofRight)} kN/m²</p>
+
+                    <p>نوع اثر باد سقف: مثبت = فشار به داخل،
+                    منفی = مکش به خارج</p>
+
+                    <p>بار باد دیوار:
+                    ${fmt(Math.abs(Number(loads.windWall) || 0))}
+                    kN/m²</p>
+
+                    <p>جهت باد دیوار: ${windDirectionText}</p>
+
+                    <p>بار خطی افقی وارد بر هر ستون:
+                    ${fmt(wallWindLineLoad / 1000)} kN/m</p>
 
                     <hr>
 
@@ -477,15 +594,20 @@
                     <p>لنگر: ${fmt(rightReaction.M)} kN.m</p>
 
                     <hr>
+
                     <h4>نیروهای انتهایی اعضا</h4>
 
                     ${memberResults.map(item => `
                         <div class="notice">
                             <b>${item.name}</b>
-                            <p>محوری ابتدا: ${fmt(item.axialStart)} kN</p>
-                            <p>محوری انتها: ${fmt(item.axialEnd)} kN</p>
-                            <p>لنگر ابتدا: ${fmt(item.momentStart)} kN.m</p>
-                            <p>لنگر انتها: ${fmt(item.momentEnd)} kN.m</p>
+                            <p>محوری ابتدا:
+                            ${fmt(item.axialStart)} kN</p>
+                            <p>محوری انتها:
+                            ${fmt(item.axialEnd)} kN</p>
+                            <p>لنگر ابتدا:
+                            ${fmt(item.momentStart)} kN.m</p>
+                            <p>لنگر انتها:
+                            ${fmt(item.momentEnd)} kN.m</p>
                         </div>
                     `).join("")}
 
@@ -493,11 +615,10 @@
 
                     <div class="notice">
                         <b>مواردی که هنوز در این تحلیل وارد نشده‌اند:</b>
-                        <p>۱. باد سقف و فشار یا مکش عمود بر سطح رفترها</p>
-                        <p>۲. باد دیوارهای جلو و عقب و تحلیل طولی سوله</p>
-                        <p>۳. ترکیبات بار آیین‌نامه‌ای و ضرایب بار</p>
-                        <p>۴. تحلیل مرتبه دوم، اثر P-Delta و کمانش</p>
-                        <p>۵. کنترل مقاومت اعضا، تغییرشکل مجاز و اتصالات</p>
+                        <p>۱. باد دیوارهای جلو و عقب و تحلیل طولی سوله</p>
+                        <p>۲. ترکیبات بار آیین‌نامه‌ای و ضرایب بار</p>
+                        <p>۳. تحلیل مرتبه دوم، اثر P-Delta و کمانش</p>
+                        <p>۴. کنترل مقاومت اعضا، تغییرشکل مجاز و اتصالات</p>
                     </div>
 
                     <p style="color:#b45309">
@@ -519,13 +640,17 @@
                 appliedLoads: {
                     leftRoofPressure,
                     rightRoofPressure,
+                    windRoofLeft,
+                    windRoofRight,
+                    roofWindLeftLine,
+                    roofWindRightLine,
                     wallWindLineLoad,
                     windDirection: loads.windDirection
                 }
             };
 
             window.SteelProject.setStatus(
-                "تحلیل خطی اولیه قاب با بارهای تفکیکی سقف و باد دیوار انجام شد."
+                "تحلیل خطی قاب با بار ثقلی، باد سقف و باد دیوار انجام شد."
             );
 
             return {
@@ -537,7 +662,8 @@
 
         } catch (error) {
             if (message) {
-                message.textContent = "خطا در تحلیل: " + error.message;
+                message.textContent =
+                    "خطا در تحلیل: " + error.message;
             }
 
             if (window.SteelProject) {
