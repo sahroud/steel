@@ -1,4 +1,3 @@
-
 /* SAHROUD STEEL - Independent Column and Rafter Girders */
 (function () {
     "use strict";
@@ -256,6 +255,43 @@
         }
     }
 
+    // اطلاعات ابعاد هر دو تیرورق برای ذخیره پروژه
+    function getData() {
+        return {
+            column: readDimensions("column"),
+            rafter: readDimensions("rafter")
+        };
+    }
+
+    // بازیابی ابعاد و محاسبه مجدد نتایج
+    function setData(data) {
+        if (!data || typeof data !== "object") return;
+
+        ["column", "rafter"].forEach(member => {
+            const dimensions = data[member];
+            if (!dimensions || typeof dimensions !== "object") return;
+
+            const prefix = member === "column" ? "colGirder" : "rafGirder";
+            const mapping = {
+                hw: "WebH",
+                tw: "WebT",
+                bb: "BottomB",
+                tb: "BottomT",
+                bt: "TopB",
+                tt: "TopT"
+            };
+
+            Object.entries(mapping).forEach(([key, suffix]) => {
+                const el = $(prefix + suffix);
+                if (el && dimensions[key] !== undefined) {
+                    el.value = dimensions[key];
+                }
+            });
+
+            calculate(member);
+        });
+    }
+
     function init() {
         createPanel();
     }
@@ -265,6 +301,8 @@
         calculateProperties,
         calculate,
         transfer,
+        getData,
+        setData,
         members
     };
 
