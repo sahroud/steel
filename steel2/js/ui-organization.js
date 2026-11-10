@@ -160,7 +160,7 @@
             if (!title) return;
             number += 1;
             const original = panel.dataset.smartTitle ||
-                title.textContent.replace(/^\\s*[0-9۰-۹٠-٩]+\\s*[ـ–.)-]\\s*/u, "").trim();
+                title.textContent.replace(/^(?:\s*[0-9۰-۹٠-٩]+\s*[ـ–.)-]\s*)+/u, "").trim();
             panel.dataset.smartTitle = original;
             const numberedTitle = number.toLocaleString("fa-IR") + " ـ " + original;
             if (title.textContent !== numberedTitle) {
