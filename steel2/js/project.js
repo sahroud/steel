@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Project Manager 2.7 */
+/* SAHROUD STEEL - Project Manager 2.8 */
 (function () {
     "use strict";
 
@@ -38,7 +38,7 @@
 
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
-            version: "2.7"
+            version: "2.8"
         };
 
         if (window.SteelLoads &&
@@ -61,16 +61,21 @@
             data.girders = window.SteelGirder.getData();
         }
 
-        // ذخیره قیدهای افقی دیوار
         if (window.SteelTies &&
             typeof window.SteelTies.getData === "function") {
             data.wallTies = window.SteelTies.getData();
         }
 
-        // ذخیره مشخصات قیدهای طولی سقف
         if (window.SteelRoofTies &&
             typeof window.SteelRoofTies.getData === "function") {
             data.roofTies = window.SteelRoofTies.getData();
+        }
+
+        // ذخیره تنظیمات پرلین‌های سقف
+        if (window.SteelRoofPurlins &&
+            typeof window.SteelRoofPurlins.getData === "function") {
+            data.roofPurlins =
+                window.SteelRoofPurlins.getData();
         }
 
         return data;
@@ -187,7 +192,7 @@
         }, 1000);
 
         setStatus(
-            "پروژه همراه با بارگذاری، مقاطع، تیرورق‌ها، بازشوها، قیدهای دیوار و قیدهای سقف ذخیره شد."
+            "پروژه همراه با بارگذاری، مقاطع، تیرورق‌ها، بازشوها، قیدهای دیوار، قیدهای سقف و پرلین‌ها ذخیره شد."
         );
     }
 
@@ -254,32 +259,36 @@
             window.SteelGirder.setData(data.girders);
         }
 
-        // بازیابی قیدهای افقی دیوار
         if (window.SteelTies &&
             typeof window.SteelTies.setData === "function") {
             window.SteelTies.setData(data.wallTies || {});
         }
 
-        // بازیابی مشخصات قیدهای طولی سقف
         if (window.SteelRoofTies &&
             typeof window.SteelRoofTies.setData === "function") {
             window.SteelRoofTies.setData(data.roofTies || {});
         }
 
-        // بازسازی مهاربندی‌ها
+        // بازیابی تنظیمات پرلین‌های سقف
+        if (window.SteelRoofPurlins &&
+            typeof window.SteelRoofPurlins.setData === "function") {
+            window.SteelRoofPurlins.setData(
+                data.roofPurlins || {}
+            );
+        }
+
         if (window.SteelBracing &&
             typeof window.SteelBracing.drawAll === "function") {
             window.SteelBracing.drawAll();
         }
 
-        // بازسازی قیدهای افقی دیوار
         if (window.SteelTies &&
             typeof window.SteelTies.drawAll === "function") {
             window.SteelTies.drawAll();
         }
 
         setStatus(
-            "پروژه بازیابی شد؛ تنظیمات قیدهای دیوار و سقف نیز بازیابی شدند."
+            "پروژه بازیابی شد؛ تنظیمات قیدهای دیوار، قیدهای سقف و پرلین‌ها نیز بازیابی شدند."
         );
     }
 
