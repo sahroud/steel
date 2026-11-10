@@ -79,7 +79,8 @@
                     combination: "—", position: 0,
                     supportMoment: 0, supportShear: 0,
                     supportAxial: 0, deflection: 0,
-                    deflectionCombination: "—"
+                    deflectionCombination: "—",
+                    connectionCases: []
                 };
             });
 
@@ -115,6 +116,13 @@
                     const supportM = Math.abs(Number(left ? member.momentEnd : member.momentStart) || 0);
                     const supportV = Math.abs(Number(left ? member.shearEnd : member.shearStart) || 0);
                     const supportN = Math.abs(Number(left ? member.axialEnd : member.axialStart) || 0);
+                    // Keep simultaneous connection actions from each individual load combination.
+                    w.connectionCases.push({
+                        combination: item.name,
+                        M: supportM,
+                        V: supportV,
+                        N: supportN
+                    });
                     if (supportM > w.supportMoment) {
                         w.supportMoment = supportM;
                         w.supportMomentCombination = item.name;
