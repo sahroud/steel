@@ -1,7 +1,10 @@
+
 /* SAHROUD STEEL - 2D Portal Frame Matrix Analysis
-Version 2.2 - Member local loads exported for force diagrams
+Version 2.3 - Corrected axial force sign convention
 Linear elastic first-order analysis
 Units: N, m, Pa
+Axial convention in exported member data:
+Tension positive, compression negative.
 */
 (function () {
 "use strict";
@@ -379,10 +382,10 @@ function calculate() {
                 Math.abs(endForces[5])
             );
 
-            // بارهای محلی عضو از N/m به kN/m تبدیل می‌شوند.
-            // این داده‌ها برای بازیابی نمودارهای واقعی‌تر لازم‌اند.
+            // بارهای محلی عضو بر حسب kN/m
+            // قرارداد علامت: کشش مثبت و فشار منفی
             const localLoadX =
-                (2 * element.fl[0] / element.L) / 1000;
+                -(2 * element.fl[0] / element.L) / 1000;
 
             const localLoadY =
                 (2 * element.fl[1] / element.L) / 1000;
@@ -393,11 +396,14 @@ function calculate() {
                 localLoadX,
                 localLoadY,
 
-                axialStart: endForces[0] / 1000,
+                // اصلاح قرارداد علامت نیروی محوری
+                // فشار در خروجی منفی و کشش مثبت است.
+                axialStart: -endForces[0] / 1000,
+                axialEnd: endForces[3] / 1000,
+
                 shearStart: endForces[1] / 1000,
                 momentStart: endForces[2] / 1e6,
 
-                axialEnd: -endForces[3] / 1000,
                 shearEnd: endForces[4] / 1000,
                 momentEnd: endForces[5] / 1e6,
 
