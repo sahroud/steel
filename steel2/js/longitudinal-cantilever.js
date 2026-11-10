@@ -18,7 +18,8 @@
       dead: Math.max(0, Number(loads["dead" + suffix]) || 0),
       live: Math.max(0, Number(loads["live" + suffix]) || 0),
       snow: Math.max(0, Number(loads["snow" + suffix]) || 0),
-      wind: Number(loads["wind" + suffix]) || 0
+      wind: Number(loads["wind" + suffix]) || 0,
+      windDirection: loads.windDirection || "not-specified"
     };
   }
 
@@ -116,6 +117,8 @@
         name: side.name,
         gravityPressure,
         windPressure: Math.abs(data.wind),
+        windSignedPressure: data.wind,
+        windDirection: data.windDirection,
         tributaryWidth,
         gravity,
         wind,
@@ -127,7 +130,8 @@
       <h4>${r.name}</h4>
       <p>عرض بارگیر تقریبی: ${fmt(r.tributaryWidth, 3)} متر</p>
       <p>بار سطحی ثقلی (مرده + زنده + برف): ${fmt(r.gravityPressure, 3)} kN/m²</p>
-      <p>قدر مطلق فشار/مکش باد ورودی: ${fmt(r.windPressure, 3)} kN/m²</p>
+      <p>بار باد با علامت ورودی: ${fmt(r.windSignedPressure, 3)} kN/m² | قدر مطلق برای کنترل تنش: ${fmt(r.windPressure, 3)} kN/m²</p>
+      <p>جهت کلی ثبت‌شده باد: ${r.windDirection === "left-to-right" ? "چپ به راست" : r.windDirection === "right-to-left" ? "راست به چپ" : "تعیین‌نشده"}</p>
       ${renderCase("حالت بار ثقلی", r.gravity)}
       ${renderCase("حالت مکش باد (جدا از بار ثقلی)", r.wind)}
     `).join("");
