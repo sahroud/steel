@@ -964,6 +964,12 @@
         $("btnManualPurlins").addEventListener(
             "click", applyManual
         );
+
+        const shortcut = $("btnOpenRoofPurlins");
+        if (shortcut) shortcut.addEventListener("click", () => {
+            const panel = $("roofPurlinsPanel");
+            if (panel) panel.scrollIntoView({behavior:"smooth", block:"start"});
+        });
     }
 
     function getData() {
