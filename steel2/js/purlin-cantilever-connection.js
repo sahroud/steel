@@ -68,16 +68,17 @@ function calculate(){
   const rows=[];
   cant.results.forEach(side=>["gravity","wind"].forEach(k=>{const c=side[k];if(!c)return;
    const V=Math.abs(Number(c.V)||0),M=Math.abs(Number(c.M)||0),v=V/n,ten=sumY2>0?M*1000*yMax/sumY2:0;
+   const tensionResultant=sumY2>0?yPositions.reduce((sum,y)=>sum+(y>0?(M*1000*y/sumY2)*nc:0),0):0;
    const sr=v/phiV,tr=ten/phiT,ir=Math.sqrt(sr*sr+tr*tr),br=v/bearing;
-   const blockRatio=ten/Math.max(phiBlock,1e-9),netRatio=ten/Math.max(phiNet,1e-9);
-   rows.push({side:side.name,k,V,M,v,ten,ir,br,blockRatio,netRatio});
+   const blockRatio=tensionResultant/Math.max(phiBlock,1e-9),netRatio=tensionResultant/Math.max(phiNet,1e-9);
+   rows.push({side:side.name,k,V,M,v,ten,tensionResultant,ir,br,blockRatio,netRatio});
   }));
   if(!rows.length)throw new Error("نیروهای کنسول در دسترس نیستند؛ کنترل کنسول را دوباره اجرا کنید.");
   const worst=rows.reduce((a,b)=>Math.max(a.ir,a.br,a.blockRatio,a.netRatio)>=Math.max(b.ir,b.br,b.blockRatio,b.netRatio)?a:b);
   const body=rows.map(r=>`<tr><td>${r.side}</td><td>${r.k==="gravity"?"ثقلی":"باد"}</td><td>${fmt(r.V)}</td><td>${fmt(r.M)}</td><td>${fmt(r.v,3)}</td><td>${fmt(r.ten,3)}</td><td>${fmt(r.ir,3)}</td><td>${fmt(r.br,3)}</td><td>${fmt(r.blockRatio,3)}</td><td>${fmt(r.netRatio,3)}</td></tr>`).join("");
   out.innerHTML=`<h4>نتایج غربالگری اتصال پیچی</h4>
   <p>مدل: ${d.type==="clip"?"نبشی/ورق اتصال":d.type==="endplate"?"ورق انتهایی":"نشیمن"}؛ آرایش فرضی: ${fmt(nr,0)} ردیف × ${fmt(nc,0)} ستون؛ تعداد کل پیچ: ${fmt(n,0)}؛ سطح مقطع مؤثر تقریبی رزوه پیچ: ${fmt(area,1)} mm²</p><p>عرض ورق: ${fmt(width,1)} mm؛ فاصله انتهایی: ${fmt(e,1)} mm؛ فاصله کناری: ${fmt(se,1)} mm؛ قطر سوراخ: ${fmt(dh,1)} mm؛ گام ردیف‌ها: ${fmt(p,1)} mm؛ فاصله عرضی: ${fmt(g,1)} mm؛ توزیع کشش با فرض رفتار الاستیک گروه پیچ حول مرکز گروه محاسبه شده است.</p>
-  <p>مساحت خالص کششی ورق An: ${fmt(An,1)} mm²؛ ظرفیت طراحی تقریبی سطح خالص: ${fmt(phiNet,2)} kN؛ ظرفیت طراحی تقریبی پارگی بلوکی: ${fmt(phiBlock,2)} kN (با فرض دو مسیر برشی طولی و یک مسیر کششی عرضی).</p><p>ظرفیت تقریبی برش هر پیچ: ${fmt(phiV,2)} kN؛ ظرفیت تقریبی کشش هر پیچ: ${fmt(phiT,2)} kN؛ ظرفیت لهیدگی تقریبی ورق برای هر پیچ: ${fmt(bearing,2)} kN</p>
+  <p>مساحت خالص کششی ورق An: ${fmt(An,1)} mm²؛ ظرفیت طراحی تقریبی سطح خالص: ${fmt(phiNet,2)} kN؛ ظرفیت طراحی تقریبی پارگی بلوکی: ${fmt(phiBlock,2)} kN (با فرض دو مسیر برشی طولی و یک مسیر کششی عرضی؛ نیروهای این دو کنترل از برآیند کشش ردیف‌های کششی گروه پیچ گرفته شده‌اند).</p><p>ظرفیت تقریبی برش هر پیچ: ${fmt(phiV,2)} kN؛ ظرفیت تقریبی کشش هر پیچ: ${fmt(phiT,2)} kN؛ ظرفیت لهیدگی تقریبی ورق برای هر پیچ: ${fmt(bearing,2)} kN</p>
   <div style="overflow-x:auto"><table style="width:100%;min-width:720px;border-collapse:collapse"><thead><tr><th>سمت</th><th>حالت بار</th><th>V (kN)</th><th>M (kN.m)</th><th>برش هر پیچ</th><th>کشش هر پیچ</th><th>نسبت اندرکنش</th><th>نسبت لهیدگی</th><th>نسبت پارگی بلوکی</th><th>نسبت سطح خالص</th></tr></thead><tbody>${body}</tbody></table></div>
   <p><b>حالت حاکم:</b> ${worst.side} ـ ${worst.k==="gravity"?"ثقلی":"باد"}؛ نسبت اندرکنش ${fmt(worst.ir,3)}، لهیدگی ${fmt(worst.br,3)}، پارگی بلوکی ${fmt(worst.blockRatio,3)} و سطح خالص ${fmt(worst.netRatio,3)}.</p>
   <div class="notice" style="color:#a65d16">${worst.ir<=1&&worst.br<=1&&worst.blockRatio<=1&&worst.netRatio<=1?"در این مدل ساده، نسبت‌های بررسی‌شده از ۱ بیشتر نیستند؛ این نتیجه به معنی تأیید اتصال نیست.":"حداقل یکی از نسبت‌های ساده‌شده از ۱ بیشتر است؛ آرایش یا مشخصات اتصال باید بازنگری شود."}</div>
