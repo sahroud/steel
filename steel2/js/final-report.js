@@ -1,8 +1,7 @@
 
 /* SAHROUD STEEL - Final Aggregated Design Report
-   Preliminary report:
-   LRFD combinations, displacements, reactions,
-   member demand, interaction, shear and buckling
+   Version 2.0
+   Includes preliminary flexural capacity check
 */
 (function () {
     "use strict";
@@ -12,7 +11,6 @@
     function fmt(value, digits = 3) {
         const n = Number(value);
         if (!Number.isFinite(n)) return "—";
-
         return n.toLocaleString("fa-IR", {
             minimumFractionDigits: digits,
             maximumFractionDigits: digits
@@ -38,13 +36,10 @@
             const leftH = reactionValue(item, 0, 1000);
             const leftV = reactionValue(item, 1, 1000);
             const leftM = reactionValue(item, 2, 1000000);
-
             const rightH = reactionValue(item, 12, 1000);
             const rightV = reactionValue(item, 13, 1000);
             const rightM = reactionValue(item, 14, 1000000);
-
-            const displacement =
-                Number(item.maxDisplacement) * 1000;
+            const displacement = Number(item.maxDisplacement) * 1000;
 
             return `
                 <tr>
@@ -76,7 +71,7 @@
 
             <p>
                 گزارش ترکیبات بار، جابه‌جایی‌ها، واکنش‌ها،
-                تقاضای اعضا و کنترل‌های مقدماتی
+                تقاضای اعضا و کنترل‌های طراحی
             </p>
 
             <button class="btn primary" id="btnFinalReport">
@@ -90,9 +85,12 @@
             <div id="finalReportResults"></div>
         `;
 
+        const flexurePanel = $("flexurePanel");
         const shearPanel = $("shearPanel");
 
-        if (shearPanel) {
+        if (flexurePanel) {
+            flexurePanel.after(panel);
+        } else if (shearPanel) {
             shearPanel.after(panel);
         } else {
             document.body.appendChild(panel);
@@ -104,7 +102,6 @@
 
     function build() {
         const out = $("finalReportResults");
-
         if (!out) return;
 
         try {
@@ -133,7 +130,8 @@
                 ["btnMemberDemand", "memberDemandResults"],
                 ["btnInteraction", "interactionResults"],
                 ["btnShear", "shearResults"],
-                ["checkCombinationBuckling", "combinationBucklingResults"]
+                ["checkCombinationBuckling", "combinationBucklingResults"],
+                ["btnFlexure", "flexureResults"]
             ];
 
             tasks.forEach(([buttonId, resultId]) => {
@@ -234,7 +232,7 @@
                     </section>
 
                     <section class="report-section">
-                        <h3>۳. جدول جابه‌جایی و واکنش تکیه‌گاهی ترکیبات بار</h3>
+                        <h3>۳. جابه‌جایی و واکنش تکیه‌گاهی</h3>
 
                         <div style="overflow-x:auto">
                             <table style="width:100%;min-width:1050px;border-collapse:collapse">
@@ -265,9 +263,9 @@
                                 جابه‌جایی انتقالی گره‌ها در قاب دوبعدی است.
                             </p>
                             <p>
-                                واکنش‌های افقی و قائم از مؤلفه‌های
-                                نیرو و واکنش لنگری از مؤلفه دوران
-                                تکیه‌گاه‌ها استخراج شده‌اند.
+                                واکنش‌های افقی و قائم از مؤلفه‌های نیرو
+                                و واکنش لنگری از مؤلفه دوران تکیه‌گاه‌ها
+                                استخراج شده‌اند.
                             </p>
                             <p>
                                 علامت مثبت و منفی واکنش‌ها مطابق
@@ -293,6 +291,10 @@
                 [
                     "۷. کنترل کمانش اعضا در ترکیبات بار",
                     $("combinationBucklingResults")
+                ],
+                [
+                    "۸. کنترل مقدماتی ظرفیت خمشی اعضا",
+                    $("flexureResults")
                 ]
             ];
 
@@ -313,7 +315,7 @@
 
             html += `
                     <section class="report-section">
-                        <h3>۸. محدودیت‌ها و هشدارها</h3>
+                        <h3>۹. محدودیت‌ها و هشدارهای مهندسی</h3>
 
                         <div class="notice">
                             <p>
@@ -325,27 +327,32 @@
                             </p>
 
                             <p>
-                                بیشینه جابه‌جایی گزارش‌شده، مقدار
-                                انتقالی گره‌هاست و کنترل تغییرمکان
-                                مجاز آیین‌نامه‌ای به‌صورت مستقل
-                                در این مرحله انجام نشده است.
+                                بیشینه جابه‌جایی گزارش‌شده، مقدار انتقالی
+                                گره‌هاست و کنترل تغییرمکان مجاز آیین‌نامه‌ای
+                                به‌صورت مستقل در این مرحله انجام نشده است.
                             </p>
 
                             <p>
-                                کنترل‌های اندرکنش، برش و کمانش
-                                مقدماتی هستند و تأیید طراحی اجرایی محسوب نمی‌شوند.
+                                کنترل‌های اندرکنش، برش و کمانش مقدماتی هستند
+                                و تأیید طراحی اجرایی محسوب نمی‌شوند.
+                            </p>
+
+                            <p>
+                                کنترل ظرفیت خمشی فعلی فقط برآورد اولیه
+                                تسلیم خمشی الاستیک است؛ کمانش جانبی‌پیچشی،
+                                کمانش موضعی، ضریب Cb، ظرفیت پلاستیک و
+                                اندرکنش کامل نیروها در آن لحاظ نشده‌اند.
                             </p>
 
                             <p>
                                 کنترل کامل کمانش موضعی، کمانش پیچشی،
-                                اثرات مرتبه دوم، اندرکنش کامل نیروها،
-                                اتصالات، ورق‌های تقویتی و فونداسیون
-                                باید جداگانه انجام شود.
+                                اثرات مرتبه دوم، اتصالات، ورق‌های تقویتی
+                                و فونداسیون باید جداگانه انجام شود.
                             </p>
 
                             <p>
-                                صحت طول‌های مهارنشده و ضرایب K
-                                باید توسط مهندس مسئول بررسی شود.
+                                صحت طول‌های مهارنشده و ضرایب K باید
+                                توسط مهندس مسئول بررسی شود.
                             </p>
 
                             <p>
