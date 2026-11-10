@@ -39,7 +39,7 @@ function calculate(){
   if(!cant||!Array.isArray(cant.results)||!cant.results.length)throw new Error("ابتدا مقطع پرلین را محاسبه و سپس کنترل کنسول طولی را اجرا کنید.");
   const d=getData(),n=Number(d.bolts),db=Number(d.diameter),fub=Number(d.fub),t=Number(d.plateThickness),fu=Number(d.plateFu),e=Number(d.edge),p=Number(d.pitch),z=Number(d.lever);
   if(!(Number.isInteger(n)&&n>=2&&db>0&&fub>0&&t>0&&fu>0&&e>db/2&&p>=db&&z>0))throw new Error("تعداد پیچ، ابعاد، مصالح و فاصله‌ها را بررسی کنید. تعداد پیچ حداقل ۲ و فاصله لبه بیشتر از نصف قطر پیچ باشد.");
-  const area=Math.PI*db*db/4,nt=Math.max(1,Math.floor(n/2));
+  const grossArea=Math.PI*db*db/4,area=.78*grossArea,nt=Math.max(1,Math.floor(n/2));
   const phiV=.75*.48*fub*area/1000,phiT=.75*.75*fub*area/1000;
   const bearing=.75*Math.min(1.2*(e-db/2)*t*fu,2.4*db*t*fu)/1000;
   const rows=[];
@@ -52,7 +52,7 @@ function calculate(){
   const worst=rows.reduce((a,b)=>Math.max(a.ir,a.br)>=Math.max(b.ir,b.br)?a:b);
   const body=rows.map(r=>`<tr><td>${r.side}</td><td>${r.k==="gravity"?"ثقلی":"باد"}</td><td>${fmt(r.V)}</td><td>${fmt(r.M)}</td><td>${fmt(r.v,3)}</td><td>${fmt(r.ten,3)}</td><td>${fmt(r.ir,3)}</td><td>${fmt(r.br,3)}</td></tr>`).join("");
   out.innerHTML=`<h4>نتایج غربالگری اتصال پیچی</h4>
-  <p>مدل: ${d.type==="clip"?"نبشی/ورق اتصال":d.type==="endplate"?"ورق انتهایی":"نشیمن"}؛ تعداد پیچ: ${fmt(n,0)}؛ سطح مقطع ناخالص پیچ: ${fmt(area,1)} mm²</p>
+  <p>مدل: ${d.type==="clip"?"نبشی/ورق اتصال":d.type==="endplate"?"ورق انتهایی":"نشیمن"}؛ تعداد پیچ: ${fmt(n,0)}؛ سطح مقطع مؤثر تقریبی رزوه پیچ: ${fmt(area,1)} mm²</p>
   <p>ظرفیت تقریبی برش هر پیچ: ${fmt(phiV,2)} kN؛ ظرفیت تقریبی کشش هر پیچ: ${fmt(phiT,2)} kN؛ ظرفیت لهیدگی تقریبی ورق برای هر پیچ: ${fmt(bearing,2)} kN</p>
   <div style="overflow-x:auto"><table style="width:100%;min-width:720px;border-collapse:collapse"><thead><tr><th>سمت</th><th>حالت بار</th><th>V (kN)</th><th>M (kN.m)</th><th>برش هر پیچ</th><th>کشش هر پیچ</th><th>نسبت اندرکنش</th><th>نسبت لهیدگی</th></tr></thead><tbody>${body}</tbody></table></div>
   <p><b>حالت حاکم:</b> ${worst.side} ـ ${worst.k==="gravity"?"ثقلی":"باد"}؛ نسبت اندرکنش ${fmt(worst.ir,3)} و نسبت لهیدگی ${fmt(worst.br,3)}.</p>
