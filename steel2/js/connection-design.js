@@ -12,6 +12,21 @@
         return `<div class="field"><label for="${id}">${label} (${unit})</label>
         <input id="${id}" type="number" min="0" step="0.1" value="${value}" placeholder="وارد کنید"></div>`;
     }
+    function bindConnectionShortcut() {
+        const button = $("btnOpenConnection");
+        if (!button || button.dataset.bound === "1") return;
+        button.dataset.bound = "1";
+        button.addEventListener("click", function () {
+            const panel = $("connectionDesignPanel");
+            if (!panel) {
+                alert("بخش طراحی اتصال هنوز بارگذاری نشده است.");
+                return;
+            }
+            const details = panel.querySelector("details");
+            if (details) details.open = true;
+            panel.scrollIntoView({behavior:"smooth", block:"start"});
+        });
+    }
     function createPanel() {
         if ($("connectionDesignPanel")) return;
         const main = document.querySelector("main");
@@ -53,6 +68,7 @@
         if (status) main.insertBefore(panel, status); else main.appendChild(panel);
         $("btnConnectionCheck").addEventListener("click", calculate);
         refreshActions();
+        bindConnectionShortcut();
     }
     function getSides() {
         const w = window.SteelCantileverCheck?.lastResult?.worst;
