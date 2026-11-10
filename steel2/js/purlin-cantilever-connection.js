@@ -18,7 +18,7 @@ function bindButton(){
 function ensurePanel(){
  if($("purlinCantileverConnectionPanel")){bindButton();return;}
  const main=document.querySelector("main");if(!main)return;
- const anchor=$("longitudinalCantileverPanel")||$("connectionDesignPanel");
+ const anchor=$("roofTiesPanel")||$("longitudinalCantileverPanel")||$("connectionDesignPanel");
  const panel=document.createElement("section");panel.className="panel";panel.id="purlinCantileverConnectionPanel";
  panel.innerHTML=`
  <div class="panel-title"><h3>کنترل مقدماتی اتصال پرلین کنسول طولی</h3></div>
