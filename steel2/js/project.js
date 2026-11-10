@@ -1,4 +1,5 @@
-/* SAHROUD STEEL - Project Manager 2.5 */
+
+/* SAHROUD STEEL - Project Manager 2.6 */
 (function () {
     "use strict";
 
@@ -17,10 +18,10 @@
 
     function getData() {
         const data = {
-            projectName: $("projectName").value.trim(),
-            owner: $("owner").value.trim(),
-            designer: $("designer").value.trim(),
-            city: $("city").value,
+            projectName: $("projectName") ? $("projectName").value.trim() : "",
+            owner: $("owner") ? $("owner").value.trim() : "",
+            designer: $("designer") ? $("designer").value.trim() : "",
+            city: $("city") ? $("city").value : "",
             baseConnection: getBaseConnection(),
 
             span: getNumber("span"),
@@ -37,24 +38,33 @@
 
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
-            version: "2.5"
+            version: "2.6"
         };
 
-        if (window.SteelLoads) {
+        if (window.SteelLoads &&
+            typeof window.SteelLoads.getData === "function") {
             data.loads = window.SteelLoads.getData();
         }
 
-        if (window.SteelSections) {
+        if (window.SteelSections &&
+            typeof window.SteelSections.read === "function") {
             data.sections = window.SteelSections.read();
         }
 
-        if (window.SteelOpenings) {
+        if (window.SteelOpenings &&
+            typeof window.SteelOpenings.getData === "function") {
             data.openings = window.SteelOpenings.getData();
         }
 
-        // ذخیره ابعاد مستقل تیرورق ستون و رفتر
-        if (window.SteelGirder) {
+        if (window.SteelGirder &&
+            typeof window.SteelGirder.getData === "function") {
             data.girders = window.SteelGirder.getData();
+        }
+
+        // ذخیره وضعیت قیدهای افقی دیوار
+        if (window.SteelTies &&
+            typeof window.SteelTies.getData === "function") {
+            data.wallTies = window.SteelTies.getData();
         }
 
         return data;
@@ -69,12 +79,9 @@
         const length = getNumber("length");
         const spacing = getNumber("spacing");
 
-        if (
-            !Number.isFinite(length) ||
+        if (!Number.isFinite(length) ||
             !Number.isFinite(spacing) ||
-            length <= 0 ||
-            spacing <= 0
-        ) {
+            length <= 0 || spacing <= 0) {
             if ($("frames")) $("frames").value = "";
             return;
         }
@@ -84,10 +91,14 @@
 
     function validate() {
         if (window.SteelLoads) {
-            window.SteelLoads.syncLegacyInputs();
+            if (typeof window.SteelLoads.syncLegacyInputs === "function") {
+                window.SteelLoads.syncLegacyInputs();
+            }
 
-            const loadError = window.SteelLoads.validate();
-            if (loadError) return loadError;
+            if (typeof window.SteelLoads.validate === "function") {
+                const loadError = window.SteelLoads.validate();
+                if (loadError) return loadError;
+            }
         }
 
         const d = getData();
@@ -126,14 +137,13 @@
             }
         }
 
-        if (
-            d.baseConnection !== "pinned" &&
-            d.baseConnection !== "fixed"
-        ) {
+        if (d.baseConnection !== "pinned" &&
+            d.baseConnection !== "fixed") {
             return "نوع اتصال پای ستون معتبر نیست.";
         }
 
-        if (window.SteelOpenings) {
+        if (window.SteelOpenings &&
+            typeof window.SteelOpenings.validate === "function") {
             const openingError = window.SteelOpenings.validate();
             if (openingError) return openingError;
         }
@@ -171,7 +181,7 @@
         }, 1000);
 
         setStatus(
-            "پروژه، بارگذاری، مقاطع، تیرورق‌ها، اتصالات و بازشوها ذخیره شدند."
+            "پروژه همراه با بارگذاری، مقاطع، تیرورق‌ها، بازشوها و قیدهای دیوار ذخیره شد."
         );
     }
 
@@ -209,30 +219,56 @@
 
         updateFrameCount();
 
-        if (data.loads && window.SteelLoads) {
+        if (data.loads && window.SteelLoads &&
+            typeof window.SteelLoads.setData === "function") {
             window.SteelLoads.setData(data.loads);
         }
 
-        if (window.SteelLoads) {
+        if (window.SteelLoads &&
+            typeof window.SteelLoads.syncLegacyInputs === "function") {
             window.SteelLoads.syncLegacyInputs();
         }
 
-        if (data.sections && window.SteelSections) {
+        if (data.sections && window.SteelSections &&
+            typeof window.SteelSections.setData === "function") {
             window.SteelSections.setData(data.sections);
         }
 
-        if (data.openings && window.SteelOpenings) {
+        if (data.openings && window.SteelOpenings &&
+            typeof window.SteelOpenings.setData === "function") {
             window.SteelOpenings.setData(data.openings);
-            window.SteelOpenings.check();
+
+            if (typeof window.SteelOpenings.check === "function") {
+                window.SteelOpenings.check();
+            }
         }
 
-        // بازیابی ابعاد تیرورق ستون و رفتر
-        if (data.girders && window.SteelGirder) {
+        if (data.girders && window.SteelGirder &&
+            typeof window.SteelGirder.setData === "function") {
             window.SteelGirder.setData(data.girders);
         }
 
+        // بازیابی تنظیمات قیدهای افقی دیوار
+        // در پروژه‌های قدیمی که wallTies ندارند، قید دوم خاموش می‌ماند.
+        if (window.SteelTies &&
+            typeof window.SteelTies.setData === "function") {
+            window.SteelTies.setData(data.wallTies || {});
+        }
+
+        // بازسازی مهاربندی‌ها
+        if (window.SteelBracing &&
+            typeof window.SteelBracing.drawAll === "function") {
+            window.SteelBracing.drawAll();
+        }
+
+        // بازسازی قیدهای افقی
+        if (window.SteelTies &&
+            typeof window.SteelTies.drawAll === "function") {
+            window.SteelTies.drawAll();
+        }
+
         setStatus(
-            "اطلاعات پروژه، بارگذاری، مقاطع، تیرورق‌ها، اتصالات و بازشوها بازیابی شدند."
+            "پروژه بازیابی شد؛ قیدهای افقی دیوار و مهاربندی‌ها نیز بازسازی شدند."
         );
     }
 
