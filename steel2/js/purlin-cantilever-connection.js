@@ -30,7 +30,10 @@ function ensurePanel(){
  <div class="button-grid"><button id="btnPurlinConnCalc" class="btn primary" type="button">محاسبه کنترل مقدماتی اتصال</button></div>
  <div id="purlinConnResults" class="notice">ابتدا طراحی پرلین و کنترل کنسول طولی را اجرا کنید.</div>
  <div class="notice" style="color:#a65d16">کنترل‌های این نسخه محدود به برش تقریبی پیچ، کشش تقریبی پیچ ناشی از لنگر، اندرکنش ساده برش/کشش و لهیدگی موضعی ورق در سوراخ است. لغزش، اثر اهرمی، پارگی بلوکی، گسیختگی سطح خالص، خمش ورق، جوش، مقاومت عضو تکیه‌گاهی، فاصله‌های آیین‌نامه‌ای و الزامات لرزه‌ای کامل کنترل نشده‌اند. خروجی تأیید اجرایی نیست.</div>`;
- if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(panel,anchor.nextSibling);else main.appendChild(panel);
+ const statusPanel=Array.from(main.querySelectorAll(".panel")).find(p=>p.textContent.includes("وضعیت پروژه"));
+ if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(panel,anchor.nextSibling);
+ else if(statusPanel&&statusPanel.parentNode)statusPanel.parentNode.insertBefore(panel,statusPanel);
+ else main.appendChild(panel);
  $("btnPurlinConnCalc").addEventListener("click",calculate);setData(pendingData);
 }
 function calculate(){
@@ -63,5 +66,12 @@ function calculate(){
  }catch(err){out.innerHTML='<div class="notice" style="color:#a65d16">'+err.message+'</div>';}
 }
 window.SteelPurlinCantileverConnection={getData,setData,calculate,lastResult:null};
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();
+function boot(){
+ ensurePanel();
+ const main=document.querySelector("main");
+ if(!main)return;
+ const observer=new MutationObserver(()=>{if(!$("purlinCantileverConnectionPanel"))ensurePanel();});
+ observer.observe(main,{childList:true,subtree:true});
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
