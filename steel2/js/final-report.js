@@ -1,9 +1,10 @@
 
 /* SAHROUD STEEL - Final Aggregated Design Report
    Preliminary report:
-   LRFD combinations, member demand, interaction and shear
+   LRFD combinations, member demand, interaction,
+   shear and preliminary buckling check
 */
-(function ()    {
+(function () {
     "use strict";
 
     const $ = id => document.getElementById(id);
@@ -41,7 +42,7 @@
 
             <p>
                 گزارش ترکیبات بار، تقاضای اعضا،
-                کنترل اندرکنش و کنترل مقدماتی برش
+                کنترل اندرکنش، برش و کمانش
             </p>
 
             <button class="btn primary" id="btnFinalReport">
@@ -94,14 +95,15 @@
                 );
             }
 
-            // اجرای محاسبات اعضا، اندرکنش و برش
+            // اجرای محاسبات اعضا، اندرکنش، برش و کمانش
             const tasks = [
                 ["btnMemberDemand", "memberDemandResults"],
                 ["btnInteraction", "interactionResults"],
-                ["btnShear", "shearResults"]
+                ["btnShear", "shearResults"],
+                ["checkCombinationBuckling", "combinationBucklingResults"]
             ];
 
-            tasks.forEach(([buttonId]) => {
+            tasks.forEach(([buttonId, resultId]) => {
                 const button = $(buttonId);
 
                 if (!button) {
@@ -111,6 +113,14 @@
                 }
 
                 button.click();
+
+                const result = $(resultId);
+
+                if (!result || !result.innerHTML.trim()) {
+                    throw new Error(
+                        "نتیجه محاسبه تولید نشد: " + resultId
+                    );
+                }
             });
 
             // جدول خلاصه ترکیبات بار
@@ -118,9 +128,9 @@
                 <tr>
                     <td>${i + 1}</td>
                     <td>${esc(item.name)}</td>
-                    <td>${fmt(item.envelope.N.value)}</td>
-                    <td>${fmt(item.envelope.V.value)}</td>
-                    <td>${fmt(item.envelope.M.value)}</td>
+                    <td>${fmt(item.envelope?.N?.value)}</td>
+                    <td>${fmt(item.envelope?.V?.value)}</td>
+                    <td>${fmt(item.envelope?.M?.value)}</td>
                 </tr>
             `).join("");
 
@@ -136,7 +146,7 @@
                     <td>${esc(item.name)}</td>
                     <td>${esc(item.member)}</td>
                     <td>${esc(item.end)}</td>
-            </tr>
+                </tr>
             `).join("");
 
             let html = `
@@ -197,7 +207,7 @@
                     </section>
             `;
 
-            // نتایج سه بخش محاسباتی
+            // بخش‌های محاسباتی گزارش
             const sections = [
                 [
                     "۳. گزارش تقاضای طراحی اعضا",
@@ -210,6 +220,10 @@
                 [
                     "۵. کنترل مقدماتی برش",
                     $("shearResults")
+                ],
+                [
+                    "۶. کنترل کمانش اعضا در ترکیبات بار",
+                    $("combinationBucklingResults")
                 ]
             ];
 
@@ -228,10 +242,10 @@
                 `;
             });
 
-            // محدودیت‌های گزارش
+            // محدودیت‌ها و هشدارها
             html += `
                     <section class="report-section">
-                        <h3>۶. محدودیت‌ها و هشدارها</h3>
+                        <h3>۷. محدودیت‌ها و هشدارها</h3>
 
                         <div class="notice">
                             <p>
@@ -243,20 +257,31 @@
                             </p>
 
                             <p>
-                                کنترل‌های اندرکنش و برش مقدماتی هستند
-                                و تأیید طراحی اجرایی محسوب نمی‌شوند.
+                                کنترل‌های اندرکنش، برش و کمانش
+                                مقدماتی هستند و تأیید طراحی اجرایی محسوب نمی‌شوند.
                             </p>
 
                             <p>
                                 کنترل کامل کمانش موضعی، کمانش پیچشی،
-                                اثرات مرتبه دوم، اتصالات، ورق‌های تقویتی،
-                                تغییرشکل مجاز و سایر الزامات آیین‌نامه‌ای
-                                باید جداگانه انجام شود.
+                                اثرات مرتبه دوم، اندرکنش کامل نیروها،
+                                اتصالات، ورق‌های تقویتی، تغییرشکل مجاز
+                                و سایر الزامات آیین‌نامه‌ای باید جداگانه انجام شود.
+                            </p>
+
+                            <p>
+                                کنترل کمانش این گزارش فقط بر اساس
+                                مدل و اطلاعات ورودی فعلی برنامه است.
+                                صحت طول‌های مهارنشده و ضرایب K باید
+                                توسط مهندس مسئول بررسی شود.
                             </p>
 
                             <p>
                                 ترکیبات بار و بارهای ورودی باید توسط
                                 مهندس مسئول بررسی و تأیید شوند.
+                            </p>
+
+                            <p>
+                                نتایج این گزارش به‌تنهایی مبنای اجرای سازه نیست.
                             </p>
                         </div>
                     </section>
@@ -276,7 +301,7 @@
                 <div class="notice">
                     <b>خطا در تهیه گزارش:</b>
                     <p>${esc(error.message)}</p>
-            </div>
+                </div>
             `;
         }
     }
