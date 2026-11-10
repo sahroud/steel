@@ -1,6 +1,8 @@
-/* SAHROUD STEEL - Roof Purlins Module 1.0
-   Preliminary screening only - not final code design.
+
+/* SAHROUD STEEL - Roof Purlins Module 1.1
+   Preliminary Z and RHS purlin selection
    Units: kN, m, mm, MPa
+   Not a final code design.
 */
 (function () {
     "use strict";
@@ -48,7 +50,9 @@
         const length = num("length", 30);
 
         const half = span / 2;
-        const slopeLength = Math.sqrt(half * half + rise * rise);
+        const slopeLength = Math.sqrt(
+            half * half + rise * rise
+        );
         const angle = Math.atan2(rise, half);
 
         return {
@@ -86,7 +90,10 @@
 
     function rectangle(b, h, x, y) {
         return {
-            b, h, x, y,
+            b: b,
+            h: h,
+            x: x,
+            y: y,
             area: b * h
         };
     }
@@ -116,45 +123,53 @@
                 p.area * Math.pow(p.x - cx, 2);
         });
 
+        const maxY = Math.max(
+            ...parts.map(p => Math.abs(p.y - cy) + p.h / 2)
+        );
+
         return {
             area,
             cx,
             cy,
             ix,
             iy,
-            wx: ix / Math.max(1, Math.max(...parts.map(
-                p => Math.abs(p.y - cy) + p.h / 2
-            ))),
+            wx: ix / Math.max(1, maxY),
             weight: area * 0.00785
         };
     }
 
-    // مقطع Z نازک‌جداره؛ خواص هندسی تقریبی از اجزای صفحه‌ای
     function zProperties(h, b, lip, t) {
         const parts = [
             rectangle(t, h, 0, 0),
 
-            rectangle(b, t,
+            rectangle(
+                b, t,
                 t / 2 + b / 2,
-                h / 2 - t / 2),
+                h / 2 - t / 2
+            ),
 
-            rectangle(b, t,
+            rectangle(
+                b, t,
                 -t / 2 - b / 2,
-                -h / 2 + t / 2),
+                -h / 2 + t / 2
+            ),
 
-            rectangle(t, lip,
+            rectangle(
+                t, lip,
                 b + t / 2,
-                h / 2 - t - lip / 2),
+                h / 2 - t - lip / 2
+            ),
 
-            rectangle(t, lip,
+            rectangle(
+                t, lip,
                 -b - t / 2,
-                -h / 2 + t + lip / 2)
+                -h / 2 + t + lip / 2
+            )
         ];
 
         return propertiesFromRectangles(parts);
     }
 
-    // مقطع قوطی مستطیلی RHS
     function rhsProperties(b, h, t) {
         const parts = [
             rectangle(b, t, 0, h / 2 - t / 2),
@@ -174,9 +189,14 @@
         const zThickness = [2, 2.5, 3, 3.5];
 
         const rhsSizes = [
-            [60, 120], [80, 120], [80, 140],
-            [80, 160], [100, 150], [100, 200],
-            [120, 200], [100, 250]
+            [60, 120],
+            [80, 120],
+            [80, 140],
+            [80, 160],
+            [100, 150],
+            [100, 200],
+            [120, 200],
+            [100, 250]
         ];
 
         if (family === "auto" || family === "z") {
@@ -217,55 +237,73 @@
         return result;
     }
 
-    function calculateOne(section, pitch, side, g, loads, settings) {
-        const dead = side === "left"
-            ? Number(loads.deadLeft || 0)
-            : Number(loads.deadRight || 0);
+    function calculateOne(
+        section, pitch, side, g, loads, settings
+    ) {
+        const dead = Number(
+            side === "left"
+                ? loads.deadLeft || 0
+                : loads.deadRight || 0
+        );
 
-        const live = side === "left"
-            ? Number(loads.liveLeft || 0)
-            : Number(loads.liveRight || 0);
+        const live = Number(
+            side === "left"
+                ? loads.liveLeft || 0
+                : loads.liveRight || 0
+        );
 
-        const snow = side === "left"
-            ? Number(loads.snowLeft || 0)
-            : Number(loads.snowRight || 0);
+        const snow = Number(
+            side === "left"
+                ? loads.snowLeft || 0
+                : loads.snowRight || 0
+        );
 
         const wind = Math.abs(Number(
-            side === "left" ? loads.windLeft || 0 : loads.windRight || 0
+            side === "left"
+                ? loads.windLeft || 0
+                : loads.windRight || 0
         ));
 
-        // بار قائم ثقلی و مکش باد جداگانه بررسی می‌شوند.
         const gravity = dead + live + snow;
         const surfaceEnvelope = Math.max(gravity, wind);
 
-        // تبدیل بار سطحی افقی به بار خطی روی طول شیب
         const qLine = surfaceEnvelope * pitch * g.cos;
-
-        // مؤلفه عمود بر سطح شیب برای خمش اولیه
         const qNormal = qLine * g.cos;
 
         const L = g.spacing * 1000;
-        const q = qNormal; // kN/m از نظر عددی برابر N/mm
+        const q = qNormal;
 
         const M = q * L * L / 8;
         const V = q * L / 2;
 
         const stress = M / Math.max(section.wx, 0.001);
-        const shearStress = 1.5 * V / Math.max(section.area, 0.001);
+
+        const shearStress =
+            1.5 * V / Math.max(section.area, 0.001);
 
         const deflection =
             5 * q * Math.pow(L, 4) /
-            (384 * settings.e * Math.max(section.ix, 1));
+            (
+                384 * settings.e *
+                Math.max(section.ix, 1)
+            );
 
-        const allowableDeflection = L / settings.deflectionLimit;
+        const allowableDeflection =
+            L / settings.deflectionLimit;
 
         const bendingOK = stress <= settings.fy;
         const shearOK = shearStress <= settings.fy / 2;
-        const deflectionOK = deflection <= allowableDeflection;
+        const deflectionOK =
+            deflection <= allowableDeflection;
 
-        const weightTotal =
-            section.weight * g.slopeLength * 2 *
+        // وزن یک پرلین در هر شیب
+        const purlinCountPerSlope =
             Math.ceil(g.length / pitch);
+
+        const weightPerSlope =
+            section.weight *
+            g.slopeLength *
+            purlinCountPerSlope;
 
         return {
             side,
@@ -284,50 +322,96 @@
             shearOK,
             deflectionOK,
             ok: bendingOK && shearOK && deflectionOK,
-            weightTotal
+            weightPerSlope
         };
     }
 
     function readSettings() {
         return {
             family: $("purlinFamily")?.value || defaults.family,
-            pitchMin: num("purlinPitchMin", defaults.pitchMin),
-            pitchMax: num("purlinPitchMax", defaults.pitchMax),
-            pitchStep: num("purlinPitchStep", defaults.pitchStep),
-            pitch: num("purlinPitch", defaults.pitch),
+
+            pitchMin: num(
+                "purlinPitchMin", defaults.pitchMin
+            ),
+
+            pitchMax: num(
+                "purlinPitchMax", defaults.pitchMax
+            ),
+
+            pitchStep: num(
+                "purlinPitchStep", defaults.pitchStep
+            ),
+
+            pitch: num(
+                "purlinPitch", defaults.pitch
+            ),
+
             fy: num("purlinFy", defaults.fy),
             e: num("purlinE", defaults.e),
+
             deflectionLimit: num(
                 "purlinDeflectionLimit",
                 defaults.deflectionLimit
             ),
+
             sectionHeight: num(
-                "purlinZHeight", defaults.sectionHeight
+                "purlinZHeight",
+                defaults.sectionHeight
             ),
-            flange: num("purlinZFlange", defaults.flange),
+
+            flange: num(
+                "purlinZFlange",
+                defaults.flange
+            ),
+
             lip: num("purlinZLip", defaults.lip),
-            thickness: num("purlinZThickness", defaults.thickness),
-            rhsWidth: num("purlinRhsWidth", defaults.rhsWidth),
-            rhsHeight: num("purlinRhsHeight", defaults.rhsHeight),
+
+            thickness: num(
+                "purlinZThickness",
+                defaults.thickness
+            ),
+
+            rhsWidth: num(
+                "purlinRhsWidth",
+                defaults.rhsWidth
+            ),
+
+            rhsHeight: num(
+                "purlinRhsHeight",
+                defaults.rhsHeight
+            ),
+
             rhsThickness: num(
-                "purlinRhsThickness", defaults.rhsThickness
+                "purlinRhsThickness",
+                defaults.rhsThickness
             )
         };
     }
 
     function validate(s, g) {
-        if (!Number.isFinite(g.spacing) || g.spacing <= 0) {
-            return "فاصله قاب‌ها معتبر نیست.";
+        if (g.spacing <= 0 || g.length <= 0 ||
+            g.slopeLength <= 0) {
+            return "مشخصات هندسی سقف معتبر نیست.";
         }
 
-        if (s.pitchMin <= 0 || s.pitchMax < s.pitchMin ||
-            s.pitchStep <= 0) {
+        if (
+            s.pitchMin <= 0 ||
+            s.pitchMax < s.pitchMin ||
+            s.pitchStep <= 0
+        ) {
             return "بازه فاصله پرلین‌ها معتبر نیست.";
         }
 
-        if (s.fy <= 0 || s.e <= 0 ||
-            s.deflectionLimit < 100) {
+        if (
+            s.fy <= 0 ||
+            s.e <= 0 ||
+            s.deflectionLimit < 100
+        ) {
             return "مشخصات مصالح یا حد خیز معتبر نیست.";
+        }
+
+        if (s.pitch <= 0) {
+            return "فاصله انتخابی پرلین باید مثبت باشد.";
         }
 
         return "";
@@ -337,6 +421,7 @@
         const g = getGeometry();
         const loads = getLoads();
         const s = readSettings();
+
         const error = validate(s, g);
 
         if (error) {
@@ -369,7 +454,9 @@
                     left,
                     right,
                     ok,
-                    weight: left.weightTotal + right.weightTotal
+                    weight:
+                        left.weightPerSlope +
+                        right.weightPerSlope
                 });
             }
         }
@@ -405,9 +492,13 @@
         if (!b) {
             el.innerHTML = `
                 <h4>نتیجه جست‌وجو</h4>
-                <p>در بازه فعلی، هیچ ترکیب مقطع و فاصله‌ای
-                از کنترل‌های مقدماتی عبور نکرد.</p>
-                <p>بازه فاصله یا مشخصات مقاطع را بررسی کنید.</p>
+                <p>
+                    در بازه فعلی هیچ ترکیب مقطع و فاصله‌ای
+                    از کنترل‌های مقدماتی عبور نکرد.
+                </p>
+                <p>
+                    بازه فاصله یا مشخصات مقاطع را بررسی کنید.
+                </p>
             `;
             return;
         }
@@ -416,21 +507,35 @@
         const left = b.left;
         const right = b.right;
 
-        const maxStress = Math.max(left.stress, right.stress);
+        const maxStress = Math.max(
+            left.stress, right.stress
+        );
+
         const maxShear = Math.max(
             left.shearStress, right.shearStress
         );
+
         const maxDef = Math.max(
             left.deflection, right.deflection
         );
-        const maxM = Math.max(left.M, right.M);
-        const maxV = Math.max(left.V, right.V);
+
+        const maxM = Math.max(
+            left.M, right.M
+        );
+
+        const maxV = Math.max(
+            left.V, right.V
+        );
 
         const countPerSlope =
             Math.ceil(r.geometry.slopeLength / b.pitch) + 1;
 
+        const totalCount = countPerSlope * 2;
+
+        const totalWeight = b.weight;
+
         el.innerHTML = `
-            <h4>پیشنهاد مقدماتی نرم‌افزار</h4>
+            <h4>نتایج پیشنهاد مقدماتی</h4>
 
             <div class="result-card">
                 <span>مقطع پیشنهادی</span>
@@ -438,7 +543,7 @@
             </div>
 
             <div class="result-card">
-                <span>فاصله پیشنهادی پرلین‌ها روی شیب</span>
+                <span>فاصله پیشنهادی روی شیب</span>
                 <strong>${fmt(b.pitch, 2)} متر</strong>
             </div>
 
@@ -491,46 +596,61 @@
 
             <div class="result-card">
                 <span>تعداد تقریبی کل دو شیب</span>
-                <strong>${countPerSlope * 2}</strong>
+                <strong>${totalCount}</strong>
             </div>
 
             <div class="result-card">
-                <span>وزن تقریبی کل پرلین‌های دو شیب</span>
-                <strong>${fmt(b.weight, 1)} kg</strong>
+                <span>وزن تقریبی کل دو شیب</span>
+                <strong>${fmt(totalWeight, 1)} kg</strong>
             </div>
 
             <div class="notice">
                 <b>تعداد گزینه‌های عبورکرده از کنترل‌های مقدماتی:</b>
                 ${r.validCount}
                 <br>
-                <b>وضعیت:</b>
-                پیشنهاد بر اساس وزن کمتر در میان گزینه‌های بررسی‌شده.
+                <b>مبنای انتخاب:</b>
+                کمترین وزن تقریبی در بین گزینه‌های عبورکرده.
             </div>
         `;
 
         $("purlinWarning").innerHTML = `
-            <b>توجه مهندسی ـ محدودیت‌های این نسخه</b>
+            <b>محدودیت‌های مهندسی این نسخه</b>
             <ul>
-                <li>خواص Z از مدل هندسی ساده صفحات محاسبه شده‌اند؛
-                مشخصات کاتالوگ سازنده نیستند.</li>
-                <li>خواص قوطی نیز هندسی و تقریبی‌اند و گوشه‌های گرد
-                و تلرانس ساخت در آن‌ها لحاظ نشده است.</li>
-                <li>بار باد و بار ثقلی به‌صورت پوش ساده و جداگانه
-                مقایسه شده‌اند؛ ترکیبات بار آیین‌نامه‌ای کامل نیستند.</li>
-                <li>کمانش موضعی، کمانش پیچشی، اعوجاج مقطع،
-                پیچش ناشی از بارگذاری خارج از مرکز و اتصالات کنترل نشده‌اند.</li>
-                <li>مهار جانبی بال فشاری، ورق پوشش و عملکرد دیافراگمی
-                سقف هنوز در این محاسبه منظور نشده است.</li>
-                <li>بار برف نامتقارن و مکش باد باید با جهت و علامت
-                واقعی در مدل نهایی بررسی شوند.</li>
+                <li>
+                    خواص Z از مدل هندسی ساده صفحات محاسبه شده‌اند؛
+                    کاتالوگ واقعی سازنده نیستند.
+                </li>
+                <li>
+                    خواص قوطی هندسی و تقریبی هستند و گوشه‌های گرد
+                    و تلرانس ساخت در آن‌ها لحاظ نشده است.
+                </li>
+                <li>
+                    بار باد و بار ثقلی به‌صورت پوش ساده بررسی شده‌اند؛
+                    ترکیبات بار آیین‌نامه‌ای کامل نیستند.
+                </li>
+                <li>
+                    کمانش موضعی، کمانش پیچشی، اعوجاج مقطع،
+                    پیچش خارج از مرکز و اتصالات کنترل نشده‌اند.
+                </li>
+                <li>
+                    مهار جانبی بال فشاری و عملکرد دیافراگمی سقف
+                    در محاسبات منظور نشده‌اند.
+                </li>
+                <li>
+                    مکش باد، بار برف نامتقارن و جهت واقعی بارها
+                    نیازمند بررسی مستقل هستند.
+                </li>
             </ul>
-            <b>این خروجی صرفاً پیشنهاد مقدماتی است و تأیید طراحی اجرایی نیست.</b>
+            <b>
+                این خروجی پیشنهاد مقدماتی است و تأیید طراحی اجرایی نیست.
+            </b>
         `;
     }
 
     function applyManual() {
         const s = readSettings();
         const g = getGeometry();
+
         const error = validate(s, g);
 
         if (error) {
@@ -543,15 +663,19 @@
         if (s.family === "rhs") {
             section = {
                 family: "RHS",
-                name: `قوطی ${s.rhsWidth}×${s.rhsHeight}×${s.rhsThickness}`,
+                name:
+                    `قوطی ${s.rhsWidth}×${s.rhsHeight}×${s.rhsThickness}`,
                 ...rhsProperties(
-                    s.rhsWidth, s.rhsHeight, s.rhsThickness
+                    s.rhsWidth,
+                    s.rhsHeight,
+                    s.rhsThickness
                 )
             };
         } else {
             section = {
                 family: "Z",
-                name: `Z ${s.sectionHeight}×${s.flange}×${s.lip}×${s.thickness}`,
+                name:
+                    `Z ${s.sectionHeight}×${s.flange}×${s.lip}×${s.thickness}`,
                 ...zProperties(
                     s.sectionHeight,
                     s.flange,
@@ -562,9 +686,11 @@
         }
 
         const loads = getLoads();
+
         const left = calculateOne(
             section, s.pitch, "left", g, loads, s
         );
+
         const right = calculateOne(
             section, s.pitch, "right", g, loads, s
         );
@@ -575,7 +701,9 @@
             left,
             right,
             ok: left.ok && right.ok,
-            weight: left.weightTotal + right.weightTotal
+            weight:
+                left.weightPerSlope +
+                right.weightPerSlope
         };
 
         const result = {
@@ -588,24 +716,27 @@
 
         lastResult = result;
         window.SteelRoofPurlins.lastResult = result;
+
         showResults(result);
     }
 
     function panelHTML() {
         return `
         <section class="panel" id="roofPurlinsPanel">
+
             <div class="panel-title">
                 <h3>۱۳ ـ طراحی مقدماتی پرلین‌های سقف</h3>
                 <span class="status">پیشنهاد خودکار Z و قوطی</span>
             </div>
 
             <div class="notice">
-                نرم‌افزار فاصله پرلین‌ها و مقطع مناسب را با توجه
-                به هندسه سقف و بارهای واردشده پیشنهاد می‌کند.
-                امکان انتخاب دستی و محاسبه مجدد نیز وجود دارد.
+                نرم‌افزار فاصله پرلین‌ها و مقطع مناسب را
+                بر اساس هندسه سقف و بارهای واردشده پیشنهاد می‌کند.
+                انتخاب دستی نیز امکان‌پذیر است.
             </div>
 
             <h4>۱ ـ روش انتخاب مقطع</h4>
+
             <div class="form-grid">
                 <div class="field">
                     <label for="purlinFamily">خانواده مقطع</label>
@@ -615,8 +746,11 @@
                         <option value="rhs">فقط قوطی مستطیلی</option>
                     </select>
                 </div>
+
                 <div class="field">
-                    <label for="purlinDeflectionLimit">حد خیز L تقسیم بر</label>
+                    <label for="purlinDeflectionLimit">
+                        حد خیز L تقسیم بر
+                    </label>
                     <select id="purlinDeflectionLimit">
                         <option value="180">۱۸۰</option>
                         <option value="200">۲۰۰</option>
@@ -627,83 +761,129 @@
             </div>
 
             <h4>۲ ـ بازه جست‌وجوی فاصله پرلین‌ها</h4>
+
             <div class="form-grid">
                 <div class="field">
-                    <label for="purlinPitchMin">حداقل فاصله (متر)</label>
-                    <input id="purlinPitchMin" type="number"
-                        min="0.3" step="0.05" value="0.60">
+                    <label for="purlinPitchMin">
+                        حداقل فاصله (متر)
+                    </label>
+                    <input id="purlinPitchMin"
+                        type="number" min="0.3"
+                        step="0.05" value="0.60">
                 </div>
+
                 <div class="field">
-                    <label for="purlinPitchMax">حداکثر فاصله (متر)</label>
-                    <input id="purlinPitchMax" type="number"
-                        min="0.4" step="0.05" value="1.50">
+                    <label for="purlinPitchMax">
+                        حداکثر فاصله (متر)
+                    </label>
+                    <input id="purlinPitchMax"
+                        type="number" min="0.4"
+                        step="0.05" value="1.50">
                 </div>
+
                 <div class="field">
-                    <label for="purlinPitchStep">گام جست‌وجو (متر)</label>
-                    <input id="purlinPitchStep" type="number"
-                        min="0.05" step="0.05" value="0.10">
+                    <label for="purlinPitchStep">
+                        گام جست‌وجو (متر)
+                    </label>
+                    <input id="purlinPitchStep"
+                        type="number" min="0.05"
+                        step="0.05" value="0.10">
                 </div>
+
                 <div class="field">
-                    <label for="purlinPitch">فاصله انتخاب دستی (متر)</label>
-                    <input id="purlinPitch" type="number"
-                        min="0.3" step="0.05" value="1.00">
+                    <label for="purlinPitch">
+                        فاصله انتخاب دستی (متر)
+                    </label>
+                    <input id="purlinPitch"
+                        type="number" min="0.3"
+                        step="0.05" value="1.00">
                 </div>
             </div>
 
-            <h4>۳ ـ مشخصات مقطع Z برای انتخاب دستی</h4>
+            <h4>۳ ـ مشخصات مقطع Z</h4>
+
             <div class="form-grid">
                 <div class="field">
-                    <label for="purlinZHeight">ارتفاع جان Z (mm)</label>
-                    <input id="purlinZHeight" type="number"
-                        min="80" value="180">
+                    <label for="purlinZHeight">
+                        ارتفاع جان Z (mm)
+                    </label>
+                    <input id="purlinZHeight"
+                        type="number" min="80" value="180">
                 </div>
+
                 <div class="field">
-                    <label for="purlinZFlange">عرض بال Z (mm)</label>
-                    <input id="purlinZFlange" type="number"
-                        min="20" value="60">
+                    <label for="purlinZFlange">
+                        عرض بال Z (mm)
+                    </label>
+                    <input id="purlinZFlange"
+                        type="number" min="20" value="60">
                 </div>
+
                 <div class="field">
-                    <label for="purlinZLip">لبه برگشتی (mm)</label>
-                    <input id="purlinZLip" type="number"
-                        min="5" value="20">
+                    <label for="purlinZLip">
+                        لبه برگشتی (mm)
+                    </label>
+                    <input id="purlinZLip"
+                        type="number" min="5" value="20">
                 </div>
+
                 <div class="field">
-                    <label for="purlinZThickness">ضخامت Z (mm)</label>
-                    <input id="purlinZThickness" type="number"
-                        min="1" step="0.1" value="2.5">
+                    <label for="purlinZThickness">
+                        ضخامت Z (mm)
+                    </label>
+                    <input id="purlinZThickness"
+                        type="number" min="1"
+                        step="0.1" value="2.5">
                 </div>
             </div>
 
-            <h4>۴ ـ مشخصات قوطی مستطیلی برای انتخاب دستی</h4>
+            <h4>۴ ـ مشخصات قوطی مستطیلی</h4>
+
             <div class="form-grid">
                 <div class="field">
-                    <label for="purlinRhsWidth">عرض قوطی (mm)</label>
-                    <input id="purlinRhsWidth" type="number"
-                        min="20" value="80">
+                    <label for="purlinRhsWidth">
+                        عرض قوطی (mm)
+                    </label>
+                    <input id="purlinRhsWidth"
+                        type="number" min="20" value="80">
                 </div>
+
                 <div class="field">
-                    <label for="purlinRhsHeight">ارتفاع قوطی (mm)</label>
-                    <input id="purlinRhsHeight" type="number"
-                        min="20" value="160">
+                    <label for="purlinRhsHeight">
+                        ارتفاع قوطی (mm)
+                    </label>
+                    <input id="purlinRhsHeight"
+                        type="number" min="20" value="160">
                 </div>
+
                 <div class="field">
-                    <label for="purlinRhsThickness">ضخامت قوطی (mm)</label>
-                    <input id="purlinRhsThickness" type="number"
-                        min="1" step="0.1" value="3">
+                    <label for="purlinRhsThickness">
+                        ضخامت قوطی (mm)
+                    </label>
+                    <input id="purlinRhsThickness"
+                        type="number" min="1"
+                        step="0.1" value="3">
                 </div>
             </div>
 
             <h4>۵ ـ مشخصات مصالح</h4>
+
             <div class="form-grid">
                 <div class="field">
-                    <label for="purlinFy">تنش تسلیم Fy (MPa)</label>
-                    <input id="purlinFy" type="number"
-                        min="100" value="240">
+                    <label for="purlinFy">
+                        تنش تسلیم Fy (MPa)
+                    </label>
+                    <input id="purlinFy"
+                        type="number" min="100" value="240">
                 </div>
+
                 <div class="field">
-                    <label for="purlinE">مدول الاستیسیته E (MPa)</label>
-                    <input id="purlinE" type="number"
-                        min="100000" value="200000">
+                    <label for="purlinE">
+                        مدول الاستیسیته E (MPa)
+                    </label>
+                    <input id="purlinE"
+                        type="number" min="100000"
+                        value="200000">
                 </div>
             </div>
 
@@ -712,6 +892,7 @@
                     class="btn primary" type="button">
                     پیشنهاد خودکار فاصله و مقطع
                 </button>
+
                 <button id="btnManualPurlins"
                     class="btn secondary" type="button">
                     محاسبه مقطع انتخابی من
@@ -719,13 +900,14 @@
             </div>
 
             <div id="purlinResults" class="notice">
-                ابتدا بارگذاری و هندسه پروژه را تکمیل کنید؛
+                ابتدا هندسه و بارگذاری پروژه را تکمیل کنید؛
                 سپس پیشنهاد خودکار را اجرا کنید.
             </div>
 
             <div id="purlinWarning" class="notice">
-                نتایج این بخش مقدماتی هستند و تأیید نهایی طراحی محسوب نمی‌شوند.
+                نتایج این بخش مقدماتی هستند.
             </div>
+
         </section>
         `;
     }
@@ -738,13 +920,17 @@
 
         main.insertAdjacentHTML("beforeend", panelHTML());
 
-        $("btnOptimizePurlins").addEventListener("click", optimize);
-        $("btnManualPurlins").addEventListener("click", applyManual);
+        $("btnOptimizePurlins").addEventListener(
+            "click", optimize
+        );
+
+        $("btnManualPurlins").addEventListener(
+            "click", applyManual
+        );
     }
 
     function getData() {
-        const s = readSettings();
-        return Object.assign({}, s);
+        return Object.assign({}, readSettings());
     }
 
     function setData(data) {
@@ -770,6 +956,7 @@
 
         Object.entries(map).forEach(([key, id]) => {
             const el = $(id);
+
             if (el && data[key] !== undefined) {
                 el.value = data[key];
             }
@@ -789,8 +976,11 @@
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
+        document.addEventListener(
+            "DOMContentLoaded", init
+        );
     } else {
         init();
     }
+
 })();
