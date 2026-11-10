@@ -43,16 +43,25 @@
       const width = tributary * Math.cos(g.angle || 0);
       const gravity = Math.max(0, r.dead + r.live + r.snow) * width;
       const uplift = Math.abs(r.wind) * width;
-      const q = Math.max(gravity, uplift); // kN/m؛ پوش ساده و غیرآیین‌نامه‌ای
-      const qNmm = q; // 1 kN/m = 1 N/mm
+      // دو حالت بارگذاری جداگانه نگه داشته می‌شوند؛ علامت لنگر باد معکوس است.
       const Lmm = a * 1000;
-      const M = qNmm * Lmm * Lmm / 2; // N.mm
-      const V = q * a; // kN
-      const stress = M / W; // MPa
-      const deflection = qNmm * Math.pow(Lmm,4) / (8 * E * I); // mm
       const limit = Lmm / 180;
-      return {side:r.side, gravity, uplift, q, M:M/1e6, V, stress, deflection, limit,
-        bendingOK:stress <= Fy, deflectionOK:deflection <= limit};
+      const checkCase = q => {
+        const qNmm = q; // 1 kN/m = 1 N/mm
+        const M = qNmm * Lmm * Lmm / 2; // N.mm
+        const V = q * a; // kN
+        const stress = M / W; // MPa، قدرمطلق تنش
+        const deflection = qNmm * Math.pow(Lmm,4) / (8 * E * I); // mm
+        return {q, M: M/1e6, V, stress, deflection,
+          bendingOK: stress <= Fy, deflectionOK: deflection <= limit};
+      };
+      const gCase = checkCase(gravity);
+      const wCase = checkCase(uplift);
+      const worst = gCase.stress >= wCase.stress ? gCase : wCase;
+      return {side:r.side, gravity, uplift, gravityCase:gCase, windCase:wCase,
+        q:worst.q, M:worst.M, V:worst.V, stress:worst.stress,
+        deflection:worst.deflection, limit,
+        bendingOK:worst.bendingOK, deflectionOK:worst.deflectionOK};
     });
 
     const ok = results.every(r => r.bendingOK && r.deflectionOK);
@@ -64,16 +73,18 @@
       ${results.map(r => `
         <div class="result-card">
           <strong>شیب ${r.side}</strong>
-          <span>بار خطی پوش: ${fmt(r.q,3)} kN/m</span>
-          <span>لنگر تکیه‌گاهی: ${fmt(r.M,3)} kN.m</span>
-          <span>برش تکیه‌گاهی: ${fmt(r.V,3)} kN</span>
-          <span>تنش خمشی تقریبی: ${fmt(r.stress,1)} MPa — ${r.bendingOK ? "قبول مقدماتی" : "نیازمند اصلاح"}</span>
-          <span>خیز نوک: ${fmt(r.deflection,3)} mm (حد فرضی ${fmt(r.limit,2)} mm) — ${r.deflectionOK ? "قبول مقدماتی" : "نیازمند اصلاح"}</span>
+          <span>بار خطی ثقلی: ${fmt(r.gravity,3)} kN/m</span>
+          <span>بار خطی مکش باد: ${fmt(r.uplift,3)} kN/m</span>
+          <span>لنگر ثقلی: ${fmt(r.gravityCase.M,3)} kN.m</span>
+          <span>لنگر باد با جهت معکوس: ${fmt(-r.windCase.M,3)} kN.m</span>
+          <span>بیشینه قدرمطلق برش: ${fmt(Math.max(r.gravityCase.V,r.windCase.V),3)} kN</span>
+          <span>بیشینه تنش خمشی: ${fmt(r.stress,1)} MPa — ${r.bendingOK ? "قبول مقدماتی" : "نیازمند اصلاح"}</span>
+          <span>بیشینه خیز/تغییرشکل: ${fmt(r.deflection,3)} mm (حد فرضی ${fmt(r.limit,2)} mm) — ${r.deflectionOK ? "قبول مقدماتی" : "نیازمند اصلاح"}</span>
         </div>
       `).join("")}
       <div class="notice">
         <b>${ok ? "از دو کنترل ساده‌شده عبور کرد" : "حداقل یکی از کنترل‌های ساده‌شده مردود است"}</b>
-        <p>این بررسی فقط خمش الاستیک و خیز یک طره ساده با بار یکنواخت را می‌سنجد. پیوستگی پرلین، مهار پیچشی، کمانش موضعی/اعوجاجی، وصله، پیچ‌ها، ورق اتصال، مکش موضعی باد و ترکیبات کامل آیین‌نامه‌ای هنوز کنترل نشده‌اند.</p>
+        <p>این بررسی دو حالت ثقلی و مکش باد را جداگانه با علامت لنگر مخالف نشان می‌دهد؛ سپس بیشینه قدرمطلق تنش و تغییرشکل را گزارش می‌کند. مدل همچنان یک طره ساده با بار یکنواخت است. پیوستگی پرلین، مهار پیچشی، کمانش موضعی/اعوجاجی، وصله، پیچ‌ها، ورق اتصال، مکش موضعی باد و ترکیبات کامل آیین‌نامه‌ای هنوز کنترل نشده‌اند.</p>
         <p>بارهای ورودی شهرمحور و تأییدشده نیستند؛ انتخاب شهر شاهرود به‌تنهایی بار برف و باد معتبر تولید نمی‌کند. خروجی برای آزمایش نرم‌افزار است و تأیید طراحی اجرایی نیست.</p>
       </div>
     `;
