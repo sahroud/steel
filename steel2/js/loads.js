@@ -22,7 +22,21 @@
         windRight: 0,
         windWall: 0,
         windDirection: "left-to-right",
-        note: ""
+        note: "",
+        climate: {
+            city: "shahroud",
+            customCity: "شاهرود",
+            elevation: "",
+            source: "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+            groundSnow: "",
+            basicWind: "",
+            terrain: "",
+            topography: "normal",
+            openingState: "enclosed",
+            openingArea: 25,
+            envelopeArea: "",
+            dominantOpening: "no"
+        }
     };
 
     const combinations = [
@@ -71,7 +85,105 @@
                 جهت اثر باید در مدل بارگذاری مشخص شود.
             </div>
 
-            <h4>الف ـ بار مرده سقف</h4>
+
+            <h4>الف ـ محل پروژه و اطلاعات اقلیمی</h4>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="climateCity">شهر پروژه</label>
+                    <select id="climateCity">
+                        <option value="shahroud">شاهرود (پیش‌فرض)</option>
+                        <option value="semnan">سمنان</option>
+                        <option value="tehran">تهران</option>
+                        <option value="mashhad">مشهد</option>
+                        <option value="tabriz">تبریز</option>
+                        <option value="isfahan">اصفهان</option>
+                        <option value="yazd">یزد</option>
+                        <option value="rasht">رشت</option>
+                        <option value="sari">ساری</option>
+                        <option value="kerman">کرمان</option>
+                        <option value="other">سایر شهرها / ورود دستی</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="climateCustomCity">نام شهر یا محل دقیق پروژه</label>
+                    <input id="climateCustomCity" type="text" value="شاهرود" placeholder="نام شهر، روستا یا محدوده">
+                </div>
+                <div class="field">
+                    <label for="climateElevation">ارتفاع محل از سطح دریا (متر)</label>
+                    <input id="climateElevation" type="number" min="-500" max="6000" step="1" value="">
+                </div>
+                <div class="field">
+                    <label for="climateSource">منبع داده اقلیمی</label>
+                    <input id="climateSource" type="text" value="ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸">
+                </div>
+            </div>
+
+            <h4>ب ـ پارامترهای اقلیمی ورودی (مقادیر تأییدنشده را خالی بگذارید)</h4>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="climateGroundSnow">بار برف زمین Pg (kN/m²)</label>
+                    <input id="climateGroundSnow" type="number" min="0" step="0.01" placeholder="از جدول/نقشه معتبر">
+                </div>
+                <div class="field">
+                    <label for="climateBasicWind">سرعت مبنای باد (m/s)</label>
+                    <input id="climateBasicWind" type="number" min="0" step="0.1" placeholder="از جدول معتبر ایستگاه">
+                </div>
+                <div class="field">
+                    <label for="climateTerrain">رده زبری / مواجهه زمین</label>
+                    <select id="climateTerrain">
+                        <option value="">انتخاب نشده</option>
+                        <option value="open">باز و هموار</option>
+                        <option value="suburban">حومه و موانع پراکنده</option>
+                        <option value="urban">شهری و متراکم</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="climateTopography">شرایط توپوگرافی</label>
+                    <select id="climateTopography">
+                        <option value="normal">عادی / بدون اثر ویژه ثبت‌شده</option>
+                        <option value="hill">تپه یا یال مرتفع</option>
+                        <option value="valley">دره یا گذرگاه باد</option>
+                        <option value="manual">نیازمند بررسی دستی</option>
+                    </select>
+                </div>
+            </div>
+
+            <h4>ج ـ وضعیت بازشوهای پوسته ساختمان</h4>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="buildingOpeningState">طبقه‌بندی وضعیت بازشوها</label>
+                    <select id="buildingOpeningState">
+                        <option value="enclosed">بسته (بازشوها در حالت بهره‌برداری بسته‌اند)</option>
+                        <option value="partially-enclosed">نیمه‌باز / دارای بازشوی غالب</option>
+                        <option value="open">باز (دیوارها عمدتاً باز یا فاقد پوشش‌اند)</option>
+                        <option value="manual">نیازمند ارزیابی مهندس</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="buildingOpeningArea">مساحت کل بازشوهای مؤثر (m²)</label>
+                    <input id="buildingOpeningArea" type="number" min="0" step="0.1" value="25">
+                </div>
+                <div class="field">
+                    <label for="buildingEnvelopeArea">مساحت تقریبی پوسته مورد بررسی (m²)</label>
+                    <input id="buildingEnvelopeArea" type="number" min="0" step="0.1" placeholder="مساحت دیوارها و پوسته">
+                </div>
+                <div class="field">
+                    <label for="buildingDominantOpening">وضعیت بازشوی غالب</label>
+                    <select id="buildingDominantOpening">
+                        <option value="no">ندارد / مشخص نیست</option>
+                        <option value="front">جبهه جلو</option>
+                        <option value="rear">جبهه عقب</option>
+                        <option value="left">دیوار طولی چپ</option>
+                        <option value="right">دیوار طولی راست</option>
+                        <option value="multiple">چند جبهه</option>
+                    </select>
+                </div>
+            </div>
+            <div class="notice" id="climateNotice">
+                بانک نام شهرها آماده است؛ تا زمان تکمیل و کنترل جدول‌های رسمی، هیچ مقدار خودکاری برای باد و برف به پروژه تحمیل نمی‌شود.
+            </div>
+
+            <h4>د ـ بار مرده سقف</h4>
             <div class="form-grid">
                 ${input("loadDeadLeft", "بار مرده سمت چپ", state.deadLeft, false)}
                 ${input("loadDeadRight", "بار مرده سمت راست", state.deadRight, false)}
@@ -213,6 +325,29 @@
         if ($("loadNote")) {
             state.note = $("loadNote").value;
         }
+
+        const climateFields = {
+            city: "climateCity",
+            customCity: "climateCustomCity",
+            elevation: "climateElevation",
+            source: "climateSource",
+            groundSnow: "climateGroundSnow",
+            basicWind: "climateBasicWind",
+            terrain: "climateTerrain",
+            topography: "climateTopography",
+            openingState: "buildingOpeningState",
+            openingArea: "buildingOpeningArea",
+            envelopeArea: "buildingEnvelopeArea",
+            dominantOpening: "buildingDominantOpening"
+        };
+        Object.keys(climateFields).forEach(key => {
+            const el = $(climateFields[key]);
+            if (el) state.climate[key] = el.value;
+        });
+        ["elevation", "groundSnow", "basicWind", "openingArea", "envelopeArea"].forEach(key => {
+            const value = state.climate[key];
+            if (value !== "" && !Number.isFinite(Number(value))) state.climate[key] = "";
+        });
 
         state.combinations = combinations.map((item, index) => ({
             name: item.name,
@@ -421,6 +556,12 @@
             state.note = data.note;
         }
 
+        if (data.climate && typeof data.climate === "object") {
+            Object.keys(state.climate).forEach(key => {
+                if (data.climate[key] !== undefined) state.climate[key] = data.climate[key];
+            });
+        }
+
         if (Array.isArray(data.combinations)) {
             data.combinations.forEach((item, index) => {
                 if (!combinations[index] || !item) return;
@@ -456,6 +597,18 @@
                 $("loadNote").value = state.note;
             }
 
+            const climateIds = {
+                city: "climateCity", customCity: "climateCustomCity",
+                elevation: "climateElevation", source: "climateSource",
+                groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
+                terrain: "climateTerrain", topography: "climateTopography",
+                openingState: "buildingOpeningState", openingArea: "buildingOpeningArea",
+                envelopeArea: "buildingEnvelopeArea", dominantOpening: "buildingDominantOpening"
+            };
+            Object.keys(climateIds).forEach(key => {
+                if ($(climateIds[key])) $(climateIds[key]).value = state.climate[key];
+            });
+
             renderCombinations();
 
             if (data.combinations) {
@@ -490,6 +643,34 @@
         const note = $("loadNote");
         if (note) note.value = state.note;
 
+        const climateCity = $("climateCity");
+        const projectCity = $("city");
+        if (climateCity && projectCity) {
+            const initialCity = projectCity.value === "custom" || projectCity.value === "other"
+                ? "shahroud" : projectCity.value;
+            climateCity.value = initialCity;
+            const cityNames = {
+                shahroud: "شاهرود", semnan: "سمنان", tehran: "تهران",
+                mashhad: "مشهد", tabriz: "تبریز", isfahan: "اصفهان",
+                yazd: "یزد", rasht: "رشت", sari: "ساری", kerman: "کرمان"
+            };
+            if (cityNames[initialCity] && $("climateCustomCity")) {
+                $("climateCustomCity").value = cityNames[initialCity];
+            }
+            climateCity.addEventListener("change", function () {
+                if (cityNames[this.value] && $("climateCustomCity")) {
+                    $("climateCustomCity").value = cityNames[this.value];
+                }
+                if (projectCity) projectCity.value = this.value;
+            });
+            if (projectCity) projectCity.addEventListener("change", function () {
+                if (cityNames[this.value]) {
+                    climateCity.value = this.value;
+                    $("climateCustomCity").value = cityNames[this.value];
+                }
+            });
+        }
+
         const panel = $("advancedLoadPanel");
 
         panel.addEventListener("input", function (event) {
@@ -505,6 +686,9 @@
         $("btnLoadReset").addEventListener("click", reset);
 
         summary();
+        const climateNotice = $("climateNotice");
+        if (climateNotice) climateNotice.textContent =
+            "شهر انتخابی فقط برای شناسایی محل پروژه است. داده‌های باد و برف تا زمان ورود از منبع رسمی، خودکار فرض یا تولید نمی‌شوند.";
     }
 
     window.SteelLoads = {
