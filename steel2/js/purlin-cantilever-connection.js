@@ -75,8 +75,8 @@ function calculate(){
   }));
   if(!rows.length)throw new Error("نیروهای کنسول در دسترس نیستند؛ کنترل کنسول را دوباره اجرا کنید.");
   const worst=rows.reduce((a,b)=>Math.max(a.ir,a.br,a.blockRatio,a.netRatio)>=Math.max(b.ir,b.br,b.blockRatio,b.netRatio)?a:b);
-  const ratioCell=x=>`<td><b>${fmt(x,3)}</b><br><small style="color:${x<=1?"#18794e":"#b42318"}">${x<=1?"قبول در غربالگری":"نیازمند بازنگری"}</small></td>`;
-  const body=rows.map(r=>`<tr><td>${r.side}</td><td>${r.k==="gravity"?"ثقلی":"باد"}</td><td>${fmt(r.V)}</td><td>${fmt(r.M)}</td><td>${fmt(r.v,3)}</td><td>${fmt(r.ten,3)}</td>${ratioCell(r.ir)}${ratioCell(r.br)}${ratioCell(r.blockRatio)}${ratioCell(r.netRatio)}</tr>`).join("");
+  const ratioCell=(x,label)=>`<td data-check="${label}"><b>${fmt(x,3)}</b><br><small style="color:${x<=1?"#18794e":"#b42318"}">${x<=1?"قبول در غربالگری":"نیازمند بازنگری"}</small></td>`;
+  const body=rows.map(r=>`<tr><td>${r.side}</td><td>${r.k==="gravity"?"ثقلی":"باد"}</td><td>${fmt(r.V)}</td><td>${fmt(r.M)}</td><td>${fmt(r.v,3)}</td><td>${fmt(r.ten,3)}</td>${ratioCell(r.ir,"interaction")}${ratioCell(r.br,"bearing")}${ratioCell(r.blockRatio,"block-shear")}${ratioCell(r.netRatio,"net-section")}</tr>`).join("");
   out.innerHTML=`<h4>نتایج غربالگری اتصال پیچی</h4>
   <p>مدل: ${d.type==="clip"?"نبشی/ورق اتصال":d.type==="endplate"?"ورق انتهایی":"نشیمن"}؛ آرایش فرضی: ${fmt(nr,0)} ردیف × ${fmt(nc,0)} ستون؛ تعداد کل پیچ: ${fmt(n,0)}؛ سطح مقطع مؤثر تقریبی رزوه پیچ: ${fmt(area,1)} mm²</p><p>عرض ورق: ${fmt(width,1)} mm؛ فاصله انتهایی: ${fmt(e,1)} mm؛ فاصله کناری: ${fmt(se,1)} mm؛ قطر سوراخ: ${fmt(dh,1)} mm؛ گام ردیف‌ها: ${fmt(p,1)} mm؛ فاصله عرضی: ${fmt(g,1)} mm؛ توزیع کشش با فرض رفتار الاستیک گروه پیچ حول مرکز گروه محاسبه شده است.</p>
   <p>مساحت خالص کششی ورق An: ${fmt(An,1)} mm²؛ ظرفیت طراحی تقریبی سطح خالص: ${fmt(phiNet,2)} kN؛ ظرفیت طراحی تقریبی پارگی بلوکی: ${fmt(phiBlock,2)} kN (با فرض دو مسیر برشی طولی و یک مسیر کششی عرضی؛ نیروهای این دو کنترل از برآیند کشش ردیف‌های کششی گروه پیچ گرفته شده‌اند).</p><p>ظرفیت تقریبی برش هر پیچ: ${fmt(phiV,2)} kN؛ ظرفیت تقریبی کشش هر پیچ: ${fmt(phiT,2)} kN؛ ظرفیت لهیدگی تقریبی ورق برای هر پیچ: ${fmt(bearing,2)} kN</p>
