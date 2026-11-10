@@ -139,16 +139,16 @@
                 const ratio = capacity.phiMy > 0 ? r.moment / capacity.phiMy : Infinity;
                 const status = ratio <= 1 ? "قبول در مقایسه خمشی مقدماتی" : "نیازمند تقویت/بررسی";
                 return `
-                    <tr>
-                        <td><b>${esc(name)}</b></td>
-                        <td>${fmt(r.moment)}</td>
-                        <td>${fmt(capacity.phiMy)}</td>
-                        <td>${fmt(ratio)}</td>
-                        <td>${status}</td>
-                        <td>${esc(r.combination)}</td>
-                        <td>${fmt(r.position)} m</td>
+                    <tr class="cantilever-main-row">
+                        <td data-label="عضو"><b>${esc(name)}</b></td>
+                        <td data-label="بیشینه لنگر (kN.m)">${fmt(r.moment)}</td>
+                        <td data-label="مرجع خمشی φFySx (kN.m)">${fmt(capacity.phiMy)}</td>
+                        <td data-label="نسبت تقاضا به مرجع">${fmt(ratio)}</td>
+                        <td data-label="نتیجه">${status}</td>
+                        <td data-label="ترکیب حاکم">${esc(r.combination)}</td>
+                        <td data-label="محل لنگر (m)">${fmt(r.position)}</td>
                     </tr>
-                    <tr>
+                    <tr class="cantilever-detail-row">
                         <td colspan="7">
                             <b>نیروهای محل اتصال به قاب:</b>
                             لنگر ${fmt(r.supportMoment)} kN.m،
@@ -167,8 +167,25 @@
                 <h4>نتایج کنترل مقدماتی کنسول‌های رفتر</h4>
                 <p>Fy = ${fmt(capacity.fyMPa)} MPa؛ Sx حداقل = ${fmt(capacity.sxCm3)} cm³</p>
                 <p>مرجع خمشی ساده‌شده φFySx = ${fmt(capacity.phiMy)} kN.m (φ = 0.90)</p>
-                <div style="overflow-x:auto">
-                    <table style="width:100%;min-width:850px">
+                <style>
+                    .cantilever-table-wrap{width:100%;overflow-x:auto}
+                    .cantilever-results-table{width:100%;min-width:850px;border-collapse:collapse}
+                    .cantilever-results-table th,.cantilever-results-table td{padding:10px 8px;text-align:center;vertical-align:middle}
+                    @media(max-width:650px){
+                        .cantilever-table-wrap{overflow:visible}
+                        .cantilever-results-table{min-width:0!important;width:100%;display:block}
+                        .cantilever-results-table thead{display:none}
+                        .cantilever-results-table tbody{display:block;width:100%}
+                        .cantilever-results-table tr.cantilever-main-row{display:block;border:1px solid #ccd8de;border-radius:9px;margin:12px 0;overflow:hidden}
+                        .cantilever-results-table tr.cantilever-main-row td{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;text-align:left;padding:9px 10px;border-bottom:1px solid #e1e8ec;white-space:normal;overflow-wrap:anywhere}
+                        .cantilever-results-table tr.cantilever-main-row td:last-child{border-bottom:0}
+                        .cantilever-results-table tr.cantilever-main-row td:before{content:attr(data-label);font-weight:700;color:#385568;flex:0 0 48%;text-align:right}
+                        .cantilever-results-table tr.cantilever-detail-row{display:block;margin:0 0 18px}
+                        .cantilever-results-table tr.cantilever-detail-row td{display:block;width:100%;padding:12px 9px;white-space:normal;overflow-wrap:anywhere;line-height:1.9}
+                    }
+                </style>
+                <div class="cantilever-table-wrap">
+                    <table class="cantilever-results-table">
                         <thead><tr>
                             <th>عضو</th><th>بیشینه |M| (kN.m)</th>
                             <th>φFySx (kN.m)</th><th>نسبت تقاضا/مرجع</th>
