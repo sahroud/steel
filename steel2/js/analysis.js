@@ -207,18 +207,29 @@ function calculate() {
             throw new Error("مشخصات مقاطع معتبر نیستند.");
         }
 
+        // پیش‌آمدگی جانبی سقف: ۸۰ سانتی‌متر در امتداد شیب در هر طرف
+        const sideOverhang = 0.80;
+        const halfSpan = span / 2;
+        const baseSlopeLength = Math.hypot(halfSpan, rise);
+        const slopeCos = halfSpan / baseSlopeLength;
+        const slopeSin = rise / baseSlopeLength;
+
         const nodes = [
             [0, 0],
             [0, height],
             [span / 2, height + rise],
             [span, height],
-            [span, 0]
+            [span, 0],
+            [-sideOverhang * slopeCos, height - sideOverhang * slopeSin],
+            [span + sideOverhang * slopeCos, height - sideOverhang * slopeSin]
         ];
 
         const definitions = [
             { start: 0, end: 1, section: column, type: "ستون چپ" },
-            { start: 1, end: 2, section: rafter, type: "رفتر چپ" },
-            { start: 2, end: 3, section: rafter, type: "رفتر راست" },
+            { start: 5, end: 1, section: rafter, type: "کنسول رفتر چپ", isRafter: true },
+            { start: 1, end: 2, section: rafter, type: "رفتر چپ", isRafter: true },
+            { start: 2, end: 3, section: rafter, type: "رفتر راست", isRafter: true },
+            { start: 3, end: 6, section: rafter, type: "کنسول رفتر راست", isRafter: true },
             { start: 3, end: 4, section: column, type: "ستون راست" }
         ];
 
@@ -269,11 +280,11 @@ function calculate() {
             let qGlobalX = 0;
             let qGlobalY = 0;
 
-            if (definition.type === "رفتر چپ") {
+            if (definition.isRafter && definition.type.includes("چپ")) {
                 qGlobalY = -leftRoofPressure * spacing * c * 1000;
             }
 
-            if (definition.type === "رفتر راست") {
+            if (definition.isRafter && definition.type.includes("راست")) {
                 qGlobalY = -rightRoofPressure * spacing * c * 1000;
             }
 
@@ -288,11 +299,11 @@ function calculate() {
 
             let qLocalY = -qGlobalX * s + qGlobalY * c;
 
-            if (definition.type === "رفتر چپ") {
+            if (definition.isRafter && definition.type.includes("چپ")) {
                 qLocalY -= roofWindLeftLine;
             }
 
-            if (definition.type === "رفتر راست") {
+            if (definition.isRafter && definition.type.includes("راست")) {
                 qLocalY -= roofWindRightLine;
             }
 
@@ -441,7 +452,7 @@ function calculate() {
             fmt(leftReaction.V) + " / " +
             fmt(rightReaction.V) + " kN";
 
-        $("memberCount").textContent = "4";
+        $("memberCount").textContent = String(definitions.length);
 
         const connectionText =
             connection === "fixed" ? "گیردار" : "مفصلی";
@@ -454,8 +465,9 @@ function calculate() {
                 <h4>نتایج تحلیل خطی قاب دوبعدی</h4>
                 <p><b>نوع تکیه‌گاه:</b> ${connectionText}</p>
                 <p><b>روش تحلیل:</b> روش سختی مستقیم</p>
-                <p><b>تعداد گره‌ها:</b> 5</p>
-                <p><b>تعداد اعضا:</b> 4</p>
+                <p><b>تعداد گره‌ها:</b> ${nodes.length}</p>
+                <p><b>تعداد اعضا:</b> ${definitions.length}</p>
+                <p><b>پیش‌آمدگی جانبی رفتر:</b> ${fmt(sideOverhang)} متر در هر طرف، در امتداد شیب</p>
                 <hr>
                 <h4>بارهای اعمال‌شده</h4>
                 <p>بار ثقلی سقف چپ: ${fmt(leftRoofPressure)} kN/m²</p>
@@ -494,10 +506,11 @@ function calculate() {
                 <hr>
                 <div class="notice">
                     <b>مواردی که هنوز در این تحلیل وارد نشده‌اند:</b>
-                    <p>۱. باد دیوارهای جلو و عقب و تحلیل طولی سوله</p>
-                    <p>۲. ترکیبات بار آیین‌نامه‌ای و ضرایب بار</p>
-                    <p>۳. تحلیل مرتبه دوم، اثر P-Delta و کمانش</p>
-                    <p>۴. کنترل مقاومت اعضا، تغییرشکل مجاز و اتصالات</p>
+                    <p>۱. پیش‌آمدگی طولی ابتدا و انتهای سوله در این قاب دوبعدی مدل نشده است</p>
+                    <p>۲. باد دیوارهای جلو و عقب و تحلیل طولی سوله</p>
+                    <p>۳. ترکیبات بار آیین‌نامه‌ای و ضرایب بار</p>
+                    <p>۴. تحلیل مرتبه دوم، اثر P-Delta و کمانش</p>
+                    <p>۵. کنترل مقاومت اعضا، تغییرشکل مجاز و اتصالات کنسول</p>
                 </div>
                 <p style="color:#b45309">
                     هشدار: این خروجی تحلیل خطی اولیه است و به‌تنهایی
