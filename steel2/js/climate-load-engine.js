@@ -77,7 +77,7 @@
     const d=getData(), ready=d.cases.filter(x=>x.value!==null).length;
     el.textContent="حالت‌های دارای مقدار: "+ready+" از "+d.cases.length+" | موارد دارای تأیید آیین‌نامه‌ای: صفر | جهت باد: "+(d.windDirection==="left-to-right"?"چپ به راست":d.windDirection==="right-to-left"?"راست به چپ":"تعیین‌نشده");
   }
-  function setData(data) { restoredMeta=data&&typeof data==="object"?{status:data.status||"",generatedAt:data.generatedAt||""}:null; }
+  function setData(data) { restoredMeta=data&&typeof data==="object"?{status:data.status||"",generatedAt:data.generatedAt||""}:null; updateSummary(); }
   window.SteelClimateLoadEngine={getData,setData,getRoofSideCases,updateSummary};
   document.addEventListener("DOMContentLoaded",()=>{
     render();
