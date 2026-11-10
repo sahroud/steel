@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Roof Purlins Module 1.1
+/* SAHROUD STEEL - Roof Purlins Module 1.2
    Preliminary Z and RHS purlin selection
    Units: kN, m, mm, MPa
    Not a final code design.
@@ -50,9 +50,16 @@
         const length = num("length", 30);
 
         const half = span / 2;
-        const slopeLength = Math.sqrt(
+        const baseSlopeLength = Math.sqrt(
             half * half + rise * rise
         );
+
+        // پیش‌آمدگی‌های مصوب پروژه: ۸۰ سانتی‌متر در امتداد شیب
+        // در هر لبه جانبی و ۸۰ سانتی‌متر در هر انتهای طولی
+        const sideOverhang = 0.80;
+        const endOverhang = 0.80;
+        const slopeLength = baseSlopeLength + sideOverhang;
+        const roofLength = length + 2 * endOverhang;
         const angle = Math.atan2(rise, half);
 
         return {
@@ -60,7 +67,11 @@
             rise,
             spacing,
             length,
+            baseSlopeLength,
             slopeLength,
+            roofLength,
+            sideOverhang,
+            endOverhang,
             angle,
             cos: Math.cos(angle),
             frames: Math.ceil(length / spacing) + 1
@@ -296,13 +307,14 @@
         const deflectionOK =
             deflection <= allowableDeflection;
 
-        // وزن یک پرلین در هر شیب
+        // تعداد ردیف‌ها در هر شیب با احتساب پیش‌آمدگی ۸۰ سانتی‌متری
+        // در امتداد شیب؛ طول هر ردیف نیز با دو پیش‌آمدگی انتهایی افزایش می‌یابد.
         const purlinCountPerSlope =
-            Math.ceil(g.length / pitch);
+            Math.ceil(g.slopeLength / pitch) + 1;
 
         const weightPerSlope =
             section.weight *
-            g.slopeLength *
+            g.roofLength *
             purlinCountPerSlope;
 
         return {
@@ -543,6 +555,21 @@
             </div>
 
             <div class="result-card">
+                <span>پیش‌آمدگی جانبی سقف در امتداد شیب (هر طرف)</span>
+                <strong>${fmt(r.geometry.sideOverhang, 2)} متر</strong>
+            </div>
+
+            <div class="result-card">
+                <span>پیش‌آمدگی طولی سقف (ابتدا و انتها)</span>
+                <strong>${fmt(r.geometry.endOverhang, 2)} متر در هر انتها</strong>
+            </div>
+
+            <div class="result-card">
+                <span>طول کل سقف در امتداد سوله با پیش‌آمدگی‌ها</span>
+                <strong>${fmt(r.geometry.roofLength, 2)} متر</strong>
+            </div>
+
+            <div class="result-card">
                 <span>فاصله پیشنهادی روی شیب</span>
                 <strong>${fmt(b.pitch, 2)} متر</strong>
             </div>
@@ -635,6 +662,16 @@
                 <li>
                     مهار جانبی بال فشاری و عملکرد دیافراگمی سقف
                     در محاسبات منظور نشده‌اند.
+                </li>
+                <li>
+                    پیش‌آمدگی‌های ۸۰ سانتی‌متری در هندسه و برآورد تعداد و وزن
+                    پرلین‌ها منظور شده‌اند؛ اما کنترل سازه‌ای طره‌ها، تیرهای
+                    کنسولی، اتصالات و مکش باد هنوز به‌صورت مستقل انجام نشده است.
+                </li>
+                <li>
+                    مدل ساده فعلی، پرلین را در دهانه بین قاب‌ها بررسی می‌کند؛
+                    اثر کنسول ۸۰ سانتی‌متری ابتدا و انتهای طولی و نیز تکیه‌گاه
+                    واقعی پیش‌آمدگی جانبی باید در مرحله تحلیل سازه‌ای کنترل شود.
                 </li>
                 <li>
                     مکش باد، بار برف نامتقارن و جهت واقعی بارها
