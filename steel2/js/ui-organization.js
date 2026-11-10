@@ -152,6 +152,20 @@
         panel.dataset.smartOrganized = "1";
     }
 
+    function renumberPanels() {
+        const panels = Array.from(document.querySelectorAll("main .panel"));
+        let number = 0;
+        panels.forEach(panel => {
+            const title = panel.querySelector(".smart-panel-title");
+            if (!title) return;
+            number += 1;
+            const original = panel.dataset.smartTitle ||
+                title.textContent.replace(/^\\s*\\d+\\s*[ـ–.)-]\\s*/, "").trim();
+            panel.dataset.smartTitle = original;
+            title.textContent = number + " ـ " + original;
+            panel.dataset.sectionNumber = String(number);
+        });
+    }
     function scan(root) {
         if (!root) return;
 
@@ -162,6 +176,7 @@
         if (root.querySelectorAll) {
             root.querySelectorAll(".panel").forEach(organize);
         }
+        renumberPanels();
     }
 
     function init() {
@@ -177,6 +192,7 @@
                         scan(node);
                     }
                 });
+                renumberPanels();
             });
         });
 
