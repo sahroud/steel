@@ -93,9 +93,13 @@
 
   function init() {
     if ($("longitudinalCantileverPanel")) return;
-    const footer = document.querySelector("main footer");
-    if (!footer) return;
-    footer.insertAdjacentHTML("beforebegin", `
+    const main = document.querySelector("main");
+    if (!main) return;
+    const statusPanel = Array.from(main.querySelectorAll(".panel"))
+      .find(panel => panel.textContent.includes("وضعیت پروژه"));
+    const insertionPoint = statusPanel || main.querySelector("footer");
+    if (!insertionPoint) return;
+    insertionPoint.insertAdjacentHTML("beforebegin", `
       <section class="panel" id="longitudinalCantileverPanel">
         <div class="panel-title"><h3>کنترل کنسول طولی پرلین‌ها</h3></div>
         <div class="notice">کنترل مقدماتی پیش‌آمدگی ۸۰ سانتی‌متری پرلین‌ها در ابتدا و انتهای طول سوله، با استفاده از مقطع پیشنهادی و بارهای واردشده.</div>
