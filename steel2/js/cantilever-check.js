@@ -202,26 +202,33 @@
     }
 
     function createPanel() {
-        if ($("cantileverCheckPanel")) return;
-        const panel = document.createElement("section");
-        panel.className = "panel";
-        panel.id = "cantileverCheckPanel";
-        panel.innerHTML = `
-            <div class="panel-title"><h3>کنترل کنسول‌های رفتر</h3></div>
-            <div class="notice">
-                استخراج تقاضای خمشی، نیروهای محل اتصال و خیز نسبی نوک کنسول از ترکیبات بار.
-            </div>
-            <div class="button-grid">
-                <button id="btnCantileverCheck" class="btn primary" type="button">محاسبه کنترل کنسول‌ها</button>
-            </div>
-            <div id="cantileverCheckResults"></div>
-        `;
-        const main = document.querySelector("main");
-        const statusPanel = Array.from(main.querySelectorAll(".panel"))
-            .find(p => p.querySelector("h3")?.textContent.includes("وضعیت پروژه"));
-        if (statusPanel) main.insertBefore(panel, statusPanel);
-        else main.appendChild(panel);
-        $("btnCantileverCheck").addEventListener("click", calculate);
+        let panel = $("cantileverCheckPanel");
+        if (!panel) {
+            const main = document.querySelector("main");
+            if (!main) return;
+            panel = document.createElement("section");
+            panel.className = "panel";
+            panel.id = "cantileverCheckPanel";
+            panel.innerHTML = `
+                <div class="panel-title"><h3>کنترل کنسول‌های رفتر</h3></div>
+                <div class="notice">
+                    استخراج تقاضای خمشی، نیروهای محل اتصال و خیز نسبی نوک کنسول از ترکیبات بار.
+                </div>
+                <div class="button-grid">
+                    <button id="btnCantileverCheck" class="btn primary" type="button">محاسبه کنترل کنسول‌ها</button>
+                </div>
+                <div id="cantileverCheckResults"></div>
+            `;
+            const statusPanel = Array.from(main.querySelectorAll(".panel"))
+                .find(p => p.querySelector("h3")?.textContent.includes("وضعیت پروژه"));
+            if (statusPanel) main.insertBefore(panel, statusPanel);
+            else main.appendChild(panel);
+        }
+        const button = $("btnCantileverCheck");
+        if (button && button.dataset.bound !== "1") {
+            button.addEventListener("click", calculate);
+            button.dataset.bound = "1";
+        }
     }
 
     window.SteelCantileverCheck = { calculate };
