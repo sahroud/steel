@@ -77,7 +77,8 @@ function ensureTools(){
 function getData(){return {schema:"sahroud-steel-climate-db",version:1,records:JSON.parse(JSON.stringify(records))};}
 function setData(data){
  if(!data||data.schema!=="sahroud-steel-climate-db"||!data.records)return;
- Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:r.basicWind===null?null:Number(r.basicWind),groundSnow:r.groundSnow===null?null:Number(r.groundSnow),elevation:r.elevation===null?null:Number(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
+ const cleanNumber=v=>v===null||v===undefined||v===""?null:(Number.isFinite(Number(v))?Number(v):null);
+ Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
  refreshStatus();
 }
 window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity};
