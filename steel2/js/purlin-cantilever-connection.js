@@ -1,11 +1,11 @@
-/* SAHROUD STEEL - Preliminary purlin cantilever connection screen 1.0 */
+/* SAHROUD STEEL - Preliminary purlin cantilever connection screen 1.1 */
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
 const fmt=(v,d=2)=>Number.isFinite(Number(v))?Number(v).toLocaleString("fa-IR",{minimumFractionDigits:d,maximumFractionDigits:d}):"—";
-const defaults={type:"clip",rows:2,cols:2,diameter:16,hole:18,fub:800,plateThickness:10,plateFu:360,edge:35,pitch:50,gage:60,lever:100};
+const defaults={type:"clip",rows:2,cols:2,diameter:16,hole:18,fub:800,plateThickness:10,plateFu:360,edge:35,pitch:50,gage:60};
 let pendingData=Object.assign({},defaults);
-const ids={type:"pcConnType",rows:"pcConnRows",cols:"pcConnCols",diameter:"pcConnDiameter",hole:"pcConnHole",fub:"pcConnFub",plateThickness:"pcConnPlateT",plateFu:"pcConnPlateFu",edge:"pcConnEdge",pitch:"pcConnPitch",gage:"pcConnGage",lever:"pcConnLever"};
+const ids={type:"pcConnType",rows:"pcConnRows",cols:"pcConnCols",diameter:"pcConnDiameter",hole:"pcConnHole",fub:"pcConnFub",plateThickness:"pcConnPlateT",plateFu:"pcConnPlateFu",edge:"pcConnEdge",pitch:"pcConnPitch",gage:"pcConnGage"};
 function getData(){const d=Object.assign({},pendingData);Object.entries(ids).forEach(([k,id])=>{if($(id))d[k]=$(id).value;});pendingData=Object.assign({},d);return d;}
 function setData(data){pendingData=Object.assign({},defaults,data||{});Object.entries(ids).forEach(([k,id])=>{if($(id)&&pendingData[k]!==undefined)$(id).value=pendingData[k];});}
 function bindButton(){
@@ -52,7 +52,7 @@ function calculate(){
   if(!(Number.isInteger(nr)&&nr>=2&&Number.isInteger(nc)&&nc>=1&&db>0&&dh>=db&&fub>0&&t>0&&fu>0&&e>dh/2&&p>=dh&&g>=dh))throw new Error("هندسه گروه پیچ را بررسی کنید: حداقل ۲ ردیف، حداقل ۱ پیچ در هر ردیف، سوراخ بزرگ‌تر یا مساوی قطر پیچ و فاصله‌های معتبر لازم است.");
   const grossArea=Math.PI*db*db/4,area=.78*grossArea;const yPositions=Array.from({length:nr},(_,i)=>(i-(nr-1)/2)*p);const sumY2=yPositions.reduce((sum,y)=>sum+nc*y*y,0);const yMax=Math.max(...yPositions);
   const phiV=.75*.48*fub*area/1000,phiT=.75*.75*fub*area/1000;
-  const bearing=.75*Math.min(1.2*(e-db/2)*t*fu,2.4*db*t*fu)/1000;
+  const bearing=.75*Math.min(1.2*(e-dh/2)*t*fu,2.4*db*t*fu)/1000;
   const rows=[];
   cant.results.forEach(side=>["gravity","wind"].forEach(k=>{const c=side[k];if(!c)return;
    const V=Math.abs(Number(c.V)||0),M=Math.abs(Number(c.M)||0),v=V/n,ten=sumY2>0?M*1000*yMax/sumY2:0;
