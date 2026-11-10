@@ -28,8 +28,7 @@
 
     function forceAt(member, x) {
         const q = Number(member.localLoadY) || 0;
-        return -(Number(member.momentStart) || 0) * 0 +
-            -(Number(member.momentStart) || 0) +
+        return -(Number(member.momentStart) || 0) +
             (Number(member.shearStart) || 0) * x +
             0.5 * q * x * x;
     }
