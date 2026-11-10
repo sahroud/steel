@@ -8,8 +8,15 @@ let pendingData=Object.assign({},defaults);
 const ids={type:"pcConnType",bolts:"pcConnBolts",diameter:"pcConnDiameter",fub:"pcConnFub",plateThickness:"pcConnPlateT",plateFu:"pcConnPlateFu",edge:"pcConnEdge",pitch:"pcConnPitch",lever:"pcConnLever"};
 function getData(){const d=Object.assign({},pendingData);Object.entries(ids).forEach(([k,id])=>{if($(id))d[k]=$(id).value;});pendingData=Object.assign({},d);return d;}
 function setData(data){pendingData=Object.assign({},defaults,data||{});Object.entries(ids).forEach(([k,id])=>{if($(id)&&pendingData[k]!==undefined)$(id).value=pendingData[k];});}
+function bindButton(){
+ const button=$("btnPurlinConnCalc");
+ if(button&&button.dataset.connectionBound!=="1"){
+  button.addEventListener("click",calculate);
+  button.dataset.connectionBound="1";
+ }
+}
 function ensurePanel(){
- if($("purlinCantileverConnectionPanel"))return;
+ if($("purlinCantileverConnectionPanel")){bindButton();return;}
  const main=document.querySelector("main");if(!main)return;
  const anchor=$("longitudinalCantileverPanel")||$("connectionDesignPanel");
  const panel=document.createElement("section");panel.className="panel";panel.id="purlinCantileverConnectionPanel";
@@ -34,7 +41,7 @@ function ensurePanel(){
  if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(panel,anchor.nextSibling);
  else if(statusPanel&&statusPanel.parentNode)statusPanel.parentNode.insertBefore(panel,statusPanel);
  else main.appendChild(panel);
- $("btnPurlinConnCalc").addEventListener("click",calculate);setData(pendingData);
+ bindButton();setData(pendingData);
 }
 function calculate(){
  const out=$("purlinConnResults");
@@ -69,9 +76,11 @@ window.SteelPurlinCantileverConnection={getData,setData,calculate,lastResult:nul
 function boot(){
  ensurePanel();
  const main=document.querySelector("main");
- if(!main)return;
- const observer=new MutationObserver(()=>{if(!$("purlinCantileverConnectionPanel"))ensurePanel();});
- observer.observe(main,{childList:true,subtree:true});
+ if(main){
+  const observer=new MutationObserver(()=>ensurePanel());
+  observer.observe(main,{childList:true,subtree:true});
+ }
+ window.addEventListener("load",ensurePanel,{once:true});
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
