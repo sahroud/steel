@@ -1,5 +1,9 @@
 
-/* SAHROUD STEEL - Compression Buckling Check */
+/* SAHROUD STEEL - Compression Buckling Check
+   Version 2.1
+   Consistent axial compression sign with interaction module
+   Units: N, m, Pa; displayed kN
+*/
 (function () {
     "use strict";
 
@@ -203,36 +207,24 @@
 
             <div class="notice">
                 <b>محور قوی</b>
-
                 <p>شعاع ژیراسیون rx: ${fmt(x.r * 100)} cm</p>
                 <p>لاغری KxLx/rx: ${fmt(x.slenderness)}</p>
                 <p>تنش کمانش الاستیک Fe: ${fmt(x.Fe / 1e6)} MPa</p>
                 <p>تنش بحرانی Fcr: ${fmt(x.Fcr / 1e6)} MPa</p>
                 <p>نوع کمانش: ${x.branch}</p>
                 <p>مقاومت اسمی Pn: ${fmt(x.Pn / 1000)} kN</p>
-                <p>
-                    <b>
-                        مقاومت طراحی φPn:
-                        ${fmt(x.designCapacity / 1000)} kN
-                    </b>
-                </p>
+                <p><b>مقاومت طراحی φPn: ${fmt(x.designCapacity / 1000)} kN</b></p>
             </div>
 
             <div class="notice">
                 <b>محور ضعیف</b>
-
                 <p>شعاع ژیراسیون ry: ${fmt(y.r * 100)} cm</p>
                 <p>لاغری KyLy/ry: ${fmt(y.slenderness)}</p>
                 <p>تنش کمانش الاستیک Fe: ${fmt(y.Fe / 1e6)} MPa</p>
                 <p>تنش بحرانی Fcr: ${fmt(y.Fcr / 1e6)} MPa</p>
                 <p>نوع کمانش: ${y.branch}</p>
                 <p>مقاومت اسمی Pn: ${fmt(y.Pn / 1000)} kN</p>
-                <p>
-                    <b>
-                        مقاومت طراحی φPn:
-                        ${fmt(y.designCapacity / 1000)} kN
-                    </b>
-                </p>
+                <p><b>مقاومت طراحی φPn: ${fmt(y.designCapacity / 1000)} kN</b></p>
             </div>
 
             <div class="notice">
@@ -246,13 +238,11 @@
     }
 
     function checkMember(member) {
-        const title =
-            member === "column" ? "ستون" : "رفتر";
+        const title = member === "column" ? "ستون" : "رفتر";
 
-        const outputId =
-            member === "column"
-                ? "columnBucklingResults"
-                : "rafterBucklingResults";
+        const outputId = member === "column"
+            ? "columnBucklingResults"
+            : "rafterBucklingResults";
 
         try {
             const result = getMemberCapacity(member);
@@ -267,12 +257,20 @@
 
         } catch (error) {
             $(outputId).innerHTML = "";
-
             $("bucklingMessage").textContent =
                 "خطا: " + error.message;
-
             $("bucklingMessage").style.color = "#b45309";
         }
+    }
+
+    // قرارداد مشترک با ماژول اندرکنش:
+    // N مثبت = فشار
+    // N = -axialStart - localLoadX*x
+    function axialForceAt(member, x) {
+        const axialStart = Number(member.axialStart) || 0;
+        const qx = Number(member.localLoadX) || 0;
+
+        return -axialStart - qx * x;
     }
 
     function checkCombinationBuckling() {
@@ -305,7 +303,7 @@
                 demand[name] = {
                     value: 0,
                     combination: "—",
-                    end: "—"
+                    position: "—"
                 };
             });
 
@@ -316,29 +314,28 @@
                             demand,
                             member.name
                         )
-                    ) {
-                        return;
-                    }
+                    ) return;
 
-                    // در مدل فعلی N مثبت به‌عنوان فشار در نظر گرفته شده است.
-                    [
-                        {
-                            value: Number(member.axialStart),
-                            end: "ابتدا"
-                        },
-                        {
-                            value: Number(member.axialEnd),
-                            end: "انتها"
-                        }
-                    ].forEach(force => {
-                        if (
-                            Number.isFinite(force.value) &&
-                            force.value > demand[member.name].value
-                        ) {
+                    const L = Number(member.length);
+
+                    if (!(Number.isFinite(L) && L > 0)) return;
+
+                    // چون نیروی محوری تحت بار گسترده یکنواخت خطی است،
+                    // بیشینه فشار در یکی از دو انتهای عضو رخ می‌دهد.
+                    const stations = [
+                        { x: 0, label: "ابتدا" },
+                        { x: L, label: "انتها" }
+                    ];
+
+                    stations.forEach(station => {
+                        const N = axialForceAt(member, station.x);
+                        const compression = Math.max(0, N);
+
+                        if (compression > demand[member.name].value) {
                             demand[member.name] = {
-                                value: force.value,
+                                value: compression,
                                 combination: item.name,
-                                end: force.end
+                                position: station.label
                             };
                         }
                     });
@@ -349,15 +346,13 @@
                 const result = members[name];
                 const d = demand[name];
 
-                const ratio =
-                    result.capacityKN > 0
-                        ? d.value / result.capacityKN
-                        : Infinity;
+                const ratio = result.capacityKN > 0
+                    ? d.value / result.capacityKN
+                    : Infinity;
 
-                const status =
-                    ratio <= 1
-                        ? "قبول مقدماتی"
-                        : "عدم کفایت مقدماتی";
+                const status = ratio <= 1
+                    ? "قبول مقدماتی"
+                    : "عدم کفایت مقدماتی";
 
                 return `
                     <tr>
@@ -370,22 +365,18 @@
                         <td>${fmt(ratio * 100, 1)}%</td>
                         <td>${status}</td>
                         <td>${d.combination}</td>
-                        <td>${d.end}</td>
+                        <td>${d.position}</td>
                     </tr>
                 `;
             }).join("");
 
             output.innerHTML = `
                 <hr>
-
-                <h4>
-                    کنترل مقدماتی کمانش اعضا در ترکیبات بار LRFD
-                </h4>
+                <h4>کنترل مقدماتی کمانش اعضا در ترکیبات بار LRFD ـ نسخه ۲.۱</h4>
 
                 <p>
-                    فقط نیروهای محوری فشاری مثبت در دو انتهای اعضا
-                    بررسی شده‌اند. کشش و اندرکنش نیروی محوری و لنگر
-                    در این جدول وارد نشده است.
+                    قرارداد علامت نیرو با ماژول اندرکنش یکسان شده است:
+                    نیروی محوری مثبت به معنی فشار است.
                 </p>
 
                 <div style="overflow-x:auto">
@@ -408,37 +399,21 @@
                                 <th>محل</th>
                             </tr>
                         </thead>
-
-                        <tbody>
-                            ${rows}
-                        </tbody>
+                        <tbody>${rows}</tbody>
                     </table>
                 </div>
 
                 <div class="notice">
-                    این جدول کنترل مقدماتی فشار محوری در برابر
-                    کمانش خمشی کلی است.
-
-                    <p>
-                        لاغری‌ها بر اساس طول‌های مهارنشده و ضرایب K
-                        واردشده توسط کاربر محاسبه شده‌اند.
-                    </p>
-
-                    <p>
-                        ظرفیت ستون‌های چپ و راست یکسان و ظرفیت
-                        رفترهای چپ و راست یکسان فرض شده است.
-                    </p>
-
-                    <p>
-                        کنترل اندرکنش N-M، کمانش پیچشی،
-                        کمانش موضعی و اثرات مرتبه دوم
-                        در این جدول انجام نشده است.
-                    </p>
+                    این جدول کنترل مقدماتی فشار محوری در برابر کمانش خمشی کلی است.
+                    <p>لاغری‌ها بر اساس طول‌های مهارنشده و ضرایب K واردشده توسط کاربر محاسبه شده‌اند.</p>
+                    <p>ظرفیت ستون‌های چپ و راست یکسان و ظرفیت رفترهای چپ و راست یکسان فرض شده است.</p>
+                    <p>کنترل اندرکنش N-M، کمانش پیچشی، کمانش موضعی و اثرات مرتبه دوم در این جدول انجام نشده است.</p>
+                    <p>نتیجه قبول مقدماتی، تأیید طراحی اجرایی یا ایمنی سازه نیست.</p>
                 </div>
             `;
 
             $("bucklingMessage").textContent =
-                "کنترل مقدماتی فشار و لاغری اعضا برای ترکیبات بار انجام شد.";
+                "کنترل فشار محوری با قرارداد علامت یکسان برای تمام ترکیبات انجام شد.";
 
             $("bucklingMessage").style.color = "#15803d";
 
@@ -468,5 +443,4 @@
     } else {
         init();
     }
-
 })();
