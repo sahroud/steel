@@ -8,9 +8,9 @@
     const $ = id => document.getElementById(id);
     const fmt = (v, d = 2) => Number.isFinite(Number(v))
         ? Number(v).toLocaleString("fa-IR", {minimumFractionDigits:d, maximumFractionDigits:d}) : "—";
-    function field(id, label, unit) {
+    function field(id, label, unit, value) {
         return `<div class="field"><label for="${id}">${label} (${unit})</label>
-        <input id="${id}" type="number" min="0" step="0.1" placeholder="وارد کنید"></div>`;
+        <input id="${id}" type="number" min="0" step="0.1" value="${value}" placeholder="وارد کنید"></div>`;
     }
     function createPanel() {
         if ($("connectionDesignPanel")) return;
@@ -29,11 +29,11 @@
             <div id="connectionActions" class="notice">ابتدا تحلیل ترکیبات بار و کنترل کنسول‌ها را اجرا کنید.</div>
             <h4>۲ ـ هندسه ورق و گروه جوش مستطیلی</h4>
             <div class="form-grid">
-                ${field("connPlateThickness", "ضخامت ورق اتصال", "mm")}
-                ${field("connPlateWidth", "عرض ورق / فاصله خطوط جوش", "mm")}
-                ${field("connPlateHeight", "ارتفاع گروه جوش", "mm")}
-                ${field("connWeldSize", "اندازه ساق جوش گوشه", "mm")}
-                ${field("connFexx", "مقاومت کششی الکترود FEXX", "MPa")}
+                ${field("connPlateThickness", "ضخامت ورق اتصال ـ مقدار آزمایشی", "mm", 10)}
+                ${field("connPlateWidth", "عرض ورق / فاصله خطوط جوش ـ آزمایشی", "mm", 200)}
+                ${field("connPlateHeight", "ارتفاع گروه جوش ـ آزمایشی", "mm", 300)}
+                ${field("connWeldSize", "اندازه ساق جوش گوشه ـ آزمایشی", "mm", 6)}
+                ${field("connFexx", "مقاومت کششی الکترود FEXX ـ آزمایشی", "MPa", 490)}
             </div>
             <div class="notice">
                 مدل محاسباتی: چهار خط جوش پیوسته روی محیط مستطیل، با مرکز هندسی در مرکز ورق.
