@@ -31,13 +31,14 @@
             ? "fixed" : "pinned";
 
         const W = 600, H = 300, marginX = 75, groundY = 235, availableH = 175;
+        const overhang = 0.80;
         const scale = Math.min(
-            (W - 2 * marginX) / span,
+            (W - 2 * marginX) / (span + 2 * overhang),
             availableH / (height + rise || height)
         );
 
-        const leftX = marginX;
-        const rightX = W - marginX;
+        const leftX = marginX + overhang * scale;
+        const rightX = leftX + span * scale;
         const baseY = groundY;
         const eaveY = groundY - height * scale;
         const ridgeY = groundY - (height + rise) * scale;
@@ -116,8 +117,20 @@
         line(35, baseY, W - 35, baseY, "#64748b", 2);
         line(leftX, baseY, leftX, eaveY, "#176b9b", 7);
         line(rightX, baseY, rightX, eaveY, "#176b9b", 7);
+        const roofAngle = Math.atan2(rise, span / 2);
+        const tipOffsetX = overhang * scale * Math.cos(roofAngle);
+        const tipOffsetY = overhang * scale * Math.sin(roofAngle);
+        const leftTipX = leftX - tipOffsetX;
+        const leftTipY = eaveY + tipOffsetY;
+        const rightTipX = rightX + tipOffsetX;
+        const rightTipY = eaveY + tipOffsetY;
+
+        line(leftTipX, leftTipY, leftX, eaveY, "#b45309", 5);
         line(leftX, eaveY, midX, ridgeY, "#d97706", 7);
         line(midX, ridgeY, rightX, eaveY, "#d97706", 7);
+        line(rightX, eaveY, rightTipX, rightTipY, "#b45309", 5);
+        label(leftTipX, leftTipY - 9, "کنسول ۰٫۸ m", 9, "#92400e");
+        label(rightTipX, rightTipY - 9, "کنسول ۰٫۸ m", 9, "#92400e");
 
         [
             [leftX, baseY], [leftX, eaveY], [midX, ridgeY],
