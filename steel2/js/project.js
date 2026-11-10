@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Project Manager 2.6 */
+/* SAHROUD STEEL - Project Manager 2.7 */
 (function () {
     "use strict";
 
@@ -38,7 +38,7 @@
 
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
-            version: "2.6"
+            version: "2.7"
         };
 
         if (window.SteelLoads &&
@@ -61,10 +61,16 @@
             data.girders = window.SteelGirder.getData();
         }
 
-        // ذخیره وضعیت قیدهای افقی دیوار
+        // ذخیره قیدهای افقی دیوار
         if (window.SteelTies &&
             typeof window.SteelTies.getData === "function") {
             data.wallTies = window.SteelTies.getData();
+        }
+
+        // ذخیره مشخصات قیدهای طولی سقف
+        if (window.SteelRoofTies &&
+            typeof window.SteelRoofTies.getData === "function") {
+            data.roofTies = window.SteelRoofTies.getData();
         }
 
         return data;
@@ -181,7 +187,7 @@
         }, 1000);
 
         setStatus(
-            "پروژه همراه با بارگذاری، مقاطع، تیرورق‌ها، بازشوها و قیدهای دیوار ذخیره شد."
+            "پروژه همراه با بارگذاری، مقاطع، تیرورق‌ها، بازشوها، قیدهای دیوار و قیدهای سقف ذخیره شد."
         );
     }
 
@@ -248,11 +254,16 @@
             window.SteelGirder.setData(data.girders);
         }
 
-        // بازیابی تنظیمات قیدهای افقی دیوار
-        // در پروژه‌های قدیمی که wallTies ندارند، قید دوم خاموش می‌ماند.
+        // بازیابی قیدهای افقی دیوار
         if (window.SteelTies &&
             typeof window.SteelTies.setData === "function") {
             window.SteelTies.setData(data.wallTies || {});
+        }
+
+        // بازیابی مشخصات قیدهای طولی سقف
+        if (window.SteelRoofTies &&
+            typeof window.SteelRoofTies.setData === "function") {
+            window.SteelRoofTies.setData(data.roofTies || {});
         }
 
         // بازسازی مهاربندی‌ها
@@ -261,14 +272,14 @@
             window.SteelBracing.drawAll();
         }
 
-        // بازسازی قیدهای افقی
+        // بازسازی قیدهای افقی دیوار
         if (window.SteelTies &&
             typeof window.SteelTies.drawAll === "function") {
             window.SteelTies.drawAll();
         }
 
         setStatus(
-            "پروژه بازیابی شد؛ قیدهای افقی دیوار و مهاربندی‌ها نیز بازسازی شدند."
+            "پروژه بازیابی شد؛ تنظیمات قیدهای دیوار و سقف نیز بازیابی شدند."
         );
     }
 
