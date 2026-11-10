@@ -46,8 +46,15 @@ function ensurePanel(){
 function calculate(){
  const out=$("purlinConnResults");
  try{
+  const purlin=window.SteelRoofPurlins?.lastResult;
+  if(!purlin||!purlin.best)throw new Error("ابتدا در بخش طراحی پرلین سقف، پیشنهاد خودکار یا محاسبه مقطع انتخابی را اجرا کنید.");
+  const cantileverButton=$("btnLongitudinalCantilever");
+  if(!cantileverButton)throw new Error("دکمه کنترل کنسول طولی پیدا نشد؛ صفحه را یک‌بار تازه‌سازی کنید.");
+  // Re-run the cantilever calculation from the latest purlin and load inputs,
+  // so a page refresh or changed purlin settings cannot leave stale/missing data.
+  cantileverButton.click();
   const cant=window.SteelLongitudinalCantilever?.lastResult;
-  if(!cant||!Array.isArray(cant.results)||!cant.results.length)throw new Error("ابتدا مقطع پرلین را محاسبه و سپس کنترل کنسول طولی را اجرا کنید.");
+  if(!cant||!Array.isArray(cant.results)||!cant.results.length)throw new Error("کنترل کنسول طولی انجام نشد. پیام بخش کنترل کنسول طولی را بررسی کنید.");
   const d=getData(),nr=Number(d.rows),nc=Number(d.cols),n=nr*nc,db=Number(d.diameter),dh=Number(d.hole),fub=Number(d.fub),t=Number(d.plateThickness),fu=Number(d.plateFu),e=Number(d.edge),p=Number(d.pitch),g=Number(d.gage);
   if(!(Number.isInteger(nr)&&nr>=2&&Number.isInteger(nc)&&nc>=1&&db>0&&dh>=db&&fub>0&&t>0&&fu>0&&e>dh/2&&p>=dh&&g>=dh))throw new Error("هندسه گروه پیچ را بررسی کنید: حداقل ۲ ردیف، حداقل ۱ پیچ در هر ردیف، سوراخ بزرگ‌تر یا مساوی قطر پیچ و فاصله‌های معتبر لازم است.");
   const grossArea=Math.PI*db*db/4,area=.78*grossArea;const yPositions=Array.from({length:nr},(_,i)=>(i-(nr-1)/2)*p);const sumY2=yPositions.reduce((sum,y)=>sum+nc*y*y,0);const yMax=Math.max(...yPositions);
