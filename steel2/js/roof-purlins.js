@@ -955,7 +955,10 @@
         const main = document.querySelector("main");
         if (!main) return;
 
-        main.insertAdjacentHTML("beforeend", panelHTML());
+        // Keep this generated panel inside the main content, before the footer.
+        const footer = main.querySelector("footer");
+        if (footer) footer.insertAdjacentHTML("beforebegin", panelHTML());
+        else main.insertAdjacentHTML("beforeend", panelHTML());
 
         $("btnOptimizePurlins").addEventListener(
             "click", optimize
