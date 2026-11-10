@@ -401,14 +401,27 @@ function calculate() {
             const localLoadY =
                 (2 * element.fl[1] / element.L) / 1000;
 
+            const isLeftCantilever = element.definition.type === "کنسول رفتر چپ";
+            const isRightCantilever = element.definition.type === "کنسول رفتر راست";
+            let tipRelativeDeflection = null;
+
+            // خیز نسبی نوک کنسول نسبت به مماسِ دوران‌یافته در تکیه‌گاه
+            // خروجی در راستای محلی عمود بر محور رفتر و بر حسب متر است.
+            if (isLeftCantilever) {
+                tipRelativeDeflection =
+                    dl[1] - dl[4] + dl[5] * element.L;
+            } else if (isRightCantilever) {
+                tipRelativeDeflection =
+                    dl[4] - dl[1] - dl[2] * element.L;
+            }
+
             memberResults.push({
                 name: element.definition.type,
                 length: element.L,
                 localLoadX,
                 localLoadY,
 
-                // اصلاح قرارداد علامت نیروی محوری
-                // فشار در خروجی منفی و کشش مثبت است.
+                // فشار منفی و کشش مثبت
                 axialStart: -endForces[0] / 1000,
                 axialEnd: endForces[3] / 1000,
 
@@ -418,7 +431,8 @@ function calculate() {
                 shearEnd: endForces[4] / 1000,
                 momentEnd: endForces[5] / 1e6,
 
-                maxMoment: maxMoment / 1e6
+                maxMoment: maxMoment / 1e6,
+                tipRelativeDeflection
             });
         }
 
