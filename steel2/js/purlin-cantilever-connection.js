@@ -3,7 +3,7 @@
 "use strict";
 const $=id=>document.getElementById(id);
 const fmt=(v,d=2)=>Number.isFinite(Number(v))?Number(v).toLocaleString("fa-IR",{minimumFractionDigits:d,maximumFractionDigits:d}):"—";
-const defaults={type:"clip",bolts:4,diameter:16,fub:800,plateThickness:10,plateFu:360,edge:35,pitch:50,lever:100};
+const defaults={type:"clip",bolts:4,diameter:16,fub:800,plateThickness:10,plateFu:360,edge:35,pitch:50,lever:100};\nlet pendingData=Object.assign({},defaults);
 const ids={type:"pcConnType",bolts:"pcConnBolts",diameter:"pcConnDiameter",fub:"pcConnFub",plateThickness:"pcConnPlateT",plateFu:"pcConnPlateFu",edge:"pcConnEdge",pitch:"pcConnPitch",lever:"pcConnLever"};
 function getData(){const d={};Object.entries(ids).forEach(([k,id])=>{if($(id))d[k]=$(id).value;});return d;}
 function setData(data){const d=Object.assign({},defaults,data||{});Object.entries(ids).forEach(([k,id])=>{if($(id)&&d[k]!==undefined)$(id).value=d[k];});}
@@ -30,7 +30,7 @@ function ensurePanel(){
  <div id="purlinConnResults" class="notice">ابتدا طراحی پرلین و کنترل کنسول طولی را اجرا کنید.</div>
  <div class="notice" style="color:#a65d16">کنترل‌های این نسخه محدود به برش تقریبی پیچ، کشش تقریبی پیچ ناشی از لنگر، اندرکنش ساده برش/کشش و لهیدگی موضعی ورق در سوراخ است. لغزش، اثر اهرمی، پارگی بلوکی، گسیختگی سطح خالص، خمش ورق، جوش، مقاومت عضو تکیه‌گاهی، فاصله‌های آیین‌نامه‌ای و الزامات لرزه‌ای کامل کنترل نشده‌اند. خروجی تأیید اجرایی نیست.</div>`;
  if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(panel,anchor.nextSibling);else main.appendChild(panel);
- $("btnPurlinConnCalc").addEventListener("click",calculate);setData(defaults);
+ $("btnPurlinConnCalc").addEventListener("click",calculate);setData(pendingData);
 }
 function calculate(){
  const out=$("purlinConnResults");
