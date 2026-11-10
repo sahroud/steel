@@ -464,12 +464,27 @@
         const result = $("loadValidation");
 
         if (error) {
-            if (result) {
-                result.textContent = "خطا: " + error;
-            }
+            if (result) result.textContent = "خطا: " + error;
             return false;
         }
-
+        const climate = readInputs().climate || {};
+        const numericClimate = [
+            ["ارتفاع محل", climate.elevation, -500, 6000],
+            ["بار برف زمین", climate.groundSnow, 0, 100],
+            ["سرعت مبنای باد", climate.basicWind, 0, 150],
+            ["مساحت بازشوها", climate.openingArea, 0, 1000000],
+            ["مساحت پوسته", climate.envelopeArea, 0, 10000000]
+        ];
+        for (const [label, raw, min, max] of numericClimate) {
+            if (raw !== "" && (!Number.isFinite(Number(raw)) || Number(raw) < min || Number(raw) > max)) {
+                if (result) result.textContent = "خطا: مقدار " + label + " خارج از محدوده مجاز فرم است.";
+                return false;
+            }
+        }
+        if (climate.openingState === "partially-enclosed" && climate.dominantOpening === "no") {
+            if (result) result.textContent = "هشدار: وضعیت نیمه‌باز انتخاب شده، اما بازشوی غالب مشخص نشده است.";
+            return false;
+        }
         syncLegacyInputs();
         summary();
 
