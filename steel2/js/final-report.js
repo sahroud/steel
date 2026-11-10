@@ -1,8 +1,8 @@
 
 /* SAHROUD STEEL - Final Aggregated Design Report
    Preliminary report:
-   LRFD combinations, member demand, interaction,
-   shear and preliminary buckling check
+   LRFD combinations, displacements, reactions,
+   member demand, interaction, shear and buckling
 */
 (function () {
     "use strict";
@@ -28,6 +28,40 @@
             .replace(/'/g, "&#039;");
     }
 
+    function reactionValue(item, index, divisor) {
+        const value = Number(item.reactions?.[index]);
+        return Number.isFinite(value) ? value / divisor : NaN;
+    }
+
+    function buildResponseTable(combos) {
+        return combos.map((item, i) => {
+            const leftH = reactionValue(item, 0, 1000);
+            const leftV = reactionValue(item, 1, 1000);
+            const leftM = reactionValue(item, 2, 1000000);
+
+            const rightH = reactionValue(item, 12, 1000);
+            const rightV = reactionValue(item, 13, 1000);
+            const rightM = reactionValue(item, 14, 1000000);
+
+            const displacement =
+                Number(item.maxDisplacement) * 1000;
+
+            return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${esc(item.name)}</td>
+                    <td>${fmt(displacement)}</td>
+                    <td>${fmt(leftH)}</td>
+                    <td>${fmt(leftV)}</td>
+                    <td>${fmt(leftM)}</td>
+                    <td>${fmt(rightH)}</td>
+                    <td>${fmt(rightV)}</td>
+                    <td>${fmt(rightM)}</td>
+                </tr>
+            `;
+        }).join("");
+    }
+
     function init() {
         if ($("finalReportPanel")) return;
 
@@ -41,8 +75,8 @@
             </div>
 
             <p>
-                گزارش ترکیبات بار، تقاضای اعضا،
-                کنترل اندرکنش، برش و کمانش
+                گزارش ترکیبات بار، جابه‌جایی‌ها، واکنش‌ها،
+                تقاضای اعضا و کنترل‌های مقدماتی
             </p>
 
             <button class="btn primary" id="btnFinalReport">
@@ -95,7 +129,6 @@
                 );
             }
 
-            // اجرای محاسبات اعضا، اندرکنش، برش و کمانش
             const tasks = [
                 ["btnMemberDemand", "memberDemandResults"],
                 ["btnInteraction", "interactionResults"],
@@ -123,7 +156,6 @@
                 }
             });
 
-            // جدول خلاصه ترکیبات بار
             const comboRows = combos.map((item, i) => `
                 <tr>
                     <td>${i + 1}</td>
@@ -134,7 +166,6 @@
                 </tr>
             `).join("");
 
-            // جدول ترکیبات بار حاکم
             const governingRows = [
                 ["محوری N", gov.N, "kN"],
                 ["برش V", gov.V, "kN"],
@@ -148,6 +179,8 @@
                     <td>${esc(item.end)}</td>
                 </tr>
             `).join("");
+
+            const responseRows = buildResponseTable(combos);
 
             let html = `
                 <div id="printableFinalReport">
@@ -179,10 +212,7 @@
                                     <th>بیشینه M (kN.m)</th>
                                 </tr>
                             </thead>
-
-                            <tbody>
-                                ${comboRows}
-                            </tbody>
+                            <tbody>${comboRows}</tbody>
                         </table>
                     </section>
 
@@ -199,30 +229,69 @@
                                     <th>محل</th>
                                 </tr>
                             </thead>
-
-                            <tbody>
-                                ${governingRows}
-                            </tbody>
+                            <tbody>${governingRows}</tbody>
                         </table>
+                    </section>
+
+                    <section class="report-section">
+                        <h3>۳. جدول جابه‌جایی و واکنش تکیه‌گاهی ترکیبات بار</h3>
+
+                        <div style="overflow-x:auto">
+                            <table style="width:100%;min-width:1050px;border-collapse:collapse">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">ردیف</th>
+                                        <th rowspan="2">ترکیب بار</th>
+                                        <th rowspan="2">بیشینه جابه‌جایی (mm)</th>
+                                        <th colspan="3">تکیه‌گاه چپ</th>
+                                        <th colspan="3">تکیه‌گاه راست</th>
+                                    </tr>
+                                    <tr>
+                                        <th>H (kN)</th>
+                                        <th>V (kN)</th>
+                                        <th>M (kN.m)</th>
+                                        <th>H (kN)</th>
+                                        <th>V (kN)</th>
+                                        <th>M (kN.m)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${responseRows}</tbody>
+                            </table>
+                        </div>
+
+                        <div class="notice">
+                            <p>
+                                جابه‌جایی گزارش‌شده، بیشینه اندازه بردار
+                                جابه‌جایی انتقالی گره‌ها در قاب دوبعدی است.
+                            </p>
+                            <p>
+                                واکنش‌های افقی و قائم از مؤلفه‌های
+                                نیرو و واکنش لنگری از مؤلفه دوران
+                                تکیه‌گاه‌ها استخراج شده‌اند.
+                            </p>
+                            <p>
+                                علامت مثبت و منفی واکنش‌ها مطابق
+                                قرارداد علامت موتور تحلیل است.
+                            </p>
+                        </div>
                     </section>
             `;
 
-            // بخش‌های محاسباتی گزارش
             const sections = [
                 [
-                    "۳. گزارش تقاضای طراحی اعضا",
+                    "۴. گزارش تقاضای طراحی اعضا",
                     $("memberDemandResults")
                 ],
                 [
-                    "۴. کنترل اندرکنش محوری و خمشی",
+                    "۵. کنترل اندرکنش محوری و خمشی",
                     $("interactionResults")
                 ],
                 [
-                    "۵. کنترل مقدماتی برش",
+                    "۶. کنترل مقدماتی برش",
                     $("shearResults")
                 ],
                 [
-                    "۶. کنترل کمانش اعضا در ترکیبات بار",
+                    "۷. کنترل کمانش اعضا در ترکیبات بار",
                     $("combinationBucklingResults")
                 ]
             ];
@@ -242,10 +311,9 @@
                 `;
             });
 
-            // محدودیت‌ها و هشدارها
             html += `
                     <section class="report-section">
-                        <h3>۷. محدودیت‌ها و هشدارها</h3>
+                        <h3>۸. محدودیت‌ها و هشدارها</h3>
 
                         <div class="notice">
                             <p>
@@ -257,6 +325,13 @@
                             </p>
 
                             <p>
+                                بیشینه جابه‌جایی گزارش‌شده، مقدار
+                                انتقالی گره‌هاست و کنترل تغییرمکان
+                                مجاز آیین‌نامه‌ای به‌صورت مستقل
+                                در این مرحله انجام نشده است.
+                            </p>
+
+                            <p>
                                 کنترل‌های اندرکنش، برش و کمانش
                                 مقدماتی هستند و تأیید طراحی اجرایی محسوب نمی‌شوند.
                             </p>
@@ -264,15 +339,13 @@
                             <p>
                                 کنترل کامل کمانش موضعی، کمانش پیچشی،
                                 اثرات مرتبه دوم، اندرکنش کامل نیروها،
-                                اتصالات، ورق‌های تقویتی، تغییرشکل مجاز
-                                و سایر الزامات آیین‌نامه‌ای باید جداگانه انجام شود.
+                                اتصالات، ورق‌های تقویتی و فونداسیون
+                                باید جداگانه انجام شود.
                             </p>
 
                             <p>
-                                کنترل کمانش این گزارش فقط بر اساس
-                                مدل و اطلاعات ورودی فعلی برنامه است.
-                                صحت طول‌های مهارنشده و ضرایب K باید
-                                توسط مهندس مسئول بررسی شود.
+                                صحت طول‌های مهارنشده و ضرایب K
+                                باید توسط مهندس مسئول بررسی شود.
                             </p>
 
                             <p>
@@ -326,13 +399,10 @@
         win.document.write(`
             <!DOCTYPE html>
             <html lang="fa" dir="rtl">
-
             <head>
                 <meta charset="UTF-8">
-
                 <meta name="viewport"
                     content="width=device-width, initial-scale=1">
-
                 <title>گزارش نهایی سازه فولادی</title>
 
                 <style>
@@ -399,11 +469,9 @@
                     }
                 </style>
             </head>
-
             <body>
                 ${report.innerHTML}
             </body>
-
             </html>
         `);
 
