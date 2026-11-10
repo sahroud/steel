@@ -3,10 +3,11 @@
 "use strict";
 const $=id=>document.getElementById(id);
 const fmt=(v,d=2)=>Number.isFinite(Number(v))?Number(v).toLocaleString("fa-IR",{minimumFractionDigits:d,maximumFractionDigits:d}):"—";
-const defaults={type:"clip",bolts:4,diameter:16,fub:800,plateThickness:10,plateFu:360,edge:35,pitch:50,lever:100};\nlet pendingData=Object.assign({},defaults);
+const defaults={type:"clip",bolts:4,diameter:16,fub:800,plateThickness:10,plateFu:360,edge:35,pitch:50,lever:100};
+let pendingData=Object.assign({},defaults);
 const ids={type:"pcConnType",bolts:"pcConnBolts",diameter:"pcConnDiameter",fub:"pcConnFub",plateThickness:"pcConnPlateT",plateFu:"pcConnPlateFu",edge:"pcConnEdge",pitch:"pcConnPitch",lever:"pcConnLever"};
-function getData(){const d={};Object.entries(ids).forEach(([k,id])=>{if($(id))d[k]=$(id).value;});return d;}
-function setData(data){const d=Object.assign({},defaults,data||{});Object.entries(ids).forEach(([k,id])=>{if($(id)&&d[k]!==undefined)$(id).value=d[k];});}
+function getData(){const d=Object.assign({},pendingData);Object.entries(ids).forEach(([k,id])=>{if($(id))d[k]=$(id).value;});pendingData=Object.assign({},d);return d;}
+function setData(data){pendingData=Object.assign({},defaults,data||{});Object.entries(ids).forEach(([k,id])=>{if($(id)&&pendingData[k]!==undefined)$(id).value=pendingData[k];});}
 function ensurePanel(){
  if($("purlinCantileverConnectionPanel"))return;
  const main=document.querySelector("main");if(!main)return;
