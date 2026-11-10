@@ -269,12 +269,16 @@
                 : loads.snowRight || 0
         );
 
-        const wind = Math.abs(Number(
+        const windSigned = Number(
             side === "left"
                 ? loads.windLeft || 0
                 : loads.windRight || 0
-        ));
+        );
+        const wind = Math.abs(windSigned);
+        const windDirection = loads.windDirection || "not-specified";
 
+        // غربالگری دو حالت مستقل: ثقلی و باد ورودی.
+        // علامت باد حفظ می‌شود؛ تفسیر فشار/مکش و ترکیب آیین‌نامه‌ای در این مرحله انجام نمی‌شود.
         const gravity = dead + live + snow;
         const surfaceEnvelope = Math.max(gravity, wind);
 
@@ -321,6 +325,12 @@
             side,
             gravity,
             wind,
+            windSigned,
+            windDirection,
+            loadCases: [
+                { id: side + "-gravity", type: "gravity", pressure: gravity, status: "unfactored-input" },
+                { id: side + "-wind", type: "wind", pressure: wind, signedPressure: windSigned, direction: windDirection, status: "unfactored-input" }
+            ],
             surfaceEnvelope,
             qLine,
             qNormal,
