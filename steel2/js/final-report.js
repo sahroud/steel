@@ -1,8 +1,31 @@
-/* SAHROUD STEEL - Final Report */
-(function () {
+
+/* SAHROUD STEEL - Final Aggregated Design Report
+   Preliminary report:
+   LRFD combinations, member demand, interaction and shear
+*/
+(function ()    {
     "use strict";
 
     const $ = id => document.getElementById(id);
+
+    function fmt(value, digits = 3) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return "—";
+
+        return n.toLocaleString("fa-IR", {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+        });
+    }
+
+    function esc(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
     function init() {
         if ($("finalReportPanel")) return;
@@ -17,8 +40,8 @@
             </div>
 
             <p>
-                نتایج تقاضای طراحی، اندرکنش و کنترل مقدماتی برش
-                در یک گزارش قابل چاپ گردآوری می‌شوند.
+                گزارش ترکیبات بار، تقاضای اعضا،
+                کنترل اندرکنش و کنترل مقدماتی برش
             </p>
 
             <button class="btn primary" id="btnFinalReport">
@@ -32,7 +55,13 @@
             <div id="finalReportResults"></div>
         `;
 
-        $("shearPanel")?.after(panel);
+        const shearPanel = $("shearPanel");
+
+        if (shearPanel) {
+            shearPanel.after(panel);
+        } else {
+            document.body.appendChild(panel);
+        }
 
         $("btnFinalReport").addEventListener("click", build);
         $("btnPrintReport").addEventListener("click", printReport);
@@ -41,42 +70,154 @@
     function build() {
         const out = $("finalReportResults");
 
-        const tasks = [
-            ["btnMemberDemand", "memberDemandResults"],
-            ["btnInteraction", "interactionResults"],
-            ["btnShear", "shearResults"]
-        ];
+        if (!out) return;
 
         try {
-            if (!window.SteelAnalysis ||
-                !Array.isArray(window.SteelAnalysis.combinationResults) ||
-                !window.SteelAnalysis.combinationResults.length) {
-                throw new Error("ابتدا تحلیل ترکیبات بار LRFD را اجرا کنید.");
+            const analysis = window.SteelAnalysis;
+
+            if (
+                !analysis ||
+                !Array.isArray(analysis.combinationResults) ||
+                !analysis.combinationResults.length
+            ) {
+                throw new Error(
+                    "ابتدا تحلیل ترکیبات بار LRFD را اجرا کنید."
+                );
             }
+
+            const combos = analysis.combinationResults;
+            const gov = analysis.governingCombinationResults;
+
+            if (!gov || !gov.N || !gov.V || !gov.M) {
+                throw new Error(
+                    "اطلاعات ترکیبات بار حاکم موجود نیست."
+                );
+            }
+
+            // اجرای محاسبات اعضا، اندرکنش و برش
+            const tasks = [
+                ["btnMemberDemand", "memberDemandResults"],
+                ["btnInteraction", "interactionResults"],
+                ["btnShear", "shearResults"]
+            ];
 
             tasks.forEach(([buttonId]) => {
                 const button = $(buttonId);
+
                 if (!button) {
-                    throw new Error("یکی از بخش‌های محاسباتی در دسترس نیست: " + buttonId);
+                    throw new Error(
+                        "دکمه محاسباتی پیدا نشد: " + buttonId
+                    );
                 }
+
                 button.click();
             });
 
-            const sections = [
-                ["گزارش تقاضای طراحی اعضا", $("memberDemandResults")],
-                ["کنترل اندرکنش محوری و خمشی", $("interactionResults")],
-                ["کنترل مقدماتی برش", $("shearResults")]
-            ];
+            // جدول خلاصه ترکیبات بار
+            const comboRows = combos.map((item, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${esc(item.name)}</td>
+                    <td>${fmt(item.envelope.N.value)}</td>
+                    <td>${fmt(item.envelope.V.value)}</td>
+                    <td>${fmt(item.envelope.M.value)}</td>
+                </tr>
+            `).join("");
+
+            // جدول ترکیبات بار حاکم
+            const governingRows = [
+                ["محوری N", gov.N, "kN"],
+                ["برش V", gov.V, "kN"],
+                ["لنگر M", gov.M, "kN.m"]
+            ].map(([title, item, unit]) => `
+                <tr>
+                    <td>${title}</td>
+                    <td>${fmt(item.value)} ${unit}</td>
+                    <td>${esc(item.name)}</td>
+                    <td>${esc(item.member)}</td>
+                    <td>${esc(item.end)}</td>
+            </tr>
+            `).join("");
 
             let html = `
                 <div id="printableFinalReport">
+
                     <h2>گزارش تجمیعی طراحی سازه فولادی</h2>
-                    <p>تاریخ تهیه: ${new Date().toLocaleString("fa-IR")}</p>
+
+                    <p>
+                        تاریخ تهیه:
+                        ${esc(new Date().toLocaleString("fa-IR"))}
+                    </p>
+
+                    <p>
+                        تعداد ترکیبات بار تحلیل‌شده:
+                        <b>${fmt(combos.length, 0)}</b>
+                    </p>
+
+                    <hr>
+
+                    <section class="report-section">
+                        <h3>۱. جدول ترکیبات بار LRFD</h3>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ردیف</th>
+                                    <th>ترکیب بار</th>
+                                    <th>بیشینه N (kN)</th>
+                                    <th>بیشینه V (kN)</th>
+                                    <th>بیشینه M (kN.m)</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                ${comboRows}
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section class="report-section">
+                        <h3>۲. ترکیبات بار حاکم</h3>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>کنترل</th>
+                                    <th>مقدار</th>
+                                    <th>ترکیب بار</th>
+                                    <th>عضو</th>
+                                    <th>محل</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                ${governingRows}
+                            </tbody>
+                        </table>
+                    </section>
             `;
+
+            // نتایج سه بخش محاسباتی
+            const sections = [
+                [
+                    "۳. گزارش تقاضای طراحی اعضا",
+                    $("memberDemandResults")
+                ],
+                [
+                    "۴. کنترل اندرکنش محوری و خمشی",
+                    $("interactionResults")
+                ],
+                [
+                    "۵. کنترل مقدماتی برش",
+                    $("shearResults")
+                ]
+            ];
 
             sections.forEach(([title, element]) => {
                 if (!element || !element.innerHTML.trim()) {
-                    throw new Error("نتایج بخش «" + title + "» خالی است.");
+                    throw new Error(
+                        "نتایج بخش «" + title + "» خالی است."
+                    );
                 }
 
                 html += `
@@ -87,29 +228,55 @@
                 `;
             });
 
+            // محدودیت‌های گزارش
             html += `
-                    <div class="notice">
-                        <b>محدودیت اعتبار گزارش</b>
-                        <p>
-                            این گزارش تجمیع نتایج محاسبات موجود برنامه است.
-                            کنترل‌ها مقدماتی هستند و تأیید طراحی اجرایی محسوب نمی‌شوند.
-                        </p>
-                        <p>
-                            کنترل کامل ضوابط مبحث دهم، کمانش موضعی،
-                            کمانش پیچشی، اثرات مرتبه دوم، اتصالات،
-                            ورق‌های تقویتی و سایر الزامات باید جداگانه انجام شود.
-                        </p>
-                    </div>
+                    <section class="report-section">
+                        <h3>۶. محدودیت‌ها و هشدارها</h3>
+
+                        <div class="notice">
+                            <p>
+                                این گزارش تجمیع نتایج محاسبات موجود برنامه است.
+                            </p>
+
+                            <p>
+                                تحلیل قاب فعلی خطی و مرتبه اول است.
+                            </p>
+
+                            <p>
+                                کنترل‌های اندرکنش و برش مقدماتی هستند
+                                و تأیید طراحی اجرایی محسوب نمی‌شوند.
+                            </p>
+
+                            <p>
+                                کنترل کامل کمانش موضعی، کمانش پیچشی،
+                                اثرات مرتبه دوم، اتصالات، ورق‌های تقویتی،
+                                تغییرشکل مجاز و سایر الزامات آیین‌نامه‌ای
+                                باید جداگانه انجام شود.
+                            </p>
+
+                            <p>
+                                ترکیبات بار و بارهای ورودی باید توسط
+                                مهندس مسئول بررسی و تأیید شوند.
+                            </p>
+                        </div>
+                    </section>
+
                 </div>
             `;
 
             out.innerHTML = html;
 
-            out.scrollIntoView({ behavior: "smooth", block: "start" });
+            out.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
 
         } catch (error) {
             out.innerHTML = `
-                <div class="notice">خطا: ${error.message}</div>
+                <div class="notice">
+                    <b>خطا در تهیه گزارش:</b>
+                    <p>${esc(error.message)}</p>
+            </div>
             `;
         }
     }
@@ -125,55 +292,102 @@
         const win = window.open("", "_blank");
 
         if (!win) {
-            alert("مرورگر اجازه باز کردن پنجره چاپ را نداده است.");
+            alert(
+                "مرورگر اجازه باز کردن پنجره چاپ را نداده است."
+            );
             return;
         }
 
         win.document.write(`
             <!DOCTYPE html>
             <html lang="fa" dir="rtl">
+
             <head>
                 <meta charset="UTF-8">
+
+                <meta name="viewport"
+                    content="width=device-width, initial-scale=1">
+
                 <title>گزارش نهایی سازه فولادی</title>
+
                 <style>
                     body {
                         font-family: Tahoma, Arial, sans-serif;
                         direction: rtl;
                         padding: 20px;
                         color: #222;
+                        font-size: 12px;
                     }
-                    h2, h3, h4 { text-align: center; }
+
+                    h2, h3, h4 {
+                        text-align: center;
+                    }
+
                     table {
                         width: 100%;
                         border-collapse: collapse;
                         margin: 12px 0;
                     }
+
                     th, td {
                         border: 1px solid #777;
                         padding: 6px;
                         text-align: center;
+                        vertical-align: middle;
                     }
+
+                    th {
+                        background: #eee;
+                    }
+
                     .report-section {
                         margin: 25px 0;
-                        page-break-inside: avoid;
+                        page-break-inside: auto;
                     }
+
                     .notice {
                         border: 1px solid #888;
                         padding: 10px;
                         margin-top: 15px;
                     }
-                    button { display: none; }
+
+                    button {
+                        display: none;
+                    }
+
+                    @media print {
+                        body {
+                            padding: 0;
+                        }
+
+                        table {
+                            page-break-inside: auto;
+                        }
+
+                        tr {
+                            page-break-inside: avoid;
+                        }
+
+                        h2, h3, h4 {
+                            page-break-after: avoid;
+                        }
+                    }
                 </style>
             </head>
+
             <body>
                 ${report.innerHTML}
             </body>
+
             </html>
         `);
 
         win.document.close();
         win.focus();
-        win.print();
+
+        win.onload = function () {
+            win.print();
+        };
     }
 
     if (document.readyState === "loading") {
@@ -181,4 +395,5 @@
     } else {
         init();
     }
+
 })();
