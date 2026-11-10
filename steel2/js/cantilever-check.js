@@ -117,8 +117,15 @@
                     const supportN = Math.abs(Number(left ? member.axialEnd : member.axialStart) || 0);
                     if (supportM > w.supportMoment) {
                         w.supportMoment = supportM;
+                        w.supportMomentCombination = item.name;
+                    }
+                    if (supportV > w.supportShear) {
                         w.supportShear = supportV;
+                        w.supportShearCombination = item.name;
+                    }
+                    if (supportN > w.supportAxial) {
                         w.supportAxial = supportN;
+                        w.supportAxialCombination = item.name;
                     }
 
                     const deflection = Math.abs(Number(member.tipRelativeDeflection));
