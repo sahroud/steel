@@ -1,5 +1,5 @@
 
-/* SAHROUD STEEL - Project Manager 2.8 */
+/* SAHROUD STEEL - Project Manager 2.9 */
 (function () {
     "use strict";
 
@@ -76,6 +76,12 @@
             typeof window.SteelRoofPurlins.getData === "function") {
             data.roofPurlins =
                 window.SteelRoofPurlins.getData();
+        }
+
+        if (window.SteelPurlinCantileverConnection &&
+            typeof window.SteelPurlinCantileverConnection.getData === "function") {
+            data.purlinCantileverConnection =
+                window.SteelPurlinCantileverConnection.getData();
         }
 
         return data;
@@ -274,6 +280,13 @@
             typeof window.SteelRoofPurlins.setData === "function") {
             window.SteelRoofPurlins.setData(
                 data.roofPurlins || {}
+            );
+        }
+
+        if (window.SteelPurlinCantileverConnection &&
+            typeof window.SteelPurlinCantileverConnection.setData === "function") {
+            window.SteelPurlinCantileverConnection.setData(
+                data.purlinCantileverConnection || {}
             );
         }
 
