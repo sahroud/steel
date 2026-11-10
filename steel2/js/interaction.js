@@ -1,7 +1,6 @@
 
 /* SAHROUD STEEL - Preliminary N-M Interaction
-   Version 2.0
-   Units: kN, m, kN.m
+   Version 2.1 - Axial force sign corrected
 */
 (function () {
     "use strict";
@@ -17,9 +16,7 @@
 
     function fmt(value, digits = 3) {
         const n = Number(value);
-
         if (!Number.isFinite(n)) return "—";
-
         return n.toLocaleString("fa-IR", {
             minimumFractionDigits: digits,
             maximumFractionDigits: digits
@@ -61,38 +58,28 @@
         const L = Number(member.length);
 
         if (!(Number.isFinite(L) && L > 0)) {
-            throw new Error(
-                "طول عضو " + member.name + " معتبر نیست."
-            );
+            throw new Error("طول عضو " + member.name + " معتبر نیست.");
         }
 
         const points = [];
 
-        // نمونه‌برداری در طول عضو
         for (let i = 0; i <= 40; i++) {
             points.push(L * i / 40);
         }
 
-        // نقطه صفرشدن برش
         const qy = Number(member.localLoadY) || 0;
         const shearStart = Number(member.shearStart) || 0;
 
         if (Math.abs(qy) > 1e-12) {
             const x = -shearStart / qy;
-
-            if (x > 0 && x < L) {
-                points.push(x);
-            }
+            if (x > 0 && x < L) points.push(x);
         }
 
         return [...new Set(points)].sort((a, b) => a - b);
     }
 
     function getCapacities(type) {
-        if (
-            !window.SteelStability ||
-            !window.SteelFlexure
-        ) {
+        if (!window.SteelStability || !window.SteelFlexure) {
             throw new Error(
                 "ماژول‌های کنترل کمانش یا ظرفیت خمشی بارگذاری نشده‌اند."
             );
@@ -108,11 +95,7 @@
         const phiMn = Number(flexure.designKNm);
 
         if (!(phiPn > 0 && phiMn > 0)) {
-            throw new Error(
-                "ظرفیت فشاری یا خمشی " +
-                (type === "column" ? "ستون" : "رفتر") +
-                " معتبر نیست."
-            );
+            throw new Error("ظرفیت فشاری یا خمشی عضو معتبر نیست.");
         }
 
         return {
@@ -128,7 +111,6 @@
         const axialRatio = Pu / phiPn;
         const momentRatio = Mu / phiMn;
 
-        // رابطه مقدماتی اندرکنش یک‌محوره
         if (axialRatio >= 0.20) {
             return axialRatio + (8 / 9) * momentRatio;
         }
@@ -141,22 +123,11 @@
 
         try {
             const analysis = window.SteelAnalysis;
-            const cases = analysis &&
-                analysis.combinationResults;
+            const cases = analysis && analysis.combinationResults;
 
             if (!Array.isArray(cases) || !cases.length) {
                 throw new Error(
                     "ابتدا تحلیل ترکیبات بار LRFD را اجرا کنید."
-                );
-            }
-
-            if (
-                !window.SteelSections ||
-                !window.SteelStability ||
-                !window.SteelFlexure
-            ) {
-                throw new Error(
-                    "ابتدا ماژول‌های مصالح، کمانش و خمش را بارگذاری کنید."
                 );
             }
 
@@ -185,21 +156,16 @@
             cases.forEach(item => {
                 (item.members || []).forEach(member => {
                     const name = member.name;
-
                     if (!results[name]) return;
 
-                    const L = Number(member.length);
-
                     if (
-                        !(Number.isFinite(L) && L > 0) ||
+                        !(Number(member.length) > 0) ||
                         !Number.isFinite(Number(member.axialStart)) ||
                         !Number.isFinite(Number(member.shearStart)) ||
                         !Number.isFinite(Number(member.momentStart))
                     ) {
                         throw new Error(
-                            "اطلاعات نیروهای عضو «" +
-                            name +
-                            "» ناقص است. تحلیل را دوباره اجرا کنید."
+                            "اطلاعات نیروهای عضو «" + name + "» ناقص است."
                         );
                     }
 
@@ -210,15 +176,12 @@
                         const N = forceAt(member, "N", x);
                         const M = forceAt(member, "M", x);
 
-                        // نیروی محوری فشاری مثبت در کنترل
-                        const Pu = Math.max(0, -N);
+                        // طبق قرارداد نمودارها، N مثبت نشان‌دهنده فشار است.
+                        const Pu = Math.max(0, N);
                         const Mu = Math.abs(M);
 
                         const ratio = interactionRatio(
-                            Pu,
-                            Mu,
-                            cap.phiPn,
-                            cap.phiMn
+                            Pu, Mu, cap.phiPn, cap.phiMn
                         );
 
                         if (ratio > target.ratio) {
@@ -257,11 +220,7 @@
                         <td>${fmt(r.axialRatio)}</td>
                         <td>${fmt(r.momentRatio)}</td>
                         <td><b>${fmt(r.ratio)}</b></td>
-                        <td>
-                            ${pass
-                                ? "قبول مقدماتی"
-                                : "نیاز به بررسی"}
-                        </td>
+                        <td>${pass ? "قبول مقدماتی" : "نیاز به بررسی"}</td>
                         <td>${esc(r.combination)}</td>
                         <td>${fmt(r.position)} m</td>
                         <td>${esc(c.axis)}</td>
@@ -271,18 +230,12 @@
 
             output.innerHTML = `
                 <hr>
-
-                <h4>
-                    کنترل اندرکنش نیروی محوری و خمش اعضا
-                </h4>
+                <h4>کنترل اندرکنش نیروی محوری و خمش اعضا</h4>
 
                 <p>
-                    تعداد ترکیبات بررسی‌شده:
+                    تعداد ترکیبات بار:
                     <b>${fmt(cases.length, 0)}</b>
-                </p>
-
-                <p>
-                    تعداد اعضای بررسی‌شده:
+                    | تعداد اعضای بررسی‌شده:
                     <b>${fmt(processed / cases.length, 0)}</b>
                 </p>
 
@@ -306,80 +259,59 @@
                                 <th>نتیجه</th>
                                 <th>ترکیب حاکم</th>
                                 <th>موقعیت</th>
-                                <th>محور حاکم کمانش</th>
+                                <th>محور حاکم</th>
                             </tr>
                         </thead>
-
                         <tbody>${rows}</tbody>
                     </table>
                 </div>
 
                 <div class="notice">
                     <b>روش محاسبه</b>
-
                     <p>
-                        ظرفیت فشاری طراحی φPn از کنترل کمانش
-                        حول محور قوی و ضعیف و انتخاب ظرفیت حاکم
-                        استخراج شده است.
+                        نیروی محوری مثبت در قرارداد نمودارها به‌عنوان
+                        فشار در نظر گرفته شده است.
                     </p>
-
-                    <p>
-                        ظرفیت خمشی طراحی φMn از ماژول کنترل خمشی
-                        و بر اساس مدول مقطع کوچک‌تر بالا و پایین
-                        به دست آمده است.
-                    </p>
-
-                    <p>
-                        نیروهای محوری و لنگر در طول عضو و در تمام
-                        ترکیبات بار بررسی شده‌اند.
-                    </p>
-
                     <p>
                         برای Pu/φPn ≥ 0.20:
                         نسبت اندرکنش =
                         Pu/φPn + (8/9)(Mu/φMn)
                     </p>
-
                     <p>
                         برای Pu/φPn کمتر از 0.20:
                         نسبت اندرکنش =
                         Pu/(2φPn) + Mu/φMn
                     </p>
+                    <p>
+                        تمام ترکیبات بار و نقاط نمونه‌برداری‌شده در
+                        طول اعضا بررسی می‌شوند.
+                    </p>
                 </div>
 
                 <div class="notice">
-                    <b>محدودیت‌های مهم مهندسی</b>
-
+                    <b>محدودیت‌های مهندسی</b>
                     <p>
-                        این کنترل یک برآورد مقدماتی اندرکنش
-                        فشار و خمش یک‌محوره است.
+                        این کنترل، برآورد مقدماتی اندرکنش فشار و خمش
+                        یک‌محوره است.
                     </p>
-
                     <p>
-                        کشش محوری، خمش حول محور ضعیف،
-                        اندرکنش دومحوره، کمانش جانبی‌پیچشی،
-                        کمانش موضعی و اثرات مرتبه دوم
-                        هنوز در این کنترل کامل نشده‌اند.
+                        خمش دومحوره، کشش محوری، کمانش جانبی‌پیچشی،
+                        کمانش موضعی و اثرات مرتبه دوم هنوز کامل نشده‌اند.
                     </p>
-
                     <p>
-                        ظرفیت خمشی استفاده‌شده برآورد اولیه
-                        تسلیم الاستیک است و ظرفیت نهایی آیین‌نامه‌ای نیست.
+                        ظرفیت خمشی فعلی برآورد اولیه تسلیم الاستیک است
+                        و ظرفیت نهایی آیین‌نامه‌ای محسوب نمی‌شود.
                     </p>
-
                     <p>
-                        نتیجه قبول مقدماتی به معنی تأیید طراحی اجرایی
-                        یا ایمنی سازه نیست.
+                        نتیجه قبول مقدماتی به معنی تأیید طراحی اجرایی نیست.
                     </p>
                 </div>
             `;
 
             analysis.interactionResults = results;
 
-            const status = $("projectStatus");
-
-            if (status) {
-                status.textContent =
+            if ($("projectStatus")) {
+                $("projectStatus").textContent =
                     "کنترل مقدماتی اندرکنش فشار و خمش چهار عضو انجام شد.";
             }
 
@@ -421,10 +353,7 @@
         const design = $("memberDesignPanel");
 
         if (design && design.parentNode) {
-            design.parentNode.insertBefore(
-                panel,
-                design.nextSibling
-            );
+            design.parentNode.insertBefore(panel, design.nextSibling);
         } else {
             document.querySelector("main")?.appendChild(panel);
         }
@@ -447,5 +376,4 @@
     } else {
         init();
     }
-
 })();
