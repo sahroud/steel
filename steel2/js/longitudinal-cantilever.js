@@ -94,6 +94,11 @@
         <div id="longitudinalCantileverResults" class="notice">ابتدا مقطع پرلین را در بخش پرلین سقف محاسبه کنید.</div>
       </section>`);
     $("btnLongitudinalCantilever").addEventListener("click", run);
+    const shortcut = $("btnOpenLongitudinalCantilever");
+    if (shortcut) shortcut.addEventListener("click", () => {
+      const panel = $("longitudinalCantileverPanel");
+      if (panel) panel.scrollIntoView({behavior:"smooth", block:"start"});
+    });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
