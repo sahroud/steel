@@ -56,6 +56,11 @@
             data.openings = window.SteelOpenings.getData();
         }
 
+        if (window.SteelClimateDB &&
+            typeof window.SteelClimateDB.getData === "function") {
+            data.climateDatabase = window.SteelClimateDB.getData();
+        }
+
         if (window.SteelGirder &&
             typeof window.SteelGirder.getData === "function") {
             data.girders = window.SteelGirder.getData();
@@ -258,6 +263,11 @@
             if (typeof window.SteelOpenings.check === "function") {
                 window.SteelOpenings.check();
             }
+        }
+
+        if (data.climateDatabase && window.SteelClimateDB &&
+            typeof window.SteelClimateDB.setData === "function") {
+            window.SteelClimateDB.setData(data.climateDatabase);
         }
 
         if (data.girders && window.SteelGirder &&
