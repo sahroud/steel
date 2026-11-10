@@ -162,7 +162,10 @@
             const original = panel.dataset.smartTitle ||
                 title.textContent.replace(/^\\s*[0-9۰-۹٠-٩]+\\s*[ـ–.)-]\\s*/u, "").trim();
             panel.dataset.smartTitle = original;
-            title.textContent = number.toLocaleString("fa-IR") + " ـ " + original;
+            const numberedTitle = number.toLocaleString("fa-IR") + " ـ " + original;
+            if (title.textContent !== numberedTitle) {
+                title.textContent = numberedTitle;
+            }
             panel.dataset.sectionNumber = String(number);
         });
     }
