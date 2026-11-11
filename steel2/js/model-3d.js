@@ -368,7 +368,8 @@
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
     const result=window.SteelFrame3D.analyze(analysisModel,{
       sectionResolver:m=>window.SteelSections.resolveAnalysis3DSection(m),
-      supports
+      supports,
+      releasePurlinRafterRotation:true
     });
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
@@ -410,7 +411,8 @@
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
     result.selfWeight={included:selected.key==="dead",unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount};
-    result.warning="وزن خود فولاد در حالت بار مرده با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. بار باد و ترکیبات بار هنوز اعمال نشده‌اند؛ همه گره‌های مشترک فعلاً صلب‌اند و آزادسازی انتهایی، P-Delta و کنترل آیین‌نامه‌ای وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
+    result.connectionModel="اتصال پرلین به رفتر: فرض کلیپس/نبشی دوپیچه؛ انتقال جابه‌جایی حفظ شده و دوران پرلین در محل تقاطع از دوران رفتر جدا شده است. دوران پرلین در امتداد خود پرلین پیوسته می‌ماند.";
+    result.warning="وزن خود فولاد در حالت بار مرده با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. بار باد و ترکیبات بار هنوز اعمال نشده‌اند؛ اتصال پرلین به رفتر با فرض کلیپس/نبشی دوپیچه و جداسازی دوران مدل شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
