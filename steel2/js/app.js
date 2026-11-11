@@ -539,11 +539,39 @@
             window.SteelDrawing.drawFrame();
         }
 
-        const result = calculateCombinations();
-
-        if (result && result.success) {
-            setStatus("تحلیل ترکیبات بار با موفقیت انجام شد.");
+        const button = $("btnCombinations");
+        const message = $("analysisMessage");
+        if (button && button.disabled) return;
+        const originalLabel = button ? button.textContent : "";
+        if (button) {
+            button.disabled = true;
+            button.textContent = "در حال تحلیل...";
         }
+        if (message) {
+            message.textContent = "⏳ تحلیل ترکیبات بار آغاز شد؛ لطفاً تا نمایش گزارش صبر کنید...";
+            message.style.color = "#176b87";
+            message.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        setStatus("در حال تحلیل ترکیبات بار؛ اجرای حالت‌های بارگذاری...");
+        // اجازه می‌دهیم پیام شروع قبل از محاسبات سنگین روی صفحه دیده شود.
+        setTimeout(function () {
+            try {
+                const result = calculateCombinations();
+                if (result && result.success) {
+                    setStatus("تحلیل ترکیبات بار با موفقیت انجام شد.");
+                } else if (message && (!message.textContent || !message.textContent.trim())) {
+                    message.textContent = "تحلیل انجام نشد؛ اطلاعات ورودی و وضعیت پروژه را بررسی کنید.";
+                }
+            } catch (error) {
+                if (message) message.textContent = "خطا در تحلیل ترکیبات بار: " + error.message;
+                setStatus("خطا در تحلیل ترکیبات بار: " + error.message);
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalLabel;
+                }
+            }
+        }, 60);
     }
 
     function save() {
