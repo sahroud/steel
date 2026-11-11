@@ -119,6 +119,7 @@
           }:null,
           selfWeight:result.selfWeight||null,
           equilibrium:result.equilibrium||null,
+          criticalMemberDiagnostics:result.criticalMemberDiagnostics||null,
           criticalMemberReport:(result.criticalMemberReport||[]).map(m=>{
             const source=analysisModelMemberById(m.id);
             return {...m,
