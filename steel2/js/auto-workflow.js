@@ -143,7 +143,18 @@
       }
       addLine(rows,"اعتبارسنجی هندسه و مشخصات پروژه",true,"ابعاد اصلی و ورودی‌های اجباری معتبرند.");
 
-      runStep(rows,"بازترسیم مدل هندسی",()=>window.SteelDrawing?.drawFrame?.());
+      let fullModelOK=false;
+      try {
+        const fullModel=window.SteelStructuralModel?.build?.();
+        fullModelOK=!!fullModel&&Array.isArray(fullModel.members)&&fullModel.members.length>0&&window.SteelStructuralModel.draw()===true;
+        if(fullModelOK) {
+          const types={};
+          fullModel.members.forEach(m=>types[m.type]=(types[m.type]||0)+1);
+          addLine(rows,"تولید و ترسیم مدل هندسی کامل سوله",true,
+            fullModel.geometry.frames.length+" قاب، "+fullModel.nodes.length+" گره و "+fullModel.members.length+" عضو هندسی؛ شامل پرلین، قید دیوار، ستونک انتهایی و مهاربندهای پیشنهادی.");
+        } else addLine(rows,"تولید و ترسیم مدل هندسی کامل سوله",false,"مدل هندسی کامل تولید نشد.");
+      } catch(e) { addLine(rows,"تولید و ترسیم مدل هندسی کامل سوله",false,e?.message||String(e)); }
+      if(!fullModelOK) window.SteelDrawing?.drawFrame?.();
       // اجرای مستقیم و هم‌زمان محاسبه؛ کلیک دکمه با setTimeout اجرا می‌شود
       // و بررسی فوری نتیجه پس از click باعث گزارش کاذب شکست می‌شد.
       let comboRun=null;
