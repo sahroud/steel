@@ -133,13 +133,36 @@
       }
       frameNodes.push({z,bl,el,r,er,br,lt,rt});
     });
+    // Build one physical purlin line at each roof station. The ridge is shared
+    // by both slopes and must be represented once, with left/right tributary widths.
+    const purlinStations=new Map();
     [-1,1].forEach(side=>{
       for(let ri=0;ri<=roofRows;ri++){
         const t=ri/roofRows;
         const x=side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t);
-        const y=roofY(x),row=roofLongitudinalStations.map(z=>addNode(nodes,x,y,z,"roof-secondary"));
-        for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"پرلین طولی سقف","roofPurlin",{side:side<0?"left":"right",row:ri+1,tributaryWidth:(totalRoofSlope/roofRows)*(ri===0||ri===roofRows?0.5:1),endOverhang:0.8});
+        const width=(totalRoofSlope/roofRows)*(ri===0||ri===roofRows?0.5:1);
+        const key=x.toFixed(7);
+        const existing=purlinStations.get(key);
+        if(existing){
+          existing.side="ridge";
+          existing.tributaryWidthRight=width;
+          existing.tributaryWidth+=width;
+        }else{
+          purlinStations.set(key,{x,side:side<0?"left":"right",row:ri+1,
+            tributaryWidth:width,
+            tributaryWidthLeft:side<0?width:0,
+            tributaryWidthRight:side>0?width:0});
+        }
       }
+    });
+    purlinStations.forEach(station=>{
+      const row=roofLongitudinalStations.map(z=>addNode(nodes,station.x,roofY(station.x),z,"roof-secondary"));
+      for(let i=0;i<row.length-1;i++)
+        addMember(members,row[i],row[i+1],"پرلین طولی سقف","roofPurlin",{
+          side:station.side,row:station.row,tributaryWidth:station.tributaryWidth,
+          tributaryWidthLeft:station.tributaryWidthLeft,
+          tributaryWidthRight:station.tributaryWidthRight,endOverhang:0.8
+        });
     });
     [-over,length+over].forEach(z=>{
       const xs=[-over*cs,half,span+over*cs];
@@ -207,8 +230,20 @@
         else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw,live:(loads.liveRight||0)*tw,snow:(loads.snowRight||0)*tw,wind:(loads.windRight||0)*tw,unit:"kN/m",tributaryWidth:tw};
         else m.lineLoads={wind:(loads.windWall||0)*windSign*tw,unit:"kN/m",tributaryWidth:tw};
       } else if(m.sectionKey==="roofPurlin"){
-        const side=m.side==="left"?"Left":"Right",w=m.tributaryWidth||0;
-        m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,unit:"kN/m",tributaryWidth:w};
+        const w=m.tributaryWidth||0;
+        if(m.side==="ridge"){
+          const wl=m.tributaryWidthLeft||0,wr=m.tributaryWidthRight||0;
+          m.lineLoads={
+            dead:(loads.deadLeft||0)*wl+(loads.deadRight||0)*wr,
+            live:(loads.liveLeft||0)*wl+(loads.liveRight||0)*wr,
+            snow:(loads.snowLeft||0)*wl+(loads.snowRight||0)*wr,
+            wind:(loads.windLeft||0)*wl+(loads.windRight||0)*wr,
+            unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr
+          };
+        }else{
+          const side=m.side==="left"?"Left":"Right";
+          m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,unit:"kN/m",tributaryWidth:w};
+        }
       } else if(m.sectionKey==="wallGirt"){
         const h=m.tributaryHeight||0;
         m.lineLoads={wind:(loads.windWall||0)*windSign*h,unit:"kN/m",tributaryHeight:h};
