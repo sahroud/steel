@@ -79,6 +79,7 @@
       const box=$("fullModel3DResult"), spanField=$("span"), riseField=$("rise");
       const originalSpan=Number(spanField?.value), originalRise=Number(riseField?.value);
       try {
+        const analysisModelMemberById=id=>(window.SteelStructuralModel?.model?.members||[]).find(x=>x.id===id)||null;
         if(!spanField||!Number.isFinite(originalSpan)||originalSpan<=0) throw new Error("دهانه فعلی معتبر نیست.");
         spanField.value="10";
         if(typeof window.updateRoofGeometry==="function") window.updateRoofGeometry();
@@ -94,6 +95,19 @@
           columnHeightM:Number($("height")?.value),
           roofSlopePercent:20,
           loadCase:"dead",
+          geometry:{
+            spanM:Number($("span")?.value),
+            lengthM:Number($("length")?.value),
+            frameSpacingM:Number($("spacing")?.value),
+            columnHeightM:Number($("height")?.value),
+            riseM:Number($("rise")?.value),
+            roofSlopePercent:(Number($("rise")?.value)/(Number($("span")?.value)/2))*100,
+            roofPurlinSpacingM:Number($("modelPurlinSpacing")?.value),
+            wallGirtSpacingM:Number($("modelGirtSpacing")?.value),
+            braceBays:Number($("modelBraceBays")?.value)
+          },
+          loadInputs:window.SteelLoads?.getData?.()||null,
+          supportType:result.supportType||null,
           nodeCount:result.nodeCount,
           memberCount:result.memberCount,
           maxTranslationMm:result.maxTranslation*1000,
@@ -105,7 +119,15 @@
           }:null,
           selfWeight:result.selfWeight||null,
           equilibrium:result.equilibrium||null,
-          criticalMemberReport:result.criticalMemberReport||[],
+          criticalMemberReport:(result.criticalMemberReport||[]).map(m=>{
+            const source=analysisModelMemberById(m.id);
+            return {...m,
+              start:source?.start||null,end:source?.end||null,
+              lineLoads:source?.lineLoads||null,
+              analysisLoad:source?.analysisLoad||null,
+              localAxes:m.localAxes||null
+            };
+          }),
           generatedAt:new Date().toISOString(),
           note:"تحلیل خطی مقدماتی است؛ نتیجه جایگزین کنترل آیین‌نامه‌ای، بررسی اتصالات و پایداری نیست."
         };
