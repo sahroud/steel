@@ -13,16 +13,24 @@ const norm=a=>Math.sqrt(dot(a,a));
 const scale=(a,s)=>a.map(v=>v*s);
 const sub=(a,b)=>a.map((v,i)=>v-b[i]);
 function solve(A,b){
- const n=b.length,M=A.map((r,i)=>r.slice().concat(b[i]));
- let maxDiag=0;for(let i=0;i<n;i++)maxDiag=Math.max(maxDiag,Math.abs(M[i][i]));
+ const n=b.length;
+ // Symmetric diagonal equilibration reduces false singularity caused by
+ // translational/rotational DOFs having very different stiffness units.
+ const scaleD=Array(n);
+ for(let i=0;i<n;i++){
+  const d=Math.abs(A[i][i]);
+  if(!(d>0&&Number.isFinite(d)))throw Error("DOF_SINGULAR:"+i+":قطر صفر یا نامعتبر در ماتریس سختی");
+  scaleD[i]=1/Math.sqrt(d);
+ }
+ const M=A.map((r,i)=>r.map((v,j)=>v*scaleD[i]*scaleD[j]).concat(b[i]*scaleD[i]));
  for(let k=0;k<n;k++){
   let p=k;for(let i=k+1;i<n;i++)if(Math.abs(M[i][k])>Math.abs(M[p][k]))p=i;
-  if(Math.abs(M[p][k])<Math.max(EPS,maxDiag*1e-12))throw Error("ماتریس سختی تکین یا سازه ناپایدار است؛ تکیه‌گاه‌ها، اتصالات و مهاربندی را بررسی کنید.");
+  if(Math.abs(M[p][k])<1e-12)throw Error("DOF_SINGULAR:"+k+":ماتریس مقیاس‌بندی‌شده تکین یا نزدیک به تکین است");
   [M[k],M[p]]=[M[p],M[k]];
   const d=M[k][k];for(let j=k;j<=n;j++)M[k][j]/=d;
   for(let i=0;i<n;i++){if(i===k)continue;const f=M[i][k];for(let j=k;j<=n;j++)M[i][j]-=f*M[k][j];}
  }
- return M.map(r=>r[n]);
+ return M.map((r,i)=>r[n]*scaleD[i]);
 }
 function transpose(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
 function mul(A,B){
@@ -98,7 +106,22 @@ function analyze(model,options){
  });
  const free=Array.from({length:nDof},(_,i)=>i).filter(i=>!fixed.has(i));
  if(!free.length)throw Error("تمام درجات آزادی مقید شده‌اند.");
- const Kff=free.map(i=>free.map(j=>K[i][j])),Ff=free.map(i=>F[i]),df=solve(Kff,Ff),D=Array(nDof).fill(0);
+ const Kff=free.map(i=>free.map(j=>K[i][j])),Ff=free.map(i=>F[i]);
+ let df;
+ try{df=solve(Kff,Ff);}
+ catch(err){
+  const match=String(err.message||err).match(/DOF_SINGULAR:(\\d+):(.*)/);
+  if(match){
+   const reduced=Number(match[1]),globalDof=free[reduced],nodeIndex=Math.floor(globalDof/6),dof=globalDof%6;
+   const dofNames=["انتقال X","انتقال Y","انتقال Z","دوران X","دوران Y","دوران Z"];
+   throw Error("ناپایداری عددی/سازه‌ای در گره "+nodes[nodeIndex].id+
+    " ("+nodes[nodeIndex].kind+")، مؤلفه "+dofNames[dof]+
+    "؛ شماره درجه آزادی آزاد "+globalDof+
+    ". جزئیات حل‌گر: "+match[2]+". باید پیوستگی اعضا، تکیه‌گاه و مهاربندی همین ناحیه بررسی شود.");
+  }
+  throw err;
+ }
+ const D=Array(nDof).fill(0);
  free.forEach((id,i)=>D[id]=df[i]);
  const KD=K.map(r=>dot(r,D)),R=KD.map((v,i)=>v-F[i]);
  const results=elements.map(e=>{
