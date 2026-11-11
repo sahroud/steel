@@ -159,7 +159,9 @@
             '<div class="field"><label for="p3_'+key+'_Iz">ممان اینرسی Iz (cm⁴)</label><input id="p3_'+key+'_Iz" type="number" min="0" step="0.01" placeholder="محور محلی z"></div>'+
             '<div class="field"><label for="p3_'+key+'_J">ثابت پیچشی J (cm⁴)</label><input id="p3_'+key+'_J" type="number" min="0" step="0.01" placeholder="مقدار واقعی"></div>'+
             '</div></details>').join('');
-        panel.appendChild(extraHost);
+        const validationButtons=panel.querySelector(".button-grid");
+        if(validationButtons) panel.insertBefore(extraHost,validationButtons);
+        else panel.appendChild(extraHost);
         $("btnCheckSections").addEventListener("click", validate);
     }
 
