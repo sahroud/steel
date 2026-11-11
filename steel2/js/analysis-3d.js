@@ -110,7 +110,7 @@ function analyze(model,options){
  let df;
  try{df=solve(Kff,Ff);}
  catch(err){
-  const match=String(err.message||err).match(/DOF_SINGULAR:(\\d+):(.*)/);
+  const match=String(err.message||err).match(/DOF_SINGULAR:(\d+):(.*)/);
   if(match){
    const reduced=Number(match[1]),globalDof=free[reduced],nodeIndex=Math.floor(globalDof/6),dof=globalDof%6;
    const dofNames=["انتقال X","انتقال Y","انتقال Z","دوران X","دوران Y","دوران Z"];
