@@ -7,6 +7,12 @@ const cities = [
 ];
 let records = {};
 cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:null,elevation:null,source:"",sourceDate:"",status:"نیازمند ورود و تطبیق با منبع رسمی"});
+function applyShahroudReference(){
+ const r=records.shahroud;if(!r)return;
+ r.name="شاهرود";r.basicWind=90;r.basicWindPressure=0.38;r.groundSnow=1.0;r.snowRegion=3;
+ r.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ ردیف ۱۸۳، جدول ۶-۷-۱ ردیف ۷۶ و بند ۶-۳-۲؛ استخراج از PDF ارسالی کاربر، نسخه توزیعی و نیازمند تطبیق نهایی با نسخه رسمی.";
+ r.sourceDate="1398";r.status="استخراج‌شده از PDF ارسالی؛ نیازمند تطبیق نهایی با نسخه رسمی";
+}
 function currentClimate(){return window.SteelLoads?.getData?.().climate || {};}
 function refreshStatus(){
  const el=$("climateDatabaseStatus"); if(!el)return;
@@ -61,7 +67,7 @@ function importDatabase(event){
     if([wind,snow,elev].some(v=>v!==null&&(!Number.isFinite(v)||v<0)))return;
     records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"واردشده؛ نیازمند کنترل")};
    });
-   refreshStatus();loadSelectedCity();alert("بانک اقلیمی وارد شد.");
+   applyShahroudReference();refreshStatus();loadSelectedCity();alert("بانک اقلیمی وارد شد؛ داده مرجع شاهرود حفظ شد.");
   }catch(e){alert("خطا در وارد کردن بانک: "+e.message);}
   event.target.value="";
  };
@@ -83,8 +89,10 @@ function setData(data){
  if(!data||data.schema!=="sahroud-steel-climate-db"||!data.records)return;
  const cleanNumber=v=>v===null||v===undefined||v===""?null:(Number.isFinite(Number(v))?Number(v):null);
  Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
+ applyShahroudReference();
  refreshStatus();
 }
+applyShahroudReference();
 records.shahroud.basicWind=90;
 records.shahroud.basicWindPressure=0.38;
 records.shahroud.groundSnow=1.0;
