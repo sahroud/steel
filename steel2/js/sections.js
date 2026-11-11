@@ -305,9 +305,23 @@
             button.dataset.sectionCheckInstalled = "true";
 
             button.addEventListener("click", function (event) {
+                // پنل مصالح ممکن است بسته باشد؛ پیش از اعتبارسنجی آن را باز می‌کنیم.
+                const panel = $("steelSectionsPanel");
+                const details = panel && panel.querySelector("details");
+                if (details) details.open = true;
+
                 if (!validate()) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
+                    const message = $("analysisMessage");
+                    const sectionMessage = $("sectionMessage");
+                    const explanation = sectionMessage ? sectionMessage.textContent : "اطلاعات مصالح و مقاطع ناقص است.";
+                    if (message) {
+                        message.textContent = "⛔ تحلیل شروع نشد: " + explanation + " لطفاً موارد مشخص‌شده در پنل مصالح و مقاطع را تکمیل کنید و دوباره بزنید.";
+                        message.style.color = "#b45309";
+                        message.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                    if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
             }, true);
         });
