@@ -120,6 +120,7 @@
           selfWeight:result.selfWeight||null,
           equilibrium:result.equilibrium||null,
           criticalMemberDiagnostics:result.criticalMemberDiagnostics||null,
+          criticalJointEquilibrium:result.criticalJointEquilibrium||null,
           criticalMemberReport:(result.criticalMemberReport||[]).map(m=>{
             const source=analysisModelMemberById(m.id);
             return {...m,
