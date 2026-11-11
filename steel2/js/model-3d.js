@@ -35,6 +35,12 @@
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
           " | تعداد واکنش‌های غیرصفر: "+result.reactions.length+
+          (result.criticalDisplacement
+            ? " | گره بحرانی: "+result.criticalDisplacement.nodeId+" ("+result.criticalDisplacement.kind+")"+
+              " | مختصات X/Y/Z: "+[result.criticalDisplacement.coordinates.x,result.criticalDisplacement.coordinates.y,result.criticalDisplacement.coordinates.z].map(v=>v.toFixed(3)).join(" / ")+" متر"+
+              " | جابه‌جایی ux/uy/uz: "+[result.criticalDisplacement.ux,result.criticalDisplacement.uy,result.criticalDisplacement.uz].map(v=>(v*1000).toFixed(3)).join(" / ")+" میلی‌متر"+
+              " | اعضای متصل ("+result.criticalDisplacement.connectedMembers.length+"): "+result.criticalDisplacement.connectedMembers.map(m=>m.id+" ["+m.type+"]").join("، ")
+            : " | اطلاعات گره بحرانی در دسترس نیست")+
           (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو":"")+
           ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ این خروجی تحلیل الاستیک خطی اولیه است و تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
         box.style.color="#15803d";
@@ -306,6 +312,23 @@
       sectionResolver:m=>window.SteelSections.resolveAnalysis3DSection(m),
       supports
     });
+    if(result.maxDisplacement){
+      const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
+      if(criticalNode){
+        result.criticalDisplacement={
+          nodeId:criticalNode.id,
+          kind:criticalNode.kind||"",
+          coordinates:{x:criticalNode.x,y:criticalNode.y,z:criticalNode.z},
+          ux:result.maxDisplacement.components[0],
+          uy:result.maxDisplacement.components[1],
+          uz:result.maxDisplacement.components[2],
+          magnitude:result.maxDisplacement.magnitude,
+          connectedMembers:analysisModel.members
+            .filter(m=>m.start===criticalNode.id||m.end===criticalNode.id)
+            .map(m=>({id:m.id,type:m.type,sectionKey:m.sectionKey,start:m.start,end:m.end}))
+        };
+      }
+    }
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
