@@ -61,6 +61,43 @@
       valid?"خواص A، Ix، Iy و مدول‌های مقطع از ابعاد تیرورق فعلی محاسبه و منتقل شد. ابعاد پیش‌فرض/انتخابی باید با طرح واقعی تطبیق داده شوند.":"محاسبه تیرورق انجام نشد یا ابعاد آن معتبر نیست.");
     return valid;
   }
+  function prepareMaterial(rows) {
+    const grade=$("steelGrade"), e=$("steelE"), fy=$("steelFy");
+    if(!grade||!e||!fy) {
+      addLine(rows,"تخصیص خودکار خواص اولیه فولاد",false,"فیلدهای مصالح در صفحه پیدا نشدند.");
+      return false;
+    }
+    const assigned=[];
+    if(!grade.value.trim()) {
+      grade.value="ST37 (فرض اولیه؛ نیازمند تأیید)";
+      assigned.push("گرید اولیه ST37");
+    }
+    if(e.value.trim()===""||!(Number(e.value)>0)) {
+      e.value="200";
+      assigned.push("E=200 GPa");
+    }
+    if(fy.value.trim()===""||!(Number(fy.value)>0)) {
+      fy.value="235";
+      assigned.push("Fy=235 MPa");
+    }
+    const valid=!!grade.value.trim()&&Number(e.value)>0&&Number(fy.value)>0;
+    const detail=(assigned.length?"مقادیر خالی تکمیل شد: "+assigned.join("، ")+". ":"مقادیر موجود حفظ شدند. ")+
+      "مقادیر فعلی: E="+e.value+" GPa و Fy="+fy.value+" MPa؛ گرید: "+grade.value+
+      ". این تخصیص فقط فرض اولیه است؛ Fy باید با استاندارد محصول، ضخامت ورق و گواهی کارخانه تأیید شود.";
+    addLine(rows,"تخصیص خودکار خواص اولیه فولاد (غیرقطعی)",false,valid?detail:"مقادیر مصالح معتبر نیستند. "+detail);
+    return valid;
+  }
+  function stabilityGaps() {
+    const labels={Lx:"طول مهارنشده محور قوی",Ly:"طول مهارنشده محور ضعیف",Kx:"ضریب طول مؤثر محور قوی",Ky:"ضریب طول مؤثر محور ضعیف"};
+    const gaps=[];
+    ["column","rafter"].forEach(member=>{
+      const values=window.SteelGirder?.readStability?.(member)||{};
+      Object.keys(labels).forEach(key=>{
+        if(!(Number(values[key])>0)) gaps.push((member==="column"?"ستون":"رفتر")+": "+labels[key]);
+      });
+    });
+    return gaps;
+  }
   function runStep(rows,label,fn,verify) {
     try {
       const result=fn();
@@ -107,17 +144,22 @@
         comboOK?"حالت‌های ترکیب بار تعریف‌شده در نرم‌افزار تحلیل شدند.":"تحلیل ترکیبات بار انجام نشد؛ پیام ماژول تحلیل را بررسی کنید.");
 
       if(comboOK) {
-        const demandButton=$("btnMemberDemand");
-        if(demandButton)demandButton.click();
-        addLine(rows,"استخراج تقاضای طراحی اعضا",!!window.SteelAnalysis?.memberDemandResults,
-          window.SteelAnalysis?.memberDemandResults?"تقاضا از نتایج ترکیبات بار استخراج شد.":"ماژول تقاضای اعضا خروجی تولید نکرد.");
+        const hasMemberDemand=window.SteelAnalysis.combinationResults.some(item=>
+          item.memberEnvelopes&&Object.keys(item.memberEnvelopes).length>0);
+        addLine(rows,"استخراج تقاضای طراحی اعضا از تحلیل ترکیبات",
+          hasMemberDemand,
+          hasMemberDemand?"تقاضا و پوش نیروهای اعضا در جدول تفکیکی تحلیل ترکیبات بار تولید شده است؛ دکمه مستقل دیگری برای این مرحله در صفحه وجود ندارد.":"در نتایج ترکیبات، جدول تقاضای تفکیکی اعضا تولید نشده است.");
 
         const bucklingMessage=$("bucklingMessage");
+        if($("combinationBucklingResults"))$("combinationBucklingResults").innerHTML="";
+        if(bucklingMessage)bucklingMessage.textContent="کنترل کمانش در حال اجراست...";
         window.SteelStability?.checkCombinationBuckling?.();
         const bucklingText=bucklingMessage?.textContent||"";
         const bucklingOK=/انجام شد|موفق/i.test(bucklingText)&&!/خطا/.test(bucklingText);
+        const gaps=stabilityGaps();
+        const gapText=gaps.length?"موارد واردنشده: "+gaps.join("؛ ")+". ":"";
         addLine(rows,"کنترل مقدماتی کمانش در ترکیبات بار",bucklingOK,
-          bucklingOK?bucklingText:"طول‌های مهارنشده Lx/Ly و ضرایب Kx/Ky باید از آرایش واقعی مهاربندی تعیین شوند؛ مقدار حدسی وارد نشد. "+bucklingText);
+          bucklingOK?bucklingText:gapText+"طول مهارنشده و K از ترسیم شماتیک مهاربند یا قید به‌تنهایی قابل تأیید نیستند؛ فقط مهارهایی باید منظور شوند که پیوستگی، سختی و اتصال آن‌ها طراحی و تأیید شده باشد. "+bucklingText);
 
         runStep(rows,"کنترل مقدماتی کنسول رفتر",()=>window.SteelCantileverCheck?.calculate?.(),
           ()=>!!window.SteelCantileverCheck?.lastResult);
@@ -168,8 +210,9 @@
       window.SteelTies?.drawAll?.();
       addLine(rows,"بازسازی ترسیم قیدها و مهاربندها",true,"ترسیم اجزای تعریف‌شده به‌روزرسانی شد.");
 
-      addLine(rows,"تعیین خودکار مشخصات فولاد و مقاطع",false,
-        "مدول E=200 GPa و Fy=235 MPa فعلی صرفاً مقادیر اولیه‌اند؛ گواهی ورق/استاندارد محصول و ضخامت باید تأیید شود. خواص هندسی تیرورق از ابعاد فعلی محاسبه شد، نه از حدس درباره مقطع واقعی.");
+      prepareMaterial(rows);
+      addLine(rows,"تعیین خودکار خواص هندسی مقاطع",true,
+        "خواص هندسی ستون و رفتر در صورت وجود ابعاد معتبر از تیرورق محاسبه می‌شود؛ این کار جایگزین تأیید گرید و خواص مکانیکی فولاد نیست.");
 
       if(!climate.ok) addLine(rows,"تولید بار اقلیمی نهایی برای شهر",false,
         "بانک فعلی نام شهرها را دارد اما رکوردهای معتبر و قابل استناد هنوز تکمیل نشده‌اند. تا آن زمان بار باد و برف خودکار تولید نمی‌شود.");
