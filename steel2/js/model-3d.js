@@ -35,7 +35,8 @@
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
           " | تعداد واکنش‌های غیرصفر: "+result.reactions.length+
-          ". این خروجی تحلیل الاستیک خطی اولیه است و تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
+          (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو":"")+
+          ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ این خروجی تحلیل الاستیک خطی اولیه است و تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
         box.style.color="#15803d";
         window.SteelStructuralModel.last3DResult=result;
       } catch(e) {
