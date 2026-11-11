@@ -18,9 +18,33 @@
       '<div class="field"><label for="modelBraceBays">تعداد دهانه مهاربندی در ابتدا و انتها</label><input id="modelBraceBays" type="number" min="0" step="1" value="1"></div></div>' +
       '<div class="button-grid"><button type="button" id="btnBuildFullModel" class="btn primary">تولید و ترسیم تمام اجزای سوله</button><button type="button" id="btnCheck3DSections" class="btn secondary">بررسی آمادگی مقاطع تحلیل سه‌بعدی</button></div>' +
       '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
-      '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>';
+      '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
+      '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
+      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option></select></div></div>' +
+      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button></div>' +
+      '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
     $("btnBuildFullModel").addEventListener("click", function () { try { build(); draw(); showSummary(); } catch (e) { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; } });
+    $("btnRunFull3D").addEventListener("click", function () {
+      const box=$("fullModel3DResult");
+      try {
+        build(); draw(); showSummary();
+        const lc=$("model3DLoadCase")?.value||"dead";
+        const result=analyze3D(lc);
+        box.textContent="تحلیل سه‌بعدی با موفقیت حل شد. حالت بار: "+result.loadCaseLabel+
+          " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
+          " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
+          " | تعداد واکنش‌های غیرصفر: "+result.reactions.length+
+          ". این خروجی تحلیل الاستیک خطی اولیه است و تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
+        box.style.color="#15803d";
+        window.SteelStructuralModel.last3DResult=result;
+      } catch(e) {
+        box.textContent="تحلیل سه‌بعدی انجام نشد: "+e.message+
+          "؛ این پیام برای جلوگیری از ارائه نتیجه نادرست نمایش داده شده است.";
+        box.style.color="#b45309";
+        window.SteelStructuralModel.last3DResult=null;
+      }
+    });
     $("btnCheck3DSections").addEventListener("click", function () {
       try {
         build();
@@ -177,6 +201,55 @@
     });
     return {ready:missing.length===0,groupCount:groups.size,memberCount:model.members.length,missing};
   }
+  function analyze3D(loadCase){
+    if(!model)build();
+    if(!window.SteelFrame3D||typeof window.SteelFrame3D.analyze!=="function")
+      throw new Error("حل‌گر سه‌بعدی بارگذاری نشده است.");
+    const readiness=validate3DSections();
+    if(!readiness.ready){
+      const first=readiness.missing[0];
+      throw new Error("مشخصات مقطع "+first.label+" ناقص است: "+first.reason+
+        "؛ تعداد اعضای این گروه: "+first.count);
+    }
+    const cases={
+      dead:{key:"dead",label:"مرده",direction:[0,-1,0]},
+      live:{key:"live",label:"زنده",direction:[0,-1,0]},
+      snow:{key:"snow",label:"برف",direction:[0,-1,0]}
+    };
+    const selected=cases[loadCase];
+    if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود.");
+    const analysisModel={
+      nodes:model.nodes.map(n=>({...n})),
+      members:model.members.map(m=>({...m}))
+    };
+    analysisModel.members.forEach(m=>{
+      const value=Number(m.lineLoads&&m.lineLoads[selected.key]||0);
+      if(!Number.isFinite(value))throw new Error("بار عضو "+m.id+" عدد معتبر نیست.");
+      const a=analysisModel.nodes.find(n=>n.id===m.start);
+      const b=analysisModel.nodes.find(n=>n.id===m.end);
+      if(!a||!b)throw new Error("مختصات عضو "+m.id+" یافت نشد.");
+      const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
+      const global=selected.direction.map(v=>v*value*1000);
+      const axes=[tr.axes.x,tr.axes.y,tr.axes.z];
+      const local=axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*global[i],0));
+      m.analysisLoad={uniformLocal:local};
+    });
+    const fixed= $("baseConnection")?.value==="fixed";
+    const supports=analysisModel.nodes.filter(n=>n.kind==="base").map(n=>({
+      nodeId:n.id,
+      fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
+    }));
+    if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
+    const result=window.SteelFrame3D.analyze(analysisModel,{
+      sectionResolver:m=>window.SteelSections.resolveAnalysis3DSection(m),
+      supports
+    });
+    result.loadCase=selected.key;
+    result.loadCaseLabel=selected.label;
+    result.supportType=fixed?"گیردار":"مفصلی";
+    result.warning="بار باد، ترکیبات بار، آزادسازی مهاربندها، P-Delta و کنترل آیین‌نامه‌ای در این مرحله منظور نشده‌اند.";
+    return result;
+  }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
     if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});}
@@ -189,6 +262,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,getProposedUnbracedLengths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,getProposedUnbracedLengths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
