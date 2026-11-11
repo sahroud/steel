@@ -7,6 +7,7 @@
   const FOLDER = "/نتایج نرم‌افزارهای مهندسی";
   const TOKEN_KEY = "sahroud_dropbox_refresh_token_v1";
   const AUTO_KEY = "sahroud_dropbox_auto_upload_v1";
+  const REPORT_KEY = "sahroud_steel_latest_span_report_v1";
   const $ = id => document.getElementById(id);
 
   let auth = null;
@@ -14,6 +15,21 @@
 
   function hasToken() {
     try { return !!localStorage.getItem(TOKEN_KEY); } catch (_) { return false; }
+  }
+
+  function getLatestReport() {
+    const live = window.SteelStructuralModel?.lastSpanComparison;
+    if (live && typeof live === "object") return live;
+    try {
+      const saved = localStorage.getItem(REPORT_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch (_) { return null; }
+  }
+
+  function rememberLatestReport(report) {
+    if (!report || typeof report !== "object") return;
+    try { localStorage.setItem(REPORT_KEY, JSON.stringify(report)); } catch (_) {}
+    if (window.SteelStructuralModel) window.SteelStructuralModel.lastSpanComparison = report;
   }
 
   function getClient() {
@@ -42,7 +58,7 @@
     const auto = $("dropboxAutoUpload");
     if (connect) connect.hidden = connected;
     if (disconnect) disconnect.hidden = !connected;
-    if (upload) upload.disabled = !connected || !window.SteelStructuralModel?.lastSpanComparison;
+    if (upload) upload.disabled = !connected || !getLatestReport();
     if (auto) auto.checked = localStorage.getItem(AUTO_KEY) !== "false";
     setStatus(connected
       ? "Dropbox در این مرورگر متصل است. پوشه مقصد: " + FOLDER
@@ -118,8 +134,8 @@
     });
     $("btnDropboxUploadLatest").addEventListener("click", async () => {
       try {
-        const report = window.SteelStructuralModel?.lastSpanComparison;
-        if (!report) throw new Error("ابتدا آزمایش مقایسه‌ای دهانه ۱۰ متر را اجرا کنید.");
+        const report = getLatestReport();
+        if (!report) throw new Error("گزارش آزمایش دهانه ۱۰ متر پیدا نشد؛ ابتدا آزمایش را اجرا کنید.");
         $("btnDropboxUploadLatest").disabled = true;
         setStatus("در حال بارگذاری گزارش…", false);
         await uploadSpanReport(report);
@@ -133,6 +149,8 @@
   }
 
   window.addEventListener("sahroud:span-report-ready", async event => {
+    rememberLatestReport(event.detail);
+    updateUI();
     if (localStorage.getItem(AUTO_KEY) === "false" || !hasToken()) return;
     try {
       setStatus("گزارش جدید شناسایی شد؛ بارگذاری خودکار آغاز شد…", false);
