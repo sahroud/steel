@@ -16,10 +16,22 @@
       '<div class="field"><label for="modelGirtSpacing">فاصله قیدهای افقی دیوار (m)</label><input id="modelGirtSpacing" type="number" min="0.3" step="0.05" value="1.50"></div>' +
       '<div class="field"><label for="modelEndPostSpacing">فاصله ستونک‌های دیوار انتهایی (m)</label><input id="modelEndPostSpacing" type="number" min="1" step="0.1" value="4.00"></div>' +
       '<div class="field"><label for="modelBraceBays">تعداد دهانه مهاربندی در ابتدا و انتها</label><input id="modelBraceBays" type="number" min="0" step="1" value="1"></div></div>' +
-      '<div class="button-grid"><button type="button" id="btnBuildFullModel" class="btn primary">تولید و ترسیم تمام اجزای سوله</button></div>' +
-      '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>';
+      '<div class="button-grid"><button type="button" id="btnBuildFullModel" class="btn primary">تولید و ترسیم تمام اجزای سوله</button><button type="button" id="btnCheck3DSections" class="btn secondary">بررسی آمادگی مقاطع تحلیل سه‌بعدی</button></div>' +
+      '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
+      '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
     $("btnBuildFullModel").addEventListener("click", function () { try { build(); draw(); showSummary(); } catch (e) { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; } });
+    $("btnCheck3DSections").addEventListener("click", function () {
+      try {
+        build();
+        const result=validate3DSections();
+        const box=$("fullModel3DReadiness");
+        box.textContent=result.ready
+          ? "مقاطع همه گروه‌ها از نظر کامل بودن A، Iy، Iz، J، E و G دارای ورودی معتبرند. این فقط کنترل تکمیل ورودی است؛ هنوز تحلیل بارگذاری‌شده و کنترل آیین‌نامه‌ای انجام نشده است."
+          : "تحلیل سه‌بعدی فعلاً مجاز نیست. گروه‌های ناقص: " + result.missing.map(x=>x.label+" ("+x.count+" عضو): "+x.reason).join(" | ");
+        box.style.color=result.ready?"#15803d":"#b45309";
+      } catch(e) { $("fullModel3DReadiness").textContent="خطا در بررسی: "+e.message; }
+    });
     ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays"].forEach(id => $(id)?.addEventListener("change", function () { try { build(); draw(); showSummary(); } catch (_) {} }));
   }
   function val(id, fallback) { const e=$(id), n=e?Number(e.value):fallback; return Number.isFinite(n)?n:fallback; }
@@ -144,6 +156,27 @@
     const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
     const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای خطی سهمی پرلین‌ها و قیدهای دیوار از بارهای سطحی ورودی محاسبه و در مدل ثبت شده‌اند؛ این داده‌ها هنوز وارد حل‌گر سه‌بعدی نشده‌اند. مهاربندهای ترسیم‌شده فقط آرایش پیشنهادی هستند؛ تا تعیین مقطع، اتصال، سختی و پیوستگی، مهار قطعی محسوب نمی‌شوند.</p><p><b>محدوده تحلیل فعلی:</b> حل‌گر موجود هنوز قاب عرضی دوبعدی نمونه را تحلیل می‌کند؛ این مدل در این مرحله برای جانمایی و استخراج هندسه است و هنوز حل‌گر سه‌بعدی همه اعضا نیست.</p>";
   }
+  function validate3DSections(){
+    if(!model)build();
+    const groups=new Map();
+    model.members.forEach(m=>{
+      const key=m.sectionKey||"unassigned";
+      if(!groups.has(key))groups.set(key,{key,count:0,member:m});
+      groups.get(key).count++;
+    });
+    const missing=[];
+    groups.forEach(g=>{
+      try{
+        if(!window.SteelSections||typeof window.SteelSections.resolveAnalysis3DSection!=="function")
+          throw new Error("اتصال تخصیص‌دهنده مقطع هنوز بارگذاری نشده است.");
+        window.SteelSections.resolveAnalysis3DSection(g.member);
+      }catch(e){
+        const labels={column:"ستون",rafter:"رفتر",roofPurlin:"پرلین سقف",wallGirt:"قید افقی دیوار",endPost:"ستونک دیوار انتهایی",endGirt:"تیر افقی دیوار انتهایی",wallBrace:"مهاربند دیوار",roofBrace:"مهاربند سقف",roofEdge:"تیر لبه سقف"};
+        missing.push({key:g.key,label:labels[g.key]||g.key,count:g.count,reason:e.message});
+      }
+    });
+    return {ready:missing.length===0,groupCount:groups.size,memberCount:model.members.length,missing};
+  }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
     if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});}
@@ -156,6 +189,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,getProposedUnbracedLengths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,getProposedUnbracedLengths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
