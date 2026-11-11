@@ -43,6 +43,28 @@
             : " | اطلاعات گره بحرانی در دسترس نیست")+
           (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو":"")+
           ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ این خروجی تحلیل الاستیک خطی اولیه است و تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
+        if(Array.isArray(result.criticalMemberReport)&&result.criticalMemberReport.length){
+          const fmt=(v,factor=1,d=3)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
+          const lines=["","گزارش تشخیصی اعضای متصل به گره بحرانی:",
+            "واحد نیرو: kN | واحد گشتاور: kN·m | مشخصات مقطع: A بر حسب cm² و ممان‌ها بر حسب cm⁴",
+            "ترتیب نیروها در هر انتها: N، Vy، Vz، T، My، Mz"];
+          result.criticalMemberReport.forEach((m,i)=>{
+            const s=m.section||{},a=m.endI||{},b=m.endJ||{};
+            lines.push((i+1)+") "+m.id+" — "+m.type+(m.profile?" — مقطع "+m.profile:"")+
+              " — طول "+fmt(m.length,1,3)+" m");
+            lines.push("   انتهای I: "+[a.N,a.Vy,a.Vz].map(v=>fmt(v,0.001)).join(" / ")+" kN؛ "+
+              [a.T,a.My,a.Mz].map(v=>fmt(v,0.001)).join(" / ")+" kN·m");
+            lines.push("   انتهای J: "+[b.N,b.Vy,b.Vz].map(v=>fmt(v,0.001)).join(" / ")+" kN؛ "+
+              [b.T,b.My,b.Mz].map(v=>fmt(v,0.001)).join(" / ")+" kN·m");
+            lines.push("   مقطع: A="+fmt(s.A,1e4,2)+" cm²؛ Iy="+fmt(s.Iy,1e8,2)+
+              "؛ Iz="+fmt(s.Iz,1e8,2)+"؛ J="+fmt(s.J,1e8,2)+" cm⁴؛ E="+
+              fmt(s.E,1e-9,2)+"؛ G="+fmt(s.G,1e-9,2)+" GPa");
+          });
+          lines.push("تذکر: این‌ها نیروهای انتهایی محلی عضو در تحلیل خطی فعلی‌اند؛ علامت‌ها مطابق قرارداد محلی حل‌گر است و به‌تنهایی کنترل مقاومت یا خیز آیین‌نامه‌ای محسوب نمی‌شوند.");
+          box.textContent+="\n"+lines.join("\n");
+        }else{
+          box.textContent+="\nگزارش نیروهای اعضای بحرانی در دسترس نیست.";
+        }
         box.style.color="#15803d";
         window.SteelStructuralModel.last3DResult=result;
       } catch(e) {
@@ -328,6 +350,25 @@
             .map(m=>({id:m.id,type:m.type,sectionKey:m.sectionKey,start:m.start,end:m.end}))
         };
       }
+    }
+    // Create a diagnostic report for members connected to the maximum-displacement node.
+    // The force signs follow the solver's local member-end convention.
+    if(result.criticalDisplacement&&Array.isArray(result.members)){
+      const connectedIds=new Set(result.criticalDisplacement.connectedMembers.map(m=>m.id));
+      result.criticalMemberReport=result.members
+        .filter(m=>connectedIds.has(m.id))
+        .map(m=>{
+          const source=analysisModel.members.find(x=>x.id===m.id)||{};
+          const f=Array.isArray(m.localEndForces)?m.localEndForces:[];
+          const section=m.section||{};
+          return {
+            id:m.id,type:m.type,length:m.length,profile:source.profile||source.sectionLabel||"",
+            sectionKey:source.sectionKey||"",
+            endI:{N:f[0],Vy:f[1],Vz:f[2],T:f[3],My:f[4],Mz:f[5]},
+            endJ:{N:f[6],Vy:f[7],Vz:f[8],T:f[9],My:f[10],Mz:f[11]},
+            section:{A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,E:section.E,G:section.G}
+          };
+        });
     }
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
