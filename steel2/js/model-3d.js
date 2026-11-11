@@ -48,12 +48,21 @@
       addMember(members,er,rt,"کنسول رفتر راست","rafter",{frame:fi+1,axis:"transverse"});
       frameNodes.push({z,bl,el,r,er,br,lt,rt});
     });
-    const roofRows=Math.max(1,Math.ceil(slope/psp));
+    const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp));
+    const roofLongitudinalStations=[-over,...frames,length+over];
     [-1,1].forEach(side=>{
       for(let ri=0;ri<=roofRows;ri++){
-        const t=ri/roofRows,x=side<0?half*t:half+half*t,y=roofY(x),row=frames.map(z=>addNode(nodes,x,y,z,"roof-secondary"));
-        for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"پرلین طولی سقف","roofPurlin",{side:side<0?"left":"right",row:ri+1,tributaryWidth:(slope/roofRows)*(ri===0||ri===roofRows?0.5:1)});
+        const t=ri/roofRows;
+        const x=side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t);
+        const y=roofY(x),row=roofLongitudinalStations.map(z=>addNode(nodes,x,y,z,"roof-secondary"));
+        for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"پرلین طولی سقف","roofPurlin",{side:side<0?"left":"right",row:ri+1,tributaryWidth:(totalRoofSlope/roofRows)*(ri===0||ri===roofRows?0.5:1),endOverhang:0.8});
       }
+    });
+    [-over,length+over].forEach(z=>{
+      const xs=[-over*cs,half,span+over*cs];
+      const edge=xs.map(x=>addNode(nodes,x,roofY(x),z,"roof-edge"));
+      addMember(members,edge[0],edge[1],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{end:z<0?"front":"rear",overhang:0.8});
+      addMember(members,edge[1],edge[2],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{end:z<0?"front":"rear",overhang:0.8});
     });
     const girtHeights=[],nGirt=Math.max(0,Math.floor(height/gsp));
     for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
@@ -120,9 +129,9 @@
     svg.innerHTML="";svg.setAttribute("viewBox","0 0 "+W+" "+H);svg.setAttribute("preserveAspectRatio","xMidYMid meet");
     const el=(tag,attrs)=>{const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));svg.appendChild(e);return e;};
     el("rect",{x:0,y:0,width:W,height:H,fill:"#f8fafc"});
-    const colors={column:"#176b9b",rafter:"#d97706",roofPurlin:"#0f766e",wallGirt:"#64748b",wallBrace:"#dc2626",roofBrace:"#b91c1c",endPost:"#2563eb",endGirt:"#94a3b8"};
-    const widths={column:5,rafter:4,roofPurlin:1.8,wallGirt:1.8,wallBrace:2.5,roofBrace:2.5,endPost:2.2,endGirt:1.5};
-    ["roofPurlin","wallGirt","endGirt","endPost","roofBrace","wallBrace","column","rafter"].forEach(type=>model.members.filter(m=>m.sectionKey===type).forEach(m=>{
+    const colors={column:"#176b9b",rafter:"#d97706",roofPurlin:"#0f766e",wallGirt:"#64748b",wallBrace:"#dc2626",roofBrace:"#b91c1c",endPost:"#2563eb",endGirt:"#94a3b8",roofEdge:"#b45309"};
+    const widths={column:5,rafter:4,roofPurlin:1.8,wallGirt:1.8,wallBrace:2.5,roofBrace:2.5,endPost:2.2,endGirt:1.5,roofEdge:3};
+    ["roofPurlin","wallGirt","endGirt","endPost","roofBrace","wallBrace","roofEdge","column","rafter"].forEach(type=>model.members.filter(m=>m.sectionKey===type).forEach(m=>{
       const a=model.nodes.find(n=>n.id===m.start),b=model.nodes.find(n=>n.id===m.end);if(!a||!b)return;const p=P(a),q=P(b);
       el("line",{x1:p.x,y1:p.y,x2:q.x,y2:q.y,stroke:colors[type],"stroke-width":widths[type],"stroke-linecap":"round",opacity:type==="roofPurlin"||type==="wallGirt"?"0.88":"1"});
     }));
