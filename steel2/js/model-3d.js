@@ -257,9 +257,13 @@
       throw new Error("شناسه گره تکراری در مدل: "+duplicateNodeIds.slice(0,8).join("، ")+
         "؛ تعداد گره‌ها: "+analysisModel.nodes.length);
     }
+    // Self-weight is added to the DEAD case only. Steel unit weight = 78.5 kN/m³.
+    // Area A comes from the same assigned section properties used by the 3D solver.
+    const steelUnitWeightKNm3=78.5;
+    let selfWeightKN=0, selfWeightMemberCount=0;
     analysisModel.members.forEach(m=>{
-      const value=Number(m.lineLoads&&m.lineLoads[selected.key]||0);
-      if(!Number.isFinite(value))throw new Error("بار عضو "+m.id+" عدد معتبر نیست.");
+      const lineLoad=Number(m.lineLoads&&m.lineLoads[selected.key]||0);
+      if(!Number.isFinite(lineLoad))throw new Error("بار عضو "+m.id+" عدد معتبر نیست.");
       const a=nodeById.get(m.start);
       const b=nodeById.get(m.end);
       if(!a||!b){
@@ -270,11 +274,20 @@
           "؛ شناسه‌های پایانی گره‌ها: "+sample+
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
+      let selfWeightLineLoad=0;
+      if(selected.key==="dead"){
+        const section=window.SteelSections.resolveAnalysis3DSection(m);
+        selfWeightLineLoad=section.A*steelUnitWeightKNm3;
+        selfWeightKN+=selfWeightLineLoad*Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+        selfWeightMemberCount++;
+      }
+      const totalLineLoad=lineLoad+selfWeightLineLoad;
       const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
-      const global=selected.direction.map(v=>v*value*1000);
+      const global=selected.direction.map(v=>v*totalLineLoad*1000);
       const axes=[tr.axes.x,tr.axes.y,tr.axes.z];
       const local=axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*global[i],0));
       m.analysisLoad={uniformLocal:local};
+      m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
     const fixed= $("baseConnection")?.value==="fixed";
     const supports=analysisModel.nodes.filter(n=>n.kind==="base").map(n=>({
@@ -289,7 +302,8 @@
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
-    result.warning="بار باد، ترکیبات بار، آزادسازی مهاربندها، P-Delta و کنترل آیین‌نامه‌ای در این مرحله منظور نشده‌اند.";
+    result.selfWeight={included:selected.key==="dead",unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount};
+    result.warning="وزن خود فولاد در حالت بار مرده با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. بار باد، ترکیبات بار، آزادسازی مهاربندها، P-Delta و کنترل آیین‌نامه‌ای در این مرحله منظور نشده‌اند.";
     return result;
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
