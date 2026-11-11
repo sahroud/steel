@@ -105,7 +105,7 @@
 
         data.windLeft = original.windLeft * windFactor * windSign;
         data.windRight = original.windRight * windFactor * windSign;
-        data.windWall = (Number(original.windWall) || 0) * windFactor;
+        data.windWall = (Number(original.windWall) || 0) * windFactor * windSign;
 
         data.windDirection = windSign < 0
             ? oppositeDirection(original.windDirection)
