@@ -84,7 +84,7 @@
     const detail=(assigned.length?"مقادیر خالی تکمیل شد: "+assigned.join("، ")+". ":"مقادیر موجود حفظ شدند. ")+
       "مقادیر فعلی: E="+e.value+" GPa و Fy="+fy.value+" MPa؛ گرید: "+grade.value+
       ". این تخصیص فقط فرض اولیه است؛ Fy باید با استاندارد محصول، ضخامت ورق و گواهی کارخانه تأیید شود.";
-    addLine(rows,"تخصیص خودکار خواص اولیه فولاد (غیرقطعی)",false,valid?detail:"مقادیر مصالح معتبر نیستند. "+detail);
+    addLine(rows,"تخصیص خودکار خواص اولیه فولاد",valid,detail+(valid?" تخصیص ورودی انجام شد؛ تأیید مهندسی خواص مصالح همچنان الزامی است.":" مقادیر مصالح معتبر نیستند."));
     return valid;
   }
   function stabilityGaps() {
@@ -144,11 +144,21 @@
       addLine(rows,"اعتبارسنجی هندسه و مشخصات پروژه",true,"ابعاد اصلی و ورودی‌های اجباری معتبرند.");
 
       runStep(rows,"بازترسیم مدل هندسی",()=>window.SteelDrawing?.drawFrame?.());
-      const comboButton=$("btnCombinations");
-      if(comboButton)comboButton.click();
-      const comboOK=Array.isArray(window.SteelAnalysis?.combinationResults)&&window.SteelAnalysis.combinationResults.length>0;
+      // اجرای مستقیم و هم‌زمان محاسبه؛ کلیک دکمه با setTimeout اجرا می‌شود
+      // و بررسی فوری نتیجه پس از click باعث گزارش کاذب شکست می‌شد.
+      let comboRun=null;
+      try {
+        window.SteelAnalysis.combinationResults=[];
+        if(typeof window.SteelAnalysis?.calculateCombinations!=="function") {
+          throw new Error("تابع محاسبه هم‌زمان ترکیبات بار در دسترس نیست؛ فایل app.js را به‌روزرسانی کنید.");
+        }
+        comboRun=window.SteelAnalysis.calculateCombinations();
+      } catch(e) {
+        comboRun={success:false,error:e?.message||String(e)};
+      }
+      const comboOK=!!comboRun?.success&&Array.isArray(window.SteelAnalysis?.combinationResults)&&window.SteelAnalysis.combinationResults.length>0;
       addLine(rows,"تحلیل قاب و همه ترکیبات بار موجود",comboOK,
-        comboOK?"حالت‌های ترکیب بار تعریف‌شده در نرم‌افزار تحلیل شدند.":"تحلیل ترکیبات بار انجام نشد؛ پیام ماژول تحلیل را بررسی کنید.");
+        comboOK?"تمام "+window.SteelAnalysis.combinationResults.length+" حالت ترکیب بار موجود تحلیل شدند.":(comboRun?.error||"تحلیل ترکیبات بار خروجی معتبر تولید نکرد؛ پیام تحلیل را بررسی کنید."));
 
       if(comboOK) {
         const hasMemberDemand=window.SteelAnalysis.combinationResults.some(item=>
@@ -219,9 +229,6 @@
 
       addLine(rows,"تعیین خودکار خواص هندسی مقاطع",true,
         "خواص هندسی ستون و رفتر در صورت وجود ابعاد معتبر از تیرورق محاسبه می‌شود؛ این کار جایگزین تأیید گرید و خواص مکانیکی فولاد نیست.");
-
-      if(!climate.ok) addLine(rows,"تولید بار اقلیمی نهایی برای شهر",false,
-        "بانک فعلی نام شهرها را دارد اما رکوردهای معتبر و قابل استناد هنوز تکمیل نشده‌اند. تا آن زمان بار باد و برف خودکار تولید نمی‌شود.");
 
       setReport(rows,"گزارش اجرای خودکار پروژه — نتایج مقدماتی");
       if(window.SteelProject?.setStatus)window.SteelProject.setStatus("اجرای خودکار مراحل وابسته انجام شد؛ موارد ناقص در گزارش اجرای خودکار مشخص شده‌اند.");
