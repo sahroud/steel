@@ -294,3 +294,43 @@ th {
     min-height: 200px;
   }
 }
+/* Geometry-first interface refinement */
+.geometry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+.roof-auto-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.roof-auto-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #cfe1e8;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #f4fafc, #eaf4f7);
+}
+.roof-auto-summary span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.roof-auto-summary strong {
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 800;
+}
+.geometry-hint {
+  margin: 10px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 650px) {
+  .geometry-grid { grid-template-columns: 1fr; }
+  .roof-auto-summary { grid-template-columns: 1fr; }
+  .roof-auto-summary > div { flex-direction: row; align-items: center; justify-content: space-between; }
+}
