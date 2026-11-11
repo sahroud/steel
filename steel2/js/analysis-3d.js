@@ -132,12 +132,29 @@ function analyze(model,options){
  catch(err){
   const match=String(err.message||err).match(/DOF_SINGULAR:(\d+):(.*)/);
   if(match){
-   const reduced=Number(match[1]),globalDof=free[reduced],nodeIndex=Math.floor(globalDof/6),dof=globalDof%6;
+   const reduced=Number(match[1]),globalDof=free[reduced];
    const dofNames=["انتقال X","انتقال Y","انتقال Z","دوران X","دوران Y","دوران Z"];
-   throw Error("ناپایداری عددی/سازه‌ای در گره "+nodes[nodeIndex].id+
-    " ("+nodes[nodeIndex].kind+")، مؤلفه "+dofNames[dof]+
+   let nodeLabel="نامشخص",component="درجه آزادی "+globalDof;
+   if(globalDof<nodes.length*6){
+    const nodeIndex=Math.floor(globalDof/6),dof=globalDof%6,node=nodes[nodeIndex];
+    nodeLabel=node?String(node.id)+" ("+(node.kind||"گره")+ ")":"گره نامشخص";
+    component=dofNames[dof];
+   }else{
+    let found=false;
+    purlinRotationDof.forEach((ids,nodeId)=>{
+     const local=ids.indexOf(globalDof);
+     if(local>=0){
+      const ni=nodeMap.get(nodeId),node=ni===undefined?null:nodes[ni];
+      nodeLabel=node?String(node.id)+" ("+(node.kind||"گره")+ ")":"گره پرلین نامشخص";
+      component="دوران "+["X","Y","Z"][local]+" پرلینِ جداشده از رفتر";
+      found=true;
+     }
+    });
+    if(!found)component="درجه آزادی اضافی "+globalDof+" (گره متناظر شناسایی نشد)";
+   }
+   throw Error("ناپایداری عددی/سازه‌ای در "+nodeLabel+"، مؤلفه "+component+
     "؛ شماره درجه آزادی آزاد "+globalDof+
-    ". جزئیات حل‌گر: "+match[2]+". باید پیوستگی اعضا، تکیه‌گاه و مهاربندی همین ناحیه بررسی شود.");
+    ". جزئیات حل‌گر: "+match[2]+". پیوستگی پرلین، جزئیات کلیپس/نبشی، مهاربندی و تکیه‌گاه‌های این ناحیه باید بررسی شوند.");
   }
   throw err;
  }
