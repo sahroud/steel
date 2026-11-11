@@ -43,7 +43,7 @@
         { name: "ترکیب ۱ ـ بارهای ثقلی", dead: 1.2, live: 1.6, snow: 0 },
         { name: "ترکیب ۲ ـ بار مرده و برف", dead: 1.2, live: 0, snow: 1.6 },
         { name: "ترکیب ۳ ـ بار مرده", dead: 1.4, live: 0, snow: 0 },
-        { name: "ترکیب ۴ ـ بار باد", dead: 0.9, live: 0, snow: 0 }
+        { name: "ترکیب ۴ ـ بار باد", dead: 0.8, live: 0, snow: 0 }
     ];
 
     let initialized = false;
