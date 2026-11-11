@@ -494,7 +494,9 @@
             sectionKey:source.sectionKey||"",
             endI:{N:f[0],Vy:f[1],Vz:f[2],T:f[3],My:f[4],Mz:f[5]},
             endJ:{N:f[6],Vy:f[7],Vz:f[8],T:f[9],My:f[10],Mz:f[11]},
-            section:{A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,E:section.E,G:section.G}
+            section:{A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,E:section.E,G:section.G},
+            analysisLoad:source.analysisLoad||null,
+            localAxes:m.localAxes||null
           };
         });
     }
