@@ -52,14 +52,16 @@
     [-1,1].forEach(side=>{
       for(let ri=0;ri<=roofRows;ri++){
         const t=ri/roofRows,x=side<0?half*t:half+half*t,y=roofY(x),row=frames.map(z=>addNode(nodes,x,y,z,"roof-secondary"));
-        for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"پرلین طولی سقف","roofPurlin",{side:side<0?"left":"right",row:ri+1,tributaryWidth:slope/roofRows});
+        for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"پرلین طولی سقف","roofPurlin",{side:side<0?"left":"right",row:ri+1,tributaryWidth:(slope/roofRows)*(ri===0||ri===roofRows?0.5:1)});
       }
     });
     const girtHeights=[],nGirt=Math.max(0,Math.floor(height/gsp));
     for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
     girtHeights.forEach((y,gi)=>[0,span].forEach((x,si)=>{
+      const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
+      const upper=gi===girtHeights.length-1?height:(y+girtHeights[gi+1])/2;
       const row=frames.map(z=>addNode(nodes,x,y,z,"wall-secondary"));
-      for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"قید افقی طولی دیوار","wallGirt",{side:si===0?"left":"right",row:gi+1,tributaryHeight:gsp});
+      for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"قید افقی طولی دیوار","wallGirt",{side:si===0?"left":"right",row:gi+1,tributaryHeight:upper-lower});
     }));
     [0,length].forEach((z,endIndex)=>{
       const count=Math.max(1,Math.ceil(span/endsp)), xs=Array.from({length:count+1},(_,i)=>span*i/count);
@@ -90,7 +92,25 @@
         addMember(members,c,d,"مهاربند ضربدری سقف","roofBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true});
       });
     });
-    model={version:1,geometry:{span,length,spacing,height,rise,frames,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
+    // Assign tributary line loads to the geometric members from current area-load inputs.
+    const loads=window.SteelLoads?.getData?.()||{};
+    const windSign=loads.windDirection==="right-to-left"?-1:1;
+    const frameTrib=frames.map((z,i)=>i===0?(frames[1]-z)/2:i===frames.length-1?(z-frames[i-1])/2:(frames[i+1]-frames[i-1])/2);
+    members.forEach(m=>{
+      if(m.axis==="transverse"){
+        const fi=(m.frame||1)-1,tw=frameTrib[fi]||spacing;
+        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:(loads.deadLeft||0)*tw,live:(loads.liveLeft||0)*tw,snow:(loads.snowLeft||0)*tw,wind:(loads.windLeft||0)*tw,unit:"kN/m",tributaryWidth:tw};
+        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw,live:(loads.liveRight||0)*tw,snow:(loads.snowRight||0)*tw,wind:(loads.windRight||0)*tw,unit:"kN/m",tributaryWidth:tw};
+        else m.lineLoads={wind:(loads.windWall||0)*windSign*tw,unit:"kN/m",tributaryWidth:tw};
+      } else if(m.sectionKey==="roofPurlin"){
+        const side=m.side==="left"?"Left":"Right",w=m.tributaryWidth||0;
+        m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,unit:"kN/m",tributaryWidth:w};
+      } else if(m.sectionKey==="wallGirt"){
+        const h=m.tributaryHeight||0;
+        m.lineLoads={wind:(loads.windWall||0)*windSign*h,unit:"kN/m",tributaryHeight:h};
+      }
+    });
+    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
     return model;
   }
   function draw() {
@@ -113,7 +133,7 @@
   function showSummary(){
     if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
     const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
-    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>مهاربندهای ترسیم‌شده فقط آرایش پیشنهادی هستند؛ تا تعیین مقطع، اتصال، سختی و پیوستگی، مهار قطعی محسوب نمی‌شوند.</p><p><b>محدوده تحلیل فعلی:</b> حل‌گر موجود هنوز قاب عرضی دوبعدی نمونه را تحلیل می‌کند؛ این مدل در این مرحله برای جانمایی و استخراج هندسه است و هنوز حل‌گر سه‌بعدی همه اعضا نیست.</p>";
+    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای خطی سهمی پرلین‌ها و قیدهای دیوار از بارهای سطحی ورودی محاسبه و در مدل ثبت شده‌اند؛ این داده‌ها هنوز وارد حل‌گر سه‌بعدی نشده‌اند. مهاربندهای ترسیم‌شده فقط آرایش پیشنهادی هستند؛ تا تعیین مقطع، اتصال، سختی و پیوستگی، مهار قطعی محسوب نمی‌شوند.</p><p><b>محدوده تحلیل فعلی:</b> حل‌گر موجود هنوز قاب عرضی دوبعدی نمونه را تحلیل می‌کند؛ این مدل در این مرحله برای جانمایی و استخراج هندسه است و هنوز حل‌گر سه‌بعدی همه اعضا نیست.</p>";
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
