@@ -65,7 +65,7 @@
         <div class="panel-title">
             <h3>۲ ـ مشخصات هندسی</h3>
         </div>
-        <div class="form-grid">
+        <div class="geometry-grid">
             <div class="field">
                 <label for="span">دهانه سوله (متر)</label>
                 <input id="span" type="number" min="1" step="0.1" value="20">
@@ -83,14 +83,17 @@
                 <input id="height" type="number" min="1" step="0.1" value="6">
             </div>
             <div class="field">
-                <label for="rise">ارتفاع تاج از تراز ستون (متر)</label>
-                <input id="rise" type="number" min="0" step="0.1" value="2">
-            </div>
-            <div class="field">
                 <label for="frames">تعداد قاب‌ها</label>
                 <input id="frames" type="number" readonly value="7">
             </div>
+            <input id="rise" type="hidden" value="1">
         </div>
+        <div class="roof-auto-summary">
+            <div><span>شیب ثابت سقف در این نسخه</span><strong id="roofSlopeDisplay">۱۰٪</strong></div>
+            <div><span>افزایش ارتفاع تا تاج</span><strong id="roofRiseDisplay">۱٫۰۰ متر</strong></div>
+            <div><span>ارتفاع کل تاج</span><strong id="roofTotalHeightDisplay">۷٫۰۰ متر</strong></div>
+        </div>
+        <p class="geometry-hint">ارتفاع تاج با توجه به دهانه و ارتفاع ستون به‌صورت خودکار محاسبه می‌شود. شیب نهایی باید با نوع پوشش سقف و دستورالعمل سازنده کنترل شود.</p>
     </section>
 
     <section class="panel">
@@ -247,6 +250,30 @@
 
 </main>
 
+<script>
+(function () {
+    "use strict";
+    const slope = 0.10;
+    const fmt = value => Number(value).toLocaleString("fa-IR", {minimumFractionDigits:2, maximumFractionDigits:2});
+    window.updateRoofGeometry = function () {
+        const span = Number(document.getElementById("span")?.value);
+        const height = Number(document.getElementById("height")?.value);
+        const riseField = document.getElementById("rise");
+        if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(height) || height <= 0) return;
+        const rise = span * 0.5 * slope;
+        if (riseField) riseField.value = rise.toFixed(6);
+        const slopeEl = document.getElementById("roofSlopeDisplay");
+        const riseEl = document.getElementById("roofRiseDisplay");
+        const totalEl = document.getElementById("roofTotalHeightDisplay");
+        if (slopeEl) slopeEl.textContent = "۱۰٪";
+        if (riseEl) riseEl.textContent = fmt(rise) + " متر";
+        if (totalEl) totalEl.textContent = fmt(height + rise) + " متر";
+    };
+    ["span", "height"].forEach(id => document.getElementById(id)?.addEventListener("input", window.updateRoofGeometry));
+    window.addEventListener("DOMContentLoaded", window.updateRoofGeometry);
+    window.updateRoofGeometry();
+})();
+</script>
 <script src="js/project.js"></script>
 <script src="js/drawing.js?v=20261110"></script>
 <script src="js/model-3d.js?v=20261111ridge1"></script>
