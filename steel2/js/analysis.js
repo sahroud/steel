@@ -242,7 +242,7 @@ function calculate() {
             loads.windDirection === "right-to-left" ? -1 : 1;
 
         const wallWindLineLoad =
-            Math.abs(Number(loads.windWall) || 0) *
+            (Number(loads.windWall) || 0) *
             spacing * 1000 * windSign;
 
         const roofWindLeftLine = windRoofLeft * spacing * 1000;
