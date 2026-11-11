@@ -248,102 +248,63 @@
         return result;
     }
 
-    function calculateOne(
-        section, pitch, side, g, loads, settings
-    ) {
-        const dead = Number(
-            side === "left"
-                ? loads.deadLeft || 0
-                : loads.deadRight || 0
-        );
-
-        const live = Number(
-            side === "left"
-                ? loads.liveLeft || 0
-                : loads.liveRight || 0
-        );
-
-        const snow = Number(
-            side === "left"
-                ? loads.snowLeft || 0
-                : loads.snowRight || 0
-        );
-
-        const windSigned = Number(
-            side === "left"
-                ? loads.windLeft || 0
-                : loads.windRight || 0
-        );
-        const wind = Math.abs(windSigned);
+    function calculateOne(section, pitch, side, g, loads, settings) {
+        const suffix = side === "left" ? "Left" : "Right";
+        const dead = Number(loads["dead" + suffix]) || 0;
+        const live = Number(loads["live" + suffix]) || 0;
+        const snow = Number(loads["snow" + suffix]) || 0;
+        const windSigned = Number(loads["wind" + suffix]) || 0;
         const windDirection = loads.windDirection || "not-specified";
-
-        // غربالگری دو حالت مستقل: ثقلی و باد ورودی.
-        // علامت باد حفظ می‌شود؛ تفسیر فشار/مکش و ترکیب آیین‌نامه‌ای در این مرحله انجام نمی‌شود.
         const gravity = dead + live + snow;
-        const surfaceEnvelope = Math.max(gravity, wind);
-
-        const qLine = surfaceEnvelope * pitch * g.cos;
-        const qNormal = qLine * g.cos;
 
         const L = g.spacing * 1000;
-        const q = qNormal;
+        const tributary = pitch * g.cos * g.cos;
+        function evaluateCase(type, pressure) {
+            const qLine = pressure * pitch * g.cos;
+            const qNormal = pressure * tributary;
+            const M = qNormal * L * L / 8;
+            const V = qNormal * L / 2;
+            const stress = Math.abs(M) / Math.max(section.wx, 0.001);
+            const shearStress = 1.5 * Math.abs(V) / Math.max(section.area, 0.001);
+            const deflection = 5 * qNormal * Math.pow(L, 4) /
+                (384 * settings.e * Math.max(section.ix, 1));
+            const allowableDeflection = L / settings.deflectionLimit;
+            const bendingOK = stress <= settings.fy;
+            const shearOK = shearStress <= settings.fy / 2;
+            const deflectionOK = Math.abs(deflection) <= allowableDeflection;
+            return {
+                id: side + "-" + type, type, pressure, qLine, qNormal,
+                M, V, stress, shearStress, deflection, allowableDeflection,
+                bendingOK, shearOK, deflectionOK,
+                ok: bendingOK && shearOK && deflectionOK
+            };
+        }
 
-        const M = q * L * L / 8;
-        const V = q * L / 2;
-
-        const stress = M / Math.max(section.wx, 0.001);
-
-        const shearStress =
-            1.5 * V / Math.max(section.area, 0.001);
-
-        const deflection =
-            5 * q * Math.pow(L, 4) /
-            (
-                384 * settings.e *
-                Math.max(section.ix, 1)
-            );
-
-        const allowableDeflection =
-            L / settings.deflectionLimit;
-
-        const bendingOK = stress <= settings.fy;
-        const shearOK = shearStress <= settings.fy / 2;
-        const deflectionOK =
-            deflection <= allowableDeflection;
-
-        // تعداد ردیف‌ها در هر شیب با احتساب پیش‌آمدگی ۸۰ سانتی‌متری
-        // در امتداد شیب؛ طول هر ردیف نیز با دو پیش‌آمدگی انتهایی افزایش می‌یابد.
-        const purlinCountPerSlope =
-            Math.ceil(g.slopeLength / pitch) + 1;
-
-        const weightPerSlope =
-            section.weight *
-            g.roofLength *
-            purlinCountPerSlope;
+        const gravityCase = evaluateCase("gravity", gravity);
+        const windCase = evaluateCase("wind", windSigned);
+        const cases = [gravityCase, windCase];
+        const governing = cases.reduce((a, b) =>
+            Math.max(a.stress, a.shearStress, Math.abs(a.deflection)) >=
+            Math.max(b.stress, b.shearStress, Math.abs(b.deflection)) ? a : b
+        );
+        const purlinCountPerSlope = Math.ceil(g.slopeLength / pitch) + 1;
+        const weightPerSlope = section.weight * g.roofLength * purlinCountPerSlope;
 
         return {
-            side,
-            gravity,
-            wind,
-            windSigned,
-            windDirection,
-            loadCases: [
-                { id: side + "-gravity", type: "gravity", pressure: gravity, status: "unfactored-input" },
-                { id: side + "-wind", type: "wind", pressure: wind, signedPressure: windSigned, direction: windDirection, status: "unfactored-input" }
-            ],
-            surfaceEnvelope,
-            qLine,
-            qNormal,
-            M,
-            V,
-            stress,
-            shearStress,
-            deflection,
-            allowableDeflection,
-            bendingOK,
-            shearOK,
-            deflectionOK,
-            ok: bendingOK && shearOK && deflectionOK,
+            side, gravity, wind: Math.abs(windSigned), windSigned, windDirection,
+            loadCases: cases,
+            gravityCase, windCase, governingCase: governing.type,
+            surfaceEnvelope: Math.max(Math.abs(gravity), Math.abs(windSigned)),
+            qLine: governing.qLine, qNormal: governing.qNormal,
+            M: governing.M, V: governing.V,
+            stress: Math.max(...cases.map(x => x.stress)),
+            shearStress: Math.max(...cases.map(x => x.shearStress)),
+            deflection: cases.reduce((a,b)=>Math.abs(a.deflection)>=Math.abs(b.deflection)?a:b).deflection,
+            allowableDeflection: governing.allowableDeflection,
+            bendingOK: cases.every(x=>x.bendingOK),
+            shearOK: cases.every(x=>x.shearOK),
+            deflectionOK: cases.every(x=>x.deflectionOK),
+            ok: cases.every(x=>x.ok),
             weightPerSlope
         };
     }
@@ -530,7 +491,7 @@
         const right = b.right;
 
         const maxStress = Math.max(
-            left.stress, right.stress
+            Math.abs(left.stress), Math.abs(right.stress)
         );
 
         const maxShear = Math.max(
@@ -538,15 +499,15 @@
         );
 
         const maxDef = Math.max(
-            left.deflection, right.deflection
+            Math.abs(left.deflection), Math.abs(right.deflection)
         );
 
         const maxM = Math.max(
-            left.M, right.M
+            Math.abs(left.M), Math.abs(right.M)
         );
 
         const maxV = Math.max(
-            left.V, right.V
+            Math.abs(left.V), Math.abs(right.V)
         );
 
         const countPerSlope =
@@ -648,8 +609,9 @@
                 <b>مبنای انتخاب:</b>
                 کمترین وزن تقریبی در بین گزینه‌های عبورکرده.
                 <br>
-                علامت باد ورودیِ حفظ‌شده ـ شیب چپ: ${fmt(left.windSigned, 3)} kN/m²
+                باد با علامت و جدا از ثقلی ـ شیب چپ: ${fmt(left.windSigned, 3)} kN/m²
                 | شیب راست: ${fmt(right.windSigned, 3)} kN/m²
+                <br>حالت حاکم چپ/راست: ${left.governingCase} / ${right.governingCase}
                 <br>
                 جهت ثبت‌شده: ${left.windDirection === "left-to-right" ? "چپ به راست" : left.windDirection === "right-to-left" ? "راست به چپ" : "تعیین‌نشده"}.
                 تفسیر فیزیکی علامت و ترکیب آیین‌نامه‌ای هنوز انجام نشده است.
