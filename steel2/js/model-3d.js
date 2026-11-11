@@ -492,7 +492,8 @@
           const f=Array.isArray(m.localEndForces)?m.localEndForces:[];
           const section=m.section||{};
           return {
-            id:m.id,type:m.type,length:m.length,profile:source.profile||source.sectionLabel||"",
+            id:m.id,type:m.type,length:m.length,start:source.start||null,end:source.end||null,
+            profile:source.profile||source.sectionLabel||"",
             sectionKey:source.sectionKey||"",
             endI:{N:f[0],Vy:f[1],Vz:f[2],T:f[3],My:f[4],Mz:f[5]},
             endJ:{N:f[6],Vy:f[7],Vz:f[8],T:f[9],My:f[10],Mz:f[11]},
@@ -507,6 +508,34 @@
         withLocalAxes:result.criticalMemberReport.filter(m=>m.localAxes!==null).length,
         sourceMemberCount:analysisModel.members.length,
         solverMemberCount:result.members.length
+      };
+      // Independently transform connected member-end actions into global axes
+      // and check force/moment closure at the critical joint.
+      const nodeId=result.criticalDisplacement.nodeId;
+      const forceSum=[0,0,0],momentSum=[0,0,0];
+      const forceScale=[0,0,0],momentScale=[0,0,0],contributions=[];
+      const addVector=(target,absolute,axes,values)=>{
+        const v=[0,1,2].map(i=>axes.x[i]*values[0]+axes.y[i]*values[1]+axes.z[i]*values[2]);
+        v.forEach((x,i)=>{target[i]+=x;absolute[i]+=Math.abs(x);});
+        return v;
+      };
+      let complete=true;
+      result.criticalMemberReport.forEach(m=>{
+        const atStart=m.start===nodeId,atEnd=m.end===nodeId;
+        if(!atStart&&!atEnd)return;
+        if(!m.localAxes||!m.start||!m.end){complete=false;return;}
+        const e=atStart?m.endI:m.endJ,a=m.localAxes;
+        const fg=addVector(forceSum,forceScale,a,[e.N,e.Vy,e.Vz]);
+        const mg=addVector(momentSum,momentScale,a,[e.T,e.My,e.Mz]);
+        contributions.push({memberId:m.id,end:atStart?"I":"J",forceGlobalN:fg,momentGlobalNm:mg});
+      });
+      const vnorm=v=>Math.hypot(v[0],v[1],v[2]);
+      result.criticalJointEquilibrium={
+        nodeId,complete,memberCount:contributions.length,contributions,
+        forceResidualN:forceSum,momentResidualNm:momentSum,
+        relativeForceResidual:vnorm(forceSum)/Math.max(vnorm(forceScale),1),
+        relativeMomentResidual:vnorm(momentSum)/Math.max(vnorm(momentScale),1),
+        note:"کنترل جمع کنش‌های انتهایی اعضای متصل در محورهای جهانی؛ این کنترل تعادل موضعی است و تأیید مقاومت یا اتصال نیست."
       };
     }
     result.loadCase=selected.key;
