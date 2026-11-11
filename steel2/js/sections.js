@@ -129,6 +129,25 @@
             if (main) main.appendChild(panel);
         }
 
+
+        const groups = [
+            ["column","ستون"],["rafter","رفتر"],["roofPurlin","پرلین سقف"],
+            ["wallGirt","قید افقی دیوار"],["endPost","ستونک دیوار انتهایی"],
+            ["endGirt","تیر افقی دیوار انتهایی"],["wallBrace","مهاربند دیوار"],
+            ["roofBrace","مهاربند سقف"],["roofEdge","تیر لبه سقف"]
+        ];
+        const p3=document.createElement("section");
+        p3.className="panel";p3.id="steel3dPropertiesPanel";
+        p3.innerHTML='<div class="panel-title"><h3>مشخصات تکمیلی مقاطع برای تحلیل سه‌بعدی</h3></div>'+
+          '<div class="notice">این ورودی‌ها برای هر گروه عضو جداگانه‌اند. تا وقتی مقادیر واقعی از نقشه یا جدول مقاطع وارد نشده باشد، تحلیل سه‌بعدی آن گروه اجرا نمی‌شود. هیچ مقدار فرضی به‌جای J یا ممان اینرسی وارد نمی‌شود.</div>'+
+          '<div class="field"><label for="steelG">مدول برشی G (GPa)</label><input id="steelG" type="number" min="1" step="0.1" placeholder="از مشخصات مصالح"></div>'+
+          groups.map(([key,label])=>'<details class="sub-panel"><summary>'+label+'</summary><div class="form-grid">'+
+            '<div class="field"><label for="p3_'+key+'_A">A (cm²)</label><input id="p3_'+key+'_A" type="number" min="0" step="0.01" placeholder="مقدار واقعی"></div>'+
+            '<div class="field"><label for="p3_'+key+'_Iy">Iy (cm⁴)</label><input id="p3_'+key+'_Iy" type="number" min="0" step="0.01" placeholder="محور محلی y"></div>'+
+            '<div class="field"><label for="p3_'+key+'_Iz">Iz (cm⁴)</label><input id="p3_'+key+'_Iz" type="number" min="0" step="0.01" placeholder="محور محلی z"></div>'+
+            '<div class="field"><label for="p3_'+key+'_J">J (cm⁴)</label><input id="p3_'+key+'_J" type="number" min="0" step="0.01" placeholder="ثابت پیچشی سنت‌ونان"></div>'+
+            '</div></details>').join('');
+        panel.insertAdjacentElement("afterend",p3);
         $("btnCheckSections").addEventListener("click", validate);
     }
 
@@ -152,7 +171,16 @@
                 Fy_MPa: Number($("steelFy").value)
             },
             column: readMember("column"),
-            rafter: readMember("rafter")
+            rafter: readMember("rafter"),
+            analysis3d: {
+                G_GPa: Number($("steelG")?.value),
+                groups: Object.fromEntries(["column","rafter","roofPurlin","wallGirt","endPost","endGirt","wallBrace","roofBrace","roofEdge"].map(key=>[key,{
+                    A_cm2:Number($("p3_"+key+"_A")?.value),
+                    Iy_cm4:Number($("p3_"+key+"_Iy")?.value),
+                    Iz_cm4:Number($("p3_"+key+"_Iz")?.value),
+                    J_cm4:Number($("p3_"+key+"_J")?.value)
+                }]))
+            }
         };
     }
 
@@ -207,6 +235,14 @@
             rafterSy: data.rafter?.Sy_cm3
         };
 
+        if(data.analysis3d){
+            const g=$("steelG");if(g&&data.analysis3d.G_GPa!==undefined)g.value=data.analysis3d.G_GPa;
+            Object.entries(data.analysis3d.groups||{}).forEach(([key,p])=>{
+                for(const [prop,suffix] of [["A","A_cm2"],["Iy","Iy_cm4"],["Iz","Iz_cm4"],["J","J_cm4"]]){
+                    const el=$("p3_"+key+"_"+prop);if(el&&p[suffix]!==undefined)el.value=p[suffix];
+                }
+            });
+        }
         Object.entries(fields).forEach(([id, value]) => {
             const element = $(id);
 
@@ -369,6 +405,18 @@
     window.SteelSections = {
         read,
         getDataSI,
+        getAnalysis3DProperties: function(){
+            const d=read(),a=d.analysis3d||{};
+            const toSI=v=>Number.isFinite(v)&&v>0?v:null;
+            const groups={};
+            Object.entries(a.groups||{}).forEach(([key,p])=>groups[key]={
+                A:toSI(p.A_cm2)*1e-4,
+                Iy:toSI(p.Iy_cm4)*1e-8,
+                Iz:toSI(p.Iz_cm4)*1e-8,
+                J:toSI(p.J_cm4)*1e-8
+            });
+            return {G:Number.isFinite(a.G_GPa)&&a.G_GPa>0?a.G_GPa*1e9:null,groups};
+        },
         setData,
         validate,
         validateForFrameAnalysis,
