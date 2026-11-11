@@ -210,6 +210,20 @@
         };
     }
 
+    function resolveAnalysis3DSection(member) {
+        if (!member || typeof member !== "object") throw new Error("مشخصات عضو برای تخصیص مقطع سه‌بعدی معتبر نیست.");
+        const key = String(member.sectionKey || "");
+        const labels = {column:"ستون",rafter:"رفتر",roofPurlin:"پرلین سقف",wallGirt:"قید افقی دیوار",endPost:"ستونک دیوار انتهایی",endGirt:"تیر افقی دیوار انتهایی",wallBrace:"مهاربند دیوار",roofBrace:"مهاربند سقف",roofEdge:"تیر لبه سقف"};
+        if (!Object.prototype.hasOwnProperty.call(labels,key)) throw new Error("گروه مقطع عضو " + (member.id || "") + " مشخص نیست؛ sectionKey=" + key);
+        const d=read(), p=d.analysis3d?.groups?.[key], E=Number(d.material?.E_GPa), G=Number(d.analysis3d?.G_GPa);
+        if (!(Number.isFinite(E)&&E>0)) throw new Error("مدول الاستیسیته E فولاد برای تحلیل سه‌بعدی معتبر نیست.");
+        if (!(Number.isFinite(G)&&G>0)) throw new Error("مدول برشی G را در پنل مشخصات تکمیلی مقاطع وارد کنید.");
+        if (!p) throw new Error("اطلاعات مقطع گروه " + labels[key] + " یافت نشد.");
+        const required=[["A_cm2","مساحت A (cm²)"],["Iy_cm4","ممان اینرسی Iy (cm⁴)"],["Iz_cm4","ممان اینرسی Iz (cm⁴)"],["J_cm4","ثابت پیچشی J (cm⁴)"]];
+        const missing=required.find(([field])=>!(Number.isFinite(Number(p[field]))&&Number(p[field])>0));
+        if(missing) throw new Error("برای گروه " + labels[key] + "، مقدار " + missing[1] + " خالی یا نامعتبر است. مقدار واقعی مقطع را وارد کنید.");
+        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile:key==="column"?d.column.profile:key==="rafter"?d.rafter.profile:""};
+    }
     function setData(data) {
         if (!data || typeof data !== "object") return;
 
@@ -417,6 +431,7 @@
             });
             return {G:Number.isFinite(a.G_GPa)&&a.G_GPa>0?a.G_GPa*1e9:null,groups};
         },
+        resolveAnalysis3DSection,
         setData,
         validate,
         validateForFrameAnalysis,
