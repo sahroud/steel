@@ -151,7 +151,7 @@ function calculate() {
         const projectError = window.SteelProject.validate();
         if (projectError) throw new Error(projectError);
 
-        if (!window.SteelSections.validate()) {
+        if (!window.SteelSections.validateForFrameAnalysis()) {
             throw new Error(
                 "ابتدا مشخصات مصالح و مقاطع را کامل و کنترل کنید."
             );
