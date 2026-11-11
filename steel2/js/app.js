@@ -131,17 +131,6 @@
         ];
 
         roofActions.forEach(action => {
-            cases.push({
-                name: "ترکیب ۲ ـ 1.2D + 0.5(" + action.title + ")",
-                data: makeCombinationData(original, {
-                    deadFactor: 1.2,
-                    liveFactor: action.key === "live" ? 0.5 : 0,
-                    snowFactor: action.key === "snow" ? 0.5 : 0
-                })
-            });
-        });
-
-        roofActions.forEach(action => {
             signs.forEach(sign => {
                 cases.push({
                     name: "ترکیب ۳ ـ 1.2D + 1.6(" +
@@ -152,23 +141,6 @@
                         liveFactor: action.key === "live" ? 1.6 : 0,
                         snowFactor: action.key === "snow" ? 1.6 : 0,
                         windFactor: 0.8,
-                        windSign: sign
-                    })
-                });
-            });
-        });
-
-        roofActions.forEach(action => {
-            signs.forEach(sign => {
-                cases.push({
-                    name: "ترکیب ۴ ـ 1.2D + 1.6W + 0.5(" +
-                        action.title + ")، " +
-                        (sign > 0 ? "جهت اول باد" : "جهت معکوس باد"),
-                    data: makeCombinationData(original, {
-                        deadFactor: 1.2,
-                        liveFactor: action.key === "live" ? 0.5 : 0,
-                        snowFactor: action.key === "snow" ? 0.5 : 0,
-                        windFactor: 1.6,
                         windSign: sign
                     })
                 });
@@ -501,9 +473,11 @@
                     ورودی مربوط، در این مرحله وارد نشده‌اند.</p>
 
                     <p>۳. این نسخه برای قاب سوله فقط Lr یا S را
-                    در حالت‌های جایگزین وارد می‌کند؛ بار زنده طبقات L،
-                    بار باران R، زلزله E و خودکرنشی T ورودی مستقل
-                    ندارند و در این تحلیل نیستند.</p>
+                    در حالت‌های جایگزین وارد می‌کند. چون ورودی مستقل
+                    بار زنده طبقات L، بار باران R و زلزله E هنوز وجود ندارد،
+                    ترکیب‌های وابسته به این بارها (ترکیب‌های ۲، ۴، ۵ و ۷)
+                    عمداً تولید نمی‌شوند؛ نباید Lr به‌جای L یا بار صفرِ فرضی
+                    به‌جای E و R استفاده شود. خودکرنشی T نیز وارد نشده است.</p>
 
                     <p>۴. باد دیوار در این مدل فقط به‌صورت بار افقی
                     روی ستون‌های قاب دوبعدی اعمال می‌شود؛ تحلیل طولی
