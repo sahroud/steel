@@ -282,7 +282,8 @@
 
         const gravityCase = evaluateCase("gravity", gravity);
         const windCase = evaluateCase("wind", windSigned);
-        const cases = [gravityCase, windCase];
+        const reverseWindCase = evaluateCase("wind-reverse", -windSigned);
+        const cases = [gravityCase, windCase, reverseWindCase];
         const governing = cases.reduce((a, b) =>
             Math.max(a.stress, a.shearStress, Math.abs(a.deflection)) >=
             Math.max(b.stress, b.shearStress, Math.abs(b.deflection)) ? a : b
@@ -293,7 +294,7 @@
         return {
             side, gravity, wind: Math.abs(windSigned), windSigned, windDirection,
             loadCases: cases,
-            gravityCase, windCase, governingCase: governing.type,
+            gravityCase, windCase, reverseWindCase, governingCase: governing.type,
             surfaceEnvelope: Math.max(Math.abs(gravity), Math.abs(windSigned)),
             qLine: governing.qLine, qNormal: governing.qNormal,
             M: governing.M, V: governing.V,
