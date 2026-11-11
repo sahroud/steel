@@ -51,6 +51,14 @@
                         <input id="${prefix}Sy" type="number"
                             min="0" step="0.01" value="0">
                     </div>
+                    <div class="field">
+                        <label for="${prefix}Iz3D">ممان اینرسی Iz برای تحلیل سه‌بعدی (cm⁴)</label>
+                        <input id="${prefix}Iz3D" type="number" min="0" step="0.01" placeholder="مقدار واقعی">
+                    </div>
+                    <div class="field">
+                        <label for="${prefix}J3D">ثابت پیچشی J برای تحلیل سه‌بعدی (cm⁴)</label>
+                        <input id="${prefix}J3D" type="number" min="0" step="0.01" placeholder="مقدار واقعی">
+                    </div>
                 </div>
             `;
         }
@@ -71,7 +79,12 @@
                     <label for="steelGrade">نوع فولاد</label>
                     <input id="steelGrade" type="text"
                         value="ST37 / مقدار نیازمند تأیید">
+                    <div class="field">
+                    <label for="steelG">مدول برشی G (GPa)</label>
+                    <input id="steelG" type="number" min="1" step="0.1"
+                        value="80" placeholder="مقدار معتبر مصالح">
                 </div>
+            </div>
                 <div class="field">
                     <label for="steelE">مدول الاستیسیته E (GPa)</label>
                     <input id="steelE" type="number"
@@ -94,9 +107,9 @@
             ${memberFields("rafter", "ج ـ مشخصات مقطع رفترها")}
 
             <div class="notice">
-                برای تیرورق جوشی، مدول‌های مقطع به‌صورت خودکار
-                از ابعاد ورق‌ها محاسبه و منتقل می‌شوند.
-                برای مقاطع آماده باید مشخصات معتبر آن‌ها وارد شود.
+                مشخصات ستون و رفتر در همین قسمت ثبت می‌شود. A و Iy در بخش اصلی هر عضو فقط یک‌بار وارد می‌شوند؛
+                برای تحلیل سه‌بعدی، Iz و J نیز در کنار همان عضو تکمیل می‌شوند.
+                G نیز یک مقدار مشترک برای تمام گروه‌هاست.
             </div>
 
             <div class="button-grid">
@@ -130,24 +143,23 @@
         }
 
 
-        const groups = [
-            ["column","ستون"],["rafter","رفتر"],["roofPurlin","پرلین سقف"],
-            ["wallGirt","قید افقی دیوار"],["endPost","ستونک دیوار انتهایی"],
-            ["endGirt","تیر افقی دیوار انتهایی"],["wallBrace","مهاربند دیوار"],
-            ["roofBrace","مهاربند سقف"],["roofEdge","تیر لبه سقف"]
+        // مشخصات گروه‌های فرعی در همان پنل اصلی و در یک محل نگهداری می‌شوند.
+        const extraGroups = [
+            ["roofPurlin","پرلین سقف"],["wallGirt","قید افقی دیوار"],
+            ["endPost","ستونک دیوار انتهایی"],["endGirt","تیر افقی دیوار انتهایی"],
+            ["wallBrace","مهاربند دیوار"],["roofBrace","مهاربند سقف"],["roofEdge","تیر لبه سقف"]
         ];
-        const p3=document.createElement("section");
-        p3.className="panel";p3.id="steel3dPropertiesPanel";
-        p3.innerHTML='<div class="panel-title"><h3>مشخصات تکمیلی مقاطع برای تحلیل سه‌بعدی</h3></div>'+
-          '<div class="notice">این ورودی‌ها برای هر گروه عضو جداگانه‌اند. تا وقتی مقادیر واقعی از نقشه یا جدول مقاطع وارد نشده باشد، تحلیل سه‌بعدی آن گروه اجرا نمی‌شود. هیچ مقدار فرضی به‌جای J یا ممان اینرسی وارد نمی‌شود.</div>'+
-          '<div class="field"><label for="steelG">مدول برشی G (GPa)</label><input id="steelG" type="number" min="1" step="0.1" placeholder="از مشخصات مصالح"></div>'+
-          groups.map(([key,label])=>'<details class="sub-panel"><summary>'+label+'</summary><div class="form-grid">'+
-            '<div class="field"><label for="p3_'+key+'_A">A (cm²)</label><input id="p3_'+key+'_A" type="number" min="0" step="0.01" placeholder="مقدار واقعی"></div>'+
-            '<div class="field"><label for="p3_'+key+'_Iy">Iy (cm⁴)</label><input id="p3_'+key+'_Iy" type="number" min="0" step="0.01" placeholder="محور محلی y"></div>'+
-            '<div class="field"><label for="p3_'+key+'_Iz">Iz (cm⁴)</label><input id="p3_'+key+'_Iz" type="number" min="0" step="0.01" placeholder="محور محلی z"></div>'+
-            '<div class="field"><label for="p3_'+key+'_J">J (cm⁴)</label><input id="p3_'+key+'_J" type="number" min="0" step="0.01" placeholder="ثابت پیچشی سنت‌ونان"></div>'+
+        const extraHost=document.createElement("div");
+        extraHost.id="extraSectionGroups";
+        extraHost.innerHTML='<hr><h4>د ـ مشخصات مقاطع سایر اعضا</h4>'+
+          '<div class="notice">هر گروه را باز کنید و مشخصات واقعی همان مقطع را فقط در همین قسمت وارد کنید.</div>'+
+          extraGroups.map(([key,label])=>'<details class="sub-panel"><summary>'+label+'</summary><div class="form-grid">'+
+            '<div class="field"><label for="p3_'+key+'_A">مساحت A (cm²)</label><input id="p3_'+key+'_A" type="number" min="0" step="0.01" placeholder="مقدار واقعی"></div>'+
+            '<div class="field"><label for="p3_'+key+'_Iy">ممان اینرسی Iy (cm⁴)</label><input id="p3_'+key+'_Iy" type="number" min="0" step="0.01" placeholder="محور محلی y"></div>'+
+            '<div class="field"><label for="p3_'+key+'_Iz">ممان اینرسی Iz (cm⁴)</label><input id="p3_'+key+'_Iz" type="number" min="0" step="0.01" placeholder="محور محلی z"></div>'+
+            '<div class="field"><label for="p3_'+key+'_J">ثابت پیچشی J (cm⁴)</label><input id="p3_'+key+'_J" type="number" min="0" step="0.01" placeholder="مقدار واقعی"></div>'+
             '</div></details>').join('');
-        panel.insertAdjacentElement("afterend",p3);
+        panel.appendChild(extraHost);
         $("btnCheckSections").addEventListener("click", validate);
     }
 
@@ -174,12 +186,23 @@
             rafter: readMember("rafter"),
             analysis3d: {
                 G_GPa: Number($("steelG")?.value),
-                groups: Object.fromEntries(["column","rafter","roofPurlin","wallGirt","endPost","endGirt","wallBrace","roofBrace","roofEdge"].map(key=>[key,{
-                    A_cm2:Number($("p3_"+key+"_A")?.value),
-                    Iy_cm4:Number($("p3_"+key+"_Iy")?.value),
-                    Iz_cm4:Number($("p3_"+key+"_Iz")?.value),
-                    J_cm4:Number($("p3_"+key+"_J")?.value)
-                }]))
+                groups: Object.fromEntries(["column","rafter","roofPurlin","wallGirt","endPost","endGirt","wallBrace","roofBrace","roofEdge"].map(key=>{
+                    if(key==="column"||key==="rafter"){
+                        const m=key==="column"?readMember("column"):readMember("rafter");
+                        return [key,{
+                            A_cm2:m.A_cm2,
+                            Iy_cm4:m.Iy_cm4,
+                            Iz_cm4:Number($(key+"Iz3D")?.value),
+                            J_cm4:Number($(key+"J3D")?.value)
+                        }];
+                    }
+                    return [key,{
+                        A_cm2:Number($("p3_"+key+"_A")?.value),
+                        Iy_cm4:Number($("p3_"+key+"_Iy")?.value),
+                        Iz_cm4:Number($("p3_"+key+"_Iz")?.value),
+                        J_cm4:Number($("p3_"+key+"_J")?.value)
+                    }];
+                }))
             }
         };
     }
@@ -252,8 +275,19 @@
         if(data.analysis3d){
             const g=$("steelG");if(g&&data.analysis3d.G_GPa!==undefined)g.value=data.analysis3d.G_GPa;
             Object.entries(data.analysis3d.groups||{}).forEach(([key,p])=>{
-                for(const [prop,suffix] of [["A","A_cm2"],["Iy","Iy_cm4"],["Iz","Iz_cm4"],["J","J_cm4"]]){
-                    const el=$("p3_"+key+"_"+prop);if(el&&p[suffix]!==undefined)el.value=p[suffix];
+                if(key==="column"||key==="rafter"){
+                    const prefix=key;
+                    // در پروژه‌های قدیمی، داده سه‌بعدی را فقط برای خانه‌های خالی منتقل کن.
+                    const a=$(prefix+"A"),iy=$(prefix+"Iy");
+                    if(a&&(!(Number(a.value)>0))&&p.A_cm2!==undefined)a.value=p.A_cm2;
+                    if(iy&&(!(Number(iy.value)>0))&&p.Iy_cm4!==undefined)iy.value=p.Iy_cm4;
+                    const iz=$(prefix+"Iz3D"),j=$(prefix+"J3D");
+                    if(iz&&p.Iz_cm4!==undefined)iz.value=p.Iz_cm4;
+                    if(j&&p.J_cm4!==undefined)j.value=p.J_cm4;
+                }else{
+                    for(const [prop,suffix] of [["A","A_cm2"],["Iy","Iy_cm4"],["Iz","Iz_cm4"],["J","J_cm4"]]){
+                        const el=$("p3_"+key+"_"+prop);if(el&&p[suffix]!==undefined)el.value=p[suffix];
+                    }
                 }
             });
         }
