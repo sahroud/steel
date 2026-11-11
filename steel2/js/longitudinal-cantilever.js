@@ -26,11 +26,11 @@
   function caseResult(qLine, a, E, I, W, Fy, limitRatio) {
     // qLine is kN/m; numerically 1 kN/m = 1 N/mm.
     const L = a * 1000;
-    const q = Math.abs(qLine);
-    const M = q * L * L / 2;       // N.mm, cantilever root moment
-    const V = q * L / 1000;        // kN
-    const stress = M / W;          // MPa, gross elastic estimate
-    const deflection = q * Math.pow(L, 4) / (8 * E * I); // mm
+    const q = qLine;
+    const M = q * L * L / 2;       // N.mm; sign follows load direction
+    const V = q * L / 1000;        // kN; signed
+    const stress = Math.abs(M / W); // MPa, gross elastic estimate
+    const deflection = q * Math.pow(L, 4) / (8 * E * I); // mm; signed
     const limit = L / limitRatio;
 
     return {
@@ -41,7 +41,7 @@
       deflection,
       limit,
       bendingRatio: stress / Fy,
-      deflectionRatio: deflection / Math.max(limit, 0.001),
+      deflectionRatio: Math.abs(deflection) / Math.max(limit, 0.001),
       bendingBelowFy: stress <= Fy,
       deflectionBelowLimit: deflection <= limit
     };
@@ -108,7 +108,7 @@
       // فرض شده بارهای سطحی بر مبنای تصویر افقی وارد شده‌اند.
       const tributaryWidth = pitch * widthFactor;
       const gravityLine = gravityPressure * tributaryWidth;
-      const windLine = Math.abs(data.wind) * tributaryWidth;
+      const windLine = data.wind * tributaryWidth;
 
       const gravity = caseResult(gravityLine, a, E, I, W, Fy, limitRatio);
       const wind = caseResult(windLine, a, E, I, W, Fy, limitRatio);
@@ -158,6 +158,7 @@
     `;
 
     window.SteelLongitudinalCantilever = {
+      run,
       lastResult: {
         results,
         section: section.name,
