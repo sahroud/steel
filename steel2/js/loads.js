@@ -125,8 +125,8 @@
                     <input id="climateGroundSnow" type="number" min="0" step="0.01" placeholder="از جدول/نقشه معتبر">
                 </div>
                 <div class="field">
-                    <label for="climateBasicWind">سرعت مبنای باد (m/s)</label>
-                    <input id="climateBasicWind" type="number" min="0" step="0.1" placeholder="از جدول معتبر ایستگاه">
+                    <label for="climateBasicWind">سرعت مبنای باد (km/h)</label>
+                    <input id="climateBasicWind" type="number" min="0" step="0.1" placeholder="از جدول ۶-۱۰-۱؛ km/h">
                 </div>
                 <div class="field">
                     <label for="climateTerrain">رده زبری / مواجهه زمین</label>
