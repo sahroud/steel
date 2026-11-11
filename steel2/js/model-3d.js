@@ -42,7 +42,8 @@
               " | اعضای متصل ("+result.criticalDisplacement.connectedMembers.length+"): "+result.criticalDisplacement.connectedMembers.map(m=>m.id+" ["+m.type+"]").join("، ")
             : " | اطلاعات گره بحرانی در دسترس نیست")+
           (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو":"")+
-          ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ این خروجی تحلیل الاستیک خطی اولیه است و تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
+          (result.equilibrium?" | کنترل تعادل نیرو: "+(result.equilibrium.relativeForceResidual*100).toExponential(2)+"٪؛ تعادل لنگر: "+(result.equilibrium.relativeMomentResidual*100).toExponential(2)+"٪؛ "+(result.equilibrium.ok?"تعادل کلی برقرار":"هشدار: عدم تعادل کلی"):" | کنترل تعادل در دسترس نیست")+
+          ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل فعلی خطی و با اتصال صلب گره‌هاست، آزادسازی انتهایی و P-Delta ندارد و تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
         if(Array.isArray(result.criticalMemberReport)&&result.criticalMemberReport.length){
           const fmt=(v,factor=1,d=3)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
           const lines=["","گزارش تشخیصی اعضای متصل به گره بحرانی:",
@@ -272,7 +273,7 @@
   function showSummary(){
     if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
     const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
-    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای خطی سهمی پرلین‌ها و قیدهای دیوار از بارهای سطحی ورودی محاسبه و در مدل ثبت شده‌اند؛ این داده‌ها هنوز وارد حل‌گر سه‌بعدی نشده‌اند. مهاربندهای ترسیم‌شده فقط آرایش پیشنهادی هستند؛ تا تعیین مقطع، اتصال، سختی و پیوستگی، مهار قطعی محسوب نمی‌شوند.</p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
+    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی پرلین‌ها تبدیل و در تحلیل سه‌بعدی اعمال می‌شوند؛ بار باد و ترکیبات بار هنوز در حل‌گر سه‌بعدی اعمال نمی‌شوند. در تحلیل فعلی، تقاطع پرلین و رفتر و سایر گره‌های مشترک به‌صورت اتصال صلب مدل شده‌اند؛ مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
   }
   function validate3DSections(){
     if(!model)build();
@@ -409,7 +410,7 @@
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
     result.selfWeight={included:selected.key==="dead",unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount};
-    result.warning="وزن خود فولاد در حالت بار مرده با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. بار باد، ترکیبات بار، آزادسازی مهاربندها، P-Delta و کنترل آیین‌نامه‌ای در این مرحله منظور نشده‌اند.";
+    result.warning="وزن خود فولاد در حالت بار مرده با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. بار باد و ترکیبات بار هنوز اعمال نشده‌اند؛ همه گره‌های مشترک فعلاً صلب‌اند و آزادسازی انتهایی، P-Delta و کنترل آیین‌نامه‌ای وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
