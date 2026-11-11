@@ -85,7 +85,7 @@ function setData(data){
  Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
  refreshStatus();
 }
-records.shahroud={id:"shahroud",name:"شاهرود",basicWind:90,basicWindPressure:0.38,groundSnow:1.0,snowRegion:3,elevation:null,source:"مبحث ششم مقررات ملی ساختمان، ویرایش چهارم ۱۳۹۸، جدول ۶-۱۰-۱ ردیف ۱۸۳ (صفحه چاپی ۱۰۱): V=90 km/h و q=0.38 kN/m²؛ جدول ۶-۷-۱ ردیف ۷۶ (صفحه چاپی ۴۸): منطقه برف ۳؛ بند ۶-۳-۲ (صفحه چاپی ۴۶): Ps=1.0 kN/m² برای منطقه ۳. نسخه PDF ارسالی کاربر؛ تطبیق نهایی با نسخه رسمی لازم است.",sourceDate:"1398",status:"استخراج‌شده از متن مبحث ششم ۱۳۹۸؛ نسخه توزیعی PDF و نیازمند تطبیق با نسخه رسمی"});
+records.shahroud={id:"shahroud",name:"شاهرود",basicWind:90,basicWindPressure:0.38,groundSnow:1.0,snowRegion:3,elevation:null,source:"مبحث ششم مقررات ملی ساختمان، ویرایش چهارم ۱۳۹۸، جدول ۶-۱۰-۱ ردیف ۱۸۳ (صفحه چاپی ۱۰۱): V=90 km/h و q=0.38 kN/m²؛ جدول ۶-۷-۱ ردیف ۷۶ (صفحه چاپی ۴۸): منطقه برف ۳؛ بند ۶-۳-۲ (صفحه چاپی ۴۶): Ps=1.0 kN/m² برای منطقه ۳. نسخه PDF ارسالی کاربر؛ تطبیق نهایی با نسخه رسمی لازم است.",sourceDate:"1398",status:"استخراج‌شده از متن مبحث ششم ۱۳۹۸؛ نسخه توزیعی PDF و نیازمند تطبیق با نسخه رسمی"};
 window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity};
 document.addEventListener("DOMContentLoaded",()=>{ensureTools();addOptions();});
 })();
