@@ -124,6 +124,33 @@ function analyze(model,options){
  const D=Array(nDof).fill(0);
  free.forEach((id,i)=>D[id]=df[i]);
  const KD=K.map(r=>dot(r,D)),R=KD.map((v,i)=>v-F[i]);
+ // Global equilibrium is evaluated from assembled equivalent nodal loads and
+ // support reactions. Do not sum force and moment components into one scalar.
+ const appliedForce=[0,0,0],appliedMoment=[0,0,0];
+ const supportForce=[0,0,0],supportMoment=[0,0,0];
+ const addGlobal=(force,moment,node,targetForce,targetMoment)=>{
+  for(let k=0;k<3;k++){targetForce[k]+=force[k];targetMoment[k]+=moment[k];}
+  const rx=node.x||0,ry=node.y||0,rz=node.z||0;
+  targetMoment[0]+=ry*force[2]-rz*force[1];
+  targetMoment[1]+=rz*force[0]-rx*force[2];
+  targetMoment[2]+=rx*force[1]-ry*force[0];
+ };
+ nodes.forEach((node,i)=>{
+  const base=i*6,loadForce=F.slice(base,base+3),loadMoment=F.slice(base+3,base+6);
+  addGlobal(loadForce,loadMoment,node,appliedForce,appliedMoment);
+  const reactionForce=[0,1,2].map(d=>fixed.has(base+d)?R[base+d]:0);
+  const reactionMoment=[3,4,5].map(d=>fixed.has(base+d)?R[base+d]:0);
+  addGlobal(reactionForce,reactionMoment,node,supportForce,supportMoment);
+ });
+ const forceResidual=appliedForce.map((v,i)=>v+supportForce[i]);
+ const momentResidual=appliedMoment.map((v,i)=>v+supportMoment[i]);
+ const vectorNorm=v=>Math.hypot(...v);
+ const relativeForceResidual=vectorNorm(forceResidual)/Math.max(vectorNorm(appliedForce),vectorNorm(supportForce),1);
+ const relativeMomentResidual=vectorNorm(momentResidual)/Math.max(vectorNorm(appliedMoment),vectorNorm(supportMoment),1);
+ const equilibrium={appliedForceN:appliedForce,supportReactionN:supportForce,
+  forceResidualN:forceResidual,appliedMomentNm:appliedMoment,supportMomentNm:supportMoment,
+  momentResidualNm:momentResidual,relativeForceResidual,relativeMomentResidual,
+  ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6,freeDofCount:free.length};
  const results=elements.map(e=>{
   const dg=e.ids.map(i=>D[i]),dl=mul(e.T,dg.map(v=>[v])).map(r=>r[0]),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
@@ -139,7 +166,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium:{appliedLoadSum:F.reduce((s,v)=>s+v,0),freeDofCount:free.length}};
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
 })(typeof window!=="undefined"?window:globalThis);
