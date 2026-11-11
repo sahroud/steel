@@ -21,7 +21,7 @@
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
       '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option></select></div></div>' +
-      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button></div>' +
+      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
     $("btnBuildFullModel").addEventListener("click", function () { try { build(); draw(); showSummary(); } catch (e) { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; } });
@@ -43,7 +43,7 @@
             : " | اطلاعات گره بحرانی در دسترس نیست")+
           (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو":"")+
           (result.equilibrium?" | کنترل تعادل نیرو: "+(result.equilibrium.relativeForceResidual*100).toExponential(2)+"٪؛ تعادل لنگر: "+(result.equilibrium.relativeMomentResidual*100).toExponential(2)+"٪؛ "+(result.equilibrium.ok?"تعادل کلی برقرار":"هشدار: عدم تعادل کلی"):" | کنترل تعادل در دسترس نیست")+
-          ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل فعلی خطی و با اتصال صلب گره‌هاست، آزادسازی انتهایی و P-Delta ندارد و تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
+          ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل خطی مرتبه اول است، P-Delta و کنترل کمانش در آن لحاظ نشده است. در اتصال پرلین به رفتر، دو دوران خمشی پرلین جدا شده و دوران حول محور طولی مشترک است؛ این تقریب، سختی واقعی کلیپس و پیچ‌ها را مدل نمی‌کند و نتیجه تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
         if(Array.isArray(result.criticalMemberReport)&&result.criticalMemberReport.length){
           const fmt=(v,factor=1,d=3)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
           const lines=["","گزارش تشخیصی اعضای متصل به گره بحرانی:",
@@ -74,6 +74,74 @@
         box.style.color="#b45309";
         window.SteelStructuralModel.last3DResult=null;
       }
+    });
+    $("btnTestSpan10").addEventListener("click", function () {
+      const box=$("fullModel3DResult"), spanField=$("span"), riseField=$("rise");
+      const originalSpan=Number(spanField?.value), originalRise=Number(riseField?.value);
+      try {
+        if(!spanField||!Number.isFinite(originalSpan)||originalSpan<=0) throw new Error("دهانه فعلی معتبر نیست.");
+        spanField.value="10";
+        if(typeof window.updateRoofGeometry==="function") window.updateRoofGeometry();
+        build(); draw(); showSummary();
+        const result=analyze3D("dead");
+        const critical=result.criticalDisplacement||null;
+        const report={
+          test:"مقایسه دهانه ۱۰ متر با بار مرده",
+          originalSpanM:originalSpan,
+          testedSpanM:10,
+          lengthM:Number($("length")?.value),
+          frameSpacingM:Number($("spacing")?.value),
+          columnHeightM:Number($("height")?.value),
+          roofSlopePercent:20,
+          loadCase:"dead",
+          nodeCount:result.nodeCount,
+          memberCount:result.memberCount,
+          maxTranslationMm:result.maxTranslation*1000,
+          criticalNode:critical?{
+            id:critical.nodeId,kind:critical.kind,
+            coordinatesM:critical.coordinates,
+            displacementMm:{ux:critical.ux*1000,uy:critical.uy*1000,uz:critical.uz*1000},
+            connectedMembers:critical.connectedMembers
+          }:null,
+          selfWeight:result.selfWeight||null,
+          equilibrium:result.equilibrium||null,
+          criticalMemberReport:result.criticalMemberReport||[],
+          generatedAt:new Date().toISOString(),
+          note:"تحلیل خطی مقدماتی است؛ نتیجه جایگزین کنترل آیین‌نامه‌ای، بررسی اتصالات و پایداری نیست."
+        };
+        window.SteelStructuralModel.lastSpanComparison=report;
+        $("btnDownloadSpanTest").disabled=false;
+        const eq=result.equilibrium||{};
+        box.textContent="آزمایش دهانه ۱۰ متری با موفقیت حل شد؛ دهانه اصلی "+originalSpan.toFixed(2)+
+          " متر و دهانه آزمایشی ۱۰٫۰۰ متر است. گره‌ها: "+result.nodeCount+
+          " | اعضا: "+result.memberCount+
+          " | بیشینه جابه‌جایی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
+          (critical?" | گره بحرانی: "+critical.nodeId+" | مختصات: "+
+            [critical.coordinates.x,critical.coordinates.y,critical.coordinates.z].map(v=>v.toFixed(3)).join(" / ")+" متر":"")+
+          (eq.relativeForceResidual!==undefined?" | خطای تعادل نیرو: "+(eq.relativeForceResidual*100).toExponential(2)+"٪":"")+
+          (eq.relativeMomentResidual!==undefined?" | خطای تعادل لنگر: "+(eq.relativeMomentResidual*100).toExponential(2)+"٪":"")+
+          " | گزارش کامل JSON آماده دانلود است. پس از آزمایش، هندسه اصلی به دهانه قبلی بازگردانده شد.";
+        box.style.color="#15803d";
+      } catch(e) {
+        box.textContent="آزمایش دهانه ۱۰ متری انجام نشد: "+e.message;
+        box.style.color="#b45309";
+        window.SteelStructuralModel.lastSpanComparison=null;
+        $("btnDownloadSpanTest").disabled=true;
+      } finally {
+        if(spanField) spanField.value=String(originalSpan);
+        if(riseField) riseField.value=String(originalRise);
+        if(typeof window.updateRoofGeometry==="function") window.updateRoofGeometry();
+        try { build(); draw(); showSummary(); } catch(_) {}
+      }
+    });
+    $("btnDownloadSpanTest").addEventListener("click", function () {
+      const report=window.SteelStructuralModel?.lastSpanComparison;
+      if(!report) return;
+      const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json;charset=utf-8"});
+      const url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url;a.download="sahroud-steel-span-10m-test.json";
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
     });
     $("btnCheck3DSections").addEventListener("click", function () {
       try {
