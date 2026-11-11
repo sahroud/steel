@@ -88,7 +88,10 @@ function analyze(model,options){
   nodes.forEach(node=>{
    const kinds=incident.get(node.id)||new Set();
    if(kinds.has("roofPurlin")&&kinds.has("rafter")){
-    purlinRotationDof.set(node.id,[nDof,nDof+1,nDof+2]);nDof+=3;
+    // The purlins run along global Z in this shed model. Decouple the two
+    // bending rotations (global X/Y) from the rafter, but retain the
+    // longitudinal torsional rotation (global Z) at the clip joint.
+    purlinRotationDof.set(node.id,[nDof,nDof+1]);nDof+=2;
    }
   });
  }
@@ -104,8 +107,8 @@ function analyze(model,options){
   const ids=Array.from({length:6},(_,i)=>ia*6+i).concat(Array.from({length:6},(_,i)=>ib*6+i));
   if(options.releasePurlinRafterRotation===true&&(m.sectionKey||"")==="roofPurlin"){
    const ri=purlinRotationDof.get(m.start),rj=purlinRotationDof.get(m.end);
-   if(ri)for(let d=0;d<3;d++)ids[3+d]=ri[d];
-   if(rj)for(let d=0;d<3;d++)ids[9+d]=rj[d];
+   if(ri){ids[3]=ri[0];ids[4]=ri[1];}
+   if(rj){ids[9]=rj[0];ids[10]=rj[1];}
   }
   addBlock(K,ids,kg);
   const q=m.analysisLoad&&m.analysisLoad.uniformLocal?m.analysisLoad.uniformLocal.map(Number):[0,0,0];
@@ -146,7 +149,7 @@ function analyze(model,options){
      if(local>=0){
       const ni=nodeMap.get(nodeId),node=ni===undefined?null:nodes[ni];
       nodeLabel=node?String(node.id)+" ("+(node.kind||"گره")+ ")":"گره پرلین نامشخص";
-      component="دوران "+["X","Y","Z"][local]+" پرلینِ جداشده از رفتر";
+      component="دوران "+["X","Y"][local]+" پرلینِ جداشده از رفتر";
       found=true;
      }
     });
@@ -180,7 +183,7 @@ function analyze(model,options){
   addGlobal(reactionForce,reactionMoment,node,supportForce,supportMoment);
  });
  const forceResidual=appliedForce.map((v,i)=>v+supportForce[i]);
- // Equivalent end moments applied to the duplicated purlin rotations
+ // Equivalent end moments applied to the duplicated purlin bending rotations
  // must be included in the global moment equilibrium check as well.
  purlinRotationDof.forEach((ids,nodeId)=>{
   const node=nodeMap.get(nodeId);
