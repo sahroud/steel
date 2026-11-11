@@ -574,6 +574,11 @@
         }, 60);
     }
 
+    // API هم‌زمان برای اجرای زنجیره‌ای، بدون تأخیر دکمه
+    if (window.SteelAnalysis) {
+        window.SteelAnalysis.calculateCombinations = calculateCombinations;
+    }
+
     function save() {
         if (!validateProject()) return;
         window.SteelProject.save();
