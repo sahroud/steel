@@ -192,6 +192,13 @@
             field.addEventListener("change", drawFrame);
             field.dataset.drawingListener = "1";
         }
+        ["span", "height"].forEach(id => {
+            const input = document.getElementById(id);
+            if (input && !input.dataset.frameDrawingListener) {
+                input.addEventListener("input", drawFrame);
+                input.dataset.frameDrawingListener = "1";
+            }
+        });
         drawFrame();
     }
 
