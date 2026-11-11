@@ -44,7 +44,7 @@
       climate:{
         city:climate.city||"", customCity:climate.customCity||"",
         elevation:climate.elevation||"", groundSnow:climate.groundSnow||"",
-        basicWind:climate.basicWind||"", terrain:climate.terrain||"",
+        basicWind:climate.basicWind||"", basicWindUnit:"km/h", groundSnowUnit:"kN/m2", terrain:climate.terrain||"",
         topography:climate.topography||"", openingState:climate.openingState||"",
         dominantOpening:climate.dominantOpening||""
       },
