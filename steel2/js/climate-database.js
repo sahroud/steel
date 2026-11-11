@@ -41,7 +41,7 @@ function saveCurrentCity(){
  if([wind,snow,elev].some(v=>v!==null&&!Number.isFinite(v))){alert("مقادیر اقلیمی باید عددی باشند.");return;}
  const source=(c.source||"").trim();
  if((wind!==null||snow!==null)&&!source){alert("برای ثبت مقدار باد یا برف، منبع داده را وارد کنید.");return;}
- records[id]={id,name,basicWind:wind,groundSnow:snow,elevation:elev,source,sourceDate:new Date().toISOString().slice(0,10),status:source?"ثبت کاربر؛ نیازمند کنترل منبع":"فاقد داده عددی"};
+ records[id]={id,name,basicWind:wind,groundSnow:snow,basicWindPressure:null,snowRegion:null,elevation:elev,source,sourceDate:new Date().toISOString().slice(0,10),status:source?"ثبت کاربر؛ نیازمند کنترل منبع":"فاقد داده عددی"};
  refreshStatus(); alert("رکورد شهر در بانک جاری ثبت شد. برای انتقال آن، پروژه را ذخیره یا از بانک خروجی JSON بگیرید.");
 }
 function exportDatabase(){
@@ -59,7 +59,7 @@ function importDatabase(event){
     const r=data.records[id];if(!r||typeof r!=="object")return;
     const n=v=>v===null||v===""||v===undefined?null:Number(v),wind=n(r.basicWind),snow=n(r.groundSnow),elev=n(r.elevation);
     if([wind,snow,elev].some(v=>v!==null&&(!Number.isFinite(v)||v<0)))return;
-    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,elevation:elev,source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"واردشده؛ نیازمند کنترل")};
+    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"واردشده؛ نیازمند کنترل")};
    });
    refreshStatus();loadSelectedCity();alert("بانک اقلیمی وارد شد.");
   }catch(e){alert("خطا در وارد کردن بانک: "+e.message);}
@@ -82,9 +82,10 @@ function getData(){return {schema:"sahroud-steel-climate-db",version:1,records:J
 function setData(data){
  if(!data||data.schema!=="sahroud-steel-climate-db"||!data.records)return;
  const cleanNumber=v=>v===null||v===undefined||v===""?null:(Number.isFinite(Number(v))?Number(v):null);
- Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
+ Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
  refreshStatus();
 }
+records.shahroud={id:"shahroud",name:"شاهرود",basicWind:90,basicWindPressure:0.38,groundSnow:1.0,snowRegion:3,elevation:null,source:"مبحث ششم مقررات ملی ساختمان، ویرایش چهارم ۱۳۹۸، جدول ۶-۱۰-۱ ردیف ۱۸۳ (صفحه چاپی ۱۰۱): V=90 km/h و q=0.38 kN/m²؛ جدول ۶-۷-۱ ردیف ۷۶ (صفحه چاپی ۴۸): منطقه برف ۳؛ بند ۶-۳-۲ (صفحه چاپی ۴۶): Ps=1.0 kN/m² برای منطقه ۳. نسخه PDF ارسالی کاربر؛ تطبیق نهایی با نسخه رسمی لازم است.",sourceDate:"1398",status:"استخراج‌شده از متن مبحث ششم ۱۳۹۸؛ نسخه توزیعی PDF و نیازمند تطبیق با نسخه رسمی"});
 window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity};
 document.addEventListener("DOMContentLoaded",()=>{ensureTools();addOptions();});
 })();
