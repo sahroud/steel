@@ -482,11 +482,12 @@
     // Create a diagnostic report for members connected to the maximum-displacement node.
     // The force signs follow the solver's local member-end convention.
     if(result.criticalDisplacement&&Array.isArray(result.members)){
-      const connectedIds=new Set(result.criticalDisplacement.connectedMembers.map(m=>m.id));
+      const connectedIds=new Set(result.criticalDisplacement.connectedMembers.map(m=>String(m.id)));
+      const analysisMemberById=new Map(analysisModel.members.map(x=>[String(x.id),x]));
       result.criticalMemberReport=result.members
-        .filter(m=>connectedIds.has(m.id))
+        .filter(m=>connectedIds.has(String(m.id)))
         .map(m=>{
-          const source=analysisModel.members.find(x=>x.id===m.id)||{};
+          const source=analysisMemberById.get(String(m.id))||{};
           const f=Array.isArray(m.localEndForces)?m.localEndForces:[];
           const section=m.section||{};
           return {
@@ -495,10 +496,17 @@
             endI:{N:f[0],Vy:f[1],Vz:f[2],T:f[3],My:f[4],Mz:f[5]},
             endJ:{N:f[6],Vy:f[7],Vz:f[8],T:f[9],My:f[10],Mz:f[11]},
             section:{A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,E:section.E,G:section.G},
-            analysisLoad:source.analysisLoad||null,
-            localAxes:m.localAxes||null
+            analysisLoad:source.analysisLoad?JSON.parse(JSON.stringify(source.analysisLoad)):null,
+            localAxes:m.localAxes?JSON.parse(JSON.stringify(m.localAxes)):null
           };
         });
+      result.criticalMemberDiagnostics={
+        connectedCount:result.criticalMemberReport.length,
+        withAnalysisLoad:result.criticalMemberReport.filter(m=>m.analysisLoad!==null).length,
+        withLocalAxes:result.criticalMemberReport.filter(m=>m.localAxes!==null).length,
+        sourceMemberCount:analysisModel.members.length,
+        solverMemberCount:result.members.length
+      };
     }
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
