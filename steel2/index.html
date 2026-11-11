@@ -184,9 +184,14 @@
             <button id="btnLoad" class="btn secondary" type="button">
                 بازکردن پروژه
             </button>
-            <button id="btnOpenConnection" class="btn secondary" type="button">رفتن به طراحی اتصال کنسول</button>
-            <button id="btnOpenRoofPurlins" class="btn secondary" type="button">رفتن به طراحی پرلین سقف</button>
-            <button id="btnOpenLongitudinalCantilever" class="btn secondary" type="button">رفتن به کنترل کنسول طولی پرلین</button>
+            <details class="tools-menu">
+                <summary>ابزارهای تخصصی و کنترل‌های تکمیلی</summary>
+                <div class="button-grid">
+                    <button id="btnOpenConnection" class="btn secondary" type="button">طراحی اتصال کنسول</button>
+                    <button id="btnOpenRoofPurlins" class="btn secondary" type="button">طراحی پرلین سقف</button>
+                    <button id="btnOpenLongitudinalCantilever" class="btn secondary" type="button">کنترل کنسول طولی پرلین</button>
+                </div>
+            </details>
             <input id="projectFile" type="file" accept=".json" hidden>
         </div>
     </section>
@@ -264,7 +269,7 @@
 <script src="js/roof-ties.js?v=1"></script>
 <script src="js/roof-purlins.js?v=20261111d"></script>
 <script src="js/longitudinal-cantilever.js?v=20261111c"></script>
-<script src="js/app.js?v=20261111d"></script>
+<script src="js/app.js?v=20261111e"></script>
 <script src="js/cantilever-check.js?v=1"></script>
 <script src="js/connection-design.js?v=20261110d"></script>
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
