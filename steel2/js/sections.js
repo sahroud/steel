@@ -371,6 +371,7 @@
         getDataSI,
         setData,
         validate,
+        validateForFrameAnalysis,
         init
     };
 
