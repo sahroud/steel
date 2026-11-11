@@ -85,6 +85,13 @@ function setData(data){
  Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
  refreshStatus();
 }
+records.shahroud.basicWind=90;
+records.shahroud.basicWindPressure=0.38;
+records.shahroud.groundSnow=1.0;
+records.shahroud.snowRegion=3;
+records.shahroud.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ ردیف ۱۸۳، جدول ۶-۷-۱ ردیف ۷۶ و بند ۶-۳-۲؛ نسخه PDF ارسالی کاربر، نیازمند تطبیق نهایی با نسخه رسمی.";
+records.shahroud.sourceDate="1398";
+records.shahroud.status="استخراج‌شده از نسخه PDF ارسالی؛ نسخه توزیعی، نه فایل رسمی قابل احراز";
 window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity};
 document.addEventListener("DOMContentLoaded",()=>{ensureTools();addOptions();});
 })();
