@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123b52">
+  <title>اتصال Dropbox | Sahroud Steel</title>
+  <style>
+    body{font-family:Tahoma,Arial,sans-serif;background:#f1f5f9;color:#123b52;margin:0;padding:24px;line-height:1.9}
+    main{max-width:560px;margin:8vh auto;background:#fff;border-radius:14px;padding:24px;box-shadow:0 8px 30px #0f172a12}
+    h1{font-size:1.25rem}p{color:#475569}.status{padding:12px;border-radius:8px;background:#f8fafc;white-space:pre-wrap}
+    a{color:#0369a1}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
+</head>
+<body>
+<main>
+  <h1>اتصال Dropbox به Sahroud Steel</h1>
+  <p id="status" class="status">در حال تکمیل اتصال امن…</p>
+</main>
+<script>
+(async function () {
+  "use strict";
+  const CLIENT_ID = "zevuaxek7hupqfb";
+  const REDIRECT_URI = "https://sahroud.github.io/steel/steel2/dropbox-callback.html";
+  const status = document.getElementById("status");
+  const fail = message => {
+    status.textContent = message;
+    const url = new URL("./index.html", location.href);
+    url.searchParams.set("dropbox", "error");
+    url.searchParams.set("message", message.slice(0, 180));
+    setTimeout(() => location.replace(url.href), 3000);
+  };
+  try {
+    const params = new URLSearchParams(location.search);
+    if (params.get("error")) throw new Error("درخواست مجوز در Dropbox لغو یا رد شد: " + params.get("error"));
+    const code = params.get("code");
+    const state = params.get("state");
+    const expectedState = sessionStorage.getItem("sahroud_dropbox_state");
+    const verifier = sessionStorage.getItem("sahroud_dropbox_code_verifier");
+    if (!code || !state || !expectedState || state !== expectedState || !verifier) {
+      throw new Error("اطلاعات بازگشت OAuth معتبر نیست یا نشست مرورگر تغییر کرده است. دوباره اتصال را آغاز کنید.");
+    }
+    const auth = new Dropbox.DropboxAuth({ clientId: CLIENT_ID });
+    auth.setCodeVerifier(verifier);
+    const response = await auth.getAccessTokenFromCode(REDIRECT_URI, code);
+    const refreshToken = response?.result?.refresh_token;
+    if (!refreshToken) throw new Error("Dropbox توکن تمدید دسترسی برنگرداند؛ تنظیمات OAuth برنامه را بررسی کنید.");
+    localStorage.setItem("sahroud_dropbox_refresh_token_v1", refreshToken);
+    sessionStorage.removeItem("sahroud_dropbox_state");
+    sessionStorage.removeItem("sahroud_dropbox_code_verifier");
+    status.textContent = "اتصال موفق بود. در حال بازگشت به نرم‌افزار…";
+    location.replace("./index.html?dropbox=connected");
+  } catch (error) {
+    fail("اتصال تکمیل نشد: " + (error?.error?.error_summary || error.message || String(error)));
+  }
+})();
+</script>
+</body>
+</html>
