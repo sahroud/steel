@@ -16,10 +16,14 @@ function refreshStatus(){
 function loadSelectedCity(){
  const id=$("climateCity")?.value, r=records[id]; if(!r)return;
  if($("climateCustomCity"))$("climateCustomCity").value=r.name;
- if(r.groundSnow!==null&&$("climateGroundSnow"))$("climateGroundSnow").value=r.groundSnow;
- if(r.basicWind!==null&&$("climateBasicWind"))$("climateBasicWind").value=r.basicWind;
- if(r.elevation!==null&&$("climateElevation"))$("climateElevation").value=r.elevation;
- if(r.source&&$("climateSource"))$("climateSource").value=r.source;
+ if($("climateGroundSnow"))$("climateGroundSnow").value=r.groundSnow===null?"":r.groundSnow;
+ if($("climateBasicWind"))$("climateBasicWind").value=r.basicWind===null?"":r.basicWind;
+ if($("climateElevation"))$("climateElevation").value=r.elevation===null?"":r.elevation;
+ if($("climateSource"))$("climateSource").value=r.source||"";
+ const status=$("climateNotice");
+ if(status)status.textContent=(r.basicWind!==null||r.groundSnow!==null)
+   ?"مقادیر این شهر در بانک موجود است؛ منبع و وضعیت اعتبار را پیش از استفاده در طراحی کنترل کنید."
+   :"برای این شهر هنوز داده عددی ثبت نشده است؛ مقادیر شهر قبلی پاک شدند تا اشتباهاً به این شهر تخصیص نیابند.";
  refreshStatus();
 }
 function addOptions(){
