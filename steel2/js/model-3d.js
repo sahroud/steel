@@ -97,8 +97,8 @@
     [-over,length+over].forEach(z=>{
       const xs=[-over*cs,half,span+over*cs];
       const edge=xs.map(x=>addNode(nodes,x,roofY(x),z,"roof-edge"));
-      addMember(members,edge[0],edge[1],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{end:z<0?"front":"rear",overhang:0.8});
-      addMember(members,edge[1],edge[2],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{end:z<0?"front":"rear",overhang:0.8});
+      addMember(members,edge[0],edge[1],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{endFace:z<0?"front":"rear",overhang:0.8});
+      addMember(members,edge[1],edge[2],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{endFace:z<0?"front":"rear",overhang:0.8});
     });
     const girtHeights=[],nGirt=Math.max(0,Math.floor(height/gsp));
     for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
@@ -112,11 +112,11 @@
       const count=Math.max(1,Math.ceil(span/endsp)), xs=Array.from({length:count+1},(_,i)=>span*i/count);
       for(let i=1;i<count;i++){
         const x=xs[i],b=addNode(nodes,x,0,z,"endwall-base"),t=addNode(nodes,x,roofY(x),z,"endwall-head");
-        addMember(members,b,t,"ستونک میانی دیوار انتهایی","endPost",{end:endIndex===0?"front":"rear"});
+        addMember(members,b,t,"ستونک میانی دیوار انتهایی","endPost",{endFace:endIndex===0?"front":"rear"});
       }
       girtHeights.forEach((y,gi)=>{for(let i=0;i<xs.length-1;i++){
         const a=addNode(nodes,xs[i],y,z,"endwall-girt"),b=addNode(nodes,xs[i+1],y,z,"endwall-girt");
-        addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{end:endIndex===0?"front":"rear",row:gi+1});
+        addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{endFace:endIndex===0?"front":"rear",row:gi+1});
       }});
     });
     const bayCount=frames.length-1,braceSet=new Set();
