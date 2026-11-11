@@ -253,7 +253,7 @@
 <script>
 (function () {
     "use strict";
-    const slope = 0.10;
+    const slope = 0.20;
     const fmt = value => Number(value).toLocaleString("fa-IR", {minimumFractionDigits:2, maximumFractionDigits:2});
     window.updateRoofGeometry = function () {
         const span = Number(document.getElementById("span")?.value);
@@ -265,7 +265,7 @@
         const slopeEl = document.getElementById("roofSlopeDisplay");
         const riseEl = document.getElementById("roofRiseDisplay");
         const totalEl = document.getElementById("roofTotalHeightDisplay");
-        if (slopeEl) slopeEl.textContent = "۱۰٪";
+        if (slopeEl) slopeEl.textContent = "۲۰٪";
         if (riseEl) riseEl.textContent = fmt(rise) + " متر";
         if (totalEl) totalEl.textContent = fmt(height + rise) + " متر";
     };
