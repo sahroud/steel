@@ -172,7 +172,7 @@
         hLabel.setAttribute("transform",
             `rotate(-90 ${dimX - 5} ${(baseY + eaveY) / 2})`);
 
-        label(midX + 45, ridgeY + 18, `ارتفاع تاج: ${rise} m`, 11, "#9a3412");
+        label(midX + 45, ridgeY + 18, `اختلاف ارتفاع تاج و ستون: ${rise} m`, 11, "#9a3412");
         label(W / 2, 18, "نمای دوبعدی قاب سوله", 13, "#123b52");
 
         const status = document.getElementById("projectStatus");
