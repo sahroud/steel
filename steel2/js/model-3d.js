@@ -110,14 +110,28 @@
     }));
     [0,length].forEach((z,endIndex)=>{
       const count=Math.max(1,Math.ceil(span/endsp)), xs=Array.from({length:count+1},(_,i)=>span*i/count);
+      const face=endIndex===0?"front":"rear";
+      // End-wall posts are split at every girt intersection so the secondary
+      // members share actual nodes instead of crossing disconnected lines.
       for(let i=1;i<count;i++){
-        const x=xs[i],b=addNode(nodes,x,0,z,"endwall-base"),t=addNode(nodes,x,roofY(x),z,"endwall-head");
-        addMember(members,b,t,"ستونک میانی دیوار انتهایی","endPost",{endFace:endIndex===0?"front":"rear"});
+        const x=xs[i],top=roofY(x);
+        const levels=[0,...girtHeights.filter(y=>y<top-1e-7),top]
+          .filter((y,j,a)=>j===0||Math.abs(y-a[j-1])>1e-7);
+        const vertical=levels.map(y=>addNode(nodes,x,y,z,y===0?"endwall-base":(Math.abs(y-top)<1e-7?"endwall-head":"endwall-post-joint")));
+        for(let j=0;j<vertical.length-1;j++)
+          addMember(members,vertical[j],vertical[j+1],"ستونک میانی دیوار انتهایی","endPost",{endFace:face,post:i,segment:j+1});
       }
-      girtHeights.forEach((y,gi)=>{for(let i=0;i<xs.length-1;i++){
-        const a=addNode(nodes,xs[i],y,z,"endwall-girt"),b=addNode(nodes,xs[i+1],y,z,"endwall-girt");
-        addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{endFace:endIndex===0?"front":"rear",row:gi+1});
-      }});
+      // Gable top chord connects the heads of the end posts to the main eaves/ridge.
+      const topChord=xs.map(x=>addNode(nodes,x,roofY(x),z,"endwall-head"));
+      for(let i=0;i<topChord.length-1;i++)
+        addMember(members,topChord[i],topChord[i+1],"رفتر قاب دیوار انتهایی","rafter",{endFace:face,axis:"endwall"});
+      girtHeights.forEach((y,gi)=>{
+        const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
+        for(let i=0;i<active.length-1;i++){
+          const a=addNode(nodes,active[i].x,y,z,"endwall-girt"),b=addNode(nodes,active[i+1].x,y,z,"endwall-girt");
+          addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{endFace:face,row:gi+1});
+        }
+      });
     });
     const bayCount=frames.length-1,braceSet=new Set();
     for(let i=0;i<Math.min(braceBays,bayCount);i++){braceSet.add(i);braceSet.add(bayCount-1-i);}
