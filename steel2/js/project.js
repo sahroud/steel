@@ -36,6 +36,7 @@
             wind: getNumber("wind"),
             snow: getNumber("snow"),
 
+            structuralModel: window.SteelStructuralModel?.getData?.() || null,
             savedAt: new Date().toISOString(),
             software: "SAHROUD STEEL",
             version: "2.9"
@@ -278,6 +279,10 @@
         if (data.climateLoadEngine && window.SteelClimateLoadEngine &&
             typeof window.SteelClimateLoadEngine.setData === "function") {
             window.SteelClimateLoadEngine.setData(data.climateLoadEngine);
+        }
+
+        if (window.SteelStructuralModel && typeof window.SteelStructuralModel.setData === "function") {
+            window.SteelStructuralModel.setData(data.structuralModel || {});
         }
 
         if (data.girders && window.SteelGirder &&
