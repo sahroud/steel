@@ -51,11 +51,7 @@
                         <input id="${prefix}Sy" type="number"
                             min="0" step="0.01" value="0">
                     </div>
-                    <div class="field">
-                        <label for="${prefix}Iz3D">ممان اینرسی Iz برای تحلیل سه‌بعدی (cm⁴)</label>
-                        <input id="${prefix}Iz3D" type="number" min="0" step="0.01" placeholder="مقدار واقعی">
-                    </div>
-                    <div class="field">
+<div class="field">
                         <label for="${prefix}J3D">ثابت پیچشی J برای تحلیل سه‌بعدی (cm⁴)</label>
                         <input id="${prefix}J3D" type="number" min="0" step="0.01" placeholder="مقدار واقعی">
                     </div>
@@ -108,7 +104,7 @@
 
             <div class="notice">
                 مشخصات ستون و رفتر در همین قسمت ثبت می‌شود. A و Iy در بخش اصلی هر عضو فقط یک‌بار وارد می‌شوند؛
-                برای تحلیل سه‌بعدی، Iz و J نیز در کنار همان عضو تکمیل می‌شوند.
+                برای تحلیل سه‌بعدی، ممان قوی Ix به‌صورت خودکار به محور محلی z نگاشت می‌شود؛ فقط J را در همین‌جا تکمیل کنید.
                 G نیز یک مقدار مشترک برای تمام گروه‌هاست.
             </div>
 
@@ -194,7 +190,7 @@
                         return [key,{
                             A_cm2:m.A_cm2,
                             Iy_cm4:m.Iy_cm4,
-                            Iz_cm4:Number($(key+"Iz3D")?.value),
+                            Iz_cm4:m.Ix_cm4,
                             J_cm4:Number($(key+"J3D")?.value)
                         }];
                     }
@@ -293,8 +289,7 @@
                     const a=$(prefix+"A"),iy=$(prefix+"Iy");
                     if(a&&(!(Number(a.value)>0))&&p.A_cm2!==undefined)a.value=p.A_cm2;
                     if(iy&&(!(Number(iy.value)>0))&&p.Iy_cm4!==undefined)iy.value=p.Iy_cm4;
-                    const iz=$(prefix+"Iz3D"),j=$(prefix+"J3D");
-                    if(iz&&p.Iz_cm4!==undefined)iz.value=p.Iz_cm4;
+                    const j=$(prefix+"J3D");
                     if(j&&p.J_cm4!==undefined)j.value=p.J_cm4;
                 }else{
                     for(const [prop,suffix] of [["A","A_cm2"],["Iy","Iy_cm4"],["Iz","Iz_cm4"],["J","J_cm4"]]){
