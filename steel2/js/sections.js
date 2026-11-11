@@ -274,6 +274,16 @@
             rafterSy: data.rafter?.Sy_cm3
         };
 
+
+        Object.entries(fields).forEach(([id, value]) => {
+            const element = $(id);
+
+            if (element && value !== undefined && value !== null) {
+                element.value = value;
+            }
+        });
+
+        // داده‌های قدیمی سه‌بعدی پس از بازیابی فیلدهای اصلی، فقط خانه‌های خالی را تکمیل می‌کنند.
         if(data.analysis3d){
             const g=$("steelG");if(g&&data.analysis3d.G_GPa!==undefined)g.value=data.analysis3d.G_GPa;
             Object.entries(data.analysis3d.groups||{}).forEach(([key,p])=>{
@@ -293,13 +303,6 @@
                 }
             });
         }
-        Object.entries(fields).forEach(([id, value]) => {
-            const element = $(id);
-
-            if (element && value !== undefined && value !== null) {
-                element.value = value;
-            }
-        });
     }
 
     function validate() {
