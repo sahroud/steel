@@ -240,6 +240,11 @@
             }
         });
 
+        // شیب سقف نسخه فعلی ثابت است؛ مقدار قدیمی rise از فایل پروژه نادیده گرفته می‌شود.
+        if (typeof window.updateRoofGeometry === "function") {
+            window.updateRoofGeometry();
+        }
+
         if ($("baseConnection")) {
             $("baseConnection").value =
                 data.baseConnection === "fixed" ? "fixed" : "pinned";
