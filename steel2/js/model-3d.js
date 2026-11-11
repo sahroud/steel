@@ -75,11 +75,12 @@
     const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp));
     const roofLongitudinalStations=[-over,...frames,length+over];
     // Every purlin/rafter crossing is a shared structural node, not two coincident but disconnected nodes.
-    const roofXs=[];
+    const roofXs=[0,span];
     [-1,1].forEach(side=>{for(let ri=0;ri<=roofRows;ri++){
       const t=ri/roofRows;
       roofXs.push(side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t));
     }});
+    // Force exact column/rafter intersections at both eaves and reuse their node IDs.
     const frameRoofXs=roofXs.sort((a,b)=>a-b).filter((x,i,a)=>i===0||Math.abs(x-a[i-1])>1e-8);
     frames.forEach((z,fi)=>{
       const bl=addNode(nodes,0,0,z,"base"),el=addNode(nodes,0,height,z,"eave"),r=addNode(nodes,half,height+rise,z,"ridge");
