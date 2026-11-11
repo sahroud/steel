@@ -121,7 +121,7 @@
             <h4>ب ـ پارامترهای اقلیمی ورودی (مقادیر تأییدنشده را خالی بگذارید)</h4>
             <div class="form-grid">
                 <div class="field">
-                    <label for="climateGroundSnow">بار برف زمین Pg (kN/m²)</label>
+                    <label for="climateGroundSnow">بار برف مبنا Ps (kN/m²)</label>
                     <input id="climateGroundSnow" type="number" min="0" step="0.01" placeholder="از جدول/نقشه معتبر">
                 </div>
                 <div class="field">
