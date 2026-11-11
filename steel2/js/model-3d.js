@@ -72,6 +72,8 @@
     const frames=[0]; for(let z=spacing;z<length-1e-8;z+=spacing) frames.push(z);
     if(length-frames[frames.length-1]>1e-8) frames.push(length);
     const nodes=[],members=[],frameNodes=[],half=span/2,slope=Math.hypot(half,rise),cs=half/slope,sn=rise/slope,over=0.8;
+    const girtHeights=[],nGirt=Math.max(0,Math.floor(height/gsp));
+    for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
     const roofY=x=>height+(x<=half?rise*x/half:rise*(span-x)/half);
     const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp));
     const roofLongitudinalStations=[-over,...frames,length+over];
@@ -87,8 +89,14 @@
       const bl=addNode(nodes,0,0,z,"base"),el=addNode(nodes,0,height,z,"eave"),r=addNode(nodes,half,height+rise,z,"ridge");
       const er=addNode(nodes,span,height,z,"eave"),br=addNode(nodes,span,0,z,"base");
       const lt=addNode(nodes,-over*cs,height-over*sn,z,"cantilever"),rt=addNode(nodes,span+over*cs,height-over*sn,z,"cantilever");
-      addMember(members,bl,el,"ستون قاب","column",{frame:fi+1,axis:"transverse"});
-      addMember(members,er,br,"ستون قاب","column",{frame:fi+1,axis:"transverse"});
+      // Split each main column at every wall-girt elevation. The girt and
+      // column must reuse the exact same node IDs to transfer forces.
+      const leftColumnLevels=[bl,...girtHeights.map(y=>addNode(nodes,0,y,z,"column-girt-joint")),el];
+      const rightColumnLevels=[br,...girtHeights.map(y=>addNode(nodes,span,y,z,"column-girt-joint")),er];
+      for(let j=0;j<leftColumnLevels.length-1;j++)
+        addMember(members,leftColumnLevels[j],leftColumnLevels[j+1],"ستون قاب","column",{frame:fi+1,axis:"transverse",segment:j+1});
+      for(let j=0;j<rightColumnLevels.length-1;j++)
+        addMember(members,rightColumnLevels[j],rightColumnLevels[j+1],"ستون قاب","column",{frame:fi+1,axis:"transverse",segment:j+1});
       const roofLine=frameRoofXs.map(x=>addNode(nodes,x,roofY(x),z,"rafter-purlin-joint"));
       for(let j=0;j<roofLine.length-1;j++){
         const a=roofLine[j],b=roofLine[j+1],mid=(a.x+b.x)/2;
@@ -111,8 +119,6 @@
       addMember(members,edge[0],edge[1],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{endFace:z<0?"front":"rear",overhang:0.8});
       addMember(members,edge[1],edge[2],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{endFace:z<0?"front":"rear",overhang:0.8});
     });
-    const girtHeights=[],nGirt=Math.max(0,Math.floor(height/gsp));
-    for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
     girtHeights.forEach((y,gi)=>[0,span].forEach((x,si)=>{
       const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
       const upper=gi===girtHeights.length-1?height:(y+girtHeights[gi+1])/2;
