@@ -110,6 +110,7 @@
           note:"تحلیل خطی مقدماتی است؛ نتیجه جایگزین کنترل آیین‌نامه‌ای، بررسی اتصالات و پایداری نیست."
         };
         window.SteelStructuralModel.lastSpanComparison=report;
+        window.dispatchEvent(new CustomEvent("sahroud:span-report-ready",{detail:report}));
         $("btnDownloadSpanTest").disabled=false;
         const eq=result.equilibrium||{};
         box.textContent="آزمایش دهانه ۱۰ متری با موفقیت حل شد؛ دهانه اصلی "+originalSpan.toFixed(2)+
