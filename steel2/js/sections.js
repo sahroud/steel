@@ -407,13 +407,13 @@
         getDataSI,
         getAnalysis3DProperties: function(){
             const d=read(),a=d.analysis3d||{};
-            const toSI=v=>Number.isFinite(v)&&v>0?v:null;
+            const toSI=(v,factor)=>Number.isFinite(v)&&v>0?v*factor:null;
             const groups={};
             Object.entries(a.groups||{}).forEach(([key,p])=>groups[key]={
-                A:toSI(p.A_cm2)*1e-4,
-                Iy:toSI(p.Iy_cm4)*1e-8,
-                Iz:toSI(p.Iz_cm4)*1e-8,
-                J:toSI(p.J_cm4)*1e-8
+                A:toSI(p.A_cm2,1e-4),
+                Iy:toSI(p.Iy_cm4,1e-8),
+                Iz:toSI(p.Iz_cm4,1e-8),
+                J:toSI(p.J_cm4,1e-8)
             });
             return {G:Number.isFinite(a.G_GPa)&&a.G_GPa>0?a.G_GPa*1e9:null,groups};
         },
