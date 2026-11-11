@@ -140,6 +140,7 @@
 
       const roofTie=window.SteelRoofTies;
       if(roofTie?.calculate) {
+        roofTie.lastResult=null;
         roofTie.calculate();
         addLine(rows,"محاسبه سختی و ظرفیت مقدماتی قیدهای سقف",!!roofTie.lastResult,
           roofTie.lastResult?"محاسبه مقدماتی انجام شد؛ مشخصات و اتصال قید باید با اجرا تطبیق داده شوند.":"ورودی‌های قید سقف کامل نیستند.");
@@ -147,6 +148,7 @@
 
       const purlinConn=window.SteelPurlinCantileverConnection;
       if(purlinConn?.calculate) {
+        purlinConn.lastResult=null;
         purlinConn.calculate();
         addLine(rows,"کنترل مقدماتی اتصال کنسول پرلین",!!purlinConn.lastResult,
           purlinConn.lastResult?"خروجی اتصال محاسبه شد؛ فرضیات پیچ و ورق باید بازبینی شوند.":"مشخصات اتصال یا نتایج پرلین/کنسول ناقص است.");
@@ -154,8 +156,12 @@
 
       const connection=window.SteelConnectionDesign;
       if(connection?.calculate && window.SteelCantileverCheck?.lastResult) {
+        const connectionOut=$("connectionCheckResults");
+        if(connectionOut)connectionOut.innerHTML="";
         connection.calculate();
-        addLine(rows,"تحلیل مقدماتی گروه جوش",true,"تابع تحلیل گروه جوش فراخوانی شد؛ نتیجه و فرضیات اتصال باید بازبینی شوند.");
+        const connectionText=connectionOut?.innerText||connectionOut?.textContent||"";
+        const connectionOK=!!connectionText.trim()&&!/ابتدا|خطا|نیاز دارد/.test(connectionText);
+        addLine(rows,"تحلیل مقدماتی گروه جوش",connectionOK,connectionOK?"خروجی تحلیل گروه جوش تولید شد؛ فرضیات اتصال باید بازبینی شوند.":connectionText||"ورودی‌های جوش یا نیروهای اتصال کامل نیستند.");
       } else addLine(rows,"تحلیل گروه جوش",false,"به نتیجه کنترل کنسول و مشخصات هندسی/جوش معتبر نیاز دارد.");
 
       window.SteelBracing?.drawAll?.();
