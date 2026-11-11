@@ -112,6 +112,7 @@
 
       const gravity = caseResult(gravityLine, a, E, I, W, Fy, limitRatio);
       const wind = caseResult(windLine, a, E, I, W, Fy, limitRatio);
+      const reverseWind = caseResult(-windLine, a, E, I, W, Fy, limitRatio);
 
       return {
         name: side.name,
@@ -122,7 +123,8 @@
         tributaryWidth,
         gravity,
         wind,
-        worst: gravity.stress >= wind.stress ? gravity : wind
+        reverseWind,
+        worst: [gravity, wind, reverseWind].reduce((a,b)=>a.stress>=b.stress?a:b)
       };
     });
 
@@ -133,12 +135,14 @@
       <p>بار باد با علامت ورودی: ${fmt(r.windSignedPressure, 3)} kN/m² | قدر مطلق برای کنترل تنش: ${fmt(r.windPressure, 3)} kN/m²</p>
       <p>جهت کلی ثبت‌شده باد: ${r.windDirection === "left-to-right" ? "چپ به راست" : r.windDirection === "right-to-left" ? "راست به چپ" : "تعیین‌نشده"}</p>
       ${renderCase("حالت بار ثقلی", r.gravity)}
-      ${renderCase("حالت مکش باد (جدا از بار ثقلی)", r.wind)}
+      ${renderCase("حالت باد با علامت ورودی (جدا از بار ثقلی)", r.wind)}
+      ${renderCase("حالت باد با جهت معکوس", r.reverseWind)}
     `).join("");
 
     const allBelow = results.every(r =>
       r.gravity.bendingBelowFy && r.gravity.deflectionBelowLimit &&
-      r.wind.bendingBelowFy && r.wind.deflectionBelowLimit
+      r.wind.bendingBelowFy && r.wind.deflectionBelowLimit &&
+      r.reverseWind.bendingBelowFy && r.reverseWind.deflectionBelowLimit
     );
 
     out.innerHTML = `
