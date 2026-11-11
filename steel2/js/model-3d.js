@@ -178,7 +178,7 @@
   function showSummary(){
     if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
     const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
-    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای خطی سهمی پرلین‌ها و قیدهای دیوار از بارهای سطحی ورودی محاسبه و در مدل ثبت شده‌اند؛ این داده‌ها هنوز وارد حل‌گر سه‌بعدی نشده‌اند. مهاربندهای ترسیم‌شده فقط آرایش پیشنهادی هستند؛ تا تعیین مقطع، اتصال، سختی و پیوستگی، مهار قطعی محسوب نمی‌شوند.</p><p><b>محدوده تحلیل فعلی:</b> حل‌گر موجود هنوز قاب عرضی دوبعدی نمونه را تحلیل می‌کند؛ این مدل در این مرحله برای جانمایی و استخراج هندسه است و هنوز حل‌گر سه‌بعدی همه اعضا نیست.</p>";
+    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای خطی سهمی پرلین‌ها و قیدهای دیوار از بارهای سطحی ورودی محاسبه و در مدل ثبت شده‌اند؛ این داده‌ها هنوز وارد حل‌گر سه‌بعدی نشده‌اند. مهاربندهای ترسیم‌شده فقط آرایش پیشنهادی هستند؛ تا تعیین مقطع، اتصال، سختی و پیوستگی، مهار قطعی محسوب نمی‌شوند.</p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
   }
   function validate3DSections(){
     if(!model)build();
@@ -222,12 +222,30 @@
       nodes:model.nodes.map(n=>({...n})),
       members:model.members.map(m=>({...m}))
     };
+    // Build an indexed node registry and validate connectivity before creating element loads.
+    const nodeById=new Map();
+    const duplicateNodeIds=[];
+    analysisModel.nodes.forEach(n=>{
+      if(nodeById.has(n.id)) duplicateNodeIds.push(n.id);
+      else nodeById.set(n.id,n);
+    });
+    if(duplicateNodeIds.length){
+      throw new Error("شناسه گره تکراری در مدل: "+duplicateNodeIds.slice(0,8).join("، ")+
+        "؛ تعداد گره‌ها: "+analysisModel.nodes.length);
+    }
     analysisModel.members.forEach(m=>{
       const value=Number(m.lineLoads&&m.lineLoads[selected.key]||0);
       if(!Number.isFinite(value))throw new Error("بار عضو "+m.id+" عدد معتبر نیست.");
-      const a=analysisModel.nodes.find(n=>n.id===m.start);
-      const b=analysisModel.nodes.find(n=>n.id===m.end);
-      if(!a||!b)throw new Error("مختصات عضو "+m.id+" یافت نشد.");
+      const a=nodeById.get(m.start);
+      const b=nodeById.get(m.end);
+      if(!a||!b){
+        const missing=[!a?"ابتدا "+String(m.start):"",!b?"انتها "+String(m.end):""].filter(Boolean).join(" و ");
+        const sample=analysisModel.nodes.slice(-8).map(n=>n.id).join("، ");
+        throw new Error("اتصال هندسی عضو "+m.id+" ("+m.type+") ناقص است؛ گره ناموجود: "+
+          missing+"؛ تعداد گره‌های مدل: "+analysisModel.nodes.length+
+          "؛ شناسه‌های پایانی گره‌ها: "+sample+
+          "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
+      }
       const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
       const global=selected.direction.map(v=>v*value*1000);
       const axes=[tr.axes.x,tr.axes.y,tr.axes.z];
