@@ -72,20 +72,29 @@
     if(length-frames[frames.length-1]>1e-8) frames.push(length);
     const nodes=[],members=[],frameNodes=[],half=span/2,slope=Math.hypot(half,rise),cs=half/slope,sn=rise/slope,over=0.8;
     const roofY=x=>height+(x<=half?rise*x/half:rise*(span-x)/half);
+    const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp));
+    const roofLongitudinalStations=[-over,...frames,length+over];
+    // Every purlin/rafter crossing is a shared structural node, not two coincident but disconnected nodes.
+    const roofXs=[];
+    [-1,1].forEach(side=>{for(let ri=0;ri<=roofRows;ri++){
+      const t=ri/roofRows;
+      roofXs.push(side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t));
+    }});
+    const frameRoofXs=roofXs.sort((a,b)=>a-b).filter((x,i,a)=>i===0||Math.abs(x-a[i-1])>1e-8);
     frames.forEach((z,fi)=>{
       const bl=addNode(nodes,0,0,z,"base"),el=addNode(nodes,0,height,z,"eave"),r=addNode(nodes,half,height+rise,z,"ridge");
       const er=addNode(nodes,span,height,z,"eave"),br=addNode(nodes,span,0,z,"base");
       const lt=addNode(nodes,-over*cs,height-over*sn,z,"cantilever"),rt=addNode(nodes,span+over*cs,height-over*sn,z,"cantilever");
       addMember(members,bl,el,"ستون قاب","column",{frame:fi+1,axis:"transverse"});
-      addMember(members,el,r,"رفتر چپ قاب","rafter",{frame:fi+1,axis:"transverse"});
-      addMember(members,r,er,"رفتر راست قاب","rafter",{frame:fi+1,axis:"transverse"});
       addMember(members,er,br,"ستون قاب","column",{frame:fi+1,axis:"transverse"});
-      addMember(members,lt,el,"کنسول رفتر چپ","rafter",{frame:fi+1,axis:"transverse"});
-      addMember(members,er,rt,"کنسول رفتر راست","rafter",{frame:fi+1,axis:"transverse"});
+      const roofLine=frameRoofXs.map(x=>addNode(nodes,x,roofY(x),z,"rafter-purlin-joint"));
+      for(let j=0;j<roofLine.length-1;j++){
+        const a=roofLine[j],b=roofLine[j+1],mid=(a.x+b.x)/2;
+        const isOverhang=mid<0||mid>span;
+        addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",segment:j+1,connectedPurlinNodes:true});
+      }
       frameNodes.push({z,bl,el,r,er,br,lt,rt});
     });
-    const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp));
-    const roofLongitudinalStations=[-over,...frames,length+over];
     [-1,1].forEach(side=>{
       for(let ri=0;ri<=roofRows;ri++){
         const t=ri/roofRows;
