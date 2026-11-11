@@ -187,7 +187,7 @@ function analyze(model,options){
  // must be included in the global moment equilibrium check as well.
  purlinRotationDof.forEach((ids,nodeId)=>{
   const node=nodeMap.get(nodeId);
-  addGlobal([0,0,0],ids.map(id=>F[id]),nodes[node],appliedForce,appliedMoment);
+  addGlobal([0,0,0],[F[ids[0]],F[ids[1]],0],nodes[node],appliedForce,appliedMoment);
  });
  const momentResidual=appliedMoment.map((v,i)=>v+supportMoment[i]);
  const vectorNorm=v=>Math.hypot(...v);
