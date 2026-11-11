@@ -124,7 +124,7 @@
             return {...m,
               start:source?.start||null,end:source?.end||null,
               lineLoads:source?.lineLoads||null,
-              analysisLoad:source?.analysisLoad||null,
+              analysisLoad:m.analysisLoad||source?.analysisLoad||null,
               localAxes:m.localAxes||null
             };
           }),
