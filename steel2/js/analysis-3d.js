@@ -77,7 +77,22 @@ function analyze(model,options){
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل هندسی معتبر ارائه نشده است.");
  const nodes=model.nodes, members=model.members, nodeMap=new Map(nodes.map((n,i)=>[n.id,i]));
  if(nodeMap.size!==nodes.length)throw Error("شناسه گره تکراری است.");
- const nDof=nodes.length*6,K=zeros(nDof,nDof),F=Array(nDof).fill(0),elements=[];
+ let nDof=nodes.length*6;
+ const purlinRotationDof=new Map();
+ if(options.releasePurlinRafterRotation===true){
+  const incident=new Map();
+  members.forEach(m=>[m.start,m.end].forEach(id=>{
+   if(!incident.has(id))incident.set(id,new Set());
+   incident.get(id).add(m.sectionKey||"");
+  }));
+  nodes.forEach(node=>{
+   const kinds=incident.get(node.id)||new Set();
+   if(kinds.has("roofPurlin")&&kinds.has("rafter")){
+    purlinRotationDof.set(node.id,[nDof,nDof+1,nDof+2]);nDof+=3;
+   }
+  });
+ }
+ const K=zeros(nDof,nDof),F=Array(nDof).fill(0),elements=[];
  const props=options.sectionResolver;
  if(typeof props!=="function")throw Error("تابع تخصیص خواص مقطع برای همه اعضا تعریف نشده است؛ تحلیل متوقف شد.");
  for(const m of members){
@@ -87,6 +102,11 @@ function analyze(model,options){
   const a=[nodes[ia].x,nodes[ia].y,nodes[ia].z],b=[nodes[ib].x,nodes[ib].y,nodes[ib].z];
   const tr=makeTransform(a,b,options.referenceAxis),kl=frameLocalStiffness(p,tr.L),kg=mul(transpose(tr.T),mul(kl,tr.T));
   const ids=Array.from({length:6},(_,i)=>ia*6+i).concat(Array.from({length:6},(_,i)=>ib*6+i));
+  if(options.releasePurlinRafterRotation===true&&(m.sectionKey||"")==="roofPurlin"){
+   const ri=purlinRotationDof.get(m.start),rj=purlinRotationDof.get(m.end);
+   if(ri)for(let d=0;d<3;d++)ids[3+d]=ri[d];
+   if(rj)for(let d=0;d<3;d++)ids[9+d]=rj[d];
+  }
   addBlock(K,ids,kg);
   const q=m.analysisLoad&&m.analysisLoad.uniformLocal?m.analysisLoad.uniformLocal.map(Number):[0,0,0];
   if(q.length!==3||q.some(v=>!Number.isFinite(v)))throw Error("بار گسترده محلی عضو "+m.id+" معتبر نیست.");
@@ -143,6 +163,12 @@ function analyze(model,options){
   addGlobal(reactionForce,reactionMoment,node,supportForce,supportMoment);
  });
  const forceResidual=appliedForce.map((v,i)=>v+supportForce[i]);
+ // Equivalent end moments applied to the duplicated purlin rotations
+ // must be included in the global moment equilibrium check as well.
+ purlinRotationDof.forEach((ids,nodeId)=>{
+  const node=nodeMap.get(nodeId);
+  addGlobal([0,0,0],ids.map(id=>F[id]),nodes[node],appliedForce,appliedMoment);
+ });
  const momentResidual=appliedMoment.map((v,i)=>v+supportMoment[i]);
  const vectorNorm=v=>Math.hypot(...v);
  const relativeForceResidual=vectorNorm(forceResidual)/Math.max(vectorNorm(appliedForce),vectorNorm(supportForce),1);
@@ -166,7 +192,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedRotationNodes:purlinRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
 })(typeof window!=="undefined"?window:globalThis);
