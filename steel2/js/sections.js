@@ -292,35 +292,69 @@
         return errors.length === 0;
     }
 
-    function installAnalysisChecks() {
-        const buttonIds = [
-            "btnCalculate",
-            "btnCombinations"
+    function validateForFrameAnalysis() {
+        // تحلیل خطی قاب فقط به E، سطح مقطع A و ممان اینرسی خمشی Ix نیاز دارد.
+        // نام مقطع، Fy، Iy و مدول‌های مقطع برای این مرحله ورودی اجباری نیستند.
+        const d = read();
+        const required = [
+            ["steelE", d.material.E_GPa, "مدول الاستیسیته فولاد"],
+            ["columnA", d.column.A_cm2, "مساحت مقطع ستون"],
+            ["columnIx", d.column.Ix_cm4, "ممان اینرسی Ix ستون"],
+            ["rafterA", d.rafter.A_cm2, "مساحت مقطع رفتر"],
+            ["rafterIx", d.rafter.Ix_cm4, "ممان اینرسی Ix رفتر"]
         ];
+
+        const missing = required.find(item =>
+            !Number.isFinite(item[1]) || item[1] <= 0
+        );
+
+        const message = $("sectionMessage");
+        if (missing) {
+            if (message) {
+                message.textContent = "برای تحلیل قاب، " + missing[2] +
+                    " باید با مقدار معتبر و واحد درست وارد شود.";
+                message.style.color = "#b45309";
+            }
+            const field = $(missing[0]);
+            if (field) {
+                field.focus();
+                field.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+            return false;
+        }
+
+        if (message) {
+            message.textContent = "ورودی‌های لازم برای تحلیل اولیه قاب کامل است؛ نام مقطع و سایر مشخصات برای کنترل‌های بعدی قابل تکمیل‌اند.";
+            message.style.color = "#15803d";
+        }
+        return true;
+    }
+
+    function installAnalysisChecks() {
+        const buttonIds = ["btnCalculate", "btnCombinations"];
 
         buttonIds.forEach(id => {
             const button = $(id);
             if (!button || button.dataset.sectionCheckInstalled) return;
 
             button.dataset.sectionCheckInstalled = "true";
-
             button.addEventListener("click", function (event) {
-                // پنل مصالح ممکن است بسته باشد؛ پیش از اعتبارسنجی آن را باز می‌کنیم.
-                const panel = $("steelSectionsPanel");
-                const details = panel && panel.querySelector("details");
-                if (details) details.open = true;
-
-                if (!validate()) {
+                if (!validateForFrameAnalysis()) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
+
                     const message = $("analysisMessage");
                     const sectionMessage = $("sectionMessage");
-                    const explanation = sectionMessage ? sectionMessage.textContent : "اطلاعات مصالح و مقاطع ناقص است.";
+                    const explanation = sectionMessage ? sectionMessage.textContent : "ورودی‌های لازم برای تحلیل قاب ناقص است.";
                     if (message) {
-                        message.textContent = "⛔ تحلیل شروع نشد: " + explanation + " لطفاً موارد مشخص‌شده در پنل مصالح و مقاطع را تکمیل کنید و دوباره بزنید.";
+                        message.textContent = "⛔ تحلیل شروع نشد: " + explanation;
                         message.style.color = "#b45309";
                         message.scrollIntoView({ behavior: "smooth", block: "center" });
                     }
+
+                    const panel = $("steelSectionsPanel");
+                    const details = panel && panel.querySelector("details");
+                    if (details) details.open = true;
                     if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
             }, true);
