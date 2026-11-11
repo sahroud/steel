@@ -22,7 +22,7 @@ function loadSelectedCity(){
  if($("climateSource"))$("climateSource").value=r.source||"";
  const status=$("climateNotice");
  if(status)status.textContent=(r.basicWind!==null||r.groundSnow!==null)
-   ?"مقادیر این شهر در بانک موجود است؛ منبع و وضعیت اعتبار را پیش از استفاده در طراحی کنترل کنید."
+   ?"مبحث ششم ۱۳۹۸ برای شاهرود: V=۹۰ km/h، q=۰٫۳۸ kN/m²، منطقه برف ۳ و Ps=۱٫۰ kN/m². Ps بار مبناست و بار نهایی بام باید جداگانه محاسبه شود."
    :"برای این شهر هنوز داده عددی ثبت نشده است؛ مقادیر شهر قبلی پاک شدند تا اشتباهاً به این شهر تخصیص نیابند.";
  refreshStatus();
 }
