@@ -128,7 +128,7 @@
  }
  function exportCSV(){
   const c=state.lastCost;if(!c)return;
-  const rows=[["شهر اجرای پروژه",c.projectCity||"نامشخص","","",""],["شرح","مقدار","واحد","قیمت واحد تومان","هزینه تومان"],...c.rows.map(x=>[x.label,x.quantity,x.unit,x.unitPrice,x.cost]),["جمع اقلام","","","",c.materialSubtotal],...Object.entries(c.percentageCosts).map(([k,v])=>[k,"","درصد/تومان",c.percentageInputs[k],v]),["برآورد کل","","","",c.totalCost],["ملاحظات",c.notice,"","",""],...(c.pricingWarnings||[]).map(w=>["هشدار قیمت و تأمین",w,"","",""])];
+  const rows=[["شهر اجرای پروژه",c.projectCity||"نامشخص","","",""],["شرح","مقدار","واحد","قیمت واحد تومان","هزینه تومان"],...c.rows.map(x=>[x.label,x.quantity,x.unit,x.unitPrice,x.cost]),["جمع اقلام","","","",c.materialSubtotal],...Object.entries(c.percentageCosts).map(([k,v])=>[k,"","درصد/تومان",c.percentageInputs[k],v]),["برآورد کل","","","",c.totalCost],["ملاحظات",c.notice,"","",""],...(c.missing||[]).map(w=>["خارج از جمع",w,"","",""]),...(c.pricingWarnings||[]).map(w=>["هشدار قیمت و تأمین",w,"","",""])];
   const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Cost-Estimate.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
