@@ -136,7 +136,8 @@
     }
   }
   function getData(){
-    const r=audit();r.customOpenAreas=readAreas();return r;
+    if(getScenario()==="custom")restored=readAreas();
+    const r=audit();r.customOpenAreas=Object.assign({},restored);return r;
   }
   function setData(saved){
     if(!saved||typeof saved!=="object")return;
