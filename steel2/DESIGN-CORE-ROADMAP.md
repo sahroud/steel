@@ -92,3 +92,13 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 - The existing end-wall framing contains vertical post chains, horizontal girts and a segmented top chord. That geometric framing does not establish cladding span direction, sheeting support, fastener/connection capacity, or a complete wind load path.
 - No wind pressure, surface load, line load, nodal load, or solver input is created or changed. `designEligible` and `loadTransferEnabled` remain false.
 - Next gate: verify the actual cladding/support arrangement and end-wall connection details, then derive tributary loads with an independent area-closure and force/moment equilibrium benchmark before any load transfer is enabled.
+
+
+## Four-facade wall envelope brief — 2026-11-12
+
+- Extended the saved engineering project brief with independent material and orientation selections for the front end wall, rear end wall, left longitudinal wall, and right longitudinal wall.
+- New-project defaults are masonry brickwork on all four faces, matching the stated typical Shahrud construction context.
+- Each face can be changed independently to metal sheeting, sandwich panel, or another system. For sheet/panel systems, the support orientation can be set to vertical, horizontal, or custom/unknown.
+- The orientation selector is retained as a geometric/support-layout input; it does not establish panel span capacity, fastener capacity, girt/post adequacy, or a verified load path.
+- Wall-envelope choices are included in the existing `designBrief` project JSON and restored when a saved project is reopened. Older project files without these fields migrate to the four-face brick default.
+- No masonry dead load, out-of-plane wall pressure, panel load, restraint force, or connection action is generated or transferred to the structural solver. The envelope configuration is recorded only; `designEligible` and load transfer remain disabled pending wall build-up, thickness/weight, restraint details, openings, support spacing, product data, and independent load-path checks.
