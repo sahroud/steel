@@ -11,7 +11,7 @@
   {key:"foundationRebar",label:"میلگرد فونداسیون",unit:"کیلوگرم"},
   {key:"excavation",label:"خاکبرداری و تسطیح",unit:"مترمکعب"},
   {key:"formwork",label:"قالب‌بندی فونداسیون",unit:"مترمربع"},
-  {key:"anchorBolts",label:"بولت و صفحه‌ستون خریداری‌شده",unit:"کیلوگرم"},
+  {key:"anchorBolts",label:"تعداد بولت و صفحه‌ستون (در صورت قیمت‌گذاری عددی)",unit:"عدد"},
   {key:"floorConcrete",label:"بتن کف و کف‌سازی",unit:"مترمکعب"},
   {key:"doors",label:"درب‌ها و کرکره‌ها",unit:"مترمربع"},
   {key:"gutters",label:"آبرو و لوله‌های ناودانی",unit:"متر"},
@@ -81,9 +81,20 @@
    const uc=document.createElement("td"),unit=document.createElement("input");unit.type="text";unit.value=item.unit;unit.dataset.manualKey=item.key;unit.dataset.manualField="unit";uc.appendChild(unit);tr.appendChild(uc);
    const pc=document.createElement("td"),price=document.createElement("input");price.type="number";price.min="0";price.step="any";price.placeholder="قیمت واحد";price.value=item.unitPrice??"";price.dataset.manualKey=item.key;price.dataset.manualField="unitPrice";pc.appendChild(price);tr.appendChild(pc);
    const total=document.createElement("td");total.dataset.manualTotal=item.key;total.textContent="—";tr.appendChild(total);
-   [q,unit,price].forEach(el=>el.addEventListener("change",()=>{item[el.dataset.manualField]=el.value;}));
+   [q,unit,price].forEach(el=>el.addEventListener("change",()=>{item[el.dataset.manualField]=el.value;if(el.dataset.manualField==="quantity")item.quantitySource="manual";}));
    body.appendChild(tr);
   });
+ }
+ function refreshFromFoundation(report){
+  if(!report)return;
+  const links={foundationConcrete:report.totalConcreteM3,excavation:report.excavationM3,formwork:report.sideFormworkM2,anchorBolts:report.anchorsCount};
+  let changed=false;
+  state.manualItems.forEach(item=>{
+   if(Object.prototype.hasOwnProperty.call(links,item.key)&&links[item.key]!==null&&links[item.key]!==undefined&&item.quantitySource!=="manual"){
+    item.quantity=String(links[item.key]);item.quantitySource="foundation";changed=true;
+   }
+  });
+  if(changed)renderManualItems();
  }
  function calculate(){
   const r=window.SteelQuantityTakeoff?.lastResult;
@@ -142,5 +153,5 @@
  function getData(){return clone({prices:state.prices,percent:state.percent,steelPricingMode:state.steelPricingMode,manualItems:state.manualItems});}
  function setData(d){if(!d||typeof d!=="object")return;state.prices=d.prices||{};state.percent={...state.percent,...(d.percent||{})};state.steelPricingMode=d.steelPricingMode||"steel_only";if(Array.isArray(d.manualItems))state.manualItems=defaultManualItems.map(def=>({...def,...(d.manualItems.find(x=>x.key===def.key)||{})}));if($("costSteelMode"))$("costSteelMode").value=state.steelPricingMode;Object.keys(state.percent).forEach(k=>{const el=$("cost"+k[0].toUpperCase()+k.slice(1));if(el)el.value=state.percent[k];});renderRows();renderManualItems();}
  document.addEventListener("DOMContentLoaded",()=>{render();});
- window.SteelCostEstimate={getData,setData,calculate,refreshFromBOQ:(report)=>{if(report&&typeof report==="object"){state.last=report;renderRows();}},getLast:()=>clone(state.lastCost||null)};
+ window.SteelCostEstimate={getData,setData,calculate,refreshFromBOQ:(report)=>{if(report&&typeof report==="object"){state.last=report;renderRows();}},refreshFromFoundation,getLast:()=>clone(state.lastCost||null)};
 })();
