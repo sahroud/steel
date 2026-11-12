@@ -149,6 +149,14 @@
   }
   return critical;
  }
+ function torsionSectionGeometry(bMm,hMm,coverMm,stirrupDiaMm){
+  const vals=[bMm,hMm,coverMm,stirrupDiaMm];
+  if(vals.some(v=>!Number.isFinite(v))||bMm<=0||hMm<=0||coverMm<0||stirrupDiaMm<=0)return{ok:false,reason:"ابعاد هندسی مقطع برای پیچش نامعتبر است"};
+  const centerlineOffset=coverMm+stirrupDiaMm/2,coreB=bMm-2*centerlineOffset,coreH=hMm-2*centerlineOffset;
+  if(coreB<=0||coreH<=0)return{ok:false,reason:"هسته محصور داخل خاموت بسته، با پوشش و قطر خاموت انتخابی، ابعاد مثبت ندارد"};
+  const Acp=bMm*hMm,pcp=2*(bMm+hMm),Aoh=coreB*coreH,ph=2*(coreB+coreH),Ao=0.85*Aoh;
+  return{ok:true,AcpMm2:Acp,pcpMm:pcp,AohMm2:Aoh,phMm:ph,AoMm2:Ao,coreWidthMm:coreB,coreHeightMm:coreH,centerlineOffsetMm:centerlineOffset,assumption:"مقطع مستطیلی توپر و خاموت بسته؛ Aoh در خط مرکزی خاموت محاسبه و Ao=0.85Aoh صرفاً هندسه مرجع روش خرپایی ACI است؛ پذیرش آیین‌نامه‌ای برای مبحث ۹ هنوز تطبیق نشده است."};
+ }
  function memberTorsionEnvelope(member){
   const f=member.localEndForces||[];
   if(f.length<12)return null;
@@ -227,6 +235,7 @@
   const stirrupArea=settings.stirrupLegs*areaBar(settings.stirrupDiaMm);
   const shearY=shearEnvelopeForRoute(envelopes,"local-y"),shearZ=shearEnvelopeForRoute(envelopes,"local-z");
   const Ag=b*h;
+  const torsionGeometry=torsionSectionGeometry(b,h,settings.coverMm,settings.stirrupDiaMm);
   const shearYResult=shearY?shearDesignDirection(Math.abs(shearY.sample.VyN),shearY.sample.Nn,b,d,Ag,fc,settings.fyMPa,settings.phiShear,settings.lambdaConcrete,stirrupArea,(AsProvided||0)/2):{ok:false,reason:"نیروی برش محلی y موجود نیست"};
   const dZ=b-settings.coverMm-settings.stirrupDiaMm-settings.barDiaMm/2;
   const shearZResult=shearZ?shearDesignDirection(Math.abs(shearZ.sample.VzN),shearZ.sample.Nn,h,dZ,Ag,fc,settings.fyMPa,settings.phiShear,settings.lambdaConcrete,stirrupArea,(AsProvided||0)/2):{ok:false,reason:"نیروی برش محلی z موجود نیست"};
@@ -241,7 +250,7 @@
   return{id:route.id,memberIds:forceRows.map(x=>x.id),segmentCount:members.length,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,
    criticalMoment:{...criticalMoment,NkN:criticalMoment.Nn/1000,MyKNm:criticalMoment.MyNm/1000,MzKNm:criticalMoment.MzNm/1000,MresultantKNm:criticalMoment.MresultantNm/1000},
    criticalAxial:{...criticalAxial,NkN:criticalAxial.Nn/1000,MyKNm:criticalAxial.MyNm/1000,MzKNm:criticalAxial.MzNm/1000,MresultantKNm:criticalAxial.MresultantNm/1000},
-   torsion:{available:torsionAvailable,criticalMemberId:criticalTorsion?.memberId||null,maxAbsKNm:criticalTorsion?criticalTorsion.result.maxAbsNm/1e6:null,memberEndValues:torsionRows.map(x=>({memberId:x.memberId,startKNm:x.result?.startNm/1e6??null,endKNm:x.result?.endNm/1e6??null})),capacityChecked:false,combinedShearTorsionChecked:false},
+   torsion:{available:torsionAvailable,criticalMemberId:criticalTorsion?.memberId||null,maxAbsKNm:criticalTorsion?criticalTorsion.result.maxAbsNm/1e6:null,memberEndValues:torsionRows.map(x=>({memberId:x.memberId,startKNm:x.result?.startNm/1e6??null,endKNm:x.result?.endNm/1e6??null})),sectionGeometry:torsionGeometry,capacityChecked:false,combinedShearTorsionChecked:false},
    interaction:{ok:interaction.ok,assumption:interaction.assumptions,pointCount:interaction.points?.length||0,atCriticalAxial:interactionAtCritical,nominalMomentUtilization:nominalUtilization,curve:interaction.points||[]},
    effectiveDepthMm:d,AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,
    barCountEachFace:count,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits,multiLayerFits,rowsPerFace:layout.rowsPerFace||null,barsPerRow:layout.barsPerRow||[],bottomCentroidMm:layout.bottomCentroidMm||null,topCentroidMm:layout.topCentroidMm||null,layers:layout.layers||[]},
@@ -278,6 +287,7 @@
     "\nمنحنی اسمی N-M در نیروی محوری نقطه بحرانی: "+(r.interaction.atCriticalAxial?("Mn اسمی≈"+fmt(r.interaction.atCriticalAxial.MnKNm)+" kN·m؛ نسبت تقاضای M به Mn اسمی≈"+fmt(r.interaction.nominalMomentUtilization,3)):"نیروی محوری خارج از بازه منحنی یا منحنی نامعتبر است")+"؛ این نسبت فاقد ضریب φ و صرفاً غربال تک‌محوره است."+
     "\nعمق مؤثر تقریبی d="+fmt(r.effectiveDepthMm)+" mm؛ As لازم="+fmt(r.AsRequiredMm2)+" mm²؛ برآورد صرفاً از خمش نظری (پیش از حداقل آرماتور آیین‌نامه‌ای): "+r.barCountEachFace+" میلگرد قطر "+r.barDiaMm+" در هر وجه کششی (As فراهم="+fmt(r.AsProvidedMm2)+" mm²)"+
     "\nچیدمان طولی: "+(r.barLayer.singleLayerFits?"از نظر هندسی در یک ردیف جا می‌شود":"در یک ردیف جا نمی‌شود؛ آرایش چندلایه و بازنگری عمق مؤثر لازم است")+"؛ حداکثر تعداد در یک ردیف="+r.barLayer.maxBars+"؛ فاصله آزاد مفروض="+fmt(r.barLayer.clearSpacingMm)+" mm (غیرآیین‌نامه‌ای)"+
+    "\\nهندسه مقطع برای مرحله پیچش: "+(r.torsion.sectionGeometry.ok?("Acp="+fmt(r.torsion.sectionGeometry.AcpMm2)+" mm²؛ pcp="+fmt(r.torsion.sectionGeometry.pcpMm)+" mm؛ Aoh="+fmt(r.torsion.sectionGeometry.AohMm2)+" mm²؛ ph="+fmt(r.torsion.sectionGeometry.phMm)+" mm؛ Ao مرجع="+fmt(r.torsion.sectionGeometry.AoMm2)+" mm²") : r.torsion.sectionGeometry.reason)+
     "\\nپیچش محلی: "+(r.torsion.available?("بیشینه |T|="+fmt(r.torsion.maxAbsKNm)+" kN·m در عضو "+r.torsion.criticalMemberId+"؛ ظرفیت و آرماتور پیچشی هنوز کنترل نشده است"):"مؤلفه پیچش در نتایج موجود نیست؛ کنترل نشده است")+
     "\nکنترل برش محلی y: "+(r.stirrup.shearY.ok?("Vu="+fmt(r.stirrup.shearY.VuKN)+" kN؛ φVn,max="+fmt(r.stirrup.shearY.maxNominalShearKN*r.stirrup.phi)+" kN؛ خاموت حداقل لازم="+(r.stirrup.shearY.minimumStirrupsTriggered?"بله":"خیر")+(r.stirrup.shearY.recommendedSpacingMm==null?"":"؛ فاصله پیشنهادی="+fmt(r.stirrup.shearY.recommendedSpacingMm)+" mm؛ φ(Vc+Vs)="+fmt(r.stirrup.shearY.phiCapacityKN)+" kN؛ حد فصل ۱۱="+fmt(r.stirrup.shearY.maxSpacingByChapter11Mm)+" mm")+(r.stirrup.shearY.shearOK?"؛ کنترل مقدماتی برقرار":"؛ کنترل برش/خاموت برقرار نیست")):r.stirrup.shearY.reason)+
     "\nکنترل برش محلی z: "+(r.stirrup.shearZ.ok?("Vu="+fmt(r.stirrup.shearZ.VuKN)+" kN؛ φVn,max="+fmt(r.stirrup.shearZ.maxNominalShearKN*r.stirrup.phi)+" kN؛ خاموت حداقل لازم="+(r.stirrup.shearZ.minimumStirrupsTriggered?"بله":"خیر")+(r.stirrup.shearZ.recommendedSpacingMm==null?"":"؛ فاصله پیشنهادی="+fmt(r.stirrup.shearZ.recommendedSpacingMm)+" mm؛ φ(Vc+Vs)="+fmt(r.stirrup.shearZ.phiCapacityKN)+" kN؛ حد فصل ۱۱="+fmt(r.stirrup.shearZ.maxSpacingByChapter11Mm)+" mm")+(r.stirrup.shearZ.shearOK?"؛ کنترل مقدماتی برقرار":"؛ کنترل برش/خاموت برقرار نیست")):r.stirrup.shearZ.reason)+
@@ -293,6 +303,7 @@
   const cantileverZ={length:6,localEndForces:[0,0,7200,0,-21600,0,0,0,0,0,0,0],analysisLoad:{uniformLocal:[0,0,-1200]}};
   const ep=memberEnvelope(pinned),ex=memberEnvelope(cantileverX),ez=memberEnvelope(cantileverZ);
   const torsionTest=memberTorsionEnvelope({localEndForces:[0,0,0,1250000,0,0,0,0,0,-1750000,0,0]});
+  const torsionGeometryTest=torsionSectionGeometry(600,500,40,10);
   const axialSample=sectionForceSamples({length:6,localEndForces:[10000,0,0,0,0,0,0,0,0,0,0,0],analysisLoad:{uniformLocal:[-1000,0,0]}});
   const axialMid=axialSample?.find(x=>Math.abs(x.xM-3)<1e-9);
   const biaxialSample=sectionForceSamples({length:6,localEndForces:[10000,3600,4800,0,0,0,0,0,0,0,0,0],analysisLoad:{uniformLocal:[-1000,-1200,-1600]}});
@@ -312,13 +323,13 @@
   const shearTest=shearDesignDirection(80000,0,600,442,300000,25,400,0.75,1,2*areaBar(10),8*areaBar(16));
   const shearHigh=shearDesignDirection(3000000,0,600,442,300000,25,400,0.75,1,2*areaBar(10),8*areaBar(16));
   const shearLow=shearDesignDirection(10000,0,600,442,300000,25,400,0.75,1,2*areaBar(10),8*areaBar(16));
-  const checks={torsionEndDemandExtracted:!!torsionTest&&Math.abs(torsionTest.maxAbsNm-1750000)<1e-9,shearScreenValid:shearTest.ok&&shearTest.maxNominalShearKN>0&&shearTest.minAvPerSmm2PerMm>0,
+  const checks={torsionGeometryValid:!!torsionGeometryTest.ok&&Math.abs(torsionGeometryTest.AcpMm2-300000)<1e-9&&Math.abs(torsionGeometryTest.AohMm2-176400)<1e-9&&Math.abs(torsionGeometryTest.AoMm2-149940)<1e-9,torsionEndDemandExtracted:!!torsionTest&&Math.abs(torsionTest.maxAbsNm-1750000)<1e-9,shearScreenValid:shearTest.ok&&shearTest.maxNominalShearKN>0&&shearTest.minAvPerSmm2PerMm>0,
    shearSpacingUsesCodeLimit:shearTest.recommendedSpacingMm===shearTest.maxSpacingByChapter11Mm&&shearTest.providedAvPerSmm2PerMm>=shearTest.minAvPerSmm2PerMm,
    shearMaximumCapacityRejectsExcess:shearHigh.ok&&!shearHigh.maxShearOK&&!shearHigh.shearOK,
    shearLowDemandNoMinimumStirrups:shearLow.ok&&!shearLow.minimumStirrupsTriggered,barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,multiLayerLayout:!!testLayout.ok&&testLayout.rowsPerFace===1&&Math.abs(testLayout.totalAsMm2-8*areaBar(16))<1e-8,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>100&&midCapacity.MnKNm<180&&Number.isFinite(midCapacity.MnKNm),interactionSignConvention:Number.isFinite(tensileEnd)&&tensileEnd>0&&Number.isFinite(compressionEnd)&&compressionEnd<0,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
    pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
    cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
-  return{passed:Object.values(checks).every(Boolean),checks,torsionTest,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,shearScreenTest:shearTest,shearHighDemandTest:shearHigh,shearLowDemandTest:shearLow,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
+  return{passed:Object.values(checks).every(Boolean),checks,torsionTest,torsionGeometryTest,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,shearScreenTest:shearTest,shearHighDemandTest:shearHigh,shearLowDemandTest:shearLow,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
    pinnedUniformLoadMomentNm:ep.MmaxNm,cantileverMomentNm:ex.MmaxNm};
  }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
