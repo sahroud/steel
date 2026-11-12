@@ -103,7 +103,7 @@
       if(!freightQuoteKeys.has(freightKey)){quotedFreightTotal+=Number(quote.freightToman)||0;freightQuoteKeys.add(freightKey);}
      }else pricingWarnings.push(d.label+": مبلغ حمل ثبت شده است اما چون شهر تحویل با شهر پروژه تطبیق ندارد، در جمع منظور نشد.");
     }
-    if(!quote.includesTax&&quote.taxPercent===null)pricingWarnings.push(d.label+": وضعیت مالیات قیمت بازار مشخص نیست.");
+    if(!quote.includesTax&&quote.taxPercent===null)pricingWarnings.push(d.label+": وضعیت مالیات قیمت بازار مشخص نیست.");else if(!quote.includesTax&&quote.taxPercent!==null)pricingWarnings.push(d.label+": درصد مالیات در منبع ثبت شده اما خودکار اعمال نشده؛ آن را در مالیات عمومی برآورد لحاظ یا کنترل کنید.");
     if(!quote.verifiedByUser)pricingWarnings.push(d.label+": قیمت بازار هنوز توسط کاربر با فروشنده یا پیش‌فاکتور تأیید نشده است.");
    }
    if(q===null||q===undefined||!Number.isFinite(Number(q))){missing.push(d.label+": مقدار نامعلوم");return;}
