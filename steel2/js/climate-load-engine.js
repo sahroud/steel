@@ -11,6 +11,14 @@
     externalPressure: "", directionality: "",
     internalGust: "", internalPressure: ""
   };
+  function windCoefficientBasis(breadth) {
+    const span=finite($("span")?.value),length=finite($("length")?.value);
+    const eave=finite($("height")?.value),rise=finite($("rise")?.value);
+    const h=eave!==null&&rise!==null?eave+rise:null;
+    if(h===null||!(h>0)||breadth===null||!(breadth>0))return null;
+    const ratio=h/breadth;
+    return {height:h,breadth,heightToBreadth:ratio,combined:h<20&&ratio<1};
+  }
   function readWindCoefficients() {
     const ids = {
       importance:"windCoeffIw", exposure:"windCoeffCe",
@@ -39,9 +47,13 @@
     const complete = q !== null && required.every(key => values[key] !== null);
     if (!complete) return { q, coefficients:c, complete:false, external:null, internal:null, net:null };
     const common = values.importance * q * values.exposure * values.topography * values.directionality;
-    const external = common * values.gust * values.externalPressure;
+    const span=finite($("span")?.value),length=finite($("length")?.value);
+    const bx=windCoefficientBasis(span),bz=windCoefficientBasis(length);
+    if(!bx||!bz||bx.combined!==bz.combined)
+      return {q,coefficients:c,complete:false,external:null,internal:null,net:null,reason:"برای این محاسبه عمومی، مبنای CgCp/Cp در دو راستای اصلی یکسان یا هندسه کامل نیست؛ از دفتر باد جهت‌دار استفاده کنید."};
+    const external = common * (bx.combined ? values.externalPressure : values.gust * values.externalPressure);
     const internal = common * values.internalGust * values.internalPressure;
-    return { q, coefficients:c, complete:true, external, internal, net:external-internal };
+    return { q, coefficients:c, complete:true, external, internal, net:external-internal, externalCoefficientBasis:bx.combined?"combined-CgCp":"separate-Cp" };
   }
   function updateWindPressureResult() {
     const out = $("windPressureCalculationResult");
@@ -96,9 +108,13 @@
       const cp=finite(zones[key]);
       if(!commonReady||cp===null||internalMagnitude===null){rows[key]=null;return;}
       const common=v.importance*q*v.exposure*v.topography*v.directionality;
-      const ext=common*v.gust*cp;
+      const breadth=key.startsWith("end-wall-")?finite($("length")?.value):finite($("span")?.value);
+      const basis=windCoefficientBasis(breadth);
+      if(!basis){rows[key]=null;return;}
+      const ext=common*(basis.combined?cp:v.gust*cp);
       const intMagnitude=common*v.internalGust*internalMagnitude;
-      rows[key]={cp,external:ext,internalPositive:intMagnitude,internalNegative:-intMagnitude,
+      rows[key]={cp,external:ext,externalCoefficientBasis:basis.combined?"combined-CgCp":"separate-Cp",
+        heightToBreadth:basis.heightToBreadth,internalPositive:intMagnitude,internalNegative:-intMagnitude,
         netInternalPositive:ext-intMagnitude,netInternalNegative:ext+intMagnitude};
     });
     return {q,rows,zones,ready:Object.values(rows).every(Boolean)};
@@ -120,7 +136,7 @@
     });
     const out=$("windZoneStatus");
     if(out)out.textContent=r.ready
-      ?"فشار خالص هر شش سطح برای دو حالت علامت فشار داخلی محاسبه شد. q="+r.q.toFixed(3)+" kN/m². مقادیر هنوز دستی/تأییدنشده‌اند و به تحلیل سه‌بعدی منتقل نمی‌شوند."
+      ?"فشار خالص هر شش سطح برای دو حالت علامت فشار داخلی محاسبه شد. مبنای CgCp/Cp طبق هندسه کنترل شد. q="+r.q.toFixed(3)+" kN/m². مقادیر هنوز دستی/تأییدنشده‌اند و به تحلیل سه‌بعدی منتقل نمی‌شوند."
       :"برای محاسبه همه سطوح، ضرایب مشترک Iw، Ce، Ct، Cg، Cd، Cgi، قدرمطلق Cpi و Cp هر شش سطح را وارد کنید.";
   }
   function getData() {
