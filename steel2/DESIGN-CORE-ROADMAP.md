@@ -85,6 +85,8 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 ## End-wall and gable geometry audit — 2026-11-12
 
 - Added `js/end-wall-audit.js` as a read-only geometry/topology audit and loaded it after the load-path audit.
+- Corrected the end-wall post/chord station grid to always include the roof ridge. The previous 4 m regular grid on a 12 m span omitted the 6 m ridge station, leaving the segmented gable chord off the actual roof profile; the ridge is now an explicit shared station.
+- The audit now checks post-chain arrival at the roof, shared post-top/chord node IDs, chord graph continuity, and total chord length against the two actual roof slopes.
 - Computes the exact area above the highest end-wall girt by integrating the roof profile. This includes both the rectangular band between the highest girt and eaves and the triangular cap below the two roof slopes; it does not incorrectly report only `span × rise / 2` as the whole uncovered upper band.
 - Reports the full gable triangle area separately, per end, and checks each end-wall post chain reaches the roof line and that the segmented gable top chord closes to the expected two-slope length.
 - The existing end-wall framing contains vertical post chains, horizontal girts and a segmented top chord. That geometric framing does not establish cladding span direction, sheeting support, fastener/connection capacity, or a complete wind load path.
