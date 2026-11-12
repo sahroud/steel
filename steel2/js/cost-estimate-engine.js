@@ -8,7 +8,8 @@
  const fmt=v=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:0});
  const defaultManualItems=[
   {key:"foundationConcrete",label:"بتن فونداسیون و شناژ",unit:"مترمکعب",priceCode:"concrete.ready",priceUnit:"تومان/مترمکعب"},
-  {key:"foundationRebar",label:"میلگرد فونداسیون",unit:"کیلوگرم",priceCode:"rebar.a3",priceUnit:"تومان/کیلوگرم"},
+  {key:"foundationRebar",label:"میلگرد فونداسیون (مقدار دستی/طراحی‌شده)",unit:"کیلوگرم",priceCode:"rebar.a3",priceUnit:"تومان/کیلوگرم"},
+  {key:"tieRebar",label:"آرماتور شناژ (برآورد وزنی واردشده)",unit:"کیلوگرم",priceCode:"rebar.a3",priceUnit:"تومان/کیلوگرم"},
   {key:"excavation",label:"خاکبرداری و تسطیح",unit:"مترمکعب",priceCode:"excavation",priceUnit:"تومان/مترمکعب"},
   {key:"formwork",label:"قالب‌بندی فونداسیون",unit:"مترمربع",priceCode:"formwork",priceUnit:"تومان/مترمربع"},
   {key:"anchorBolts",label:"تعداد بولت و صفحه‌ستون (در صورت قیمت‌گذاری عددی)",unit:"عدد",priceCode:"anchor.bolt",priceUnit:"تومان/عدد"},
@@ -92,7 +93,7 @@
  }
  function refreshFromFoundation(report){
   if(!report)return;
-  const links={foundationConcrete:report.totalConcreteM3,excavation:report.excavationM3,formwork:report.sideFormworkM2,anchorBolts:report.anchorsCount};
+  const links={foundationConcrete:report.totalConcreteM3,excavation:report.excavationM3,formwork:report.sideFormworkM2,anchorBolts:report.anchorsCount,tieRebar:report.tieRebarKg};
   let changed=false;
   state.manualItems.forEach(item=>{
    if(Object.prototype.hasOwnProperty.call(links,item.key)&&links[item.key]!==null&&links[item.key]!==undefined&&item.quantitySource!=="manual"){
