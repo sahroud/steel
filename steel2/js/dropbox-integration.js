@@ -12,6 +12,7 @@
 
   let auth = null;
   let dbx = null;
+  let uploadInProgress = false;
 
   function hasToken() {
     try { return !!localStorage.getItem(TOKEN_KEY); } catch (_) { return false; }
@@ -58,7 +59,7 @@
     const auto = $("dropboxAutoUpload");
     if (connect) connect.hidden = connected;
     if (disconnect) disconnect.hidden = !connected;
-    if (upload) upload.disabled = !connected || !getLatestReport();
+    if (upload) upload.disabled = uploadInProgress || !connected || !getLatestReport();
     if (auto) auto.checked = localStorage.getItem(AUTO_KEY) !== "false";
     setStatus(connected
       ? "Dropbox در این مرورگر متصل است. پوشه مقصد: " + FOLDER
@@ -88,18 +89,19 @@
       await auth.checkAndRefreshAccessToken();
     }
     const date = new Date(report.generatedAt || Date.now());
-    const stamp = date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    if (!Number.isFinite(date.getTime())) throw new Error("زمان ثبت گزارش معتبر نیست.");
+    const stamp = date.toISOString().replace(/[-:]/g, "").replace(/\\.\\d{3}Z$/, "Z");
     const fileName = "sahroud-steel-span10-" + stamp + ".json";
     const path = FOLDER + "/" + fileName;
     const response = await client.filesUpload({
       path,
       contents: JSON.stringify(report, null, 2),
-      mode: { ".tag": "add" },
+      // Re-sending the same run updates its report instead of failing on a duplicate name.
+      mode: { ".tag": "overwrite" },
       autorename: false,
       mute: true
     });
-    setStatus("گزارش با موفقیت در Dropbox ذخیره شد: " + (response.result.path_display || path), false);
-    updateUI();
+    setStatus("ارسال تأیید شد؛ گزارش در Dropbox ذخیره شد: " + (response.result.path_display || path), false);
     return response.result;
   }
 
@@ -133,14 +135,23 @@
       updateUI();
     });
     $("btnDropboxUploadLatest").addEventListener("click", async () => {
+      if (uploadInProgress) return;
+      const report = getLatestReport();
+      if (!report) {
+        setStatus("گزارش آزمایش دهانه ۱۰ متر پیدا نشد؛ ابتدا آزمایش را اجرا کنید.", true);
+        return;
+      }
+      uploadInProgress = true;
+      updateUI();
+      setStatus("در حال ارسال گزارش به Dropbox؛ لطفاً دکمه را دوباره نزنید…", false);
       try {
-        const report = getLatestReport();
-        if (!report) throw new Error("گزارش آزمایش دهانه ۱۰ متر پیدا نشد؛ ابتدا آزمایش را اجرا کنید.");
-        $("btnDropboxUploadLatest").disabled = true;
-        setStatus("در حال بارگذاری گزارش…", false);
         await uploadSpanReport(report);
-      } catch (e) { setStatus("بارگذاری انجام نشد: " + (e.error?.error_summary || e.message), true); }
-      finally { updateUI(); }
+      } catch (e) {
+        setStatus("ارسال ناموفق بود: " + (e.error?.error_summary || e.message) + "؛ گزارش در حافظه مرورگر باقی مانده است.", true);
+      } finally {
+        uploadInProgress = false;
+        updateUI();
+      }
     });
     $("dropboxAutoUpload").addEventListener("change", e => {
       localStorage.setItem(AUTO_KEY, e.target.checked ? "true" : "false");
