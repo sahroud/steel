@@ -92,7 +92,8 @@
     }
 
     function shouldOpen(title) {
-        return /مشخصات پروژه|مشخصات هندسی|شرایط تکیه|بارگذاری مقدماتی|نمایش قاب|عملیات پروژه|کنترل کنسول‌های رفتر|طراحی مقدماتی اتصال کنسول|کنترل مقدماتی اتصال پرلین کنسول طولی/.test(title);
+        // Keep the first screen compact: expose actions/results, collapse detail inputs.
+        return /عملیات پروژه|مدل هندسی کامل سوله|نتایج تحلیل|اجرای هوشمند و یکپارچه پروژه/.test(title);
     }
 
     function organize(panel) {
