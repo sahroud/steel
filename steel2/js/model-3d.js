@@ -50,7 +50,7 @@
       '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
-      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option></select></div></div>' +
+      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option></select></div></div>' +
       '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
@@ -572,11 +572,19 @@
         "؛ تعداد اعضای این گروه: "+first.count);
     }
     const cases={
-      dead:{key:"dead",label:"مرده",direction:[0,-1,0]},
-      live:{key:"live",label:"زنده",direction:[0,-1,0]},
-      snow:{key:"snow",label:"برف",direction:[0,-1,0]}
+      dead:{key:"dead",label:"مرده",direction:[0,-1,0],deadFactor:1},
+      live:{key:"live",label:"زنده",direction:[0,-1,0],deadFactor:0},
+      snow:{key:"snow",label:"برف",direction:[0,-1,0],deadFactor:0}
     };
-    const selected=cases[loadCase];
+    let selected=cases[loadCase];
+    if(/^combo[0-2]$/.test(loadCase)){
+      const comboIndex=Number(loadCase.slice(5));
+      const combo=window.SteelLoads?.getData?.().combinations?.[comboIndex];
+      if(!combo)throw new Error("ضرایب ترکیب بار انتخابی در دسترس نیستند.");
+      selected={key:loadCase,label:combo.name,direction:[0,-1,0],
+        factors:{dead:Number(combo.dead)||0,live:Number(combo.live)||0,snow:Number(combo.snow)||0},
+        deadFactor:Number(combo.dead)||0};
+    }
     if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود.");
     const analysisModel={
       nodes:model.nodes.map(n=>({...n})),
@@ -598,7 +606,11 @@
     const steelUnitWeightKNm3=78.5;
     let selfWeightKN=0, selfWeightMemberCount=0;
     analysisModel.members.forEach(m=>{
-      const lineLoad=Number(m.lineLoads&&m.lineLoads[selected.key]||0);
+      const lineLoad=selected.factors
+        ? (Number(m.lineLoads?.dead||0)*selected.factors.dead+
+           Number(m.lineLoads?.live||0)*selected.factors.live+
+           Number(m.lineLoads?.snow||0)*selected.factors.snow)
+        : Number(m.lineLoads&&m.lineLoads[selected.key]||0);
       if(!Number.isFinite(lineLoad))throw new Error("بار عضو "+m.id+" عدد معتبر نیست.");
       const a=nodeById.get(m.start);
       const b=nodeById.get(m.end);
@@ -611,9 +623,9 @@
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
       let selfWeightLineLoad=0;
-      if(selected.key==="dead"){
+      if(selected.deadFactor>0){
         const section=window.SteelSections.resolveAnalysis3DSection(m);
-        selfWeightLineLoad=section.A*steelUnitWeightKNm3;
+        selfWeightLineLoad=section.A*steelUnitWeightKNm3*selected.deadFactor;
         selfWeightKN+=selfWeightLineLoad*Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
         selfWeightMemberCount++;
       }
@@ -714,7 +726,7 @@
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
-    result.selfWeight={included:selected.key==="dead",unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount};
+    result.selfWeight={included:selected.deadFactor>0,deadLoadFactor:selected.deadFactor,unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount};
     result.connectionModel="اتصال پرلین به رفتر: تقریب کلیپس/نبشی دوپیچه؛ انتقال جابه‌جایی مشترک است، دو دوران خمشی پرلین از رفتر جدا شده‌اند و دوران حول محور طولی پرلین مشترک باقی مانده است. این مدل سختی واقعی اتصال را محاسبه نمی‌کند.";
     result.warning="وزن خود فولاد در حالت بار مرده با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. بار باد و ترکیبات بار هنوز اعمال نشده‌اند؛ اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
