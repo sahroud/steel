@@ -86,7 +86,7 @@
               " | جابه‌جایی ux/uy/uz: "+[result.criticalDisplacement.ux,result.criticalDisplacement.uy,result.criticalDisplacement.uz].map(v=>(v*1000).toFixed(3)).join(" / ")+" میلی‌متر"+
               " | اعضای متصل ("+result.criticalDisplacement.connectedMembers.length+"): "+result.criticalDisplacement.connectedMembers.map(m=>m.id+" ["+m.type+"]").join("، ")
             : " | اطلاعات گره بحرانی در دسترس نیست")+
-          (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو":"")+
+          (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو"+(result.selfWeight.bySectionGroup?" | تفکیک وزن گروه‌ها: "+Object.entries(result.selfWeight.bySectionGroup).map(([k,v])=>k+"="+v.totalKN.toFixed(2)+"kN، "+v.count+" عضو، "+v.lengthM.toFixed(1)+"m").join("؛ "):""):"")+
           (result.equilibrium?" | کنترل تعادل نیرو: "+(result.equilibrium.relativeForceResidual*100).toExponential(2)+"٪؛ تعادل لنگر: "+(result.equilibrium.relativeMomentResidual*100).toExponential(2)+"٪؛ "+(result.equilibrium.ok?"تعادل کلی برقرار":"هشدار: عدم تعادل کلی"):" | کنترل تعادل در دسترس نیست")+
           ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل خطی مرتبه اول است، P-Delta و کنترل کمانش در آن لحاظ نشده است. هر پرلین به‌صورت قطعه مستقل بین دو قاب مدل شده است؛ دوران‌های انتهایی هر قطعه از رفتر و از قطعه پرلین دهانه مجاور جدا هستند (فرض مفصل ایده‌آل). سختی واقعی کلیپس و پیچ‌ها، لغزش و خروج از صفحه هنوز مدل نشده و نتیجه تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
         if(Array.isArray(result.criticalMemberReport)&&result.criticalMemberReport.length){
@@ -655,6 +655,7 @@
     // Area A comes from the same assigned section properties used by the 3D solver.
     const steelUnitWeightKNm3=78.5;
     let selfWeightKN=0, selfWeightMemberCount=0;
+    const selfWeightByGroup=Object.create(null);
     const sectionsByMemberId=Object.create(null);
     analysisModel.members.forEach(m=>{
       const lineLoad=selected.factors
@@ -677,9 +678,14 @@
       sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile};
       let selfWeightLineLoad=0;
       if(selected.deadFactor>0){
+        const memberLength=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
         selfWeightLineLoad=section.A*steelUnitWeightKNm3*selected.deadFactor;
-        selfWeightKN+=selfWeightLineLoad*Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+        const memberWeight=selfWeightLineLoad*memberLength;
+        selfWeightKN+=memberWeight;
         selfWeightMemberCount++;
+        const groupKey=String(m.sectionKey||"unknown");
+        const group=selfWeightByGroup[groupKey]||(selfWeightByGroup[groupKey]={count:0,lengthM:0,areaM2:section.A,totalKN:0});
+        group.count++;group.lengthM+=memberLength;group.totalKN+=memberWeight;
       }
       const totalLineLoad=lineLoad+selfWeightLineLoad;
       const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
@@ -775,7 +781,7 @@
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
-    result.selfWeight={included:selected.deadFactor>0,deadLoadFactor:selected.deadFactor,unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount};
+    result.selfWeight={included:selected.deadFactor>0,deadLoadFactor:selected.deadFactor,unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount,bySectionGroup:selfWeightByGroup};
     result.connectionModel="اتصال پرلین به رفتر: تقریب کلیپس/نبشی دوپیچه؛ انتقال جابه‌جایی مشترک است، دو دوران خمشی پرلین از رفتر جدا شده‌اند و دوران حول محور طولی پرلین مشترک باقی مانده است. این مدل سختی واقعی اتصال را محاسبه نمی‌کند.";
     result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. بار باد و ترکیبات دارای باد/زلزله هنوز اعمال نشده‌اند؛ سه ترکیب ثقلی ULS-1 تا ULS-3 به‌صورت خطی قابل تحلیل هستند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
