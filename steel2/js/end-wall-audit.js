@@ -29,19 +29,21 @@
    const posts=endPosts.filter(m=>m.endFace===face);
    const chords=topChords.filter(m=>m.endFace===face);
    const girts=endGirts.filter(m=>m.endFace===face);
-   const postTop=posts.filter(m=>{
+   const postGroups=new Map();
+   posts.forEach(m=>{const key=String(m.post);if(!postGroups.has(key))postGroups.set(key,[]);postGroups.get(key).push(m);});
+   const postsReachingRoof=Array.from(postGroups.values()).filter(chain=>chain.some(m=>{
     const a=nodes.get(m.start),b=nodes.get(m.end);
     return [a,b].some(n=>n&&near(n.y,roofY(n.x))&&near(n.z,face==="front"?0:num(g.length)));
-   });
+   }));
    const chordLength=chords.reduce((s,m)=>{
     const a=nodes.get(m.start),b=nodes.get(m.end);
     return s+(a&&b?Math.hypot(b.x-a.x,b.y-a.y):0);
    },0);
    const expectedChordLength=2*Math.hypot(span/2,rise);
    const chordClosure=expectedChordLength>0?chordLength/expectedChordLength:0;
-   const missingPostTops=posts.length-postTop.length;
+   const missingPostTops=postGroups.size-postsReachingRoof.length;
    return {face,endPostSegments:posts.length,endGirtSegments:girts.length,gableTopChordSegments:chords.length,
-    postSegmentsReachingRoofline:postTop.length,missingPostTopSegments:missingPostTops,
+    postsReachingRoofline:postsReachingRoof.length,postCount:postGroups.size,missingPostTops,
     topChordLengthM:chordLength,expectedTopChordLengthM:expectedChordLength,
     topChordLengthRatio:chordClosure,
     topologyOk:posts.length>0&&chords.length>0&&missingPostTops===0&&near(chordClosure,1,1e-5)};
