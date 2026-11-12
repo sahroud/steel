@@ -54,6 +54,20 @@
   const checks={fourGridLayers:g.ok&&g.count>0&&new Set(g.bars.map(x=>x.layer+"-"+x.direction)).size===4,bottomTopElevation:g.ok&&g.bars.some(x=>x.layer==="bottom"&&x.a.y<0.1)&&g.bars.some(x=>x.layer==="top"&&x.a.y>0.4),gridBarsStayInsideFootprint:g.ok&&g.bars.every(x=>Math.abs(x.a.x)<=1&&Math.abs(x.a.z)<=1&&Math.abs(x.b.x)<=1&&Math.abs(x.b.z)<=1)};
   return{passed:Object.values(checks).every(Boolean),checks,barCount:g.count,assumptions:g.assumptions};
 }
+function checkTieBeamRebarClearance(tieBars,requiredClearanceMm=0){
+  readInputs();
+  if(!lastReport?.rows?.length)return{ok:false,reason:"ابتدا واکنش‌های پی یا پوش واکنش را استخراج کنید تا مختصات پایه‌ها مشخص شود."};
+  const B=num(state.footingWidthM),L=num(state.footingLengthM),T=num(state.footingThicknessM),cover=signedNum(state.rebarCoverMm);
+  if(!B||!L||!T||cover===null)return{ok:false,reason:"عرض، طول، ضخامت پی و پوشش بتن را از نقشه وارد کنید؛ مقدار فرضی استفاده نمی‌شود."};
+  const specs=footingGridSpecs(state);
+  if(!specs.length)return{ok:false,reason:"قطر و فاصله حداقل یک شبکه میلگرد پی را در ورودی‌های آرماتور وارد کنید."};
+  const grid=buildFootingRebarGeometry(lastReport.rows,B,L,T,cover,specs);
+  if(!grid.ok)return grid;
+  const checker=window.SteelTieBeamReinforcement?.checkFootingBarClearance;
+  if(typeof checker!=="function")return{ok:false,reason:"ماژول کنترل سه‌بعدی میلگرد شناژ بارگذاری نشده است."};
+  const result=checker(tieBars,grid.bars,requiredClearanceMm);
+  return{...result,footingGridBarCount:grid.count,baseCount:grid.baseCount,gridAssumptions:grid.assumptions};
+}
 function modelFingerprint(model){
   return JSON.stringify({
    nodes:(model.nodes||[]).map(n=>[n.id,n.x,n.y,n.z,n.kind]),
@@ -74,7 +88,7 @@ function modelFingerprint(model){
   const reactionMap=new Map(result.reactions.map(r=>[r.nodeId,r]));
   const rows=model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>{
    const r=reactionMap.get(n.id);
-   return {nodeId:n.id,x:Number(n.x)||0,z:Number(n.z)||0,kind:n.kind,hasReaction:!!r,values:r?(r.values||[]).slice(0,6).map(v=>Number(v)||0):[0,0,0,0,0,0]};
+   return {nodeId:n.id,x:Number(n.x)||0,y:Number(n.y),z:Number(n.z)||0,kind:n.kind,hasReaction:!!r,values:r?(r.values||[]).slice(0,6).map(v=>Number(v)||0):[0,0,0,0,0,0]};
   }).sort((a,b)=>a.z-b.z||a.x-b.x);
   if(!rows.length){$("foundationTakeoffSummary").textContent="هیچ گره پایه‌ای در مدل هندسی پیدا نشد؛ ساخت مدل و نوع تکیه‌گاه را بررسی کنید.";return;}
   const body=$("foundationReactionRows");body.replaceChildren();
@@ -352,5 +366,5 @@ function calculateFootingRebar(baseCount,B,L){
  function getData(){readInputs();return JSON.parse(JSON.stringify(state));}
  function setData(d){if(!d||typeof d!=="object")return;keys.forEach(k=>{if(d[k]!==undefined)state[k]=d[k];const el=$(map[k]);if(el)el.value=state[k]??"";});}
  document.addEventListener("DOMContentLoaded",panel);
- window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,checkTieBeamRebarClearance,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
 })();
