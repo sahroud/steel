@@ -191,6 +191,9 @@
         if(legacyResults)legacyResults.hidden=true;
         const comboButton=document.getElementById("btnCombinations");
         if(comboButton)comboButton.textContent="تحلیل ترکیبات بار سه‌بعدی";
+        // The previous one-click workflow still calls the retired 2D combination API.
+        const staleWorkflow=document.getElementById("steelAutoWorkflowPanel");
+        if(staleWorkflow)staleWorkflow.hidden=true;
         const oldCount=document.querySelector("#results #memberCount");
         if(oldCount)oldCount.closest(".result-card")?.setAttribute("hidden","");
     }
