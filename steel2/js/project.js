@@ -174,6 +174,10 @@
                 window.SteelPurlinCantileverConnection.getData();
         }
 
+        if (window.SteelDesignCore && typeof window.SteelDesignCore.getData === "function") {
+            data.designBrief = window.SteelDesignCore.getData();
+        }
+
         return data;
     }
 
@@ -376,6 +380,10 @@
             if (typeof window.SteelOpenings.check === "function") {
                 window.SteelOpenings.check();
             }
+        }
+
+        if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
+            window.SteelDesignCore.setData(data.designBrief || {});
         }
 
         if (data.climateDatabase && window.SteelClimateDB &&
