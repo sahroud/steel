@@ -72,7 +72,7 @@
    const c=hMm*0.01*Math.pow(10000,i/100),a=Math.min(beta1*c,hMm),Cc=alpha1*fc*bMm*a;
    let P=-Cc,M=-Cc*(hMm/2-a/2),epsT=0;
    for(const layer of layers){
-    const eps=epsilonCu*(1-layer.y/c),fs=Math.max(-fy,Math.min(fy,Es*eps));
+    const eps=epsilonCu*(layer.y/c-1),fs=Math.max(-fy,Math.min(fy,Es*eps));
     const force=layer.area*(fs-(layer.y<=a?alpha1*fc:0));
     P+=force;M+=force*(hMm/2-layer.y);if(eps>epsT)epsT=eps;
    }
