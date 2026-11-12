@@ -189,17 +189,16 @@
 
             <h4>د ـ بار باد</h4>
             <div class="form-grid">
-                ${input("loadWindLeft", "بار باد سمت چپ سقف", state.windLeft, true)}
-                ${input("loadWindRight", "بار باد سمت راست سقف", state.windRight, true)}
-                ${input("loadWindWall", "بار باد دیوار", state.windWall, true)}
+                ${input("loadWindLeft", "فشار خالص باد سقف سمت چپ", state.windLeft, true)}
+                ${input("loadWindRight", "فشار خالص باد سقف سمت راست", state.windRight, true)}
+                ${input("loadWindWall", "فشار خالص باد دیوارهای طولی (هر دو طرف)", state.windWall, true)}
             </div>
-
-            <div class="field">
-                <label for="loadWindDirection">جهت باد</label>
-                <select id="loadWindDirection">
-                    <option value="left-to-right">از چپ به راست</option>
-                    <option value="right-to-left">از راست به چپ</option>
-                </select>
+            <div class="notice">
+                برای تحلیل آزمایشی باد، این سه ورودی باید «فشار خالص وارد بر سطح» بر حسب kN/m² باشند، نه سرعت مبنای باد.
+                مقدار مثبت یعنی فشار به سمت داخل سالن و مقدار منفی یعنی مکش به سمت بیرون.
+                فشار سقف به‌صورت عمود بر هر شیب و فشار دیوار به‌صورت عمود بر دو دیوار طولی به مدل منتقل می‌شود.
+                مقدار دیوار فعلاً برای هر دو دیوار طولی یکسان فرض می‌شود؛ دیوارهای انتهایی و ضرایب فشار بادگیر/بادپناه هنوز در این نسخه محاسبه نمی‌شوند.
+                این ورودی‌ها باید توسط مهندس محاسب از محاسبه معتبر باد تعیین شوند.
             </div>
 
             <h4>هـ ـ توضیحات بارگذاری</h4>
@@ -437,12 +436,7 @@
             <p>میانگین بار برف سقف: ${averageSnow.toFixed(3)} kN/m²</p>
             <p>باد سمت چپ: ${data.windLeft.toFixed(3)} kN/m²</p>
             <p>باد سمت راست: ${data.windRight.toFixed(3)} kN/m²</p>
-            <p>باد دیوار: ${data.windWall.toFixed(3)} kN/m²</p>
-            <p>جهت باد: ${
-                data.windDirection === "left-to-right"
-                    ? "از چپ به راست"
-                    : "از راست به چپ"
-            }</p>
+            <p>فشار خالص باد دیوارهای طولی: ${data.windWall.toFixed(3)} kN/m² (هر دو طرف)</p>
         `;
     }
 
