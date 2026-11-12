@@ -107,7 +107,7 @@
  }
  function exportCSV(){
   if(!last)run();if(!last)return;
-  const rows=[["گزارش غربال سازه‌ای پی منفرد"],["مبنای گزارش",last.basis],["fc MPa",last.fcMPa],["fy MPa",last.fyMPa],["φ flexure",last.phiFlexure],["φ shear",last.phiShear],["پایه/حالت","جهت","Mu kN.m/m","As required mm2/m","As provided mm2/m","Vu one-way kN/m","φVc one-way kN/m","Vu punching kN","φVc punching kN","status"],...last.records.map(r=>[r.nodeId+" / "+r.caseLabel,r.direction,r.MuKNmPerM,r.AsRequired,r.AsProvided,r.oneWayDemand,r.oneWayCapacity,r.punchDemand,r.punchCapacity,r.status]),...last.limitations.map(x=>["محدودیت",x])];
+  const rows=[["گزارش غربال سازه‌ای پی منفرد"],["مبنای گزارش",last.basis],["fc MPa",last.fcMPa],["fy MPa",last.fyMPa],["φ flexure",last.phiFlexure],["φ shear",last.phiShear],["پایه/حالت","جهت","Mu kN.m/m","As required mm2/m","As provided mm2/m","spacing from flexural As mm","Vu one-way kN/m","φVc one-way kN/m","Vu punching kN","φVc punching kN","status"],...last.records.map(r=>[r.nodeId+" / "+r.caseLabel,r.direction,r.MuKNmPerM,r.AsRequired,r.AsProvided,r.spacingByStrengthMm,r.oneWayDemand,r.oneWayCapacity,r.punchDemand,r.punchCapacity,r.status]),...last.limitations.map(x=>["محدودیت",x])];
   const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Footing-Structural-Screen.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
