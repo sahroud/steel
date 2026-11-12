@@ -53,14 +53,17 @@
    $("foundationTakeoffSummary").textContent="مدل، مقاطع یا بارها پس از آخرین تحلیل تغییر کرده‌اند (یا نتیجه با نسخه قدیمی حل‌گر تولید شده است). برای جلوگیری از متره اشتباه، ابتدا تحلیل سه‌بعدی را دوباره اجرا کنید.";
    return;
   }
-  const nodeMap=new Map(model.nodes.map(n=>[n.id,n]));
-  const rows=result.reactions.map(r=>({r,n:nodeMap.get(r.nodeId)})).filter(x=>x.n&&(x.n.kind==="base"||x.n.kind==="endwall-base")).map(({r,n})=>({nodeId:r.nodeId,x:Number(n.x)||0,z:Number(n.z)||0,kind:n.kind,values:(r.values||[]).slice(0,6).map(v=>Number(v)||0)})).sort((a,b)=>a.z-b.z||a.x-b.x);
-  if(!rows.length){$("foundationTakeoffSummary").textContent="در آخرین تحلیل واکنشی برای گره‌های پایه پیدا نشد؛ نتیجه و نوع تکیه‌گاه را بررسی کنید.";return;}
+  const reactionMap=new Map(result.reactions.map(r=>[r.nodeId,r]));
+  const rows=model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>{
+   const r=reactionMap.get(n.id);
+   return {nodeId:n.id,x:Number(n.x)||0,z:Number(n.z)||0,kind:n.kind,hasReaction:!!r,values:r?(r.values||[]).slice(0,6).map(v=>Number(v)||0):[0,0,0,0,0,0]};
+  }).sort((a,b)=>a.z-b.z||a.x-b.x);
+  if(!rows.length){$("foundationTakeoffSummary").textContent="هیچ گره پایه‌ای در مدل هندسی پیدا نشد؛ ساخت مدل و نوع تکیه‌گاه را بررسی کنید.";return;}
   const body=$("foundationReactionRows");body.replaceChildren();
   rows.forEach(row=>{const tr=document.createElement("tr");const vals=[row.nodeId,fmt(row.x)+" / "+fmt(row.z),...row.values.slice(0,3).map(v=>fmt(v/1000)),...row.values.slice(3,6).map(v=>fmt(v/1e6))];vals.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);});
   const sum=[0,0,0,0,0,0];rows.forEach(x=>x.values.forEach((v,i)=>sum[i]+=v));
   lastReport={generatedAt:new Date().toISOString(),loadCase:result.loadCaseLabel||result.loadCase||"نامشخص",supportType:result.supportType||"نامشخص",units:"kN,kN.m",rows,total:sum.map((v,i)=>v/(i<3?1000:1e6)),equilibrium:result.equilibrium||null,quantities:null};
-  $("foundationTakeoffSummary").textContent="حالت بار تحلیل‌شده: "+lastReport.loadCase+" | نوع تکیه‌گاه: "+lastReport.supportType+" | تعداد گره‌های پایه دارای واکنش: "+rows.length+" | مختصات بر حسب متر؛ نیرو kN و لنگر kN.m. جمع واکنش‌ها: Fx "+fmt(sum[0]/1000)+", Fy "+fmt(sum[1]/1000)+", Fz "+fmt(sum[2]/1000)+" kN. این جمع فقط مربوط به همین حالت بار است؛ برای طراحی پی باید همه ترکیبات بار و پوش نیروها بررسی شوند.";
+  $("foundationTakeoffSummary").textContent="حالت بار تحلیل‌شده: "+lastReport.loadCase+" | نوع تکیه‌گاه: "+lastReport.supportType+" | تعداد کل پایه‌های مدل: "+rows.length+" | پایه‌های دارای واکنش غیرصفر: "+rows.filter(x=>x.hasReaction).length+" | مختصات بر حسب متر؛ نیرو kN و لنگر kN.m. جمع واکنش‌ها: Fx "+fmt(sum[0]/1000)+", Fy "+fmt(sum[1]/1000)+", Fz "+fmt(sum[2]/1000)+" kN. این جمع فقط مربوط به همین حالت بار است؛ برای طراحی پی باید همه ترکیبات بار و پوش نیروها بررسی شوند.";
   $("btnFoundationCSV").disabled=false;
   quantify();
  }
