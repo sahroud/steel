@@ -605,9 +605,9 @@
         if (!validateProject()) return;
         if (!validateSections()) return;
 
-        if (!window.SteelAnalysis ||
-            typeof window.SteelAnalysis.calculate !== "function") {
-            alert("ماژول تحلیل سازه بارگذاری نشده است.");
+        if (!window.SteelStructuralModel ||
+            typeof window.SteelStructuralModel.analyze3D !== "function") {
+            alert("موتور تحلیل سه‌بعدی بارگذاری نشده است.");
             return;
         }
 
