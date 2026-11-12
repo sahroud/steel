@@ -81,3 +81,12 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 - Reports integrated line-load totals by member group and flags the known un-loaded triangular gable area above the end-wall girts (span × rise / 2 per end).
 - Does not modify member loads, solver inputs, wind coefficients, or design eligibility.
 - Important limitation: shared-node topology is not proof of real connection stiffness/capacity or cladding-to-purlin attachment. End-wall gable infill, roof/wall edge transfer, bracing connections and foundation load path remain incomplete.
+
+## End-wall and gable geometry audit — 2026-11-12
+
+- Added `js/end-wall-audit.js` as a read-only geometry/topology audit and loaded it after the load-path audit.
+- Computes the exact area above the highest end-wall girt by integrating the roof profile. This includes both the rectangular band between the highest girt and eaves and the triangular cap below the two roof slopes; it does not incorrectly report only `span × rise / 2` as the whole uncovered upper band.
+- Reports the full gable triangle area separately, per end, and checks each end-wall post chain reaches the roof line and that the segmented gable top chord closes to the expected two-slope length.
+- The existing end-wall framing contains vertical post chains, horizontal girts and a segmented top chord. That geometric framing does not establish cladding span direction, sheeting support, fastener/connection capacity, or a complete wind load path.
+- No wind pressure, surface load, line load, nodal load, or solver input is created or changed. `designEligible` and `loadTransferEnabled` remain false.
+- Next gate: verify the actual cladding/support arrangement and end-wall connection details, then derive tributary loads with an independent area-closure and force/moment equilibrium benchmark before any load transfer is enabled.
