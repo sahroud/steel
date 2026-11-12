@@ -383,7 +383,11 @@
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
-            window.SteelDesignCore.setData(data.designBrief || {});
+            const legacyClimate = data.loads && data.loads.climate ? data.loads.climate : {};
+            window.SteelDesignCore.setData(data.designBrief || {
+                occupancy: legacyClimate.buildingUse === "warehouse-industrial-enclosed" ? "industrial" : legacyClimate.buildingUse,
+                enclosure: legacyClimate.openingState
+            });
         }
 
         if (data.climateDatabase && window.SteelClimateDB &&
