@@ -30,7 +30,7 @@
   $("btnFootingSizeCSV").addEventListener("click",exportCSV);
  }
  function search(){
-  const summary=$("footingSizeSummary"),body=$("footingSizeRows");body.replaceChildren();last=null;
+  const summary=$("footingSizeSummary"),body=$("footingSizeRows");body.replaceChildren();last=null;$("btnFootingSizeApply").disabled=true;$("btnFootingSizeCSV").disabled=true;
   const report=window.SteelFoundationTakeoff?.getLast?.(),inputs=window.SteelFoundationTakeoff?.getData?.();
   if(!report?.rows?.length){summary.textContent="ابتدا پوش واکنش فونداسیون را استخراج کنید.";return;}
   const allow=pos(inputs?.soilAllowableKPa),t=pos(inputs?.footingThicknessM),gammaC=pos(inputs?.concreteUnitWeightKNm3),cx=pos(inputs?.pedestalWidthM),cz=pos(inputs?.pedestalLengthM),ph=pos(inputs?.pedestalHeightM);
