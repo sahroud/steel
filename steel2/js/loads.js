@@ -708,6 +708,21 @@
 
         renderCombinations();
 
+        const climateInputIds = {
+            city: "climateCity", customCity: "climateCustomCity",
+            elevation: "climateElevation", source: "climateSource",
+            groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
+            terrain: "climateTerrain", topography: "climateTopography",
+            openingArea: "buildingOpeningArea", envelopeArea: "buildingEnvelopeArea",
+            dominantOpening: "buildingDominantOpening"
+        };
+        Object.keys(climateInputIds).forEach(key => {
+            const el = $(climateInputIds[key]);
+            if (el && state.climate[key] !== undefined && state.climate[key] !== null) {
+                el.value = state.climate[key];
+            }
+        });
+
         const direction = $("loadWindDirection");
         if (direction) direction.value = state.windDirection;
 
