@@ -4,7 +4,7 @@
 (function(){
  "use strict";
  const $=id=>document.getElementById(id);
- const defaults={fyMPa:400,coverMm:40,barDiaMm:16,stirrupDiaMm:10,stirrupLegs:2,clearSpacingMm:25,phiFlexure:0.90,phiShear:0.75,lambdaConcrete:1.0,EsMPa:200000,alpha1:0.85,beta1:0.85,epsilonCu:0.003};
+ const defaults={fyMPa:400,coverMm:40,barDiaMm:16,stirrupDiaMm:10,stirrupLegs:2,clearSpacingMm:25,sideBarsPerSide:1,phiFlexure:0.90,phiShear:0.75,lambdaConcrete:1.0,EsMPa:200000,alpha1:0.85,beta1:0.85,epsilonCu:0.003};
  let settings={...defaults},latest=null,lastReport=null;
  const fmt=(v,d=2)=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:d});
  function mount(){
@@ -19,7 +19,7 @@
   '<div class="field"><label for="tbrBarDia">قطر پیشنهادی میلگرد طولی (mm)</label><select id="tbrBarDia"><option>12</option><option>14</option><option selected>16</option><option>18</option><option>20</option><option>22</option><option>25</option><option>28</option><option>32</option></select></div>'+
   '<div class="field"><label for="tbrStirrupDia">قطر خاموت (mm)</label><input id="tbrStirrupDia" type="number" min="6" max="16" step="1" value="10"></div>'+
   '<div class="field"><label for="tbrLegs">تعداد شاخه مؤثر خاموت</label><select id="tbrLegs"><option value="2" selected>۲ شاخه</option><option value="4">۴ شاخه</option></select></div>'+
-  '<div class="field"><label for="tbrClearSpacing">فاصله آزاد هندسی پیشنهادی میلگردها (mm)</label><input id="tbrClearSpacing" type="number" min="10" max="100" step="1" value="25"></div>'+
+  '<div class="field"><label for="tbrClearSpacing">فاصله آزاد هندسی پیشنهادی میلگردها (mm)</label><input id="tbrClearSpacing" type="number" min="10" max="100" step="1" value="25"></div><div class="field"><label for="tbrSideBars">میلگرد میانی در هر وجه جانبی (پیشنهاد اولیه)</label><select id="tbrSideBars"><option value="0">بدون میلگرد جانبی</option><option value="1" selected>۱ عدد در هر وجه جانبی</option><option value="2">۲ عدد در هر وجه جانبی</option><option value="3">۳ عدد در هر وجه جانبی</option></select></div>'+
   '<div class="field"><label for="tbrPhi">ضریب مقاومت خمشی فرضی φ (غربال مقدماتی)</label><input id="tbrPhi" type="number" min="0.5" max="1" step="0.01" value="0.90"></div>'+
   '<div class="field"><label for="tbrPhiShear">ضریب مقاومت برشی φ</label><input id="tbrPhiShear" type="number" min="0.5" max="0.9" step="0.01" value="0.75"></div><div class="field"><label for="tbrLambda">ضریب بتن معمولی/سبک λ</label><input id="tbrLambda" type="number" min="0.75" max="1" step="0.01" value="1.0"></div><div class="field"><label for="tbrEs">مدول فولاد Es (MPa)</label><input id="tbrEs" type="number" min="150000" max="220000" step="1000" value="200000"></div>'+
   '<div class="field"><label for="tbrAlpha">ضریب بلوک تنش α1</label><input id="tbrAlpha" type="number" min="0.5" max="1" step="0.01" value="0.85"></div>'+
@@ -38,12 +38,12 @@
  }
  function read(){
   if(!$("tbrFy"))return;
-  settings={fyMPa:Number($("tbrFy").value),coverMm:Number($("tbrCover").value),barDiaMm:Number($("tbrBarDia").value),stirrupDiaMm:Number($("tbrStirrupDia").value),stirrupLegs:Number($("tbrLegs").value),clearSpacingMm:Number($("tbrClearSpacing").value),phiFlexure:Number($("tbrPhi").value),phiShear:Number($("tbrPhiShear").value),lambdaConcrete:Number($("tbrLambda").value),EsMPa:Number($("tbrEs").value),alpha1:Number($("tbrAlpha").value),beta1:Number($("tbrBeta").value),epsilonCu:Number($("tbrEpsCu").value)};
+  settings={fyMPa:Number($("tbrFy").value),coverMm:Number($("tbrCover").value),barDiaMm:Number($("tbrBarDia").value),stirrupDiaMm:Number($("tbrStirrupDia").value),stirrupLegs:Number($("tbrLegs").value),clearSpacingMm:Number($("tbrClearSpacing").value),sideBarsPerSide:Number($("tbrSideBars")?.value??defaults.sideBarsPerSide),phiFlexure:Number($("tbrPhi").value),phiShear:Number($("tbrPhiShear").value),lambdaConcrete:Number($("tbrLambda").value),EsMPa:Number($("tbrEs").value),alpha1:Number($("tbrAlpha").value),beta1:Number($("tbrBeta").value),epsilonCu:Number($("tbrEpsCu").value)};
   try{localStorage.setItem("sahroudSteel.tieBeamRebarSettings.v1",JSON.stringify(settings));}catch(e){}
  }
  function write(){
   if(!$("tbrFy"))return;
-  Object.entries({tbrFy:settings.fyMPa,tbrCover:settings.coverMm,tbrBarDia:settings.barDiaMm,tbrStirrupDia:settings.stirrupDiaMm,tbrLegs:settings.stirrupLegs,tbrClearSpacing:settings.clearSpacingMm,tbrPhi:settings.phiFlexure,tbrPhiShear:settings.phiShear,tbrLambda:settings.lambdaConcrete,tbrEs:settings.EsMPa,tbrAlpha:settings.alpha1,tbrBeta:settings.beta1,tbrEpsCu:settings.epsilonCu}).forEach(([id,v])=>{if($(id))$(id).value=v;});
+  Object.entries({tbrFy:settings.fyMPa,tbrCover:settings.coverMm,tbrBarDia:settings.barDiaMm,tbrStirrupDia:settings.stirrupDiaMm,tbrLegs:settings.stirrupLegs,tbrClearSpacing:settings.clearSpacingMm,tbrSideBars:settings.sideBarsPerSide,tbrPhi:settings.phiFlexure,tbrPhiShear:settings.phiShear,tbrLambda:settings.lambdaConcrete,tbrEs:settings.EsMPa,tbrAlpha:settings.alpha1,tbrBeta:settings.beta1,tbrEpsCu:settings.epsilonCu}).forEach(([id,v])=>{if($(id))$(id).value=v;});
  }
  function areaBar(d){return Math.PI*d*d/4;}
  function barLayerCapacity(bMm,coverMm,stirrupDiaMm,barDiaMm,clearSpacingMm){
@@ -79,6 +79,25 @@
   const bottomArea=face.reduce((s,x)=>s+x.area,0);
   const bottomCentroid=face.reduce((s,x)=>s+x.area*x.y,0)/bottomArea;
   return{ok:true,layers,rowsPerFace:face.length,barsPerRow:face.map(x=>x.count),bottomCentroidMm:bottomCentroid,topCentroidMm:hMm-bottomCentroid,maxBarsPerRow:perRow,totalAsMm2:2*bottomArea};
+ }
+ function buildPerimeterBarLayout(bMm,hMm,countEachFace,sideBarsPerSide,coverMm,stirrupDiaMm,barDiaMm,clearSpacingMm){
+  const base=buildSymmetricBarLayers(bMm,hMm,countEachFace,coverMm,stirrupDiaMm,barDiaMm,clearSpacingMm);
+  if(!base.ok)return base;
+  if(!Number.isInteger(sideBarsPerSide)||sideBarsPerSide<0||sideBarsPerSide>8)return{ok:false,reason:"تعداد میلگرد جانبی باید عدد صحیح بین صفر تا ۸ باشد"};
+  const first=coverMm+stirrupDiaMm+barDiaMm/2,pitch=barDiaMm+clearSpacingMm,xFirst=first,xLast=bMm-first,coords=[];
+  for(const face of ["bottom","top"])for(let row=0;row<base.rowsPerFace;row++){
+   const y0=first+row*pitch,y=face==="bottom"?y0:hMm-y0,n=base.barsPerRow[row];
+   for(let j=0;j<n;j++)coords.push({xMm:n===1?bMm/2:xFirst+j*(xLast-xFirst)/(n-1),yMm:y,face,row,kind:"face"});
+  }
+  for(let side=0;side<2;side++)for(let j=1;j<=sideBarsPerSide;j++){
+   const y=first+j*(hMm-2*first)/(sideBarsPerSide+1);
+   coords.push({xMm:side===0?xFirst:xLast,yMm:y,face:side===0?"left":"right",row:j,kind:"side"});
+  }
+  const groups=new Map();
+  for(const p of coords){const key=p.yMm.toFixed(6);if(!groups.has(key))groups.set(key,{y:Number(key),area:0,count:0,coordinates:[]});const g=groups.get(key);g.area+=areaBar(barDiaMm);g.count++;g.coordinates.push(p);}
+  const layers=[...groups.values()].sort((a,b)=>a.y-b.y),bottom=coords.filter(p=>p.face==="bottom");
+  const bottomCentroid=bottom.reduce((v,p)=>v+p.yMm,0)/bottom.length;
+  return{...base,coordinates:coords,layers,sideBarsPerSide,totalCount:coords.length,totalAsMm2:coords.length*areaBar(barDiaMm),bottomCentroidMm:bottomCentroid,topCentroidMm:hMm-bottomCentroid,sideBarCount:2*sideBarsPerSide,faceBarCount:2*countEachFace,sideBarAreaMm2:2*sideBarsPerSide*areaBar(barDiaMm)};
  }
  function sectionInteractionCurve(bMm,hMm,fc,fy,Es,alpha1,beta1,epsilonCu,barAreaPerFace,coverMm,stirrupDiaMm,barDiaMm){
   const vals=[bMm,hMm,fc,fy,Es,alpha1,beta1,epsilonCu,coverMm,stirrupDiaMm,barDiaMm];
@@ -258,12 +277,12 @@
   let As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
   const barA=areaBar(settings.barDiaMm);
   let count=As.ok?Math.max(2,Math.ceil(As.AsRequiredMm2/barA)):null;
-  let layout=count?buildSymmetricBarLayers(b,h,count,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm):{ok:false,reason:"تعداد میلگرد برای آرایش موجود نیست"};
+  let layout=count?buildPerimeterBarLayout(b,h,count,settings.sideBarsPerSide,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm):{ok:false,reason:"تعداد میلگرد برای آرایش موجود نیست"};
   if(layout.ok){
    d=h-layout.bottomCentroidMm;
    As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
    count=As.ok?Math.max(2,Math.ceil(As.AsRequiredMm2/barA)):null;
-   layout=count?buildSymmetricBarLayers(b,h,count,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm):{ok:false,reason:"محاسبه مجدد آرماتور نامعتبر است"};
+   layout=count?buildPerimeterBarLayout(b,h,count,settings.sideBarsPerSide,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm):{ok:false,reason:"محاسبه مجدد آرماتور نامعتبر است"};
    if(layout.ok)d=h-layout.bottomCentroidMm;
   }
   const AsProvided=layout.ok?layout.totalAsMm2:null;
@@ -280,17 +299,17 @@
   const shearMaxForCombined=Math.max(shearY?.sample?Math.abs(shearY.sample.VyN):0,shearZ?.sample?Math.abs(shearZ.sample.VzN):0);
   const shearSpacingCandidates=[shearYResult.recommendedSpacingMm,shearZResult.recommendedSpacingMm].filter(x=>Number.isFinite(x)&&x>0);
   const shearSpacingForTorsion=shearSpacingCandidates.length?Math.min(...shearSpacingCandidates):null;
-  const torsionDesign=torsionAvailable&&torsionGeometry.ok?torsionDesignScreen(criticalTorsion.result.maxAbsNm,criticalTension.Nn,shearY?.sample?Math.abs(shearY.sample.VyN):0,b,d,shearYResult.ok?shearYResult.VcKN*1000:0,shearZ?.sample?Math.abs(shearZ.sample.VzN):0,h,dZ,shearZResult.ok?shearZResult.VcKN*1000:0,Ag,fc,settings.fyMPa,settings.lambdaConcrete,torsionGeometry,areaBar(settings.stirrupDiaMm),stirrupArea,shearSpacingForTorsion):{ok:false,reason:"تقاضای پیچش یا هندسه مقطع برای طراحی موجود نیست"};
-
   const shearYResult=shearY?shearDesignDirection(Math.abs(shearY.sample.VyN),shearY.sample.Nn,b,d,Ag,fc,settings.fyMPa,settings.phiShear,settings.lambdaConcrete,stirrupArea,(AsProvided||0)/2):{ok:false,reason:"نیروی برش محلی y موجود نیست"};
   const dZ=b-settings.coverMm-settings.stirrupDiaMm-settings.barDiaMm/2;
   const shearZResult=shearZ?shearDesignDirection(Math.abs(shearZ.sample.VzN),shearZ.sample.Nn,h,dZ,Ag,fc,settings.fyMPa,settings.phiShear,settings.lambdaConcrete,stirrupArea,(AsProvided||0)/2):{ok:false,reason:"نیروی برش محلی z موجود نیست"};
+  const torsionDesign=torsionAvailable&&torsionGeometry.ok?torsionDesignScreen(criticalTorsion.result.maxAbsNm,criticalTension.Nn,shearY?.sample?Math.abs(shearY.sample.VyN):0,b,d,shearYResult.ok?shearYResult.VcKN*1000:0,shearZ?.sample?Math.abs(shearZ.sample.VzN):0,h,dZ,shearZResult.ok?shearZResult.VcKN*1000:0,Ag,fc,settings.fyMPa,settings.lambdaConcrete,torsionGeometry,areaBar(settings.stirrupDiaMm),stirrupArea,shearSpacingForTorsion):{ok:false,reason:"تقاضای پیچش یا هندسه مقطع برای طراحی موجود نیست"};
+
   const spacing=V>0?stirrupArea*settings.fyMPa*d/(V*1000):null;
   const foundation=window.SteelFoundationTakeoff?.getData?.()||{};
   const footingDimension=material?.axis==="X"?Number(foundation.footingWidthM):Number(foundation.footingLengthM);
   const footingExtension=Number.isFinite(footingDimension)&&footingDimension>0;
   const straightBarLength=footingExtension?Number(material?.lengthM)+footingDimension:null;
-  const barsBothFaces=count?2*count:null;
+  const barsBothFaces=count?2*count+2*settings.sideBarsPerSide:null;
   const totalStraightBarLengthM=barsBothFaces?barsBothFaces*straightBarLength:null;
   const unitMassKgM=Math.pow(settings.barDiaMm,2)/162;
   return{id:route.id,memberIds:forceRows.map(x=>x.id),segmentCount:members.length,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,
@@ -299,7 +318,7 @@
    torsion:{available:torsionAvailable,criticalMemberId:criticalTorsion?.memberId||null,maxAbsKNm:criticalTorsion?criticalTorsion.result.maxAbsNm/1e6:null,memberEndValues:torsionRows.map(x=>({memberId:x.memberId,startKNm:x.result?.startNm/1e6??null,endKNm:x.result?.endNm/1e6??null})),sectionGeometry:torsionGeometry,design:torsionDesign,capacityChecked:false,combinedShearTorsionChecked:true},
    interaction:{ok:interaction.ok,assumption:interaction.assumptions,pointCount:interaction.points?.length||0,atCriticalAxial:interactionAtCritical,nominalMomentUtilization:nominalUtilization,curve:interaction.points||[]},
    effectiveDepthMm:d,AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,
-   barCountEachFace:count,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits,multiLayerFits,rowsPerFace:layout.rowsPerFace||null,barsPerRow:layout.barsPerRow||[],bottomCentroidMm:layout.bottomCentroidMm||null,topCentroidMm:layout.topCentroidMm||null,layers:layout.layers||[]},
+   barCountEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits,multiLayerFits,rowsPerFace:layout.rowsPerFace||null,barsPerRow:layout.barsPerRow||[],bottomCentroidMm:layout.bottomCentroidMm||null,topCentroidMm:layout.topCentroidMm||null,layers:layout.layers||[]},
    longitudinalBars:{countEachFace:count,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
     totalStraightLengthM:totalStraightBarLengthM,approximateMassKg:totalStraightBarLengthM==null?null:totalStraightBarLengthM*unitMassKgM,
     hookAllowanceIncluded:false,footingExtensionIncluded:footingExtension},
@@ -358,7 +377,7 @@
   const biaxialMid=biaxialSample?.find(x=>Math.abs(x.xM-3)<1e-9);
   const r=flexuralAs(100,600,442,25,400,0.90);
   if(!r.ok)return{passed:false,reason:r.reason};
-  const testLayout=buildSymmetricBarLayers(600,500,4,40,10,16,25);
+  const testLayout=buildSymmetricBarLayers(600,500,4,40,10,16,25);\n  const perimeterTest=buildPerimeterBarLayout(600,500,4,1,40,10,16,25);
   const ic=testLayout.ok?sectionInteractionCurve(600,500,25,400,200000,0.85,0.85,0.003,testLayout.layers,40,10,16):{ok:false,points:[]};
   const midCapacity=ic.ok?interactionMomentAtAxial(ic,0):null;
   const tensileEnd=ic.points?.[1]?.PnN,compressionEnd=ic.points?.[ic.points.length-1]?.PnN;
@@ -374,10 +393,10 @@
   const checks={torsionDesignValid:!!torsionDesignTest.ok&&torsionDesignTest.required&&torsionDesignTest.requiredAtPerSMm2PerMm>0&&torsionDesignTest.requiredAlMm2>0&&torsionDesignTest.recommendedSpacingMm>0,torsionMinimumThresholdSeparate:!!torsionDesignTest.required&&!torsionDesignTest.minimumRequired,torsionThresholdNoRebar:!!torsionDesignScreen(1e3,0,1e3,600,442,90000,1e3,500,442,85000,300000,25,400,1,torsionGeometryTest,areaBar(10),2*areaBar(10),200).ok&&!torsionDesignScreen(1e3,0,1e3,600,442,90000,1e3,500,442,85000,300000,25,400,1,torsionGeometryTest,areaBar(10),2*areaBar(10),200).required,torsionGeometryValid:!!torsionGeometryTest.ok&&Math.abs(torsionGeometryTest.AcpMm2-300000)<1e-9&&Math.abs(torsionGeometryTest.AohMm2-209100)<1e-9&&Math.abs(torsionGeometryTest.AoMm2-177735)<1e-9,torsionEndDemandExtracted:!!torsionTest&&Math.abs(torsionTest.maxAbsNm-1750000)<1e-9,shearScreenValid:shearTest.ok&&shearTest.maxNominalShearKN>0&&shearTest.minAvPerSmm2PerMm>0,
    shearSpacingUsesCodeLimit:shearTest.recommendedSpacingMm===shearTest.maxSpacingByChapter11Mm&&shearTest.providedAvPerSmm2PerMm>=shearTest.minAvPerSmm2PerMm,
    shearMaximumCapacityRejectsExcess:shearHigh.ok&&!shearHigh.maxShearOK&&!shearHigh.shearOK,
-   shearLowDemandNoMinimumStirrups:shearLow.ok&&!shearLow.minimumStirrupsTriggered,barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,multiLayerLayout:!!testLayout.ok&&testLayout.rowsPerFace===1&&Math.abs(testLayout.totalAsMm2-8*areaBar(16))<1e-8,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>100&&midCapacity.MnKNm<180&&Number.isFinite(midCapacity.MnKNm),interactionSignConvention:Number.isFinite(tensileEnd)&&tensileEnd>0&&Number.isFinite(compressionEnd)&&compressionEnd<0,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
+   shearLowDemandNoMinimumStirrups:shearLow.ok&&!shearLow.minimumStirrupsTriggered,barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,multiLayerLayout:!!testLayout.ok&&testLayout.rowsPerFace===1&&Math.abs(testLayout.totalAsMm2-8*areaBar(16))<1e-8,perimeterCoordinatesValid:!!perimeterTest.ok&&perimeterTest.coordinates.length===10&&perimeterTest.sideBarCount===2&&perimeterTest.coordinates.every(p=>p.xMm>0&&p.xMm<600&&p.yMm>0&&p.yMm<500)&&perimeterTest.layers.reduce((a,x)=>a+x.count,0)===10,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>100&&midCapacity.MnKNm<180&&Number.isFinite(midCapacity.MnKNm),interactionSignConvention:Number.isFinite(tensileEnd)&&tensileEnd>0&&Number.isFinite(compressionEnd)&&compressionEnd<0,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
    pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
    cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
-  return{passed:Object.values(checks).every(Boolean),checks,torsionTest,torsionGeometryTest,torsionDesignTest,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,shearScreenTest:shearTest,shearHighDemandTest:shearHigh,shearLowDemandTest:shearLow,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
+  return{passed:Object.values(checks).every(Boolean),checks,torsionTest,torsionGeometryTest,torsionDesignTest,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,perimeterTest,shearScreenTest:shearTest,shearHighDemandTest:shearHigh,shearLowDemandTest:shearLow,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
    pinnedUniformLoadMomentNm:ep.MmaxNm,cantileverMomentNm:ex.MmaxNm};
  }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
