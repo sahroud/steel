@@ -73,6 +73,63 @@ function equivalentUniformLoad(q,L){
  f[2]=qz*L/2;f[8]=qz*L/2;f[4]=-qz*L*L/12;f[10]=qz*L*L/12;
  return f;
 }
+
+function solveSmall(A,b){
+ const n=b.length,M=A.map((r,i)=>r.slice().concat([b[i]]));
+ for(let k=0;k<n;k++){
+  let p=k;for(let i=k+1;i<n;i++)if(Math.abs(M[i][k])>Math.abs(M[p][k]))p=i;
+  if(Math.abs(M[p][k])<1e-14)throw Error("آزادسازی انتهایی عضو به زیرماتریس تکین منجر شد؛ ترکیب آزادی‌های پیچشی/خمشی را بررسی کنید.");
+  [M[k],M[p]]=[M[p],M[k]];
+  const d=M[k][k];for(let j=k;j<=n;j++)M[k][j]/=d;
+  for(let i=0;i<n;i++)if(i!==k){const q=M[i][k];for(let j=k;j<=n;j++)M[i][j]-=q*M[k][j];}
+ }
+ return M.map(r=>r[n]);
+}
+function normalizeEndReleases(member,options){
+ const raw=(options.memberEndReleases&&options.memberEndReleases[String(member.id)])||member.endReleases||{};
+ const out={i:[],j:[]};
+ for(const end of ["i","j"]){
+  const values=Array.isArray(raw[end])?raw[end]:[];
+  values.forEach(v=>{
+   const d=Number(v);
+   if(!Number.isInteger(d)||d<3||d>5)throw Error("آزادسازی عضو "+member.id+" فقط برای دوران‌های محلی 3، 4 و 5 مجاز است.");
+   if(!out[end].includes(d))out[end].push(d);
+  });
+ }
+ if(out.i.includes(3)&&out.j.includes(3))
+  throw Error("آزادسازی پیچش در هر دو انتهای عضو "+member.id+" هم‌زمان مجاز نیست؛ عضو می‌تواند ناپایدار شود.");
+ return out;
+}
+function condenseMemberEndReleases(K,F,releases){
+ const released=[...releases.i.map(d=>d),...releases.j.map(d=>d+6)].sort((a,b)=>a-b);
+ if(!released.length)return{K,F,released,restore:null};
+ const retained=Array.from({length:12},(_,i)=>i).filter(i=>!released.includes(i));
+ const Kss=released.map(i=>released.map(j=>K[i][j]));
+ const Ksr=released.map(i=>retained.map(j=>K[i][j]));
+ const Krs=retained.map(i=>released.map(j=>K[i][j]));
+ const Krr=retained.map(i=>retained.map(j=>K[i][j]));
+ const Fs=released.map(i=>F[i]),Fr=retained.map(i=>F[i]);
+ const invKsr=retained.map((_,j)=>solveSmall(Kss,Ksr.map(row=>row[j])));
+ const invFs=solveSmall(Kss,Fs);
+ const Kc=Array.from({length:12},()=>Array(12).fill(0)),Fc=Array(12).fill(0);
+ for(let a=0;a<retained.length;a++){
+  const i=retained[a];
+  Fc[i]=Fr[a]-Krs[a].reduce((s,v,k)=>s+v*invFs[k],0);
+  for(let b=0;b<retained.length;b++){
+   const j=retained[b];
+   Kc[i][j]=Krr[a][b]-Krs[a].reduce((s,v,k)=>s+v*invKsr[b][k],0);
+  }
+ }
+ return{K:Kc,F:Fc,released,retained,Kss,Ksr,Fs};
+}
+function restoreReleasedRotations(localD,releaseData){
+ if(!releaseData||!releaseData.released.length)return localD;
+ const {released,retained,Kss,Ksr,Fs}=releaseData;
+ const rhs=Fs.map((v,i)=>v-Ksr[i].reduce((s,k,j)=>s+k*localD[retained[j]],0));
+ const values=solveSmall(Kss,rhs);
+ released.forEach((d,i)=>localD[d]=values[i]);
+ return localD;
+}
 function analyze(model,options){
  options=options||{};
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل هندسی معتبر ارائه نشده است.");
@@ -108,8 +165,11 @@ function analyze(model,options){
   const p=props(m);if(!p)throw Error("مقطع عضو "+m.id+" ("+m.type+") تخصیص نیافته است.");
   for(const key of ["E","G","A","Iy","Iz","J"])if(!(Number.isFinite(Number(p[key]))&&Number(p[key])>0))throw Error("خاصیت "+key+" برای عضو "+m.id+" ناقص یا نامعتبر است.");
   const a=[nodes[ia].x,nodes[ia].y,nodes[ia].z],b=[nodes[ib].x,nodes[ib].y,nodes[ib].z];
-  const tr=makeTransform(a,b,options.referenceAxis),kl=frameLocalStiffness(p,tr.L),kg=mul(transpose(tr.T),mul(kl,tr.T));
+  const tr=makeTransform(a,b,options.referenceAxis),kl=frameLocalStiffness(p,tr.L);
   const ids=Array.from({length:6},(_,i)=>ia*6+i).concat(Array.from({length:6},(_,i)=>ib*6+i));
+  const endReleases=normalizeEndReleases(m,options);
+  const releaseData=condenseMemberEndReleases(kl,Array(12).fill(0),endReleases);
+  const kg=mul(transpose(tr.T),mul(releaseData.K,tr.T));
   if(options.releasePurlinRafterRotation===true&&(m.sectionKey||"")==="roofPurlin"){
    const ri=purlinEndRotationDof.get(String(m.id)+":i"),rj=purlinEndRotationDof.get(String(m.id)+":j");
    if(ri){ids[3]=ri[0];ids[4]=ri[1];}
@@ -118,9 +178,11 @@ function analyze(model,options){
   addBlock(K,ids,kg);
   const q=m.analysisLoad&&m.analysisLoad.uniformLocal?m.analysisLoad.uniformLocal.map(Number):[0,0,0];
   if(q.length!==3||q.some(v=>!Number.isFinite(v)))throw Error("بار گسترده محلی عضو "+m.id+" معتبر نیست.");
-  const fl=equivalentUniformLoad(q,tr.L),fg=mul(transpose(tr.T),fl.map(v=>[v])).map(r=>r[0]);
+  const fl=equivalentUniformLoad(q,tr.L);
+  const releasedLoad=condenseMemberEndReleases(kl,fl,endReleases);
+  const fg=mul(transpose(tr.T),releasedLoad.F.map(v=>[v])).map(r=>r[0]);
   ids.forEach((id,i)=>F[id]+=fg[i]);
-  elements.push({member:m,ids,kl,T:tr.T,L:tr.L,axes:tr.axes,fl,props:p});
+  elements.push({member:m,ids,kl,T:tr.T,L:tr.L,axes:tr.axes,fl,props:p,releaseData,endReleases});
  }
  (options.nodalLoads||[]).forEach(load=>{
   const ni=nodeMap.get(load.nodeId);if(ni===undefined)throw Error("گره بارگذاری‌شده یافت نشد: "+load.nodeId);
@@ -209,9 +271,9 @@ function analyze(model,options){
   momentResidualNm:momentResidual,relativeForceResidual,relativeMomentResidual,
   ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6,freeDofCount:free.length};
  const results=elements.map(e=>{
-  const dg=e.ids.map(i=>D[i]),dl=mul(e.T,dg.map(v=>[v])).map(r=>r[0]),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
+  const dg=e.ids.map(i=>D[i]),dl=restoreReleasedRotations(mul(e.T,dg.map(v=>[v])).map(r=>r[0]),e.releaseData),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
-  return {id:e.member.id,type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props};
+  return {id:e.member.id,type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props,endReleases:e.endReleases};
  });
  let maxTranslation=0,maxDisplacement=null;
  nodes.forEach((n,i)=>{
@@ -223,7 +285,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی یا فنر اتصال","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 
 function selfTest(){
@@ -243,6 +305,22 @@ function selfTest(){
  run("axial-extension",[1000,0,0,0,0,0],r=>r.displacements.find(n=>n.nodeId==="TIP").values[0],1000*L/(E*A));
  run("cantilever-y-deflection",[0,-1000,0,0,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[1]),1000*Math.pow(L,3)/(3*E*Iz));
  run("torsional-rotation",[0,0,0,1000,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[3]),1000*L/(G*J));
+
+ // A uniformly loaded member with both bending rotations released must recover zero end moments.
+ try{
+  const q=-1200,model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"PIN",start:"A",end:"B",type:"validation",analysisLoad:{uniformLocal:[0,q,0]},endReleases:{i:[4,5],j:[4,5]}}]};
+  const result=analyze(model,{...base,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]});
+  const end=result.members[0].localEndForces;
+  const maxMoment=Math.max(Math.abs(end[3]),Math.abs(end[4]),Math.abs(end[5]),Math.abs(end[9]),Math.abs(end[10]),Math.abs(end[11]));
+  const expectedShear=Math.abs(q)*L/2;
+  const shearOK=close(Math.abs(end[1]),expectedShear,1e-7)&&close(Math.abs(end[7]),expectedShear,1e-7);
+  tests.push({name:"pinned-end-uniform-load-zero-end-moments",ok:maxMoment<1e-6&&shearOK&&result.equilibrium.ok,maxReleasedEndMomentNm:maxMoment,expectedEndShearN:expectedShear,equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"pinned-end-uniform-load-zero-end-moments",ok:false,error:String(e.message||e)});}
+ try{
+  const model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"BAD",start:"A",end:"B",type:"validation",endReleases:{i:[3],j:[3]}}]};
+  analyze(model,{...base});
+  tests.push({name:"reject-double-torsion-release",ok:false});
+ }catch(e){tests.push({name:"reject-double-torsion-release",ok:String(e.message||e).includes("پیچش")});}
  return{schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"آزمون‌های تحلیلی عضو منفرد برای کنترل واحدها و قرارداد علامت؛ جایگزین اعتبارسنجی مستقل، آزمون همگرایی یا کنترل آیین‌نامه‌ای نیست."};
 }
 root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
