@@ -34,7 +34,7 @@
             basicWind: "90",
             terrain: "suburban",
             topography: "normal",
-            buildingUse: "warehouse-industrial-enclosed",
+            buildingUse: "warehouse-industrial",
             openingState: "enclosed",
             openingArea: 25,
             envelopeArea: "",
@@ -148,14 +148,37 @@
                 </div>
             </div>
 
-            <h4>ج ـ کاربری و وضعیت پوسته ساختمان ـ فرض پایه نسخه اول</h4>
+            <h4>ج ـ کاربری و وضعیت پوسته ساختمان</h4>
             <div class="notice">
-                <b>کاربری مبنا: انبار یا سالن صنعتیِ بسته</b><br>
-                در این نسخه، وضعیت ساختمان به‌صورت بسته و با بازشوهای معمولیِ قابل‌بستن در نظر گرفته می‌شود.
-                این فرض فعلاً ثابت است و از فایل پروژه نیز قابل تغییر نیست؛ در نسخه‌های بعدی، انتخاب نوع کاربری و وضعیت بازشوها به تنظیمات پروژه افزوده خواهد شد.
-                بازشوهای دائمی یا غالب، درهای بزرگِ بازمانده و شرایط نیمه‌باز باید پیش از تحلیل به‌صورت جداگانه بررسی شوند.
+                نوع ساختمان و وضعیت بازشوها برای هر پروژه قابل انتخاب است. حالت پیش‌فرض، سالن صنعتی با درهای قابل‌بستن و بسته در شرایط طراحی باد است. طبقه‌بندی نهایی بازشوها باید با مساحت واقعی و ضوابط مبحث ششم کنترل شود.
             </div>
             <div class="form-grid">
+                <div class="field">
+                    <label for="buildingUse">نوع کاربری ساختمان</label>
+                    <select id="buildingUse">
+                        <option value="warehouse-industrial">سالن صنعتی / انبار</option>
+                        <option value="commercial">تجاری</option>
+                        <option value="agricultural">کشاورزی</option>
+                        <option value="workshop">کارگاه</option>
+                        <option value="other">سایر / سفارشی</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="buildingOpeningState">وضعیت پوسته در شرایط طراحی باد</label>
+                    <select id="buildingOpeningState">
+                        <option value="enclosed" selected>بسته؛ درهای قابل‌بستن بسته‌اند (پیش‌فرض)</option>
+                        <option value="partially-enclosed">نیمه‌بسته / دارای بازشوی غالب</option>
+                        <option value="open">باز / فاقد پوسته مؤثر در یک یا چند وجه</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="buildingDominantOpening">وجود بازشوی غالب طبق تعریف آیین‌نامه</label>
+                    <select id="buildingDominantOpening">
+                        <option value="unknown" selected>نامشخص؛ نیازمند بررسی</option>
+                        <option value="yes">بله</option>
+                        <option value="no">خیر</option>
+                    </select>
+                </div>
                 <div class="field">
                     <label for="buildingOpeningArea">مساحت تقریبی درها و بازشوهای معمولی (m²) ـ اطلاعات ثبت‌شده</label>
                     <input id="buildingOpeningArea" type="number" min="0" step="0.1" value="25">
@@ -336,8 +359,8 @@
             const el = $(climateFields[key]);
             if (el) state.climate[key] = el.value;
         });
-        state.climate.buildingUse = "warehouse-industrial-enclosed";
-        state.climate.openingState = "enclosed";
+        state.climate.buildingUse = $("buildingUse")?.value || "warehouse-industrial";
+        state.climate.openingState = $("buildingOpeningState")?.value || "enclosed";
         ["elevation", "groundSnow", "basicWind", "openingArea", "envelopeArea"].forEach(key => {
             const value = state.climate[key];
             if (value !== "" && !Number.isFinite(Number(value))) state.climate[key] = "";
@@ -504,7 +527,7 @@
                 return false;
             }
         }
-        if (climate.openingState === "partially-enclosed" && climate.dominantOpening === "no") {
+        if (climate.openingState === "partially-enclosed" && climate.dominantOpening !== "yes") {
             if (result) result.textContent = "هشدار: وضعیت نیمه‌باز انتخاب شده، اما بازشوی غالب مشخص نشده است.";
             return false;
         }
@@ -600,7 +623,7 @@
 
         if (data.climate && typeof data.climate === "object") {
             Object.keys(state.climate).forEach(key => {
-                if (data.climate[key] !== undefined && key !== "buildingUse" && key !== "openingState") state.climate[key] = data.climate[key];
+                if (data.climate[key] !== undefined) state.climate[key] = data.climate[key];
             });
         }
         // Migration for older Shahroud projects: preserve explicit values, fill only missing site defaults.
@@ -611,8 +634,8 @@
                 state.climate.source = "مبحث ششم ۱۳۹۸؛ سرعت باد ۹۰ km/h طبق رکورد PDF پروژه، نیازمند تطبیق نهایی؛ ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود";
             }
         }
-        state.climate.buildingUse = "warehouse-industrial-enclosed";
-        state.climate.openingState = "enclosed";
+        state.climate.buildingUse = state.climate.buildingUse || "warehouse-industrial";
+        state.climate.openingState = state.climate.openingState || "enclosed";
 
         if (Array.isArray(data.combinations)) {
             data.combinations.forEach((item, index) => {
@@ -657,7 +680,8 @@
                 groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
                 terrain: "climateTerrain", topography: "climateTopography",
                 openingArea: "buildingOpeningArea",
-                envelopeArea: "buildingEnvelopeArea", dominantOpening: "buildingDominantOpening"
+                envelopeArea: "buildingEnvelopeArea", dominantOpening: "buildingDominantOpening",
+                buildingUse: "buildingUse", openingState: "buildingOpeningState"
             };
             Object.keys(climateIds).forEach(key => {
                 if ($(climateIds[key])) $(climateIds[key]).value = state.climate[key];
@@ -742,11 +766,9 @@
 
         summary();
         updateWindReference();
-        state.climate.buildingUse = "warehouse-industrial-enclosed";
-        state.climate.openingState = "enclosed";
         const climateNotice = $("climateNotice");
         if (climateNotice) climateNotice.textContent =
-            "کاربری مبنا در این نسخه: انبار یا سالن صنعتی بسته. ارتفاع محل ۱۳۵۰ متر و رده زبری حومه/موانع پراکنده برای شهرک صنعتی شاهرود به‌صورت مقدماتی ثبت شده‌اند؛ فشار خالص باد تا تکمیل ضرایب آیین‌نامه‌ای تولید نمی‌شود.";
+            "وضعیت بسته، نیمه‌بسته یا باز مطابق انتخاب پروژه ثبت می‌شود. تعیین ضرایب فشار داخلی و خارجی و تأیید سناریوی باد همچنان نیازمند تکمیل داده‌های آیین‌نامه‌ای است.";
         updateWindReference();
     }
 
