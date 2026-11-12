@@ -167,7 +167,8 @@
   const sqrtFc=Math.min(Math.sqrt(fcMPa),8.3);
   const Tth=0.083*lambda*sqrtFc*Math.pow(geometry.AcpMm2,2)/geometry.pcpMm*Math.sqrt(axialFactor);
   const Tcr=0.33*lambda*sqrtFc*Math.pow(geometry.AcpMm2,2)/geometry.pcpMm*Math.sqrt(axialFactor);
-  const required=TuNm>=phiT*Tth;\n  const minimumRequired=TuNm>=phiT*Tcr;
+  const required=TuNm>=phiT*Tth;
+  const minimumRequired=TuNm>=phiT*Tcr;
   const AtPerS=required?TuNm*Math.tan(theta)/(2*geometry.AoMm2*fyMPa):0;
   const AlStrength=required?TuNm*geometry.phMm/(2*geometry.AoMm2*fyMPa*Math.tan(theta)):0;
   const minCombinedPerS=Math.max(0.062*Math.sqrt(fcMPa)*bwY/fyMPa,0.35*bwY/fyMPa);
@@ -244,7 +245,8 @@
   const envelopes=members.map(memberEnvelope);
   if(envelopes.some(x=>!x))return{id:route.id,ok:false,reason:"برای محاسبه نمودار داخلی، طول/نیروهای یکی از قطعات شناژ معتبر نیست"};
   const criticalMoment=envelopes.map((x,i)=>({...x.criticalMoment,memberId:members[i].id})).reduce((a,b)=>b.MresultantNm>a.MresultantNm?b:a);
-  const criticalAxial=envelopes.map((x,i)=>({...x.criticalAxial,memberId:members[i].id})).reduce((a,b)=>Math.abs(b.Nn)>Math.abs(a.Nn)?b:a);\n  const criticalTension=envelopes.flatMap((x,i)=>x.samples.map(sample=>({...sample,memberId:members[i].id}))).reduce((a,b)=>b.Nn>a.Nn?b:a);
+  const criticalAxial=envelopes.map((x,i)=>({...x.criticalAxial,memberId:members[i].id})).reduce((a,b)=>Math.abs(b.Nn)>Math.abs(a.Nn)?b:a);
+  const criticalTension=envelopes.flatMap((x,i)=>x.samples.map(sample=>({...sample,memberId:members[i].id}))).reduce((a,b)=>b.Nn>a.Nn?b:a);
   const torsionRows=members.map(member=>({memberId:member.id,result:memberTorsionEnvelope(member)}));
   const torsionAvailable=torsionRows.every(x=>x.result);
   const criticalTorsion=torsionAvailable?torsionRows.reduce((a,b)=>b.result.maxAbsNm>a.result.maxAbsNm?b:a):null;
