@@ -93,7 +93,7 @@
  }
  function refreshFromFoundation(report){
   if(!report)return;
-  const links={foundationConcrete:report.totalConcreteM3,excavation:report.excavationM3,formwork:report.sideFormworkM2,anchorBolts:report.anchorsCount,tieRebar:report.tieRebarKg};
+  const links={foundationConcrete:report.totalConcreteM3,foundationRebar:report.footingRebarKg,excavation:report.excavationM3,formwork:report.sideFormworkM2,anchorBolts:report.anchorsCount,tieRebar:report.tieRebarKg};
   let changed=false;
   state.manualItems.forEach(item=>{
    if(Object.prototype.hasOwnProperty.call(links,item.key)&&links[item.key]!==null&&links[item.key]!==undefined&&item.quantitySource!=="manual"){
