@@ -87,11 +87,17 @@ function analyze(model,options){
   });
   // Every purlin piece end at a rafter support receives its own three
   // rotational DOFs. Adjacent bay pieces therefore do not share end moments.
+  const pieceNodeRotationDof=new Map();
   members.forEach(m=>{
    if((m.sectionKey||"")!=="roofPurlin")return;
    [["i",m.start],["j",m.end]].forEach(([end,nodeId])=>{
     if(!rafterNodes.has(nodeId))return;
-    purlinEndRotationDof.set(String(m.id)+":"+end,[nDof,nDof+1,nDof+2]);nDof+=3;
+    // Segments belonging to the same fabricated end-bay piece share
+    // rotation at their common node, while remaining released from the rafter.
+    const pieceKey=String(m.pieceId||m.id)+":"+String(nodeId);
+    let ids=pieceNodeRotationDof.get(pieceKey);
+    if(!ids){ids=[nDof,nDof+1,nDof+2];nDof+=3;pieceNodeRotationDof.set(pieceKey,ids);}
+    purlinEndRotationDof.set(String(m.id)+":"+end,ids);
    });
   });
  }
