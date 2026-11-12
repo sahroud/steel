@@ -505,9 +505,9 @@
         if (!validateProject()) return;
         if (!validateSections()) return;
 
-        if (!window.SteelAnalysis ||
-            typeof window.SteelAnalysis.calculate !== "function") {
-            alert("ماژول تحلیل سازه بارگذاری نشده است.");
+        if (!window.SteelStructuralModel ||
+            typeof window.SteelStructuralModel.analyze3D !== "function") {
+            alert("موتور تحلیل سه‌بعدی بارگذاری نشده است.");
             return;
         }
 
@@ -525,7 +525,7 @@
     }
 
     // تحلیل مستقل ترکیبات بار
-    function calculateCombinations() {
+    async function calculateCombinations() {
         const model = window.SteelStructuralModel;
         const loadsApi = window.SteelLoads;
         if (!model || typeof model.analyze3D !== "function" || !loadsApi) {
@@ -630,9 +630,9 @@
         }
         setStatus("در حال تحلیل ترکیبات بار؛ اجرای حالت‌های بارگذاری...");
         // اجازه می‌دهیم پیام شروع قبل از محاسبات سنگین روی صفحه دیده شود.
-        setTimeout(function () {
+        setTimeout(async function () {
             try {
-                const result = calculateCombinations();
+                const result = await calculateCombinations();
                 if (result && result.success) {
                     setStatus("تحلیل ترکیبات بار با موفقیت انجام شد.");
                 } else if (message && (!message.textContent || !message.textContent.trim())) {
