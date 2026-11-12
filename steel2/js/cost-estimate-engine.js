@@ -34,7 +34,7 @@
  ];
  function projectCity(){const market=window.SteelMarketPrices;const v=market&&typeof market.getProjectCity==="function"?market.getProjectCity():(document.getElementById("city")?.selectedOptions?.[0]?.textContent||"");return String(v||"").replace(/\s*\(پیش‌فرض\)\s*/g,"").trim();}
  function cityKey(v){return String(v||"").replace(/\s*\(پیش‌فرض\)\s*/g,"").replace(/\s+/g,"").trim().toLowerCase();}
- function marketPrice(code,expectedUnit){const d=window.SteelMarketPrices?.getData?.(),city=cityKey(projectCity());const compatible=(d?.prices||[]).filter(p=>p.code===code&&p.unit===expectedUnit);compatible.sort((a,b)=>{const ac=city&&cityKey(a.city)===city?1:0,bc=city&&cityKey(b.city)===city?1:0;return bc-ac||new Date(b.updatedAt)-new Date(a.updatedAt);});return compatible[0]||null;}
+ function marketPrice(code,expectedUnit){const d=window.SteelMarketPrices?.getData?.(),city=cityKey(projectCity());if(!city)return null;const compatible=(d?.prices||[]).filter(p=>p.code===code&&p.unit===expectedUnit&&cityKey(p.city)===city);compatible.sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));return compatible[0]||null;}
  function render(){
   const root=$("quantityTakeoffPanel");if(!root||$("costEstimatePanel"))return;
   const p=document.createElement("section");p.className="panel";p.id="costEstimatePanel";
