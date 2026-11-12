@@ -180,6 +180,7 @@ function analyze(model,options){
   if(q.length!==3||q.some(v=>!Number.isFinite(v)))throw Error("بار گسترده محلی عضو "+m.id+" معتبر نیست.");
   const fl=equivalentUniformLoad(q,tr.L);
   const releasedLoad=condenseMemberEndReleases(kl,fl,endReleases);
+  if(releaseData.released.length)releaseData.Fs=releasedLoad.Fs;
   const fg=mul(transpose(tr.T),releasedLoad.F.map(v=>[v])).map(r=>r[0]);
   ids.forEach((id,i)=>F[id]+=fg[i]);
   elements.push({member:m,ids,kl,T:tr.T,L:tr.L,axes:tr.axes,fl,props:p,releaseData,endReleases});
