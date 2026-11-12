@@ -225,5 +225,25 @@ function analyze(model,options){
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
  return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
-root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
+
+function selfTest(){
+ const E=200e9,G=77e9,A=0.01,Iy=8e-5,Iz=2e-5,J=1e-5,L=3;
+ const section={E,G,A,Iy,Iz,J};
+ const makeModel=()=>({nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:L,y:0,z:0}],members:[{id:"TEST",start:"FIX",end:"TIP",type:"validation"}]});
+ const base={supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],sectionResolver:()=>section};
+ const close=(actual,expected,tol)=>Math.abs(actual-expected)<=Math.max(Math.abs(expected)*tol,1e-12);
+ const tests=[];
+ const run=(name,load,read,expected)=>{
+  try{
+   const result=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:load}]});
+   const actual=read(result),ok=close(actual,expected,1e-7)&&result.equilibrium.ok;
+   tests.push({name,ok,actual,expected,equilibrium:result.equilibrium.ok});
+  }catch(e){tests.push({name,ok:false,error:String(e.message||e)});}
+ };
+ run("axial-extension",[1000,0,0,0,0,0],r=>r.displacements.find(n=>n.nodeId==="TIP").values[0],1000*L/(E*A));
+ run("cantilever-y-deflection",[0,-1000,0,0,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[1]),1000*Math.pow(L,3)/(3*E*Iz));
+ run("torsional-rotation",[0,0,0,1000,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[3]),1000*L/(G*J));
+ return{schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"آزمون‌های تحلیلی عضو منفرد برای کنترل واحدها و قرارداد علامت؛ جایگزین اعتبارسنجی مستقل، آزمون همگرایی یا کنترل آیین‌نامه‌ای نیست."};
+}
+root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
 })(typeof window!=="undefined"?window:globalThis);
