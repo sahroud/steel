@@ -125,7 +125,7 @@
           criticalJointEquilibrium:result.criticalJointEquilibrium||null,
           criticalRafterContinuity:(critical?(()=>{
             const linked=(critical.connectedMembers||[]).filter(m=>m.sectionKey==="rafter");
-            return {nodeId:critical.id,memberCount:linked.length,allShareCriticalNode:linked.every(m=>m.start===critical.id||m.end===critical.id),
+            return {nodeId:critical.nodeId,memberCount:linked.length,allShareCriticalNode:linked.every(m=>m.start===critical.nodeId||m.end===critical.nodeId),
               members:linked.map(m=>{const source=analysisModelMemberById(m.id);return {id:m.id,start:source?.start||null,end:source?.end||null,lengthM:source?.length||null,sectionKey:source?.sectionKey||null};}),
               note:"کنترل اشتراک شناسه گره در مدل هندسی است؛ به‌تنهایی جایگزین کنترل سختی اتصال یا صحت مدل نیست."};
           })():null),
