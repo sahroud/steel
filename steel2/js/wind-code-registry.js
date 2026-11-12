@@ -13,7 +13,7 @@
     if (!e || typeof e !== "object") return ["ورودی ضریب معتبر نیست."];
     requiredText.forEach(k => { if (e[k] == null || String(e[k]).trim() === "") errors.push("فیلد اجباری خالی است: " + k); });
     if (!allowedBasis.has(e.coefficientBasis)) errors.push("مبنای ضریب ناشناخته است.");
-    if (!Number.isFinite(Number(e.value))) errors.push("مقدار ضریب باید عددی و محدود باشد.");
+    if (e.value === null || e.value === undefined || e.value === "" || !Number.isFinite(Number(e.value))) errors.push("مقدار ضریب باید عددی و محدود باشد.");
     if (!Number.isInteger(Number(e.page)) || Number(e.page) < 1) errors.push("شماره صفحه باید عدد صحیح مثبت باشد.");
     if (!e.table && !e.figure) errors.push("حداقل یکی از شماره جدول یا شکل باید ثبت شود.");
     if (e.edition !== EDITION) errors.push("ویرایش مرجع باید دقیقاً ویرایش چهارم ۱۳۹۸ باشد.");
