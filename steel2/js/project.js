@@ -190,6 +190,10 @@
             data.designBrief = window.SteelDesignCore.getData();
         }
 
+        if (window.SteelMarketPrices && typeof window.SteelMarketPrices.getData === "function") {
+            data.marketPrices = window.SteelMarketPrices.getData();
+        }
+
         return data;
     }
 
@@ -396,6 +400,10 @@
 
         if (window.SteelFabricationTakeoff && typeof window.SteelFabricationTakeoff.setData === "function") {
             window.SteelFabricationTakeoff.setData(data.fabricationTakeoff || {});
+        }
+
+        if (window.SteelMarketPrices && typeof window.SteelMarketPrices.setData === "function") {
+            window.SteelMarketPrices.setData(data.marketPrices || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
