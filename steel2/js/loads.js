@@ -628,9 +628,6 @@
                 state.climate.source = "مبحث ششم ۱۳۹۸؛ سرعت باد ۹۰ km/h طبق رکورد PDF پروژه، نیازمند تطبیق نهایی؛ ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود";
             }
         }
-        state.climate.buildingUse = "warehouse-industrial-enclosed";
-        state.climate.openingState = "enclosed";
-
         if (Array.isArray(data.combinations)) {
             data.combinations.forEach((item, index) => {
                 if (!combinations[index] || !item) return;
