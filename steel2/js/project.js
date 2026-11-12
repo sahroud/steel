@@ -215,6 +215,10 @@
             data.footingStructuralScreen = window.SteelFootingStructuralScreen.getData();
         }
 
+        if (window.SteelFootingSizingAssistant && typeof window.SteelFootingSizingAssistant.getData === "function") {
+            data.footingSizingAssistant = window.SteelFootingSizingAssistant.getData();
+        }
+
         return data;
     }
 
@@ -450,6 +454,10 @@
 
         if (window.SteelFootingStructuralScreen && typeof window.SteelFootingStructuralScreen.setData === "function") {
             window.SteelFootingStructuralScreen.setData(data.footingStructuralScreen || {});
+        }
+
+        if (window.SteelFootingSizingAssistant && typeof window.SteelFootingSizingAssistant.setData === "function") {
+            window.SteelFootingSizingAssistant.setData(data.footingSizingAssistant || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
