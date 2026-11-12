@@ -143,7 +143,7 @@
        const freightKey=[quote.sourceUrl||"",quote.seller,quote.source,quote.city,quote.deliveryCity,quote.updatedAt].join("|");
        if(!freightQuoteKeys.has(freightKey)){quotedFreightTotal+=Number(quote.freightToman)||0;freightQuoteKeys.add(freightKey);}
       }
-      if(!quote.includesTax&&quote.taxPercent===null)pricingWarnings.push(item.label+": وضعیت مالیات قیمت بازار مشخص نیست.");
+      if(!quote.includesTax&&quote.taxPercent===null)pricingWarnings.push(item.label+": وضعیت مالیات قیمت بازار مشخص نیست.");else if(!quote.includesTax&&quote.taxPercent!==null)pricingWarnings.push(item.label+": درصد مالیات ثبت شده اما خودکار اعمال نشده است؛ آن را در مالیات عمومی کنترل کنید.");
       if(!quote.verifiedByUser)pricingWarnings.push(item.label+": قیمت بازار هنوز تأیید دستی نشده است.");
      }else pricingWarnings.push(item.label+": قیمت پیشنهادی بانک قیمت دیگر در دسترس یا هم‌واحد نیست؛ قیمت را دوباره کنترل کنید.");
     }
