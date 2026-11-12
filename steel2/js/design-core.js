@@ -28,6 +28,10 @@
       rear:{material:"brick",orientation:"vertical"},
       left:{material:"brick",orientation:"vertical"},
       right:{material:"brick",orientation:"vertical"}
+    },
+    masonry:{
+      thicknessMm:"",unitWeightKNm3:"",
+      restraintSystem:"unknown",horizontalTieSpacingM:"",verticalTieSpacingM:""
     }
   });
   let data=Object.assign({},DEFAULTS);
@@ -53,6 +57,13 @@
       '<div class="field"><label for="wallRearMaterial">دیوار انتهایی عقب</label><select id="wallRearMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallRearOrientation">امتداد پوشش</label><select id="wallRearOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
       '<div class="field"><label for="wallLeftMaterial">دیوار طولی چپ</label><select id="wallLeftMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallLeftOrientation">امتداد پوشش</label><select id="wallLeftOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
       '<div class="field"><label for="wallRightMaterial">دیوار طولی راست</label><select id="wallRightMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallRightOrientation">امتداد پوشش</label><select id="wallRightOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
+      '</div>',
+      '<h4>مشخصات مصالح و مهار دیوار آجری</h4><div class="form-grid">',
+      '<div class="field"><label for="masonryThicknessMm">ضخامت اسمی دیوار آجری (mm)</label><input id="masonryThicknessMm" type="number" min="0" step="5" placeholder="از نقشه یا وضع موجود" /></div>',
+      '<div class="field"><label for="masonryUnitWeight">وزن مخصوص حجمی مصالح بنایی (kN/m³)</label><input id="masonryUnitWeight" type="number" min="0" step="0.1" placeholder="از مشخصات مصالح / آزمایش" /></div>',
+      '<div class="field"><label for="masonryRestraintSystem">سیستم مهار دیوار به سازه</label><select id="masonryRestraintSystem"><option value="unknown">نامشخص / هنوز طراحی نشده</option><option value="columns-beams">مهار به ستون‌ها و کلاف‌های پیرامونی</option><option value="independent">قاب یا زیرسازی مستقل</option><option value="other">سیستم دیگر؛ نیازمند شرح</option></select></div>',
+      '<div class="field"><label for="masonryHorizontalTieSpacing">فاصله قائم مهارهای افقی (m)</label><input id="masonryHorizontalTieSpacing" type="number" min="0" step="0.1" placeholder="در صورت وجود جزئیات" /></div>',
+      '<div class="field"><label for="masonryVerticalTieSpacing">فاصله افقی مهارهای قائم (m)</label><input id="masonryVerticalTieSpacing" type="number" min="0" step="0.1" placeholder="در صورت وجود جزئیات" /></div>',
       '</div><div class="notice" id="wallEnvelopeNotice" aria-live="polite">چهار دیوار آجری؛ بارگذاری و انتقال بار پوشش هنوز غیرفعال است.</div>',
       '<h4>تجهیزات و توسعه آتی</h4><div class="form-grid">',
       '<div class="field"><label for="designCrane">جرثقیل سقفی</label><select id="designCrane"><option value="no">ندارد</option><option value="yes">دارد</option><option value="unknown">هنوز مشخص نیست</option></select></div>',
@@ -85,6 +96,9 @@
         orientation:valid(orientation?.value,["vertical","horizontal","custom"],"vertical")
       };
     });
+    data.masonry=data.masonry||clone(DEFAULTS.masonry);
+    const masonryFields={thicknessMm:"masonryThicknessMm",unitWeightKNm3:"masonryUnitWeight",restraintSystem:"masonryRestraintSystem",horizontalTieSpacingM:"masonryHorizontalTieSpacing",verticalTieSpacingM:"masonryVerticalTieSpacing"};
+    Object.entries(masonryFields).forEach(([key,id])=>{const el=$(id);if(el)data.masonry[key]=el.value;});
     return clone(data);
   }
   function getReadiness(){
@@ -130,6 +144,9 @@
       if($("wall"+suffix+"Material"))$("wall"+suffix+"Material").value=valid(v.material,["brick","metal-sheet","sandwich-panel","other"],"brick");
       if($("wall"+suffix+"Orientation"))$("wall"+suffix+"Orientation").value=valid(v.orientation,["vertical","horizontal","custom"],"vertical");
     });
+    const masonry=d.masonry||DEFAULTS.masonry;
+    const masonryMap={masonryThicknessMm:"thicknessMm",masonryUnitWeight:"unitWeightKNm3",masonryRestraintSystem:"restraintSystem",masonryHorizontalTieSpacing:"horizontalTieSpacingM",masonryVerticalTieSpacing:"verticalTieSpacingM"};
+    Object.entries(masonryMap).forEach(([id,key])=>{if($(id))$(id).value=masonry[key]??"";});
     update();
   }
   function render(){
@@ -162,6 +179,12 @@
         orientation:valid(v.orientation,["vertical","horizontal","custom"],"vertical")
       };
     });
+    const m=data.masonry&&typeof data.masonry==="object"?data.masonry:{};
+    data.masonry={
+      thicknessMm:m.thicknessMm??"",unitWeightKNm3:m.unitWeightKNm3??"",
+      restraintSystem:valid(m.restraintSystem,["unknown","columns-beams","independent","other"],"unknown"),
+      horizontalTieSpacingM:m.horizontalTieSpacingM??"",verticalTieSpacingM:m.verticalTieSpacingM??""
+    };
     if($("engineeringBriefPanel"))renderValues();
   }
   function validate(){
