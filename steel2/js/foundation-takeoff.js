@@ -90,6 +90,7 @@
   const tieLength=state.tieTotalLengthM!==""&&Number(state.tieTotalLengthM)>=0?Number(state.tieTotalLengthM):null;
   const tw=num(state.tieWidthM),th=num(state.tieHeightM),tieSectionComplete=!!(tw&&th&&tieLength!==null);
   const tieConcrete=tieSectionComplete?tieLength*tw*th:null;
+  const tieReady=tieConcrete!==null;
   const tieFormwork=tieSectionComplete?tieLength*2*th:null;
   const tieRebar=tieSectionComplete&&state.tieRebarKgPerM!==""&&Number(state.tieRebarKgPerM)>=0?tieLength*Number(state.tieRebarKgPerM):null;
   const totalConcrete=footingConcrete+(pedComplete?pedConcrete:0)+(tieConcrete!==null?tieConcrete:0);
