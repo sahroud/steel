@@ -115,3 +115,13 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 - Restraint category and nominal spacing are recorded as input-completeness gates. Even when supplied, engineering verification remains outstanding for out-of-plane pressure, slenderness, cracking, sliding/overturning, seismic detailing, bond beams, wall-post details, anchors, and connections.
 - No dead load, wind load, restraint force, solver nodal load, or member line load is generated or changed. `designEligible=false` and `loadTransferEnabled=false` are explicit.
 - Synthetic geometry test only: 12 m span, 36 m length, 6 m eaves, 1.2 m rise, 200 mm wall, 18 kN/m³ assumed test unit weight, and one 5 m × 5 m front opening produced 590.4 m² gross, 25.0 m² deducted opening, 565.4 m² net, and 2035.44 kN estimated masonry weight. This verifies arithmetic only; it is not project data, a code check, or a browser test.
+
+
+## Masonry thickness and exportable bill of quantities — 2026-11-12
+
+- Set the new-project and legacy-project migration default for all four brick facades to the user-confirmed 350 mm thickness. A non-empty saved thickness remains unchanged.
+- Added saved, optional takeoff inputs for actual brick unit dimensions, mortar-joint thickness, masonry unit weight, and plaster thickness. These are left unspecified unless entered from actual project specifications.
+- Added `js/quantity-takeoff.js`: calculates facade gross/net areas, valid rectangular opening deductions, masonry volume, masonry weight when unit weight is entered, estimated brick count when brick dimensions/joint are entered (includes an explicit 5% quantity allowance), theoretical mortar volume, plaster area/volume when plaster thickness is entered, approximate roof-cover area, and structural-model member counts/total lengths grouped by section key.
+- Provides downloadable UTF-8 CSV (Excel-compatible) and JSON quantity reports from the browser.
+- Steel member mass is intentionally not invented: it requires verified section unit masses. Fasteners, welds, connection plates, reinforcement, mortar cement/sand split, and fabrication waste remain outside this preliminary takeoff until their specifications are supplied.
+- The report is a quantity estimate, not an approved construction bill or code design. No structural load transfer or design eligibility is enabled.
