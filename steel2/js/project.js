@@ -374,7 +374,7 @@
             }
         });
         if ($("cityName")) {
-            $("cityName").style.display = $("city")?.value === "other" ? "" : "none";
+            $("cityName").style.display = ["other", "custom"].includes($("city")?.value) ? "" : "none";
             if (data.cityName !== undefined) $("cityName").value = data.cityName;
         }
 
