@@ -1,7 +1,8 @@
 /* SAHROUD STEEL - 3D elastic frame solver core
  * 6 DOF/node, 12 DOF/member, SI units (N, m, Pa).
- * Linear first-order elastic analysis only. No releases, P-Delta, warping,
- * shear deformation, buckling, or code design checks in this version.
+ * Linear first-order elastic analysis; optional independent rotational DOFs
+ * at each roof-purlin piece end. No P-Delta, warping, shear deformation,
+ * buckling, or code design checks in this version.
  */
 (function(root){
 "use strict";
