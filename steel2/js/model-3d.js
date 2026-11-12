@@ -638,7 +638,7 @@
       const f=loadCase.factors;
       selected={key:"combo",label:String(loadCase.label||"ترکیب بار سه‌بعدی"),
         direction:[0,-1,0],
-        factors:{dead:Number(f.dead)||0,live:Number(f.live)||0,snow:Number(f.snow)||0},
+        factors:{dead:Number(f.dead)||0,live:Number(f.live)||0,snow:Number(f.snow)||0,wind:Number(f.wind)||0},
         windFactor:Number(f.wind)||0,windSign:Number(loadCase.windSign)||1,
         deadFactor:Number(f.dead)||0};
     }else if(/^combo[0-2]$/.test(loadCase)){
@@ -850,7 +850,7 @@
     const samples=[];
     for(let i=0;i<cases.length;i++){
       const spec=cases[i];
-      const result=await analyze3D({label:spec.label,factors:spec.factors,wind:spec.wind||0,windSign:spec.windSign||1});
+      const result=await analyze3D({label:spec.label,factors:{...spec.factors,wind:spec.wind||0},windSign:spec.windSign||1});
       if(!result||!Array.isArray(result.reactions)||!result.foundationModelFingerprint)throw new Error("نتیجه واکنش معتبر برای "+spec.label+" دریافت نشد.");
       const map=new Map(result.reactions.map(r=>[r.nodeId,r.values||[]]));
       samples.push({label:spec.label,equilibrium:result.equilibrium,reactions:nodes.map(n=>({nodeId:n.id,values:(map.get(n.id)||[0,0,0,0,0,0]).slice(0,6)}))});
