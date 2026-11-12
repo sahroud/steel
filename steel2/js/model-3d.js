@@ -51,7 +51,7 @@
       '<div class="field"><label for="modelEndPostSpacing">فاصله ستونک‌های دیوار انتهایی (m)</label><input id="modelEndPostSpacing" type="number" min="1" step="0.1" value="4.00"></div>' +
       '<div class="field"><label for="modelBraceBays">تعداد دهانه مهاربندی در ابتدا و انتها</label><input id="modelBraceBays" type="number" min="0" step="1" value="1"></div></div>' +
       '<div class="button-grid"><button type="button" id="btnBuildFullModel" class="btn primary">تولید و ترسیم تمام اجزای سوله</button><button type="button" id="btnCheck3DSections" class="btn secondary">بررسی آمادگی مقاطع تحلیل سه‌بعدی</button></div>' +
-      '<div id="modelProgress" class="model-progress" hidden aria-live="polite"><div class="model-progress-head"><strong id="modelProgressText">در حال آماده‌سازی…</strong><span id="modelProgressElapsed">۰٫۰ ثانیه</span></div><div class="model-progress-track"><span></span></div><small>نوار متحرک نشانه ادامه عملیات است؛ هنگام حل ماتریس ممکن است زمان‌سنج موقتاً متوقف شود.</small></div>' +
+      '<div id="modelProgress" class="model-progress" hidden aria-live="polite"><div class="model-progress-head"><strong id="modelProgressText">در حال آماده‌سازی…</strong><span id="modelProgressElapsed">۰٫۰ ثانیه</span></div><div class="model-progress-track"><span></span></div><small>حل ماتریس در پردازشگر پس‌زمینه انجام می‌شود؛ نوار پیشرفت و زمان‌سنج باید در طول تحلیل فعال بمانند.</small></div>' +
       '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
