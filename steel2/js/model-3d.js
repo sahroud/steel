@@ -853,7 +853,7 @@
       const result=await analyze3D({label:spec.label,factors:{...spec.factors,wind:spec.wind||0},windSign:spec.windSign||1});
       if(!result||!Array.isArray(result.reactions)||!result.foundationModelFingerprint)throw new Error("نتیجه واکنش معتبر برای "+spec.label+" دریافت نشد.");
       const map=new Map(result.reactions.map(r=>[r.nodeId,r.values||[]]));
-      samples.push({label:spec.label,equilibrium:result.equilibrium,reactions:nodes.map(n=>({nodeId:n.id,values:(map.get(n.id)||[0,0,0,0,0,0]).slice(0,6)}))});
+      samples.push({label:spec.label,factors:{...spec.factors,wind:Number(spec.wind)||0},windSign:spec.windSign||1,equilibrium:result.equilibrium,reactions:nodes.map(n=>({nodeId:n.id,values:(map.get(n.id)||[0,0,0,0,0,0]).slice(0,6)}))});
     }
     const rows=nodes.map(n=>{
       const values=samples.map(s=>({label:s.label,values:s.reactions.find(r=>r.nodeId===n.id)?.values||[0,0,0,0,0,0]}));
@@ -864,7 +864,7 @@
       });
       return {nodeId:n.id,x:Number(n.x)||0,z:Number(n.z)||0,kind:n.kind,envelopes,caseReactions:values.map(s=>({label:s.label,values:s.values.slice()}))};
     }).sort((a,b)=>a.z-b.z||a.x-b.x);
-    return {generatedAt:new Date().toISOString(),supportType:$("baseConnection")?.value==="fixed"?"گیردار":"مفصلی",units:"N,N.m",rows,cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),windCasesIncluded:windPresent,windFactor:windPresent?1:null,foundationModelFingerprint:samples[0]?.reactions?JSON.stringify({nodes:model.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),members:model.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),sections:window.SteelSections?.read?.()||null,support:$("baseConnection")?.value||"pinned"}):null,limitations:["پوش فقط بر اساس ترکیبات موجود در نرم‌افزار ساخته شده و ضرایب آن هنوز با نسخه رسمی آیین‌نامه تطبیق نهایی نشده‌اند.","باد مثبت و منفی با ضریب ۱٫۰ فقط غربال مقدماتی است؛ ترکیبات کامل باد، زلزله، uplift و ضرایب بار آیین‌نامه‌ای تضمین نشده‌اند.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش، اندرکنش خاک و سازه و طراحی پی انجام نشده است."]};
+    return {generatedAt:new Date().toISOString(),supportType:$("baseConnection")?.value==="fixed"?"گیردار":"مفصلی",units:"N,N.m",rows,cases:samples.map(s=>({label:s.label,factors:s.factors,windSign:s.windSign,equilibrium:s.equilibrium})),windCasesIncluded:windPresent,windFactor:windPresent?1:null,foundationModelFingerprint:samples[0]?.reactions?JSON.stringify({nodes:model.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),members:model.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),sections:window.SteelSections?.read?.()||null,support:$("baseConnection")?.value||"pinned"}):null,limitations:["پوش فقط بر اساس ترکیبات موجود در نرم‌افزار ساخته شده و ضرایب آن هنوز با نسخه رسمی آیین‌نامه تطبیق نهایی نشده‌اند.","باد مثبت و منفی با ضریب ۱٫۰ فقط غربال مقدماتی است؛ ترکیبات کامل باد، زلزله، uplift و ضرایب بار آیین‌نامه‌ای تضمین نشده‌اند.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش، اندرکنش خاک و سازه و طراحی پی انجام نشده است."]};
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
