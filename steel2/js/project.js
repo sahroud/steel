@@ -22,13 +22,29 @@
         }
     }
 
+    function flushAutoSave() {
+        if (persistTimer) {
+            clearTimeout(persistTimer);
+            persistTimer = null;
+        }
+        try {
+            const ok = persistSnapshot(getData());
+            if (ok) {
+                setStatus("ذخیره خودکار انجام شد؛ آخرین تغییرات در حافظه همین مرورگر ثبت شد.");
+            } else {
+                setStatus("هشدار: ذخیره در حافظه مرورگر ناموفق بود؛ از دکمه «ذخیره پروژه» فایل JSON بگیرید.");
+            }
+            return ok;
+        } catch (error) {
+            console.warn("ذخیره خودکار انجام نشد:", error);
+            setStatus("هشدار: ذخیره خودکار انجام نشد؛ از دکمه «ذخیره پروژه» فایل JSON بگیرید.");
+            return false;
+        }
+    }
+
     function scheduleAutoSave() {
         if (persistTimer) clearTimeout(persistTimer);
-        persistTimer = setTimeout(function () {
-            try { persistSnapshot(getData()); } catch (error) {
-                console.warn("ذخیره خودکار انجام نشد:", error);
-            }
-        }, 500);
+        persistTimer = setTimeout(flushAutoSave, 500);
     }
 
     async function restoreLastProject() {
@@ -251,7 +267,9 @@
         }
 
         const data = getData();
-        persistSnapshot(data);
+        if (!persistSnapshot(data)) {
+            setStatus("ذخیره در حافظه مرورگر ناموفق بود؛ فایل JSON همچنان برای ذخیره دستی آماده می‌شود.");
+        }
 
         const blob = new Blob(
             [JSON.stringify(data, null, 2)],
@@ -273,7 +291,7 @@
         }, 1000);
 
         setStatus(
-            "پروژه همراه با بارگذاری، مقاطع، تیرورق‌ها، بازشوها، قیدهای دیوار، قیدهای سقف و پرلین‌ها ذخیره شد."
+            "فایل پروژه برای ذخیره در گوشی/رایانه آماده شد؛ نسخه‌ای نیز در حافظه مرورگر ثبت شد، در صورت موفقیت."
         );
     }
 
@@ -463,6 +481,14 @@
                 scheduleAutoSave();
             }
         });
+    });
+
+    // هنگام رفتن برنامه به پس‌زمینه یا بستن صفحه، تغییرات معوق فوراً ثبت شوند.
+    document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "hidden" && persistTimer) flushAutoSave();
+    });
+    window.addEventListener("pagehide", function () {
+        if (persistTimer) flushAutoSave();
     });
 
     window.addEventListener("load", function () {
