@@ -47,6 +47,7 @@
   $("btnExportCost").addEventListener("click",exportCSV);
   renderRows();
   $("city")?.addEventListener("change",()=>{renderRows();});
+  $("cityName")?.addEventListener("input",()=>{renderRows();});
  }
  function renderRows(){
   const body=$("costEstimateRows");if(!body)return;body.replaceChildren();
