@@ -9,8 +9,8 @@
  const directions=[
   {id:"x-positive",label:"باد در راستای +X"},
   {id:"x-negative",label:"باد در راستای −X"},
-  {id:"y-positive",label:"باد در راستای +Y"},
-  {id:"y-negative",label:"باد در راستای −Y"}
+  {id:"z-positive",label:"باد در راستای +Z"},
+  {id:"z-negative",label:"باد در راستای −Z"}
  ];
  const surfaces=[
   {id:"roof-left",label:"شیب چپ بام"},
@@ -42,14 +42,24 @@
  }
  function calculate(){
   const base=getBase(),records={},errors=[];
+  const span=finite($("span")?.value),length=finite($("length")?.value);
+  const eave=finite($("height")?.value),rise=finite($("rise")?.value);
+  const totalHeight=eave!==null&&rise!==null?eave+rise:null;
+  const geometryReady=[span,length,totalHeight].every(v=>v!==null&&v>0);
+  const directionBreadth={"x-positive":span,"x-negative":span,"z-positive":length,"z-negative":length};
+  const combinedBasis={};
+  directions.forEach(dir=>{const b=directionBreadth[dir.id],ratio=geometryReady?totalHeight/b:null;combinedBasis[dir.id]={height:totalHeight,breadth:b,heightToBreadth:ratio,useCombinedCgCp:geometryReady&&totalHeight<20&&ratio<1};});
   directions.forEach(dir=>{
    records[dir.id]={label:dir.label,surfaces:{}};
    surfaces.forEach(face=>{
     const cp=finite(cpValues[dir.id]?.[face.id]);
-    const ext=base.ready&&cp!==null?base.externalFactor*cp:null;
+    const basis=combinedBasis[dir.id];
+    const externalFactor=base.ready&&basis.useCombinedCgCp?base.externalFactor/base.coeff.gust:base.externalFactor;
+    const ext=base.ready&&geometryReady&&cp!==null?externalFactor*cp:null;
     const im=base.ready?base.internalFactor*Math.abs(base.coeff.internalPressure):null;
     records[dir.id].surfaces[face.id]={
      cp,externalPressure:ext,
+     externalCoefficientBasis:basis.useCombinedCgCp?"combined-CgCp":"separate-Cp",
      netWithPositiveInternal:ext===null||im===null?null:ext-im,
      netWithNegativeInternal:ext===null||im===null?null:ext+im,
      unit:"kN/m2",
@@ -64,11 +74,12 @@
    formulaInternal:"Pi = Iw q Ce Ct Cgi Cpi Cd",
    netConvention:"Pnet = Pexternal - Pinternal",
    directions:records,enteredCpCount:entered,requiredCpCount:24,
+   geometry:{span,length,eaveHeight:eave,ridgeRise:rise,totalHeight},externalCoefficientBasis:combinedBasis,
    basicVelocityPressure:base.q??null,pressureUnit:"kN/m2",
-   commonCoefficients:base.coeff||{},ready:base.ready&&entered===24,
+   commonCoefficients:base.coeff||{},ready:base.ready&&geometryReady&&entered===24,
    codeDesignEligible:false,
-   status:!base.ready?"common-coefficients-incomplete":entered===24?"all-directional-Cp-entered-preliminary":"directional-Cp-incomplete",
-   message:base.ready?"مقادیر فقط با ضرایب دستی محاسبه شده‌اند؛ تأیید آیین‌نامه‌ای نشده‌اند.":base.reason,
+   status:!base.ready?"common-coefficients-incomplete":!geometryReady?"geometry-incomplete":entered===24?"all-directional-coefficients-entered-preliminary":"directional-Cp-incomplete",
+   message:!base.ready?base.reason:!geometryReady?"ابعاد هندسی برای تعیین مبنای ضریب خارجی ناقص است.":"برای h<20m و h/b<1، ورودی این جهت به‌صورت CgCp ترکیبی تفسیر می‌شود؛ در سایر حالات Cp جداگانه است. همه ضرایب دستی و نیازمند تطبیق آیین‌نامه‌ای‌اند.",
    missingCp:errors};
  }
  function render(){
@@ -77,7 +88,7 @@
   panel.id="directionalWindPanel";panel.className="panel";
   let html='<div class="panel-title"><h3>۷ ـ دفتر باد جهت‌دار</h3><span class="status">چهار جهت مستقل</span></div>';
   html+='<div class="notice">برای هر جهت باد، Cp خارجی هر سطح را جداگانه و با علامت از مرجع معتبر وارد کنید. ضریب فشار داخلی Cpi از دفتر ضرایب قبلی خوانده می‌شود و دو حالت علامت مثبت و منفی جداگانه بررسی می‌شوند.</div>';
-  html+='<div class="notice"><b>قرارداد جهت:</b> محورهای +X، −X، +Y و −Y صرفاً شناسه جهت هستند. اتصال آن‌ها به جبهه‌های واقعی ساختمان باید پس از تأیید محوربندی مدل انجام شود.</div>';
+  html+='<div class="notice"><b>قرارداد محور مدل:</b> X عرض دهانه، Y قائم و Z امتداد طول سوله است؛ بنابراین جهت‌های افقی این دفتر +X، −X، +Z و −Z هستند.</div>';
   directions.forEach(dir=>{
    html+='<fieldset><legend>'+dir.label+'</legend><div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>Cp خارجی (علامت‌دار)</th><th>خالص با Cpi مثبت (kN/m²)</th><th>خالص با Cpi منفی (kN/m²)</th></tr></thead><tbody>';
    surfaces.forEach(face=>{
@@ -103,6 +114,8 @@
  }
  function update(){
   const r=calculate();
+  const basisText=directions.map(dir=>{const b=r.externalCoefficientBasis?.[dir.id];return dir.label+": "+(b?.useCombinedCgCp?"CgCp ترکیبی":"Cp جداگانه")+" (h/b="+(b?.heightToBreadth===null?"—":Number(b?.heightToBreadth).toFixed(3))+")";}).join("؛ ");
+  if($("directionalWindStatus"))$("directionalWindStatus").textContent=basisText+" | Cpهای ثبت‌شده: "+r.enteredCpCount+" از ۲۴. "+r.message+" وضعیت: "+r.status+" | مجاز برای طراحی آیین‌نامه‌ای: خیر.";
   directions.forEach(dir=>surfaces.forEach(face=>{
    const cell=r.directions[dir.id].surfaces[face.id];
    const base="dirCp_"+dir.id+"_"+face.id;
@@ -110,8 +123,7 @@
    $(base+"_plus").textContent=cell.netWithPositiveInternal===null?"—":cell.netWithPositiveInternal.toFixed(3);
    $(base+"_minus").textContent=cell.netWithNegativeInternal===null?"—":cell.netWithNegativeInternal.toFixed(3);
   }));
-  const out=$("directionalWindStatus");
-  if(out)out.textContent="Cpهای ثبت‌شده: "+r.enteredCpCount+" از ۲۴. "+r.message+" وضعیت: "+r.status+" | مجاز برای طراحی آیین‌نامه‌ای: خیر.";
+
  }
  function getData(){
   directions.forEach(dir=>surfaces.forEach(face=>{
