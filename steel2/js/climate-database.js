@@ -10,8 +10,11 @@ cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:n
 function applyShahroudReference(){
  const r=records.shahroud;if(!r)return;
  r.name="شاهرود";r.basicWind=90;r.basicWindPressure=0.38;r.groundSnow=1.0;r.snowRegion=3;
- r.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ ردیف ۱۸۳، جدول ۶-۷-۱ ردیف ۷۶ و بند ۶-۳-۲؛ استخراج از PDF ارسالی کاربر، نسخه توزیعی و نیازمند تطبیق نهایی با نسخه رسمی.";
- r.sourceDate="1398";r.status="استخراج‌شده از PDF ارسالی؛ نیازمند تطبیق نهایی با نسخه رسمی";
+ if(r.elevation===null||r.elevation===undefined)r.elevation=1350;
+ r.siteCoordinates=r.siteCoordinates||{latitude:36.37478,longitude:54.88545};
+ r.elevationSource=r.elevationSource||"برآورد تقریبی مرکز شهرک صنعتی؛ نیازمند کنترل با DEM یا برداشت نقشه‌برداری";
+ r.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ و رکورد PDF پروژه برای سرعت باد؛ سرعت ۹۰ km/h نیازمند تطبیق نهایی با نسخه رسمی. ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود.";
+ r.sourceDate="1398";r.status="سرعت باد و برف استخراج‌شده از رکورد پروژه؛ ارتفاع محل تقریبی و نیازمند کنترل نقشه‌برداری";
 }
 function currentClimate(){return window.SteelLoads?.getData?.().climate || {};}
 function refreshStatus(){
@@ -65,7 +68,7 @@ function importDatabase(event){
     const r=data.records[id];if(!r||typeof r!=="object")return;
     const n=v=>v===null||v===""||v===undefined?null:Number(v),wind=n(r.basicWind),snow=n(r.groundSnow),elev=n(r.elevation);
     if([wind,snow,elev].some(v=>v!==null&&(!Number.isFinite(v)||v<0)))return;
-    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"واردشده؛ نیازمند کنترل")};
+    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,siteCoordinates:r.siteCoordinates&&typeof r.siteCoordinates==="object"?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"واردشده؛ نیازمند کنترل")};
    });
    applyShahroudReference();refreshStatus();loadSelectedCity();alert("بانک اقلیمی وارد شد؛ داده مرجع شاهرود حفظ شد.");
   }catch(e){alert("خطا در وارد کردن بانک: "+e.message);}
