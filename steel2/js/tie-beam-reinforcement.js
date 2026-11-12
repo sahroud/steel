@@ -377,7 +377,8 @@
   const biaxialMid=biaxialSample?.find(x=>Math.abs(x.xM-3)<1e-9);
   const r=flexuralAs(100,600,442,25,400,0.90);
   if(!r.ok)return{passed:false,reason:r.reason};
-  const testLayout=buildSymmetricBarLayers(600,500,4,40,10,16,25);\n  const perimeterTest=buildPerimeterBarLayout(600,500,4,1,40,10,16,25);
+  const testLayout=buildSymmetricBarLayers(600,500,4,40,10,16,25);
+  const perimeterTest=buildPerimeterBarLayout(600,500,4,1,40,10,16,25);
   const ic=testLayout.ok?sectionInteractionCurve(600,500,25,400,200000,0.85,0.85,0.003,testLayout.layers,40,10,16):{ok:false,points:[]};
   const midCapacity=ic.ok?interactionMomentAtAxial(ic,0):null;
   const tensileEnd=ic.points?.[1]?.PnN,compressionEnd=ic.points?.[ic.points.length-1]?.PnN;
