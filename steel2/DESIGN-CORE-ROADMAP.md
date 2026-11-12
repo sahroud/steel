@@ -74,3 +74,10 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 - Checks longitudinal wall-girt tributary area against gross wall area, flags unusually large tributary heights for review, and verifies that purlin endpoints at frame stations reuse rafter node IDs.
 - Checks completeness of purlin and end-girt load-record fields, including separate left/right tributary widths at ridge purlins.
 - The audit is diagnostic only: it does not create pressures, derive code zones, change load values, transfer loads, or enable code-design eligibility. Geometric area closure does not prove that real cladding supports or connections follow the assumed load path.
+
+## Load-path coverage audit — 2026-11-12
+
+- Added `js/load-path-audit.js` as a read-only diagnostic. It checks load-record coverage on roof purlins, longitudinal wall girts and end-wall girts, plus per-end shared-node connectivity to rafters, columns and end posts.
+- Reports integrated line-load totals by member group and flags the known un-loaded triangular gable area above the end-wall girts (span × rise / 2 per end).
+- Does not modify member loads, solver inputs, wind coefficients, or design eligibility.
+- Important limitation: shared-node topology is not proof of real connection stiffness/capacity or cladding-to-purlin attachment. End-wall gable infill, roof/wall edge transfer, bracing connections and foundation load path remain incomplete.
