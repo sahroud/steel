@@ -146,6 +146,10 @@
             data.climateLoadEngine = window.SteelClimateLoadEngine.getData();
         }
 
+        if (window.SteelWindBasis && typeof window.SteelWindBasis.getData === "function") {
+            data.windBasis = window.SteelWindBasis.getData();
+        }
+
         if (window.SteelGirder &&
             typeof window.SteelGirder.getData === "function") {
             data.girders = window.SteelGirder.getData();
@@ -398,6 +402,10 @@
         if (data.climateLoadEngine && window.SteelClimateLoadEngine &&
             typeof window.SteelClimateLoadEngine.setData === "function") {
             window.SteelClimateLoadEngine.setData(data.climateLoadEngine);
+        }
+
+        if (window.SteelWindBasis && typeof window.SteelWindBasis.setData === "function") {
+            window.SteelWindBasis.setData(data.windBasis || {});
         }
 
         if (window.SteelStructuralModel && typeof window.SteelStructuralModel.setData === "function") {
