@@ -150,6 +150,10 @@
             data.windBasis = window.SteelWindBasis.getData();
         }
 
+        if (window.SteelDirectionalWind && typeof window.SteelDirectionalWind.getData === "function") {
+            data.directionalWind = window.SteelDirectionalWind.getData();
+        }
+
         if (window.SteelGirder &&
             typeof window.SteelGirder.getData === "function") {
             data.girders = window.SteelGirder.getData();
@@ -406,6 +410,10 @@
 
         if (window.SteelWindBasis && typeof window.SteelWindBasis.setData === "function") {
             window.SteelWindBasis.setData(data.windBasis || {});
+        }
+
+        if (window.SteelDirectionalWind && typeof window.SteelDirectionalWind.setData === "function") {
+            window.SteelDirectionalWind.setData(data.directionalWind || {});
         }
 
         if (window.SteelStructuralModel && typeof window.SteelStructuralModel.setData === "function") {
