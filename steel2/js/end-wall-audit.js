@@ -94,8 +94,9 @@
     const result=audit(window.SteelStructuralModel?.build?.());
     window.SteelEndWallAudit.lastResult=result;
     const areas=result.areasPerEndM2.map(a=>a.id+": "+a.areaM2.toFixed(3)+" m² در هر انتها").join("\n");
-    const faces=result.faces.map(f=>f.face+": ستونک‌ها "+f.postSegmentsReachingRoofline+"/"+f.endPostSegments+
-     " به خط بام می‌رسند؛ وتر بالایی "+f.topChordLengthM.toFixed(3)+"/"+f.expectedTopChordLengthM.toFixed(3)+" m؛ "+
+    const faces=result.faces.map(f=>f.face+": ستونک‌ها "+f.postsReachingRoofline+"/"+f.postCount+
+     " به خط بام می‌رسند؛ وتر بالایی "+f.topChordLengthM.toFixed(3)+"/"+f.expectedTopChordLengthM.toFixed(3)+" m؛ پیوستگی وتر: "+
+     (f.chordConnected?"برقرار":"ناقص")+"؛ اتصال گره رأس ستونک‌ها به وتر: "+(f.postTopOnChord?"برقرار":"ناقص")+"؛ "+
      (f.topologyOk?"توپولوژی هندسی برقرار":"نیازمند اصلاح")).join("\n");
     box.textContent="ممیزی گابل — "+result.geometry.spanM.toFixed(2)+" m دهانه، "+
      result.geometry.eavesHeightM.toFixed(2)+" m ارتفاع لبه و "+
