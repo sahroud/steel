@@ -90,7 +90,7 @@
   const foundation=window.SteelFoundationTakeoff?.getData?.()||{};
   const footingDimension=material?.axis==="X"?Number(foundation.footingWidthM):Number(foundation.footingLengthM);
   const footingExtension=Number.isFinite(footingDimension)&&footingDimension>0;
-  const straightBarLength=Number(material?.lengthM)+(footingExtension?footingDimension:0);
+  const straightBarLength=footingExtension?Number(material?.lengthM)+footingDimension:null;
   const barsBothFaces=count?2*count:null;
   const totalStraightBarLengthM=barsBothFaces?barsBothFaces*straightBarLength:null;
   const unitMassKgM=Math.pow(settings.barDiaMm,2)/162;
@@ -119,7 +119,7 @@
    return routeResult(route,ids.map(id=>memberMap.get(id)),info);
   });
   lastReport={generatedAt:new Date().toISOString(),loadCase:latest.loadCaseLabel||latest.loadCase,settings:{...settings},rows,
-   limitations:["این خروجی غربال اولیه است و طراحی اجرایی یا تأیید آیین‌نامه‌ای نیست.","مقادیر نیرو از تحلیل خطی عضو با مقطع ناخالص و ترک‌نخورده گرفته شده‌اند.","برای خمش، رابطه تعادل مقطع مستطیلی با φ و fy ورودی استفاده شده؛ حداقل/حداکثر آرماتور و کرنش نهایی کنترل نشده است.","برای برش، فقط سهم فولاد خاموت بدون مشارکت بتن محاسبه شده؛ فاصله مجاز آیین‌نامه‌ای و ضوابط لرزه‌ای کنترل نشده است.","پیچش، خستگی، ترک، خیز، مهاری، وصله، طول قلاب، تداخل میلگردها و جزئیات عبور از فونداسیون کنترل نشده‌اند."]};
+   limitations:["این خروجی غربال اولیه است و طراحی اجرایی یا تأیید آیین‌نامه‌ای نیست.","مقادیر نیرو از تحلیل خطی عضو با مقطع ناخالص و ترک‌نخورده گرفته شده‌اند.","برای خمش، رابطه تعادل مقطع مستطیلی با φ و fy ورودی استفاده شده؛ حداقل/حداکثر آرماتور و کرنش نهایی کنترل نشده است.","برای برش، فقط سهم فولاد خاموت بدون مشارکت بتن محاسبه شده؛ فاصله مجاز آیین‌نامه‌ای و ضوابط لرزه‌ای کنترل نشده است.","نیروی محوری N گزارش می‌شود اما هنوز با خمش در طراحی اندرکنش ندارد.","پیچش، خستگی، ترک، خیز، مهاری، وصله، طول قلاب، تداخل میلگردها و جزئیات عبور از فونداسیون کنترل نشده‌اند."]};
   status.textContent="نتیجه بر اساس آخرین تحلیل: "+lastReport.loadCase+"؛ مسیرها: "+rows.length+"؛ قابل محاسبه خمشی: "+rows.filter(x=>x.ok).length+".";
   box.textContent=rows.map(r=>{
    if(!r.ok)return"شناژ "+r.id+": "+r.reason;
