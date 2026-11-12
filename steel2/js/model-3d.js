@@ -13,6 +13,8 @@
       '<div class="notice">فاصله‌ها و تعداد اعضای فرعی برای تولید مدل هندسی استفاده می‌شوند. مقادیر پیش‌فرض صرفاً برای شروع مدل هستند و باید با نقشه اجرایی تطبیق داده شوند.</div>' +
       '<div class="form-grid">' +
       '<div class="field"><label for="modelPurlinSpacing">فاصله پرلین‌های سقف (m)</label><input id="modelPurlinSpacing" type="number" min="0.3" step="0.05" value="1.20"></div>' +
+      '<div class="field"><label for="modelPurlinClipDeduction">کسر مجموع دو انتهای کلیپس از طول برش هر پرلین (m)</label><input id="modelPurlinClipDeduction" type="number" min="0" step="0.005" value="0"></div>' +
+      '<div class="field"><label for="modelPurlinAssemblyGap">لقی مونتاژ کل هر قطعه پرلین (m)</label><input id="modelPurlinAssemblyGap" type="number" min="0" step="0.005" value="0"></div>' +
       '<div class="field"><label for="modelGirtSpacing">فاصله قیدهای افقی دیوار (m)</label><input id="modelGirtSpacing" type="number" min="0.3" step="0.05" value="1.50"></div>' +
       '<div class="field"><label for="modelEndPostSpacing">فاصله ستونک‌های دیوار انتهایی (m)</label><input id="modelEndPostSpacing" type="number" min="1" step="0.1" value="4.00"></div>' +
       '<div class="field"><label for="modelBraceBays">تعداد دهانه مهاربندی در ابتدا و انتها</label><input id="modelBraceBays" type="number" min="0" step="1" value="1"></div></div>' +
@@ -44,7 +46,7 @@
             : " | اطلاعات گره بحرانی در دسترس نیست")+
           (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو":"")+
           (result.equilibrium?" | کنترل تعادل نیرو: "+(result.equilibrium.relativeForceResidual*100).toExponential(2)+"٪؛ تعادل لنگر: "+(result.equilibrium.relativeMomentResidual*100).toExponential(2)+"٪؛ "+(result.equilibrium.ok?"تعادل کلی برقرار":"هشدار: عدم تعادل کلی"):" | کنترل تعادل در دسترس نیست")+
-          ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل خطی مرتبه اول است، P-Delta و کنترل کمانش در آن لحاظ نشده است. در اتصال پرلین به رفتر، دو دوران خمشی پرلین جدا شده و دوران حول محور طولی مشترک است؛ این تقریب، سختی واقعی کلیپس و پیچ‌ها را مدل نمی‌کند و نتیجه تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
+          ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل خطی مرتبه اول است، P-Delta و کنترل کمانش در آن لحاظ نشده است. هر پرلین به‌صورت قطعه مستقل بین دو قاب مدل شده است؛ دوران‌های انتهایی هر قطعه از رفتر و از قطعه پرلین دهانه مجاور جدا هستند (فرض مفصل ایده‌آل). سختی واقعی کلیپس و پیچ‌ها، لغزش و خروج از صفحه هنوز مدل نشده و نتیجه تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
         if(Array.isArray(result.criticalMemberReport)&&result.criticalMemberReport.length){
           const fmt=(v,factor=1,d=3)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
           const lines=["","گزارش تشخیصی اعضای متصل به گره بحرانی:",
@@ -207,7 +209,6 @@
     for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
     const roofY=x=>height+(x<=half?rise*x/half:rise*(span-x)/half);
     const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp));
-    const roofLongitudinalStations=[-over,...frames,length+over];
     // Every purlin/rafter crossing is a shared structural node, not two coincident but disconnected nodes.
     const roofXs=[0,span];
     [-1,1].forEach(side=>{for(let ri=0;ri<=roofRows;ri++){
@@ -258,14 +259,28 @@
         }
       }
     });
+    const clipDeduction=val("modelPurlinClipDeduction",0);
+    const assemblyGap=val("modelPurlinAssemblyGap",0);
+    if(clipDeduction<0||assemblyGap<0)throw new Error("کسر کلیپس و لقی مونتاژ پرلین نمی‌تواند منفی باشد.");
     purlinStations.forEach(station=>{
-      const row=roofLongitudinalStations.map(z=>addNode(nodes,station.x,roofY(station.x),z,"roof-secondary"));
-      for(let i=0;i<row.length-1;i++)
-        addMember(members,row[i],row[i+1],"پرلین طولی سقف","roofPurlin",{
-          side:station.side,row:station.row,tributaryWidth:station.tributaryWidth,
+      // Each purlin is a separate physical piece between two consecutive frame axes.
+      // Analytical endpoints stay at frame/rafter support nodes; cut length is stored separately.
+      for(let bay=0;bay<frames.length-1;bay++){
+        const z1=frames[bay],z2=frames[bay+1],axisLength=z2-z1;
+        const fabricationLength=axisLength-clipDeduction-assemblyGap;
+        if(!(fabricationLength>0))throw new Error("طول برش پرلین در دهانه "+(bay+1)+" مثبت نیست؛ ابعاد کلیپس و لقی مونتاژ را بررسی کنید.");
+        const n1=addNode(nodes,station.x,roofY(station.x),z1,"roof-secondary-support");
+        const n2=addNode(nodes,station.x,roofY(station.x),z2,"roof-secondary-support");
+        addMember(members,n1,n2,"پرلین مستقل بین دو قاب","roofPurlin",{
+          side:station.side,row:station.row,bay:bay+1,
+          tributaryWidth:station.tributaryWidth,
           tributaryWidthLeft:station.tributaryWidthLeft,
-          tributaryWidthRight:station.tributaryWidthRight,endOverhang:0.8
+          tributaryWidthRight:station.tributaryWidthRight,
+          supportAxisLengthM:axisLength,clipDeductionM:clipDeduction,
+          assemblyGapM:assemblyGap,fabricationLengthM:fabricationLength,
+          separatePiece:true,endOverhang:0
         });
+      }
     });
     [-over,length+over].forEach(z=>{
       const xs=[-over*cs,half,span+over*cs];
@@ -448,7 +463,7 @@
   function showSummary(){
     if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
     const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
-    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی پرلین‌ها تبدیل و در تحلیل سه‌بعدی اعمال می‌شوند؛ بار باد و ترکیبات بار هنوز در حل‌گر سه‌بعدی اعمال نمی‌شوند. در تحلیل فعلی، اتصال پرلین به رفتر با فرض کلیپس/نبشی دوپیچه مدل می‌شود: جابه‌جایی در محل اتصال مشترک است؛ دو دوران خمشی پرلین از رفتر جدا می‌شوند، اما دوران حول محور طولی پرلین مشترک می‌ماند و پیوستگی طولی حفظ می‌شود؛ سایر گره‌های مشترک فعلاً صلب‌اند. مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
+    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی پرلین‌ها تبدیل و در تحلیل سه‌بعدی اعمال می‌شوند؛ بار باد و ترکیبات بار هنوز در حل‌گر سه‌بعدی اعمال نمی‌شوند. پرلین‌های سقف به‌صورت قطعات مجزا بین دو قاب ساخته شده‌اند؛ در تحلیل، انتقال جابه‌جایی در محل تکیه‌گاه برقرار و هر سه دوران انتهای هر قطعه آزاد شده است تا پرلین دهانه مجاور پیوسته فرض نشود. این مدل، مفصل ایده‌آل است و سختی واقعی کلیپس/پیچ، لغزش و اثر خروج از مرکزیت را شامل نمی‌شود؛ سایر گره‌های مشترک فعلاً صلب‌اند. مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
   }
   function validate3DSections(){
     if(!model)build();
