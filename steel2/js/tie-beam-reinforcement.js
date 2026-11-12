@@ -297,11 +297,11 @@
   const Ag=b*h;
   const torsionGeometry=torsionSectionGeometry(b,h,settings.coverMm,settings.stirrupDiaMm);
   const shearMaxForCombined=Math.max(shearY?.sample?Math.abs(shearY.sample.VyN):0,shearZ?.sample?Math.abs(shearZ.sample.VzN):0);
-  const shearSpacingCandidates=[shearYResult.recommendedSpacingMm,shearZResult.recommendedSpacingMm].filter(x=>Number.isFinite(x)&&x>0);
-  const shearSpacingForTorsion=shearSpacingCandidates.length?Math.min(...shearSpacingCandidates):null;
   const shearYResult=shearY?shearDesignDirection(Math.abs(shearY.sample.VyN),shearY.sample.Nn,b,d,Ag,fc,settings.fyMPa,settings.phiShear,settings.lambdaConcrete,stirrupArea,(AsProvided||0)/2):{ok:false,reason:"نیروی برش محلی y موجود نیست"};
   const dZ=b-settings.coverMm-settings.stirrupDiaMm-settings.barDiaMm/2;
   const shearZResult=shearZ?shearDesignDirection(Math.abs(shearZ.sample.VzN),shearZ.sample.Nn,h,dZ,Ag,fc,settings.fyMPa,settings.phiShear,settings.lambdaConcrete,stirrupArea,(AsProvided||0)/2):{ok:false,reason:"نیروی برش محلی z موجود نیست"};
+  const shearSpacingCandidates=[shearYResult.recommendedSpacingMm,shearZResult.recommendedSpacingMm].filter(x=>Number.isFinite(x)&&x>0);
+  const shearSpacingForTorsion=shearSpacingCandidates.length?Math.min(...shearSpacingCandidates):null;
   const torsionDesign=torsionAvailable&&torsionGeometry.ok?torsionDesignScreen(criticalTorsion.result.maxAbsNm,criticalTension.Nn,shearY?.sample?Math.abs(shearY.sample.VyN):0,b,d,shearYResult.ok?shearYResult.VcKN*1000:0,shearZ?.sample?Math.abs(shearZ.sample.VzN):0,h,dZ,shearZResult.ok?shearZResult.VcKN*1000:0,Ag,fc,settings.fyMPa,settings.lambdaConcrete,torsionGeometry,areaBar(settings.stirrupDiaMm),stirrupArea,shearSpacingForTorsion):{ok:false,reason:"تقاضای پیچش یا هندسه مقطع برای طراحی موجود نیست"};
 
   const spacing=V>0?stirrupArea*settings.fyMPa*d/(V*1000):null;
@@ -318,8 +318,8 @@
    torsion:{available:torsionAvailable,criticalMemberId:criticalTorsion?.memberId||null,maxAbsKNm:criticalTorsion?criticalTorsion.result.maxAbsNm/1e6:null,memberEndValues:torsionRows.map(x=>({memberId:x.memberId,startKNm:x.result?.startNm/1e6??null,endKNm:x.result?.endNm/1e6??null})),sectionGeometry:torsionGeometry,design:torsionDesign,capacityChecked:false,combinedShearTorsionChecked:true},
    interaction:{ok:interaction.ok,assumption:interaction.assumptions,pointCount:interaction.points?.length||0,atCriticalAxial:interactionAtCritical,nominalMomentUtilization:nominalUtilization,curve:interaction.points||[]},
    effectiveDepthMm:d,AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,
-   barCountEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits,multiLayerFits,rowsPerFace:layout.rowsPerFace||null,barsPerRow:layout.barsPerRow||[],bottomCentroidMm:layout.bottomCentroidMm||null,topCentroidMm:layout.topCentroidMm||null,layers:layout.layers||[]},
-   longitudinalBars:{countEachFace:count,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
+   barCountEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits,multiLayerFits,rowsPerFace:layout.rowsPerFace||null,barsPerRow:layout.barsPerRow||[],bottomCentroidMm:layout.bottomCentroidMm||null,topCentroidMm:layout.topCentroidMm||null,layers:layout.layers||[],coordinates:layout.coordinates||[],sideBarCount:layout.sideBarCount||0},
+   longitudinalBars:{countEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
     totalStraightLengthM:totalStraightBarLengthM,approximateMassKg:totalStraightBarLengthM==null?null:totalStraightBarLengthM*unitMassKgM,
     hookAllowanceIncluded:false,footingExtensionIncluded:footingExtension},
    stirrup:{diaMm:settings.stirrupDiaMm,legs:settings.stirrupLegs,areaMm2:stirrupArea,steelOnlySpacingMm:spacing,shearY:shearYResult,shearZ:shearZResult,phi:settings.phiShear},
