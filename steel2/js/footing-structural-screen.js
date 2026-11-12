@@ -23,7 +23,7 @@
    '<label class="check-row" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><input id="fsReactionSign" type="checkbox"><span>قرارداد علامت واکنش قائم و افقی حل‌گر با یک حالت بار معلوم کنترل شده است؛ فشار فشاری پایه مثبت در نظر گرفته می‌شود.</span></label>'+
    '<div class="button-grid"><button id="btnFootingStructuralScreen" class="btn primary" type="button">اجرای غربال خمش، برش و پانچ</button><button id="btnFootingStructuralCSV" class="btn secondary" type="button" disabled>دریافت CSV کنترل پی</button></div>'+
    '<div id="footingStructuralSummary" class="notice">برای شروع، پوش واکنش‌ها را استخراج کنید و ابعاد پی، پدستال، پوشش بتن و مشخصات مصالح را وارد کنید.</div>'+
-   '<h4>نتایج هر پایه و هر حالت بار</h4><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:1000px"><thead><tr><th>پایه / حالت</th><th>جهت</th><th>لنگر تقاضا (kN.m/m)</th><th>As لازم (mm²/m)</th><th>As موجود (mm²/m)</th><th>برش یک‌طرفه Vu / φVc (kN/m)</th><th>پانچ Vu / φVc (kN)</th><th>وضعیت</th></tr></thead><tbody id="footingStructuralRows"></tbody></table></div>'+
+   '<h4>نتایج هر پایه و هر حالت بار</h4><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:1000px"><thead><tr><th>پایه / حالت</th><th>جهت</th><th>لنگر تقاضا (kN.m/m)</th><th>As لازم (mm²/m)</th><th>As موجود (mm²/m)</th><th>فاصله متناظر با As خمشی (mm)</th><th>برش یک‌طرفه Vu / φVc (kN/m)</th><th>پانچ Vu / φVc (kN)</th><th>وضعیت</th></tr></thead><tbody id="footingStructuralRows"></tbody></table></div>'+
    '<div class="notice" id="footingStructuralLimits">این غربال از فشار بیشینه یکنواخت روی طره‌ها استفاده می‌کند؛ محافظه‌کارانه و ساده‌سازی‌شده است و جای تحلیل دقیق فشار متغیر، طراحی کامل پی و کنترل آیین‌نامه‌ای را نمی‌گیرد.</div>';
   root.parentNode.insertBefore(p,root.nextSibling);
   $("fsFc").value=state.fcMPa;$("fsFy").value=state.fyMPa;$("fsReactionSign").checked=!!state.reactionSignConfirmed;
@@ -61,7 +61,7 @@
   const pedestalWeight=gammaC*cx*cz*pedH,concreteWeight=gammaC*B*L*t+pedestalWeight;
   const soilWeight=soilCover>0?gammaS*Math.max(0,B*L-cx*cz)*soilCover:0;
   const added=concreteWeight+soilWeight,area=B*L,records=[];
-  const addRow=(rec)=>{records.push(rec);const tr=document.createElement("tr");[rec.nodeId+" / "+rec.caseLabel,rec.direction,fmt(rec.MuKNmPerM),rec.AsRequired===null?"—":fmt(rec.AsRequired),rec.AsProvided===null?"وارد نشده":fmt(rec.AsProvided),rec.oneWayDemand===null?"—":fmt(rec.oneWayDemand)+" / "+fmt(rec.oneWayCapacity),rec.punchDemand===null?"—":fmt(rec.punchDemand)+" / "+fmt(rec.punchCapacity),rec.status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);};
+  const addRow=(rec)=>{records.push(rec);const tr=document.createElement("tr");[rec.nodeId+" / "+rec.caseLabel,rec.direction,fmt(rec.MuKNmPerM),rec.AsRequired===null?"—":fmt(rec.AsRequired),rec.AsProvided===null?"وارد نشده":fmt(rec.AsProvided),rec.spacingByStrengthMm===null?"—":fmt(rec.spacingByStrengthMm),rec.oneWayDemand===null?"—":fmt(rec.oneWayDemand)+" / "+fmt(rec.oneWayCapacity),rec.punchDemand===null?"—":fmt(rec.punchDemand)+" / "+fmt(rec.punchCapacity),rec.status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);};
   foundation.rows.forEach(row=>{
    const cases=Array.isArray(row.caseReactions)?row.caseReactions:[];
    cases.forEach(item=>{
@@ -80,13 +80,13 @@
      const leff=Math.max(0,s.projection-s.d/1000);
      const Mu=qmax*s.projection*s.projection/2;
      const As=requiredAs(Mu,fc,fy,s.d);
-     const AsProv=s.dia&&s.spacing?Math.PI*s.dia*s.dia/4*1000/s.spacing:null;
+     const AsProv=s.dia&&s.spacing?Math.PI*s.dia*s.dia/4*1000/s.spacing:null,spacingByStrength=As&&s.dia?Math.PI*s.dia*s.dia/4*1000/As:null;
      const vu=qmax*leff;
      const vc=0.75*0.17*Math.sqrt(fc)*1000*s.d/1000;
      const oneWay=leff<=0?"مقطع بحرانی در بیرون طره نیست":vu<=vc?"برش یک‌طرفه در غربال ساده کمتر از ظرفیت اسمی است":"برش یک‌طرفه از ظرفیت اسمی غربال بیشتر است";
      const flex=As===null?"As لازم قابل محاسبه نیست":AsProv===null?"آرماتور موجود وارد نشده":AsProv>=As?"As واردشده از As لازم محاسباتی کمتر نیست":"As واردشده از As لازم محاسباتی کمتر است";
      statusParts.push(s.direction+": "+flex+"؛ "+oneWay);
-     addRow({nodeId:row.nodeId,caseLabel:item.label,direction:s.direction,MuKNmPerM:Mu,AsRequired:As,AsProvided:AsProv,oneWayDemand:vu,oneWayCapacity:vc,punchDemand:null,punchCapacity:null,status:flex+"؛ "+oneWay});
+     addRow({nodeId:row.nodeId,caseLabel:item.label,direction:s.direction,MuKNmPerM:Mu,AsRequired:As,AsProvided:AsProv,spacingByStrengthMm:spacingByStrength,oneWayDemand:vu,oneWayCapacity:vc,punchDemand:null,punchCapacity:null,status:flex+"؛ "+oneWay});
     });
     const dPunch=Math.min(dX,dZ),perimeter=2*((cx*1000+dPunch)+(cz*1000+dPunch));
     const insideW=(cx+dPunch/1000),insideL=(cz+dPunch/1000),insideArea=insideW*insideL;
@@ -95,7 +95,7 @@
     const Vc=punchValid?0.75*0.33*Math.sqrt(fc)*perimeter*dPunch/1000:null;
     const punchStatus=!punchValid?"محیط بحرانی پانچ در محدوده پی جا نمی‌شود":Vu<=Vc?"پانچ در غربال محوری ساده کمتر از ظرفیت اسمی است":"پانچ از ظرفیت اسمی غربال بیشتر است";
     statusParts.push(punchStatus);
-    addRow({nodeId:row.nodeId,caseLabel:item.label,direction:"پانچ پیرامون پدستال",MuKNmPerM:0,AsRequired:null,AsProvided:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:Vu,punchCapacity:Vc,status:punchStatus});
+    addRow({nodeId:row.nodeId,caseLabel:item.label,direction:"پانچ پیرامون پدستال",MuKNmPerM:0,AsRequired:null,AsProvided:null,oneWayDemand:null,oneWayCapacity:null,spacingByStrengthMm:null,punchDemand:Vu,punchCapacity:Vc,status:punchStatus});
    });
   });
   if(!records.length){summary.textContent="هیچ حالت فشاری با تماس کامل خاک برای غربال خمش و برش موجود نیست؛ پوش واکنش، علامت‌ها و کنترل فشار زیر پی را بررسی کنید.";return;}
