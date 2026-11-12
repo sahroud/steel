@@ -445,6 +445,8 @@
         const v = Number($("climateBasicWind")?.value);
         const altitude = $("climateElevation")?.value;
         const terrain = $("climateTerrain")?.value || "";
+        const eaveHeight = Number($("height")?.value);
+        const roofRise = Number($("rise")?.value);
         const out = $("windReferenceResult");
         if (!out) return;
         if (!Number.isFinite(v) || v <= 0) {
@@ -456,10 +458,16 @@
         const terrainText = terrain === "open" ? "باز و هموار" :
             terrain === "suburban" ? "حومه و موانع پراکنده" :
             terrain === "urban" ? "شهری و متراکم" : "انتخاب‌نشده";
+        const geometryText = Number.isFinite(eaveHeight) && eaveHeight > 0 &&
+            Number.isFinite(roofRise) && roofRise >= 0
+            ? "ارتفاع هندسی از سطح زمین: لبه بام " + eaveHeight.toFixed(2) +
+              " m؛ تاج بام " + (eaveHeight + roofRise).toFixed(2) + " m. "
+            : "ارتفاع هندسی نقاط سازه از سطح زمین هنوز کامل نیست. ";
         out.textContent =
             "فشار مبنای محاسبه‌شده q = " + q.toFixed(3) + " kN/m² (رابطه q=0.000613V² با V بر حسب m/s؛ سرعت ورودی " + v.toFixed(1) + " km/h). " +
             "ارتفاع محل از سطح دریا: " + (altitude === "" ? "ثبت‌نشده" : altitude + " m") +
-            "؛ رده زبری: " + terrainText + ". این q فقط فشار مبناست و فشار طراحی/خالص سقف و دیوار نیست. ارتفاع محل از سطح دریا با ارتفاع نقطه سازه از سطح زمین متفاوت است و در محاسبه ضریب Ce جایگزین آن نمی‌شود.";
+            "؛ رده زبری: " + terrainText + ". " + geometryText +
+            "ارتفاع محل از سطح دریا با ارتفاع نقطه سازه از سطح زمین متفاوت است. ارتفاع‌های هندسی بالا صرفاً اطلاعات مدل‌اند و تا تطبیق دقیق بندهای مبحث ششم، ضریب Ce از آن‌ها محاسبه نمی‌شود. q نیز فقط فشار مبناست، نه فشار طراحی/خالص سقف و دیوار.";
     }
 
     function check() {
