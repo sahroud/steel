@@ -4,7 +4,7 @@
 (function(){
  "use strict";
  const $=id=>document.getElementById(id);
- const defaults={fyMPa:400,coverMm:40,barDiaMm:16,stirrupDiaMm:10,stirrupLegs:2,phiFlexure:0.90};
+ const defaults={fyMPa:400,coverMm:40,barDiaMm:16,stirrupDiaMm:10,stirrupLegs:2,clearSpacingMm:25,phiFlexure:0.90};
  let settings={...defaults},latest=null,lastReport=null;
  const fmt=(v,d=2)=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:d});
  function mount(){
@@ -19,6 +19,7 @@
   '<div class="field"><label for="tbrBarDia">قطر پیشنهادی میلگرد طولی (mm)</label><select id="tbrBarDia"><option>12</option><option>14</option><option selected>16</option><option>18</option><option>20</option><option>22</option><option>25</option><option>28</option><option>32</option></select></div>'+
   '<div class="field"><label for="tbrStirrupDia">قطر خاموت (mm)</label><input id="tbrStirrupDia" type="number" min="6" max="16" step="1" value="10"></div>'+
   '<div class="field"><label for="tbrLegs">تعداد شاخه مؤثر خاموت</label><select id="tbrLegs"><option value="2" selected>۲ شاخه</option><option value="4">۴ شاخه</option></select></div>'+
+  '<div class="field"><label for="tbrClearSpacing">فاصله آزاد هندسی پیشنهادی میلگردها (mm)</label><input id="tbrClearSpacing" type="number" min="10" max="100" step="1" value="25"></div>'+
   '<div class="field"><label for="tbrPhi">ضریب مقاومت خمشی فرضی φ</label><input id="tbrPhi" type="number" min="0.5" max="1" step="0.01" value="0.90"></div>'+
   '</div><div class="notice">مقادیر fy=400، پوشش ۴۰، قطر طولی ۱۶ و φ=۰٫۹ صرفاً پیش‌فرض غربال اولیه‌اند؛ باید با مشخصات واقعی میلگرد، شرایط محیطی، حریق، قطر سنگدانه و آیین‌نامه پروژه تطبیق داده شوند.</div>'+
   '<div class="button-grid"><button type="button" class="btn secondary" id="btnRunTieRebarScreen">محاسبه مقدماتی آرماتور از آخرین تحلیل</button><button type="button" class="btn secondary" id="btnResetTieRebarDefaults">بازگردانی پیش‌فرض‌ها</button></div>'+
@@ -26,21 +27,27 @@
   '<div id="tieRebarOutput" class="result-box">هنوز نتیجه‌ای محاسبه نشده است.</div>'+
   '<div class="notice">این محاسبه حداقل آرماتور آیین‌نامه‌ای، کنترل ترک، خیز، دوام، حداکثر فاصله میلگرد، محدودیت فاصله خاموت، برش بتن، پیچش، اثر زلزله، مهاری و وصله را تعیین نمی‌کند. مقدار فاصله خاموت صرفاً از تقاضای فولادی برشی و بدون مشارکت بتن استخراج می‌شود و حد نهایی اجرایی نیست.</div>';
   anchor.parentNode.insertBefore(p,anchor.nextSibling);
-  ["tbrFy","tbrCover","tbrBarDia","tbrStirrupDia","tbrLegs","tbrPhi"].forEach(id=>$(id).addEventListener("change",read));
+  ["tbrFy","tbrCover","tbrBarDia","tbrStirrupDia","tbrLegs","tbrClearSpacing","tbrPhi"].forEach(id=>$(id).addEventListener("change",read));
   $("btnRunTieRebarScreen").addEventListener("click",()=>render(true));
   $("btnResetTieRebarDefaults").addEventListener("click",()=>{settings={...defaults};write();render(false);});
   write();
  }
  function read(){
   if(!$("tbrFy"))return;
-  settings={fyMPa:Number($("tbrFy").value),coverMm:Number($("tbrCover").value),barDiaMm:Number($("tbrBarDia").value),stirrupDiaMm:Number($("tbrStirrupDia").value),stirrupLegs:Number($("tbrLegs").value),phiFlexure:Number($("tbrPhi").value)};
+  settings={fyMPa:Number($("tbrFy").value),coverMm:Number($("tbrCover").value),barDiaMm:Number($("tbrBarDia").value),stirrupDiaMm:Number($("tbrStirrupDia").value),stirrupLegs:Number($("tbrLegs").value),clearSpacingMm:Number($("tbrClearSpacing").value),phiFlexure:Number($("tbrPhi").value)};
   try{localStorage.setItem("sahroudSteel.tieBeamRebarSettings.v1",JSON.stringify(settings));}catch(e){}
  }
  function write(){
   if(!$("tbrFy"))return;
-  Object.entries({tbrFy:settings.fyMPa,tbrCover:settings.coverMm,tbrBarDia:settings.barDiaMm,tbrStirrupDia:settings.stirrupDiaMm,tbrLegs:settings.stirrupLegs,tbrPhi:settings.phiFlexure}).forEach(([id,v])=>{if($(id))$(id).value=v;});
+  Object.entries({tbrFy:settings.fyMPa,tbrCover:settings.coverMm,tbrBarDia:settings.barDiaMm,tbrStirrupDia:settings.stirrupDiaMm,tbrLegs:settings.stirrupLegs,tbrClearSpacing:settings.clearSpacingMm,tbrPhi:settings.phiFlexure}).forEach(([id,v])=>{if($(id))$(id).value=v;});
  }
  function areaBar(d){return Math.PI*d*d/4;}
+ function barLayerCapacity(bMm,coverMm,stirrupDiaMm,barDiaMm,clearSpacingMm){
+  const centerSpan=bMm-2*(coverMm+stirrupDiaMm+barDiaMm/2);
+  const pitch=barDiaMm+clearSpacingMm;
+  if(!(centerSpan>=0&&pitch>0))return{ok:false,maxBars:0,centerSpanMm:centerSpan};
+  return{ok:true,maxBars:Math.floor(centerSpan/pitch+1e-9)+1,centerSpanMm:centerSpan};
+ }
  function flexuralAs(MNm,bMm,dMm,fc,fy,phi){
   if(!(MNm>0&&bMm>0&&dMm>0&&fc>0&&fy>0&&phi>0&&phi<=1))return{ok:false,reason:"ورودی خمشی نامعتبر است"};
   const demand=MNm*1e6/phi;
@@ -85,6 +92,8 @@
   const barA=areaBar(settings.barDiaMm);
   const count=As.ok?Math.max(2,Math.ceil(As.AsRequiredMm2/barA)):null;
   const AsProvided=count?count*barA:null;
+  const fit=barLayerCapacity(b,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm);
+  const singleLayerFits=!!(fit.ok&&count!==null&&count<=fit.maxBars);
   const stirrupArea=settings.stirrupLegs*areaBar(settings.stirrupDiaMm);
   const spacing=V>0?stirrupArea*settings.fyMPa*d/(V*1000):null;
   const foundation=window.SteelFoundationTakeoff?.getData?.()||{};
@@ -96,12 +105,12 @@
   const unitMassKgM=Math.pow(settings.barDiaMm,2)/162;
   return{id:route.id,memberIds:forceRows.map(x=>x.id),segmentCount:members.length,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,
    effectiveDepthMm:d,AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,
-   barCountEachFace:count,AsProvidedMm2:AsProvided,
+   barCountEachFace:count,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits},
    longitudinalBars:{countEachFace:count,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
     totalStraightLengthM:totalStraightBarLengthM,approximateMassKg:totalStraightBarLengthM==null?null:totalStraightBarLengthM*unitMassKgM,
     hookAllowanceIncluded:false,footingExtensionIncluded:footingExtension},
    stirrup:{diaMm:settings.stirrupDiaMm,legs:settings.stirrupLegs,areaMm2:stirrupArea,steelOnlySpacingMm:spacing},
-   note:"نیروهای تمام قطعات مسیر پیوسته بررسی شده‌اند. برای پوشش لنگرهای مثبت و منفی، آرماتور کششی به‌صورت متقارن در دو وجه برآورد شده است. طول مستقیم میلگرد تا وجه بیرونی دو فونداسیون انتهایی برآورد شده؛ طول قلاب و خم به علت نیاز به ضابطه/جزئیات معتبر به مقدار طول اضافه نشده است."};
+   note:"نیروهای تمام قطعات مسیر پیوسته بررسی شده‌اند. برای پوشش لنگرهای مثبت و منفی، آرماتور کششی به‌صورت متقارن در دو وجه برآورد شده است. ظرفیت یک‌لایه با پوشش و فاصله آزاد ورودی فقط از نظر هندسی بررسی شده و حداقل فاصله آیین‌نامه‌ای نیست. طول مستقیم میلگرد تا وجه بیرونی دو فونداسیون انتهایی برآورد شده؛ طول قلاب و خم به علت نیاز به ضابطه/جزئیات معتبر به مقدار طول اضافه نشده است."};
  }
  function render(requireLatest){
   read();
@@ -125,6 +134,7 @@
    if(!r.ok)return"شناژ "+r.id+": "+r.reason;
    return"شناژ "+r.id+" — Mmax="+fmt(r.MmaxKNm)+" kN·m؛ Vmax="+fmt(r.VmaxKN)+" kN؛ Nmax="+fmt(r.NmaxKN)+" kN"+
     "\nعمق مؤثر تقریبی d="+fmt(r.effectiveDepthMm)+" mm؛ As لازم="+fmt(r.AsRequiredMm2)+" mm²؛ برآورد صرفاً از خمش نظری (پیش از حداقل آرماتور آیین‌نامه‌ای): "+r.barCountEachFace+" میلگرد قطر "+r.barDiaMm+" در هر وجه کششی (As فراهم="+fmt(r.AsProvidedMm2)+" mm²)"+
+    "\nچیدمان طولی: "+(r.barLayer.singleLayerFits?"از نظر هندسی در یک ردیف جا می‌شود":"در یک ردیف جا نمی‌شود؛ آرایش چندلایه و بازنگری عمق مؤثر لازم است")+"؛ حداکثر تعداد در یک ردیف="+r.barLayer.maxBars+"؛ فاصله آزاد مفروض="+fmt(r.barLayer.clearSpacingMm)+" mm (غیرآیین‌نامه‌ای)"+
     "\nخاموت: "+r.stirrup.legs+" شاخه قطر "+r.stirrup.diaMm+"؛ فاصله نظری فولاد خاموت بدون مشارکت بتن و بدون سقف آیین‌نامه‌ای (قابل استفاده به‌عنوان فاصله اجرایی نیست)="+(r.stirrup.steelOnlySpacingMm==null?"—":fmt(r.stirrup.steelOnlySpacingMm)+" mm")+
     "\nمیلگرد طولی دو وجه: "+r.longitudinalBars.totalCount+" عدد؛ طول مستقیم هر میلگرد تا وجه بیرونی پی‌های انتهایی: "+(r.longitudinalBars.footingExtensionIncluded?fmt(r.longitudinalBars.straightLengthPerBarM)+" m":"ابعاد پی وارد نشده")+"؛ مجموع طول مستقیم: "+(r.longitudinalBars.totalStraightLengthM==null?"—":fmt(r.longitudinalBars.totalStraightLengthM)+" m")+"؛ وزن تقریبی بدون قلاب: "+(r.longitudinalBars.approximateMassKg==null?"—":fmt(r.longitudinalBars.approximateMassKg)+" kg")+
     "\n"+r.note;
@@ -144,10 +154,11 @@
   const barCount=Math.max(2,Math.ceil(a/areaBar(16)));
   const provided=barCount*areaBar(16);
   const spacing=2*areaBar(10)*400*442/(100000);
-  const checks={flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
+  const layer=barLayerCapacity(600,40,10,16,25);
+  const checks={barLayerCapacity:layer.ok&&layer.maxBars===12,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
    pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
    cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
-  return{passed:Object.values(checks).every(Boolean),checks,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
+  return{passed:Object.values(checks).every(Boolean),checks,barLayerCapacity600mm:layer,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
    pinnedUniformLoadMomentNm:ep.MmaxNm,cantileverMomentNm:ex.MmaxNm};
  }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
