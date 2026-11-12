@@ -198,6 +198,10 @@
             data.codeReferences = window.SteelCodeReferences.getData();
         }
 
+        if (window.SteelCostEstimate && typeof window.SteelCostEstimate.getData === "function") {
+            data.costEstimate = window.SteelCostEstimate.getData();
+        }
+
         return data;
     }
 
@@ -412,6 +416,10 @@
 
         if (window.SteelCodeReferences && typeof window.SteelCodeReferences.setData === "function") {
             window.SteelCodeReferences.setData(data.codeReferences || {});
+        }
+
+        if (window.SteelCostEstimate && typeof window.SteelCostEstimate.setData === "function") {
+            window.SteelCostEstimate.setData(data.costEstimate || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
