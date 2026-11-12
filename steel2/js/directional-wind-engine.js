@@ -29,16 +29,17 @@
   const loads=window.SteelLoads?.getData?.()||{};
   const speed=finite(loads.climate?.basicWind);
   const q=speed===null?null:0.000613*Math.pow(speed/3.6,2);
-  const keys=["importance","exposure","topography","gust","directionality","internalGust","internalPressure"];
+  const keys=["importance","exposure","topography","directionality","internalGust","internalPressure"];
   const v={};keys.forEach(k=>v[k]=finite(coeff[k]));
   const missing=keys.filter(k=>v[k]===null);
   if(q===null)return {ready:false,reason:"سرعت مبنای باد وارد نشده است.",q,coeff:v};
   if(missing.length)return {ready:false,reason:"ضرایب مشترک ناقص‌اند: "+missing.join("، "),q,coeff:v};
-  const positive=["importance","exposure","topography","gust","directionality","internalGust"];
+  const positive=["importance","exposure","topography","directionality","internalGust"];
   const invalid=positive.filter(k=>!(v[k]>0));
   if(invalid.length)return {ready:false,reason:"این ضرایب باید مثبت و بزرگ‌تر از صفر باشند: "+invalid.join("، "),q,coeff:v};
   const common=v.importance*q*v.exposure*v.topography*v.directionality;
-  return {ready:true,q,coeff:v,externalFactor:common*v.gust,internalFactor:common*v.internalGust};
+  if(v.gust!==null&&!(v.gust>0))return {ready:false,reason:"ضریب Cg در صورت استفاده از Cp جداگانه باید مثبت باشد.",q,coeff:v};
+  return {ready:true,q,coeff:v,common,internalFactor:common*v.internalGust};
  }
  function calculate(){
   const base=getBase(),records={},errors=[];
@@ -54,8 +55,8 @@
    surfaces.forEach(face=>{
     const cp=finite(cpValues[dir.id]?.[face.id]);
     const basis=combinedBasis[dir.id];
-    const externalFactor=base.ready&&basis.useCombinedCgCp?base.externalFactor/base.coeff.gust:base.externalFactor;
-    const ext=base.ready&&geometryReady&&cp!==null?externalFactor*cp:null;
+    const externalFactor=basis.useCombinedCgCp?base.common:(base.coeff.gust!==null?base.common*base.coeff.gust:null);
+    const ext=base.ready&&geometryReady&&externalFactor!==null&&cp!==null?externalFactor*cp:null;
     const im=base.ready?base.internalFactor*Math.abs(base.coeff.internalPressure):null;
     records[dir.id].surfaces[face.id]={
      cp,externalPressure:ext,
@@ -70,7 +71,7 @@
   });
   const entered=Object.values(cpValues).reduce((n,x)=>n+Object.values(x||{}).filter(v=>finite(v)!==null).length,0);
   return {schema:"sahroud-steel-directional-wind",version:1,
-   formulaExternal:"P = Iw q Ce Ct Cg Cp Cd",
+   formulaExternal:"P = Iw q Ce Ct Cd × CgCp (combined basis) OR × Cg × Cp (separate basis)",
    formulaInternal:"Pi = Iw q Ce Ct Cgi Cpi Cd",
    netConvention:"Pnet = Pexternal - Pinternal",
    directions:records,enteredCpCount:entered,requiredCpCount:24,
@@ -90,10 +91,10 @@
   html+='<div class="notice">برای هر جهت باد، Cp خارجی هر سطح را جداگانه و با علامت از مرجع معتبر وارد کنید. ضریب فشار داخلی Cpi از دفتر ضرایب قبلی خوانده می‌شود و دو حالت علامت مثبت و منفی جداگانه بررسی می‌شوند.</div>';
   html+='<div class="notice"><b>قرارداد محور مدل:</b> X عرض دهانه، Y قائم و Z امتداد طول سوله است؛ بنابراین جهت‌های افقی این دفتر +X، −X، +Z و −Z هستند.</div>';
   directions.forEach(dir=>{
-   html+='<fieldset><legend>'+dir.label+'</legend><div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>Cp خارجی (علامت‌دار)</th><th>خالص با Cpi مثبت (kN/m²)</th><th>خالص با Cpi منفی (kN/m²)</th></tr></thead><tbody>';
+   html+='<fieldset><legend>'+dir.label+'</legend><div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>Cp یا CgCp خارجی (علامت‌دار)</th><th>خالص با Cpi مثبت (kN/m²)</th><th>خالص با Cpi منفی (kN/m²)</th></tr></thead><tbody>';
    surfaces.forEach(face=>{
     const id="dirCp_"+dir.id+"_"+face.id;
-    html+='<tr><td>'+face.label+'</td><td><input id="'+id+'" type="number" step="0.01" placeholder="Cp"></td><td id="'+id+'_plus">—</td><td id="'+id+'_minus">—</td></tr>';
+    html+='<tr><td>'+face.label+'</td><td><input id="'+id+'" type="number" step="0.01" placeholder="Cp / CgCp"></td><td id="'+id+'_plus">—</td><td id="'+id+'_minus">—</td></tr>';
    });
    html+='</tbody></table></div></fieldset>';
   });
