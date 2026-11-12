@@ -41,7 +41,9 @@
  function modelFingerprint(model){
   return JSON.stringify({
    nodes:(model.nodes||[]).map(n=>[n.id,n.x,n.y,n.z,n.kind]),
-   members:(model.members||[]).map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}])
+   members:(model.members||[]).map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),
+   sections:window.SteelSections?.read?.()||null,
+   support:$("baseConnection")?.value||"pinned"
   });
  }
  function extract(){
