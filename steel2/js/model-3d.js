@@ -685,6 +685,43 @@
       nodes:model.nodes.map(n=>({...n})),
       members:model.members.map(m=>({...m}))
     };
+    // Explicit concrete tie-beam routes are admitted only after geometry audit
+    // and explicit joint selection. Unknown/invalid routes never enter the solver.
+    const tieBeamIntegration={included:[],skipped:[],reinforcementWarnings:[]};
+    const tieData=window.SteelTieBeamLayout?.getData?.();
+    const tieAudit=window.SteelTieBeamLayout?.audit?.();
+    if(tieData&&Array.isArray(tieData.routes)&&tieData.routes.length){
+      const auditById=new Map((tieAudit?.rows||[]).map(r=>[String(r.id),r]));
+      const nodeIds=new Set(analysisModel.nodes.map(n=>String(n.id)));
+      tieData.routes.forEach(route=>{
+        const id=String(route.id||"");
+        const audited=auditById.get(id);
+        const reasons=[];
+        if(!audited||!audited.valid)reasons.push(...(audited?.reasons||["ممیزی هندسی مسیر در دسترس نیست"]));
+        if(!nodeIds.has(String(route.start))||!nodeIds.has(String(route.end)))reasons.push("گره ابتدا/انتها در مدل تحلیل فعلی وجود ندارد");
+        if(!["rigid","pinned"].includes(route.startJoint)||!["rigid","pinned"].includes(route.endJoint))reasons.push("نوع اتصال هر دو انتها باید صریحاً گیردار یا مفصلی باشد");
+        if(reasons.length){tieBeamIntegration.skipped.push({id,reasons});return;}
+        const p=window.SteelTieBeamLayout.rectangleProperties(route,audited.axis);
+        const releases={i:route.startJoint==="pinned"?[4,5]:[],j:route.endJoint==="pinned"?[4,5]:[]};
+        const memberId="TIE_BEAM_"+id.replace(/[^A-Za-z0-9_-]/g,"_");
+        if(analysisModel.members.some(m=>String(m.id)===memberId)){
+          tieBeamIntegration.skipped.push({id,reasons:["شناسه عضو شناژ تکراری است"]});return;
+        }
+        analysisModel.members.push({
+          id:memberId,start:route.start,end:route.end,type:"شناژ بتنی",
+          sectionKey:"tieBeam",endReleases:releases,
+          tieBeamDensityKNm3:Number(route.densityKNm3),
+          analysisSection:{E:p.E,G:p.G,A:p.A,Iy:p.Iy,Iz:p.Iz,J:p.J,sectionKey:"tieBeam",sectionLabel:"مقطع مستطیلی شناژ "+route.widthM+"×"+route.heightM+" m"}
+        });
+        const warnings=audited.detailingWarnings||[];
+        tieBeamIntegration.included.push({id,memberId,start:route.start,end:route.end,
+          startJoint:route.startJoint,endJoint:route.endJoint,axis:audited.axis,
+          lengthM:audited.lengthM,volumeM3:audited.volumeM3,selfWeightKN:audited.selfWeightKN,
+          reinforcement:route.reinforcement||tieData.reinforcement,detailingWarnings:warnings,
+          stiffnessBasis:"gross_uncracked_rectangular_concrete_section"});
+        if(warnings.length)tieBeamIntegration.reinforcementWarnings.push({id,warnings});
+      });
+    }
     // Build an indexed node registry and validate connectivity before creating element loads.
     const nodeById=new Map();
     const duplicateNodeIds=[];
@@ -719,17 +756,19 @@
           "؛ شناسه‌های پایانی گره‌ها: "+sample+
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
-      const section=window.SteelSections.resolveAnalysis3DSection(m);
+      const section=m.sectionKey==="tieBeam"?m.analysisSection:window.SteelSections.resolveAnalysis3DSection(m);
       sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile};
       let selfWeightLineLoad=0;
       if(selected.deadFactor>0){
         const memberLength=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
-        selfWeightLineLoad=section.A*steelUnitWeightKNm3*selected.deadFactor;
+        const memberUnitWeight=m.sectionKey==="tieBeam"?Number(m.tieBeamDensityKNm3):steelUnitWeightKNm3;
+        if(!(memberUnitWeight>0&&Number.isFinite(memberUnitWeight)))throw new Error("وزن مخصوص عضو "+m.id+" معتبر نیست.");
+        selfWeightLineLoad=section.A*memberUnitWeight*selected.deadFactor;
         const memberWeight=selfWeightLineLoad*memberLength;
         selfWeightKN+=memberWeight;
         selfWeightMemberCount++;
         const groupKey=String(m.sectionKey||"unknown");
-        const group=selfWeightByGroup[groupKey]||(selfWeightByGroup[groupKey]={count:0,lengthM:0,areaM2:section.A,totalKN:0});
+        const group=selfWeightByGroup[groupKey]||(selfWeightByGroup[groupKey]={count:0,lengthM:0,areaM2:section.A,unitWeightKNm3:memberUnitWeight,totalKN:0});
         group.count++;group.lengthM+=memberLength;group.totalKN+=memberWeight;
       }
       const totalLineLoad=lineLoad+selfWeightLineLoad;
@@ -859,6 +898,9 @@
       sections:window.SteelSections?.read?.()||null,
       support:$("baseConnection")?.value||"pinned"
     });
+    result.tieBeamIntegration={...tieBeamIntegration,activeInAnalysis:tieBeamIntegration.included.length>0,
+      concreteSelfWeightIncluded:selected.deadFactor>0&&tieBeamIntegration.included.length>0,
+      note:"فقط مسیرهای معتبر با اتصال صریح وارد تحلیل شده‌اند. سختی مقطع ناخالص و ترک‌نخورده فرض شده؛ اثر آرماتور، ترک‌خوردگی، اندرکنش پی/خاک و ظرفیت مهاری در این مرحله طراحی نشده‌اند."};
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
