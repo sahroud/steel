@@ -180,7 +180,7 @@
         zones:readWindZones(),
         zoneResults:calculateWindZones(),
         status:"manual-code-coefficients-calculated-for-multiple-surfaces-not-applied-to-3d-model",
-        formulaExternal:"P = Iw q Ce Ct Cg Cp Cd",
+        formulaExternal:"P = Iw q Ce Ct Cd × CgCp (combined) OR × Cg × Cp (separate)",
         formulaInternal:"Pi = Iw q Ce Ct Cgi Cpi Cd",
         netConvention:"Pnet = Pexternal - Pinternal"
       },
@@ -218,7 +218,7 @@
     panel.id="climateLoadCasePanel"; panel.className="notice";
     panel.innerHTML='<b>دفتر حالت‌های بار و وضعیت اعتبار</b><p id="climateLoadCaseSummary"></p><p>این بخش بارهای واردشده را با واحد، منبع، محل و وضعیت اعتبار ثبت می‌کند. تا زمان تکمیل ضرایب رسمی باد، فشار داخلی ناشی از بازشوها، برف نامتوازن و ترکیبات بار، این رکوردها برای طراحی نهایی تأیید نشده‌اند.</p>' +
       '<hr><b>محاسبه فشار باد ـ مرحله اول</b>' +
-      '<p>رابطه فشار خارجی: P = Iw × q × Ce × Ct × Cg × Cp × Cd</p>' +
+      '<p>رابطه فشار خارجی: P = Iw × q × Ce × Ct × Cd × (CgCp ترکیبی، یا Cg × Cp در حالت جداگانه)</p>' +
       '<p>رابطه فشار داخلی: Pi = Iw × q × Ce × Ct × Cgi × Cpi × Cd</p>' +
       '<p>ضرایب را از بندها و جداول مبحث ششم ۱۳۹۸ وارد کنید. برای جلوگیری از محاسبه نادرست، مقدارهای تأییدنشده خالی مانده‌اند.</p>' +
       '<div class="form-grid">' +
