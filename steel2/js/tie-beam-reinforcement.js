@@ -119,13 +119,13 @@
    return routeResult(route,ids.map(id=>memberMap.get(id)),info);
   });
   lastReport={generatedAt:new Date().toISOString(),loadCase:latest.loadCaseLabel||latest.loadCase,settings:{...settings},rows,
-   limitations:["این خروجی غربال اولیه است و طراحی اجرایی یا تأیید آیین‌نامه‌ای نیست.","مقادیر نیرو از تحلیل خطی عضو با مقطع ناخالص و ترک‌نخورده گرفته شده‌اند.","برای خمش، رابطه تعادل مقطع مستطیلی با φ و fy ورودی استفاده شده؛ حداقل/حداکثر آرماتور و کرنش نهایی کنترل نشده است.","برای برش، فقط سهم فولاد خاموت بدون مشارکت بتن محاسبه شده؛ فاصله مجاز آیین‌نامه‌ای و ضوابط لرزه‌ای کنترل نشده است.","نیروی محوری N گزارش می‌شود اما هنوز با خمش در طراحی اندرکنش ندارد.","پیچش، خستگی، ترک، خیز، مهاری، وصله، طول قلاب، تداخل میلگردها و جزئیات عبور از فونداسیون کنترل نشده‌اند."]};
+   limitations:["این خروجی غربال اولیه است و طراحی اجرایی یا تأیید آیین‌نامه‌ای نیست.","مقادیر نیرو از تحلیل خطی عضو با مقطع ناخالص و ترک‌نخورده گرفته شده‌اند.","برای خمش، رابطه تعادل مقطع مستطیلی با φ و fy ورودی استفاده شده؛ حداقل/حداکثر آرماتور و کرنش نهایی کنترل نشده است؛ تعداد میلگرد حاصل از این رابطه به‌تنهایی پیشنهاد اجرایی نیست.","برای برش، فقط سهم فولاد خاموت بدون مشارکت بتن محاسبه شده؛ فاصله مجاز آیین‌نامه‌ای و ضوابط لرزه‌ای کنترل نشده است.","نیروی محوری N گزارش می‌شود اما هنوز با خمش در طراحی اندرکنش ندارد.","پیچش، خستگی، ترک، خیز، مهاری، وصله، طول قلاب، تداخل میلگردها و جزئیات عبور از فونداسیون کنترل نشده‌اند."]};
   status.textContent="نتیجه بر اساس آخرین تحلیل: "+lastReport.loadCase+"؛ مسیرها: "+rows.length+"؛ قابل محاسبه خمشی: "+rows.filter(x=>x.ok).length+".";
   box.textContent=rows.map(r=>{
    if(!r.ok)return"شناژ "+r.id+": "+r.reason;
    return"شناژ "+r.id+" — Mmax="+fmt(r.MmaxKNm)+" kN·m؛ Vmax="+fmt(r.VmaxKN)+" kN؛ Nmax="+fmt(r.NmaxKN)+" kN"+
-    "\nعمق مؤثر تقریبی d="+fmt(r.effectiveDepthMm)+" mm؛ As لازم="+fmt(r.AsRequiredMm2)+" mm²؛ پیشنهاد محاسباتی: "+r.barCountEachFace+" میلگرد قطر "+r.barDiaMm+" در هر وجه کششی (As فراهم="+fmt(r.AsProvidedMm2)+" mm²)"+
-    "\nخاموت: "+r.stirrup.legs+" شاخه قطر "+r.stirrup.diaMm+"؛ فاصله نظری از سهم فولاد برشی تنها="+(r.stirrup.steelOnlySpacingMm==null?"—":fmt(r.stirrup.steelOnlySpacingMm)+" mm")+
+    "\nعمق مؤثر تقریبی d="+fmt(r.effectiveDepthMm)+" mm؛ As لازم="+fmt(r.AsRequiredMm2)+" mm²؛ برآورد صرفاً از خمش نظری (پیش از حداقل آرماتور آیین‌نامه‌ای): "+r.barCountEachFace+" میلگرد قطر "+r.barDiaMm+" در هر وجه کششی (As فراهم="+fmt(r.AsProvidedMm2)+" mm²)"+
+    "\nخاموت: "+r.stirrup.legs+" شاخه قطر "+r.stirrup.diaMm+"؛ فاصله نظری فولاد خاموت بدون مشارکت بتن و بدون سقف آیین‌نامه‌ای (قابل استفاده به‌عنوان فاصله اجرایی نیست)="+(r.stirrup.steelOnlySpacingMm==null?"—":fmt(r.stirrup.steelOnlySpacingMm)+" mm")+
     "\nمیلگرد طولی دو وجه: "+r.longitudinalBars.totalCount+" عدد؛ طول مستقیم هر میلگرد تا وجه بیرونی پی‌های انتهایی: "+(r.longitudinalBars.footingExtensionIncluded?fmt(r.longitudinalBars.straightLengthPerBarM)+" m":"ابعاد پی وارد نشده")+"؛ مجموع طول مستقیم: "+(r.longitudinalBars.totalStraightLengthM==null?"—":fmt(r.longitudinalBars.totalStraightLengthM)+" m")+"؛ وزن تقریبی بدون قلاب: "+(r.longitudinalBars.approximateMassKg==null?"—":fmt(r.longitudinalBars.approximateMassKg)+" kg")+
     "\n"+r.note;
   }).join("\n\n")+
