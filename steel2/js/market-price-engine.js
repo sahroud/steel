@@ -13,7 +13,16 @@
   {code:"cement.type2.bag",name:"سیمان تیپ ۲ پاکتی",unit:"تومان/تن"},
   {code:"panel.wall40",name:"ساندویچ‌پنل دیواری ۴ سانتی‌متر",unit:"تومان/مترمربع"},
   {code:"panel.roof50",name:"ساندویچ‌پنل سقفی ۵ سانتی‌متر",unit:"تومان/مترمربع"},
-  {code:"brick",name:"آجر",unit:"تومان/عدد"}
+  {code:"brick",name:"آجر",unit:"تومان/عدد"},
+  {code:"concrete.ready",name:"بتن آماده فونداسیون",unit:"تومان/مترمکعب"},
+  {code:"rebar.a3",name:"میلگرد آجدار A3",unit:"تومان/کیلوگرم"},
+  {code:"excavation",name:"خاکبرداری و بارگیری",unit:"تومان/مترمکعب"},
+  {code:"formwork",name:"قالب‌بندی بتن",unit:"تومان/مترمربع"},
+  {code:"anchor.bolt",name:"بولت و متعلقات صفحه‌ستون",unit:"تومان/عدد"},
+  {code:"concrete.floor",name:"بتن کف سوله",unit:"تومان/مترمکعب"},
+  {code:"door.industrial",name:"درب صنعتی و کرکره",unit:"تومان/مترمربع"},
+  {code:"gutter",name:"آبرو و ناودانی",unit:"تومان/متر"},
+  {code:"electrical.package",name:"برق و روشنایی پروژه",unit:"تومان/مجموع"}
  ];
  const fmt=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:2});
  function projectCity(){
