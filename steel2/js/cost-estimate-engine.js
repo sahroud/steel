@@ -88,14 +88,21 @@
  function calculate(){
   const r=window.SteelQuantityTakeoff?.lastResult;
   if(!r){$("costEstimateSummary").textContent="ابتدا دکمه محاسبه متره را اجرا کنید.";return;}
-  state.last=r;renderRows();const rows=[];let subtotal=0,missing=[],pricingWarnings=[];
+  state.last=r;renderRows();const rows=[];let subtotal=0,missing=[],pricingWarnings=[],quotedFreightTotal=0;const freightQuoteKeys=new Set();
   definitions.forEach(d=>{
    const q=d.qty(r),el=document.querySelector('[data-cost-key="'+d.key+'"]'),p=N(el?.value),quote=marketPrice(d.priceCode,d.priceUnit);
    if(el)state.prices[d.key]=el.value;
    if(quote&&el&&String(el.value)===String(quote.price)){
     if(cityKey(quote.city)!==cityKey(projectCity()))pricingWarnings.push(d.label+": قیمت از شهر دیگری است؛ هزینه تأمین تا "+(projectCity()||"شهر پروژه")+" باید جداگانه تعیین شود.");
+    if(!quote.deliveryCity)pricingWarnings.push(d.label+": شهر تحویل در پیش‌فاکتور مشخص نشده است.");
     if(quote.deliveryCity&&cityKey(quote.deliveryCity)!==cityKey(projectCity()))pricingWarnings.push(d.label+": شهر تحویل اعلام‌شده با شهر پروژه یکسان نیست.");
     if(!quote.includesFreight&&quote.freightToman===null)pricingWarnings.push(d.label+": وضعیت/مبلغ حمل در قیمت بازار مشخص نیست.");
+    if(!quote.includesFreight&&quote.freightToman!==null){
+     if(cityKey(quote.deliveryCity)===cityKey(projectCity())&&cityKey(projectCity())){
+      const freightKey=[quote.code,quote.city,quote.seller,quote.updatedAt].join("|");
+      if(!freightQuoteKeys.has(freightKey)){quotedFreightTotal+=Number(quote.freightToman)||0;freightQuoteKeys.add(freightKey);}
+     }else pricingWarnings.push(d.label+": مبلغ حمل ثبت شده است اما چون شهر تحویل با شهر پروژه تطبیق ندارد، در جمع منظور نشد.");
+    }
     if(!quote.includesTax&&quote.taxPercent===null)pricingWarnings.push(d.label+": وضعیت مالیات قیمت بازار مشخص نیست.");
     if(!quote.verifiedByUser)pricingWarnings.push(d.label+": قیمت بازار هنوز توسط کاربر با فروشنده یا پیش‌فاکتور تأیید نشده است.");
    }
@@ -114,7 +121,7 @@
    }
   });
   const pct=state.percent,base=subtotal;
-  const extras={transport:base*pct.transport/100,fabrication:state.steelPricingMode==="fabricated"?0:base*pct.fabrication/100,installation:base*pct.installation/100,paint:base*pct.paint/100};
+  const extras={transport:base*pct.transport/100+quotedFreightTotal,fabrication:state.steelPricingMode==="fabricated"?0:base*pct.fabrication/100,installation:base*pct.installation/100,paint:base*pct.paint/100};
   const direct=base+Object.values(extras).reduce((a,b)=>a+b,0);
   extras.overhead=direct*pct.overhead/100;
   const afterOverhead=direct+extras.overhead;
@@ -122,13 +129,13 @@
   const afterRisk=afterOverhead+extras.contingency;
   extras.tax=afterRisk*pct.tax/100;
   const total=afterRisk+extras.tax;
-  state.lastCost={generatedAt:new Date().toISOString(),currency:"تومان",projectCity:projectCity(),rows,pricingWarnings:[...new Set(pricingWarnings)],materialSubtotal:subtotal,percentageInputs:clone(pct),percentageCosts:extras,totalCost:total,missing,pricingMode:state.steelPricingMode,notice:"برآورد مقدماتی؛ قیمت‌های تأییدنشده، مقادیر ناقص و هزینه‌های فاقد داده در جمع لحاظ نشده‌اند."};
+  state.lastCost={generatedAt:new Date().toISOString(),currency:"تومان",projectCity:projectCity(),rows,marketFreightTotal:quotedFreightTotal,pricingWarnings:[...new Set(pricingWarnings)],materialSubtotal:subtotal,percentageInputs:clone(pct),percentageCosts:extras,totalCost:total,missing,pricingMode:state.steelPricingMode,notice:"برآورد مقدماتی؛ قیمت‌های تأییدنشده، مقادیر ناقص و هزینه‌های فاقد داده در جمع لحاظ نشده‌اند."};
   $("costEstimateSummary").textContent="شهر اجرای پروژه: "+(projectCity()||"نامشخص")+"\nجمع اقلام دارای قیمت: "+fmt(subtotal)+" تومان\nحمل: "+fmt(extras.transport)+" | ساخت: "+fmt(extras.fabrication)+(state.steelPricingMode==="fabricated"?" (در قیمت ساخت هر کیلو منظور شده)":"")+" | نصب: "+fmt(extras.installation)+" | رنگ: "+fmt(extras.paint)+"\nبالاسری: "+fmt(extras.overhead)+" | ذخیره ریسک: "+fmt(extras.contingency)+" | مالیات: "+fmt(extras.tax)+"\nبرآورد کل اقلام قیمت‌گذاری‌شده: "+fmt(total)+" تومان\n"+(missing.length?"موارد خارج از جمع:\n"+missing.join("\n"):"تمام اقلام دارای مقدار قیمت‌گذاری شده‌اند.")+(pricingWarnings.length?"\n\nهشدارهای قیمت و تأمین:\n"+[...new Set(pricingWarnings)].join("\n"):"")+"\n\nاین رقم قیمت قطعی پیمان یا پیشنهاد فروشنده نیست."
   $("btnExportCost").disabled=false;
  }
  function exportCSV(){
   const c=state.lastCost;if(!c)return;
-  const rows=[["شهر اجرای پروژه",c.projectCity||"نامشخص","","",""],["شرح","مقدار","واحد","قیمت واحد تومان","هزینه تومان"],...c.rows.map(x=>[x.label,x.quantity,x.unit,x.unitPrice,x.cost]),["جمع اقلام","","","",c.materialSubtotal],...Object.entries(c.percentageCosts).map(([k,v])=>[k,"","درصد/تومان",c.percentageInputs[k],v]),["برآورد کل","","","",c.totalCost],["ملاحظات",c.notice,"","",""],...(c.missing||[]).map(w=>["خارج از جمع",w,"","",""]),...(c.pricingWarnings||[]).map(w=>["هشدار قیمت و تأمین",w,"","",""])];
+  const rows=[["شهر اجرای پروژه",c.projectCity||"نامشخص","","",""],["شرح","مقدار","واحد","قیمت واحد تومان","هزینه تومان"],...c.rows.map(x=>[x.label,x.quantity,x.unit,x.unitPrice,x.cost]),["جمع اقلام","","","",c.materialSubtotal],...Object.entries(c.percentageCosts).map(([k,v])=>[k,"","درصد/تومان",c.percentageInputs[k],v]),["حمل ثبت‌شده در پیش‌فاکتور","","","",c.marketFreightTotal||0],["برآورد کل","","","",c.totalCost],["ملاحظات",c.notice,"","",""],...(c.missing||[]).map(w=>["خارج از جمع",w,"","",""]),...(c.pricingWarnings||[]).map(w=>["هشدار قیمت و تأمین",w,"","",""])];
   const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Cost-Estimate.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
