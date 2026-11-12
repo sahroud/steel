@@ -51,14 +51,34 @@
   if(!(As>0&&Number.isFinite(As)))return{ok:false,reason:"حل مساحت میلگرد معتبر نیست"};
   return{ok:true,AsRequiredMm2:As,nominalDepthFactor:0.85,assumption:"مقطع مستطیلی، میلگرد کششی تنها، بدون کنترل حداقل/حداکثر آرماتور آیین‌نامه‌ای"};
  }
+ function memberEnvelope(member){
+  const f=member.localEndForces||[],q=member.analysisLoad?.uniformLocal||[0,0,0],L=Number(member.length)||0;
+  if(f.length<12||!(L>0))return null;
+  const candidates=[Math.abs(Number(f[4])||0),Math.abs(Number(f[5])||0),Math.abs(Number(f[10])||0),Math.abs(Number(f[11])||0)];
+  const shears=[Math.abs(Number(f[1])||0),Math.abs(Number(f[2])||0),Math.abs(Number(f[7])||0),Math.abs(Number(f[8])||0)];
+  const addPlane=(m0,v0,load,sign)=>{
+   const m=Number(m0)||0,v=Number(v0)||0,w=Number(load)||0;
+   const value=x=>m+sign*v*x+sign*w*x*x/2;
+   candidates.push(Math.abs(value(0)),Math.abs(value(L)));
+   if(Math.abs(w)>1e-12){const x=-v/w;if(x>0&&x<L)candidates.push(Math.abs(value(x)));}
+   shears.push(Math.abs(v),Math.abs(v+w*L));
+  };
+  // Local equilibrium: q_y produces M_z; q_z produces M_y.
+  addPlane(f[5],f[1],q[1],-1);
+  addPlane(f[4],f[2],q[2],1);
+  return{MmaxNm:Math.max(...candidates),VmaxN:Math.max(...shears),
+   NmaxN:Math.max(Math.abs(Number(f[0])||0),Math.abs(Number(f[6])||0))};
+ }
  function routeResult(route,members,material){
   members=Array.isArray(members)?members.filter(Boolean):[members].filter(Boolean);
   if(!members.length)return{id:route.id,ok:false,reason:"نیروهای انتهایی اعضای شناژ در نتیجه تحلیل موجود نیستند"};
   const forceRows=members.map(member=>({id:member.id,f:member.localEndForces||[]}));
   if(forceRows.some(x=>x.f.length<12))return{id:route.id,ok:false,reason:"نیروهای انتهایی یکی از قطعات شناژ موجود نیست"};
-  const M=Math.max(...forceRows.flatMap(x=>[x.f[4],x.f[5],x.f[10],x.f[11]]).map(v=>Math.abs(Number(v)||0)))/1000;
-  const V=Math.max(...forceRows.flatMap(x=>[x.f[1],x.f[2],x.f[7],x.f[8]]).map(v=>Math.abs(Number(v)||0)))/1000;
-  const N=Math.max(...forceRows.flatMap(x=>[x.f[0],x.f[6]]).map(v=>Math.abs(Number(v)||0)))/1000;
+  const envelopes=members.map(memberEnvelope);
+  if(envelopes.some(x=>!x))return{id:route.id,ok:false,reason:"برای محاسبه نمودار داخلی، طول/نیروهای یکی از قطعات شناژ معتبر نیست"};
+  const M=Math.max(...envelopes.map(x=>x.MmaxNm))/1000;
+  const V=Math.max(...envelopes.map(x=>x.VmaxN))/1000;
+  const N=Math.max(...envelopes.map(x=>x.NmaxN))/1000;
   const h=Number(route.heightM)*1000,b=Number(route.widthM)*1000,fc=Number(route.fcMPa)||25;
   const d=h-settings.coverMm-settings.stirrupDiaMm-settings.barDiaMm/2;
   const As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
@@ -113,6 +133,10 @@
   return lastReport;
  }
  function selfTest(){
+  const pinned={length:6,localEndForces:[0,3600,0,0,0,0,0,3600,0,0,0,0],analysisLoad:{uniformLocal:[0,-1200,0]}};
+  const cantileverX={length:6,localEndForces:[0,7200,0,0,0,21600,0,0,0,0,0,0],analysisLoad:{uniformLocal:[0,-1200,0]}};
+  const cantileverZ={length:6,localEndForces:[0,0,7200,0,-21600,0,0,0,0,0,0,0],analysisLoad:{uniformLocal:[0,0,-1200]}};
+  const ep=memberEnvelope(pinned),ex=memberEnvelope(cantileverX),ez=memberEnvelope(cantileverZ);
   const r=flexuralAs(100,600,442,25,400,0.90);
   if(!r.ok)return{passed:false,reason:r.reason};
   const a=r.AsRequiredMm2,depth=a*400/(0.85*25*600);
@@ -120,8 +144,11 @@
   const barCount=Math.max(2,Math.ceil(a/areaBar(16)));
   const provided=barCount*areaBar(16);
   const spacing=2*areaBar(10)*400*442/(100000);
-  const checks={flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing)};
-  return{passed:Object.values(checks).every(Boolean),checks,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing};
+  const checks={flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
+   pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
+   cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
+  return{passed:Object.values(checks).every(Boolean),checks,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
+   pinnedUniformLoadMomentNm:ep.MmaxNm,cantileverMomentNm:ex.MmaxNm};
  }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
  function getData(){read();return{schemaVersion:1,settings:{...settings}};}
