@@ -97,9 +97,20 @@
   "\n\nمحدودیت‌ها:\n- "+lastReport.limitations.join("\n- ");
   return lastReport;
  }
+ function selfTest(){
+  const r=flexuralAs(100,600,442,25,400,0.90);
+  if(!r.ok)return{passed:false,reason:r.reason};
+  const a=r.AsRequiredMm2,depth=a*400/(0.85*25*600);
+  const capacity=0.90*a*400*(442-depth/2)/1e6;
+  const barCount=Math.max(2,Math.ceil(a/areaBar(16)));
+  const provided=barCount*areaBar(16);
+  const spacing=2*areaBar(10)*400*442/(100000);
+  const checks={flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing)};
+  return{passed:Object.values(checks).every(Boolean),checks,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing};
+ }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
  function getData(){read();return{schemaVersion:1,settings:{...settings}};}
  function setData(d){if(d&&d.settings)settings={...defaults,...d.settings};try{const s=JSON.parse(localStorage.getItem("sahroudSteel.tieBeamRebarSettings.v1")||"null");if(s&&!d?.settings)settings={...defaults,...s};}catch(e){}write();}
- window.SteelTieBeamReinforcement={captureAnalysis,getData,setData,run:()=>render(true),getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelTieBeamReinforcement={captureAnalysis,getData,setData,run:()=>render(true),selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
  document.addEventListener("DOMContentLoaded",()=>{try{const s=JSON.parse(localStorage.getItem("sahroudSteel.tieBeamRebarSettings.v1")||"null");if(s)settings={...defaults,...s};}catch(e){}mount();});
 })();
