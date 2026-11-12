@@ -67,6 +67,62 @@
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   }
+  const windZoneIds = {
+    "roof-left":"windZoneRoofLeft","roof-right":"windZoneRoofRight",
+    "long-wall-left":"windZoneLongLeft","long-wall-right":"windZoneLongRight",
+    "end-wall-front":"windZoneEndFront","end-wall-back":"windZoneEndBack"
+  };
+  function readWindZones() {
+    const saved=restoredMeta&&restoredMeta.windZones?restoredMeta.windZones:{};
+    const result={};
+    Object.keys(windZoneIds).forEach(key=>{
+      const el=document.querySelector('.wind-zone-cp[data-zone="'+key+'"]');
+      result[key]=el?el.value:(saved[key]!==undefined?saved[key]:"");
+    });
+    return result;
+  }
+  function calculateWindZones() {
+    const loads=window.SteelLoads&&window.SteelLoads.getData?window.SteelLoads.getData():{};
+    const climate=loads.climate||{},speed=finite(climate.basicWind);
+    const q=speed===null?null:0.000613*Math.pow(speed/3.6,2);
+    const c=readWindCoefficients(),v={};
+    Object.keys(windCoefficientDefaults).forEach(k=>v[k]=finite(c[k]));
+    const zones=readWindZones();
+    const required=["importance","exposure","topography","gust","directionality","internalGust"];
+    const commonReady=q!==null&&required.every(k=>v[k]!==null);
+    const internalMagnitude=v.internalPressure===null?null:Math.abs(v.internalPressure);
+    const rows={};
+    Object.keys(zones).forEach(key=>{
+      const cp=finite(zones[key]);
+      if(!commonReady||cp===null||internalMagnitude===null){rows[key]=null;return;}
+      const common=v.importance*q*v.exposure*v.topography*v.directionality;
+      const ext=common*v.gust*cp;
+      const intMagnitude=common*v.internalGust*internalMagnitude;
+      rows[key]={cp,external:ext,internalPositive:intMagnitude,internalNegative:-intMagnitude,
+        netInternalPositive:ext-intMagnitude,netInternalNegative:ext+intMagnitude};
+    });
+    return {q,rows,zones,ready:Object.values(rows).every(Boolean)};
+  }
+  function updateWindZones() {
+    const r=calculateWindZones();
+    const map={
+      "roof-left":["windZoneRoofLeftPlus","windZoneRoofLeftMinus"],
+      "roof-right":["windZoneRoofRightPlus","windZoneRoofRightMinus"],
+      "long-wall-left":["windZoneLongLeftPlus","windZoneLongLeftMinus"],
+      "long-wall-right":["windZoneLongRightPlus","windZoneLongRightMinus"],
+      "end-wall-front":["windZoneEndFrontPlus","windZoneEndFrontMinus"],
+      "end-wall-back":["windZoneEndBackPlus","windZoneEndBackMinus"]
+    };
+    Object.keys(map).forEach(k=>{
+      const x=r.rows[k],ids=map[k];
+      if($(ids[0]))$(ids[0]).textContent=x?x.netInternalPositive.toFixed(3)+" kN/m²":"—";
+      if($(ids[1]))$(ids[1]).textContent=x?x.netInternalNegative.toFixed(3)+" kN/m²":"—";
+    });
+    const out=$("windZoneStatus");
+    if(out)out.textContent=r.ready
+      ?"فشار خالص هر شش سطح برای دو حالت علامت فشار داخلی محاسبه شد. q="+r.q.toFixed(3)+" kN/m². مقادیر هنوز دستی/تأییدنشده‌اند و به تحلیل سه‌بعدی منتقل نمی‌شوند."
+      :"برای محاسبه همه سطوح، ضرایب مشترک Iw، Ce، Ct، Cg، Cd، Cgi، قدرمطلق Cpi و Cp هر شش سطح را وارد کنید.";
+  }
   function getData() {
     const loads = window.SteelLoads && window.SteelLoads.getData ? window.SteelLoads.getData() : {};
     const climate = loads.climate || {};
@@ -99,6 +155,8 @@
       note:"این فهرست فقط مقادیر واردشده را سازمان‌دهی می‌کند؛ بار آیین‌نامه‌ای یا ترکیب بار طراحی تولید نمی‌کند.",
       windCalculation:{
         coefficients:readWindCoefficients(),
+        zones:readWindZones(),
+        zoneResults:calculateWindZones(),
         status:"manual-code-coefficients-calculated-for-one-surface-not-applied-to-3d-model",
         formulaExternal:"P = Iw q Ce Ct Cg Cp Cd",
         formulaInternal:"Pi = Iw q Ce Ct Cgi Cpi Cd",
@@ -151,7 +209,19 @@
       '<div class="field"><label for="windCoeffCgi">ضریب اثر تندباد داخلی Cgi</label><input id="windCoeffCgi" type="number" step="0.01" placeholder="از بند مربوط"></div>' +
       '<div class="field"><label for="windCoeffCpi">ضریب فشار داخلی Cpi</label><input id="windCoeffCpi" type="number" step="0.01" placeholder="علامت‌دار؛ بر اساس بازشوها"></div>' +
       '</div><p id="windPressureCalculationResult" class="notice" aria-live="polite"></p>' +
-      '<p><b>محدودیت این مرحله:</b> نتیجه فعلاً برای یک سطح و یک جهت باد محاسبه می‌شود؛ هنوز بارگذاری خودکار اعضا، نواحی کناری بام/دیوار و ترکیبات بار فعال نشده است.</p>';
+      '<hr><b>دفتر فشار بادِ سطوح مختلف ـ ورود ضرایب خارجی به تفکیک سطح</b>' +
+      '<p>برای هر سطح، Cp خارجی را جداگانه و با علامت از متن معتبر وارد کنید. نرم‌افزار دو حالت فشار داخلی مثبت و منفی را جداگانه می‌سازد و فشار خالص هر سطح را گزارش می‌کند. این دفتر هنوز به تحلیل سه‌بعدی متصل نیست.</p>' +
+      '<div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>جهت باد</th><th>Cp خارجی</th><th>فشار خالص با Cpi مثبت</th><th>فشار خالص با Cpi منفی</th></tr></thead><tbody>' +
+      '<tr><td>شیب چپ بام</td><td>عمود بر قاب</td><td><input class="wind-zone-cp" data-zone="roof-left" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneRoofLeftPlus">—</td><td id="windZoneRoofLeftMinus">—</td></tr>' +
+      '<tr><td>شیب راست بام</td><td>عمود بر قاب</td><td><input class="wind-zone-cp" data-zone="roof-right" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneRoofRightPlus">—</td><td id="windZoneRoofRightMinus">—</td></tr>' +
+      '<tr><td>دیوار طولی چپ</td><td>طولی ±Y</td><td><input class="wind-zone-cp" data-zone="long-wall-left" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneLongLeftPlus">—</td><td id="windZoneLongLeftMinus">—</td></tr>' +
+      '<tr><td>دیوار طولی راست</td><td>طولی ±Y</td><td><input class="wind-zone-cp" data-zone="long-wall-right" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneLongRightPlus">—</td><td id="windZoneLongRightMinus">—</td></tr>' +
+      '<tr><td>دیوار انتهایی جلو</td><td>عرضی ±X</td><td><input class="wind-zone-cp" data-zone="end-wall-front" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneEndFrontPlus">—</td><td id="windZoneEndFrontMinus">—</td></tr>' +
+      '<tr><td>دیوار انتهایی عقب</td><td>عرضی ±X</td><td><input class="wind-zone-cp" data-zone="end-wall-back" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneEndBackPlus">—</td><td id="windZoneEndBackMinus">—</td></tr>' +
+      '</tbody></table></div>' +
+      '<p id="windZoneStatus" class="notice" aria-live="polite">برای محاسبه، ضرایب مشترک و Cp هر سطح باید تکمیل شوند.</p>' +
+      '<p><b>تذکر:</b> انتخاب Cp و علامت آن باید متناسب با جهت باد، نسبت ابعادی، شیب بام و ناحیه لبه/گوشه از جداول و شکل‌های مبحث ششم ۱۳۹۸ انجام شود. این جدول فقط سطوح کلی را تفکیک می‌کند و جایگزین تفکیک نواحی موضعی بام و نما نیست.</p>' +
+      '<p><b>محدودیت این مرحله:</b> نتایج این دفتر فقط گزارش و ذخیره می‌شوند؛ هنوز به اعضای مدل سه‌بعدی منتقل نمی‌شوند و دیوارهای انتهایی نیز در بارگذاری مدل لحاظ نشده‌اند.</p>';
     anchor.insertAdjacentElement("afterend",panel);
     Object.keys({
       windCoeffIw:1,windCoeffCe:1,windCoeffCt:1,windCoeffCg:1,
@@ -169,11 +239,13 @@
       el.textContent="حالت‌های دارای مقدار: "+ready+" از "+d.cases.length+" | موارد دارای تأیید آیین‌نامه‌ای: صفر | جهت باد: "+(d.windDirection==="left-to-right"?"چپ به راست":d.windDirection==="right-to-left"?"راست به چپ":"تعیین‌نشده");
     }
     updateWindPressureResult();
+    updateWindZones();
   }
   function setData(data) {
     restoredMeta=data&&typeof data==="object"?{
       status:data.status||"",generatedAt:data.generatedAt||"",
-      windCalculation:data.windCalculation||null
+      windCalculation:data.windCalculation||null,
+      windZones:data.windCalculation&&data.windCalculation.zones?data.windCalculation.zones:null
     }:null;
     if (document.readyState !== "loading") {
       const coeff=restoredMeta&&restoredMeta.windCalculation&&restoredMeta.windCalculation.coefficients;
@@ -184,7 +256,7 @@
     }
     updateSummary();
   }
-  window.SteelClimateLoadEngine={getData,setData,getRoofSideCases,updateSummary};
+  window.SteelClimateLoadEngine={getData,setData,getRoofSideCases,calculateWindZones,updateSummary};
   document.addEventListener("DOMContentLoaded",()=>{
     render();
     document.addEventListener("input",e=>{if(e.target&&e.target.closest("#advancedLoadPanel"))updateSummary();});
