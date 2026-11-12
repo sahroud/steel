@@ -31,22 +31,34 @@
    const girts=endGirts.filter(m=>m.endFace===face);
    const postGroups=new Map();
    posts.forEach(m=>{const key=String(m.post);if(!postGroups.has(key))postGroups.set(key,[]);postGroups.get(key).push(m);});
-   const postsReachingRoof=Array.from(postGroups.values()).filter(chain=>chain.some(m=>{
-    const a=nodes.get(m.start),b=nodes.get(m.end);
-    return [a,b].some(n=>n&&near(n.y,roofY(n.x))&&near(n.z,face==="front"?0:num(g.length)));
-   }));
+   const postTopNodeIds=[];
+   const postsReachingRoof=Array.from(postGroups.values()).filter(chain=>{
+    const top=chain.flatMap(m=>[nodes.get(m.start),nodes.get(m.end)]).filter(n=>
+     n&&near(n.y,roofY(n.x))&&near(n.z,face==="front"?0:num(g.length)));
+    if(top.length)postTopNodeIds.push(top[0].id);
+    return top.length>0;
+   });
    const chordLength=chords.reduce((s,m)=>{
     const a=nodes.get(m.start),b=nodes.get(m.end);
     return s+(a&&b?Math.hypot(b.x-a.x,b.y-a.y):0);
    },0);
    const expectedChordLength=2*Math.hypot(span/2,rise);
    const chordClosure=expectedChordLength>0?chordLength/expectedChordLength:0;
+   const chordAdj=new Map(),chordNodeIds=new Set();
+   chords.forEach(m=>{chordNodeIds.add(m.start);chordNodeIds.add(m.end);
+    if(!chordAdj.has(m.start))chordAdj.set(m.start,new Set());if(!chordAdj.has(m.end))chordAdj.set(m.end,new Set());
+    chordAdj.get(m.start).add(m.end);chordAdj.get(m.end).add(m.start);
+   });
+   const visited=new Set(),stack=chordNodeIds.size?[chordNodeIds.values().next().value]:[];
+   while(stack.length){const id=stack.pop();if(visited.has(id))continue;visited.add(id);(chordAdj.get(id)||[]).forEach(next=>{if(!visited.has(next))stack.push(next);});}
+   const chordConnected=chordNodeIds.size>0&&visited.size===chordNodeIds.size&&Array.from(chordAdj.values()).filter(v=>v.size===1).length===2;
+   const postTopOnChord=postTopNodeIds.every(id=>chordNodeIds.has(id));
    const missingPostTops=postGroups.size-postsReachingRoof.length;
    return {face,endPostSegments:posts.length,endGirtSegments:girts.length,gableTopChordSegments:chords.length,
     postsReachingRoofline:postsReachingRoof.length,postCount:postGroups.size,missingPostTops,
     topChordLengthM:chordLength,expectedTopChordLengthM:expectedChordLength,
-    topChordLengthRatio:chordClosure,
-    topologyOk:posts.length>0&&chords.length>0&&missingPostTops===0&&near(chordClosure,1,1e-5)};
+    topChordLengthRatio:chordClosure,chordConnected,postTopOnChord,
+    topologyOk:posts.length>0&&chords.length>0&&missingPostTops===0&&near(chordClosure,1,1e-5)&&chordConnected&&postTopOnChord};
   });
   const areaChecks=[
    {id:"gable-triangle",areaM2:fullGableTriangleArea,formula:"span × rise / 2",status:"geometry-only"},
