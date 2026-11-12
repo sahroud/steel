@@ -97,11 +97,20 @@
   const links={foundationConcrete:report.totalConcreteM3,foundationRebar:report.footingRebarKg,pedestalRebar:report.pedestalRebarKg,excavation:report.excavationM3,formwork:report.sideFormworkM2,anchorBolts:report.anchorsCount,tieRebar:report.tieRebarKg};
   let changed=false;
   state.manualItems.forEach(item=>{
-   if(Object.prototype.hasOwnProperty.call(links,item.key)&&links[item.key]!==null&&links[item.key]!==undefined&&item.quantitySource!=="manual"){
+   if(Object.prototype.hasOwnProperty.call(links,item.key)&&links[item.key]!==null&&links[item.key]!==undefined&&item.quantitySource!=="manual"&&item.quantitySource!=="anchorSchedule"){
     item.quantity=String(links[item.key]);item.quantitySource="foundation";changed=true;
    }
   });
   if(changed)renderManualItems();
+ }
+ function refreshFromAnchorTakeoff(report){
+  if(!report||report.boltCount===null||report.boltCount===undefined)return;
+  const item=state.manualItems.find(x=>x.key==="anchorBolts");
+  if(item&&item.quantitySource!=="manual"){
+   item.quantity=String(report.boltCount);
+   item.quantitySource="anchorSchedule";
+   renderManualItems();
+  }
  }
  function calculate(){
   const r=window.SteelQuantityTakeoff?.lastResult;
@@ -175,5 +184,5 @@
  function getData(){return clone({prices:state.prices,percent:state.percent,steelPricingMode:state.steelPricingMode,manualItems:state.manualItems});}
  function setData(d){if(!d||typeof d!=="object")return;state.prices=d.prices||{};state.percent={...state.percent,...(d.percent||{})};state.steelPricingMode=d.steelPricingMode||"steel_only";if(Array.isArray(d.manualItems))state.manualItems=defaultManualItems.map(def=>({...def,...(d.manualItems.find(x=>x.key===def.key)||{})}));if($("costSteelMode"))$("costSteelMode").value=state.steelPricingMode;Object.keys(state.percent).forEach(k=>{const el=$("cost"+k[0].toUpperCase()+k.slice(1));if(el)el.value=state.percent[k];});renderRows();renderManualItems();}
  document.addEventListener("DOMContentLoaded",()=>{render();});
- window.SteelCostEstimate={getData,setData,calculate,refreshFromBOQ:(report)=>{if(report&&typeof report==="object"){state.last=report;renderRows();}},refreshFromFoundation,getLast:()=>clone(state.lastCost||null)};
+ window.SteelCostEstimate={getData,setData,calculate,refreshFromBOQ:(report)=>{if(report&&typeof report==="object"){state.last=report;renderRows();}},refreshFromFoundation,refreshFromAnchorTakeoff,getLast:()=>clone(state.lastCost||null)};
 })();
