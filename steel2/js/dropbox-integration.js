@@ -56,10 +56,12 @@
     const connect = $("btnDropboxConnect");
     const disconnect = $("btnDropboxDisconnect");
     const upload = $("btnDropboxUploadLatest");
+    const projectUpload = $("btnDropboxUploadProject");
     const auto = $("dropboxAutoUpload");
     if (connect) connect.hidden = connected;
     if (disconnect) disconnect.hidden = !connected;
     if (upload) upload.disabled = uploadInProgress || !connected || !getLatestReport();
+    if (projectUpload) projectUpload.disabled = uploadInProgress || !connected || !window.SteelProject?.getData;
     if (auto) auto.checked = localStorage.getItem(AUTO_KEY) !== "false";
     setStatus(connected
       ? "Dropbox در این مرورگر متصل است. پوشه مقصد: " + FOLDER
@@ -105,6 +107,24 @@
     return response.result;
   }
 
+  async function uploadCurrentProject() {
+    if (!window.SteelProject || typeof window.SteelProject.getData !== "function") throw new Error("مدیر پروژه آماده نیست.");
+    const data = window.SteelProject.getData();
+    if (!data || typeof data !== "object") throw new Error("اطلاعات پروژه برای ذخیره آماده نیست.");
+    const client = getClient();
+    if (auth && typeof auth.checkAndRefreshAccessToken === "function") await auth.checkAndRefreshAccessToken();
+    const path = FOLDER + "/Sahroud_Steel_Project.json";
+    const response = await client.filesUpload({
+      path,
+      contents: JSON.stringify(data, null, 2),
+      mode: { ".tag": "overwrite" },
+      autorename: false,
+      mute: true
+    });
+    setStatus("پروژه فعلی مستقیماً در Dropbox ذخیره شد: " + (response.result.path_display || path), false);
+    return response.result;
+  }
+
   function addPanel() {
     if ($("dropboxIntegrationPanel")) return;
     const anchor = $("shedLayoutPanel") || $("fullModel3DResult")?.closest(".panel");
@@ -119,6 +139,7 @@
       '<button type="button" id="btnDropboxConnect" class="btn primary">اتصال به Dropbox</button>' +
       '<button type="button" id="btnDropboxDisconnect" class="btn secondary" hidden>قطع اتصال این مرورگر</button>' +
       '<button type="button" id="btnDropboxUploadLatest" class="btn success" disabled>بارگذاری آخرین گزارش</button>' +
+      '<button type="button" id="btnDropboxUploadProject" class="btn primary" disabled>ذخیره مستقیم پروژه در Dropbox</button>' +
       '</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="dropboxAutoUpload" checked> بارگذاری خودکار گزارش‌های آزمایش بعدی پس از اتصال</label>' +
       '<div id="dropboxStatus" class="notice" aria-live="polite">وضعیت اتصال بررسی می‌شود.</div>' +
@@ -153,6 +174,15 @@
         updateUI();
       }
     });
+    $("btnDropboxUploadProject").addEventListener("click", async () => {
+      if (uploadInProgress) return;
+      uploadInProgress = true;
+      updateUI();
+      setStatus("در حال ذخیره فایل کامل پروژه در Dropbox…", false);
+      try { await uploadCurrentProject(); }
+      catch (e) { setStatus("ذخیره پروژه ناموفق بود: " + (e.error?.error_summary || e.message), true); }
+      finally { uploadInProgress = false; updateUI(); }
+    });
     $("dropboxAutoUpload").addEventListener("change", e => {
       localStorage.setItem(AUTO_KEY, e.target.checked ? "true" : "false");
     });
@@ -173,6 +203,7 @@
 
   window.SahroudDropbox = {
     uploadSpanReport,
+    uploadCurrentProject,
     isConnected: hasToken,
     isAutoUploadEnabled: () => localStorage.getItem(AUTO_KEY) !== "false"
   };
