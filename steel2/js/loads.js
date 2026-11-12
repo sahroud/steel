@@ -26,11 +26,11 @@
         climate: {
             city: "shahroud",
             customCity: "شاهرود",
-            elevation: "",
-            source: "مبحث ششم ۱۳۹۸؛ رکورد اقلیمی PDF همراه پروژه، نیازمند تطبیق نهایی",
+            elevation: "1350",
+            source: "مبحث ششم ۱۳۹۸؛ سرعت باد ۹۰ km/h طبق رکورد PDF پروژه، نیازمند تطبیق نهایی؛ ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود",
             groundSnow: "1.0",
             basicWind: "90",
-            terrain: "",
+            terrain: "suburban",
             topography: "normal",
             buildingUse: "warehouse-industrial-enclosed",
             openingState: "enclosed",
@@ -164,7 +164,10 @@
                 </div>
             </div>
             <div class="notice" id="climateNotice">
-                پیش‌فرض شاهرود: Pg=1.0 kN/m²، منطقه ۳؛ V=90 km/h و q=0.38 kN/m². بار برف ۱٫۰ kN/m² در تحلیل برف اعمال می‌شود. فشار نهایی باد هنوز اعمال نشده است؛ زیرا به زبری زمین، توپوگرافی و ضرایب فشار خارجی/داخلی وابسته است.
+                پیش‌فرض شاهرود: Pg=1.0 kN/m²، منطقه ۳؛ V=90 km/h. ارتفاع محل ۱۳۵۰ متر و زبری زمین «حومه و موانع پراکنده» به‌صورت مقدماتی ثبت شده‌اند.
+            </div>
+            <div class="notice" id="windReferenceResult">
+                فشار مبنای باد پس از بارگذاری اطلاعات محاسبه می‌شود.
             </div>
 
             <h4>د ـ بار مرده سقف</h4>
@@ -438,6 +441,27 @@
         `;
     }
 
+    function updateWindReference() {
+        const v = Number($("climateBasicWind")?.value);
+        const altitude = $("climateElevation")?.value;
+        const terrain = $("climateTerrain")?.value || "";
+        const out = $("windReferenceResult");
+        if (!out) return;
+        if (!Number.isFinite(v) || v <= 0) {
+            out.textContent = "برای محاسبه فشار مبنا، سرعت باد معتبر را از جدول ۶-۱۰-۱ وارد کنید.";
+            return;
+        }
+        const vms = v / 3.6;
+        const q = 0.000613 * vms * vms;
+        const terrainText = terrain === "open" ? "باز و هموار" :
+            terrain === "suburban" ? "حومه و موانع پراکنده" :
+            terrain === "urban" ? "شهری و متراکم" : "انتخاب‌نشده";
+        out.textContent =
+            "فشار مبنای محاسبه‌شده q = " + q.toFixed(3) + " kN/m² (رابطه q=0.000613V² با V بر حسب m/s؛ سرعت ورودی " + v.toFixed(1) + " km/h). " +
+            "ارتفاع محل از سطح دریا: " + (altitude === "" ? "ثبت‌نشده" : altitude + " m") +
+            "؛ رده زبری: " + terrainText + ". این q فقط فشار مبناست و فشار طراحی/خالص سقف و دیوار نیست. ارتفاع محل از سطح دریا با ارتفاع نقطه سازه از سطح زمین متفاوت است و در محاسبه ضریب Ce جایگزین آن نمی‌شود.";
+    }
+
     function check() {
         const error = validate();
         const result = $("loadValidation");
@@ -554,6 +578,14 @@
             Object.keys(state.climate).forEach(key => {
                 if (data.climate[key] !== undefined && key !== "buildingUse" && key !== "openingState") state.climate[key] = data.climate[key];
             });
+        }
+        // Migration for older Shahroud projects: preserve explicit values, fill only missing site defaults.
+        if (state.climate.city === "shahroud") {
+            if (state.climate.elevation === "" || state.climate.elevation === null) state.climate.elevation = "1350";
+            if (state.climate.terrain === "") state.climate.terrain = "suburban";
+            if (!state.climate.source || state.climate.source === "مبحث ششم ۱۳۹۸؛ رکورد اقلیمی PDF همراه پروژه، نیازمند تطبیق نهایی") {
+                state.climate.source = "مبحث ششم ۱۳۹۸؛ سرعت باد ۹۰ km/h طبق رکورد PDF پروژه، نیازمند تطبیق نهایی؛ ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود";
+            }
         }
         state.climate.buildingUse = "warehouse-industrial-enclosed";
         state.climate.openingState = "enclosed";
@@ -675,6 +707,7 @@
                 event.target.matches("input, textarea, select")
             ) {
                 summary();
+                updateWindReference();
             }
         });
 
@@ -682,11 +715,13 @@
         $("btnLoadReset").addEventListener("click", reset);
 
         summary();
+        updateWindReference();
         state.climate.buildingUse = "warehouse-industrial-enclosed";
         state.climate.openingState = "enclosed";
         const climateNotice = $("climateNotice");
         if (climateNotice) climateNotice.textContent =
-            "کاربری مبنا در این نسخه: انبار یا سالن صنعتی بسته. داده‌های باد و برف تا زمان ورود از منبع رسمی، خودکار فرض یا تولید نمی‌شوند.";
+            "کاربری مبنا در این نسخه: انبار یا سالن صنعتی بسته. ارتفاع محل ۱۳۵۰ متر و رده زبری حومه/موانع پراکنده برای شهرک صنعتی شاهرود به‌صورت مقدماتی ثبت شده‌اند؛ فشار خالص باد تا تکمیل ضرایب آیین‌نامه‌ای تولید نمی‌شود.";
+        updateWindReference();
     }
 
     window.SteelLoads = {
