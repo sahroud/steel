@@ -204,13 +204,14 @@
   if(!r.ok)return{passed:false,reason:r.reason};
   const ic=sectionInteractionCurve(600,500,25,400,200000,0.85,0.85,0.003,4*areaBar(16),40,10,16);
   const midCapacity=ic.ok?interactionMomentAtAxial(ic,0):null;
+  const tensileEnd=ic.points?.[1]?.PnN,compressionEnd=ic.points?.[ic.points.length-1]?.PnN;
   const a=r.AsRequiredMm2,depth=a*400/(0.85*25*600);
   const capacity=0.90*a*400*(442-depth/2)/1e6;
   const barCount=Math.max(2,Math.ceil(a/areaBar(16)));
   const provided=barCount*areaBar(16);
   const spacing=2*areaBar(10)*400*442/(100000);
   const layer=barLayerCapacity(600,40,10,16,25);
-  const checks={barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>0&&Number.isFinite(midCapacity.MnKNm),concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
+  const checks={barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>100&&midCapacity.MnKNm<180&&Number.isFinite(midCapacity.MnKNm),interactionSignConvention:Number.isFinite(tensileEnd)&&tensileEnd>0&&Number.isFinite(compressionEnd)&&compressionEnd<0,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
    pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
    cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
   return{passed:Object.values(checks).every(Boolean),checks,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
