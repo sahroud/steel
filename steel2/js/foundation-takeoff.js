@@ -48,7 +48,13 @@
   $("btnFoundationCSV").addEventListener("click",exportCSV);
  }
  function readInputs(){keys.forEach(k=>{const el=$(map[k]);if(el)state[k]=el.value;});}
- function modelFingerprint(model){
+ function selfTest(){
+  const bases=[{nodeId:"B1",x:0,y:0,z:0}],specs=[{layer:"bottom",direction:"X",diaMm:16,spacingMm:200},{layer:"bottom",direction:"Z",diaMm:16,spacingMm:200},{layer:"top",direction:"X",diaMm:14,spacingMm:200},{layer:"top",direction:"Z",diaMm:14,spacingMm:200}];
+  const g=buildFootingRebarGeometry(bases,2,2,0.5,50,specs);
+  const checks={fourGridLayers:g.ok&&g.count>0&&new Set(g.bars.map(x=>x.layer+"-"+x.direction)).size===4,bottomTopElevation:g.ok&&g.bars.some(x=>x.layer==="bottom"&&x.a.y<0.1)&&g.bars.some(x=>x.layer==="top"&&x.a.y>0.4),gridBarsStayInsideFootprint:g.ok&&g.bars.every(x=>Math.abs(x.a.x)<=1&&Math.abs(x.a.z)<=1&&Math.abs(x.b.x)<=1&&Math.abs(x.b.z)<=1)};
+  return{passed:Object.values(checks).every(Boolean),checks,barCount:g.count,assumptions:g.assumptions};
+}
+function modelFingerprint(model){
   return JSON.stringify({
    nodes:(model.nodes||[]).map(n=>[n.id,n.x,n.y,n.z,n.kind]),
    members:(model.members||[]).map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),
@@ -222,7 +228,38 @@
   if(box)box.textContent="غربال بالاکشیدگی برای "+records.length+" حالت-پایه انجام شد. وزن ثقلی محاسبه‌شده هر پی (بتن + خاک پوششی واردشده): "+fmt(resistance)+" kN؛ موارد دارای کسری مقاومت ثقلی: "+residual+". این محاسبه ظرفیت بولت، صفحه‌ستون، مهار بتن، مخروط شکست، وزن خاک اطراف، آب زیرزمینی یا ضرایب آیین‌نامه‌ای را بررسی نمی‌کند و حتی در صورت صفر بودن کسری، به‌معنای تأیید مهار نیست.";
   return {basis:"preliminary_gravity_uplift_screen_only",concreteWeightPerFootingKN:concrete,soilCoverWeightPerFootingKN:soil,gravityResistancePerFootingKN:resistance,cases:records,limitations:["علامت Fy بر اساس قرارداد واکنش حل‌گر تفسیر شده و باید با یک حالت بارگذاری معلوم تطبیق شود.","فقط وزن بتن پی/پدستال و خاک پوششی واردشده لحاظ شده؛ خاک اطراف، شناژها، آب زیرزمینی و سایر بارهای دائمی لحاظ نشده‌اند.","ظرفیت کششی بولت، صفحه‌ستون، مهار بتن، شکست مخروطی/لبه‌ای و اندرکنش گروهی پی‌ها بررسی نشده است.","ترکیبات بار و ضرایب آیین‌نامه‌ای هنوز تأیید نهایی نشده‌اند؛ این غربال طراحی یا تأیید نهایی نیست."]};
  }
- function calculateFootingRebar(baseCount,B,L){
+ function buildFootingRebarGeometry(baseRows,B,L,T,coverMm,specs){
+  if(!Array.isArray(baseRows)||!baseRows.length||![B,L,T,coverMm].every(Number.isFinite)||B<=0||L<=0||T<=0||coverMm<0)return{ok:false,reason:"مختصات پایه‌ها، ابعاد پی، ضخامت و پوشش بتن باید معتبر باشند."};
+  const bars=[],layers=Array.isArray(specs)?specs:[];
+  for(const row of baseRows){
+   if(![row.x,row.y,row.z].every(Number.isFinite))return{ok:false,reason:"مختصات سه‌بعدی یکی از پایه‌ها موجود نیست."};
+   for(const sp of layers){
+    if(!sp||!["bottom","top"].includes(sp.layer)||!["X","Z"].includes(sp.direction)||![sp.diaMm,sp.spacingMm].every(Number.isFinite)||sp.diaMm<=0||sp.spacingMm<=0)continue;
+    const available=(sp.direction==="X"?L:B)*1000-2*coverMm;
+    const cross=(sp.direction==="X"?B:L)*1000-2*coverMm;
+    if(available<=0||cross<=0||T*1000<=2*coverMm+sp.diaMm)return{ok:false,reason:"پوشش و قطر میلگرد با ابعاد پی سازگار نیست."};
+    const count=Math.floor(cross/sp.spacingMm)+1;
+    const y=row.y+(sp.layer==="bottom"?coverMm+sp.diaMm/2:T*1000-coverMm-sp.diaMm/2)/1000;
+    for(let i=0;i<count;i++){
+     const offset=-cross/2+(count===1?0:i*cross/(count-1));
+     const a=sp.direction==="X"?{x:row.x-available/2000,y,z:row.z+offset/1000}:{x:row.x+offset/1000,y,z:row.z-available/2000};
+     const b=sp.direction==="X"?{x:row.x+available/2000,y,z:row.z+offset/1000}:{x:row.x+offset/1000,y,z:row.z+available/2000};
+     bars.push({id:[row.nodeId||"base",sp.layer,sp.direction,i+1].join("-"),baseNodeId:row.nodeId||null,layer:sp.layer,direction:sp.direction,a,b,diameterMm:sp.diaMm});
+    }
+   }
+  }
+  return{ok:bars.length>0,bars,count:bars.length,baseCount:baseRows.length,assumptions:"مرکز هر پی منطبق بر مختصات گره پایه فرض شده؛ میلگردها مستقیم و بدون خم/قلاب/وصله مدل شده‌اند. تراز y گره پایه مبنای تراز رویه پی است و شبکه بالا/پایین با پوشش واردشده جانمایی می‌شود. این هندسه برای کنترل برخورد اولیه است، نه نقشه اجرایی."};
+}
+function footingGridSpecs(state){
+ const out=[];
+ for(const layer of ["bottom","top"])for(const direction of ["X","Z"]){
+  const prefix=layer==="bottom"?"bottomBar":"topBar",suffix=direction==="X"?"Xmm":"Zmm";
+  const dia=Number(state[prefix+"Dia"+suffix]),spacing=Number(state[prefix+"Spacing"+suffix]);
+  if(dia>0&&spacing>0)out.push({layer,direction,diaMm:dia,spacingMm:spacing});
+ }
+ return out;
+}
+function calculateFootingRebar(baseCount,B,L){
   const cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
   const specs=[
    {layer:"تحتانی",direction:"موازی X",dia:num(state.bottomBarDiaXmm),spacing:num(state.bottomBarSpacingXmm),perp:"Z",parallel:"X"},
@@ -315,5 +352,5 @@
  function getData(){readInputs();return JSON.parse(JSON.stringify(state));}
  function setData(d){if(!d||typeof d!=="object")return;keys.forEach(k=>{if(d[k]!==undefined)state[k]=d[k];const el=$(map[k]);if(el)el.value=state[k]??"";});}
  document.addEventListener("DOMContentLoaded",panel);
- window.SteelFoundationTakeoff={getData,setData,extract,quantify,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
 })();
