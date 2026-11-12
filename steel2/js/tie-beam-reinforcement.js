@@ -58,23 +58,27 @@
   if(!(As>0&&Number.isFinite(As)))return{ok:false,reason:"حل مساحت میلگرد معتبر نیست"};
   return{ok:true,AsRequiredMm2:As,nominalDepthFactor:0.85,assumption:"مقطع مستطیلی، میلگرد کششی تنها، بدون کنترل حداقل/حداکثر آرماتور آیین‌نامه‌ای"};
  }
- function memberEnvelope(member){
+ function sectionForceSamples(member,stations=40){
   const f=member.localEndForces||[],q=member.analysisLoad?.uniformLocal,L=Number(member.length)||0;
   if(f.length<12||!(L>0)||!Array.isArray(q)||q.length!==3)return null;
-  const candidates=[Math.abs(Number(f[4])||0),Math.abs(Number(f[5])||0),Math.abs(Number(f[10])||0),Math.abs(Number(f[11])||0)];
-  const shears=[Math.abs(Number(f[1])||0),Math.abs(Number(f[2])||0),Math.abs(Number(f[7])||0),Math.abs(Number(f[8])||0)];
-  const addPlane=(m0,v0,load,sign)=>{
-   const m=Number(m0)||0,v=Number(v0)||0,w=Number(load)||0;
-   const value=x=>m+sign*v*x+sign*w*x*x/2;
-   candidates.push(Math.abs(value(0)),Math.abs(value(L)));
-   if(Math.abs(w)>1e-12){const x=-v/w;if(x>0&&x<L)candidates.push(Math.abs(value(x)));}
-   shears.push(Math.abs(v),Math.abs(v+w*L));
-  };
-  // Local equilibrium: q_y produces M_z; q_z produces M_y.
-  addPlane(f[5],f[1],q[1],-1);
-  addPlane(f[4],f[2],q[2],1);
-  return{MmaxNm:Math.max(...candidates),VmaxN:Math.max(...shears),
-   NmaxN:Math.max(Math.abs(Number(f[0])||0),Math.abs(Number(f[6])||0))};
+  const qx=Number(q[0])||0,qy=Number(q[1])||0,qz=Number(q[2])||0;
+  const xs=new Set(Array.from({length:stations+1},(_,i)=>L*i/stations));
+  if(Math.abs(qz)>1e-12){const x=-(Number(f[2])||0)/qz;if(x>0&&x<L)xs.add(x);}
+  if(Math.abs(qy)>1e-12){const x=-(Number(f[1])||0)/qy;if(x>0&&x<L)xs.add(x);}
+  return Array.from(xs).sort((a,b)=>a-b).map(x=>{
+   const N=-(Number(f[0]||0)+qx*x);
+   const Vy=-(Number(f[1]||0)+qy*x),Vz=-(Number(f[2]||0)+qz*x);
+   const My=-(Number(f[4]||0)+Number(f[2]||0)*x+qz*x*x/2);
+   const Mz=-(Number(f[5]||0)-Number(f[1]||0)*x-qy*x*x/2);
+   return{xM:x,Nn:N,VyN:Vy,VzN:Vz,VresultantN:Math.hypot(Vy,Vz),MyNm:My,MzNm:Mz,MresultantNm:Math.hypot(My,Mz)};
+  });
+ }
+ function memberEnvelope(member){
+  const samples=sectionForceSamples(member);if(!samples)return null;
+  const byMoment=samples.reduce((a,b)=>b.MresultantNm>a.MresultantNm?b:a,samples[0]);
+  const byAxial=samples.reduce((a,b)=>Math.abs(b.Nn)>Math.abs(a.Nn)?b:a,samples[0]);
+  const byShear=samples.reduce((a,b)=>b.VresultantN>a.VresultantN?b:a,samples[0]);
+  return{MmaxNm:byMoment.MresultantNm,VmaxN:byShear.VresultantN,NmaxN:Math.abs(byAxial.Nn),criticalMoment:byMoment,criticalAxial:byAxial,samples};
  }
  function routeResult(route,members,material){
   members=Array.isArray(members)?members.filter(Boolean):[members].filter(Boolean);
@@ -83,7 +87,9 @@
   if(forceRows.some(x=>x.f.length<12))return{id:route.id,ok:false,reason:"نیروهای انتهایی یکی از قطعات شناژ موجود نیست"};
   const envelopes=members.map(memberEnvelope);
   if(envelopes.some(x=>!x))return{id:route.id,ok:false,reason:"برای محاسبه نمودار داخلی، طول/نیروهای یکی از قطعات شناژ معتبر نیست"};
-  const M=Math.max(...envelopes.map(x=>x.MmaxNm))/1000;
+  const criticalMoment=envelopes.map((x,i)=>({...x.criticalMoment,memberId:members[i].id})).reduce((a,b)=>b.MresultantNm>a.MresultantNm?b:a);
+  const criticalAxial=envelopes.map((x,i)=>({...x.criticalAxial,memberId:members[i].id})).reduce((a,b)=>Math.abs(b.Nn)>Math.abs(a.Nn)?b:a);
+  const M=criticalMoment.MresultantNm/1000;
   const V=Math.max(...envelopes.map(x=>x.VmaxN))/1000;
   const N=Math.max(...envelopes.map(x=>x.NmaxN))/1000;
   const h=Number(route.heightM)*1000,b=Number(route.widthM)*1000,fc=Number(route.fcMPa)||25;
@@ -104,6 +110,8 @@
   const totalStraightBarLengthM=barsBothFaces?barsBothFaces*straightBarLength:null;
   const unitMassKgM=Math.pow(settings.barDiaMm,2)/162;
   return{id:route.id,memberIds:forceRows.map(x=>x.id),segmentCount:members.length,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,
+   criticalMoment:{...criticalMoment,NkN:criticalMoment.Nn/1000,MyKNm:criticalMoment.MyNm/1000,MzKNm:criticalMoment.MzNm/1000,MresultantKNm:criticalMoment.MresultantNm/1000},
+   criticalAxial:{...criticalAxial,NkN:criticalAxial.Nn/1000,MyKNm:criticalAxial.MyNm/1000,MzKNm:criticalAxial.MzNm/1000,MresultantKNm:criticalAxial.MresultantNm/1000},
    effectiveDepthMm:d,AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,
    barCountEachFace:count,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits},
    longitudinalBars:{countEachFace:count,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
@@ -147,6 +155,8 @@
   const cantileverX={length:6,localEndForces:[0,7200,0,0,0,21600,0,0,0,0,0,0],analysisLoad:{uniformLocal:[0,-1200,0]}};
   const cantileverZ={length:6,localEndForces:[0,0,7200,0,-21600,0,0,0,0,0,0,0],analysisLoad:{uniformLocal:[0,0,-1200]}};
   const ep=memberEnvelope(pinned),ex=memberEnvelope(cantileverX),ez=memberEnvelope(cantileverZ);
+  const axialSample=sectionForceSamples({length:6,localEndForces:[10000,0,0,0,0,0,0,0,0,0,0,0],analysisLoad:{uniformLocal:[-1000,0,0]}});
+  const axialMid=axialSample?.find(x=>Math.abs(x.xM-3)<1e-9);
   const r=flexuralAs(100,600,442,25,400,0.90);
   if(!r.ok)return{passed:false,reason:r.reason};
   const a=r.AsRequiredMm2,depth=a*400/(0.85*25*600);
@@ -155,10 +165,10 @@
   const provided=barCount*areaBar(16);
   const spacing=2*areaBar(10)*400*442/(100000);
   const layer=barLayerCapacity(600,40,10,16,25);
-  const checks={barLayerCapacity:layer.ok&&layer.maxBars===12,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
+  const checks={barLayerCapacity:layer.ok&&layer.maxBars===12,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
    pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
    cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
-  return{passed:Object.values(checks).every(Boolean),checks,barLayerCapacity600mm:layer,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
+  return{passed:Object.values(checks).every(Boolean),checks,barLayerCapacity600mm:layer,axialMidSample:axialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
    pinnedUniformLoadMomentNm:ep.MmaxNm,cantileverMomentNm:ex.MmaxNm};
  }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
