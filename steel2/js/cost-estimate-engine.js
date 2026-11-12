@@ -70,7 +70,7 @@
    const cell=document.querySelector('[data-cost-total="'+d.key+'"]');if(cell)cell.textContent=fmt(amount);
   });
   const pct=state.percent,base=subtotal;
-  const extras={transport:base*pct.transport/100,fabrication:base*pct.fabrication/100,installation:base*pct.installation/100,paint:base*pct.paint/100};
+  const extras={transport:base*pct.transport/100,fabrication:state.steelPricingMode==="fabricated"?0:base*pct.fabrication/100,installation:base*pct.installation/100,paint:base*pct.paint/100};
   const direct=base+Object.values(extras).reduce((a,b)=>a+b,0);
   extras.overhead=direct*pct.overhead/100;
   const afterOverhead=direct+extras.overhead;
@@ -79,7 +79,7 @@
   extras.tax=afterRisk*pct.tax/100;
   const total=afterRisk+extras.tax;
   state.lastCost={generatedAt:new Date().toISOString(),currency:"تومان",rows,materialSubtotal:subtotal,percentageInputs:clone(pct),percentageCosts:extras,totalCost:total,missing,pricingMode:state.steelPricingMode,notice:"برآورد مقدماتی؛ قیمت‌های تأییدنشده، مقادیر ناقص و هزینه‌های فاقد داده در جمع لحاظ نشده‌اند."};
-  $("costEstimateSummary").textContent="جمع اقلام دارای قیمت: "+fmt(subtotal)+" تومان\nحمل: "+fmt(extras.transport)+" | ساخت: "+fmt(extras.fabrication)+" | نصب: "+fmt(extras.installation)+" | رنگ: "+fmt(extras.paint)+"\nبالاسری: "+fmt(extras.overhead)+" | ذخیره ریسک: "+fmt(extras.contingency)+" | مالیات: "+fmt(extras.tax)+"\nبرآورد کل اقلام قیمت‌گذاری‌شده: "+fmt(total)+" تومان\n"+(missing.length?"موارد خارج از جمع:\n"+missing.join("\n"):"تمام اقلام دارای مقدار قیمت‌گذاری شده‌اند.")+"\n\nاین رقم قیمت قطعی پیمان یا پیشنهاد فروشنده نیست.";
+  $("costEstimateSummary").textContent="جمع اقلام دارای قیمت: "+fmt(subtotal)+" تومان\nحمل: "+fmt(extras.transport)+" | ساخت: "+fmt(extras.fabrication)+(state.steelPricingMode==="fabricated"?" (در قیمت ساخت هر کیلو منظور شده)":"")+" | نصب: "+fmt(extras.installation)+" | رنگ: "+fmt(extras.paint)+"\nبالاسری: "+fmt(extras.overhead)+" | ذخیره ریسک: "+fmt(extras.contingency)+" | مالیات: "+fmt(extras.tax)+"\nبرآورد کل اقلام قیمت‌گذاری‌شده: "+fmt(total)+" تومان\n"+(missing.length?"موارد خارج از جمع:\n"+missing.join("\n"):"تمام اقلام دارای مقدار قیمت‌گذاری شده‌اند.")+"\n\nاین رقم قیمت قطعی پیمان یا پیشنهاد فروشنده نیست.";
   $("btnExportCost").disabled=false;
  }
  function exportCSV(){
