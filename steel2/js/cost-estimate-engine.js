@@ -19,7 +19,7 @@
   {key:"bolt",label:"پیچ‌ها (وزن ساق نظری)",unit:"کیلوگرم",priceCode:"bolt",qty:r=>r.steelMassTakeoff?.boltShankMassKg??null,priceUnit:"تومان/کیلوگرم"},
   {key:"weld",label:"فلز جوش نظری",unit:"کیلوگرم",priceCode:"weld",qty:r=>r.steelMassTakeoff?.theoreticalWeldMetalMassKg??null,priceUnit:"تومان/کیلوگرم"}
  ];
- function marketPrice(code){const d=window.SteelMarketPrices?.getData?.();return d?.prices?.filter(p=>p.code===code).sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0]||null;}
+ function marketPrice(code,expectedUnit){const d=window.SteelMarketPrices?.getData?.();const matches=(d?.prices||[]).filter(p=>p.code===code);const compatible=matches.filter(p=>p.unit===expectedUnit);return compatible.sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0]||null;}
  function render(){
   const root=$("quantityTakeoffPanel");if(!root||$("costEstimatePanel"))return;
   const p=document.createElement("section");p.className="panel";p.id="costEstimatePanel";
@@ -48,18 +48,18 @@
  function renderRows(){
   const body=$("costEstimateRows");if(!body)return;body.replaceChildren();
   definitions.forEach(d=>{
-   const tr=document.createElement("tr"),qty=state.last?d.qty(state.last):null,mp=marketPrice(d.priceCode),manual=state.prices[d.key]??"";
+   const tr=document.createElement("tr"),qty=state.last?d.qty(state.last):null,mp=marketPrice(d.priceCode,d.priceUnit),manual=state.prices[d.key]??"";
    const vals=[d.label,qty===null||qty===undefined?"نامشخص":fmt(qty),d.unit];
    vals.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});
    const priceTd=document.createElement("td"),input=document.createElement("input");input.type="number";input.min="0";input.step="any";input.placeholder="قیمت واحد";input.value=manual!==""?manual:(mp?.price??"");input.dataset.costKey=d.key;input.addEventListener("change",()=>{state.prices[d.key]=input.value;});priceTd.appendChild(input);tr.appendChild(priceTd);
-   const src=document.createElement("td");src.textContent=mp?(mp.source+" | "+mp.city+" | "+new Date(mp.updatedAt).toLocaleDateString("fa-IR")+" | "+(Date.now()-new Date(mp.updatedAt).getTime()>36*3600000?"قدیمی":"جدید")+" (تأیید لازم)"):"قیمت ثبت نشده";tr.appendChild(src);
+   const src=document.createElement("td");src.textContent=mp?(mp.source+" | "+mp.city+" | "+new Date(mp.updatedAt).toLocaleDateString("fa-IR")+" | "+(Date.now()-new Date(mp.updatedAt).getTime()>36*3600000?"قدیمی":"جدید")+" | واحد منطبق (تأیید لازم)"):(state.prices[d.key]!==undefined?"ورود دستی":"قیمت منطبق ثبت نشده؛ کد: "+d.priceCode+"، واحد لازم: "+d.priceUnit);tr.appendChild(src);
    const total=document.createElement("td");total.textContent="—";total.dataset.costTotal=d.key;tr.appendChild(total);body.appendChild(tr);
   });
  }
  function calculate(){
   const r=window.SteelQuantityTakeoff?.lastResult;
   if(!r){$("costEstimateSummary").textContent="ابتدا دکمه محاسبه متره را اجرا کنید.";return;}
-  state.last=r;const rows=[];let subtotal=0,missing=[];
+  state.last=r;renderRows();const rows=[];let subtotal=0,missing=[];
   definitions.forEach(d=>{
    const q=d.qty(r),el=document.querySelector('[data-cost-key="'+d.key+'"]'),p=N(el?.value);
    if(el)state.prices[d.key]=el.value;
@@ -91,5 +91,5 @@
  function getData(){return clone({prices:state.prices,percent:state.percent,steelPricingMode:state.steelPricingMode});}
  function setData(d){if(!d||typeof d!=="object")return;state.prices=d.prices||{};state.percent={...state.percent,...(d.percent||{})};state.steelPricingMode=d.steelPricingMode||"steel_only";if($("costSteelMode"))$("costSteelMode").value=state.steelPricingMode;Object.keys(state.percent).forEach(k=>{const el=$("cost"+k[0].toUpperCase()+k.slice(1));if(el)el.value=state.percent[k];});renderRows();}
  document.addEventListener("DOMContentLoaded",()=>{render();});
- window.SteelCostEstimate={getData,setData,calculate,getLast:()=>clone(state.lastCost||null)};
+ window.SteelCostEstimate={getData,setData,calculate,refreshFromBOQ:(report)=>{if(report&&typeof report==="object"){state.last=report;renderRows();}},getLast:()=>clone(state.lastCost||null)};
 })();
