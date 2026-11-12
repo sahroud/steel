@@ -6,7 +6,19 @@
  "use strict";
  const $=id=>document.getElementById(id),N=v=>{const x=Number(v);return Number.isFinite(x)&&x>=0?x:null;};
  const fmt=v=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:0});
- const state={prices:{},percent:{transport:0,fabrication:0,installation:0,paint:0,overhead:0,contingency:0,tax:0},steelPricingMode:"steel_only",last:null};
+ const defaultManualItems=[
+  {key:"foundationConcrete",label:"بتن فونداسیون و شناژ",unit:"مترمکعب"},
+  {key:"foundationRebar",label:"میلگرد فونداسیون",unit:"کیلوگرم"},
+  {key:"excavation",label:"خاکبرداری و تسطیح",unit:"مترمکعب"},
+  {key:"formwork",label:"قالب‌بندی فونداسیون",unit:"مترمربع"},
+  {key:"anchorBolts",label:"بولت و صفحه‌ستون خریداری‌شده",unit:"کیلوگرم"},
+  {key:"floorConcrete",label:"بتن کف و کف‌سازی",unit:"مترمکعب"},
+  {key:"doors",label:"درب‌ها و کرکره‌ها",unit:"مترمربع"},
+  {key:"gutters",label:"آبرو و لوله‌های ناودانی",unit:"متر"},
+  {key:"electrical",label:"برق و روشنایی",unit:"مجموع"},
+  {key:"other",label:"سایر هزینه‌های مستقیم",unit:"مجموع"}
+ ];
+ const state={prices:{},percent:{transport:0,fabrication:0,installation:0,paint:0,overhead:0,contingency:0,tax:0},steelPricingMode:"steel_only",manualItems:defaultManualItems.map(x=>({...x,quantity:"",unitPrice:""})),last:null};
  const clone=x=>JSON.parse(JSON.stringify(x));
  const definitions=[
   {key:"steel",label:"فولاد اسکلت و ورق اتصال",unit:"کیلوگرم",priceCode:"steel.general",qty:r=>r.steelMassTakeoff?.procurementMassExcludingBoltsAndWeldKg??null,priceUnit:"تومان/کیلوگرم"},
@@ -29,6 +41,7 @@
    '<div class="notice">مقادیر از آخرین متره محاسبه‌شده گرفته می‌شوند. قیمت‌ها از بانک قیمت یا ورود دستی پیشنهاد می‌شوند؛ تا زمان تأیید کاربر، قیمت منبع بازار قطعی خرید تلقی نمی‌شود. اقلام نامعلوم یا فاقد مقدار/قیمت در جمع لحاظ نمی‌شوند و هشدار می‌گیرند.</div>'+
    '<div class="form-grid"><div class="field"><label for="costSteelMode">روش قیمت‌گذاری فولاد</label><select id="costSteelMode"><option value="steel_only">فقط اسکلت و ورق اتصال؛ پیچ و جوش جدا</option><option value="fabricated">قیمت هر کیلو فولاد ساخته‌شده شامل ساخت و اتصالات؛ اقلام پیچ و جوش جداگانه صفر شوند</option></select></div></div>'+
    '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:760px"><thead><tr><th>قلم</th><th>مقدار</th><th>واحد</th><th>قیمت واحد (تومان)</th><th>منبع پیشنهادی</th><th>هزینه</th></tr></thead><tbody id="costEstimateRows"></tbody></table></div>'+
+   '<h4>هزینه‌های تکمیلی اجرا و فونداسیون</h4><div class="notice">مقادیر این بخش هنوز از طراحی فونداسیون استخراج نشده‌اند؛ فقط پس از متره یا استعلام واقعی وارد کنید. مواردی را که قبلاً در اقلام دیگر یا قیمت ساخت منظور کرده‌اید دوباره ثبت نکنید.</div><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:720px"><thead><tr><th>شرح</th><th>مقدار</th><th>واحد</th><th>قیمت واحد (تومان)</th><th>هزینه</th></tr></thead><tbody id="costManualRows"></tbody></table></div>'+
    '<h4>هزینه‌های درصدی</h4><div class="form-grid">'+
    '<div class="field"><label for="costTransport">حمل‌ونقل (%)</label><input id="costTransport" type="number" min="0" step="0.1"></div>'+
    '<div class="field"><label for="costFabrication">ساخت/برش/سوراخ‌کاری (%)</label><input id="costFabrication" type="number" min="0" step="0.1"></div>'+
@@ -45,7 +58,7 @@
   $("costSteelMode").addEventListener("change",()=>{state.steelPricingMode=$("costSteelMode").value;});
   $("btnCalculateCost").addEventListener("click",calculate);
   $("btnExportCost").addEventListener("click",exportCSV);
-  renderRows();
+  renderRows();renderManualItems();
   $("city")?.addEventListener("change",()=>{renderRows();});
   $("cityName")?.addEventListener("input",()=>{renderRows();});
  }
@@ -58,6 +71,18 @@
    const priceTd=document.createElement("td"),input=document.createElement("input");input.type="number";input.min="0";input.step="any";input.placeholder="قیمت واحد";input.value=manual!==""?manual:(mp?.price??"");input.dataset.costKey=d.key;input.addEventListener("change",()=>{state.prices[d.key]=input.value;});priceTd.appendChild(input);tr.appendChild(priceTd);
    const src=document.createElement("td");src.textContent=mp?((mp.seller||mp.source)+" | بازار: "+(mp.city||"نامشخص")+" | "+(cityKey(mp.city)===cityKey(projectCity())?"هم‌شهر پروژه":"قیمت شهر دیگر؛ حمل تا پروژه باید بررسی شود")+" | تحویل: "+(mp.deliveryCity||"نامشخص")+" | "+(mp.includesFreight?"حمل منظور شده":mp.freightToman!==null&&mp.freightToman!==undefined?"حمل جداگانه ثبت شده":"حمل نامشخص")+" | "+(mp.includesTax?"مالیات منظور شده":mp.taxPercent!==null&&mp.taxPercent!==undefined?"مالیات جداگانه ثبت شده":"مالیات نامشخص")+" | "+(mp.verifiedByUser?"تأیید دستی":"تأییدنشده")+" | "+new Date(mp.updatedAt).toLocaleDateString("fa-IR")+" | "+(Date.now()-new Date(mp.updatedAt).getTime()>36*3600000?"قدیمی":"جدید")+" | واحد منطبق؛ کنترل نهایی لازم"):(state.prices[d.key]!==undefined?"ورود دستی":"قیمت منطبق ثبت نشده؛ کد: "+d.priceCode+"، واحد لازم: "+d.priceUnit);tr.appendChild(src);
    const total=document.createElement("td");total.textContent="—";total.dataset.costTotal=d.key;tr.appendChild(total);body.appendChild(tr);
+  });
+ }
+ function renderManualItems(){
+  const body=$("costManualRows");if(!body)return;body.replaceChildren();
+  state.manualItems.forEach(item=>{
+   const tr=document.createElement("tr"),name=document.createElement("td");name.textContent=item.label;tr.appendChild(name);
+   const qc=document.createElement("td"),q=document.createElement("input");q.type="number";q.min="0";q.step="any";q.placeholder="مقدار";q.value=item.quantity??"";q.dataset.manualKey=item.key;q.dataset.manualField="quantity";qc.appendChild(q);tr.appendChild(qc);
+   const uc=document.createElement("td"),unit=document.createElement("input");unit.type="text";unit.value=item.unit;unit.dataset.manualKey=item.key;unit.dataset.manualField="unit";uc.appendChild(unit);tr.appendChild(uc);
+   const pc=document.createElement("td"),price=document.createElement("input");price.type="number";price.min="0";price.step="any";price.placeholder="قیمت واحد";price.value=item.unitPrice??"";price.dataset.manualKey=item.key;price.dataset.manualField="unitPrice";pc.appendChild(price);tr.appendChild(pc);
+   const total=document.createElement("td");total.dataset.manualTotal=item.key;total.textContent="—";tr.appendChild(total);
+   [q,unit,price].forEach(el=>el.addEventListener("change",()=>{item[el.dataset.manualField]=el.value;}));
+   body.appendChild(tr);
   });
  }
  function calculate(){
@@ -80,6 +105,14 @@
    const amount=Number(q)*p;subtotal+=amount;rows.push({key:d.key,label:d.label,quantity:Number(q),unit:d.unit,unitPrice:p,cost:amount});
    const cell=document.querySelector('[data-cost-total="'+d.key+'"]');if(cell)cell.textContent=fmt(amount);
   });
+  state.manualItems.forEach(item=>{
+   const q=N(item.quantity),p=N(item.unitPrice);
+   if((item.quantity!==""&&item.quantity!==undefined)||(item.unitPrice!==""&&item.unitPrice!==undefined)){
+    if(!(q>0)||!(p>0)){missing.push(item.label+": مقدار یا قیمت واحد تکمیل نشده");return;}
+    const amount=q*p;subtotal+=amount;rows.push({key:item.key,label:item.label,quantity:q,unit:item.unit,unitPrice:p,cost:amount});
+    const cell=document.querySelector('[data-manual-total="'+item.key+'"]');if(cell)cell.textContent=fmt(amount);
+   }
+  });
   const pct=state.percent,base=subtotal;
   const extras={transport:base*pct.transport/100,fabrication:state.steelPricingMode==="fabricated"?0:base*pct.fabrication/100,installation:base*pct.installation/100,paint:base*pct.paint/100};
   const direct=base+Object.values(extras).reduce((a,b)=>a+b,0);
@@ -99,8 +132,8 @@
   const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Cost-Estimate.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
- function getData(){return clone({prices:state.prices,percent:state.percent,steelPricingMode:state.steelPricingMode});}
- function setData(d){if(!d||typeof d!=="object")return;state.prices=d.prices||{};state.percent={...state.percent,...(d.percent||{})};state.steelPricingMode=d.steelPricingMode||"steel_only";if($("costSteelMode"))$("costSteelMode").value=state.steelPricingMode;Object.keys(state.percent).forEach(k=>{const el=$("cost"+k[0].toUpperCase()+k.slice(1));if(el)el.value=state.percent[k];});renderRows();}
+ function getData(){return clone({prices:state.prices,percent:state.percent,steelPricingMode:state.steelPricingMode,manualItems:state.manualItems});}
+ function setData(d){if(!d||typeof d!=="object")return;state.prices=d.prices||{};state.percent={...state.percent,...(d.percent||{})};state.steelPricingMode=d.steelPricingMode||"steel_only";if(Array.isArray(d.manualItems))state.manualItems=defaultManualItems.map(def=>({...def,...(d.manualItems.find(x=>x.key===def.key)||{})}));if($("costSteelMode"))$("costSteelMode").value=state.steelPricingMode;Object.keys(state.percent).forEach(k=>{const el=$("cost"+k[0].toUpperCase()+k.slice(1));if(el)el.value=state.percent[k];});renderRows();renderManualItems();}
  document.addEventListener("DOMContentLoaded",()=>{render();});
  window.SteelCostEstimate={getData,setData,calculate,refreshFromBOQ:(report)=>{if(report&&typeof report==="object"){state.last=report;renderRows();}},getLast:()=>clone(state.lastCost||null)};
 })();
