@@ -45,7 +45,12 @@
   if(!$("tbrFy"))return;
   Object.entries({tbrFy:settings.fyMPa,tbrCover:settings.coverMm,tbrBarDia:settings.barDiaMm,tbrStirrupDia:settings.stirrupDiaMm,tbrLegs:settings.stirrupLegs,tbrClearSpacing:settings.clearSpacingMm,tbrHookAllowance:settings.hookCutAllowancePerEndMm,tbrStirrupSpacing:settings.stirrupSpacingFallbackMm,tbrStirrupRadius:settings.stirrupBendRadiusMm,tbrStirrupHook:settings.stirrupHookExtensionPerEndMm,tbrSideBars:settings.sideBarsPerSide,tbrPhi:settings.phiFlexure,tbrPhiShear:settings.phiShear,tbrLambda:settings.lambdaConcrete,tbrEs:settings.EsMPa,tbrAlpha:settings.alpha1,tbrBeta:settings.beta1,tbrEpsCu:settings.epsilonCu}).forEach(([id,v])=>{if($(id))$(id).value=v;});
  }
-   function closedStirrupDetail(bMm,hMm,coverMm,diameterMm,bendRadiusMm,hookPerEndMm,lengthM,spacingMm){
+   function longitudinalBarPathDetail(routeLengthM,footingDimensionM,hookAllowancePerEndMm=0){
+   if(!Number.isFinite(routeLengthM)||routeLengthM<=0||!Number.isFinite(footingDimensionM)||footingDimensionM<=0||!Number.isFinite(hookAllowancePerEndMm)||hookAllowancePerEndMm<0)return{ok:false,reason:"طول مسیر، بعد پی در راستای شناژ یا افزوده قلاب معتبر نیست"};
+   const footingThroughLengthM=footingDimensionM,straightLengthPerBarM=routeLengthM+footingThroughLengthM,hookAllowancePerEndM=hookAllowancePerEndMm/1000;
+   return{ok:true,routeLengthM,footingDimensionM,footingThroughLengthM,straightLengthPerBarM,hookAllowancePerEndMm,hookAllowancePerEndM,totalCutLengthPerBarM:straightLengthPerBarM+2*hookAllowancePerEndM,assumption:"مسیر شناژ از مرکز هندسی هر دو پی انتهایی می‌گذرد؛ نصف بعد پی در هر انتها افزوده شده تا میلگرد تا وجه بیرونی پی برسد. قلاب فقط افزوده طول دستی است و شکل، جهت و طول مهاری آن تأیید آیین‌نامه‌ای نشده است."};
+  }
+  function closedStirrupDetail(bMm,hMm,coverMm,diameterMm,bendRadiusMm,hookPerEndMm,lengthM,spacingMm){
    const vals=[bMm,hMm,coverMm,diameterMm,bendRadiusMm,hookPerEndMm,lengthM,spacingMm];
    if(vals.some(v=>!Number.isFinite(v))||bMm<=0||hMm<=0||coverMm<0||diameterMm<=0||bendRadiusMm<0||hookPerEndMm<0||lengthM<=0||spacingMm<=0)return{ok:false,reason:"ورودی هندسه خاموت معتبر نیست"};
    const centerB=bMm-2*coverMm-diameterMm,centerH=hMm-2*coverMm-diameterMm,r=bendRadiusMm;
@@ -316,15 +321,15 @@ function areaBar(d){return Math.PI*d*d/4;}
   const spacing=V>0?stirrupArea*settings.fyMPa*d/(V*1000):null;
   const foundation=window.SteelFoundationTakeoff?.getData?.()||{};
   const footingDimension=material?.axis==="X"?Number(foundation.footingWidthM):Number(foundation.footingLengthM);
-  const footingExtension=Number.isFinite(footingDimension)&&footingDimension>0;
-  const straightBarLength=footingExtension?Number(material?.lengthM)+footingDimension:null;
+  const footingPath=longitudinalBarPathDetail(Number(material?.lengthM),footingDimension,settings.hookCutAllowancePerEndMm);
+  const footingExtension=!!footingPath.ok;
+  const straightBarLength=footingExtension?footingPath.straightLengthPerBarM:null;
   const barsBothFaces=count?2*count:null;
-  const totalStraightBarLengthM=barsBothFaces?barsBothFaces*straightBarLength:null;
+  const totalStraightBarLengthM=barsBothFaces&&straightBarLength!=null?barsBothFaces*straightBarLength:null;
    const stirrupSpacingCandidates=[shearYResult.recommendedSpacingMm,shearZResult.recommendedSpacingMm,torsionDesign?.recommendedSpacingMm].filter(x=>Number.isFinite(x)&&x>0);
    const stirrupSpacingUsed=stirrupSpacingCandidates.length?Math.min(...stirrupSpacingCandidates):settings.stirrupSpacingFallbackMm;
    const stirrupDetail=closedStirrupDetail(b,h,settings.coverMm,settings.stirrupDiaMm,settings.stirrupBendRadiusMm,settings.stirrupHookExtensionPerEndMm,Number(material?.lengthM),stirrupSpacingUsed);
-   const hookCutAllowancePerEndM=Math.max(0,Number(settings.hookCutAllowancePerEndMm)||0)/1000;
-   const totalCutLengthM=barsBothFaces&&straightBarLength!=null?barsBothFaces*(straightBarLength+2*hookCutAllowancePerEndM):null;
+   const totalCutLengthM=barsBothFaces&&footingPath.ok?barsBothFaces*footingPath.totalCutLengthPerBarM:null;
   const unitMassKgM=Math.pow(settings.barDiaMm,2)/162;
   return{id:route.id,memberIds:forceRows.map(x=>x.id),segmentCount:members.length,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,
    criticalMoment:{...criticalMoment,NkN:criticalMoment.Nn/1000,MyKNm:criticalMoment.MyNm/1000,MzKNm:criticalMoment.MzNm/1000,MresultantKNm:criticalMoment.MresultantNm/1000},
@@ -333,12 +338,12 @@ function areaBar(d){return Math.PI*d*d/4;}
    interaction:{ok:interaction.ok,assumption:interaction.assumptions,pointCount:interaction.points?.length||0,atCriticalAxial:interactionAtCritical,nominalMomentUtilization:nominalUtilization,curve:interaction.points||[]},
    effectiveDepthMm:d,AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,
    barCountEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits,multiLayerFits,rowsPerFace:layout.rowsPerFace||null,barsPerRow:layout.barsPerRow||[],bottomCentroidMm:layout.bottomCentroidMm||null,topCentroidMm:layout.topCentroidMm||null,layers:layout.layers||[],coordinates:layout.coordinates||[],sideBarCount:layout.sideBarCount||0},
-   longitudinalBars:{countEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
+   longitudinalBars:{countEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,totalCount:barsBothFaces,footingPath,straightLengthPerBarM:straightBarLength,
     totalStraightLengthM:totalStraightBarLengthM,approximateMassKg:totalStraightBarLengthM==null?null:totalStraightBarLengthM*unitMassKgM,
     hookCutAllowancePerEndMm:settings.hookCutAllowancePerEndMm,totalCutLengthM,approximateMassKg:totalCutLengthM==null?null:totalCutLengthM*unitMassKgM,
-    hookAllowanceIncluded:hookCutAllowancePerEndM>0,hookAllowanceIsManual:true,footingExtensionIncluded:footingExtension},
+    hookAllowanceIncluded:settings.hookCutAllowancePerEndMm>0,hookAllowanceIsManual:true,footingExtensionIncluded:footingExtension},
    stirrup:{diaMm:settings.stirrupDiaMm,legs:settings.stirrupLegs,areaMm2:stirrupArea,steelOnlySpacingMm:spacing,detail:stirrupDetail,spacingSource:stirrupSpacingCandidates.length?"حداقل فاصله حاصل از غربال برش/پیچش":"فاصله موقت ورودی؛ فاقد تأیید آیین‌نامه‌ای",shearY:shearYResult,shearZ:shearZResult,phi:settings.phiShear},
-   note:"نیروهای تمام قطعات مسیر پیوسته بررسی شده‌اند. برای پوشش لنگرهای مثبت و منفی، آرماتور به‌صورت متقارن در دو وجه و در چند ردیف با مختصات واقعی ارتفاعی توزیع شده است. آرایش هندسی بر اساس فاصله آزاد ورودی است و جایگزین کنترل حداقل فاصله آیین‌نامه‌ای، تراکم بتن‌ریزی و تداخل خاموت نیست. طول مستقیم میلگرد تا وجه بیرونی دو فونداسیون انتهایی برآورد شده؛ طول قلاب و خم به علت نیاز به ضابطه/جزئیات معتبر به مقدار طول اضافه نشده است."};
+   note:"نیروهای تمام قطعات مسیر پیوسته بررسی شده‌اند. برای پوشش لنگرهای مثبت و منفی، آرماتور به‌صورت متقارن در دو وجه و در چند ردیف با مختصات واقعی ارتفاعی توزیع شده است. آرایش هندسی بر اساس فاصله آزاد ورودی است و جایگزین کنترل حداقل فاصله آیین‌نامه‌ای، تراکم بتن‌ریزی و تداخل خاموت نیست. طول مستقیم میلگرد با فرض عبور مسیر از مرکز هر دو پی و افزودن نصف بعد پی در هر انتها تا وجه بیرونی محاسبه شده است؛ افزوده قلاب صرفاً ورود دستی است و جهت، شکل خم، طول مهاری و ضوابط قلاب هنوز تأیید آیین‌نامه‌ای نشده‌اند."};
  }
  function render(requireLatest){
   read();
@@ -414,7 +419,7 @@ function areaBar(d){return Math.PI*d*d/4;}
    shearLowDemandNoMinimumStirrups:shearLow.ok&&!shearLow.minimumStirrupsTriggered,barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,multiLayerLayout:!!testLayout.ok&&testLayout.rowsPerFace===1&&Math.abs(testLayout.totalAsMm2-8*areaBar(16))<1e-8,perimeterCoordinatesValid:!!perimeterTest.ok&&perimeterTest.coordinates.length===10&&perimeterTest.sideBarCount===2&&perimeterTest.coordinates.every(p=>p.xMm>0&&p.xMm<600&&p.yMm>0&&p.yMm<500)&&perimeterTest.layers.reduce((a,x)=>a+x.count,0)===10,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>100&&midCapacity.MnKNm<180&&Number.isFinite(midCapacity.MnKNm),interactionSignConvention:Number.isFinite(tensileEnd)&&tensileEnd>0&&Number.isFinite(compressionEnd)&&compressionEnd<0,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
    pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
    cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
-  return{passed:Object.values(checks).every(Boolean),checks,stirrupDetailTest,torsionTest,torsionGeometryTest,torsionDesignTest,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,perimeterTest,shearScreenTest:shearTest,shearHighDemandTest:shearHigh,shearLowDemandTest:shearLow,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
+  return{passed:Object.values(checks).every(Boolean),checks,pathTest,stirrupDetailTest,torsionTest,torsionGeometryTest,torsionDesignTest,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,perimeterTest,shearScreenTest:shearTest,shearHighDemandTest:shearHigh,shearLowDemandTest:shearLow,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
    pinnedUniformLoadMomentNm:ep.MmaxNm,cantileverMomentNm:ex.MmaxNm};
  }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
