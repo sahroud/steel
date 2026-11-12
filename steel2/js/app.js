@@ -257,7 +257,7 @@
         return output;
     }
 
-    function calculateCombinations() {
+    function calculateLegacy2DCombinations() {
         if (!window.SteelLoads ||
             typeof window.SteelLoads.getData !== "function" ||
             typeof window.SteelLoads.setData !== "function") {
@@ -525,6 +525,82 @@
     }
 
     // تحلیل مستقل ترکیبات بار
+    function calculateCombinations() {
+        const model = window.SteelStructuralModel;
+        const loadsApi = window.SteelLoads;
+        if (!model || typeof model.analyze3D !== "function" || !loadsApi) {
+            const msg = $("analysisMessage");
+            if (msg) msg.textContent = "موتور تحلیل سه‌بعدی یا ورودی بارگذاری در دسترس نیست.";
+            return { success: false };
+        }
+        const original = loadsApi.getData();
+        if (!original) throw new Error("اطلاعات بارگذاری پروژه خوانده نشد.");
+        const hasWind = ["windLeft","windRight","windWall","windEndFront","windEndBack"]
+            .some(k => Math.abs(Number(original[k]) || 0) > 1e-12);
+        const signs = hasWind ? [1,-1] : [1];
+        const cases = [{
+            label:"ترکیب ۱ ـ 1.4D",
+            factors:{dead:1.4,live:0,snow:0,wind:0},windSign:1
+        }];
+        [{key:"live",title:"Lr"},{key:"snow",title:"S"}].forEach(action => {
+            signs.forEach(sign => cases.push({
+                label:"ترکیب ۳ ـ 1.2D + 1.6"+action.title+" + 0.8W"+(hasWind?(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"):""),
+                factors:{dead:1.2,live:action.key==="live"?1.6:0,
+                    snow:action.key==="snow"?1.6:0,wind:hasWind?0.8:0},
+                windSign:sign
+            }));
+        });
+        if(hasWind) signs.forEach(sign => cases.push({
+            label:"ترکیب ۶ ـ 0.8D + 1.6W"+(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"),
+            factors:{dead:0.8,live:0,snow:0,wind:1.6},windSign:sign
+        }));
+
+        const rows=[];
+        const summaries=[];
+        for(const item of cases){
+            const result=await model.analyze3D(item);
+            if(!result||!result.success)throw new Error("حل سه‌بعدی ترکیب انجام نشد: "+item.label);
+            let peakN=0,peakV=0,peakM=0,criticalMember="";
+            (result.members||[]).forEach(member=>{
+                const f=member.localEndForces||[];
+                const n=Math.max(Math.abs(Number(f[0])||0),Math.abs(Number(f[6])||0));
+                const v=Math.max(Math.hypot(Number(f[1])||0,Number(f[2])||0),
+                    Math.hypot(Number(f[7])||0,Number(f[8])||0));
+                const mm=Math.max(Math.hypot(Number(f[4])||0,Number(f[5])||0),
+                    Math.hypot(Number(f[10])||0,Number(f[11])||0));
+                if(n>peakN||v>peakV||mm>peakM)criticalMember=member.id;
+                peakN=Math.max(peakN,n);peakV=Math.max(peakV,v);peakM=Math.max(peakM,mm);
+            });
+            const itemResult={name:item.label,envelope:{
+                N:{value:peakN/1000,member:criticalMember,end:"بیشینه دو انتها"},
+                V:{value:peakV/1000,member:criticalMember,end:"برآیند برش دو انتها"},
+                M:{value:peakM/1000,member:criticalMember,end:"برآیند لنگر دو انتها"}},
+                maxDisplacement:result.maxTranslation||0,
+                reactions:(result.reactions||[]).length,
+                equilibrium:result.equilibrium||null};
+            summaries.push(itemResult);
+            rows.push("<tr><td>"+(rows.length+1)+"</td><td>"+item.label+
+                "</td><td>"+fmt(peakN/1000)+"</td><td>"+fmt(peakV/1000)+
+                "</td><td>"+fmt(peakM/1000)+"</td><td>"+fmt((result.maxTranslation||0)*1000)+
+                "</td><td>"+(result.equilibrium?.ok?"متعادل":"نیازمند بررسی")+"</td></tr>");
+        }
+        model.combinationResults=summaries;
+        const message=$("analysisMessage");
+        if(message) message.innerHTML=
+            "<h4>تحلیل ترکیبات بار سه‌بعدی ـ مقدماتی</h4>"+
+            "<p>تعداد حالت‌های حل‌شده: <b>"+summaries.length+"</b>؛ گره‌ها و اعضا در مدل سه‌بعدی کامل لحاظ شده‌اند.</p>"+
+            "<div style='overflow-x:auto'><table style='width:100%;min-width:760px;border-collapse:collapse'><thead><tr>"+
+            "<th>ردیف</th><th>ترکیب</th><th>بیشینه |N| (kN)</th><th>بیشینه |V| (kN)</th>"+
+            "<th>بیشینه |M| (kN.m)</th><th>جابجایی (mm)</th><th>تعادل</th></tr></thead><tbody>"+
+            rows.join("")+"</tbody></table></div>"+
+            "<div class='notice'><b>دامنه و محدودیت‌ها</b>"+
+            "<p>این مرحله ترکیب‌های موجود D، Lr، S و W را در مدل سه‌بعدی اجرا می‌کند. فشار باد سقف، دیوارهای طولی و دیوارهای انتهاییِ دارای ورودی مستقل در ترکیبات منظور می‌شوند.</p>"+
+            "<p>ترکیب‌های وابسته به L، R و E و اثر T ساخته نمی‌شوند؛ ورودی مستقل آن‌ها هنوز وجود ندارد. ترکیبات فقط برای بارهای واردشده و با ضرایب فعلی برنامه‌اند و پیش از استفاده طراحی باید با متن رسمی مبحث ششم ۱۳۹۸ و اصلاحیه‌ها بازبینی شوند.</p>"+
+            "<p>نیروها از برآیند نیروهای انتهایی اعضا استخراج شده‌اند؛ کنترل مقاومت، کمانش، P-Delta، تغییرمکان مجاز و اتصالات همچنان مستقل و ضروری است.</p></div>";
+        setStatus("تحلیل سه‌بعدی ترکیبات بار موجود انجام شد.");
+        return {success:true,cases:summaries};
+    }
+
     function calculateCombinationsButton() {
         if (!validateProject()) return;
         if (!validateSections()) return;
