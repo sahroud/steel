@@ -12,7 +12,7 @@
   const anchor=$("tieBeamLayoutPanel");if(!anchor)return;
   const p=document.createElement("section");p.className="panel";p.id="tieBeamRebarPanel";
   p.innerHTML='<div class="panel-title"><h3>کنترل مقدماتی آرماتور شناژ بر اساس نیروهای تحلیل</h3><span class="status">غربال اولیه؛ نه طراحی نهایی</span></div>'+
-  '<div class="notice">پس از اجرای تحلیل سه‌بعدی، نیروهای انتهایی هر شناژ از نتیجه حل‌گر خوانده می‌شوند. برای برآورد اولیه خمشی از رابطه تعادل مقطع مستطیلی استفاده می‌شود؛ مشارکت بتن در برش منظور نمی‌شود. ضرایب و حداقل‌های آیین‌نامه‌ای، ضوابط لرزه‌ای و طول مهاری باید پس از تعیین آیین‌نامه معتبر کنترل شوند.</div>'+
+  '<div class="notice">پس از اجرای تحلیل سه‌بعدی، نیروهای انتهایی هر شناژ از نتیجه حل‌گر خوانده می‌شوند. برای برآورد خمشی از رابطه تعادل مقطع مستطیلی و منحنی سازگاری کرنش استفاده می‌شود. کنترل مقدماتی برش با مشارکت بتن و خاموت بر اساس روابط مبحث ۹ ویرایش ۱۳۹۹ انجام می‌شود؛ ویرایش معتبر، اصلاحیه‌ها، ضوابط لرزه‌ای و جزئیات مهاری باید برای پروژه تأیید شوند.</div>'+
   '<div class="form-grid">'+
   '<div class="field"><label for="tbrFy">تنش تسلیم میلگرد fy (MPa)</label><input id="tbrFy" type="number" min="200" max="700" step="5" value="400"></div>'+
   '<div class="field"><label for="tbrCover">پوشش بتن (mm)</label><input id="tbrCover" type="number" min="20" max="100" step="5" value="40"></div>'+
@@ -29,7 +29,7 @@
   '<div class="button-grid"><button type="button" class="btn secondary" id="btnRunTieRebarScreen">محاسبه مقدماتی آرماتور از آخرین تحلیل</button><button type="button" class="btn secondary" id="btnResetTieRebarDefaults">بازگردانی پیش‌فرض‌ها</button></div>'+
   '<div id="tieRebarStatus" class="notice">ابتدا تحلیل سه‌بعدی را اجرا کنید؛ سپس کنترل مقدماتی در این قسمت قابل انجام است.</div>'+
   '<div id="tieRebarOutput" class="result-box">هنوز نتیجه‌ای محاسبه نشده است.</div>'+
-  '<div class="notice">این محاسبه حداقل آرماتور آیین‌نامه‌ای، کنترل ترک، خیز، دوام، حداکثر فاصله میلگرد، محدودیت فاصله خاموت، برش بتن، پیچش، اثر زلزله، مهاری و وصله را تعیین نمی‌کند. مقدار فاصله خاموت صرفاً از تقاضای فولادی برشی و بدون مشارکت بتن استخراج می‌شود و حد نهایی اجرایی نیست.</div>';
+  '<div class="notice">این محاسبه حداقل آرماتور آیین‌نامه‌ای، کنترل ترک، خیز، دوام، حداکثر فاصله میلگرد، محدودیت فاصله خاموت، برش بتن، پیچش، اثر زلزله، مهاری و وصله را تعیین نمی‌کند. فاصله خاموت از برش بتن و فولاد، حداقل فولاد برشی و محدودیت فاصله فصل ۱۱ محاسبه می‌شود؛ با این حال کنترل پیچش، زلزله، آرایش واقعی خاموت و جزئیات اجرایی هنوز کامل نیست.</div>';
   anchor.parentNode.insertBefore(p,anchor.nextSibling);
   ["tbrFy","tbrCover","tbrBarDia","tbrStirrupDia","tbrLegs","tbrClearSpacing","tbrPhi","tbrPhiShear","tbrLambda","tbrEs","tbrAlpha","tbrBeta","tbrEpsCu"].forEach(id=>$(id).addEventListener("change",read));
   $("btnRunTieRebarScreen").addEventListener("click",()=>render(true));
