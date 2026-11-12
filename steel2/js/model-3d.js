@@ -21,7 +21,7 @@
     (async () => {
       // ابتدا دو فریم و سپس یک مکث کوتاه؛ تا مرورگر فرصت قطعی برای paint نوار داشته باشد.
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 180))));
-      try { task(stage); }
+      try { await task(stage); }
       catch (error) { if (typeof onError === "function") onError(error); }
       finally {
         clearInterval(timer);
@@ -68,14 +68,14 @@
     });
     $("btnRunFull3D").addEventListener("click", function () {
       const box=$("fullModel3DResult");
-      runWithProgress("مرحله ۱ از ۳: آماده‌سازی مدل هندسی…", stage => {
+      runWithProgress("مرحله ۱ از ۳: آماده‌سازی مدل هندسی…", async stage => {
       try {
         stage("مرحله ۱ از ۳: تولید و ترسیم مدل هندسی…");
         build(); draw(); showSummary();
         const lc=$("model3DLoadCase")?.value||"dead";
         stage("مرحله ۲ از ۳: مونتاژ ماتریس سختی و بارگذاری اعضا…");
         stage("مرحله ۳ از ۳: حل دستگاه معادلات سه‌بعدی؛ لطفاً صفحه را نبندید…");
-        const result=analyze3D(lc);
+        const result=await analyze3D(lc);
         box.textContent="تحلیل سه‌بعدی با موفقیت حل شد. حالت بار: "+result.loadCaseLabel+
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
@@ -127,7 +127,7 @@
       });
     });
     $("btnTestSpan10").addEventListener("click", function () {
-      runWithProgress("در حال آماده‌سازی آزمایش مقایسه‌ای دهانه ۱۰ متر…", stage => {
+      runWithProgress("در حال آماده‌سازی آزمایش مقایسه‌ای دهانه ۱۰ متر…", async stage => {
       const box=$("fullModel3DResult"), spanField=$("span"), riseField=$("rise");
       stage("تغییر موقت هندسه و تولید مدل آزمایشی…");
       const originalSpan=Number(spanField?.value), originalRise=Number(riseField?.value);
@@ -138,7 +138,7 @@
         if(typeof window.updateRoofGeometry==="function") window.updateRoofGeometry();
         build(); draw(); showSummary();
         stage("حل مدل سه‌بعدی دهانه ۱۰ متر و استخراج نتایج…");
-        const result=analyze3D("dead");
+        const result=await analyze3D("dead");
         const critical=result.criticalDisplacement||null;
         const report={
           test:"مقایسه دهانه ۱۰ متر با بار مرده",
@@ -574,10 +574,47 @@
     });
     return {ready:missing.length===0,groupCount:groups.size,memberCount:model.members.length,missing};
   }
-  function analyze3D(loadCase){
+  function run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports){
+    return new Promise((resolve,reject)=>{
+      let worker;
+      try{
+        worker=new Worker(new URL("js/analysis-3d-worker.js",window.location.href));
+      }catch(error){
+        reject(new Error("امکان راه‌اندازی پردازشگر پس‌زمینه وجود ندارد: "+error.message));
+        return;
+      }
+      let settled=false;
+      const finish=(fn,value)=>{
+        if(settled)return;
+        settled=true;
+        worker.terminate();
+        fn(value);
+      };
+      worker.onmessage=event=>{
+        const data=event.data||{};
+        if(data.ok)finish(resolve,data.result);
+        else finish(reject,new Error(data.error?.message||"حل‌گر پس‌زمینه پاسخ نامعتبر برگرداند."));
+      };
+      worker.onerror=event=>{
+        event.preventDefault?.();
+        finish(reject,new Error("خطای پردازشگر تحلیل سه‌بعدی: "+(event.message||"خطای ناشناخته")));
+      };
+      try{
+        worker.postMessage({
+          model:analysisModel,
+          sectionsByMemberId,
+          supports,
+          releasePurlinRafterRotation:true
+        });
+      }catch(error){
+        finish(reject,new Error("ارسال مدل به پردازشگر پس‌زمینه ناموفق بود: "+error.message));
+      }
+    });
+  }
+  async function analyze3D(loadCase){
     if(!model)build();
-    if(!window.SteelFrame3D||typeof window.SteelFrame3D.analyze!=="function")
-      throw new Error("حل‌گر سه‌بعدی بارگذاری نشده است.");
+    if(!window.SteelFrame3D||typeof window.SteelFrame3D.makeTransform!=="function")
+      throw new Error("هسته هندسی حل‌گر سه‌بعدی بارگذاری نشده است.");
     const readiness=validate3DSections();
     if(!readiness.ready){
       const first=readiness.missing[0];
@@ -618,6 +655,7 @@
     // Area A comes from the same assigned section properties used by the 3D solver.
     const steelUnitWeightKNm3=78.5;
     let selfWeightKN=0, selfWeightMemberCount=0;
+    const sectionsByMemberId=Object.create(null);
     analysisModel.members.forEach(m=>{
       const lineLoad=selected.factors
         ? (Number(m.lineLoads?.dead||0)*selected.factors.dead+
@@ -635,9 +673,10 @@
           "؛ شناسه‌های پایانی گره‌ها: "+sample+
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
+      const section=window.SteelSections.resolveAnalysis3DSection(m);
+      sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile};
       let selfWeightLineLoad=0;
       if(selected.deadFactor>0){
-        const section=window.SteelSections.resolveAnalysis3DSection(m);
         selfWeightLineLoad=section.A*steelUnitWeightKNm3*selected.deadFactor;
         selfWeightKN+=selfWeightLineLoad*Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
         selfWeightMemberCount++;
@@ -656,11 +695,8 @@
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
-    const result=window.SteelFrame3D.analyze(analysisModel,{
-      sectionResolver:m=>window.SteelSections.resolveAnalysis3DSection(m),
-      supports,
-      releasePurlinRafterRotation:true
-    });
+    const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports);
+
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
       if(criticalNode){
