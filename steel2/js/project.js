@@ -498,6 +498,7 @@
             window.SteelTies.drawAll();
         }
 
+        window.SteelMarketPrices?.syncProjectCity?.();
         persistSnapshot(getData());
         setStatus(
             "پروژه بازیابی شد؛ تنظیمات قیدهای دیوار، قیدهای سقف، پرلین‌ها و اتصال کنسول نیز بازیابی شدند."
