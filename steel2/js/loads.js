@@ -21,6 +21,8 @@
         windLeft: 0,
         windRight: 0,
         windWall: 0,
+        windEndFront: 0,
+        windEndBack: 0,
         windDirection: "left-to-right",
         note: "",
         climate: {
@@ -192,7 +194,9 @@
             <div class="form-grid">
                 ${input("loadWindLeft", "فشار خالص باد سقف سمت چپ", state.windLeft, true)}
                 ${input("loadWindRight", "فشار خالص باد سقف سمت راست", state.windRight, true)}
-                ${input("loadWindWall", "فشار خالص باد دیوارهای طولی (هر دو طرف)", state.windWall, true)}
+                ${input("loadWindWall", "فشار خالص باد دیوارهای طولی (دو طرف)", state.windWall, true)}
+                ${input("loadWindEndFront", "فشار خالص دیوار انتهایی جلو (وجه z=0)", state.windEndFront, true)}
+                ${input("loadWindEndBack", "فشار خالص دیوار انتهایی عقب (وجه z=L)", state.windEndBack, true)}
             </div>
             <div class="notice">
                 برای تحلیل آزمایشی باد، این سه ورودی باید «فشار خالص وارد بر سطح» بر حسب kN/m² باشند، نه سرعت مبنای باد.
@@ -296,7 +300,9 @@
             snowRight: "loadSnowRight",
             windLeft: "loadWindLeft",
             windRight: "loadWindRight",
-            windWall: "loadWindWall"
+            windWall: "loadWindWall",
+            windEndFront: "loadWindEndFront",
+            windEndBack: "loadWindEndBack"
         };
 
         Object.keys(ids).forEach(key => {
@@ -397,7 +403,9 @@
         const signed = [
             data.windLeft,
             data.windRight,
-            data.windWall
+            data.windWall,
+            data.windEndFront,
+            data.windEndBack
         ];
 
         if (signed.some(v => !Number.isFinite(v))) {
@@ -437,7 +445,9 @@
             <p>میانگین بار برف سقف: ${averageSnow.toFixed(3)} kN/m²</p>
             <p>باد سمت چپ: ${data.windLeft.toFixed(3)} kN/m²</p>
             <p>باد سمت راست: ${data.windRight.toFixed(3)} kN/m²</p>
-            <p>فشار خالص باد دیوارهای طولی: ${data.windWall.toFixed(3)} kN/m² (هر دو طرف)</p>
+            <p>فشار خالص باد دیوارهای طولی: ${data.windWall.toFixed(3)} kN/m²</p>
+            <p>فشار خالص دیوار انتهایی جلو: ${data.windEndFront.toFixed(3)} kN/m²</p>
+            <p>فشار خالص دیوار انتهایی عقب: ${data.windEndBack.toFixed(3)} kN/m²</p>
         `;
     }
 
@@ -519,7 +529,9 @@
             snowRight: 1.0,
             windLeft: 0,
             windRight: 0,
-            windWall: 0
+            windWall: 0,
+            windEndFront: 0,
+            windEndBack: 0
         };
 
         Object.assign(state, defaults);
@@ -533,7 +545,9 @@
             snowRight: "loadSnowRight",
             windLeft: "loadWindLeft",
             windRight: "loadWindRight",
-            windWall: "loadWindWall"
+            windWall: "loadWindWall",
+            windEndFront: "loadWindEndFront",
+            windEndBack: "loadWindEndBack"
         };
 
         Object.keys(ids).forEach(key => {
@@ -566,7 +580,7 @@
             "deadLeft", "deadRight",
             "liveLeft", "liveRight",
             "snowLeft", "snowRight",
-            "windLeft", "windRight", "windWall"
+            "windLeft", "windRight", "windWall", "windEndFront", "windEndBack"
         ];
 
         keys.forEach(key => {
@@ -620,7 +634,9 @@
                     snowRight: "loadSnowRight",
                     windLeft: "loadWindLeft",
                     windRight: "loadWindRight",
-                    windWall: "loadWindWall"
+                    windWall: "loadWindWall",
+                    windEndFront: "loadWindEndFront",
+                    windEndBack: "loadWindEndBack"
                 };
 
                 if ($(map[key])) $(map[key]).value = state[key];
