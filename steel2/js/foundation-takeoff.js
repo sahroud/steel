@@ -121,14 +121,14 @@
   if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
   if(pw>B||pl>L){if(box)box.textContent="ابعاد پدستال از ابعاد پی بزرگ‌تر است؛ ورودی‌ها را اصلاح کنید.";return null;}
   if(Math.abs(offsetX)+(pedComplete?pw:0)/2>B/2+1e-9||Math.abs(offsetZ)+(pedComplete?pl:0)/2>L/2+1e-9){if(box)box.textContent="محور ستون/ابعاد پدستال از محدوده پی خارج می‌شود؛ ابعاد و جابه‌جایی‌ها را بررسی کنید.";return null;}
-  const concreteWeight=gammaC*(B*L*t+(pedComplete?pw*pl*ph:0));
+  const pedestalWeight=pedComplete?gammaC*pw*pl*ph:0,concreteWeight=gammaC*B*L*t+pedestalWeight;
   const soilWeight=cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
   const permanentWeight=concreteWeight+soilWeight,area=B*L;
   const cases=[];
   lastReport.rows.forEach(row=>{
    const source=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
    source.forEach(item=>{
-    const v=item.values||[],N=Number(v[1])/1000,MxBase=Number(v[3])/1e6,MzBase=Number(v[5])/1e6,Mx=MxBase-offsetZ*N,Mz=MzBase+offsetX*N;
+    const v=item.values||[],N=Number(v[1])/1000,MxBase=Number(v[3])/1e6,MzBase=Number(v[5])/1e6,Mx=MxBase-offsetZ*(N+pedestalWeight),Mz=MzBase+offsetX*(N+pedestalWeight);
     if(![N,Mx,Mz].every(Number.isFinite))return;
     const totalN=N+permanentWeight;
     let status="",qmin=null,qmax=null,eX=null,eZ=null;
