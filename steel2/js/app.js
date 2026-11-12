@@ -576,12 +576,16 @@
                 V:{value:peakV/1000,member:criticalMember,end:"برآیند برش دو انتها"},
                 M:{value:peakM/1000,member:criticalMember,end:"برآیند لنگر دو انتها"}},
                 maxDisplacement:result.maxTranslation||0,
+                criticalNode:result.maxDisplacement?.nodeId||"—",
+                displacementComponents:(result.maxDisplacement?.components||[0,0,0]).map(v=>Number(v)||0),
                 reactions:(result.reactions||[]).length,
                 equilibrium:result.equilibrium||null};
             summaries.push(itemResult);
             rows.push("<tr><td>"+(rows.length+1)+"</td><td>"+item.label+
                 "</td><td>"+fmt(peakN/1000)+"</td><td>"+fmt(peakV/1000)+
                 "</td><td>"+fmt(peakM/1000)+"</td><td>"+fmt((result.maxTranslation||0)*1000)+
+                "</td><td>"+(result.maxDisplacement?.nodeId||"—")+"</td><td>"+
+                (result.maxDisplacement?.components||[0,0,0]).map(v=>fmt(Number(v||0)*1000)).join(" / ")+
                 "</td><td>"+(result.equilibrium?.ok?"متعادل":"نیازمند بررسی")+"</td></tr>");
         }
         model.combinationResults=summaries;
@@ -591,12 +595,13 @@
             "<p>تعداد حالت‌های حل‌شده: <b>"+summaries.length+"</b>؛ گره‌ها و اعضا در مدل سه‌بعدی کامل لحاظ شده‌اند.</p>"+
             "<div style='overflow-x:auto'><table style='width:100%;min-width:760px;border-collapse:collapse'><thead><tr>"+
             "<th>ردیف</th><th>ترکیب</th><th>بیشینه |N| (kN)</th><th>بیشینه |V| (kN)</th>"+
-            "<th>بیشینه |M| (kN.m)</th><th>جابجایی (mm)</th><th>تعادل</th></tr></thead><tbody>"+
+            "<th>بیشینه |M| (kN.m)</th><th>جابجایی کل (mm)</th><th>گره بحرانی</th><th>ux / uy / uz (mm)</th><th>تعادل</th></tr></thead><tbody>"+
             rows.join("")+"</tbody></table></div>"+
             "<div class='notice'><b>دامنه و محدودیت‌ها</b>"+
             "<p>این مرحله ترکیب‌های موجود D، Lr، S و W را در مدل سه‌بعدی اجرا می‌کند. فشار باد سقف، دیوارهای طولی و دیوارهای انتهاییِ دارای ورودی مستقل در ترکیبات منظور می‌شوند.</p>"+
             "<p>ترکیب‌های وابسته به L، R و E و اثر T ساخته نمی‌شوند؛ ورودی مستقل آن‌ها هنوز وجود ندارد. ترکیبات فقط برای بارهای واردشده و با ضرایب فعلی برنامه‌اند و پیش از استفاده طراحی باید با متن رسمی مبحث ششم ۱۳۹۸ و اصلاحیه‌ها بازبینی شوند.</p>"+
-            "<p>نیروها از برآیند نیروهای انتهایی اعضا استخراج شده‌اند؛ کنترل مقاومت، کمانش، P-Delta، تغییرمکان مجاز و اتصالات همچنان مستقل و ضروری است.</p></div>";
+            "<p>برای هر حالت، شناسه گره دارای بیشینه جابه‌جایی و مؤلفه‌های انتقالی ux/uy/uz نیز گزارش شده‌اند تا راستای حرکت و مسیر احتمالی ناپایداری قابل تشخیص باشد.</p>"+
+            "<p>نیروها از برآیند نیروهای انتهایی اعضا استخراج شده‌اند؛ کنترل مقاومت، کمانش، P-Delta، تغییرمکان مجاز و اتصالات همچنان مستقل و ضروری است. تعادل عددی به‌تنهایی اثبات‌کننده پایداری یا کفایت طراحی نیست.</p></div>";
         setStatus("تحلیل سه‌بعدی ترکیبات بار موجود انجام شد.");
         return {success:true,cases:summaries};
     }
