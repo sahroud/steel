@@ -101,6 +101,7 @@
             owner: $("owner") ? $("owner").value.trim() : "",
             designer: $("designer") ? $("designer").value.trim() : "",
             city: $("city") ? $("city").value : "",
+            cityName: $("cityName") ? $("cityName").value.trim() : "",
             baseConnection: getBaseConnection(),
 
             span: getNumber("span"),
@@ -355,6 +356,7 @@
             "owner",
             "designer",
             "city",
+            "cityName",
             "span",
             "length",
             "spacing",
@@ -371,6 +373,10 @@
                 $(id).value = data[id];
             }
         });
+        if ($("cityName")) {
+            $("cityName").style.display = $("city")?.value === "other" ? "" : "none";
+            if (data.cityName !== undefined) $("cityName").value = data.cityName;
+        }
 
         // ارتفاع تاج از فایل پروژه بازیابی می‌شود؛ شیب از rise و نصف دهانه محاسبه می‌شود.
         updateRoofGeometry();
