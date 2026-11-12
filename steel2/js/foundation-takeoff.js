@@ -5,9 +5,9 @@
 (function(){
  "use strict";
  const $=id=>document.getElementById(id);
- const keys=["footingWidthM","footingLengthM","footingThicknessM","pedestalWidthM","pedestalLengthM","pedestalHeightM","excavationDepthM","workingSpaceM","anchorsPerBase","tieCount","tieTotalLengthM","tieWidthM","tieHeightM","tieRebarKgPerM"];
- const state={footingWidthM:"",footingLengthM:"",footingThicknessM:"",pedestalWidthM:"",pedestalLengthM:"",pedestalHeightM:"",excavationDepthM:"",workingSpaceM:"",anchorsPerBase:"",tieCount:"",tieTotalLengthM:"",tieWidthM:"",tieHeightM:"",tieRebarKgPerM:""};
- const map={footingWidthM:"ftWidth",footingLengthM:"ftLength",footingThicknessM:"ftThickness",pedestalWidthM:"ftPedWidth",pedestalLengthM:"ftPedLength",pedestalHeightM:"ftPedHeight",excavationDepthM:"ftExcDepth",workingSpaceM:"ftWorking",anchorsPerBase:"ftAnchors",tieCount:"ftTieCount",tieTotalLengthM:"ftTieLength",tieWidthM:"ftTieWidth",tieHeightM:"ftTieHeight",tieRebarKgPerM:"ftTieRebar"};
+ const keys=["footingWidthM","footingLengthM","footingThicknessM","pedestalWidthM","pedestalLengthM","pedestalHeightM","excavationDepthM","workingSpaceM","anchorsPerBase","tieCount","tieTotalLengthM","tieWidthM","tieHeightM","tieRebarKgPerM","soilAllowableKPa","concreteUnitWeightKNm3","soilUnitWeightKNm3","soilCoverDepthM"];
+ const state={footingWidthM:"",footingLengthM:"",footingThicknessM:"",pedestalWidthM:"",pedestalLengthM:"",pedestalHeightM:"",excavationDepthM:"",workingSpaceM:"",anchorsPerBase:"",tieCount:"",tieTotalLengthM:"",tieWidthM:"",tieHeightM:"",tieRebarKgPerM:"",soilAllowableKPa:"",concreteUnitWeightKNm3:"",soilUnitWeightKNm3:"",soilCoverDepthM:""};
+ const map={footingWidthM:"ftWidth",footingLengthM:"ftLength",footingThicknessM:"ftThickness",pedestalWidthM:"ftPedWidth",pedestalLengthM:"ftPedLength",pedestalHeightM:"ftPedHeight",excavationDepthM:"ftExcDepth",workingSpaceM:"ftWorking",anchorsPerBase:"ftAnchors",tieCount:"ftTieCount",tieTotalLengthM:"ftTieLength",tieWidthM:"ftTieWidth",tieHeightM:"ftTieHeight",tieRebarKgPerM:"ftTieRebar",soilAllowableKPa:"ftSoilAllow",concreteUnitWeightKNm3:"ftConcreteGamma",soilUnitWeightKNm3:"ftSoilGamma",soilCoverDepthM:"ftSoilCover"};
  const fmt=x=>Number(x).toLocaleString("fa-IR",{maximumFractionDigits:3});
  const num=x=>{const n=Number(x);return Number.isFinite(n)&&n>0?n:null;};
  let lastReport=null;
@@ -32,7 +32,7 @@
    '<div class="field"><label for="ftTieLength">مجموع طول شناژها (متر)</label><input id="ftTieLength" type="number" min="0" step="0.1" placeholder="جمع طول محور یا طول اجرایی"></div>'+
    '<div class="field"><label for="ftTieWidth">عرض شناژ (متر)</label><input id="ftTieWidth" type="number" min="0" step="0.05"></div>'+
    '<div class="field"><label for="ftTieHeight">ارتفاع شناژ (متر)</label><input id="ftTieHeight" type="number" min="0" step="0.05"></div>'+
-   '<div class="field"><label for="ftTieRebar">وزن آرماتور شناژ (کیلوگرم بر متر؛ اختیاری)</label><input id="ftTieRebar" type="number" min="0" step="0.1" placeholder="از جدول آرماتوربندی"></div></div>'+
+   '<div class="field"><label for="ftTieRebar">وزن آرماتور شناژ (کیلوگرم بر متر؛ اختیاری)</label><input id="ftTieRebar" type="number" min="0" step="0.1" placeholder="از جدول آرماتوربندی"></div></div>'+'<h4>ورودی‌های ژئوتکنیک و وزن‌های مؤثر برای غربال فشار زیر پی</h4><div class="notice">این مقادیر باید از گزارش مکانیک خاک و مشخصات مصالح برداشته شوند. فشار مجاز واردشده باید از نظر gross/net بودن روشن باشد؛ فعلاً فقط فشار مجاز ناخالص قابل مقایسه است. وزن پی و خاک روی پی فقط با ورودی‌های زیر افزوده می‌شود.</div><div class="form-grid">'+'<div class="field"><label for="ftSoilAllow">ظرفیت باربری مجاز ناخالص خاک (kPa)</label><input id="ftSoilAllow" type="number" min="0" step="1" placeholder="از گزارش ژئوتکنیک؛ نه حدس"></div>'+'<div class="field"><label for="ftConcreteGamma">وزن مخصوص بتن (kN/m³)</label><input id="ftConcreteGamma" type="number" min="0" step="0.1" placeholder="طبق مشخصات پروژه"></div>'+'<div class="field"><label for="ftSoilGamma">وزن مخصوص خاک روی پی (kN/m³)</label><input id="ftSoilGamma" type="number" min="0" step="0.1" placeholder="در صورت وجود خاک پوششی"></div>'+'<div class="field"><label for="ftSoilCover">ضخامت خاک پوششی روی پی (متر)</label><input id="ftSoilCover" type="number" min="0" step="0.05" placeholder="از ترازهای واقعی"></div></div>'+'<div id="foundationBearingSummary" class="notice">پس از ورود داده‌های ژئوتکنیک و ابعاد واقعی، غربال فشار انجام می‌شود.</div><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:780px"><thead><tr><th>گره پایه</th><th>حالت بار</th><th>N (kN)</th><th>eX / eZ (m)</th><th>qmin (kPa)</th><th>qmax (kPa)</th><th>نتیجه غربال</th></tr></thead><tbody id="foundationBearingRows"></tbody></table></div>'+
    '<div class="button-grid"><button id="btnFoundationReactions" class="btn secondary" type="button">استخراج واکنش یک حالت بار</button><button id="btnFoundationEnvelope" class="btn primary" type="button">تحلیل پوش واکنش همه ترکیبات مقدماتی</button><button id="btnFoundationQuantities" class="btn secondary" type="button">محاسبه متره هندسی فونداسیون</button><button id="btnFoundationCSV" class="btn secondary" type="button" disabled>خروجی CSV واکنش و متره</button></div>'+
    '<div id="foundationTakeoffSummary" class="notice">هنوز واکنش تحلیل سه‌بعدی استخراج نشده است.</div>'+
    '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:920px"><thead><tr><th>گره پایه</th><th>مختصات X/Z (متر)</th><th>Fx min/max (kN)</th><th>Fy min/max (kN)</th><th>Fz min/max (kN)</th><th>Mx min/max (kN.m)</th><th>My min/max (kN.m)</th><th>Mz min/max (kN.m)</th></tr></thead><tbody id="foundationReactionRows"></tbody></table></div>'+
@@ -100,6 +100,52 @@
   }catch(e){summary.textContent="استخراج پوش واکنش ناموفق بود: "+e.message;}
   finally{button.disabled=false;}
  }
+ function screenBearing(q){
+  const box=$("foundationBearingSummary"),body=$("foundationBearingRows");
+  if(body)body.replaceChildren();
+  if(!lastReport||!Array.isArray(lastReport.rows)||!lastReport.rows.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
+  const B=num(state.footingWidthM),L=num(state.footingLengthM),t=num(state.footingThicknessM);
+  const allow=num(state.soilAllowableKPa),gammaC=num(state.concreteUnitWeightKNm3);
+  const cover=state.soilCoverDepthM===""?0:Number(state.soilCoverDepthM);
+  const gammaS=cover>0?num(state.soilUnitWeightKNm3):0;
+  if(!B||!L||!t||!allow||!gammaC||cover<0||!Number.isFinite(cover)||(cover>0&&!gammaS)){
+   if(box)box.textContent="برای غربال فشار زیر پی، عرض/طول/ضخامت پی، فشار مجاز ناخالص خاک، وزن مخصوص بتن و در صورت وجود خاک پوششی، ضخامت و وزن مخصوص آن را وارد کنید. نتیجه‌ای حدس زده نمی‌شود.";
+   return null;
+  }
+  const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM);
+  const pedComplete=!!(pw&&pl&&ph);
+  if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
+  if(pw>B||pl>L){if(box)box.textContent="ابعاد پدستال از ابعاد پی بزرگ‌تر است؛ ورودی‌ها را اصلاح کنید.";return null;}
+  const concreteWeight=gammaC*(B*L*t+(pedComplete?pw*pl*ph:0));
+  const soilWeight=cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
+  const permanentWeight=concreteWeight+soilWeight,area=B*L;
+  const cases=[];
+  lastReport.rows.forEach(row=>{
+   const source=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
+   source.forEach(item=>{
+    const v=item.values||[],N=Number(v[1])/1000,Mx=Number(v[3])/1e6,Mz=Number(v[5])/1e6;
+    if(![N,Mx,Mz].every(Number.isFinite))return;
+    const totalN=N+permanentWeight;
+    let status="",qmin=null,qmax=null,eX=null,eZ=null;
+    if(totalN<=0){status="کشش/بالاکشیدگی؛ فشار فشاری قابل محاسبه نیست";}
+    else{
+     eX=Math.abs(Mz)/totalN;eZ=Math.abs(Mx)/totalN;
+     const bending=6*Math.abs(Mx)/(B*L*L)+6*Math.abs(Mz)/(L*B*B);
+     qmin=totalN/area-bending;qmax=totalN/area+bending;
+     const kern=eX<=B/6+1e-9&&eZ<=L/6+1e-9;
+     if(qmin<0||!kern)status="تماس کامل برقرار نیست؛ تحلیل تماس جزئی/غیرخطی لازم است";
+     else if(qmax>allow)status="فشار بیشینه از ظرفیت مجاز واردشده بیشتر است";
+     else status="غربال اولیه: فشار در محدوده مجاز واردشده";
+    }
+    const record={nodeId:row.nodeId,label:item.label,NkN:N,totalNkN:totalN,eXM:eX,eZM:eZ,qminKPa:qmin,qmaxKPa:qmax,allowableKPa:allow,status,concreteWeightKN:concreteWeight,soilCoverWeightKN:soilWeight};
+    cases.push(record);
+    if(body){const tr=document.createElement("tr");[record.nodeId,record.label,fmt(N),eX===null?"—":fmt(eX)+" / "+fmt(eZ),qmin===null?"—":fmt(qmin),qmax===null?"—":fmt(qmax),status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);}
+   });
+  });
+  const failed=cases.filter(x=>x.status!=="غربال اولیه: فشار در محدوده مجاز واردشده").length;
+  if(box)box.textContent="غربال فشار برای "+cases.length+" حالت-پایه انجام شد. وزن بتن پی/پدستال افزوده‌شده: "+fmt(concreteWeight)+" kN برای هر پی؛ خاک پوششی: "+fmt(soilWeight)+" kN برای هر پی. موارد نیازمند بررسی بیشتر: "+failed+". این نتیجه فقط کنترل فشار خطی با فرض پی مستطیلی صلب، تماس کامل و بار متمرکز در مرکز پدستال است؛ در صورت خروج از هسته، کشش خاک مجاز فرض نشده و نتیجه قبولی صادر نمی‌شود.";
+  return {basis:"preliminary_gross_bearing_full_contact",allowableKPa:allow,footing:{B,L,t},concreteUnitWeightKNm3:gammaC,soilUnitWeightKNm3:gammaS||null,soilCoverDepthM:cover,concreteWeightPerFootingKN:concreteWeight,soilCoverWeightPerFootingKN:soilWeight,cases,limitations:["فقط واکنش‌های خطی موجود در پوش مقدماتی؛ ضرایب ترکیبات هنوز با آیین‌نامه رسمی تطبیق نهایی نشده‌اند.","بارهای قائم و لنگرهای تکیه‌گاهی به‌صورت بار متمرکز در مرکز پی فرض شده‌اند؛ خروج از مرکز هندسی ستون/پدستال لحاظ نشده است.","پی به‌صورت مستطیلی صلب و فشار خاک خطی با تماس کامل فرض شده است.","در صورت qmin منفی یا خروج از هسته، تماس جزئی خاک، uplift و اندرکنش خاک-سازه تحلیل نشده و نتیجه قبولی صادر نمی‌شود.","وزن خاک پوششی فقط روی سطح خالص پی خارج از پدستال برآورد شده؛ سربار سطحی، آب زیرزمینی، شناژ، خاکبرداری، اثر زلزله و کنترل لغزش/واژگونی لحاظ نشده‌اند.","این غربال جایگزین طراحی ژئوتکنیکی و سازه‌ای فونداسیون نیست."]};
+ }
  function quantify(){
   readInputs();
   const count=lastReport?.rows?.length||0,w=num(state.footingWidthM),l=num(state.footingLengthM),t=num(state.footingThicknessM);
@@ -122,6 +168,7 @@
   const totalFormwork=formFoot+formPed+(tieFormwork!==null?tieFormwork:0);
   const q={baseCount:count,footingConcreteM3:footingConcrete,pedestalConcreteM3:pedComplete?pedConcrete:null,tieCount,tieTotalLengthM:tieLength,tieConcreteM3:tieConcrete,tieSideFormworkM2:tieFormwork,tieRebarKg:tieRebar,totalConcreteM3:totalConcrete,excavationM3:excavation,sideFormworkM2:totalFormwork,anchorsCount:anchors,dimensions:{w,l,t,pw:pw||null,pl:pl||null,ph:ph||null,excavationDepthM:excavationDepth,workingSpaceM:clearance,tieWidthM:tw||null,tieHeightM:th||null}};
   lastReport.quantities=q;
+  lastReport.foundationBearing=screenBearing(q);
   window.SteelCostEstimate?.refreshFromFoundation?.(q);
   $("foundationQuantitySummary").textContent="تعداد پی: "+count+" | بتن پی: "+fmt(footingConcrete)+" م³"+(pedComplete?" | بتن پدستال: "+fmt(pedConcrete)+" م³":" | پدستال: ابعاد کامل وارد نشده")+(tieReady?" | شناژها: "+fmt(tieLength)+" متر طول، "+fmt(tieConcrete)+" م³ بتن، "+fmt(tieFormwork)+" م² قالب جانبی"+(tieRebar!==null?"، "+fmt(tieRebar)+" کیلوگرم آرماتور بر اساس وزن واحد واردشده":"، آرماتور شناژ محاسبه نشده"):" | شناژها هنوز متره نشده‌اند؛ تعداد، طول کل، عرض و ارتفاع را از نقشه وارد کنید")+" | مجموع بتن پی، پدستال و شناژِ محاسبه‌شده: "+fmt(q.totalConcreteM3)+" م³"+(excavation!==null?" | خاکبرداری هندسی: "+fmt(excavation)+" م³":" | خاکبرداری محاسبه نشده؛ عمق و فضای کار را وارد کنید")+" | قالب جانبی کلِ محاسبه‌شده: "+fmt(totalFormwork)+" م²"+(anchors!==null?" | تعداد بولت: "+anchors:" | تعداد بولت وارد نشده")+". قالب کف شناژ، وصله/خم میلگرد، بتن مگر، پرت، خاک متورم و اصلاح حجم خاکبرداری در این محاسبه نیستند. مقدار شناژ بر اساس ورودی نقشه است، نه تشخیص خودکار مسیر.";
  }
@@ -131,7 +178,7 @@
   const lines=[["نوع گزارش","واکنش و متره مقدماتی فونداسیون"],["حالت بار",lastReport.loadCase],["نوع تکیه‌گاه",lastReport.supportType]];
   if(lastReport.rows.some(r=>Array.isArray(r.envelopes))){lines.push(["گره","X (m)","Z (m)",...["Fx","Fy","Fz"].map(x=>x+" min (kN)"),...["Fx","Fy","Fz"].map(x=>x+" max (kN)"),...["Mx","My","Mz"].map(x=>x+" min (kN.m)"),...["Mx","My","Mz"].map(x=>x+" max (kN.m)")]);lastReport.rows.forEach(r=>lines.push([r.nodeId,r.x,r.z,...r.envelopes.slice(0,3).map(e=>e.min/1000),...r.envelopes.slice(0,3).map(e=>e.max/1000),...r.envelopes.slice(3).map(e=>e.min/1e6),...r.envelopes.slice(3).map(e=>e.max/1e6)]));lines.push([],["واکنش‌های هم‌زمان هر ترکیب (برای جلوگیری از ترکیب کمینه/بیشینه‌های نامتجانس)"],["گره","حالت بار","Fx (kN)","Fy (kN)","Fz (kN)","Mx (kN.m)","My (kN.m)","Mz (kN.m)"]);lastReport.rows.forEach(r=>(r.caseReactions||[]).forEach(s=>lines.push([r.nodeId,s.label,...s.values.slice(0,3).map(v=>v/1000),...s.values.slice(3,6).map(v=>v/1e6)])));}
   else{lines.push(["گره","X (m)","Z (m)","Fx (kN)","Fy (kN)","Fz (kN)","Mx (kN.m)","My (kN.m)","Mz (kN.m)"],...lastReport.rows.map(r=>[r.nodeId,r.x,r.z,...r.values.slice(0,3).map(v=>v/1000),...r.values.slice(3,6).map(v=>v/1e6)]));}
-  if(lastReport.quantities){const q=lastReport.quantities;lines.push(["تعداد پی",q.baseCount],["بتن پی (m3)",q.footingConcreteM3],["بتن پدستال (m3)",q.pedestalConcreteM3??"نامشخص"],["مجموع بتن (m3)",q.totalConcreteM3],["خاکبرداری (m3)",q.excavationM3??"نامشخص"],["بتن شناژ (m3)",q.tieConcreteM3??"نامشخص"],["طول کل شناژ (m)",q.tieTotalLengthM??"نامشخص"],["تعداد شناژ",q.tieCount??"نامشخص"],["قالب جانبی شناژ (m2)",q.tieSideFormworkM2??"نامشخص"],["آرماتور شناژ (kg)",q.tieRebarKg??"نامشخص"],["قالب جانبی کل (m2)",q.sideFormworkM2],["تعداد بولت",q.anchorsCount??"نامشخص"]);}
+  if(lastReport.foundationBearing){const fb=lastReport.foundationBearing;lines.push([],["غربال مقدماتی فشار زیر پی"],["مبنای کنترل",fb.basis],["فشار مجاز ناخالص (kPa)",fb.allowableKPa],["وزن بتن هر پی (kN)",fb.concreteWeightPerFootingKN],["وزن خاک پوششی هر پی (kN)",fb.soilCoverWeightPerFootingKN],["گره","حالت بار","N سازه (kN)","N با وزن‌های افزوده (kN)","eX (m)","eZ (m)","qmin (kPa)","qmax (kPa)","نتیجه"],...fb.cases.map(x=>[x.nodeId,x.label,x.NkN,x.totalNkN,x.eXM,x.eZM,x.qminKPa,x.qmaxKPa,x.status]));}if(lastReport.quantities){const q=lastReport.quantities;lines.push(["تعداد پی",q.baseCount],["بتن پی (m3)",q.footingConcreteM3],["بتن پدستال (m3)",q.pedestalConcreteM3??"نامشخص"],["مجموع بتن (m3)",q.totalConcreteM3],["خاکبرداری (m3)",q.excavationM3??"نامشخص"],["بتن شناژ (m3)",q.tieConcreteM3??"نامشخص"],["طول کل شناژ (m)",q.tieTotalLengthM??"نامشخص"],["تعداد شناژ",q.tieCount??"نامشخص"],["قالب جانبی شناژ (m2)",q.tieSideFormworkM2??"نامشخص"],["آرماتور شناژ (kg)",q.tieRebarKg??"نامشخص"],["قالب جانبی کل (m2)",q.sideFormworkM2],["تعداد بولت",q.anchorsCount??"نامشخص"]);}
   const csv="\uFEFF"+lines.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Foundation-Takeoff.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
