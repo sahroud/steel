@@ -55,7 +55,7 @@
       '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
-      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option></select></div></div>' +
+      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option></select></div></div>' +
       '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
@@ -624,7 +624,8 @@
     const cases={
       dead:{key:"dead",label:"مرده",direction:[0,-1,0],deadFactor:1},
       live:{key:"live",label:"زنده",direction:[0,-1,0],deadFactor:0},
-      snow:{key:"snow",label:"برف",direction:[0,-1,0],deadFactor:0}
+      snow:{key:"snow",label:"برف",direction:[0,-1,0],deadFactor:0},
+      wind:{key:"wind",label:"باد ـ فشار خالص ورودی",direction:null,deadFactor:0}
     };
     let selected=cases[loadCase];
     if(/^combo[0-2]$/.test(loadCase)){
@@ -689,10 +690,32 @@
       }
       const totalLineLoad=lineLoad+selfWeightLineLoad;
       const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
-      const global=selected.direction.map(v=>v*totalLineLoad*1000);
+      let global;
+      if(selected.key==="wind"){
+        // Wind inputs are signed NET pressures (kN/m²), not basic wind speed.
+        // Positive = pressure toward the enclosed building; negative = suction.
+        // Roof pressure is transferred to purlins normal to each roof slope.
+        // Side-wall pressure is transferred to longitudinal wall girts, normal to the wall.
+        global=[0,0,0];
+        if(m.sectionKey==="roofPurlin"){
+          const half=Number(model.geometry.span)/2;
+          const rise=Number(model.geometry.rise);
+          const slope=rise/half;
+          const norm=Math.hypot(slope,1);
+          const left=Number(m.lineLoads?.windLeft||0)*1000;
+          const right=Number(m.lineLoads?.windRight||0)*1000;
+          global[0]+=left*slope/norm-right*slope/norm;
+          global[1]-=(left+right)/norm;
+        }else if(m.sectionKey==="wallGirt"){
+          const wall=Number(m.lineLoads?.wind||0)*1000;
+          global[0]+=m.side==="left"?wall:-wall;
+        }
+      }else{
+        global=selected.direction.map(v=>v*totalLineLoad*1000);
+      }
       const axes=[tr.axes.x,tr.axes.y,tr.axes.z];
       const local=axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*global[i],0));
-      m.analysisLoad={uniformLocal:local};
+      m.analysisLoad={uniformLocal:local,globalUniform:global};
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
     const fixed= $("baseConnection")?.value==="fixed";
@@ -783,7 +806,7 @@
     result.supportType=fixed?"گیردار":"مفصلی";
     result.selfWeight={included:selected.deadFactor>0,deadLoadFactor:selected.deadFactor,unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount,bySectionGroup:selfWeightByGroup};
     result.connectionModel="اتصال پرلین به رفتر: تقریب کلیپس/نبشی دوپیچه؛ انتقال جابه‌جایی مشترک است، دو دوران خمشی پرلین از رفتر جدا شده‌اند و دوران حول محور طولی پرلین مشترک باقی مانده است. این مدل سختی واقعی اتصال را محاسبه نمی‌کند.";
-    result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. بار باد و ترکیبات دارای باد/زلزله هنوز اعمال نشده‌اند؛ سه ترکیب ثقلی ULS-1 تا ULS-3 به‌صورت خطی قابل تحلیل هستند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
+    result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. حالت باد فقط فشار خالص دستی واردشده را به‌صورت برداری به پرلین‌های سقف و قیدهای طولی دو دیوار جانبی منتقل می‌کند؛ فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، دیوارهای انتهایی، بازشوهای غالب، پیچش کلی و ترکیبات بار شامل باد هنوز به‌صورت آیین‌نامه‌ای تولید نشده‌اند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
