@@ -18,7 +18,7 @@
  const fmt=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:2});
  function projectCity(){
   const el=$("city"); if(!el)return "";
-  if(el.value==="other")return ($("cityName")?.value||"").trim();
+  if(el.value==="other"||el.value==="custom")return ($("cityName")?.value||"").trim();
   const opt=el.options?.[el.selectedIndex];return (opt?.textContent||el.value||"").trim().replace(/\s*\(پیش‌فرض\)\s*/g,"");
  }
  function safeDate(v){const d=new Date(v);return Number.isFinite(d.getTime())?d.toISOString():null;}
@@ -156,7 +156,7 @@
   $("marketPriceAuto").addEventListener("change",()=>{state.autoRefresh=$("marketPriceAuto").checked;persist();configureAutoRefresh();});
   $("marketUseProjectCity")?.addEventListener("click",()=>{$("marketPriceCity").value=projectCity();});
   const syncProjectCity=()=>{$("marketPriceProjectCity").textContent=projectCity()||"انتخاب نشده";};
-  $("city")?.addEventListener("change",()=>{if($("cityName"))$("cityName").style.display=$("city").value==="other"?"":"none";syncProjectCity();});
+  $("city")?.addEventListener("change",()=>{if($("cityName"))$("cityName").style.display=($("city").value==="other"||$("city").value==="custom")?"":"none";syncProjectCity();});
   $("cityName")?.addEventListener("input",syncProjectCity);
   render();configureAutoRefresh();
  }
