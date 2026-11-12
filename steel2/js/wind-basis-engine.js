@@ -53,6 +53,7 @@
   function audit(){
     const g=geometry(),a=effectiveAreas(),errors=[],rows={};
     if(!g.valid)errors.push("ابعاد دهانه، طول، ارتفاع ستون و خیز بام باید معتبر باشند.");
+    if(a.scenario==="front-open"&&g.physical.front<=0)errors.push("سناریوی درِ جلو باز انتخاب شده، اما بازشوی جلویی فعال و دارای ابعاد معتبر نیست.");
     SIDES.forEach(side=>{
       const open=a.effective[side],gross=g.gross[side],physical=g.physical[side];
       if(a.scenario==="custom"&&open===null)errors.push("مساحت بازشوی باز در "+LABELS[side]+" مشخص نشده است.");
@@ -143,6 +144,15 @@
       update();
     }
   }
-  document.addEventListener("DOMContentLoaded",()=>{render();});
+  document.addEventListener("DOMContentLoaded",()=>{
+    render();
+    document.addEventListener("input",e=>{
+      if(e.target&&["span","length","height","rise","openingFrontWidth","openingFrontHeight","openingFrontEnabled","openingRearWidth","openingRearHeight","openingRearEnabled","openingLeftWidth","openingLeftHeight","openingLeftEnabled","openingRightWidth","openingRightHeight","openingRightEnabled"].includes(e.target.id))update();
+    });
+    document.addEventListener("change",e=>{
+      if(e.target&&e.target.id==="windOpeningScenario")update();
+      if(e.target&&e.target.closest("#openingPanel"))update();
+    });
+  });
   window.SteelWindBasis={getData,setData,audit,update};
 })();
