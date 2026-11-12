@@ -2,7 +2,34 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id), NS = "http://www.w3.org/2000/svg";
-  let model = null, originalDrawFrame = null;
+  let model = null, originalDrawFrame = null, progressRunning = false;
+  function runWithProgress(startLabel, task, onError) {
+    if (progressRunning) return;
+    progressRunning = true;
+    const panel = $("modelProgress"), text = $("modelProgressText"), elapsed = $("modelProgressElapsed");
+    const buttons = ["btnBuildFullModel", "btnCheck3DSections", "btnRunFull3D"];
+    const started = performance.now();
+    buttons.forEach(id => { if ($(id)) $(id).disabled = true; });
+    if (panel) panel.hidden = false;
+    if (text) text.textContent = startLabel;
+    if (elapsed) elapsed.textContent = "۰٫۰ ثانیه";
+    const timer = setInterval(() => {
+      if (elapsed) elapsed.textContent = ((performance.now() - started) / 1000).toFixed(1).replace(".", "٫") + " ثانیه";
+    }, 250);
+    const stage = message => { if (text) text.textContent = message; };
+    setTimeout(() => {
+      try { task(stage); }
+      catch (error) { if (typeof onError === "function") onError(error); }
+      finally {
+        clearInterval(timer);
+        const duration = (performance.now() - started) / 1000;
+        if (text) text.textContent = "عملیات پایان یافت";
+        if (elapsed) elapsed.textContent = duration.toFixed(2).replace(".", "٫") + " ثانیه";
+        buttons.forEach(id => { if ($(id)) $(id).disabled = false; });
+        progressRunning = false;
+      }
+    }, 70);
+  }
   function ensurePanel() {
     if ($("shedLayoutPanel")) return;
     const drawingPanel = Array.from(document.querySelectorAll("main .panel")).find(p => p.querySelector("#frameDrawing"));
@@ -19,6 +46,7 @@
       '<div class="field"><label for="modelEndPostSpacing">فاصله ستونک‌های دیوار انتهایی (m)</label><input id="modelEndPostSpacing" type="number" min="1" step="0.1" value="4.00"></div>' +
       '<div class="field"><label for="modelBraceBays">تعداد دهانه مهاربندی در ابتدا و انتها</label><input id="modelBraceBays" type="number" min="0" step="1" value="1"></div></div>' +
       '<div class="button-grid"><button type="button" id="btnBuildFullModel" class="btn primary">تولید و ترسیم تمام اجزای سوله</button><button type="button" id="btnCheck3DSections" class="btn secondary">بررسی آمادگی مقاطع تحلیل سه‌بعدی</button></div>' +
+      '<div id="modelProgress" class="model-progress" hidden aria-live="polite"><div class="model-progress-head"><strong id="modelProgressText">در حال آماده‌سازی…</strong><span id="modelProgressElapsed">۰٫۰ ثانیه</span></div><div class="model-progress-track"><span></span></div><small>نوار متحرک نشانه ادامه عملیات است؛ هنگام حل ماتریس ممکن است زمان‌سنج موقتاً متوقف شود.</small></div>' +
       '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
@@ -27,12 +55,21 @@
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
-    $("btnBuildFullModel").addEventListener("click", function () { try { build(); draw(); showSummary(); } catch (e) { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; } });
+    $("btnBuildFullModel").addEventListener("click", function () {
+      runWithProgress("در حال تولید گره‌ها، قاب‌ها، پرلین‌ها و مهاربندها…", stage => {
+        build(); draw(); showSummary();
+        stage("ترسیم مدل و تکمیل خلاصه هندسی انجام شد.");
+      }, e => { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; });
+    });
     $("btnRunFull3D").addEventListener("click", function () {
       const box=$("fullModel3DResult");
+      runWithProgress("مرحله ۱ از ۳: آماده‌سازی مدل هندسی…", stage => {
       try {
+        stage("مرحله ۱ از ۳: تولید و ترسیم مدل هندسی…");
         build(); draw(); showSummary();
         const lc=$("model3DLoadCase")?.value||"dead";
+        stage("مرحله ۲ از ۳: مونتاژ ماتریس سختی و بارگذاری اعضا…");
+        stage("مرحله ۳ از ۳: حل دستگاه معادلات سه‌بعدی؛ لطفاً صفحه را نبندید…");
         const result=analyze3D(lc);
         box.textContent="تحلیل سه‌بعدی با موفقیت حل شد. حالت بار: "+result.loadCaseLabel+
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
@@ -78,6 +115,11 @@
         box.style.color="#b45309";
         window.SteelStructuralModel.last3DResult=null;
       }
+      }, e => {
+        box.textContent = "تحلیل سه‌بعدی انجام نشد: " + e.message;
+        box.style.color = "#b45309";
+        window.SteelStructuralModel.last3DResult = null;
+      });
     });
     $("btnTestSpan10").addEventListener("click", function () {
       const box=$("fullModel3DResult"), spanField=$("span"), riseField=$("rise");
@@ -185,8 +227,10 @@
       setTimeout(()=>URL.revokeObjectURL(url),1500);
     });
     $("btnCheck3DSections").addEventListener("click", function () {
+      runWithProgress("در حال ساخت مدل و کنترل مشخصات مقاطع…", stage => {
       try {
         build();
+        stage("در حال بررسی سطح مقطع، ممان‌های اینرسی، پیچش و مدول‌های مصالح…");
         const result=validate3DSections();
         const box=$("fullModel3DReadiness");
         box.textContent=result.ready
@@ -194,6 +238,7 @@
           : "تحلیل سه‌بعدی فعلاً مجاز نیست. گروه‌های ناقص: " + result.missing.map(x=>x.label+" ("+x.count+" عضو): "+x.reason).join(" | ");
         box.style.color=result.ready?"#15803d":"#b45309";
       } catch(e) { $("fullModel3DReadiness").textContent="خطا در بررسی: "+e.message; }
+      }, e => { $("fullModel3DReadiness").textContent = "خطا در بررسی: " + e.message; });
     });
     ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays"].forEach(id => $(id)?.addEventListener("change", function () { try { build(); draw(); showSummary(); } catch (_) {} }));
   }
@@ -683,6 +728,12 @@
   function getProposedUnbracedLengths(){if(!model)build();const g=model.geometry;return{column:g.height,rafter:Math.hypot(g.span/2,g.rise),roofPurlin:g.spacing,wallGirt:g.spacing,status:"پیشنهاد هندسی؛ تا تأیید جزئیات مهار و اتصال، مقدار قطعی طراحی نیست"};}
   function init(){
     ensurePanel();
+    if (!document.getElementById("modelProgressStyle")) {
+      const style = document.createElement("style");
+      style.id = "modelProgressStyle";
+      style.textContent = ".model-progress{margin:12px 0;padding:12px;border:1px solid #9ac5d3;border-radius:10px;background:#f1f9fb}.model-progress[hidden]{display:none}.model-progress-head{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px}.model-progress-track{height:9px;overflow:hidden;border-radius:99px;background:#d9e8ee;margin:10px 0}.model-progress-track span{display:block;width:38%;height:100%;border-radius:99px;background:linear-gradient(90deg,#176b87,#20a4b8);animation:sahroudProgress 1.15s ease-in-out infinite alternate}.model-progress small{display:block;color:#526b78;font-size:11px}@keyframes sahroudProgress{from{transform:translateX(165%)}to{transform:translateX(-265%)}}";
+      document.head.appendChild(style);
+    }
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
