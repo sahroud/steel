@@ -198,7 +198,7 @@
     ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays"].forEach(id => $(id)?.addEventListener("change", function () { try { build(); draw(); showSummary(); } catch (_) {} }));
   }
   function val(id, fallback) { const e=$(id), n=e?Number(e.value):fallback; return Number.isFinite(n)?n:fallback; }
-  function addNode(nodes,x,y,z,kind) { const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7); if(old)return old; const n={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"}; nodes.push(n); return n; }
+  function addNode(nodes,x,y,z,kind) { const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7); if(old){if(kind==="roof-edge")old.kind="roof-edge";return old;} const n={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"}; nodes.push(n); return n; }
   function addMember(members,a,b,type,sectionKey,extra) {
     members.push({id:type.toUpperCase().replace(/[^A-Z0-9]+/g,"_")+"_"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
   }
@@ -295,11 +295,17 @@
         }
       }
     });
+    // Connect the transverse roof-edge member to every purlin tail.
     [-over,length+over].forEach(z=>{
-      const xs=[-over*cs,half,span+over*cs];
-      const edge=xs.map(x=>addNode(nodes,x,roofY(x),z,"roof-edge"));
-      addMember(members,edge[0],edge[1],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{endFace:z<0?"front":"rear",overhang:0.8});
-      addMember(members,edge[1],edge[2],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{endFace:z<0?"front":"rear",overhang:0.8});
+      const edgeStations=Array.from(purlinStations.values()).sort((a,b)=>a.x-b.x);
+      const edge=edgeStations.map(station=>addNode(nodes,station.x,roofY(station.x),z,"roof-edge"));
+      for(let i=0;i<edge.length-1;i++){
+        addMember(members,edge[i],edge[i+1],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{
+          endFace:z<0?"front":"rear",overhang:0.8,
+          stationStart:edgeStations[i].row,stationEnd:edgeStations[i+1].row,
+          connectsPurlinTail:true
+        });
+      }
     });
     girtHeights.forEach((y,gi)=>[0,span].forEach((x,si)=>{
       const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
