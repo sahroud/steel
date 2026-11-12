@@ -17,7 +17,9 @@
       if (elapsed) elapsed.textContent = ((performance.now() - started) / 1000).toFixed(1).replace(".", "٫") + " ثانیه";
     }, 250);
     const stage = message => { if (text) text.textContent = message; };
-    setTimeout(() => {
+    // دو فریم به مرورگر فرصت می‌دهیم نوار را واقعاً رسم کند؛ سپس محاسبات سنگین آغاز می‌شود.
+    (async () => {
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       try { task(stage); }
       catch (error) { if (typeof onError === "function") onError(error); }
       finally {
@@ -30,7 +32,7 @@
         // نتیجه برای لحظه‌ای خوانا می‌ماند و سپس نوار از صفحه جمع می‌شود.
         setTimeout(() => { if (panel) panel.hidden = true; }, 650);
       }
-    }, 70);
+    })();
   }
   function ensurePanel() {
     if ($("shedLayoutPanel")) return;
@@ -753,7 +755,7 @@
     if (!document.getElementById("modelProgressStyle")) {
       const style = document.createElement("style");
       style.id = "modelProgressStyle";
-      style.textContent = ".model-progress{margin:12px 0;padding:12px;border:1px solid #9ac5d3;border-radius:10px;background:#f1f9fb}.model-progress[hidden]{display:none}.model-progress-head{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px}.model-progress-track{height:9px;overflow:hidden;border-radius:99px;background:#d9e8ee;margin:10px 0}.model-progress-track span{display:block;width:38%;height:100%;border-radius:99px;background:linear-gradient(90deg,#176b87,#20a4b8);animation:sahroudProgress 1.15s ease-in-out infinite alternate}.model-progress small{display:block;color:#526b78;font-size:11px}@keyframes sahroudProgress{from{transform:translateX(165%)}to{transform:translateX(-265%)}}";
+      style.textContent = ".model-progress{position:sticky;top:8px;z-index:1000;margin:12px 0;padding:12px;border:2px solid #176b87;border-radius:10px;background:#f1f9fb;box-shadow:0 4px 16px rgba(0,0,0,.16)}.model-progress[hidden]{display:none}.model-progress-head{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px}.model-progress-track{height:9px;overflow:hidden;border-radius:99px;background:#d9e8ee;margin:10px 0}.model-progress-track span{display:block;width:38%;height:100%;border-radius:99px;background:linear-gradient(90deg,#176b87,#20a4b8);animation:sahroudProgress 1.15s ease-in-out infinite alternate}.model-progress small{display:block;color:#526b78;font-size:11px}@keyframes sahroudProgress{from{transform:translateX(165%)}to{transform:translateX(-265%)}}";
       document.head.appendChild(style);
     }
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
