@@ -706,23 +706,54 @@
         if(!["rigid","pinned"].includes(route.startJoint)||!["rigid","pinned"].includes(route.endJoint))reasons.push("نوع اتصال هر دو انتها باید صریحاً گیردار یا مفصلی باشد");
         if(reasons.length){tieBeamIntegration.skipped.push({id,reasons});return;}
         const p=window.SteelTieBeamLayout.rectangleProperties(route,audited.axis);
-        const releases={i:route.startJoint==="pinned"?[4,5]:[],j:route.endJoint==="pinned"?[4,5]:[]};
-        const memberId="TIE_BEAM_"+id.replace(/[^A-Za-z0-9_-]/g,"_");
-        if(analysisModel.members.some(m=>String(m.id)===memberId)){
-          tieBeamIntegration.skipped.push({id,reasons:["شناسه عضو شناژ تکراری است"]});return;
-        }
-        analysisModel.members.push({
-          id:memberId,start:route.start,end:route.end,type:"شناژ بتنی",
-          sectionKey:"tieBeam",endReleases:releases,
-          tieBeamDensityKNm3:Number(route.densityKNm3),
-          analysisSection:{E:p.E,G:p.G,A:p.A,Iy:p.Iy,Iz:p.Iz,J:p.J,sectionKey:"tieBeam",sectionLabel:"مقطع مستطیلی شناژ "+route.widthM+"×"+route.heightM+" m"}
-        });
+        const startNode=analysisModel.nodes.find(n=>String(n.id)===String(route.start));
+        const endNode=analysisModel.nodes.find(n=>String(n.id)===String(route.end));
+        const coordinate=audited.axis==="X"?"x":"z";
+        const cross=audited.axis==="X"?"z":"x";
+        const direction=Math.sign(Number(endNode[coordinate])-Number(startNode[coordinate]));
+        const span=Math.abs(Number(endNode[coordinate])-Number(startNode[coordinate]));
+        const intermediate=analysisModel.nodes.filter(n=>
+          (n.kind==="base"||n.kind==="endwall-base")&&
+          Math.abs(Number(n.y)-Number(startNode.y))<=0.01&&
+          Math.abs(Number(n[cross])-Number(startNode[cross]))<=0.01&&
+          direction*(Number(n[coordinate])-Number(startNode[coordinate]))>0.01&&
+          direction*(Number(endNode[coordinate])-Number(n[coordinate]))>0.01
+        ).sort((a,b)=>direction*(Number(a[coordinate])-Number(b[coordinate])));
+        const routeNodes=[startNode,...intermediate,endNode];
+        const segmentIds=[];
         const warnings=audited.detailingWarnings||[];
-        tieBeamIntegration.included.push({id,memberId,start:route.start,end:route.end,
+        let segmentLength=0,duplicate=false;
+        for(let si=0;si<routeNodes.length-1;si++){
+          const ni=routeNodes[si],nj=routeNodes[si+1];
+          const length=Math.hypot(nj.x-ni.x,nj.y-ni.y,nj.z-ni.z);
+          if(!(length>0.001)){duplicate=true;break;}
+          const memberId="TIE_BEAM_"+id.replace(/[^A-Za-z0-9_-]/g,"_")+"_S"+(si+1);
+          if(analysisModel.members.some(m=>String(m.id)===memberId)){duplicate=true;break;}
+          const releases={
+            i:si===0&&route.startJoint==="pinned"?[4,5]:[],
+            j:si===routeNodes.length-2&&route.endJoint==="pinned"?[4,5]:[]
+          };
+          analysisModel.members.push({
+            id:memberId,start:ni.id,end:nj.id,type:"شناژ بتنی",
+            sectionKey:"tieBeam",endReleases:releases,
+            tieBeamDensityKNm3:Number(route.densityKNm3),
+            analysisSection:{E:p.E,G:p.G,A:p.A,Iy:p.Iy,Iz:p.Iz,J:p.J,sectionKey:"tieBeam",sectionLabel:"مقطع مستطیلی شناژ "+route.widthM+"×"+route.heightM+" m"}
+          });
+          segmentIds.push(memberId);segmentLength+=length;
+        }
+        if(duplicate){
+          analysisModel.members=analysisModel.members.filter(m=>!segmentIds.includes(String(m.id)));
+          tieBeamIntegration.skipped.push({id,reasons:["تقسیم مسیر در گره‌های پایه میانی با شناسه تکراری یا قطعه با طول صفر روبه‌رو شد"]});return;
+        }
+        tieBeamIntegration.included.push({id,memberId:segmentIds[0],memberIds:segmentIds,
+          intermediateBaseNodes:intermediate.map(n=>n.id),start:route.start,end:route.end,
           startJoint:route.startJoint,endJoint:route.endJoint,axis:audited.axis,
-          lengthM:audited.lengthM,volumeM3:audited.volumeM3,selfWeightKN:audited.selfWeightKN,
+          lengthM:segmentLength,segmentCount:segmentIds.length,
+          volumeM3:segmentLength*route.widthM*route.heightM,
+          selfWeightKN:segmentLength*route.widthM*route.heightM*route.densityKNm3,
           reinforcement:route.reinforcement||tieData.reinforcement,detailingWarnings:warnings,
-          stiffnessBasis:"gross_uncracked_rectangular_concrete_section"});
+          stiffnessBasis:"gross_uncracked_rectangular_concrete_section",
+          continuity:"مسیر در گره‌های پایه میانی به قطعات متصل با پیوستگی دوران تقسیم شده است"});
         if(warnings.length)tieBeamIntegration.reinforcementWarnings.push({id,warnings});
       });
     }
