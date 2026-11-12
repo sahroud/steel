@@ -31,10 +31,17 @@
         }, 500);
     }
 
-    function restoreLastProject() {
+    async function restoreLastProject() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return false;
+            if (!raw) {
+                const response = await fetch("default-project.json", { cache: "no-store" });
+                if (!response.ok) throw new Error("فایل پیش‌فرض پروژه در دسترس نیست.");
+                const initialProject = await response.json();
+                loadData(initialProject);
+                setStatus("پروژه پایه مهندسی از فایل ارسالی شما بارگذاری شد؛ تغییرات بعدی در همین مرورگر ذخیره خودکار می‌شود.");
+                return true;
+            }
             const data = JSON.parse(raw);
             loadData(data);
             if (window.SteelDrawing && typeof window.SteelDrawing.drawFrame === "function") {
@@ -47,6 +54,18 @@
             setStatus("بازیابی خودکار ممکن نشد؛ فایل پروژه را یک‌بار باز کنید.");
             return false;
         }
+    }
+
+    function updateRoofGeometry() {
+        const span = Number($("span")?.value);
+        const rise = Number($("rise")?.value);
+        const height = Number($("height")?.value);
+        if (!(span > 0) || !(rise >= 0) || !(height > 0)) return;
+        const slope = rise / (span / 2) * 100;
+        if ($("roofSlopeDisplay")) $("roofSlopeDisplay").textContent = slope.toFixed(1).replace(".", "٫") + "٪";
+        if ($("roofRiseDisplay")) $("roofRiseDisplay").textContent = rise.toFixed(2).replace(".", "٫") + " متر";
+        if ($("roofTotalHeightDisplay")) $("roofTotalHeightDisplay").textContent = (height + rise).toFixed(2).replace(".", "٫") + " متر";
+        if (window.SteelDrawing && typeof window.SteelDrawing.drawFrame === "function") window.SteelDrawing.drawFrame();
     }
 
     function getNumber(id) {
@@ -285,10 +304,13 @@
             }
         });
 
-        // شیب سقف نسخه فعلی ثابت است؛ مقدار قدیمی rise از فایل پروژه نادیده گرفته می‌شود.
-        if (typeof window.updateRoofGeometry === "function") {
-            window.updateRoofGeometry();
-        }
+        // ارتفاع تاج از فایل پروژه بازیابی می‌شود؛ شیب از rise و نصف دهانه محاسبه می‌شود.
+        updateRoofGeometry();
+
+        ["span", "rise", "height"].forEach(function (id) {
+            const el = $(id);
+            if (el) el.addEventListener("input", updateRoofGeometry);
+        });
 
         if ($("baseConnection")) {
             $("baseConnection").value =
@@ -401,6 +423,8 @@
 
         reader.readAsText(file, "UTF-8");
     }
+
+    window.updateRoofGeometry = updateRoofGeometry;
 
     window.SteelProject = {
         getData,
