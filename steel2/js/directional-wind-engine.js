@@ -157,7 +157,10 @@
  document.addEventListener("DOMContentLoaded",()=>{
   render();
   document.addEventListener("input",e=>{
-   if(e.target&&e.target.closest("#climateLoadCasePanel"))update();
+   if(e.target&&(
+     e.target.closest("#climateLoadCasePanel")||
+     ["span","length","height","rise"].includes(e.target.id)
+   ))update();
   });
  });
  window.SteelDirectionalWind={getData,setData,calculate,update};
