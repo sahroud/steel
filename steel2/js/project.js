@@ -211,6 +211,10 @@
             data.anchorBaseplateTakeoff = window.SteelAnchorBaseplateTakeoff.getData();
         }
 
+        if (window.SteelFootingStructuralScreen && typeof window.SteelFootingStructuralScreen.getData === "function") {
+            data.footingStructuralScreen = window.SteelFootingStructuralScreen.getData();
+        }
+
         return data;
     }
 
@@ -442,6 +446,10 @@
 
         if (window.SteelAnchorBaseplateTakeoff && typeof window.SteelAnchorBaseplateTakeoff.setData === "function") {
             window.SteelAnchorBaseplateTakeoff.setData(data.anchorBaseplateTakeoff || {});
+        }
+
+        if (window.SteelFootingStructuralScreen && typeof window.SteelFootingStructuralScreen.setData === "function") {
+            window.SteelFootingStructuralScreen.setData(data.footingStructuralScreen || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
