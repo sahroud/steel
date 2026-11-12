@@ -182,7 +182,11 @@
                 window.SteelPurlinCantileverConnection.getData();
         }
 
-        if (window.SteelFabricationTakeoff && typeof window.SteelFabricationTakeoff.getData === "function") {\n            data.fabricationTakeoff = window.SteelFabricationTakeoff.getData();\n        }\n\n        if (window.SteelDesignCore && typeof window.SteelDesignCore.getData === "function") {
+        if (window.SteelFabricationTakeoff && typeof window.SteelFabricationTakeoff.getData === "function") {
+            data.fabricationTakeoff = window.SteelFabricationTakeoff.getData();
+        }
+
+        if (window.SteelDesignCore && typeof window.SteelDesignCore.getData === "function") {
             data.designBrief = window.SteelDesignCore.getData();
         }
 
@@ -390,7 +394,11 @@
             }
         }
 
-        if (window.SteelFabricationTakeoff && typeof window.SteelFabricationTakeoff.setData === "function") {\n            window.SteelFabricationTakeoff.setData(data.fabricationTakeoff || {});\n        }\n\n        if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
+        if (window.SteelFabricationTakeoff && typeof window.SteelFabricationTakeoff.setData === "function") {
+            window.SteelFabricationTakeoff.setData(data.fabricationTakeoff || {});
+        }
+
+        if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
             const legacyClimate = data.loads && data.loads.climate ? data.loads.climate : {};
             window.SteelDesignCore.setData(data.designBrief || {
                 occupancy: legacyClimate.buildingUse === "warehouse-industrial-enclosed" ? "industrial" : legacyClimate.buildingUse,
