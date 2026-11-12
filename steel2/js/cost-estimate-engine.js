@@ -98,8 +98,8 @@
     if(quote.deliveryCity&&cityKey(quote.deliveryCity)!==cityKey(projectCity()))pricingWarnings.push(d.label+": شهر تحویل اعلام‌شده با شهر پروژه یکسان نیست.");
     if(!quote.includesFreight&&quote.freightToman===null)pricingWarnings.push(d.label+": وضعیت/مبلغ حمل در قیمت بازار مشخص نیست.");
     if(!quote.includesFreight&&quote.freightToman!==null){
-     if(cityKey(quote.deliveryCity)===cityKey(projectCity())&&cityKey(projectCity())){
-      const freightKey=[quote.code,quote.city,quote.seller,quote.updatedAt].join("|");
+     if(Number(q)>0&&cityKey(quote.deliveryCity)===cityKey(projectCity())&&cityKey(projectCity())){
+      const freightKey=[quote.sourceUrl||"",quote.seller,quote.source,quote.city,quote.deliveryCity,quote.updatedAt].join("|");
       if(!freightQuoteKeys.has(freightKey)){quotedFreightTotal+=Number(quote.freightToman)||0;freightQuoteKeys.add(freightKey);}
      }else pricingWarnings.push(d.label+": مبلغ حمل ثبت شده است اما چون شهر تحویل با شهر پروژه تطبیق ندارد، در جمع منظور نشد.");
     }
