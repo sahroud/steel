@@ -18,6 +18,7 @@
  const fmt=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:2});
  function projectCity(){
   const el=$("city"); if(!el)return "";
+  if(el.value==="other")return ($("cityName")?.value||"").trim();
   const opt=el.options?.[el.selectedIndex];return (opt?.textContent||el.value||"").trim().replace(/\s*\(پیش‌فرض\)\s*/g,"");
  }
  function safeDate(v){const d=new Date(v);return Number.isFinite(d.getTime())?d.toISOString():null;}
@@ -127,7 +128,7 @@
     <div class="field"><label for="marketPriceSpec">مشخصات فنی دقیق</label><input id="marketPriceSpec" placeholder="استاندارد، گرید، ضخامت، ابعاد و پوشش"></div>
     <div class="field"><label for="marketPriceValue">قیمت پایه (تومان)</label><input id="marketPriceValue" type="number" min="0" step="any"></div>
     <div class="field"><label for="marketPriceUnit">واحد قیمت</label><select id="marketPriceUnit">${units.map(u=>'<option>'+u+'</option>').join("")}</select></div>
-    <div class="field"><label for="marketPriceCity">شهر بازار/انبار/کارخانه</label><input id="marketPriceCity" placeholder="شهر محل عرضه"></div>
+    <div class="field"><label for="marketPriceCity">شهر بازار/انبار/کارخانه</label><input id="marketPriceCity" placeholder="شهر محل عرضه"><button id="marketUseProjectCity" type="button" class="btn secondary">قرار دادن شهر پروژه</button></div>
     <div class="field"><label for="marketPriceSeller">نام فروشنده/کارخانه</label><input id="marketPriceSeller" placeholder="نام فروشنده"></div>
     <div class="field"><label for="marketPriceSourceType">نوع منبع</label><select id="marketPriceSourceType"><option value="factory">کارخانه</option><option value="warehouse">انبار</option><option value="market">بازار محلی</option><option value="exchange">بورس کالا</option><option value="manual">ورود دستی</option><option value="api">API</option></select></div>
     <div class="field"><label for="marketPriceDeliveryCity">شهر تحویل اعلام‌شده (اگر قطعی است)</label><input id="marketPriceDeliveryCity" placeholder="خالی = نامشخص"></div>
@@ -153,7 +154,10 @@
   $("marketPriceEndpoint").addEventListener("change",()=>{state.endpoint=$("marketPriceEndpoint").value.trim();persist();configureAutoRefresh();});
   $("marketPriceInterval").addEventListener("change",()=>{state.intervalMinutes=Math.max(5,Math.min(1440,Number($("marketPriceInterval").value)||60));persist();configureAutoRefresh();});
   $("marketPriceAuto").addEventListener("change",()=>{state.autoRefresh=$("marketPriceAuto").checked;persist();configureAutoRefresh();});
-  $("city")?.addEventListener("change",()=>{$("marketPriceProjectCity").textContent=projectCity()||"انتخاب نشده";});
+  $("marketUseProjectCity")?.addEventListener("click",()=>{$("marketPriceCity").value=projectCity();});
+  const syncProjectCity=()=>{$("marketPriceProjectCity").textContent=projectCity()||"انتخاب نشده";};
+  $("city")?.addEventListener("change",()=>{if($("cityName"))$("cityName").style.display=$("city").value==="other"?"":"none";syncProjectCity();});
+  $("cityName")?.addEventListener("input",syncProjectCity);
   render();configureAutoRefresh();
  }
  window.SteelMarketPrices={getData,setData,refresh,addManual,render,getProjectCity:projectCity,units,presets};
