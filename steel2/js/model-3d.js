@@ -836,6 +836,36 @@
     result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. حالت باد فقط فشار خالص دستی واردشده را به‌صورت برداری به پرلین‌های سقف و قیدهای طولی دو دیوار جانبی منتقل می‌کند؛ فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، ناحیه مثلثی دیوار انتهایی بالای آخرین قید، بازشوهای غالب و پیچش کلی هنوز منظور نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
+  async function analyzeFoundationEnvelope(){
+    if(!model)build();
+    const combos=window.SteelLoads?.getData?.().combinations;
+    if(!Array.isArray(combos)||!combos.length)throw new Error("ترکیبات بار در دسترس نیستند.");
+    const gravity=combos.map((c,i)=>({label:String(c.name||("ترکیب ثقلی "+(i+1))),factors:{dead:Number(c.dead)||0,live:Number(c.live)||0,snow:Number(c.snow)||0}}));
+    if(gravity.some(c=>Object.values(c.factors).some(v=>!Number.isFinite(v))))throw new Error("ضرایب ترکیب بار معتبر نیستند.");
+    const windPresent=model.members.some(m=>["windLeft","windRight","wind","windEnd"].some(k=>Math.abs(Number(m.lineLoads?.[k])||0)>1e-12));
+    const cases=gravity.map(c=>({label:c.label,factors:c.factors}));
+    if(windPresent)gravity.forEach(c=>[1,-1].forEach(sign=>cases.push({label:c.label+" + باد "+(sign>0?"مثبت":"منفی")+" (ضریب ۱٫۰)",factors:c.factors,wind:1,windSign:sign})));
+    const nodes=model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base");
+    if(!nodes.length)throw new Error("گره پایه‌ای برای استخراج واکنش وجود ندارد.");
+    const samples=[];
+    for(let i=0;i<cases.length;i++){
+      const spec=cases[i];
+      const result=await analyze3D({label:spec.label,factors:spec.factors,wind:spec.wind||0,windSign:spec.windSign||1});
+      if(!result||!Array.isArray(result.reactions)||!result.foundationModelFingerprint)throw new Error("نتیجه واکنش معتبر برای "+spec.label+" دریافت نشد.");
+      const map=new Map(result.reactions.map(r=>[r.nodeId,r.values||[]]));
+      samples.push({label:spec.label,equilibrium:result.equilibrium,reactions:nodes.map(n=>({nodeId:n.id,values:(map.get(n.id)||[0,0,0,0,0,0]).slice(0,6)}))});
+    }
+    const rows=nodes.map(n=>{
+      const values=samples.map(s=>({label:s.label,values:s.reactions.find(r=>r.nodeId===n.id)?.values||[0,0,0,0,0,0]}));
+      const envelopes=[0,1,2,3,4,5].map(k=>{
+        let min=Infinity,max=-Infinity,minCase="",maxCase="";
+        values.forEach(s=>{const v=Number(s.values[k])||0;if(v<min){min=v;minCase=s.label;}if(v>max){max=v;maxCase=s.label;}});
+        return {min,max,minCase,maxCase};
+      });
+      return {nodeId:n.id,x:Number(n.x)||0,z:Number(n.z)||0,kind:n.kind,envelopes};
+    }).sort((a,b)=>a.z-b.z||a.x-b.x);
+    return {generatedAt:new Date().toISOString(),supportType:$("baseConnection")?.value==="fixed"?"گیردار":"مفصلی",units:"N,N.m",rows,cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),windCasesIncluded:windPresent,windFactor:windPresent?1:null,foundationModelFingerprint:samples[0]?.reactions?JSON.stringify({nodes:model.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),members:model.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),sections:window.SteelSections?.read?.()||null,support:$("baseConnection")?.value||"pinned"}):null,limitations:["پوش فقط بر اساس ترکیبات موجود در نرم‌افزار ساخته شده و ضرایب آن هنوز با نسخه رسمی آیین‌نامه تطبیق نهایی نشده‌اند.","باد مثبت و منفی با ضریب ۱٫۰ فقط غربال مقدماتی است؛ ترکیبات کامل باد، زلزله، uplift و ضرایب بار آیین‌نامه‌ای تضمین نشده‌اند.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش، اندرکنش خاک و سازه و طراحی پی انجام نشده است."]};
+  }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
     if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});}
@@ -854,6 +884,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,getProposedUnbracedLengths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,getProposedUnbracedLengths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
