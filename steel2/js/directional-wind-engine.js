@@ -38,7 +38,6 @@
   const invalid=positive.filter(k=>!(v[k]>0));
   if(invalid.length)return {ready:false,reason:"این ضرایب باید مثبت و بزرگ‌تر از صفر باشند: "+invalid.join("، "),q,coeff:v};
   const common=v.importance*q*v.exposure*v.topography*v.directionality;
-  if(v.gust!==null&&!(v.gust>0))return {ready:false,reason:"ضریب Cg در صورت استفاده از Cp جداگانه باید مثبت باشد.",q,coeff:v};
   return {ready:true,q,coeff:v,common,internalFactor:common*v.internalGust};
  }
  function calculate(){
@@ -70,6 +69,8 @@
    });
   });
   const entered=Object.values(cpValues).reduce((n,x)=>n+Object.values(x||{}).filter(v=>finite(v)!==null).length,0);
+  const requiresSeparateCg=Object.values(combinedBasis).some(x=>!x.useCombinedCgCp);
+  const cgReady=!requiresSeparateCg||(base.coeff?.gust!==null&&base.coeff?.gust>0);
   return {schema:"sahroud-steel-directional-wind",version:1,
    formulaExternal:"P = Iw q Ce Ct Cd × CgCp (combined basis) OR × Cg × Cp (separate basis)",
    formulaInternal:"Pi = Iw q Ce Ct Cgi Cpi Cd",
@@ -77,10 +78,10 @@
    directions:records,enteredCpCount:entered,requiredCpCount:24,
    geometry:{span,length,eaveHeight:eave,ridgeRise:rise,totalHeight},externalCoefficientBasis:combinedBasis,
    basicVelocityPressure:base.q??null,pressureUnit:"kN/m2",
-   commonCoefficients:base.coeff||{},ready:base.ready&&geometryReady&&entered===24,
+   commonCoefficients:base.coeff||{},ready:base.ready&&geometryReady&&cgReady&&entered===24,
    codeDesignEligible:false,
-   status:!base.ready?"common-coefficients-incomplete":!geometryReady?"geometry-incomplete":entered===24?"all-directional-coefficients-entered-preliminary":"directional-Cp-incomplete",
-   message:!base.ready?base.reason:!geometryReady?"ابعاد هندسی برای تعیین مبنای ضریب خارجی ناقص است.":"برای h<20m و h/b<1، ورودی این جهت به‌صورت CgCp ترکیبی تفسیر می‌شود؛ در سایر حالات Cp جداگانه است. همه ضرایب دستی و نیازمند تطبیق آیین‌نامه‌ای‌اند.",
+   status:!base.ready?"common-coefficients-incomplete":!geometryReady?"geometry-incomplete":!cgReady?"separate-Cp-mode-requires-positive-Cg":entered===24?"all-directional-coefficients-entered-preliminary":"directional-Cp-incomplete",
+   message:!base.ready?base.reason:!geometryReady?"ابعاد هندسی برای تعیین مبنای ضریب خارجی ناقص است.":!cgReady?"در حالت Cp جداگانه، Cg باید مثبت و معتبر وارد شود.":"برای h<20m و h/b<1، ورودی این جهت به‌صورت CgCp ترکیبی تفسیر می‌شود؛ در سایر حالات Cp جداگانه است. همه ضرایب دستی و نیازمند تطبیق آیین‌نامه‌ای‌اند.",
    missingCp:errors};
  }
  function render(){
