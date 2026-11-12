@@ -44,9 +44,13 @@
       climate:{
         city:climate.city||"", customCity:climate.customCity||"",
         elevation:climate.elevation||"", groundSnow:climate.groundSnow||"",
-        basicWind:climate.basicWind||"", basicWindUnit:"km/h", groundSnowUnit:"kN/m2", terrain:climate.terrain||"",
+        basicWind:climate.basicWind||"", basicWindUnit:"km/h",
+        basicWindPressure:finite(climate.basicWind)===null?null:0.000613*Math.pow(Number(climate.basicWind)/3.6,2),
+        basicWindPressureUnit:"kN/m2", groundSnowUnit:"kN/m2",
+        siteElevationASL:finite(climate.elevation), terrain:climate.terrain||"",
         topography:climate.topography||"", openingState:climate.openingState||"",
-        dominantOpening:climate.dominantOpening||""
+        dominantOpening:climate.dominantOpening||"",
+        windCalculationStatus:"basic-pressure-only; terrain and building coefficients not yet applied"
       },
       windDirection:loads.windDirection||"not-specified", cases, restoredMeta
     };
