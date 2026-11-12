@@ -752,7 +752,7 @@
             };
             const syncProjectFromClimate = () => {
                 const selected = climateCity.value;
-                if (knownClimateCodes.includes(selected) && ["shahroud","semnan","tehran","mashhad"].includes(selected)) {
+                if (knownClimateCodes.includes(selected)) {
                     projectCity.value = selected;
                     if (projectCityName) {
                         projectCityName.value = cityNames[selected];
