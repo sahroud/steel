@@ -4,7 +4,7 @@
     "use strict";
 
     const $ = id => document.getElementById(id);
-    const STORAGE_KEY = "sahroudSteelProject.autosave.v2";
+    const STORAGE_KEY = "sahroudSteelProject.autosave.v3";
     let persistTimer = null;
 
     function persistSnapshot(data) {
