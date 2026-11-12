@@ -58,7 +58,7 @@
   if(!Number.isFinite(soilCover)||soilCover<0||(soilCover>0&&!gammaS)){summary.textContent="ضخامت یا وزن مخصوص خاک پوششی نامعتبر است.";return;}
   const pedH=positive(inputs?.pedestalHeightM);
   if(!pedH){summary.textContent="ارتفاع پدستال را نیز از نقشه وارد کنید تا وزن بتن و هندسه انتقال بار ناقص نماند.";return;}
-  const concreteWeight=gammaC*(B*L*t+cx*cz*pedH);
+  const pedestalWeight=gammaC*cx*cz*pedH,concreteWeight=gammaC*B*L*t+pedestalWeight;
   const soilWeight=soilCover>0?gammaS*Math.max(0,B*L-cx*cz)*soilCover:0;
   const added=concreteWeight+soilWeight,area=B*L,records=[];
   const addRow=(rec)=>{records.push(rec);const tr=document.createElement("tr");[rec.nodeId+" / "+rec.caseLabel,rec.direction,fmt(rec.MuKNmPerM),rec.AsRequired===null?"—":fmt(rec.AsRequired),rec.AsProvided===null?"وارد نشده":fmt(rec.AsProvided),rec.oneWayDemand===null?"—":fmt(rec.oneWayDemand)+" / "+fmt(rec.oneWayCapacity),rec.punchDemand===null?"—":fmt(rec.punchDemand)+" / "+fmt(rec.punchCapacity),rec.status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);};
@@ -68,7 +68,7 @@
     const v=item.values||[],N=Number(v[1])/1000,fx=Number(v[0])/1000,fz=Number(v[2])/1000;
     const mx0=Number(v[3])/1e6,mz0=Number(v[5])/1e6;
     if(![N,fx,fz,mx0,mz0].every(Number.isFinite)||N<=0)return;
-    const Mx=mx0-oz*N,Mz=mz0+ox*N,totalN=N+added;
+    const Mx=mx0-oz*(N+pedestalWeight),Mz=mz0+ox*(N+pedestalWeight),totalN=N+added;
     const q0=totalN/area,bend=6*Math.abs(Mx)/(B*L*L)+6*Math.abs(Mz)/(L*B*B),qmax=q0+bend,qmin=q0-bend;
     if(qmin<0)return;
     const specs=[
@@ -91,7 +91,7 @@
     const dPunch=Math.min(dX,dZ),perimeter=2*((cx*1000+dPunch)+(cz*1000+dPunch));
     const insideW=(cx+dPunch/1000),insideL=(cz+dPunch/1000),insideArea=insideW*insideL;
     const punchValid=Math.abs(ox)+cx/2+dPunch/2000<=B/2+1e-9&&Math.abs(oz)+cz/2+dPunch/2000<=L/2+1e-9;
-    const qavg=totalN/area,Vu=punchValid?Math.max(0,N-qavg*insideArea):null;
+    const qavg=totalN/area,Vu=punchValid?Math.max(0,(N+pedestalWeight)*(1-insideArea/area)):null;
     const Vc=punchValid?0.75*0.33*Math.sqrt(fc)*perimeter*dPunch/1000:null;
     const punchStatus=!punchValid?"محیط بحرانی پانچ در محدوده پی جا نمی‌شود":Vu<=Vc?"پانچ در غربال محوری ساده کمتر از ظرفیت اسمی است":"پانچ از ظرفیت اسمی غربال بیشتر است";
     statusParts.push(punchStatus);
