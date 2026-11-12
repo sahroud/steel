@@ -67,6 +67,7 @@
   const anchors=state.anchorsPerBase!==""&&Number.isInteger(Number(state.anchorsPerBase))&&Number(state.anchorsPerBase)>=0?count*Number(state.anchorsPerBase):null;
   const q={baseCount:count,footingConcreteM3:footingConcrete,pedestalConcreteM3:pedComplete?pedConcrete:null,totalConcreteM3:pedComplete?footingConcrete+pedConcrete:footingConcrete,excavationM3:excavation,sideFormworkM2:formFoot+formPed,anchorsCount:anchors,dimensions:{w,l,t,pw:pw||null,pl:pl||null,ph:ph||null,excavationDepthM:excavationDepth,workingSpaceM:clearance}};
   lastReport.quantities=q;
+  window.SteelCostEstimate?.refreshFromFoundation?.(q);
   $("foundationQuantitySummary").textContent="تعداد پی بر اساس گره‌های پایه مدل: "+count+" | بتن بدنه پی: "+fmt(footingConcrete)+" مترمکعب"+(pedComplete?" | بتن پدستال: "+fmt(pedConcrete)+" مترمکعب":" | پدستال محاسبه نشده (ابعاد کامل وارد نشده)")+" | مجموع بتن محاسبه‌شده: "+fmt(q.totalConcreteM3)+" مترمکعب"+(excavation!==null?" | خاکبرداری هندسی: "+fmt(excavation)+" مترمکعب":" | خاکبرداری محاسبه نشده؛ عمق و فضای کار را وارد کنید")+" | سطح جانبی قالب: "+fmt(formFoot+formPed)+" مترمربع"+(anchors!==null?" | تعداد بولت بر اساس ورودی کاربر: "+anchors:" | تعداد بولت وارد نشده")+". آرماتور، بتن مگر، لایه‌های زیرسازی، شیب دیواره گود، حجم پرت و حجم خاک متورم در این متره نیستند.";
  }
  function exportCSV(){
