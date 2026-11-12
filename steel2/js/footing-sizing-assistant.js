@@ -9,6 +9,7 @@
  const fmt=x=>Number(x).toLocaleString("fa-IR",{maximumFractionDigits:3});
  const pos=x=>{const n=Number(x);return Number.isFinite(n)&&n>0?n:null;};
  function panel(){
+  try{const saved=JSON.parse(localStorage.getItem("sahroudSteel.footingSizingAssistant.v1")||"null");if(saved&&typeof saved==="object")state={...state,...saved};}catch(e){}
   if($("footingSizingAssistantPanel"))return;
   const root=$("footingStructuralScreenPanel")||$("foundationTakeoffPanel");if(!root)return;
   const p=document.createElement("section");p.className="panel";p.id="footingSizingAssistantPanel";
@@ -23,7 +24,7 @@
    '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:700px"><thead><tr><th>گزینه</th><th>B در X (m)</th><th>L در Z (m)</th><th>مساحت هر پی (m²)</th><th>qmin (kPa)</th><th>qmax (kPa)</th><th>پایه/حالت حاکم</th></tr></thead><tbody id="footingSizeRows"></tbody></table></div>';
   root.parentNode.insertBefore(p,root.nextSibling);
   $("fsaMin").value=state.minSideM;$("fsaMax").value=state.maxSideM;$("fsaStep").value=state.stepM;
-  ["fsaMin","fsaMax","fsaStep"].forEach((id,i)=>$(id).addEventListener("change",()=>{state[["minSideM","maxSideM","stepM"][i]]=$(id).value;}));
+  ["fsaMin","fsaMax","fsaStep"].forEach((id,i)=>$(id).addEventListener("change",()=>{state[["minSideM","maxSideM","stepM"][i]]=$(id).value;try{localStorage.setItem("sahroudSteel.footingSizingAssistant.v1",JSON.stringify(state));}catch(e){}}));
   $("btnFootingSizeSearch").addEventListener("click",search);
   $("btnFootingSizeApply").addEventListener("click",apply);
   $("btnFootingSizeCSV").addEventListener("click",exportCSV);
@@ -89,5 +90,5 @@
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Footing-Preliminary-Sizing.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
  document.addEventListener("DOMContentLoaded",panel);
- window.SteelFootingSizingAssistant={search,getLast:()=>last?JSON.parse(JSON.stringify(last)):null};
+ window.SteelFootingSizingAssistant={search,getData:()=>JSON.parse(JSON.stringify(state)),setData:(d)=>{if(d&&typeof d==="object")state={...state,...d};try{localStorage.setItem("sahroudSteel.footingSizingAssistant.v1",JSON.stringify(state));}catch(e){}if($("fsaMin")){$("fsaMin").value=state.minSideM;$("fsaMax").value=state.maxSideM;$("fsaStep").value=state.stepM;}},getLast:()=>last?JSON.parse(JSON.stringify(last)):null};
 })();
