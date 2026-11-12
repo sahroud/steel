@@ -334,3 +334,34 @@ th {
   .roof-auto-summary { grid-template-columns: 1fr; }
   .roof-auto-summary > div { flex-direction: row; align-items: center; justify-content: space-between; }
 }
+
+
+/* Compact project controls and denser engineering workspace */
+.quick-actions {
+  display: grid;
+  grid-template-columns: auto auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px 13px;
+  margin: 10px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.quick-actions-title { color: var(--navy); font-weight: 800; white-space: nowrap; }
+.quick-actions-buttons { display: flex; gap: 6px; }
+.quick-actions-buttons button { margin: 0; min-height: 38px; padding: 7px 13px; }
+.quick-project-status { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.panel { margin: 8px 0; }
+.panel.smart-organized summary { min-height: 44px; padding: 9px 13px; }
+.panel.smart-organized .smart-panel-content { padding: 10px 12px; }
+.panel.smart-organized h3 { font-size: 13px; }
+.welcome { padding: 12px 15px; margin: 10px 0; }
+.welcome h2 { margin-bottom: 5px; }
+.welcome p { margin: 0; font-size: 12px; color: var(--muted); }
+@media (max-width: 650px) {
+  .quick-actions { grid-template-columns: 1fr; gap: 6px; padding: 9px; }
+  .quick-actions-buttons button { flex: 1 1 0; }
+  .quick-project-status { font-size: 10px; }
+}
