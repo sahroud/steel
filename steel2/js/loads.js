@@ -728,28 +728,68 @@
 
         const climateCity = $("climateCity");
         const projectCity = $("city");
+        const projectCityName = $("cityName");
+        const climateCustomCity = $("climateCustomCity");
         if (climateCity && projectCity) {
-            const initialCity = projectCity.value === "custom" || projectCity.value === "other"
-                ? "shahroud" : projectCity.value;
-            climateCity.value = initialCity;
             const cityNames = {
                 shahroud: "شاهرود", semnan: "سمنان", tehran: "تهران",
                 mashhad: "مشهد", tabriz: "تبریز", isfahan: "اصفهان",
                 yazd: "یزد", rasht: "رشت", sari: "ساری", kerman: "کرمان"
             };
-            if (cityNames[initialCity] && $("climateCustomCity")) {
-                $("climateCustomCity").value = cityNames[initialCity];
-            }
-            climateCity.addEventListener("change", function () {
-                if (cityNames[this.value] && $("climateCustomCity")) {
-                    $("climateCustomCity").value = cityNames[this.value];
+            const knownClimateCodes = Object.keys(cityNames);
+            const syncClimateFromProject = () => {
+                const selected = projectCity.value;
+                if (knownClimateCodes.includes(selected)) {
+                    climateCity.value = selected;
+                    if (climateCustomCity) climateCustomCity.value = cityNames[selected];
+                } else {
+                    climateCity.value = "other";
+                    const name = (projectCityName?.value || "").trim();
+                    if (climateCustomCity && name) climateCustomCity.value = name;
                 }
-                if (projectCity) projectCity.value = this.value;
+                if (projectCityName) projectCityName.style.display =
+                    ["other", "custom"].includes(selected) ? "" : "none";
+            };
+            const syncProjectFromClimate = () => {
+                const selected = climateCity.value;
+                if (knownClimateCodes.includes(selected) && ["shahroud","semnan","tehran","mashhad"].includes(selected)) {
+                    projectCity.value = selected;
+                    if (projectCityName) {
+                        projectCityName.value = cityNames[selected];
+                        projectCityName.style.display = "none";
+                    }
+                } else {
+                    projectCity.value = "other";
+                    if (projectCityName) {
+                        projectCityName.value = (climateCustomCity?.value || cityNames[selected] || "").trim();
+                        projectCityName.style.display = "";
+                    }
+                }
+                projectCity.dispatchEvent(new Event("change", {bubbles:true}));
+            };
+            // Recover older projects whose top-level city value was not a valid option.
+            const savedClimate = climateCity.value;
+            if (["other","custom",""].includes(projectCity.value)) {
+                syncClimateFromProject();
+            } else if (knownClimateCodes.includes(projectCity.value)) {
+                syncClimateFromProject();
+            } else if (knownClimateCodes.includes(savedClimate)) {
+                syncProjectFromClimate();
+            } else {
+                syncClimateFromProject();
+            }
+            projectCity.addEventListener("change", syncClimateFromProject);
+            projectCityName?.addEventListener("input", () => {
+                if (["other","custom"].includes(projectCity.value)) {
+                    climateCity.value = "other";
+                    if (climateCustomCity) climateCustomCity.value = projectCityName.value;
+                }
             });
-            if (projectCity) projectCity.addEventListener("change", function () {
-                if (cityNames[this.value]) {
-                    climateCity.value = this.value;
-                    $("climateCustomCity").value = cityNames[this.value];
+            climateCity.addEventListener("change", syncProjectFromClimate);
+            climateCustomCity?.addEventListener("input", () => {
+                if (climateCity.value === "other" && ["other","custom"].includes(projectCity.value) && projectCityName) {
+                    projectCityName.value = climateCustomCity.value;
+                    projectCityName.dispatchEvent(new Event("input", {bubbles:true}));
                 }
             });
         }
