@@ -186,7 +186,7 @@
     });
     const m=data.masonry&&typeof data.masonry==="object"?data.masonry:{};
     data.masonry={
-      thicknessMm:m.thicknessMm??350,unitWeightKNm3:m.unitWeightKNm3??"",brickLengthMm:m.brickLengthMm??"",brickHeightMm:m.brickHeightMm??"",brickDepthMm:m.brickDepthMm??"",mortarJointMm:m.mortarJointMm??"",plasterThicknessMm:m.plasterThicknessMm??"",
+      thicknessMm:(m.thicknessMm===undefined||m.thicknessMm===null||m.thicknessMm==="")?350:m.thicknessMm,unitWeightKNm3:m.unitWeightKNm3??"",brickLengthMm:m.brickLengthMm??"",brickHeightMm:m.brickHeightMm??"",brickDepthMm:m.brickDepthMm??"",mortarJointMm:m.mortarJointMm??"",plasterThicknessMm:m.plasterThicknessMm??"",
       restraintSystem:valid(m.restraintSystem,["unknown","columns-beams","independent","other"],"unknown"),
       horizontalTieSpacingM:m.horizontalTieSpacingM??"",verticalTieSpacingM:m.verticalTieSpacingM??""
     };
