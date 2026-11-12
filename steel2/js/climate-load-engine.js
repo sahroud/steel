@@ -230,6 +230,12 @@
       const el=$(id);
       if(el) el.addEventListener("input",updateSummary);
     });
+    panel.querySelectorAll(".wind-zone-cp").forEach(el=>el.addEventListener("input",updateSummary));
+    const savedZones=restoredMeta&&restoredMeta.windZones;
+    if(savedZones)Object.keys(savedZones).forEach(key=>{
+      const el=panel.querySelector('.wind-zone-cp[data-zone="'+key+'"]');
+      if(el)el.value=savedZones[key];
+    });
     updateSummary();
   }
   function updateSummary() {
@@ -252,6 +258,11 @@
       if(coeff) Object.keys(coeff).forEach(key=>{
         const map={importance:"windCoeffIw",exposure:"windCoeffCe",topography:"windCoeffCt",gust:"windCoeffCg",externalPressure:"windCoeffCp",directionality:"windCoeffCd",internalGust:"windCoeffCgi",internalPressure:"windCoeffCpi"};
         if($(map[key])) $(map[key]).value=coeff[key];
+      });
+      const zones=restoredMeta&&restoredMeta.windZones;
+      if(zones)Object.keys(zones).forEach(key=>{
+        const el=document.querySelector('.wind-zone-cp[data-zone="'+key+'"]');
+        if(el)el.value=zones[key];
       });
     }
     updateSummary();
