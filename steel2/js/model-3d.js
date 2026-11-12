@@ -390,9 +390,11 @@
         addMember(members,topChord[i],topChord[i+1],"رفتر قاب دیوار انتهایی","rafter",{endFace:face,axis:"endwall"});
       girtHeights.forEach((y,gi)=>{
         const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
+        const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
+        const upper=gi===girtHeights.length-1?height:(y+girtHeights[gi+1])/2;
         for(let i=0;i<active.length-1;i++){
           const a=addNode(nodes,active[i].x,y,z,"endwall-girt"),b=addNode(nodes,active[i+1].x,y,z,"endwall-girt");
-          addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{endFace:face,row:gi+1});
+          addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{endFace:face,row:gi+1,tributaryHeight:upper-lower});
         }
       });
     });
@@ -442,6 +444,10 @@
       } else if(m.sectionKey==="wallGirt"){
         const h=m.tributaryHeight||0;
         m.lineLoads={wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h};
+      } else if(m.sectionKey==="endGirt"){
+        const h=m.tributaryHeight||0;
+        const pressure=m.endFace==="front"?(loads.windEndFront||0):(loads.windEndBack||0);
+        m.lineLoads={windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure};
       }
     });
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
@@ -709,6 +715,10 @@
         }else if(m.sectionKey==="wallGirt"){
           const wall=Number(m.lineLoads?.wind||0)*1000;
           global[0]+=m.side==="left"?wall:-wall;
+        }else if(m.sectionKey==="endGirt"){
+          // Positive pressure acts inward: +Z on the front face and -Z on the rear face.
+          const endWall=Number(m.lineLoads?.windEnd||0)*1000;
+          global[2]+=m.endFace==="front"?endWall:-endWall;
         }
       }else{
         global=selected.direction.map(v=>v*totalLineLoad*1000);
