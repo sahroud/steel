@@ -56,7 +56,7 @@
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
       '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option></select></div></div>' +
-      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnSolverSelfTest" class="btn secondary">آزمون صحت هسته تحلیل</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
+      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnSolverSelfTest" class="btn secondary">آزمون صحت هسته تحلیل</button><button type="button" id="btnTieBeamIntegrationTest" class="btn secondary">آزمون یکپارچگی شناژ</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
@@ -77,6 +77,23 @@
         box.style.color=result.failed===0?"#15803d":"#b45309";
       } catch(error) {
         box.textContent="اجرای آزمون هسته تحلیل ناموفق بود: "+error.message;
+        box.style.color="#b45309";
+      }
+    });
+    $("btnTieBeamIntegrationTest").addEventListener("click", function () {
+      const box=$("fullModel3DResult");
+      try {
+        if(!window.SteelTieBeamIntegrationTest)throw new Error("آزمون یکپارچگی شناژ بارگذاری نشده است.");
+        const r=window.SteelTieBeamIntegrationTest.run();
+        box.textContent="آزمون مستقل اتصال شناژ: "+r.passed+"/"+r.total+" موفق؛ ناموفق: "+r.failed+
+          "\\n"+r.cases.map(x=>(x.passed?"✓ ":"✗ ")+x.axis+" / "+x.joint+
+            (x.error?" — "+x.error:" — واکنش قائم: "+x.verticalSupportReactionN.toFixed(2)+
+            " N؛ وزن مورد انتظار: "+x.expectedSelfWeightN.toFixed(2)+" N؛ بیشینه لنگر انتهایی: "+
+            x.maxTieEndBendingMomentNm.toFixed(5)+" N·m")).join("\\n")+
+          "\\n"+r.note;
+        box.style.color=r.failed===0?"#15803d":"#b45309";
+      } catch(error) {
+        box.textContent="آزمون شناژ ناموفق بود: "+error.message;
         box.style.color="#b45309";
       }
     });
