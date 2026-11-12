@@ -88,7 +88,7 @@
    const p=normalize({
     code:$("marketPriceCode").value.trim(),name:$("marketPriceName").value.trim(),productSpec:$("marketPriceSpec").value.trim(),
     price:$("marketPriceValue").value,unit:$("marketPriceUnit").value,
-    city:$("marketPriceCity").value.trim()||projectCity()||"نامشخص",
+    city:$("marketPriceCity").value.trim()||"نامشخص",
     seller:$("marketPriceSeller").value.trim(),source:$("marketPriceSource").value.trim()||"ورود دستی",
     sourceType:$("marketPriceSourceType").value,deliveryCity:$("marketPriceDeliveryCity").value.trim(),
     includesFreight:$("marketPriceFreightIncluded").checked,freightToman:$("marketPriceFreight").value,
@@ -131,7 +131,7 @@
     <div class="field"><label for="marketPriceSeller">نام فروشنده/کارخانه</label><input id="marketPriceSeller" placeholder="نام فروشنده"></div>
     <div class="field"><label for="marketPriceSourceType">نوع منبع</label><select id="marketPriceSourceType"><option value="factory">کارخانه</option><option value="warehouse">انبار</option><option value="market">بازار محلی</option><option value="exchange">بورس کالا</option><option value="manual">ورود دستی</option><option value="api">API</option></select></div>
     <div class="field"><label for="marketPriceDeliveryCity">شهر تحویل اعلام‌شده (اگر قطعی است)</label><input id="marketPriceDeliveryCity" placeholder="خالی = نامشخص"></div>
-    <div class="field"><label for="marketPriceFreight">هزینه حمل جداگانه (تومان)</label><input id="marketPriceFreight" type="number" min="0" step="any" placeholder="در صورت اطلاع"></div>
+    <div class="field"><label for="marketPriceFreight">هزینه حمل جداگانه (تومان؛ مبنای محاسبه در یادداشت ثبت شود)</label><input id="marketPriceFreight" type="number" min="0" step="any" placeholder="در صورت اطلاع"></div>
     <div class="field"><label for="marketPriceTaxPercent">مالیات جداگانه (%)</label><input id="marketPriceTaxPercent" type="number" min="0" step="any" placeholder="در صورت اطلاع"></div>
     <div class="field"><label for="marketPriceSource">منبع/مرجع قیمت</label><input id="marketPriceSource" placeholder="وب‌سایت، پیش‌فاکتور، تماس و ..."></div>
     <div class="field"><label for="marketPriceUrl">پیوند منبع یا پیش‌فاکتور</label><input id="marketPriceUrl" type="url" placeholder="https://..."></div>
@@ -149,7 +149,6 @@
   const footer=document.querySelector("footer");if(footer)footer.parentNode.insertBefore(panel,footer);else document.querySelector("main")?.appendChild(panel);
   $("marketPriceProjectCity").textContent=projectCity()||"انتخاب نشده";
   $("marketPriceEndpoint").value=state.endpoint;$("marketPriceInterval").value=state.intervalMinutes;$("marketPriceAuto").checked=state.autoRefresh;
-  $("marketPriceCity").value=projectCity();
   $("marketPriceRefresh").addEventListener("click",refresh);$("marketPriceExport").addEventListener("click",exportCSV);$("marketPriceAdd").addEventListener("click",addManual);
   $("marketPriceEndpoint").addEventListener("change",()=>{state.endpoint=$("marketPriceEndpoint").value.trim();persist();configureAutoRefresh();});
   $("marketPriceInterval").addEventListener("change",()=>{state.intervalMinutes=Math.max(5,Math.min(1440,Number($("marketPriceInterval").value)||60));persist();configureAutoRefresh();});
