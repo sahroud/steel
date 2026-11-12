@@ -67,7 +67,7 @@
     }
     const qText = "فشار مبنا q = " + r.q.toFixed(3) + " kN/m². ";
     if (!r.complete) {
-      out.textContent = qText + "برای محاسبه فشار خارجی و داخلی، همه ضرایب این بخش باید از متن معتبر مبحث ششم ۱۳۹۸ وارد شوند. هیچ ضریب پیش‌فرض یا حدسی اعمال نمی‌شود.";
+      out.textContent = qText + (r.reason || "برای محاسبه فشار خارجی و داخلی، ضرایب لازم باید از متن معتبر مبحث ششم ۱۳۹۸ وارد شوند. هیچ ضریب پیش‌فرض یا حدسی اعمال نمی‌شود.");
       return;
     }
     out.textContent = qText +
@@ -139,7 +139,7 @@
     const out=$("windZoneStatus");
     if(out)out.textContent=r.ready
       ?"فشار خالص هر شش سطح برای دو حالت علامت فشار داخلی محاسبه شد. مبنای CgCp/Cp طبق هندسه کنترل شد. q="+r.q.toFixed(3)+" kN/m². مقادیر هنوز دستی/تأییدنشده‌اند و به تحلیل سه‌بعدی منتقل نمی‌شوند."
-      :"برای محاسبه همه سطوح، ضرایب مشترک Iw، Ce، Ct، Cg، Cd، Cgi، قدرمطلق Cpi و Cp هر شش سطح را وارد کنید.";
+      :"برای محاسبه همه سطوح، ضرایب مشترک Iw، Ce، Ct، Cd، Cgi، قدرمطلق Cpi و ضریب خارجی هر سطح را وارد کنید؛ Cg فقط در حالت Cp جداگانه لازم است.";
   }
   function getData() {
     const loads = window.SteelLoads && window.SteelLoads.getData ? window.SteelLoads.getData() : {};
@@ -232,8 +232,8 @@
       '<div class="field"><label for="windCoeffCpi">ضریب فشار داخلی Cpi</label><input id="windCoeffCpi" type="number" step="0.01" placeholder="علامت‌دار؛ بر اساس بازشوها"></div>' +
       '</div><p id="windPressureCalculationResult" class="notice" aria-live="polite"></p>' +
       '<hr><b>دفتر فشار بادِ سطوح مختلف ـ ورود ضرایب خارجی به تفکیک سطح</b>' +
-      '<p>برای هر سطح، Cp خارجی را جداگانه و با علامت از متن معتبر وارد کنید. نرم‌افزار دو حالت فشار داخلی مثبت و منفی را جداگانه می‌سازد و فشار خالص هر سطح را گزارش می‌کند. این دفتر هنوز به تحلیل سه‌بعدی متصل نیست.</p>' +
-      '<div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>جهت باد</th><th>Cp خارجی</th><th>فشار خالص با Cpi مثبت</th><th>فشار خالص با Cpi منفی</th></tr></thead><tbody>' +
+      '<p>برای هر سطح، ضریب خارجی را جداگانه و با علامت از متن معتبر وارد کنید؛ در حالت h<20m و h/b<1، مقدار جدول ممکن است CgCp ترکیبی باشد و نباید Cg دوباره ضرب شود. نرم‌افزار دو حالت فشار داخلی مثبت و منفی را جداگانه می‌سازد و فشار خالص هر سطح را گزارش می‌کند. این دفتر هنوز به تحلیل سه‌بعدی متصل نیست.</p>' +
+      '<div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>جهت باد</th><th>Cp یا CgCp خارجی</th><th>فشار خالص با Cpi مثبت</th><th>فشار خالص با Cpi منفی</th></tr></thead><tbody>' +
       '<tr><td>شیب چپ بام</td><td>عمود بر قاب</td><td><input class="wind-zone-cp" data-zone="roof-left" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneRoofLeftPlus">—</td><td id="windZoneRoofLeftMinus">—</td></tr>' +
       '<tr><td>شیب راست بام</td><td>عمود بر قاب</td><td><input class="wind-zone-cp" data-zone="roof-right" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneRoofRightPlus">—</td><td id="windZoneRoofRightMinus">—</td></tr>' +
       '<tr><td>دیوار طولی چپ</td><td>طولی ±Y</td><td><input class="wind-zone-cp" data-zone="long-wall-left" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneLongLeftPlus">—</td><td id="windZoneLongLeftMinus">—</td></tr>' +
