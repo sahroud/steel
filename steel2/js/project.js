@@ -219,6 +219,10 @@
             data.footingSizingAssistant = window.SteelFootingSizingAssistant.getData();
         }
 
+        if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.getData === "function") {
+            data.geotechnicalData = window.SteelGeotechnicalData.getData();
+        }
+
         return data;
     }
 
@@ -458,6 +462,10 @@
 
         if (window.SteelFootingSizingAssistant && typeof window.SteelFootingSizingAssistant.setData === "function") {
             window.SteelFootingSizingAssistant.setData(data.footingSizingAssistant || {});
+        }
+
+        if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.setData === "function") {
+            window.SteelGeotechnicalData.setData(data.geotechnicalData || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
