@@ -207,6 +207,10 @@
             data.foundationTakeoff = window.SteelFoundationTakeoff.getData();
         }
 
+        if (window.SteelAnchorBaseplateTakeoff && typeof window.SteelAnchorBaseplateTakeoff.getData === "function") {
+            data.anchorBaseplateTakeoff = window.SteelAnchorBaseplateTakeoff.getData();
+        }
+
         return data;
     }
 
@@ -434,6 +438,10 @@
 
         if (window.SteelFoundationTakeoff && typeof window.SteelFoundationTakeoff.setData === "function") {
             window.SteelFoundationTakeoff.setData(data.foundationTakeoff || {});
+        }
+
+        if (window.SteelAnchorBaseplateTakeoff && typeof window.SteelAnchorBaseplateTakeoff.setData === "function") {
+            window.SteelAnchorBaseplateTakeoff.setData(data.anchorBaseplateTakeoff || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
