@@ -307,11 +307,6 @@
         // ارتفاع تاج از فایل پروژه بازیابی می‌شود؛ شیب از rise و نصف دهانه محاسبه می‌شود.
         updateRoofGeometry();
 
-        ["span", "rise", "height"].forEach(function (id) {
-            const el = $(id);
-            if (el) el.addEventListener("input", updateRoofGeometry);
-        });
-
         if ($("baseConnection")) {
             $("baseConnection").value =
                 data.baseConnection === "fixed" ? "fixed" : "pinned";
@@ -446,6 +441,11 @@
             if (el) {
                 el.addEventListener("input", updateFrameCount);
             }
+        });
+
+        ["span", "rise", "height"].forEach(function (id) {
+            const el = $(id);
+            if (el) el.addEventListener("input", updateRoofGeometry);
         });
 
         if ($("baseConnection")) {
