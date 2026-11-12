@@ -309,7 +309,7 @@ function selfTest(){
  // A uniformly loaded member with both bending rotations released must recover zero end moments.
  try{
   const q=-1200,model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"PIN",start:"A",end:"B",type:"validation",analysisLoad:{uniformLocal:[0,q,0]},endReleases:{i:[4,5],j:[4,5]}}]};
-  const result=analyze(model,{...base,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]});
+  const result=analyze(model,{...base,supports:[{nodeId:"A",fixedDofs:[0,1,2,4,5]},{nodeId:"B",fixedDofs:[0,1,2,4,5]}]});
   const end=result.members[0].localEndForces;
   const maxMoment=Math.max(Math.abs(end[3]),Math.abs(end[4]),Math.abs(end[5]),Math.abs(end[9]),Math.abs(end[10]),Math.abs(end[11]));
   const expectedShear=Math.abs(q)*L/2;
