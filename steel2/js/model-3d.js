@@ -22,7 +22,8 @@
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
       '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option></select></div></div>' +
       '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
-      '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>';
+      '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
+      '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
     $("btnBuildFullModel").addEventListener("click", function () { try { build(); draw(); showSummary(); } catch (e) { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; } });
     $("btnRunFull3D").addEventListener("click", function () {
@@ -68,6 +69,7 @@
         }
         box.style.color="#15803d";
         window.SteelStructuralModel.last3DResult=result;
+        renderCriticalRafterDiagram(result,"تحلیل مدل اصلی");
       } catch(e) {
         box.textContent="تحلیل سه‌بعدی انجام نشد: "+e.message+
           "؛ این پیام برای جلوگیری از ارائه نتیجه نادرست نمایش داده شده است.";
@@ -121,6 +123,12 @@
           equilibrium:result.equilibrium||null,
           criticalMemberDiagnostics:result.criticalMemberDiagnostics||null,
           criticalJointEquilibrium:result.criticalJointEquilibrium||null,
+          criticalRafterContinuity:(critical?(()=>{
+            const linked=(critical.connectedMembers||[]).filter(m=>m.sectionKey==="rafter");
+            return {nodeId:critical.id,memberCount:linked.length,allShareCriticalNode:linked.every(m=>m.start===critical.id||m.end===critical.id),
+              members:linked.map(m=>{const source=analysisModelMemberById(m.id);return {id:m.id,start:source?.start||null,end:source?.end||null,lengthM:source?.length||null,sectionKey:source?.sectionKey||null};}),
+              note:"کنترل اشتراک شناسه گره در مدل هندسی است؛ به‌تنهایی جایگزین کنترل سختی اتصال یا صحت مدل نیست."};
+          })():null),
           criticalMemberReport:(result.criticalMemberReport||[]).map(m=>{
             const source=analysisModelMemberById(m.id);
             return {...m,
@@ -134,6 +142,7 @@
           note:"تحلیل خطی مقدماتی است؛ نتیجه جایگزین کنترل آیین‌نامه‌ای، بررسی اتصالات و پایداری نیست."
         };
         window.SteelStructuralModel.lastSpanComparison=report;
+        renderCriticalRafterDiagram(result,"آزمایش دهانه ۱۰ متر");
         window.dispatchEvent(new CustomEvent("sahroud:span-report-ready",{detail:report}));
         $("btnDownloadSpanTest").disabled=false;
         const eq=result.equilibrium||{};
@@ -362,6 +371,79 @@
     const title=el("text",{x:W/2,y:25,"text-anchor":"middle",fill:"#123b52","font-size":17,"font-family":"Tahoma,Arial"});title.textContent="مدل سه‌بعدی جانمایی اجزای سوله";
     const note=el("text",{x:W/2,y:455,"text-anchor":"middle",fill:"#64748b","font-size":11,"font-family":"Tahoma,Arial"});note.textContent="نمای شماتیک آکسونومتریک ـ مقیاس تصویری";
     return true;
+  }
+  function renderCriticalRafterDiagram(result, contextLabel) {
+    const box=$("criticalRafterDiagram");
+    if(!box||!model||!result||!result.criticalDisplacement){return;}
+    const critical=result.criticalDisplacement;
+    const z=Number(critical.coordinates.z);
+    const nodeById=new Map(model.nodes.map(n=>[n.id,n]));
+    const frameMembers=model.members.filter(m=>{
+      if(m.axis!=="transverse"||m.sectionKey!=="rafter")return false;
+      const a=nodeById.get(m.start),b=nodeById.get(m.end);
+      return a&&b&&Math.abs(a.z-z)<1e-6&&Math.abs(b.z-z)<1e-6;
+    });
+    const selectedIds=new Set((critical.connectedMembers||[])
+      .filter(m=>m.sectionKey==="rafter").map(m=>String(m.id)));
+    const selected=frameMembers.filter(m=>selectedIds.has(String(m.id)));
+    if(!selected.length){
+      box.textContent="قطعه رفتر متصل به گره بحرانی در قاب انتخاب‌شده پیدا نشد.";
+      return;
+    }
+    const frameNodes=frameMembers.flatMap(m=>[nodeById.get(m.start),nodeById.get(m.end)]).filter(Boolean);
+    const xs=frameNodes.map(n=>n.x),ys=frameNodes.map(n=>n.y);
+    const minX=Math.min(...xs),maxX=Math.max(...xs),maxY=Math.max(...ys);
+    const W=980,H=370,x0=38,baseY=300,xScale=610/Math.max(maxX-minX,1),yScale=220/Math.max(maxY,1);
+    const P=n=>({x:x0+(n.x-minX)*xScale,y:baseY-n.y*yScale});
+    const esc=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    let svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای قاب عرضی و محل قطعه رفتر بحرانی" style="width:100%;height:auto;display:block;background:#f8fafc;border-radius:8px">';
+    svg+='<text x="340" y="25" text-anchor="middle" fill="#123b52" font-size="17" font-family="Tahoma,Arial">نمای عرضی قاب سوله — '+esc(contextLabel||"مدل فعلی")+'</text>';
+    svg+='<line x1="25" y1="'+baseY+'" x2="675" y2="'+baseY+'" stroke="#94a3b8" stroke-width="2"/>';
+    const columns=model.members.filter(m=>m.sectionKey==="column").filter(m=>{
+      const a=nodeById.get(m.start),b=nodeById.get(m.end);
+      return a&&b&&Math.abs(a.z-z)<1e-6&&Math.abs(b.z-z)<1e-6;
+    });
+    columns.forEach(m=>{const a=P(nodeById.get(m.start)),b=P(nodeById.get(m.end));svg+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="#256b91" stroke-width="10" stroke-linecap="square"/>';});
+    frameMembers.slice().sort((a,b)=>Math.min(nodeById.get(a.start).x,nodeById.get(a.end).x)-Math.min(nodeById.get(b.start).x,nodeById.get(b.end).x)).forEach(m=>{
+      const na=nodeById.get(m.start),nb=nodeById.get(m.end),a=P(na),b=P(nb),over=m.type==="کنسول رفتر";
+      const hi=selectedIds.has(String(m.id));
+      svg+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="'+(hi?"#dc2626":over?"#8b5cf6":"#334155")+'" stroke-width="'+(hi?13:over?7:9)+'" stroke-linecap="square"'+(over?' stroke-dasharray="7 4"':"")+'/>';
+      if(hi){
+        const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+        svg+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="#fff" stroke-width="2"/>';
+        svg+='<text x="'+mid.x+'" y="'+(mid.y-15)+'" text-anchor="middle" fill="#991b1b" font-size="12" font-weight="bold" font-family="Tahoma,Arial">'+esc(m.id)+' — '+Number(m.length).toFixed(3)+' m</text>';
+      }
+    });
+    frameMembers.forEach(m=>[m.start,m.end].forEach(id=>{
+      const n=nodeById.get(id);if(!n)return;const p=P(n);
+      svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="3.2" fill="#64748b"/>';
+    }));
+    const cp=nodeById.get(critical.nodeId);
+    if(cp){
+      const p=P(cp);
+      svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="8" fill="#facc15" stroke="#991b1b" stroke-width="2"/>';
+      svg+='<text x="'+(p.x+10)+'" y="'+(p.y-13)+'" fill="#7f1d1d" font-size="13" font-weight="bold" font-family="Tahoma,Arial">'+esc(critical.nodeId)+' — تاج سقف</text>';
+    }
+    const leftCan=frameMembers.find(m=>m.type==="کنسول رفتر"&&Math.min(nodeById.get(m.start).x,nodeById.get(m.end).x)<0);
+    if(leftCan){
+      const a=P(nodeById.get(leftCan.start)),b=P(nodeById.get(leftCan.end)),mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+      svg+='<text x="'+mid.x+'" y="'+(mid.y+25)+'" text-anchor="middle" fill="#6d28d9" font-size="11" font-family="Tahoma,Arial">کنسول سایه‌بان</text>';
+    }
+    svg+='<text x="340" y="328" text-anchor="middle" fill="#475569" font-size="11" font-family="Tahoma,Arial">قطعات قرمز، اعضای مدل متصل به گره بحرانی‌اند؛ خط‌چین بنفش کنسول رفتر را نشان می‌دهد.</text>';
+    // Schematic built-up I-girder cross-section; dimensions are intentionally not implied.
+    svg+='<rect x="700" y="48" width="255" height="258" rx="8" fill="#fff" stroke="#cbd5e1"/>';
+    svg+='<text x="827" y="72" text-anchor="middle" fill="#123b52" font-size="14" font-weight="bold" font-family="Tahoma,Arial">مقطع شماتیک تیرورق</text>';
+    svg+='<rect x="765" y="95" width="125" height="18" fill="#64748b" stroke="#334155"/>';
+    svg+='<rect x="817" y="113" width="21" height="105" fill="#94a3b8" stroke="#334155"/>';
+    svg+='<rect x="765" y="218" width="125" height="18" fill="#64748b" stroke="#334155"/>';
+    svg+='<text x="900" y="108" fill="#334155" font-size="11" font-family="Tahoma,Arial">بال بالا</text>';
+    svg+='<text x="850" y="170" fill="#334155" font-size="11" font-family="Tahoma,Arial">جان</text>';
+    svg+='<text x="900" y="232" fill="#334155" font-size="11" font-family="Tahoma,Arial">بال پایین</text>';
+    svg+='<text x="827" y="265" text-anchor="middle" fill="#64748b" font-size="10" font-family="Tahoma,Arial">صرفاً شماتیک؛ نه به مقیاس</text>';
+    svg+='<text x="827" y="282" text-anchor="middle" fill="#64748b" font-size="10" font-family="Tahoma,Arial">ابعاد واقعی مقطع هنوز درج نشده</text>';
+    svg+='</svg>';
+    const sameNode=selected.every(m=>m.start===critical.nodeId||m.end===critical.nodeId);
+    box.innerHTML=svg+'<p style="margin:8px 0 0"><b>نتیجه اتصال:</b> '+(sameNode?'قطعات قرمز در گره مشترک '+esc(critical.nodeId)+' به هم می‌رسند؛ در مدل، این گره مشترک است و قطعه کوتاه به‌عنوان تیر مستقل و جدا از رفتر تعریف نشده.':'اتصال قطعات به گره بحرانی نیازمند بازبینی است.')+'</p><p style="margin:4px 0 0">نمای بالا مربوط به '+esc(contextLabel||"مدل تحلیل‌شده")+' است. شکل I فقط نوع مقطع را نشان می‌دهد؛ چون ابعاد جان و بال در گزارش موجود نیست، اندازه واقعی مقطع نمایش داده نشده است.</p>';
   }
   function showSummary(){
     if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
