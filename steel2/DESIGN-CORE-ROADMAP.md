@@ -125,3 +125,14 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 - Provides downloadable UTF-8 CSV (Excel-compatible) and JSON quantity reports from the browser.
 - Steel member mass is intentionally not invented: it requires verified section unit masses. Fasteners, welds, connection plates, reinforcement, mortar cement/sand split, and fabrication waste remain outside this preliminary takeoff until their specifications are supplied.
 - The report is a quantity estimate, not an approved construction bill or code design. No structural load transfer or design eligibility is enabled.
+
+
+
+## Steel fabrication and connection quantity takeoff — 2026-11-12
+
+- Added a fabrication takeoff extension that calculates steel member mass by section group from each model member's geometric length and the group's entered 3D section area A (cm²), using editable steel density (default 7850 kg/m³). Missing group areas or invalid lengths leave affected mass uncomputed rather than guessed.
+- Added manually entered fabrication inventory for connection plates (count × width × height × thickness), bolts (count × nominal shank cylinder volume; head/nut/washer excluded), and fillet weld metal (length × triangular leg²/2 theoretical area).
+- Added optional cutting-waste percentage applied only to structural members plus connection plates. Bolts and theoretical weld metal remain separately itemized.
+- Added project-file persistence for density, waste allowance and manual connection inventory. CSV/JSON BOQ output includes steel group member count, total length, section area and calculated mass plus connection items.
+- Synthetic arithmetic test only: a fabricated 9-member test model using artificial section areas produced 479.635 kg member mass, 9.420 kg plates, 1.578 kg bolt shanks and 0.565 kg theoretical weld metal. These are test fixtures, not project quantities.
+- No automatic connection layout or connection demand is inferred. Connection plate/bolt/weld inventory must be entered from the actual connection drawings. Section areas and steel density must be verified against selected profiles/material certificates. This remains a preliminary takeoff, not a fabrication release or design approval.
