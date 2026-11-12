@@ -203,6 +203,10 @@
             data.costEstimate = window.SteelCostEstimate.getData();
         }
 
+        if (window.SteelFoundationTakeoff && typeof window.SteelFoundationTakeoff.getData === "function") {
+            data.foundationTakeoff = window.SteelFoundationTakeoff.getData();
+        }
+
         return data;
     }
 
@@ -426,6 +430,10 @@
 
         if (window.SteelCostEstimate && typeof window.SteelCostEstimate.setData === "function") {
             window.SteelCostEstimate.setData(data.costEstimate || {});
+        }
+
+        if (window.SteelFoundationTakeoff && typeof window.SteelFoundationTakeoff.setData === "function") {
+            window.SteelFoundationTakeoff.setData(data.foundationTakeoff || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
