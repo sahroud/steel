@@ -4,7 +4,7 @@
 (function(){
  "use strict";
  const $=id=>document.getElementById(id);
- const defaults={fyMPa:400,coverMm:40,barDiaMm:16,stirrupDiaMm:10,stirrupLegs:2,clearSpacingMm:25,sideBarsPerSide:0,phiFlexure:0.90,phiShear:0.75,lambdaConcrete:1.0,EsMPa:200000,alpha1:0.85,beta1:0.85,epsilonCu:0.003};
+ const defaults={fyMPa:400,coverMm:40,barDiaMm:16,stirrupDiaMm:10,stirrupLegs:2,clearSpacingMm:25,hookCutAllowancePerEndMm:0,sideBarsPerSide:0,phiFlexure:0.90,phiShear:0.75,lambdaConcrete:1.0,EsMPa:200000,alpha1:0.85,beta1:0.85,epsilonCu:0.003};
  let settings={...defaults},latest=null,lastReport=null;
  const fmt=(v,d=2)=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:d});
  function mount(){
@@ -19,7 +19,7 @@
   '<div class="field"><label for="tbrBarDia">قطر پیشنهادی میلگرد طولی (mm)</label><select id="tbrBarDia"><option>12</option><option>14</option><option selected>16</option><option>18</option><option>20</option><option>22</option><option>25</option><option>28</option><option>32</option></select></div>'+
   '<div class="field"><label for="tbrStirrupDia">قطر خاموت (mm)</label><input id="tbrStirrupDia" type="number" min="6" max="16" step="1" value="10"></div>'+
   '<div class="field"><label for="tbrLegs">تعداد شاخه مؤثر خاموت</label><select id="tbrLegs"><option value="2" selected>۲ شاخه</option><option value="4">۴ شاخه</option></select></div>'+
-  '<div class="field"><label for="tbrClearSpacing">فاصله آزاد هندسی پیشنهادی میلگردها (mm)</label><input id="tbrClearSpacing" type="number" min="10" max="100" step="1" value="25"></div><div class="field"><label>آرایش پایه میلگرد طولی</label><div class="hint">۳ عدد میلگرد ۱۶ بالا و ۳ عدد میلگرد ۱۶ پایین؛ بدون میلگرد میانی جانبی. نرم‌افزار در صورت نیاز محاسباتی، افزایش تعداد یا قطر را پیشنهاد می‌کند.</div></div>'+
+  '<div class="field"><label for="tbrClearSpacing">فاصله آزاد هندسی پیشنهادی میلگردها (mm)</label><input id="tbrClearSpacing" type="number" min="10" max="100" step="1" value="25"></div><div class="field"><label for="tbrHookAllowance">افزوده طول برش قلاب در هر انتها (mm) — ورود دستی</label><input id="tbrHookAllowance" type="number" min="0" max="1000" step="5" value="0"></div><div class="field"><label>آرایش پایه میلگرد طولی</label><div class="hint">۳ عدد میلگرد ۱۶ بالا و ۳ عدد میلگرد ۱۶ پایین؛ بدون میلگرد میانی جانبی. نرم‌افزار در صورت نیاز محاسباتی، افزایش تعداد یا قطر را پیشنهاد می‌کند.</div></div>'+
   '<div class="field"><label for="tbrPhi">ضریب مقاومت خمشی فرضی φ (غربال مقدماتی)</label><input id="tbrPhi" type="number" min="0.5" max="1" step="0.01" value="0.90"></div>'+
   '<div class="field"><label for="tbrPhiShear">ضریب مقاومت برشی φ</label><input id="tbrPhiShear" type="number" min="0.5" max="0.9" step="0.01" value="0.75"></div><div class="field"><label for="tbrLambda">ضریب بتن معمولی/سبک λ</label><input id="tbrLambda" type="number" min="0.75" max="1" step="0.01" value="1.0"></div><div class="field"><label for="tbrEs">مدول فولاد Es (MPa)</label><input id="tbrEs" type="number" min="150000" max="220000" step="1000" value="200000"></div>'+
   '<div class="field"><label for="tbrAlpha">ضریب بلوک تنش α1</label><input id="tbrAlpha" type="number" min="0.5" max="1" step="0.01" value="0.85"></div>'+
@@ -31,19 +31,19 @@
   '<div id="tieRebarOutput" class="result-box">هنوز نتیجه‌ای محاسبه نشده است.</div>'+
   '<div class="notice">این محاسبه حداقل آرماتور آیین‌نامه‌ای، کنترل ترک، خیز، دوام، حداکثر فاصله میلگرد، محدودیت فاصله خاموت، برش بتن، پیچش، اثر زلزله، مهاری و وصله را تعیین نمی‌کند. فاصله خاموت از برش بتن و فولاد، حداقل فولاد برشی و محدودیت فاصله فصل ۱۱ محاسبه می‌شود؛ با این حال کنترل پیچش، زلزله، آرایش واقعی خاموت و جزئیات اجرایی هنوز کامل نیست.</div>';
   anchor.parentNode.insertBefore(p,anchor.nextSibling);
-  ["tbrFy","tbrCover","tbrBarDia","tbrStirrupDia","tbrLegs","tbrClearSpacing","tbrPhi","tbrPhiShear","tbrLambda","tbrEs","tbrAlpha","tbrBeta","tbrEpsCu"].forEach(id=>$(id).addEventListener("change",read));
+  ["tbrFy","tbrCover","tbrBarDia","tbrStirrupDia","tbrLegs","tbrClearSpacing","tbrHookAllowance","tbrPhi","tbrPhiShear","tbrLambda","tbrEs","tbrAlpha","tbrBeta","tbrEpsCu"].forEach(id=>$(id).addEventListener("change",read));
   $("btnRunTieRebarScreen").addEventListener("click",()=>render(true));
   $("btnResetTieRebarDefaults").addEventListener("click",()=>{settings={...defaults};write();render(false);});
   write();
  }
  function read(){
   if(!$("tbrFy"))return;
-  settings={fyMPa:Number($("tbrFy").value),coverMm:Number($("tbrCover").value),barDiaMm:Number($("tbrBarDia").value),stirrupDiaMm:Number($("tbrStirrupDia").value),stirrupLegs:Number($("tbrLegs").value),clearSpacingMm:Number($("tbrClearSpacing").value),sideBarsPerSide:0,phiFlexure:Number($("tbrPhi").value),phiShear:Number($("tbrPhiShear").value),lambdaConcrete:Number($("tbrLambda").value),EsMPa:Number($("tbrEs").value),alpha1:Number($("tbrAlpha").value),beta1:Number($("tbrBeta").value),epsilonCu:Number($("tbrEpsCu").value)};
+  settings={fyMPa:Number($("tbrFy").value),coverMm:Number($("tbrCover").value),barDiaMm:Number($("tbrBarDia").value),stirrupDiaMm:Number($("tbrStirrupDia").value),stirrupLegs:Number($("tbrLegs").value),clearSpacingMm:Number($("tbrClearSpacing").value),hookCutAllowancePerEndMm:Number($("tbrHookAllowance").value),sideBarsPerSide:0,phiFlexure:Number($("tbrPhi").value),phiShear:Number($("tbrPhiShear").value),lambdaConcrete:Number($("tbrLambda").value),EsMPa:Number($("tbrEs").value),alpha1:Number($("tbrAlpha").value),beta1:Number($("tbrBeta").value),epsilonCu:Number($("tbrEpsCu").value)};
   try{localStorage.setItem("sahroudSteel.tieBeamRebarSettings.v1",JSON.stringify(settings));}catch(e){}
  }
  function write(){
   if(!$("tbrFy"))return;
-  Object.entries({tbrFy:settings.fyMPa,tbrCover:settings.coverMm,tbrBarDia:settings.barDiaMm,tbrStirrupDia:settings.stirrupDiaMm,tbrLegs:settings.stirrupLegs,tbrClearSpacing:settings.clearSpacingMm,tbrSideBars:settings.sideBarsPerSide,tbrPhi:settings.phiFlexure,tbrPhiShear:settings.phiShear,tbrLambda:settings.lambdaConcrete,tbrEs:settings.EsMPa,tbrAlpha:settings.alpha1,tbrBeta:settings.beta1,tbrEpsCu:settings.epsilonCu}).forEach(([id,v])=>{if($(id))$(id).value=v;});
+  Object.entries({tbrFy:settings.fyMPa,tbrCover:settings.coverMm,tbrBarDia:settings.barDiaMm,tbrStirrupDia:settings.stirrupDiaMm,tbrLegs:settings.stirrupLegs,tbrClearSpacing:settings.clearSpacingMm,tbrHookAllowance:settings.hookCutAllowancePerEndMm,tbrSideBars:settings.sideBarsPerSide,tbrPhi:settings.phiFlexure,tbrPhiShear:settings.phiShear,tbrLambda:settings.lambdaConcrete,tbrEs:settings.EsMPa,tbrAlpha:settings.alpha1,tbrBeta:settings.beta1,tbrEpsCu:settings.epsilonCu}).forEach(([id,v])=>{if($(id))$(id).value=v;});
  }
  function areaBar(d){return Math.PI*d*d/4;}
  function barLayerCapacity(bMm,coverMm,stirrupDiaMm,barDiaMm,clearSpacingMm){
@@ -311,6 +311,8 @@
   const straightBarLength=footingExtension?Number(material?.lengthM)+footingDimension:null;
   const barsBothFaces=count?2*count:null;
   const totalStraightBarLengthM=barsBothFaces?barsBothFaces*straightBarLength:null;
+   const hookCutAllowancePerEndM=Math.max(0,Number(settings.hookCutAllowancePerEndMm)||0)/1000;
+   const totalCutLengthM=barsBothFaces&&straightBarLength!=null?barsBothFaces*(straightBarLength+2*hookCutAllowancePerEndM):null;
   const unitMassKgM=Math.pow(settings.barDiaMm,2)/162;
   return{id:route.id,memberIds:forceRows.map(x=>x.id),segmentCount:members.length,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,
    criticalMoment:{...criticalMoment,NkN:criticalMoment.Nn/1000,MyKNm:criticalMoment.MyNm/1000,MzKNm:criticalMoment.MzNm/1000,MresultantKNm:criticalMoment.MresultantNm/1000},
@@ -321,7 +323,8 @@
    barCountEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits,multiLayerFits,rowsPerFace:layout.rowsPerFace||null,barsPerRow:layout.barsPerRow||[],bottomCentroidMm:layout.bottomCentroidMm||null,topCentroidMm:layout.topCentroidMm||null,layers:layout.layers||[],coordinates:layout.coordinates||[],sideBarCount:layout.sideBarCount||0},
    longitudinalBars:{countEachFace:count,sideBarsPerSide:settings.sideBarsPerSide,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
     totalStraightLengthM:totalStraightBarLengthM,approximateMassKg:totalStraightBarLengthM==null?null:totalStraightBarLengthM*unitMassKgM,
-    hookAllowanceIncluded:false,footingExtensionIncluded:footingExtension},
+    hookCutAllowancePerEndMm:settings.hookCutAllowancePerEndMm,totalCutLengthM,approximateMassKg:totalCutLengthM==null?null:totalCutLengthM*unitMassKgM,
+    hookAllowanceIncluded:hookCutAllowancePerEndM>0,hookAllowanceIsManual:true,footingExtensionIncluded:footingExtension},
    stirrup:{diaMm:settings.stirrupDiaMm,legs:settings.stirrupLegs,areaMm2:stirrupArea,steelOnlySpacingMm:spacing,shearY:shearYResult,shearZ:shearZResult,phi:settings.phiShear},
    note:"نیروهای تمام قطعات مسیر پیوسته بررسی شده‌اند. برای پوشش لنگرهای مثبت و منفی، آرماتور به‌صورت متقارن در دو وجه و در چند ردیف با مختصات واقعی ارتفاعی توزیع شده است. آرایش هندسی بر اساس فاصله آزاد ورودی است و جایگزین کنترل حداقل فاصله آیین‌نامه‌ای، تراکم بتن‌ریزی و تداخل خاموت نیست. طول مستقیم میلگرد تا وجه بیرونی دو فونداسیون انتهایی برآورد شده؛ طول قلاب و خم به علت نیاز به ضابطه/جزئیات معتبر به مقدار طول اضافه نشده است."};
  }
@@ -357,7 +360,7 @@
     "\\nکنترل مقدماتی پیچش: "+(r.torsion.design?.ok?(r.torsion.design.required?("Tu="+fmt(r.torsion.design.TuKNm)+" kN·m؛ φTth="+fmt(r.torsion.design.phiT*r.torsion.design.TthKNm)+" kN·m؛ پیچش فعال؛ At/s لازم="+fmt(r.torsion.design.requiredAtPerSMm2PerMm,4)+" mm²/mm؛ Al لازم="+fmt(r.torsion.design.requiredAlMm2)+" mm²؛ فاصله پیشنهادی ترکیبی="+fmt(r.torsion.design.recommendedSpacingMm)+" mm؛ حد Ph/8 و 300="+fmt(r.torsion.design.maxSpacingByTorsionMm)+" mm؛ ظرفیت عرضی پیچش="+fmt(r.torsion.design.torsionTransverseCapacityKNm)+" kN·m؛ حداقل آرماتور پیچشی طبق Tcr="+(r.torsion.design.minimumRequired?"فعال":"فعال نیست")+"؛ کنترل ترکیبی برش-پیچش="+(r.torsion.design.combinedShearTorsionOK?"قبول مقدماتی":"رد مقدماتی")+"؛ کنترل طولی پیرامونی هنوز ناقص"):"Tu="+fmt(r.torsion.design.TuKNm)+" kN·m؛ کمتر از φTth="+fmt(r.torsion.design.phiT*r.torsion.design.TthKNm)+" kN·m؛ آرماتور حداقل پیچشی بر اساس آستانه فعال نیست") : (r.torsion.design?.reason||"محاسبه نشده"))+"\\nپیچش محلی: "+(r.torsion.available?("بیشینه |T|="+fmt(r.torsion.maxAbsKNm)+" kN·m در عضو "+r.torsion.criticalMemberId+"؛ غربال پیچش و برش-پیچش انجام شده، اما ظرفیت نهایی طولی و جزئیات میلگردهای پیرامونی هنوز کنترل نشده است"):"مؤلفه پیچش در نتایج موجود نیست؛ کنترل نشده است")+
     "\nکنترل برش محلی y: "+(r.stirrup.shearY.ok?("Vu="+fmt(r.stirrup.shearY.VuKN)+" kN؛ φVn,max="+fmt(r.stirrup.shearY.maxNominalShearKN*r.stirrup.phi)+" kN؛ خاموت حداقل لازم="+(r.stirrup.shearY.minimumStirrupsTriggered?"بله":"خیر")+(r.stirrup.shearY.recommendedSpacingMm==null?"":"؛ فاصله پیشنهادی="+fmt(r.stirrup.shearY.recommendedSpacingMm)+" mm؛ φ(Vc+Vs)="+fmt(r.stirrup.shearY.phiCapacityKN)+" kN؛ حد فصل ۱۱="+fmt(r.stirrup.shearY.maxSpacingByChapter11Mm)+" mm")+(r.stirrup.shearY.shearOK?"؛ کنترل مقدماتی برقرار":"؛ کنترل برش/خاموت برقرار نیست")):r.stirrup.shearY.reason)+
     "\nکنترل برش محلی z: "+(r.stirrup.shearZ.ok?("Vu="+fmt(r.stirrup.shearZ.VuKN)+" kN؛ φVn,max="+fmt(r.stirrup.shearZ.maxNominalShearKN*r.stirrup.phi)+" kN؛ خاموت حداقل لازم="+(r.stirrup.shearZ.minimumStirrupsTriggered?"بله":"خیر")+(r.stirrup.shearZ.recommendedSpacingMm==null?"":"؛ فاصله پیشنهادی="+fmt(r.stirrup.shearZ.recommendedSpacingMm)+" mm؛ φ(Vc+Vs)="+fmt(r.stirrup.shearZ.phiCapacityKN)+" kN؛ حد فصل ۱۱="+fmt(r.stirrup.shearZ.maxSpacingByChapter11Mm)+" mm")+(r.stirrup.shearZ.shearOK?"؛ کنترل مقدماتی برقرار":"؛ کنترل برش/خاموت برقرار نیست")):r.stirrup.shearZ.reason)+
-    "\nمیلگرد طولی دو وجه: "+r.longitudinalBars.totalCount+" عدد؛ طول مستقیم هر میلگرد تا وجه بیرونی پی‌های انتهایی: "+(r.longitudinalBars.footingExtensionIncluded?fmt(r.longitudinalBars.straightLengthPerBarM)+" m":"ابعاد پی وارد نشده")+"؛ مجموع طول مستقیم: "+(r.longitudinalBars.totalStraightLengthM==null?"—":fmt(r.longitudinalBars.totalStraightLengthM)+" m")+"؛ وزن تقریبی بدون قلاب: "+(r.longitudinalBars.approximateMassKg==null?"—":fmt(r.longitudinalBars.approximateMassKg)+" kg")+
+    "\nمیلگرد طولی دو وجه: "+r.longitudinalBars.totalCount+" عدد؛ طول مستقیم هر میلگرد تا وجه بیرونی پی‌های انتهایی: "+(r.longitudinalBars.footingExtensionIncluded?fmt(r.longitudinalBars.straightLengthPerBarM)+" m":"ابعاد پی وارد نشده")+"؛ افزوده دستی قلاب در هر انتها: "+fmt(r.longitudinalBars.hookCutAllowancePerEndMm)+" mm؛ مجموع طول برش با افزوده دستی: "+(r.longitudinalBars.totalCutLengthM==null?"—":fmt(r.longitudinalBars.totalCutLengthM)+" m")+"؛ وزن تقریبی بر اساس طول برش ثبت‌شده: "+(r.longitudinalBars.approximateMassKg==null?"—":fmt(r.longitudinalBars.approximateMassKg)+" kg")+
     "\n"+r.note;
   }).join("\n\n")+
   "\n\nمحدودیت‌ها:\n- "+lastReport.limitations.join("\n- ");
