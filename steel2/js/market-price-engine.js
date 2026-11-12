@@ -158,13 +158,15 @@
   `;
   const footer=document.querySelector("footer");if(footer)footer.parentNode.insertBefore(panel,footer);else document.querySelector("main")?.appendChild(panel);
   $("marketPriceProjectCity").textContent=projectCity()||"انتخاب نشده";
+  let lastProjectCity=projectCity();
+  if($("marketPriceCity")&&!$("marketPriceCity").value.trim())$("marketPriceCity").value=lastProjectCity;
   $("marketPriceEndpoint").value=state.endpoint;$("marketPriceInterval").value=state.intervalMinutes;$("marketPriceAuto").checked=state.autoRefresh;
   $("marketPriceRefresh").addEventListener("click",refresh);$("marketPriceExport").addEventListener("click",exportCSV);$("marketPriceAdd").addEventListener("click",addManual);
   $("marketPriceEndpoint").addEventListener("change",()=>{state.endpoint=$("marketPriceEndpoint").value.trim();persist();configureAutoRefresh();});
   $("marketPriceInterval").addEventListener("change",()=>{state.intervalMinutes=Math.max(5,Math.min(1440,Number($("marketPriceInterval").value)||60));persist();configureAutoRefresh();});
   $("marketPriceAuto").addEventListener("change",()=>{state.autoRefresh=$("marketPriceAuto").checked;persist();configureAutoRefresh();});
   $("marketUseProjectCity")?.addEventListener("click",()=>{$("marketPriceCity").value=projectCity();});
-  const syncProjectCity=()=>{$("marketPriceProjectCity").textContent=projectCity()||"انتخاب نشده";};
+  const syncProjectCity=()=>{const next=projectCity();$("marketPriceProjectCity").textContent=next||"انتخاب نشده";const cityInput=$("marketPriceCity");if(cityInput&&(!cityInput.value.trim()||cityInput.value.trim()===lastProjectCity))cityInput.value=next;lastProjectCity=next;};
   $("city")?.addEventListener("change",()=>{if($("cityName"))$("cityName").style.display=($("city").value==="other"||$("city").value==="custom")?"":"none";syncProjectCity();});
   $("cityName")?.addEventListener("input",syncProjectCity);
   render();configureAutoRefresh();
