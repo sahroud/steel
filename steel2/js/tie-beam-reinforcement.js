@@ -4,7 +4,7 @@
 (function(){
  "use strict";
  const $=id=>document.getElementById(id);
- const defaults={fyMPa:400,coverMm:40,barDiaMm:16,stirrupDiaMm:10,stirrupLegs:2,clearSpacingMm:25,sideBarsPerSide:1,phiFlexure:0.90,phiShear:0.75,lambdaConcrete:1.0,EsMPa:200000,alpha1:0.85,beta1:0.85,epsilonCu:0.003};
+ const defaults={fyMPa:400,coverMm:40,barDiaMm:16,stirrupDiaMm:10,stirrupLegs:2,clearSpacingMm:25,sideBarsPerSide:0,phiFlexure:0.90,phiShear:0.75,lambdaConcrete:1.0,EsMPa:200000,alpha1:0.85,beta1:0.85,epsilonCu:0.003};
  let settings={...defaults},latest=null,lastReport=null;
  const fmt=(v,d=2)=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:d});
  function mount(){
@@ -19,7 +19,7 @@
   '<div class="field"><label for="tbrBarDia">قطر پیشنهادی میلگرد طولی (mm)</label><select id="tbrBarDia"><option>12</option><option>14</option><option selected>16</option><option>18</option><option>20</option><option>22</option><option>25</option><option>28</option><option>32</option></select></div>'+
   '<div class="field"><label for="tbrStirrupDia">قطر خاموت (mm)</label><input id="tbrStirrupDia" type="number" min="6" max="16" step="1" value="10"></div>'+
   '<div class="field"><label for="tbrLegs">تعداد شاخه مؤثر خاموت</label><select id="tbrLegs"><option value="2" selected>۲ شاخه</option><option value="4">۴ شاخه</option></select></div>'+
-  '<div class="field"><label for="tbrClearSpacing">فاصله آزاد هندسی پیشنهادی میلگردها (mm)</label><input id="tbrClearSpacing" type="number" min="10" max="100" step="1" value="25"></div><div class="field"><label for="tbrSideBars">میلگرد میانی در هر وجه جانبی (پیشنهاد اولیه)</label><select id="tbrSideBars"><option value="0">بدون میلگرد جانبی</option><option value="1" selected>۱ عدد در هر وجه جانبی</option><option value="2">۲ عدد در هر وجه جانبی</option><option value="3">۳ عدد در هر وجه جانبی</option></select></div>'+
+  '<div class="field"><label for="tbrClearSpacing">فاصله آزاد هندسی پیشنهادی میلگردها (mm)</label><input id="tbrClearSpacing" type="number" min="10" max="100" step="1" value="25"></div><div class="field"><label>آرایش پایه میلگرد طولی</label><div class="hint">۳ عدد میلگرد ۱۶ بالا و ۳ عدد میلگرد ۱۶ پایین؛ بدون میلگرد میانی جانبی. نرم‌افزار در صورت نیاز محاسباتی، افزایش تعداد یا قطر را پیشنهاد می‌کند.</div></div>'+
   '<div class="field"><label for="tbrPhi">ضریب مقاومت خمشی فرضی φ (غربال مقدماتی)</label><input id="tbrPhi" type="number" min="0.5" max="1" step="0.01" value="0.90"></div>'+
   '<div class="field"><label for="tbrPhiShear">ضریب مقاومت برشی φ</label><input id="tbrPhiShear" type="number" min="0.5" max="0.9" step="0.01" value="0.75"></div><div class="field"><label for="tbrLambda">ضریب بتن معمولی/سبک λ</label><input id="tbrLambda" type="number" min="0.75" max="1" step="0.01" value="1.0"></div><div class="field"><label for="tbrEs">مدول فولاد Es (MPa)</label><input id="tbrEs" type="number" min="150000" max="220000" step="1000" value="200000"></div>'+
   '<div class="field"><label for="tbrAlpha">ضریب بلوک تنش α1</label><input id="tbrAlpha" type="number" min="0.5" max="1" step="0.01" value="0.85"></div>'+
@@ -38,7 +38,7 @@
  }
  function read(){
   if(!$("tbrFy"))return;
-  settings={fyMPa:Number($("tbrFy").value),coverMm:Number($("tbrCover").value),barDiaMm:Number($("tbrBarDia").value),stirrupDiaMm:Number($("tbrStirrupDia").value),stirrupLegs:Number($("tbrLegs").value),clearSpacingMm:Number($("tbrClearSpacing").value),sideBarsPerSide:Number($("tbrSideBars")?.value??defaults.sideBarsPerSide),phiFlexure:Number($("tbrPhi").value),phiShear:Number($("tbrPhiShear").value),lambdaConcrete:Number($("tbrLambda").value),EsMPa:Number($("tbrEs").value),alpha1:Number($("tbrAlpha").value),beta1:Number($("tbrBeta").value),epsilonCu:Number($("tbrEpsCu").value)};
+  settings={fyMPa:Number($("tbrFy").value),coverMm:Number($("tbrCover").value),barDiaMm:Number($("tbrBarDia").value),stirrupDiaMm:Number($("tbrStirrupDia").value),stirrupLegs:Number($("tbrLegs").value),clearSpacingMm:Number($("tbrClearSpacing").value),sideBarsPerSide:0,phiFlexure:Number($("tbrPhi").value),phiShear:Number($("tbrPhiShear").value),lambdaConcrete:Number($("tbrLambda").value),EsMPa:Number($("tbrEs").value),alpha1:Number($("tbrAlpha").value),beta1:Number($("tbrBeta").value),epsilonCu:Number($("tbrEpsCu").value)};
   try{localStorage.setItem("sahroudSteel.tieBeamRebarSettings.v1",JSON.stringify(settings));}catch(e){}
  }
  function write(){
@@ -276,12 +276,12 @@
   let d=h-settings.coverMm-settings.stirrupDiaMm-settings.barDiaMm/2;
   let As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
   const barA=areaBar(settings.barDiaMm);
-  let count=As.ok?Math.max(2,Math.ceil(As.AsRequiredMm2/barA)):null;
+  let count=As.ok?Math.max(3,Math.ceil(As.AsRequiredMm2/barA)):3;
   let layout=count?buildPerimeterBarLayout(b,h,count,settings.sideBarsPerSide,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm):{ok:false,reason:"تعداد میلگرد برای آرایش موجود نیست"};
   if(layout.ok){
    d=h-layout.bottomCentroidMm;
    As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
-   count=As.ok?Math.max(2,Math.ceil(As.AsRequiredMm2/barA)):null;
+   count=As.ok?Math.max(3,Math.ceil(As.AsRequiredMm2/barA)):3;
    layout=count?buildPerimeterBarLayout(b,h,count,settings.sideBarsPerSide,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm):{ok:false,reason:"محاسبه مجدد آرماتور نامعتبر است"};
    if(layout.ok)d=h-layout.bottomCentroidMm;
   }
@@ -309,7 +309,7 @@
   const footingDimension=material?.axis==="X"?Number(foundation.footingWidthM):Number(foundation.footingLengthM);
   const footingExtension=Number.isFinite(footingDimension)&&footingDimension>0;
   const straightBarLength=footingExtension?Number(material?.lengthM)+footingDimension:null;
-  const barsBothFaces=count?2*count+2*settings.sideBarsPerSide:null;
+  const barsBothFaces=count?2*count:null;
   const totalStraightBarLengthM=barsBothFaces?barsBothFaces*straightBarLength:null;
   const unitMassKgM=Math.pow(settings.barDiaMm,2)/162;
   return{id:route.id,memberIds:forceRows.map(x=>x.id),segmentCount:members.length,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,
