@@ -114,7 +114,7 @@
           purlinFabricationSchedule:(()=>{
             const pieces=(window.SteelStructuralModel?.model?.members||[]).filter(x=>x.sectionKey==="roofPurlin"&&x.fabricationRecord);
             return {pieceCount:pieces.length,clipDeductionM:pieces[0]?.clipDeductionM??0,assemblyGapM:pieces[0]?.assemblyGapM??0,
-              pieces:pieces.map(x=>({id:x.id,side:x.side,row:x.row,bay:x.bay,supportAxisLengthM:x.supportAxisLengthM,fabricationLengthM:x.fabricationLengthM}))};
+              pieces:pieces.map(x=>({id:x.id,side:x.side,row:x.row,bay:x.bay,supportAxisLengthM:x.supportAxisLengthM,frontOverhangM:x.frontOverhangM||0,rearOverhangM:x.rearOverhangM||0,fabricationLengthM:x.fabricationLengthM}))};
           })(),
           supportType:result.supportType||null,
           nodeCount:result.nodeCount,
