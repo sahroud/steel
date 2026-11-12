@@ -12,6 +12,8 @@
         right: { enabled: false, width: 3, height: 3, position: 5 }
     };
 
+    const DEFAULT_WIND_SCENARIO = "closed";
+
     function number(id) {
         const el = $(id);
         return el ? Number(el.value) : NaN;
@@ -31,15 +33,27 @@
             </div>
 
             <div class="notice">
-                محل بادبندها و قیدهای میانی بعداً با توجه به بازشوهای
-                تعریف‌شده توسط نرم‌افزار انتخاب خواهد شد.
+                نوع محصورشدگی و وضعیت بازشوها برای هر پروژه قابل انتخاب است. وجود در به معنی باز بودن آن هنگام باد نیست.
             </div>
+
+            <fieldset>
+                <legend>سناریوی بازشوها هنگام وزش باد</legend>
+                <div class="field">
+                    <label for="windOpeningScenario">وضعیت ساختمان در شرایط طراحی باد</label>
+                    <select id="windOpeningScenario">
+                        <option value="closed" selected>تمام درها و بازشوهای قابل‌بستن بسته (پیش‌فرض)</option>
+                        <option value="front-open">درِ اصلی جلو باز</option>
+                        <option value="custom">وضعیت سفارشی؛ تعیین بازشوهای باز</option>
+                    </select>
+                </div>
+                <p class="hint">این انتخاب سناریوی بهره‌برداری را ثبت می‌کند؛ تعیین Cpi و تشخیص بازشوی غالب باید طبق ضوابط و مساحت واقعی بازشوها انجام شود. نرم‌افزار ضریب فشار داخلی را خودکار حدس نمی‌زند.</p>
+            </fieldset>
 
             <fieldset>
                 <legend>دیوار انتهایی جلو</legend>
                 <label>
-                    <input id="openingFrontEnabled" type="checkbox" checked disabled>
-                    درِ اصلی جلویی (پیش‌فرض)
+                    <input id="openingFrontEnabled" type="checkbox" checked>
+                    وجود در/بازشوی اصلی جلویی
                 </label>
                 <div class="form-grid">
                     <div>
@@ -157,9 +171,7 @@
                 side.charAt(0).toUpperCase() + side.slice(1);
 
             result[side] = {
-                enabled: side === "front"
-                    ? true
-                    : $(prefix + "Enabled").checked,
+                enabled: !!$(prefix + "Enabled")?.checked,
                 width: number(prefix + "Width"),
                 height: number(prefix + "Height"),
                 position: side === "front"
@@ -168,6 +180,7 @@
             };
         });
 
+        result.windScenario = $("windOpeningScenario")?.value || DEFAULT_WIND_SCENARIO;
         return result;
     }
 
@@ -181,8 +194,8 @@
             const prefix = "opening" +
                 side.charAt(0).toUpperCase() + side.slice(1);
 
-            if (side !== "front" && $(prefix + "Enabled")) {
-                $(prefix + "Enabled").checked = !!item.enabled;
+            if ($(prefix + "Enabled")) {
+                $(prefix + "Enabled").checked = item.enabled === undefined ? !!defaults[side].enabled : !!item.enabled;
             }
 
             ["width", "height"].forEach(key => {
@@ -200,6 +213,8 @@
                 }
             }
         });
+        const scenario = $("windOpeningScenario");
+        if (scenario) scenario.value = ["closed","front-open","custom"].includes(data.windScenario) ? data.windScenario : DEFAULT_WIND_SCENARIO;
     }
 
     function validate() {
@@ -256,8 +271,10 @@
             return false;
         }
 
-        status.textContent =
-            "ابعاد و موقعیت بازشوهای فعال در محدوده دیوارها قرار دارند.";
+        const scenario = $("windOpeningScenario")?.value || DEFAULT_WIND_SCENARIO;
+        const scenarioText = scenario === "closed" ? "سناریوی باد: تمام درها بسته" :
+            scenario === "front-open" ? "سناریوی باد: درِ اصلی جلو باز" : "سناریوی باد: بازشوهای سفارشی";
+        status.textContent = "ابعاد و موقعیت بازشوهای فعال معتبر است. " + scenarioText + "؛ ضریب فشار داخلی باید جداگانه طبق ضوابط تعیین شود.";
         status.style.color = "#16845b";
 
         return true;
@@ -268,6 +285,7 @@
 
         const button = $("btnCheckOpenings");
         if (button) button.addEventListener("click", check);
+        ["windOpeningScenario","openingFrontEnabled","openingRearEnabled","openingLeftEnabled","openingRightEnabled"].forEach(id => $(id)?.addEventListener("change", check));
 
         panelListeners();
         check();
@@ -286,7 +304,9 @@
         getData,
         setData,
         validate,
-        check
+        check,
+        defaults: JSON.parse(JSON.stringify(defaults)),
+        defaultWindScenario: DEFAULT_WIND_SCENARIO
     };
 
     if (document.readyState === "loading") {
