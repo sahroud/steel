@@ -146,8 +146,12 @@
       add(side+"-wind","wind-roof-input",loads["wind"+s],side,
         "علامت حفظ می‌شود؛ فشار/مکش نهایی و ضرایب خارجی/داخلی هنوز تعیین نشده‌اند");
     });
-    add("wall-wind","wind-wall-input",loads.windWall,"walls",
-      "علامت حفظ می‌شود؛ جهت و توزیع نهایی باید در مدل بارگذاری تعیین شود");
+    add("wall-wind","wind-wall-input",loads.windWall,"long-walls",
+      "فشار خالص دستی؛ در مدل سه‌بعدی به قیدهای طولی منتقل می‌شود");
+    add("front-end-wall-wind","wind-endwall-input",loads.windEndFront,"front",
+      "فشار خالص دستی؛ در مدل سه‌بعدی به تیرهای افقی دیوار انتهایی جلو منتقل می‌شود؛ ناحیه مثلثی زیر تاج هنوز منظور نشده است");
+    add("rear-end-wall-wind","wind-endwall-input",loads.windEndBack,"rear",
+      "فشار خالص دستی؛ در مدل سه‌بعدی به تیرهای افقی دیوار انتهایی عقب منتقل می‌شود؛ ناحیه مثلثی زیر تاج هنوز منظور نشده است");
     return {
       schema:"sahroud-steel-load-cases", version:1,
       generatedAt:new Date().toISOString(), codeEdition:"مبحث ششم ۱۳۹۸",
