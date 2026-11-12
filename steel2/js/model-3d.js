@@ -740,7 +740,7 @@
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
     const fixed= $("baseConnection")?.value==="fixed";
-    const supports=analysisModel.nodes.filter(n=>n.kind==="base").map(n=>({
+    const supports=analysisModel.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>({
       nodeId:n.id,
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
