@@ -160,6 +160,6 @@
   $("cityName")?.addEventListener("input",syncProjectCity);
   render();configureAutoRefresh();
  }
- window.SteelMarketPrices={getData,setData,refresh,addManual,render,getProjectCity:projectCity,units,presets};
+ window.SteelMarketPrices={getData,setData,refresh,addManual,render,getProjectCity:projectCity,syncProjectCity:()=>{const el=$("marketPriceProjectCity");if(el)el.textContent=projectCity()||"انتخاب نشده";},units,presets};
  document.addEventListener("DOMContentLoaded",mount);
 })();
