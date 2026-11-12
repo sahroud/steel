@@ -48,15 +48,17 @@
   const fc=positive(state.fcMPa),fy=positive(state.fyMPa),B=positive(inputs?.footingWidthM),L=positive(inputs?.footingLengthM),t=positive(inputs?.footingThicknessM),cx=positive(inputs?.pedestalWidthM),cz=positive(inputs?.pedestalLengthM),cover=positive(inputs?.rebarCoverMm),gammaC=positive(inputs?.concreteUnitWeightKNm3);
   const dx=positive(inputs?.bottomBarDiaXmm),sx=positive(inputs?.bottomBarSpacingXmm),dz=positive(inputs?.bottomBarDiaZmm),sz=positive(inputs?.bottomBarSpacingZmm);
   const ox=inputs?.columnOffsetXM===""?null:Number(inputs?.columnOffsetXM),oz=inputs?.columnOffsetZM===""?null:Number(inputs?.columnOffsetZM);
-  if(!fc||!fy||!B||!L||!t||!cx||!cz||!cover||!gammaC||!Number.isFinite(ox)||!Number.isFinite(oz)){
+  if(!fc||!fy||!B||!L||!t||!cx||!cz||!cover||!gammaC||!dx||!dz||!Number.isFinite(ox)||!Number.isFinite(oz)){
    summary.textContent="ورودی لازم: f'c، fy، ابعاد پی و پدستال، ضخامت پی، پوشش بتن، وزن مخصوص بتن و جابه‌جایی محور ستون در X و Z (برای ستون مرکزی صفر وارد کنید).";return;
   }
   if(cx>B||cz>L||Math.abs(ox)+cx/2>B/2+1e-9||Math.abs(oz)+cz/2>L/2+1e-9){summary.textContent="پدستال یا محور ستون در محدوده پی قرار نمی‌گیرد؛ ابعاد و خروج از مرکز را اصلاح کنید.";return;}
-  const dX=t*1000-cover-(dz?dz/2:0),dZ=t*1000-cover-(dx?dx/2:0);
+  const dX=t*1000-cover-dz/2,dZ=t*1000-cover-dx/2;
   if(dX<=0||dZ<=0){summary.textContent="عمق مؤثر پی نامعتبر است؛ ضخامت، پوشش و قطر میلگرد را بررسی کنید.";return;}
   const gammaS=positive(inputs?.soilUnitWeightKNm3),soilCover=inputs?.soilCoverDepthM===""?0:Number(inputs?.soilCoverDepthM);
   if(!Number.isFinite(soilCover)||soilCover<0||(soilCover>0&&!gammaS)){summary.textContent="ضخامت یا وزن مخصوص خاک پوششی نامعتبر است.";return;}
-  const pedH=positive(inputs?.pedestalHeightM),concreteWeight=gammaC*(B*L*t+(pedH?cx*cz*pedH:0));
+  const pedH=positive(inputs?.pedestalHeightM);
+  if(!pedH){summary.textContent="ارتفاع پدستال را نیز از نقشه وارد کنید تا وزن بتن و هندسه انتقال بار ناقص نماند.";return;}
+  const concreteWeight=gammaC*(B*L*t+cx*cz*pedH);
   const soilWeight=soilCover>0?gammaS*Math.max(0,B*L-cx*cz)*soilCover:0;
   const added=concreteWeight+soilWeight,area=B*L,records=[];
   const addRow=(rec)=>{records.push(rec);const tr=document.createElement("tr");[rec.nodeId+" / "+rec.caseLabel,rec.direction,fmt(rec.MuKNmPerM),rec.AsRequired===null?"—":fmt(rec.AsRequired),rec.AsProvided===null?"وارد نشده":fmt(rec.AsProvided),rec.oneWayDemand===null?"—":fmt(rec.oneWayDemand)+" / "+fmt(rec.oneWayCapacity),rec.punchDemand===null?"—":fmt(rec.punchDemand)+" / "+fmt(rec.punchCapacity),rec.status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);};
@@ -88,7 +90,7 @@
     });
     const dPunch=Math.min(dX,dZ),perimeter=2*((cx*1000+dPunch)+(cz*1000+dPunch));
     const insideW=(cx+dPunch/1000),insideL=(cz+dPunch/1000),insideArea=insideW*insideL;
-    const punchValid=insideW<=B&&insideL<=L;
+    const punchValid=Math.abs(ox)+cx/2+dPunch/2000<=B/2+1e-9&&Math.abs(oz)+cz/2+dPunch/2000<=L/2+1e-9;
     const qavg=totalN/area,Vu=punchValid?Math.max(0,N-qavg*insideArea):null;
     const Vc=punchValid?0.75*0.33*Math.sqrt(fc)*perimeter*dPunch/1000:null;
     const punchStatus=!punchValid?"محیط بحرانی پانچ در محدوده پی جا نمی‌شود":Vu<=Vc?"پانچ در غربال محوری ساده کمتر از ظرفیت اسمی است":"پانچ از ظرفیت اسمی غربال بیشتر است";
