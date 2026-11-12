@@ -300,6 +300,26 @@
             throw new Error("ساختار اطلاعات پروژه معتبر نیست.");
         }
 
+        // Migrate the old provisional Shahroud value (90 km/h) only when
+        // its source is the superseded project-PDF record; preserve user overrides.
+        if (data.loads && data.loads.climate &&
+            data.loads.climate.city === "shahroud" &&
+            String(data.loads.climate.basicWind) === "90" &&
+            /رکورد PDF پروژه|نیازمند تطبیق نهایی/.test(String(data.loads.climate.source || ""))) {
+            data.loads.climate.basicWind = "80";
+            data.loads.climate.source = "مبحث ششم ویرایش چهارم ۱۳۹۸؛ جدول ۶-۱۰-۱: سرعت مبنای باد شاهرود ۸۰ km/h؛ فشار مبنا حدود ۰٫۳۰۳ kN/m².";
+            if (data.climateLoadEngine && data.climateLoadEngine.climate) {
+                data.climateLoadEngine.climate.basicWind = "80";
+                data.climateLoadEngine.climate.basicWindPressure = 0.303;
+            }
+            if (data.climateDatabase && data.climateDatabase.records &&
+                data.climateDatabase.records.shahroud) {
+                data.climateDatabase.records.shahroud.basicWind = 80;
+                data.climateDatabase.records.shahroud.basicWindPressure = 0.303;
+                data.climateDatabase.records.shahroud.source = data.loads.climate.source;
+            }
+        }
+
         const fields = [
             "projectName",
             "owner",
