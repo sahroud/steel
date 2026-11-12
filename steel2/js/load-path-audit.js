@@ -12,13 +12,13 @@
   const groups={roofPurlin:members.filter(m=>m.sectionKey==="roofPurlin"),rafter:members.filter(m=>m.sectionKey==="rafter"),wallGirt:members.filter(m=>m.sectionKey==="wallGirt"),column:members.filter(m=>m.sectionKey==="column"),endGirt:members.filter(m=>m.sectionKey==="endGirt"),endPost:members.filter(m=>m.sectionKey==="endPost"),roofEdge:members.filter(m=>m.sectionKey==="roofEdge")};
   const memberLength=m=>{const a=nodes.get(m.start),b=nodes.get(m.end);return a&&b?Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z):0;};
   const endpoints=(m)=>[nodes.get(m.start),nodes.get(m.end)];
-  const shared=(m,keys)=>endpoints(m).filter(Boolean).filter(p=>members.some(q=>keys.includes(q.sectionKey)&&(q.start===p.id||q.end===p.id))).length;
+  const hasSharedAtNode=(m,p,keys)=>!!p&&members.some(q=>q.id!==m.id&&keys.includes(q.sectionKey)&&(q.start===p.id||q.end===p.id));
   const lineCoverage=(arr,keys)=>arr.filter(m=>keys.every(k=>Number.isFinite(Number(m.lineLoads?.[k]))));
   const integrate=(arr,key)=>arr.reduce((s,m)=>s+n(m.lineLoads?.[key])*memberLength(m),0);
   const purlins=groups.roofPurlin, girts=groups.wallGirt, endGirts=groups.endGirt;
-  const purlinSupported=purlins.filter(m=>endpoints(m).every(p=>p&&shared(m,["rafter"])>0));
-  const girtSupported=girts.filter(m=>endpoints(m).every(p=>p&&shared(m,["column"])>0));
-  const endGirtSupported=endGirts.filter(m=>endpoints(m).every(p=>p&&shared(m,["endPost","rafter"])>0));
+  const purlinSupported=purlins.filter(m=>endpoints(m).every(p=>hasSharedAtNode(m,p,["rafter"])));
+  const girtSupported=girts.filter(m=>endpoints(m).every(p=>hasSharedAtNode(m,p,["column"])));
+  const endGirtSupported=endGirts.filter(m=>endpoints(m).every(p=>hasSharedAtNode(m,p,["endPost","rafter"])));
   const endWallTriangleArea=Number(g.span)*Number(g.rise)/2;
   const topGirtHeight=Math.max(0,...endGirts.map(m=>n(m.row)));
   const purlinLoads=lineCoverage(purlins,["dead","live","snow","wind","windLeft","windRight"]);
