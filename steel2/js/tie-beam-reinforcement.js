@@ -52,8 +52,8 @@
   return{ok:true,AsRequiredMm2:As,nominalDepthFactor:0.85,assumption:"مقطع مستطیلی، میلگرد کششی تنها، بدون کنترل حداقل/حداکثر آرماتور آیین‌نامه‌ای"};
  }
  function memberEnvelope(member){
-  const f=member.localEndForces||[],q=member.analysisLoad?.uniformLocal||[0,0,0],L=Number(member.length)||0;
-  if(f.length<12||!(L>0))return null;
+  const f=member.localEndForces||[],q=member.analysisLoad?.uniformLocal,L=Number(member.length)||0;
+  if(f.length<12||!(L>0)||!Array.isArray(q)||q.length!==3)return null;
   const candidates=[Math.abs(Number(f[4])||0),Math.abs(Number(f[5])||0),Math.abs(Number(f[10])||0),Math.abs(Number(f[11])||0)];
   const shears=[Math.abs(Number(f[1])||0),Math.abs(Number(f[2])||0),Math.abs(Number(f[7])||0),Math.abs(Number(f[8])||0)];
   const addPlane=(m0,v0,load,sign)=>{
