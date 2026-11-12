@@ -86,7 +86,7 @@
      statusParts.push(s.direction+": "+flex+"؛ "+oneWay);
      addRow({nodeId:row.nodeId,caseLabel:item.label,direction:s.direction,MuKNmPerM:Mu,AsRequired:As,AsProvided:AsProv,oneWayDemand:vu,oneWayCapacity:vc,punchDemand:null,punchCapacity:null,status:flex+"؛ "+oneWay});
     });
-    const dPunch=Math.min(dX,dZ),perimeter=2*((cx*1000+dPunch*2)+(cz*1000+dPunch*2));
+    const dPunch=Math.min(dX,dZ),perimeter=2*((cx*1000+dPunch)+(cz*1000+dPunch));
     const insideW=(cx+dPunch/1000),insideL=(cz+dPunch/1000),insideArea=insideW*insideL;
     const punchValid=insideW<=B&&insideL<=L;
     const qavg=totalN/area,Vu=punchValid?Math.max(0,N-qavg*insideArea):null;
