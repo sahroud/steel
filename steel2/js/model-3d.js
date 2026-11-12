@@ -851,6 +851,11 @@
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports);
+    const sourceMembersById=new Map(analysisModel.members.map(m=>[String(m.id),m]));
+    result.members.forEach(member=>{
+      const source=sourceMembersById.get(String(member.id));
+      if(source?.analysisLoad)member.analysisLoad=JSON.parse(JSON.stringify(source.analysisLoad));
+    });
 
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
