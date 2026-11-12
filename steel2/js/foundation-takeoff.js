@@ -38,10 +38,20 @@
   $("btnFoundationCSV").addEventListener("click",exportCSV);
  }
  function readInputs(){keys.forEach(k=>{const el=$(map[k]);if(el)state[k]=el.value;});}
+ function modelFingerprint(model){
+  return JSON.stringify({
+   nodes:(model.nodes||[]).map(n=>[n.id,n.x,n.y,n.z,n.kind]),
+   members:(model.members||[]).map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}])
+  });
+ }
  function extract(){
   const sm=window.SteelStructuralModel,result=sm?.last3DResult,model=sm?.model;
   if(!result||!Array.isArray(result.reactions)||!model||!Array.isArray(model.nodes)){
    $("foundationTakeoffSummary").textContent="نتیجه تحلیل سه‌بعدی در دسترس نیست. ابتدا مدل را بسازید و تحلیل سه‌بعدی را با موفقیت اجرا کنید.";return;
+  }
+  if(!result.foundationModelFingerprint||result.foundationModelFingerprint!==modelFingerprint(model)){
+   $("foundationTakeoffSummary").textContent="مدل، مقاطع یا بارها پس از آخرین تحلیل تغییر کرده‌اند (یا نتیجه با نسخه قدیمی حل‌گر تولید شده است). برای جلوگیری از متره اشتباه، ابتدا تحلیل سه‌بعدی را دوباره اجرا کنید.";
+   return;
   }
   const nodeMap=new Map(model.nodes.map(n=>[n.id,n]));
   const rows=result.reactions.map(r=>({r,n:nodeMap.get(r.nodeId)})).filter(x=>x.n&&(x.n.kind==="base"||x.n.kind==="endwall-base")).map(({r,n})=>({nodeId:r.nodeId,x:Number(n.x)||0,z:Number(n.z)||0,kind:n.kind,values:(r.values||[]).slice(0,6).map(v=>Number(v)||0)})).sort((a,b)=>a.z-b.z||a.x-b.x);
