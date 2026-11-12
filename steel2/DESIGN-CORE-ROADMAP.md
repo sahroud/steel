@@ -54,3 +54,15 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 - Area closure is checked for each partitioned rectangle. No Cp/CgCp values, pressure values, line loads, or 3D load transfers are generated.
 - `codeDesignEligible` and `loadTransferEnabled` remain false.
 - Next: verify zone-depth equations and roof/wall/gable zoning against the official 1398 Sixth Issue figures and examples; only then implement coefficient registry with exact clause/table/figure/page provenance and independently checked test cases.
+
+
+## Wind code traceability and zoning audit — 2026-11-12
+
+- Added `js/wind-code-registry.js`: coefficient entries are rejected unless they include the exact 1398 edition, numeric value, surface, wind direction, zone, coefficient basis, clause, page, table or figure, and an explicit verified flag. No coefficient values are preloaded.
+- Added the registry script to `index.html` after the geometry-only module.
+- Audited the first zoning implementation: its 3×3 rectangles are now explicitly labelled as generic geometric cells, not code-defined zones. They must not be interpreted as the code's numbered zones (for example 1/1E/2/2E). The gable triangle remains unpartitioned.
+- Corrected the eaves overhang conversion: the model's 0.8 m is horizontal, so the extension along the sloping roof plane is computed as horizontal overhang divided by the roof slope cosine. The longitudinal end overhang remains a plan-length extension.
+- Located a public copy advertised as the 4th edition (1398), 179-page PDF at `https://www.mediafire.com/file/6p5gce4k1fcbrfj/mabhas06-1398.pdf/file`. The PDF download endpoint redirects to an inaccessible repair URL in the current retrieval environment; therefore the exact zoning figure/table pages could not be visually verified in this pass.
+- Search results also exposed a worked example citing an edge-width expression from a prior/secondary source. It is deliberately not implemented: that is not a verified transcription of the 1398 official text and may apply to a different surface/component scope.
+- Accordingly, no code zone dimensions or coefficients have been asserted. The next engineering gate is to obtain and inspect the exact 1398 pages for roof/wall zoning, effective-area dependence, wind directions, and gable geometry. Only after page-level verification may coefficient registry entries be marked verified.
+- `codeDesignEligible` and `loadTransferEnabled` remain false.
