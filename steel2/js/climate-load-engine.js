@@ -41,7 +41,7 @@
     const speed = finite(climate.basicWind);
     const q = speed === null ? null : 0.000613 * Math.pow(speed / 3.6, 2);
     const c = readWindCoefficients();
-    const required = Object.keys(windCoefficientDefaults);
+    const required = Object.keys(windCoefficientDefaults).filter(key => key !== "gust");
     const values = {};
     required.forEach(key => values[key] = finite(c[key]));
     const complete = q !== null && required.every(key => values[key] !== null);
@@ -51,6 +51,8 @@
     const bx=windCoefficientBasis(span),bz=windCoefficientBasis(length);
     if(!bx||!bz||bx.combined!==bz.combined)
       return {q,coefficients:c,complete:false,external:null,internal:null,net:null,reason:"برای این محاسبه عمومی، مبنای CgCp/Cp در دو راستای اصلی یکسان یا هندسه کامل نیست؛ از دفتر باد جهت‌دار استفاده کنید."};
+    if(!bx.combined&&!(values.gust>0))
+      return {q,coefficients:c,complete:false,external:null,internal:null,net:null,reason:"در حالت Cp جداگانه، Cg باید مثبت و معتبر باشد."};
     const external = common * (bx.combined ? values.externalPressure : values.gust * values.externalPressure);
     const internal = common * values.internalGust * values.internalPressure;
     return { q, coefficients:c, complete:true, external, internal, net:external-internal, externalCoefficientBasis:bx.combined?"combined-CgCp":"separate-Cp" };
@@ -100,7 +102,7 @@
     const c=readWindCoefficients(),v={};
     Object.keys(windCoefficientDefaults).forEach(k=>v[k]=finite(c[k]));
     const zones=readWindZones();
-    const required=["importance","exposure","topography","gust","directionality","internalGust"];
+    const required=["importance","exposure","topography","directionality","internalGust"];
     const commonReady=q!==null&&required.every(k=>v[k]!==null);
     const internalMagnitude=v.internalPressure===null?null:Math.abs(v.internalPressure);
     const rows={};
@@ -110,7 +112,7 @@
       const common=v.importance*q*v.exposure*v.topography*v.directionality;
       const breadth=key.startsWith("end-wall-")?finite($("length")?.value):finite($("span")?.value);
       const basis=windCoefficientBasis(breadth);
-      if(!basis){rows[key]=null;return;}
+      if(!basis||(!basis.combined&&!(v.gust>0))){rows[key]=null;return;}
       const ext=common*(basis.combined?cp:v.gust*cp);
       const intMagnitude=common*v.internalGust*internalMagnitude;
       rows[key]={cp,external:ext,externalCoefficientBasis:basis.combined?"combined-CgCp":"separate-Cp",
