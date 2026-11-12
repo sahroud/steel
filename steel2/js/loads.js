@@ -445,8 +445,8 @@
         const v = Number($("climateBasicWind")?.value);
         const altitude = $("climateElevation")?.value;
         const terrain = $("climateTerrain")?.value || "";
-        const eaveHeight = Number($("height")?.value);
-        const roofRise = Number($("rise")?.value);
+        const columnHeight = Number($("height")?.value);
+        const ridgeRise = Number($("rise")?.value);
         const out = $("windReferenceResult");
         if (!out) return;
         if (!Number.isFinite(v) || v <= 0) {
@@ -458,11 +458,12 @@
         const terrainText = terrain === "open" ? "باز و هموار" :
             terrain === "suburban" ? "حومه و موانع پراکنده" :
             terrain === "urban" ? "شهری و متراکم" : "انتخاب‌نشده";
-        const geometryText = Number.isFinite(eaveHeight) && eaveHeight > 0 &&
-            Number.isFinite(roofRise) && roofRise >= 0
-            ? "ارتفاع هندسی از سطح زمین: لبه بام " + eaveHeight.toFixed(2) +
-              " m؛ تاج بام " + (eaveHeight + roofRise).toFixed(2) + " m. "
-            : "ارتفاع هندسی نقاط سازه از سطح زمین هنوز کامل نیست. ";
+        const geometryText = Number.isFinite(columnHeight) && columnHeight > 0 &&
+            Number.isFinite(ridgeRise) && ridgeRise >= 0
+            ? "ارتفاع ستون: " + columnHeight.toFixed(2) +
+              " m؛ افزایش ارتفاع تا تاج: " + ridgeRise.toFixed(2) +
+              " m؛ ارتفاع کل تا تاج: " + (columnHeight + ridgeRise).toFixed(2) + " m. "
+            : "ارتفاع ستون یا افزایش ارتفاع تا تاج هنوز کامل نیست. ";
         out.textContent =
             "فشار مبنای محاسبه‌شده q = " + q.toFixed(3) + " kN/m² (رابطه q=0.000613V² با V بر حسب m/s؛ سرعت ورودی " + v.toFixed(1) + " km/h). " +
             "ارتفاع محل از سطح دریا: " + (altitude === "" ? "ثبت‌نشده" : altitude + " m") +
