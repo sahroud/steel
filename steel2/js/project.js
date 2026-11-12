@@ -300,6 +300,28 @@
             throw new Error("ساختار اطلاعات پروژه معتبر نیست.");
         }
 
+        // مهاجرت کنترل‌شده مشخصات پیش‌فرض قدیمی پرلین Z180:
+        // فقط اگر هر چهار مقدار دقیقاً همان مقادیر نمونه ناسازگار قبلی باشند،
+        // آن‌ها را به خواص هندسی به‌روزشده منتقل می‌کنیم؛ مقاطع سفارشی کاربر دست‌نخورده می‌مانند.
+        const legacyPurlin = data.sections?.analysis3d?.groups?.roofPurlin;
+        if (legacyPurlin &&
+            Number(legacyPurlin.A_cm2) === 30 &&
+            Number(legacyPurlin.Iy_cm4) === 1000 &&
+            Number(legacyPurlin.Iz_cm4) === 300 &&
+            Number(legacyPurlin.J_cm4) === 20) {
+            Object.assign(legacyPurlin, {
+                A_cm2: 8.5,
+                Iy_cm4: 75.84114583333333,
+                Iz_cm4: 418.2083333333333,
+                J_cm4: 0.17708333333333334
+            });
+        }
+
+        // مقدار پیش‌فرض قدیمی فاصله محاسباتی پرلین را فقط در صورت برابر بودن با 1m اصلاح کن.
+        if (data.roofPurlins && Number(data.roofPurlins.pitch) === 1) {
+            data.roofPurlins.pitch = 0.95;
+        }
+
         const fields = [
             "projectName",
             "owner",
