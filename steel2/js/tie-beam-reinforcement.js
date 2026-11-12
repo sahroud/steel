@@ -141,6 +141,8 @@
   box.textContent=rows.map(r=>{
    if(!r.ok)return"شناژ "+r.id+": "+r.reason;
    return"شناژ "+r.id+" — Mmax="+fmt(r.MmaxKNm)+" kN·m؛ Vmax="+fmt(r.VmaxKN)+" kN؛ Nmax="+fmt(r.NmaxKN)+" kN"+
+     "\nمقطع بحرانی M برآیند در عضو "+r.criticalMoment.memberId+" و x="+fmt(r.criticalMoment.xM)+" m: N هم‌زمان="+fmt(r.criticalMoment.NkN)+" kN؛ My="+fmt(r.criticalMoment.MyKNm)+" kN·m؛ Mz="+fmt(r.criticalMoment.MzKNm)+" kN·m."+
+     "\nبیشینه N در عضو "+r.criticalAxial.memberId+" و x="+fmt(r.criticalAxial.xM)+" m: N="+fmt(r.criticalAxial.NkN)+" kN؛ M برآیند هم‌زمان="+fmt(r.criticalAxial.MresultantKNm)+" kN·m. این گزارش تقاضای هم‌زمان است، نه کنترل اندرکنش ظرفیت."+
     "\nعمق مؤثر تقریبی d="+fmt(r.effectiveDepthMm)+" mm؛ As لازم="+fmt(r.AsRequiredMm2)+" mm²؛ برآورد صرفاً از خمش نظری (پیش از حداقل آرماتور آیین‌نامه‌ای): "+r.barCountEachFace+" میلگرد قطر "+r.barDiaMm+" در هر وجه کششی (As فراهم="+fmt(r.AsProvidedMm2)+" mm²)"+
     "\nچیدمان طولی: "+(r.barLayer.singleLayerFits?"از نظر هندسی در یک ردیف جا می‌شود":"در یک ردیف جا نمی‌شود؛ آرایش چندلایه و بازنگری عمق مؤثر لازم است")+"؛ حداکثر تعداد در یک ردیف="+r.barLayer.maxBars+"؛ فاصله آزاد مفروض="+fmt(r.barLayer.clearSpacingMm)+" mm (غیرآیین‌نامه‌ای)"+
     "\nخاموت: "+r.stirrup.legs+" شاخه قطر "+r.stirrup.diaMm+"؛ فاصله نظری فولاد خاموت بدون مشارکت بتن و بدون سقف آیین‌نامه‌ای (قابل استفاده به‌عنوان فاصله اجرایی نیست)="+(r.stirrup.steelOnlySpacingMm==null?"—":fmt(r.stirrup.steelOnlySpacingMm)+" mm")+
