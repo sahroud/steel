@@ -157,7 +157,7 @@
         coefficients:readWindCoefficients(),
         zones:readWindZones(),
         zoneResults:calculateWindZones(),
-        status:"manual-code-coefficients-calculated-for-one-surface-not-applied-to-3d-model",
+        status:"manual-code-coefficients-calculated-for-multiple-surfaces-not-applied-to-3d-model",
         formulaExternal:"P = Iw q Ce Ct Cg Cp Cd",
         formulaInternal:"Pi = Iw q Ce Ct Cgi Cpi Cd",
         netConvention:"Pnet = Pexternal - Pinternal"
