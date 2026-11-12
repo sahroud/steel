@@ -824,7 +824,9 @@
     }
     result.foundationModelFingerprint=JSON.stringify({
       nodes:analysisModel.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),
-      members:analysisModel.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}])
+      members:analysisModel.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),
+      sections:window.SteelSections?.read?.()||null,
+      support:$("baseConnection")?.value||"pinned"
     });
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
