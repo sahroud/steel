@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#123b52">
 <title>Sahroud Steel | تحلیل مقدماتی سوله</title>
-<link rel="stylesheet" href="style.css?v=20261111slope1">
+<link rel="stylesheet" href="style.css?v=20261112compact1">
 </head>
 <body>
 
@@ -27,6 +27,16 @@
         <h2>طراحی و تحلیل مقدماتی سوله</h2>
         <p>ورود مشخصات هندسی، بارگذاری اولیه، ترسیم قاب و بررسی نتایج تحلیل</p>
     </section>
+
+    <div class="quick-actions" role="group" aria-label="عملیات سریع پروژه">
+        <div class="quick-actions-title">پروژه فعال</div>
+        <div class="quick-actions-buttons">
+            <button id="btnLoad" class="btn secondary" type="button">بازکردن پروژه</button>
+            <button id="btnSave" class="btn secondary" type="button">ذخیره پروژه</button>
+        </div>
+        <div id="projectStatus" class="quick-project-status">پروژه آماده است؛ آخرین پروژه پس از بارگذاری به‌صورت خودکار نگهداری می‌شود.</div>
+        <input id="projectFile" type="file" accept=".json" hidden>
+    </div>
 
     <section class="panel">
         <div class="panel-title">
@@ -68,15 +78,15 @@
         <div class="geometry-grid">
             <div class="field">
                 <label for="span">دهانه سوله (متر)</label>
-                <input id="span" type="number" min="1" step="0.1" value="20">
+                <input id="span" type="number" min="1" step="0.1" value="12">
             </div>
             <div class="field">
                 <label for="length">طول سوله (متر)</label>
-                <input id="length" type="number" min="1" step="0.1" value="30">
+                <input id="length" type="number" min="1" step="0.1" value="36">
             </div>
             <div class="field">
                 <label for="spacing">فاصله قاب‌ها (متر)</label>
-                <input id="spacing" type="number" min="1" step="0.1" value="5">
+                <input id="spacing" type="number" min="1" step="0.1" value="6">
             </div>
             <div class="field">
                 <label for="height">ارتفاع ستون (متر)</label>
@@ -181,12 +191,7 @@
             <button id="btnCombinations" class="btn success" type="button">
                 تحلیل ترکیبات بار
             </button>
-            <button id="btnSave" class="btn secondary" type="button">
-                ذخیره پروژه
-            </button>
-            <button id="btnLoad" class="btn secondary" type="button">
-                بازکردن پروژه
-            </button>
+
             <details class="tools-menu">
                 <summary>ابزارهای تخصصی و کنترل‌های تکمیلی</summary>
                 <div class="button-grid">
@@ -195,7 +200,6 @@
                     <button id="btnOpenLongitudinalCantilever" class="btn secondary" type="button">کنترل کنسول طولی پرلین</button>
                 </div>
             </details>
-            <input id="projectFile" type="file" accept=".json" hidden>
         </div>
     </section>
 
@@ -233,11 +237,6 @@
             <button id="btnCantileverCheck" class="btn primary" type="button">محاسبه کنترل کنسول‌ها</button>
         </div>
         <div id="cantileverCheckResults"></div>
-    </section>
-
-    <section class="panel">
-        <h3>۸ ـ وضعیت پروژه</h3>
-        <div id="projectStatus">پروژه جدید</div>
     </section>
 
     <footer>
