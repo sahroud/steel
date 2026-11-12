@@ -111,6 +111,11 @@
             braceBays:Number($("modelBraceBays")?.value)
           },
           loadInputs:window.SteelLoads?.getData?.()||null,
+          purlinFabricationSchedule:(()=>{
+            const pieces=(window.SteelStructuralModel?.model?.members||[]).filter(x=>x.sectionKey==="roofPurlin"&&x.separatePiece);
+            return {pieceCount:pieces.length,clipDeductionM:pieces[0]?.clipDeductionM??0,assemblyGapM:pieces[0]?.assemblyGapM??0,
+              pieces:pieces.map(x=>({id:x.id,side:x.side,row:x.row,bay:x.bay,supportAxisLengthM:x.supportAxisLengthM,fabricationLengthM:x.fabricationLengthM}))};
+          })(),
           supportType:result.supportType||null,
           nodeCount:result.nodeCount,
           memberCount:result.memberCount,
@@ -380,8 +385,19 @@
     const colors={column:"#176b9b",rafter:"#d97706",roofPurlin:"#0f766e",wallGirt:"#64748b",wallBrace:"#dc2626",roofBrace:"#b91c1c",endPost:"#2563eb",endGirt:"#94a3b8",roofEdge:"#b45309"};
     const widths={column:5,rafter:4,roofPurlin:1.8,wallGirt:1.8,wallBrace:2.5,roofBrace:2.5,endPost:2.2,endGirt:1.5,roofEdge:3};
     ["roofPurlin","wallGirt","endGirt","endPost","roofBrace","wallBrace","roofEdge","column","rafter"].forEach(type=>model.members.filter(m=>m.sectionKey===type).forEach(m=>{
-      const a=model.nodes.find(n=>n.id===m.start),b=model.nodes.find(n=>n.id===m.end);if(!a||!b)return;const p=P(a),q=P(b);
+      const a=model.nodes.find(n=>n.id===m.start),b=model.nodes.find(n=>n.id===m.end);if(!a||!b)return;
+      let aa=a,bb=b;
+      if(type==="roofPurlin"&&m.separatePiece){
+        const deduction=Math.max(0,Number(m.supportAxisLengthM||m.length)-Number(m.fabricationLengthM||m.length));
+        const inset=deduction/2,dir=Math.sign(b.z-a.z)||1;
+        aa={...a,z:a.z+dir*inset};bb={...b,z:b.z-dir*inset};
+      }
+      const p=P(aa),q=P(bb);
       el("line",{x1:p.x,y1:p.y,x2:q.x,y2:q.y,stroke:colors[type],"stroke-width":widths[type],"stroke-linecap":"round",opacity:type==="roofPurlin"||type==="wallGirt"?"0.88":"1"});
+      if(type==="roofPurlin"&&m.separatePiece){
+        const sa=P(a),sb=P(b);
+        [sa,sb].forEach(c=>el("circle",{cx:c.x,cy:c.y,r:2.6,fill:"#f59e0b",stroke:"#78350f","stroke-width":0.8}));
+      }
     }));
     const title=el("text",{x:W/2,y:25,"text-anchor":"middle",fill:"#123b52","font-size":17,"font-family":"Tahoma,Arial"});title.textContent="مدل سه‌بعدی جانمایی اجزای سوله";
     const note=el("text",{x:W/2,y:455,"text-anchor":"middle",fill:"#64748b","font-size":11,"font-family":"Tahoma,Arial"});note.textContent="نمای شماتیک آکسونومتریک ـ مقیاس تصویری";
