@@ -62,12 +62,30 @@
   if(!(As>0&&Number.isFinite(As)))return{ok:false,reason:"حل مساحت میلگرد معتبر نیست"};
   return{ok:true,AsRequiredMm2:As,nominalDepthFactor:0.85,assumption:"مقطع مستطیلی، میلگرد کششی تنها، بدون کنترل حداقل/حداکثر آرماتور آیین‌نامه‌ای"};
  }
+ function buildSymmetricBarLayers(bMm,hMm,countEachFace,coverMm,stirrupDiaMm,barDiaMm,clearSpacingMm){
+  const pitch=barDiaMm+clearSpacingMm,first=coverMm+stirrupDiaMm+barDiaMm/2;
+  const span=bMm-2*first;
+  if(!(span>=0&&pitch>0&&countEachFace>=2))return{ok:false,reason:"ابعاد یا تعداد میلگرد برای آرایش چندلایه معتبر نیست"};
+  const perRow=Math.floor(span/pitch+1e-9)+1;
+  if(perRow<2)return{ok:false,reason:"عرض مقطع برای جای‌گیری حداقل دو میلگرد در هر ردیف کافی نیست"};
+  let remaining=countEachFace;const face=[];
+  while(remaining>0){
+   const n=Math.min(perRow,remaining),row=face.length,y=first+row*pitch;
+   if(y>=hMm/2)return{ok:false,reason:"ارتفاع مقطع برای تعداد ردیف‌های موردنیاز کافی نیست"};
+   face.push({y,area:n*areaBar(barDiaMm),count:n,row});
+   remaining-=n;
+  }
+  const layers=[...face,...face.map(x=>({y:hMm-x.y,area:x.area,count:x.count,row:x.row}))];
+  const bottomArea=face.reduce((s,x)=>s+x.area,0);
+  const bottomCentroid=face.reduce((s,x)=>s+x.area*x.y,0)/bottomArea;
+  return{ok:true,layers,rowsPerFace:face.length,barsPerRow:face.map(x=>x.count),bottomCentroidMm:bottomCentroid,topCentroidMm:hMm-bottomCentroid,maxBarsPerRow:perRow,totalAsMm2:2*bottomArea};
+ }
  function sectionInteractionCurve(bMm,hMm,fc,fy,Es,alpha1,beta1,epsilonCu,barAreaPerFace,coverMm,stirrupDiaMm,barDiaMm){
-  const vals=[bMm,hMm,fc,fy,Es,alpha1,beta1,epsilonCu,barAreaPerFace,coverMm,stirrupDiaMm,barDiaMm];
+  const vals=[bMm,hMm,fc,fy,Es,alpha1,beta1,epsilonCu,coverMm,stirrupDiaMm,barDiaMm];
   if(vals.some(v=>!Number.isFinite(v)||v<=0)||alpha1>1||beta1>1||epsilonCu>0.01)return{ok:false,reason:"پارامترهای منحنی اندرکنش نامعتبرند"};
-  const dp=coverMm+stirrupDiaMm+barDiaMm/2;
-  if(dp>=hMm/2)return{ok:false,reason:"عمق محل میلگردها برای مقطع معتبر نیست"};
-  const layers=[{y:dp,area:barAreaPerFace},{y:hMm-dp,area:barAreaPerFace}],totalAs=2*barAreaPerFace,points=[];
+  const layers=Array.isArray(barAreaPerFace)?barAreaPerFace:null;
+  if(!layers||!layers.length||layers.some(x=>!Number.isFinite(x.y)||!Number.isFinite(x.area)||x.y<=0||x.y>=hMm||x.area<=0))return{ok:false,reason:"مختصات یا سطح مقطع لایه‌های میلگرد نامعتبر است"};
+  const totalAs=layers.reduce((s,x)=>s+x.area,0),points=[];
   for(let i=0;i<=100;i++){
    const c=hMm*0.01*Math.pow(10000,i/100),a=Math.min(beta1*c,hMm),Cc=alpha1*fc*bMm*a;
    let P=-Cc,M=-Cc*(hMm/2-a/2),epsT=0;
@@ -79,7 +97,7 @@
    points.push({cMm:c,aMm:a,PnN:P,MnNmm:Math.abs(M),epsilonT:epsT});
   }
   points.unshift({cMm:0,aMm:0,PnN:totalAs*fy,MnNmm:0,epsilonT:fy/Es});
-  return{ok:true,points,steelAreaMm2:totalAs,assumptions:"دو ردیف متقارن میلگرد در دو وجه بالا و پایین؛ بلوک مستطیلی با α1 و β1 ورودی؛ بدون ضریب φ و فقط خمش یک‌محوره"};
+  return{ok:true,points,steelAreaMm2:totalAs,assumptions:"مختصات گسسته چندردیفه میلگرد؛ بلوک مستطیلی با α1 و β1 ورودی؛ بدون ضریب φ و فقط خمش یک‌محوره"};
  }
  function interactionMomentAtAxial(curve,axialN){
   if(!curve?.ok||!Number.isFinite(axialN))return null;
@@ -127,16 +145,25 @@
   const V=Math.max(...envelopes.map(x=>x.VmaxN))/1000;
   const N=Math.max(...envelopes.map(x=>x.NmaxN))/1000;
   const h=Number(route.heightM)*1000,b=Number(route.widthM)*1000,fc=Number(route.fcMPa)||25;
-  const d=h-settings.coverMm-settings.stirrupDiaMm-settings.barDiaMm/2;
-  const As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
+  let d=h-settings.coverMm-settings.stirrupDiaMm-settings.barDiaMm/2;
+  let As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
   const barA=areaBar(settings.barDiaMm);
-  const count=As.ok?Math.max(2,Math.ceil(As.AsRequiredMm2/barA)):null;
-  const AsProvided=count?count*barA:null;
-  const interaction=count?sectionInteractionCurve(b,h,fc,settings.fyMPa,settings.EsMPa,settings.alpha1,settings.beta1,settings.epsilonCu,count*barA,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm):{ok:false,reason:"تعداد میلگرد برای منحنی اندرکنش موجود نیست"};
+  let count=As.ok?Math.max(2,Math.ceil(As.AsRequiredMm2/barA)):null;
+  let layout=count?buildSymmetricBarLayers(b,h,count,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm):{ok:false,reason:"تعداد میلگرد برای آرایش موجود نیست"};
+  if(layout.ok){
+   d=h-layout.bottomCentroidMm;
+   As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
+   count=As.ok?Math.max(2,Math.ceil(As.AsRequiredMm2/barA)):null;
+   layout=count?buildSymmetricBarLayers(b,h,count,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm):{ok:false,reason:"محاسبه مجدد آرماتور نامعتبر است"};
+   if(layout.ok)d=h-layout.bottomCentroidMm;
+  }
+  const AsProvided=layout.ok?layout.totalAsMm2:null;
+  const interaction=layout.ok?sectionInteractionCurve(b,h,fc,settings.fyMPa,settings.EsMPa,settings.alpha1,settings.beta1,settings.epsilonCu,layout.layers,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm):{ok:false,reason:layout.reason||"آرایش میلگرد معتبر نیست"};
   const interactionAtCritical=interaction.ok?interactionMomentAtAxial(interaction,criticalMoment.Nn):null;
   const nominalUtilization=interactionAtCritical?.MnKNm>0?M/interactionAtCritical.MnKNm:null;
   const fit=barLayerCapacity(b,settings.coverMm,settings.stirrupDiaMm,settings.barDiaMm,settings.clearSpacingMm);
   const singleLayerFits=!!(fit.ok&&count!==null&&count<=fit.maxBars);
+  const multiLayerFits=!!layout.ok;
   const stirrupArea=settings.stirrupLegs*areaBar(settings.stirrupDiaMm);
   const spacing=V>0?stirrupArea*settings.fyMPa*d/(V*1000):null;
   const foundation=window.SteelFoundationTakeoff?.getData?.()||{};
@@ -151,12 +178,12 @@
    criticalAxial:{...criticalAxial,NkN:criticalAxial.Nn/1000,MyKNm:criticalAxial.MyNm/1000,MzKNm:criticalAxial.MzNm/1000,MresultantKNm:criticalAxial.MresultantNm/1000},
    interaction:{ok:interaction.ok,assumption:interaction.assumptions,pointCount:interaction.points?.length||0,atCriticalAxial:interactionAtCritical,nominalMomentUtilization:nominalUtilization,curve:interaction.points||[]},
    effectiveDepthMm:d,AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,
-   barCountEachFace:count,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits},
+   barCountEachFace:count,AsProvidedMm2:AsProvided,barLayer:{maxBars:fit.maxBars,centerSpanMm:fit.centerSpanMm,clearSpacingMm:settings.clearSpacingMm,singleLayerFits,multiLayerFits,rowsPerFace:layout.rowsPerFace||null,barsPerRow:layout.barsPerRow||[],bottomCentroidMm:layout.bottomCentroidMm||null,topCentroidMm:layout.topCentroidMm||null,layers:layout.layers||[]},
    longitudinalBars:{countEachFace:count,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
     totalStraightLengthM:totalStraightBarLengthM,approximateMassKg:totalStraightBarLengthM==null?null:totalStraightBarLengthM*unitMassKgM,
     hookAllowanceIncluded:false,footingExtensionIncluded:footingExtension},
    stirrup:{diaMm:settings.stirrupDiaMm,legs:settings.stirrupLegs,areaMm2:stirrupArea,steelOnlySpacingMm:spacing},
-   note:"نیروهای تمام قطعات مسیر پیوسته بررسی شده‌اند. برای پوشش لنگرهای مثبت و منفی، آرماتور کششی به‌صورت متقارن در دو وجه برآورد شده است. ظرفیت یک‌لایه با پوشش و فاصله آزاد ورودی فقط از نظر هندسی بررسی شده و حداقل فاصله آیین‌نامه‌ای نیست. طول مستقیم میلگرد تا وجه بیرونی دو فونداسیون انتهایی برآورد شده؛ طول قلاب و خم به علت نیاز به ضابطه/جزئیات معتبر به مقدار طول اضافه نشده است."};
+   note:"نیروهای تمام قطعات مسیر پیوسته بررسی شده‌اند. برای پوشش لنگرهای مثبت و منفی، آرماتور به‌صورت متقارن در دو وجه و در چند ردیف با مختصات واقعی ارتفاعی توزیع شده است. آرایش هندسی بر اساس فاصله آزاد ورودی است و جایگزین کنترل حداقل فاصله آیین‌نامه‌ای، تراکم بتن‌ریزی و تداخل خاموت نیست. طول مستقیم میلگرد تا وجه بیرونی دو فونداسیون انتهایی برآورد شده؛ طول قلاب و خم به علت نیاز به ضابطه/جزئیات معتبر به مقدار طول اضافه نشده است."};
  }
  function render(requireLatest){
   read();
@@ -202,7 +229,8 @@
   const biaxialMid=biaxialSample?.find(x=>Math.abs(x.xM-3)<1e-9);
   const r=flexuralAs(100,600,442,25,400,0.90);
   if(!r.ok)return{passed:false,reason:r.reason};
-  const ic=sectionInteractionCurve(600,500,25,400,200000,0.85,0.85,0.003,4*areaBar(16),40,10,16);
+  const testLayout=buildSymmetricBarLayers(600,500,4,40,10,16,25);
+  const ic=testLayout.ok?sectionInteractionCurve(600,500,25,400,200000,0.85,0.85,0.003,testLayout.layers,40,10,16):{ok:false,points:[]};
   const midCapacity=ic.ok?interactionMomentAtAxial(ic,0):null;
   const tensileEnd=ic.points?.[1]?.PnN,compressionEnd=ic.points?.[ic.points.length-1]?.PnN;
   const a=r.AsRequiredMm2,depth=a*400/(0.85*25*600);
@@ -211,10 +239,10 @@
   const provided=barCount*areaBar(16);
   const spacing=2*areaBar(10)*400*442/(100000);
   const layer=barLayerCapacity(600,40,10,16,25);
-  const checks={barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>100&&midCapacity.MnKNm<180&&Number.isFinite(midCapacity.MnKNm),interactionSignConvention:Number.isFinite(tensileEnd)&&tensileEnd>0&&Number.isFinite(compressionEnd)&&compressionEnd<0,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
+  const checks={barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,multiLayerLayout:!!testLayout.ok&&testLayout.rowsPerFace===1&&Math.abs(testLayout.totalAsMm2-8*areaBar(16))<1e-8,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>100&&midCapacity.MnKNm<180&&Number.isFinite(midCapacity.MnKNm),interactionSignConvention:Number.isFinite(tensileEnd)&&tensileEnd>0&&Number.isFinite(compressionEnd)&&compressionEnd<0,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
    pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
    cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
-  return{passed:Object.values(checks).every(Boolean),checks,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
+  return{passed:Object.values(checks).every(Boolean),checks,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
    pinnedUniformLoadMomentNm:ep.MmaxNm,cantileverMomentNm:ex.MmaxNm};
  }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
