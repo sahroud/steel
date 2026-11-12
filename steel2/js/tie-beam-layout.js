@@ -16,6 +16,41 @@ function sync(){
 }
 function material(){return{widthM:num($("tieWidthM")?.value),heightM:num($("tieHeightM")?.value),fcMPa:num($("tieFcMPa")?.value),E_GPa:num($("tieEGPa")?.value),G_GPa:num($("tieGGPa")?.value),densityKNm3:num($("tieDensity")?.value)};}
 function check(m){for(const[k,n]of Object.entries({widthM:"عرض شناژ",heightM:"ارتفاع شناژ",fcMPa:"مقاومت بتن",E_GPa:"مدول E بتن",G_GPa:"مدول G بتن",densityKNm3:"وزن مخصوص بتن"}))if(!(m[k]>0&&Number.isFinite(m[k])))throw Error("مقدار واقعی "+n+" را وارد کنید.");}
+function rectangleProperties(m,axis){
+ check(m);
+ const b=m.widthM,h=m.heightM;
+ // Rectangular Saint-Venant torsion constant; b is the shorter side.
+ const short=Math.min(b,h),long=Math.max(b,h),r=short/long;
+ const J=long*Math.pow(short,3)*(1/3-0.21*r*(1-Math.pow(r,4)/12));
+ // The solver local axes put global vertical in local y for X beams and local z for Z beams.
+ const Iy=axis==="X"?h*Math.pow(b,3)/12:b*Math.pow(h,3)/12;
+ const Iz=axis==="X"?b*Math.pow(h,3)/12:h*Math.pow(b,3)/12;
+ return{E:m.E_GPa*1e9,G:m.G_GPa*1e9,A:b*h,Iy,Iz,J,axis,assumption:"مقطع مستطیلی؛ محور عمق قائم؛ J تقریبی سنت‌ونان"};
+}
+function audit(){
+ const ns=new Map(bases().map(n=>[n.id,n])),m=material();
+ let valid=0,invalid=0,totalLength=0,totalVolume=0,totalWeight=0;
+ const rows=state.routes.map(r=>{
+  const a=ns.get(r.start),b=ns.get(r.end);let reasons=[];
+  if(!a||!b)reasons.push("گره در مدل فعلی پیدا نشد");
+  if(r.startJoint==="unknown"||r.endJoint==="unknown")reasons.push("نوع اتصال دو سر کامل تعیین نشده");
+  let axis=null,L=0;
+  if(a&&b){
+   L=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+   if(Math.abs(b.y-a.y)>0.01)reasons.push("تراز دو گره بیش از 10 میلی‌متر اختلاف دارد");
+   const dx=Math.abs(b.x-a.x),dz=Math.abs(b.z-a.z);
+   if(dx<0.001&&dz<0.001)reasons.push("فاصله افقی مسیر تقریباً صفر است");
+   else if(dx>0.001&&dz>0.001)reasons.push("مسیر مورب در پلان است؛ فعلاً فقط مسیر موازی محور X یا Z پذیرفته می‌شود");
+   else axis=dx>dz?"X":"Z";
+  }
+  let p=null,V=0,W=0;
+  try{p=rectangleProperties(m,axis||"X");if(a&&b){V=L*r.widthM*r.heightM;W=V*m.densityKNm3;}}catch(e){reasons.push(e.message);}
+  const ok=reasons.length===0;
+  if(ok){valid++;totalLength+=L;totalVolume+=V;totalWeight+=W;}else invalid++;
+  return{id:r.id,start:r.start,end:r.end,axis,lengthM:L,volumeM3:V,selfWeightKN:W,section:p,valid:ok,reasons};
+ });
+ return{schemaVersion:1,validCount:valid,invalidCount:invalid,totalLengthM:totalLength,totalConcreteM3:totalVolume,totalSelfWeightKN:totalWeight,rows,solverActive:false,note:"این ممیزی هندسی/مقطعی است؛ وزن و سختی هنوز به مدل تحلیل اضافه نشده‌اند."};
+}
 function jointLabel(v){return v==="rigid"?"گیردار/یکپارچه":v==="pinned"?"مفصلی": "نامشخص";}
 function render(){
  const host=$("tieRoutesTable");if(!host)return;const ns=new Map(bases().map(n=>[n.id,n]));
@@ -41,10 +76,10 @@ function mount(){
  const p=document.createElement("section");p.className="panel";p.id="tieBeamLayoutPanel";
  p.innerHTML='<div class="panel-title"><h3>تعریف مسیر و مشخصات شناژهای بتنی</h3><span class="status">ورودی هندسی مستقل</span></div><div class="notice">مسیر هر شناژ را بین دو گره پایه واقعی انتخاب کنید. نوع اتصال هر انتها را از روی نقشه/جزئیات اجرایی تعیین کنید؛ گزینه نامشخص مانع فعال‌شدن تحلیل شناژ خواهد بود.</div><div class="form-grid">'+
  [['tieWidthM','عرض مقطع شناژ (m)'],['tieHeightM','ارتفاع مقطع شناژ (m)'],['tieFcMPa',"مقاومت مشخصه بتن f\'c (MPa)"],['tieEGPa','مدول الاستیسیته E بتن (GPa)'],['tieGGPa','مدول برشی G بتن (GPa)'],['tieDensity','وزن مخصوص بتن (kN/m³)']].map(([id,l])=>'<div class="field"><label for="'+id+'">'+l+'</label><input id="'+id+'" type="number" min="0.01" step="0.1" placeholder="مقدار مستند از نقشه/مشخصات"></div>').join("")+
- '</div><div class="button-grid"><button type="button" class="btn secondary" id="btnRefreshTieNodes">به‌روزرسانی گره‌های پایه</button></div><div id="tieNodeCount" class="geometry-hint"></div><div class="form-grid"><div class="field"><label for="tieRouteStart">گره شروع شناژ</label><select id="tieRouteStart"></select></div><div class="field"><label for="tieRouteEnd">گره پایان شناژ</label><select id="tieRouteEnd"></select></div><div class="field"><label for="tieStartJoint">نوع اتصال ابتدای شناژ</label><select id="tieStartJoint"><option value="unknown">نامشخص ـ نیازمند نقشه</option><option value="rigid">یکپارچه/گیردار</option><option value="pinned">مفصلی</option></select></div><div class="field"><label for="tieEndJoint">نوع اتصال انتهای شناژ</label><select id="tieEndJoint"><option value="unknown">نامشخص ـ نیازمند نقشه</option><option value="rigid">یکپارچه/گیردار</option><option value="pinned">مفصلی</option></select></div></div><div class="button-grid"><button type="button" class="btn primary" id="btnAddTieRoute">ثبت مسیر شناژ</button></div><div id="tieRouteMessage" class="notice">مشخصات واقعی مقطع و اتصال‌ها را وارد کنید.</div><div id="tieRoutesTable"></div><div id="tieRouteSummary" class="notice"></div><div class="notice">این مرحله هنوز عضو بتنی را به ماتریس سختی اضافه نمی‌کند. حتی انتخاب «گیردار» یا «مفصلی» صرفاً ثبت داده است؛ تا زمانی که آزادسازی انتهایی و انتقال نیرو در حل‌گر به‌درستی پیاده‌سازی و آزمایش نشده باشد، تحلیل شناژ فعال نمی‌شود. وزن بتن نیز هنوز به بار مرده افزوده نشده است.</div>';
- anchor.parentNode.insertBefore(p,anchor.nextSibling);$("btnRefreshTieNodes").addEventListener("click",sync);$("btnAddTieRoute").addEventListener("click",add);sync();render();
+ '</div><div class="button-grid"><button type="button" class="btn secondary" id="btnRefreshTieNodes">به‌روزرسانی گره‌های پایه</button></div><div id="tieNodeCount" class="geometry-hint"></div><div class="form-grid"><div class="field"><label for="tieRouteStart">گره شروع شناژ</label><select id="tieRouteStart"></select></div><div class="field"><label for="tieRouteEnd">گره پایان شناژ</label><select id="tieRouteEnd"></select></div><div class="field"><label for="tieStartJoint">نوع اتصال ابتدای شناژ</label><select id="tieStartJoint"><option value="unknown">نامشخص ـ نیازمند نقشه</option><option value="rigid">یکپارچه/گیردار</option><option value="pinned">مفصلی</option></select></div><div class="field"><label for="tieEndJoint">نوع اتصال انتهای شناژ</label><select id="tieEndJoint"><option value="unknown">نامشخص ـ نیازمند نقشه</option><option value="rigid">یکپارچه/گیردار</option><option value="pinned">مفصلی</option></select></div></div><div class="button-grid"><button type="button" class="btn primary" id="btnAddTieRoute">ثبت مسیر شناژ</button></div><div id="tieRouteMessage" class="notice">مشخصات واقعی مقطع و اتصال‌ها را وارد کنید.</div><div id="tieRoutesTable"></div><div id="tieRouteSummary" class="notice"></div><div class="button-grid"><button type="button" class="btn secondary" id="btnAuditTieRoutes">ممیزی هندسه و محاسبه مشخصات مقطع</button></div><pre id="tieAuditOutput" class="result-box">ممیزی هنوز اجرا نشده است.</pre><div class="notice">این مرحله هنوز عضو بتنی را به ماتریس سختی اضافه نمی‌کند. حتی انتخاب «گیردار» یا «مفصلی» صرفاً ثبت داده است؛ تا زمانی که آزادسازی انتهایی و انتقال نیرو در حل‌گر به‌درستی پیاده‌سازی و آزمایش نشده باشد، تحلیل شناژ فعال نمی‌شود. وزن بتن نیز هنوز به بار مرده افزوده نشده است.</div>';
+ anchor.parentNode.insertBefore(p,anchor.nextSibling);$("btnRefreshTieNodes").addEventListener("click",sync);$("btnAddTieRoute").addEventListener("click",add);$("btnAuditTieRoutes").addEventListener("click",()=>{const r=audit();$("tieAuditOutput").textContent=JSON.stringify(r,null,2);});sync();render();
 }
 function getData(){return JSON.parse(JSON.stringify(state));}
 function setData(d){if(!d||typeof d!=="object")return;state={schemaVersion:2,material:{...(d.material||{})},routes:Array.isArray(d.routes)?d.routes.filter(r=>r&&r.start&&r.end).map(r=>({...r,startJoint:r.startJoint||"unknown",endJoint:r.endJoint||"unknown"})):[]};const m=state.material,f={tieWidthM:m.widthM,tieHeightM:m.heightM,tieFcMPa:m.fcMPa,tieEGPa:m.E_GPa,tieGGPa:m.G_GPa,tieDensity:m.densityKNm3};Object.entries(f).forEach(([id,v])=>{if($(id)&&v!=null)$(id).value=v;});sync();render();}
-window.SteelTieBeamLayout={getData,setData,refresh:sync};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();
+window.SteelTieBeamLayout={getData,setData,refresh:sync,audit,rectangleProperties};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();
 })();
