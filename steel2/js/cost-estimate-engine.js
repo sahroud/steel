@@ -19,7 +19,9 @@
   {key:"bolt",label:"پیچ‌ها (وزن ساق نظری)",unit:"کیلوگرم",priceCode:"bolt",qty:r=>r.steelMassTakeoff?.boltShankMassKg??null,priceUnit:"تومان/کیلوگرم"},
   {key:"weld",label:"فلز جوش نظری",unit:"کیلوگرم",priceCode:"weld",qty:r=>r.steelMassTakeoff?.theoreticalWeldMetalMassKg??null,priceUnit:"تومان/کیلوگرم"}
  ];
- function marketPrice(code,expectedUnit){const d=window.SteelMarketPrices?.getData?.();const matches=(d?.prices||[]).filter(p=>p.code===code);const compatible=matches.filter(p=>p.unit===expectedUnit);return compatible.sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0]||null;}
+ function projectCity(){const v=window.SteelMarketPrices?.getProjectCity?.()||document.getElementById("city")?.selectedOptions?.[0]?.textContent||"";return String(v).replace(/\\s*\\(پیش‌فرض\\)\\s*/g,"").trim();}
+ function cityKey(v){return String(v||"").replace(/\\s*\\(پیش‌فرض\\)\\s*/g,"").replace(/\\s+/g,"").trim().toLowerCase();}
+ function marketPrice(code,expectedUnit){const d=window.SteelMarketPrices?.getData?.(),city=cityKey(projectCity());const compatible=(d?.prices||[]).filter(p=>p.code===code&&p.unit===expectedUnit);compatible.sort((a,b)=>{const ac=city&&cityKey(a.city)===city?1:0,bc=city&&cityKey(b.city)===city?1:0;return bc-ac||new Date(b.updatedAt)-new Date(a.updatedAt);});return compatible[0]||null;}
  function render(){
   const root=$("quantityTakeoffPanel");if(!root||$("costEstimatePanel"))return;
   const p=document.createElement("section");p.className="panel";p.id="costEstimatePanel";
@@ -52,7 +54,7 @@
    const vals=[d.label,qty===null||qty===undefined?"نامشخص":fmt(qty),d.unit];
    vals.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});
    const priceTd=document.createElement("td"),input=document.createElement("input");input.type="number";input.min="0";input.step="any";input.placeholder="قیمت واحد";input.value=manual!==""?manual:(mp?.price??"");input.dataset.costKey=d.key;input.addEventListener("change",()=>{state.prices[d.key]=input.value;});priceTd.appendChild(input);tr.appendChild(priceTd);
-   const src=document.createElement("td");src.textContent=mp?(mp.source+" | "+mp.city+" | "+new Date(mp.updatedAt).toLocaleDateString("fa-IR")+" | "+(Date.now()-new Date(mp.updatedAt).getTime()>36*3600000?"قدیمی":"جدید")+" | واحد منطبق (تأیید لازم)"):(state.prices[d.key]!==undefined?"ورود دستی":"قیمت منطبق ثبت نشده؛ کد: "+d.priceCode+"، واحد لازم: "+d.priceUnit);tr.appendChild(src);
+   const src=document.createElement("td");src.textContent=mp?((mp.seller||mp.source)+" | بازار: "+(mp.city||"نامشخص")+" | "+(cityKey(mp.city)===cityKey(projectCity())?"هم‌شهر پروژه":"قیمت شهر دیگر؛ حمل تا پروژه باید بررسی شود")+" | تحویل: "+(mp.deliveryCity||"نامشخص")+" | "+(mp.includesFreight?"حمل منظور شده":mp.freightToman!==null&&mp.freightToman!==undefined?"حمل جداگانه ثبت شده":"حمل نامشخص")+" | "+(mp.includesTax?"مالیات منظور شده":mp.taxPercent!==null&&mp.taxPercent!==undefined?"مالیات جداگانه ثبت شده":"مالیات نامشخص")+" | "+(mp.verifiedByUser?"تأیید دستی":"تأییدنشده")+" | "+new Date(mp.updatedAt).toLocaleDateString("fa-IR")+" | "+(Date.now()-new Date(mp.updatedAt).getTime()>36*3600000?"قدیمی":"جدید")+" | واحد منطبق؛ کنترل نهایی لازم"):(state.prices[d.key]!==undefined?"ورود دستی":"قیمت منطبق ثبت نشده؛ کد: "+d.priceCode+"، واحد لازم: "+d.priceUnit);tr.appendChild(src);
    const total=document.createElement("td");total.textContent="—";total.dataset.costTotal=d.key;tr.appendChild(total);body.appendChild(tr);
   });
  }
@@ -78,7 +80,7 @@
   const afterRisk=afterOverhead+extras.contingency;
   extras.tax=afterRisk*pct.tax/100;
   const total=afterRisk+extras.tax;
-  state.lastCost={generatedAt:new Date().toISOString(),currency:"تومان",rows,materialSubtotal:subtotal,percentageInputs:clone(pct),percentageCosts:extras,totalCost:total,missing,pricingMode:state.steelPricingMode,notice:"برآورد مقدماتی؛ قیمت‌های تأییدنشده، مقادیر ناقص و هزینه‌های فاقد داده در جمع لحاظ نشده‌اند."};
+  state.lastCost={generatedAt:new Date().toISOString(),currency:"تومان",projectCity:projectCity(),rows,materialSubtotal:subtotal,percentageInputs:clone(pct),percentageCosts:extras,totalCost:total,missing,pricingMode:state.steelPricingMode,notice:"برآورد مقدماتی؛ قیمت‌های تأییدنشده، مقادیر ناقص و هزینه‌های فاقد داده در جمع لحاظ نشده‌اند."};
   $("costEstimateSummary").textContent="جمع اقلام دارای قیمت: "+fmt(subtotal)+" تومان\nحمل: "+fmt(extras.transport)+" | ساخت: "+fmt(extras.fabrication)+(state.steelPricingMode==="fabricated"?" (در قیمت ساخت هر کیلو منظور شده)":"")+" | نصب: "+fmt(extras.installation)+" | رنگ: "+fmt(extras.paint)+"\nبالاسری: "+fmt(extras.overhead)+" | ذخیره ریسک: "+fmt(extras.contingency)+" | مالیات: "+fmt(extras.tax)+"\nبرآورد کل اقلام قیمت‌گذاری‌شده: "+fmt(total)+" تومان\n"+(missing.length?"موارد خارج از جمع:\n"+missing.join("\n"):"تمام اقلام دارای مقدار قیمت‌گذاری شده‌اند.")+"\n\nاین رقم قیمت قطعی پیمان یا پیشنهاد فروشنده نیست.";
   $("btnExportCost").disabled=false;
  }
