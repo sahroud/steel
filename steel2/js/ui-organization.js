@@ -183,8 +183,21 @@
         renumberPanels();
     }
 
+    function cleanLegacyControls() {
+        // The old 2D single-frame action/results are superseded by the full 3D model.
+        const legacyButton=document.getElementById("btnCalculate");
+        if(legacyButton)legacyButton.hidden=true;
+        const legacyResults=document.getElementById("results");
+        if(legacyResults)legacyResults.hidden=true;
+        const comboButton=document.getElementById("btnCombinations");
+        if(comboButton)comboButton.textContent="تحلیل ترکیبات بار سه‌بعدی";
+        const oldCount=document.querySelector("#results #memberCount");
+        if(oldCount)oldCount.closest(".result-card")?.setAttribute("hidden","");
+    }
+
     function init() {
         addStyles();
+        cleanLegacyControls();
 
         scan(document);
 
