@@ -113,7 +113,7 @@
   const minAvPerS=Math.max(0.062*Math.sqrt(fcMPa)*bwMm/fyMPa,0.35*bwMm/fyMPa);
   const minAv= minAvPerS; // mm²/mm
   const trigger=VuN>0.5*phi*Vc0;
-  let Vc=Vc0,AvsRequired=0,VsRequired=0,spacing=null,providedAvPerS=AvMm2/100;
+  let Vc=Vc0,AvsRequired=0,VsRequired=0,spacing=null,providedAvPerS=0;
   if(trigger){
    Vc=Math.max(0,(0.17*lambda*Math.sqrt(fcMPa)+axialStress)*bwMm*dMm);
    const VcCap=0.66*lambda*Math.sqrt(fcMPa)*bwMm*dMm;
@@ -124,10 +124,11 @@
   }
   const VsLimit=0.33*Math.sqrt(fcMPa)*bwMm*dMm;
   const spacingLimit=VsRequired>VsLimit?Math.min(dMm/4,300):Math.min(dMm/2,600);
-  const maxNominal=VcCapValue(lambda,fcMPa,bwMm,dMm);
+  const maxNominal=Vc+VcCapValue(lambda,fcMPa,bwMm,dMm);
   const maxShearOK=VuN<=phi*maxNominal;
   const requiredSpacing=spacing==null?null:Math.min(spacing,spacingLimit);
-  const providedVs=spacing&&spacing>0?AvMm2*fyMPa*dMm/spacing:0;
+  providedAvPerS=requiredSpacing&&requiredSpacing>0?AvMm2/requiredSpacing:0;
+  const providedVs=requiredSpacing&&requiredSpacing>0?AvMm2*fyMPa*dMm/requiredSpacing:0;
   const phiCapacity=phi*(Vc+providedVs);
   return{ok:true,VuKN:VuN/1000,NuCompressionKN:NuCompression/1000,VcKN:Vc/1000,VcInitialKN:Vc0/1000,VsRequiredKN:VsRequired/1000,
    minAvPerSmm2PerMm:minAv,requiredAvPerSmm2PerMm:AvsRequired,providedAvPerSmm2PerMm:providedAvPerS,spacingFromSteelMm:spacing,
