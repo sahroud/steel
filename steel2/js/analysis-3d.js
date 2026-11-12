@@ -85,18 +85,17 @@ function analyze(model,options){
   members.forEach(m=>{
    if((m.sectionKey||"")==="rafter"){rafterNodes.add(m.start);rafterNodes.add(m.end);}
   });
-  // Every purlin piece end at a rafter support receives its own three
-  // rotational DOFs. Adjacent bay pieces therefore do not share end moments.
+  // Release two bending rotations (global X/Y) at each purlin support.
+  // Keep global Z rotation shared: it is torsion about the longitudinal purlin axis.
   const pieceNodeRotationDof=new Map();
   members.forEach(m=>{
    if((m.sectionKey||"")!=="roofPurlin")return;
    [["i",m.start],["j",m.end]].forEach(([end,nodeId])=>{
     if(!rafterNodes.has(nodeId))return;
-    // Segments belonging to the same fabricated end-bay piece share
-    // rotation at their common node, while remaining released from the rafter.
+    // Segments of the same fabricated piece share the released bending rotations.
     const pieceKey=String(m.pieceId||m.id)+":"+String(nodeId);
     let ids=pieceNodeRotationDof.get(pieceKey);
-    if(!ids){ids=[nDof,nDof+1,nDof+2];nDof+=3;pieceNodeRotationDof.set(pieceKey,ids);}
+    if(!ids){ids=[nDof,nDof+1];nDof+=2;pieceNodeRotationDof.set(pieceKey,ids);}
     purlinEndRotationDof.set(String(m.id)+":"+end,ids);
    });
   });
@@ -113,8 +112,8 @@ function analyze(model,options){
   const ids=Array.from({length:6},(_,i)=>ia*6+i).concat(Array.from({length:6},(_,i)=>ib*6+i));
   if(options.releasePurlinRafterRotation===true&&(m.sectionKey||"")==="roofPurlin"){
    const ri=purlinEndRotationDof.get(String(m.id)+":i"),rj=purlinEndRotationDof.get(String(m.id)+":j");
-   if(ri){ids[3]=ri[0];ids[4]=ri[1];ids[5]=ri[2];}
-   if(rj){ids[9]=rj[0];ids[10]=rj[1];ids[11]=rj[2];}
+   if(ri){ids[3]=ri[0];ids[4]=ri[1];}
+   if(rj){ids[9]=rj[0];ids[10]=rj[1];}
   }
   addBlock(K,ids,kg);
   const q=m.analysisLoad&&m.analysisLoad.uniformLocal?m.analysisLoad.uniformLocal.map(Number):[0,0,0];
@@ -158,7 +157,7 @@ function analyze(model,options){
       const nodeId=member?(end==="i"?member.start:member.end):null;
       const ni=nodeMap.get(nodeId),node=ni===undefined?null:nodes[ni];
       nodeLabel=node?String(node.id)+" ("+(node.kind||"گره")+ ")":"گره پرلین نامشخص";
-      component="دوران "+["X","Y","Z"][local]+" انتهای "+end+" پرلین مستقل "+memberId;
+      component="دوران "+["X","Y"][local]+" انتهای "+end+" پرلین مستقل "+memberId;
       found=true;
      }
     });
@@ -199,7 +198,7 @@ function analyze(model,options){
   const member=members.find(x=>String(x.id)===memberId);
   const nodeId=member?(end==="i"?member.start:member.end):null;
   const nodeIndex=nodeMap.get(nodeId);
-  if(nodeIndex!==undefined)addGlobal([0,0,0],[F[ids[0]],F[ids[1]],F[ids[2]]],nodes[nodeIndex],appliedForce,appliedMoment);
+  if(nodeIndex!==undefined)addGlobal([0,0,0],[F[ids[0]],F[ids[1]],0],nodes[nodeIndex],appliedForce,appliedMoment);
  });
  const momentResidual=appliedMoment.map((v,i)=>v+supportMoment[i]);
  const vectorNorm=v=>Math.hypot(...v);
@@ -224,7 +223,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
 })(typeof window!=="undefined"?window:globalThis);
