@@ -1,0 +1,7937 @@
+{
+  "projectName": "سوله صنعتی",
+  "owner": "شرکت شهرکهای صنعتی",
+  "designer": "مهندس احمد نوری",
+  "city": "shahroud",
+  "baseConnection": "pinned",
+  "span": 12,
+  "length": 36,
+  "spacing": 6,
+  "height": 6,
+  "rise": 2,
+  "frames": 7,
+  "dead": 0.5,
+  "live": 0.75,
+  "wind": 0,
+  "snow": 0,
+  "structuralModel": {
+    "geometry": {
+      "span": 12,
+      "length": 36,
+      "spacing": 6,
+      "height": 6,
+      "rise": 2,
+      "frames": [
+        0,
+        6,
+        12,
+        18,
+        24,
+        30,
+        36
+      ],
+      "frameTributaryWidths": [
+        3,
+        6,
+        6,
+        6,
+        6,
+        6,
+        3
+      ],
+      "roofPurlinSpacing": 0.95,
+      "wallGirtSpacing": 3,
+      "endPostSpacing": 4,
+      "braceBays": 1,
+      "roofOverhang": 0.8,
+      "endOverhang": 0.8
+    },
+    "nodes": [
+      {
+        "id": "N1",
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "kind": "base"
+      },
+      {
+        "id": "N2",
+        "x": 0,
+        "y": 6,
+        "z": 0,
+        "kind": "eave"
+      },
+      {
+        "id": "N3",
+        "x": 6,
+        "y": 8,
+        "z": 0,
+        "kind": "ridge"
+      },
+      {
+        "id": "N4",
+        "x": 12,
+        "y": 6,
+        "z": 0,
+        "kind": "eave"
+      },
+      {
+        "id": "N5",
+        "x": 12,
+        "y": 0,
+        "z": 0,
+        "kind": "base"
+      },
+      {
+        "id": "N6",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": 0,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N7",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": 0,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N8",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N9",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N10",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N11",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N12",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N13",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N14",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N15",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N16",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N17",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N18",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N19",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N20",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N21",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": 0,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N22",
+        "x": 0,
+        "y": 0,
+        "z": 6,
+        "kind": "base"
+      },
+      {
+        "id": "N23",
+        "x": 0,
+        "y": 6,
+        "z": 6,
+        "kind": "eave"
+      },
+      {
+        "id": "N24",
+        "x": 6,
+        "y": 8,
+        "z": 6,
+        "kind": "ridge"
+      },
+      {
+        "id": "N25",
+        "x": 12,
+        "y": 6,
+        "z": 6,
+        "kind": "eave"
+      },
+      {
+        "id": "N26",
+        "x": 12,
+        "y": 0,
+        "z": 6,
+        "kind": "base"
+      },
+      {
+        "id": "N27",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": 6,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N28",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": 6,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N29",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N30",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N31",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N32",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N33",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N34",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N35",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N36",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N37",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N38",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N39",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N40",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N41",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N42",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": 6,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N43",
+        "x": 0,
+        "y": 0,
+        "z": 12,
+        "kind": "base"
+      },
+      {
+        "id": "N44",
+        "x": 0,
+        "y": 6,
+        "z": 12,
+        "kind": "eave"
+      },
+      {
+        "id": "N45",
+        "x": 6,
+        "y": 8,
+        "z": 12,
+        "kind": "ridge"
+      },
+      {
+        "id": "N46",
+        "x": 12,
+        "y": 6,
+        "z": 12,
+        "kind": "eave"
+      },
+      {
+        "id": "N47",
+        "x": 12,
+        "y": 0,
+        "z": 12,
+        "kind": "base"
+      },
+      {
+        "id": "N48",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": 12,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N49",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": 12,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N50",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N51",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N52",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N53",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N54",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N55",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N56",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N57",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N58",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N59",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N60",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N61",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N62",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N63",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": 12,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N64",
+        "x": 0,
+        "y": 0,
+        "z": 18,
+        "kind": "base"
+      },
+      {
+        "id": "N65",
+        "x": 0,
+        "y": 6,
+        "z": 18,
+        "kind": "eave"
+      },
+      {
+        "id": "N66",
+        "x": 6,
+        "y": 8,
+        "z": 18,
+        "kind": "ridge"
+      },
+      {
+        "id": "N67",
+        "x": 12,
+        "y": 6,
+        "z": 18,
+        "kind": "eave"
+      },
+      {
+        "id": "N68",
+        "x": 12,
+        "y": 0,
+        "z": 18,
+        "kind": "base"
+      },
+      {
+        "id": "N69",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": 18,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N70",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": 18,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N71",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N72",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N73",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N74",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N75",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N76",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N77",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N78",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N79",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N80",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N81",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N82",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N83",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N84",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": 18,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N85",
+        "x": 0,
+        "y": 0,
+        "z": 24,
+        "kind": "base"
+      },
+      {
+        "id": "N86",
+        "x": 0,
+        "y": 6,
+        "z": 24,
+        "kind": "eave"
+      },
+      {
+        "id": "N87",
+        "x": 6,
+        "y": 8,
+        "z": 24,
+        "kind": "ridge"
+      },
+      {
+        "id": "N88",
+        "x": 12,
+        "y": 6,
+        "z": 24,
+        "kind": "eave"
+      },
+      {
+        "id": "N89",
+        "x": 12,
+        "y": 0,
+        "z": 24,
+        "kind": "base"
+      },
+      {
+        "id": "N90",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": 24,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N91",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": 24,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N92",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N93",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N94",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N95",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N96",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N97",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N98",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N99",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N100",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N101",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N102",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N103",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N104",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N105",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": 24,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N106",
+        "x": 0,
+        "y": 0,
+        "z": 30,
+        "kind": "base"
+      },
+      {
+        "id": "N107",
+        "x": 0,
+        "y": 6,
+        "z": 30,
+        "kind": "eave"
+      },
+      {
+        "id": "N108",
+        "x": 6,
+        "y": 8,
+        "z": 30,
+        "kind": "ridge"
+      },
+      {
+        "id": "N109",
+        "x": 12,
+        "y": 6,
+        "z": 30,
+        "kind": "eave"
+      },
+      {
+        "id": "N110",
+        "x": 12,
+        "y": 0,
+        "z": 30,
+        "kind": "base"
+      },
+      {
+        "id": "N111",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": 30,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N112",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": 30,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N113",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N114",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N115",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N116",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N117",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N118",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N119",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N120",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N121",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N122",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N123",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N124",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N125",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N126",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": 30,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N127",
+        "x": 0,
+        "y": 0,
+        "z": 36,
+        "kind": "base"
+      },
+      {
+        "id": "N128",
+        "x": 0,
+        "y": 6,
+        "z": 36,
+        "kind": "eave"
+      },
+      {
+        "id": "N129",
+        "x": 6,
+        "y": 8,
+        "z": 36,
+        "kind": "ridge"
+      },
+      {
+        "id": "N130",
+        "x": 12,
+        "y": 6,
+        "z": 36,
+        "kind": "eave"
+      },
+      {
+        "id": "N131",
+        "x": 12,
+        "y": 0,
+        "z": 36,
+        "kind": "base"
+      },
+      {
+        "id": "N132",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": 36,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N133",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": 36,
+        "kind": "cantilever"
+      },
+      {
+        "id": "N134",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N135",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N136",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N137",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N138",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N139",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N140",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N141",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N142",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N143",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N144",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N145",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N146",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N147",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": 36,
+        "kind": "rafter-purlin-joint"
+      },
+      {
+        "id": "N148",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N149",
+        "x": -0.7589466384404111,
+        "y": 5.74701778718653,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N150",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N151",
+        "x": 0.08592169136464034,
+        "y": 6.028640563788214,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N152",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N153",
+        "x": 0.9307900211696918,
+        "y": 6.310263340389898,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N154",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N155",
+        "x": 1.775658350974743,
+        "y": 6.5918861169915814,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N156",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N157",
+        "x": 2.6205266807797947,
+        "y": 6.8735088935932644,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N158",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N159",
+        "x": 3.4653950105848463,
+        "y": 7.155131670194949,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N160",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N161",
+        "x": 4.310263340389897,
+        "y": 7.436754446796632,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N162",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N163",
+        "x": 5.155131670194949,
+        "y": 7.718377223398316,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N164",
+        "x": 6,
+        "y": 8,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N165",
+        "x": 6,
+        "y": 8,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N166",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N167",
+        "x": 6.844868329805052,
+        "y": 7.718377223398316,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N168",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N169",
+        "x": 7.689736659610103,
+        "y": 7.436754446796632,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N170",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N171",
+        "x": 8.534604989415154,
+        "y": 7.155131670194948,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N172",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N173",
+        "x": 9.379473319220207,
+        "y": 6.8735088935932644,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N174",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N175",
+        "x": 10.224341649025257,
+        "y": 6.591886116991581,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N176",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N177",
+        "x": 11.069209978830308,
+        "y": 6.310263340389898,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N178",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N179",
+        "x": 11.91407830863536,
+        "y": 6.028640563788213,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N180",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": -0.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N181",
+        "x": 12.758946638440412,
+        "y": 5.74701778718653,
+        "z": 36.8,
+        "kind": "roof-secondary"
+      },
+      {
+        "id": "N182",
+        "x": 0,
+        "y": 3,
+        "z": 0,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N183",
+        "x": 0,
+        "y": 3,
+        "z": 6,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N184",
+        "x": 0,
+        "y": 3,
+        "z": 12,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N185",
+        "x": 0,
+        "y": 3,
+        "z": 18,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N186",
+        "x": 0,
+        "y": 3,
+        "z": 24,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N187",
+        "x": 0,
+        "y": 3,
+        "z": 30,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N188",
+        "x": 0,
+        "y": 3,
+        "z": 36,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N189",
+        "x": 12,
+        "y": 3,
+        "z": 0,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N190",
+        "x": 12,
+        "y": 3,
+        "z": 6,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N191",
+        "x": 12,
+        "y": 3,
+        "z": 12,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N192",
+        "x": 12,
+        "y": 3,
+        "z": 18,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N193",
+        "x": 12,
+        "y": 3,
+        "z": 24,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N194",
+        "x": 12,
+        "y": 3,
+        "z": 30,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N195",
+        "x": 12,
+        "y": 3,
+        "z": 36,
+        "kind": "wall-secondary"
+      },
+      {
+        "id": "N196",
+        "x": 4,
+        "y": 0,
+        "z": 0,
+        "kind": "endwall-base"
+      },
+      {
+        "id": "N197",
+        "x": 4,
+        "y": 3,
+        "z": 0,
+        "kind": "endwall-post-joint"
+      },
+      {
+        "id": "N198",
+        "x": 4,
+        "y": 7.333333333333333,
+        "z": 0,
+        "kind": "endwall-head"
+      },
+      {
+        "id": "N199",
+        "x": 8,
+        "y": 0,
+        "z": 0,
+        "kind": "endwall-base"
+      },
+      {
+        "id": "N200",
+        "x": 8,
+        "y": 3,
+        "z": 0,
+        "kind": "endwall-post-joint"
+      },
+      {
+        "id": "N201",
+        "x": 8,
+        "y": 7.333333333333333,
+        "z": 0,
+        "kind": "endwall-head"
+      },
+      {
+        "id": "N202",
+        "x": 4,
+        "y": 0,
+        "z": 36,
+        "kind": "endwall-base"
+      },
+      {
+        "id": "N203",
+        "x": 4,
+        "y": 3,
+        "z": 36,
+        "kind": "endwall-post-joint"
+      },
+      {
+        "id": "N204",
+        "x": 4,
+        "y": 7.333333333333333,
+        "z": 36,
+        "kind": "endwall-head"
+      },
+      {
+        "id": "N205",
+        "x": 8,
+        "y": 0,
+        "z": 36,
+        "kind": "endwall-base"
+      },
+      {
+        "id": "N206",
+        "x": 8,
+        "y": 3,
+        "z": 36,
+        "kind": "endwall-post-joint"
+      },
+      {
+        "id": "N207",
+        "x": 8,
+        "y": 7.333333333333333,
+        "z": 36,
+        "kind": "endwall-head"
+      }
+    ],
+    "members": [
+      {
+        "id": "__1",
+        "start": "N1",
+        "end": "N2",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 1,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__2",
+        "start": "N4",
+        "end": "N5",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 1,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__3",
+        "start": "N6",
+        "end": "N8",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 1,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__4",
+        "start": "N8",
+        "end": "N9",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 2,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__5",
+        "start": "N9",
+        "end": "N10",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420947,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 3,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__6",
+        "start": "N10",
+        "end": "N11",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420949,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 4,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__7",
+        "start": "N11",
+        "end": "N12",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420954,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 5,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__8",
+        "start": "N12",
+        "end": "N13",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420936,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 6,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__9",
+        "start": "N13",
+        "end": "N14",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 7,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__10",
+        "start": "N14",
+        "end": "N3",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 8,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__11",
+        "start": "N3",
+        "end": "N15",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 9,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__12",
+        "start": "N15",
+        "end": "N16",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 10,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__13",
+        "start": "N16",
+        "end": "N17",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 11,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__14",
+        "start": "N17",
+        "end": "N18",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 12,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__15",
+        "start": "N18",
+        "end": "N19",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 13,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__16",
+        "start": "N19",
+        "end": "N20",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 14,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__17",
+        "start": "N20",
+        "end": "N21",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420963,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 15,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__18",
+        "start": "N21",
+        "end": "N7",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 1,
+        "axis": "transverse",
+        "segment": 16,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__19",
+        "start": "N22",
+        "end": "N23",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 2,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__20",
+        "start": "N25",
+        "end": "N26",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 2,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__21",
+        "start": "N27",
+        "end": "N29",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 1,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__22",
+        "start": "N29",
+        "end": "N30",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 2,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__23",
+        "start": "N30",
+        "end": "N31",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420947,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 3,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__24",
+        "start": "N31",
+        "end": "N32",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420949,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 4,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__25",
+        "start": "N32",
+        "end": "N33",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420954,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 5,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__26",
+        "start": "N33",
+        "end": "N34",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420936,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 6,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__27",
+        "start": "N34",
+        "end": "N35",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 7,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__28",
+        "start": "N35",
+        "end": "N24",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 8,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__29",
+        "start": "N24",
+        "end": "N36",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 9,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__30",
+        "start": "N36",
+        "end": "N37",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 10,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__31",
+        "start": "N37",
+        "end": "N38",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 11,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__32",
+        "start": "N38",
+        "end": "N39",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 12,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__33",
+        "start": "N39",
+        "end": "N40",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 13,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__34",
+        "start": "N40",
+        "end": "N41",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 14,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__35",
+        "start": "N41",
+        "end": "N42",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420963,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 15,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__36",
+        "start": "N42",
+        "end": "N28",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 2,
+        "axis": "transverse",
+        "segment": 16,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__37",
+        "start": "N43",
+        "end": "N44",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 3,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__38",
+        "start": "N46",
+        "end": "N47",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 3,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__39",
+        "start": "N48",
+        "end": "N50",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 1,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__40",
+        "start": "N50",
+        "end": "N51",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 2,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__41",
+        "start": "N51",
+        "end": "N52",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420947,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 3,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__42",
+        "start": "N52",
+        "end": "N53",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420949,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 4,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__43",
+        "start": "N53",
+        "end": "N54",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420954,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 5,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__44",
+        "start": "N54",
+        "end": "N55",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420936,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 6,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__45",
+        "start": "N55",
+        "end": "N56",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 7,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__46",
+        "start": "N56",
+        "end": "N45",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 8,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__47",
+        "start": "N45",
+        "end": "N57",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 9,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__48",
+        "start": "N57",
+        "end": "N58",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 10,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__49",
+        "start": "N58",
+        "end": "N59",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 11,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__50",
+        "start": "N59",
+        "end": "N60",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 12,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__51",
+        "start": "N60",
+        "end": "N61",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 13,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__52",
+        "start": "N61",
+        "end": "N62",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 14,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__53",
+        "start": "N62",
+        "end": "N63",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420963,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 15,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__54",
+        "start": "N63",
+        "end": "N49",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 3,
+        "axis": "transverse",
+        "segment": 16,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__55",
+        "start": "N64",
+        "end": "N65",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 4,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__56",
+        "start": "N67",
+        "end": "N68",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 4,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__57",
+        "start": "N69",
+        "end": "N71",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 1,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__58",
+        "start": "N71",
+        "end": "N72",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 2,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__59",
+        "start": "N72",
+        "end": "N73",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420947,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 3,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__60",
+        "start": "N73",
+        "end": "N74",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420949,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 4,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__61",
+        "start": "N74",
+        "end": "N75",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420954,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 5,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__62",
+        "start": "N75",
+        "end": "N76",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420936,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 6,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__63",
+        "start": "N76",
+        "end": "N77",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 7,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__64",
+        "start": "N77",
+        "end": "N66",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 8,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__65",
+        "start": "N66",
+        "end": "N78",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 9,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__66",
+        "start": "N78",
+        "end": "N79",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 10,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__67",
+        "start": "N79",
+        "end": "N80",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 11,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__68",
+        "start": "N80",
+        "end": "N81",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 12,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__69",
+        "start": "N81",
+        "end": "N82",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 13,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__70",
+        "start": "N82",
+        "end": "N83",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 14,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__71",
+        "start": "N83",
+        "end": "N84",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420963,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 15,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__72",
+        "start": "N84",
+        "end": "N70",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 4,
+        "axis": "transverse",
+        "segment": 16,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__73",
+        "start": "N85",
+        "end": "N86",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 5,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__74",
+        "start": "N88",
+        "end": "N89",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 5,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__75",
+        "start": "N90",
+        "end": "N92",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 1,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__76",
+        "start": "N92",
+        "end": "N93",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 2,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__77",
+        "start": "N93",
+        "end": "N94",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420947,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 3,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__78",
+        "start": "N94",
+        "end": "N95",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420949,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 4,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__79",
+        "start": "N95",
+        "end": "N96",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420954,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 5,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__80",
+        "start": "N96",
+        "end": "N97",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420936,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 6,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__81",
+        "start": "N97",
+        "end": "N98",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 7,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__82",
+        "start": "N98",
+        "end": "N87",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 8,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__83",
+        "start": "N87",
+        "end": "N99",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 9,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__84",
+        "start": "N99",
+        "end": "N100",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 10,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__85",
+        "start": "N100",
+        "end": "N101",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 11,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__86",
+        "start": "N101",
+        "end": "N102",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 12,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__87",
+        "start": "N102",
+        "end": "N103",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 13,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__88",
+        "start": "N103",
+        "end": "N104",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 14,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__89",
+        "start": "N104",
+        "end": "N105",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420963,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 15,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__90",
+        "start": "N105",
+        "end": "N91",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 5,
+        "axis": "transverse",
+        "segment": 16,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__91",
+        "start": "N106",
+        "end": "N107",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 6,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__92",
+        "start": "N109",
+        "end": "N110",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 6,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__93",
+        "start": "N111",
+        "end": "N113",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 1,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__94",
+        "start": "N113",
+        "end": "N114",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 2,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__95",
+        "start": "N114",
+        "end": "N115",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420947,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 3,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__96",
+        "start": "N115",
+        "end": "N116",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420949,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 4,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__97",
+        "start": "N116",
+        "end": "N117",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420954,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 5,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__98",
+        "start": "N117",
+        "end": "N118",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420936,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 6,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__99",
+        "start": "N118",
+        "end": "N119",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 7,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__100",
+        "start": "N119",
+        "end": "N108",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 8,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__101",
+        "start": "N108",
+        "end": "N120",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 9,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__102",
+        "start": "N120",
+        "end": "N121",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 10,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__103",
+        "start": "N121",
+        "end": "N122",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 11,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__104",
+        "start": "N122",
+        "end": "N123",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 12,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__105",
+        "start": "N123",
+        "end": "N124",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 13,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__106",
+        "start": "N124",
+        "end": "N125",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 14,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__107",
+        "start": "N125",
+        "end": "N126",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420963,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 15,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__108",
+        "start": "N126",
+        "end": "N112",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 6,
+        "axis": "transverse",
+        "segment": 16,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 6
+        }
+      },
+      {
+        "id": "__109",
+        "start": "N127",
+        "end": "N128",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 7,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__110",
+        "start": "N130",
+        "end": "N131",
+        "type": "ستون قاب",
+        "sectionKey": "column",
+        "length": 6,
+        "frame": 7,
+        "axis": "transverse",
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__111",
+        "start": "N132",
+        "end": "N134",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 1,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__112",
+        "start": "N134",
+        "end": "N135",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042095,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 2,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__113",
+        "start": "N135",
+        "end": "N136",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420947,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 3,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__114",
+        "start": "N136",
+        "end": "N137",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420949,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 4,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__115",
+        "start": "N137",
+        "end": "N138",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420954,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 5,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__116",
+        "start": "N138",
+        "end": "N139",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420936,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 6,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__117",
+        "start": "N139",
+        "end": "N140",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 7,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__118",
+        "start": "N140",
+        "end": "N129",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 8,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__119",
+        "start": "N129",
+        "end": "N141",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 9,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__120",
+        "start": "N141",
+        "end": "N142",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420952,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 10,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__121",
+        "start": "N142",
+        "end": "N143",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 11,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__122",
+        "start": "N143",
+        "end": "N144",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.890569415042096,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 12,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__123",
+        "start": "N144",
+        "end": "N145",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420943,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 13,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__124",
+        "start": "N145",
+        "end": "N146",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 14,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__125",
+        "start": "N146",
+        "end": "N147",
+        "type": "رفتر قاب",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420963,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 15,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__126",
+        "start": "N147",
+        "end": "N133",
+        "type": "کنسول رفتر",
+        "sectionKey": "rafter",
+        "length": 0.8905694150420941,
+        "frame": 7,
+        "axis": "transverse",
+        "segment": 16,
+        "connectedPurlinNodes": true,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 3
+        }
+      },
+      {
+        "id": "__127",
+        "start": "N148",
+        "end": "N6",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__128",
+        "start": "N6",
+        "end": "N27",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__129",
+        "start": "N27",
+        "end": "N48",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__130",
+        "start": "N48",
+        "end": "N69",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__131",
+        "start": "N69",
+        "end": "N90",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__132",
+        "start": "N90",
+        "end": "N111",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__133",
+        "start": "N111",
+        "end": "N132",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__134",
+        "start": "N132",
+        "end": "N149",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__135",
+        "start": "N150",
+        "end": "N8",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__136",
+        "start": "N8",
+        "end": "N29",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__137",
+        "start": "N29",
+        "end": "N50",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__138",
+        "start": "N50",
+        "end": "N71",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__139",
+        "start": "N71",
+        "end": "N92",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__140",
+        "start": "N92",
+        "end": "N113",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__141",
+        "start": "N113",
+        "end": "N134",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__142",
+        "start": "N134",
+        "end": "N151",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__143",
+        "start": "N152",
+        "end": "N9",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__144",
+        "start": "N9",
+        "end": "N30",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__145",
+        "start": "N30",
+        "end": "N51",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__146",
+        "start": "N51",
+        "end": "N72",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__147",
+        "start": "N72",
+        "end": "N93",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__148",
+        "start": "N93",
+        "end": "N114",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__149",
+        "start": "N114",
+        "end": "N135",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__150",
+        "start": "N135",
+        "end": "N153",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__151",
+        "start": "N154",
+        "end": "N10",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__152",
+        "start": "N10",
+        "end": "N31",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__153",
+        "start": "N31",
+        "end": "N52",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__154",
+        "start": "N52",
+        "end": "N73",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__155",
+        "start": "N73",
+        "end": "N94",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__156",
+        "start": "N94",
+        "end": "N115",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__157",
+        "start": "N115",
+        "end": "N136",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__158",
+        "start": "N136",
+        "end": "N155",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__159",
+        "start": "N156",
+        "end": "N11",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__160",
+        "start": "N11",
+        "end": "N32",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__161",
+        "start": "N32",
+        "end": "N53",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__162",
+        "start": "N53",
+        "end": "N74",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__163",
+        "start": "N74",
+        "end": "N95",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__164",
+        "start": "N95",
+        "end": "N116",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__165",
+        "start": "N116",
+        "end": "N137",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__166",
+        "start": "N137",
+        "end": "N157",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__167",
+        "start": "N158",
+        "end": "N12",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__168",
+        "start": "N12",
+        "end": "N33",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__169",
+        "start": "N33",
+        "end": "N54",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__170",
+        "start": "N54",
+        "end": "N75",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__171",
+        "start": "N75",
+        "end": "N96",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__172",
+        "start": "N96",
+        "end": "N117",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__173",
+        "start": "N117",
+        "end": "N138",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__174",
+        "start": "N138",
+        "end": "N159",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__175",
+        "start": "N160",
+        "end": "N13",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__176",
+        "start": "N13",
+        "end": "N34",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__177",
+        "start": "N34",
+        "end": "N55",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__178",
+        "start": "N55",
+        "end": "N76",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__179",
+        "start": "N76",
+        "end": "N97",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__180",
+        "start": "N97",
+        "end": "N118",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__181",
+        "start": "N118",
+        "end": "N139",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__182",
+        "start": "N139",
+        "end": "N161",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__183",
+        "start": "N162",
+        "end": "N14",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__184",
+        "start": "N14",
+        "end": "N35",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__185",
+        "start": "N35",
+        "end": "N56",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__186",
+        "start": "N56",
+        "end": "N77",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__187",
+        "start": "N77",
+        "end": "N98",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__188",
+        "start": "N98",
+        "end": "N119",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__189",
+        "start": "N119",
+        "end": "N140",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__190",
+        "start": "N140",
+        "end": "N163",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__191",
+        "start": "N164",
+        "end": "N3",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "left",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__192",
+        "start": "N3",
+        "end": "N24",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__193",
+        "start": "N24",
+        "end": "N45",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__194",
+        "start": "N45",
+        "end": "N66",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__195",
+        "start": "N66",
+        "end": "N87",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__196",
+        "start": "N87",
+        "end": "N108",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__197",
+        "start": "N108",
+        "end": "N129",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "left",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__198",
+        "start": "N129",
+        "end": "N165",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "left",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__199",
+        "start": "N164",
+        "end": "N3",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__200",
+        "start": "N3",
+        "end": "N24",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__201",
+        "start": "N24",
+        "end": "N45",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__202",
+        "start": "N45",
+        "end": "N66",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__203",
+        "start": "N66",
+        "end": "N87",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__204",
+        "start": "N87",
+        "end": "N108",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__205",
+        "start": "N108",
+        "end": "N129",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__206",
+        "start": "N129",
+        "end": "N165",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 1,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__207",
+        "start": "N166",
+        "end": "N15",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__208",
+        "start": "N15",
+        "end": "N36",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__209",
+        "start": "N36",
+        "end": "N57",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__210",
+        "start": "N57",
+        "end": "N78",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__211",
+        "start": "N78",
+        "end": "N99",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__212",
+        "start": "N99",
+        "end": "N120",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__213",
+        "start": "N120",
+        "end": "N141",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__214",
+        "start": "N141",
+        "end": "N167",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 2,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__215",
+        "start": "N168",
+        "end": "N16",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__216",
+        "start": "N16",
+        "end": "N37",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__217",
+        "start": "N37",
+        "end": "N58",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__218",
+        "start": "N58",
+        "end": "N79",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__219",
+        "start": "N79",
+        "end": "N100",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__220",
+        "start": "N100",
+        "end": "N121",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__221",
+        "start": "N121",
+        "end": "N142",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__222",
+        "start": "N142",
+        "end": "N169",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 3,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__223",
+        "start": "N170",
+        "end": "N17",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__224",
+        "start": "N17",
+        "end": "N38",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__225",
+        "start": "N38",
+        "end": "N59",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__226",
+        "start": "N59",
+        "end": "N80",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__227",
+        "start": "N80",
+        "end": "N101",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__228",
+        "start": "N101",
+        "end": "N122",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__229",
+        "start": "N122",
+        "end": "N143",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__230",
+        "start": "N143",
+        "end": "N171",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 4,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__231",
+        "start": "N172",
+        "end": "N18",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__232",
+        "start": "N18",
+        "end": "N39",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__233",
+        "start": "N39",
+        "end": "N60",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__234",
+        "start": "N60",
+        "end": "N81",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__235",
+        "start": "N81",
+        "end": "N102",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__236",
+        "start": "N102",
+        "end": "N123",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__237",
+        "start": "N123",
+        "end": "N144",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__238",
+        "start": "N144",
+        "end": "N173",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 5,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__239",
+        "start": "N174",
+        "end": "N19",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__240",
+        "start": "N19",
+        "end": "N40",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__241",
+        "start": "N40",
+        "end": "N61",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__242",
+        "start": "N61",
+        "end": "N82",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__243",
+        "start": "N82",
+        "end": "N103",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__244",
+        "start": "N103",
+        "end": "N124",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__245",
+        "start": "N124",
+        "end": "N145",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__246",
+        "start": "N145",
+        "end": "N175",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 6,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__247",
+        "start": "N176",
+        "end": "N20",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__248",
+        "start": "N20",
+        "end": "N41",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__249",
+        "start": "N41",
+        "end": "N62",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__250",
+        "start": "N62",
+        "end": "N83",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__251",
+        "start": "N83",
+        "end": "N104",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__252",
+        "start": "N104",
+        "end": "N125",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__253",
+        "start": "N125",
+        "end": "N146",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__254",
+        "start": "N146",
+        "end": "N177",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 7,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__255",
+        "start": "N178",
+        "end": "N21",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__256",
+        "start": "N21",
+        "end": "N42",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__257",
+        "start": "N42",
+        "end": "N63",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__258",
+        "start": "N63",
+        "end": "N84",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__259",
+        "start": "N84",
+        "end": "N105",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__260",
+        "start": "N105",
+        "end": "N126",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__261",
+        "start": "N126",
+        "end": "N147",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__262",
+        "start": "N147",
+        "end": "N179",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 8,
+        "tributaryWidth": 0.8905694150420949,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.44528470752104743,
+          "live": 0.6679270612815711,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.8905694150420949
+        }
+      },
+      {
+        "id": "__263",
+        "start": "N180",
+        "end": "N7",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.8,
+        "side": "right",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__264",
+        "start": "N7",
+        "end": "N28",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__265",
+        "start": "N28",
+        "end": "N49",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__266",
+        "start": "N49",
+        "end": "N70",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__267",
+        "start": "N70",
+        "end": "N91",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__268",
+        "start": "N91",
+        "end": "N112",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__269",
+        "start": "N112",
+        "end": "N133",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 6,
+        "side": "right",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__270",
+        "start": "N133",
+        "end": "N181",
+        "type": "پرلین طولی سقف",
+        "sectionKey": "roofPurlin",
+        "length": 0.7999999999999972,
+        "side": "right",
+        "row": 9,
+        "tributaryWidth": 0.44528470752104743,
+        "endOverhang": 0.8,
+        "lineLoads": {
+          "dead": 0.22264235376052371,
+          "live": 0.33396353064078554,
+          "snow": 0,
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryWidth": 0.44528470752104743
+        }
+      },
+      {
+        "id": "__271",
+        "start": "N148",
+        "end": "N164",
+        "type": "تیر لبه عرضی پیش‌آمدگی سقف",
+        "sectionKey": "roofEdge",
+        "length": 7.12455532033676,
+        "endFace": "front",
+        "overhang": 0.8
+      },
+      {
+        "id": "__272",
+        "start": "N164",
+        "end": "N180",
+        "type": "تیر لبه عرضی پیش‌آمدگی سقف",
+        "sectionKey": "roofEdge",
+        "length": 7.12455532033676,
+        "endFace": "front",
+        "overhang": 0.8
+      },
+      {
+        "id": "__273",
+        "start": "N149",
+        "end": "N165",
+        "type": "تیر لبه عرضی پیش‌آمدگی سقف",
+        "sectionKey": "roofEdge",
+        "length": 7.12455532033676,
+        "endFace": "rear",
+        "overhang": 0.8
+      },
+      {
+        "id": "__274",
+        "start": "N165",
+        "end": "N181",
+        "type": "تیر لبه عرضی پیش‌آمدگی سقف",
+        "sectionKey": "roofEdge",
+        "length": 7.12455532033676,
+        "endFace": "rear",
+        "overhang": 0.8
+      },
+      {
+        "id": "__275",
+        "start": "N182",
+        "end": "N183",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__276",
+        "start": "N183",
+        "end": "N184",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__277",
+        "start": "N184",
+        "end": "N185",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__278",
+        "start": "N185",
+        "end": "N186",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__279",
+        "start": "N186",
+        "end": "N187",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__280",
+        "start": "N187",
+        "end": "N188",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "left",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__281",
+        "start": "N189",
+        "end": "N190",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__282",
+        "start": "N190",
+        "end": "N191",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__283",
+        "start": "N191",
+        "end": "N192",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__284",
+        "start": "N192",
+        "end": "N193",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__285",
+        "start": "N193",
+        "end": "N194",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__286",
+        "start": "N194",
+        "end": "N195",
+        "type": "قید افقی طولی دیوار",
+        "sectionKey": "wallGirt",
+        "length": 6,
+        "side": "right",
+        "row": 1,
+        "tributaryHeight": 6,
+        "lineLoads": {
+          "wind": 0,
+          "unit": "kN/m",
+          "tributaryHeight": 6
+        }
+      },
+      {
+        "id": "__287",
+        "start": "N196",
+        "end": "N197",
+        "type": "ستونک میانی دیوار انتهایی",
+        "sectionKey": "endPost",
+        "length": 3,
+        "endFace": "front",
+        "post": 1,
+        "segment": 1
+      },
+      {
+        "id": "__288",
+        "start": "N197",
+        "end": "N198",
+        "type": "ستونک میانی دیوار انتهایی",
+        "sectionKey": "endPost",
+        "length": 4.333333333333333,
+        "endFace": "front",
+        "post": 1,
+        "segment": 2
+      },
+      {
+        "id": "__289",
+        "start": "N199",
+        "end": "N200",
+        "type": "ستونک میانی دیوار انتهایی",
+        "sectionKey": "endPost",
+        "length": 3,
+        "endFace": "front",
+        "post": 2,
+        "segment": 1
+      },
+      {
+        "id": "__290",
+        "start": "N200",
+        "end": "N201",
+        "type": "ستونک میانی دیوار انتهایی",
+        "sectionKey": "endPost",
+        "length": 4.333333333333333,
+        "endFace": "front",
+        "post": 2,
+        "segment": 2
+      },
+      {
+        "id": "__291",
+        "start": "N2",
+        "end": "N198",
+        "type": "رفتر قاب دیوار انتهایی",
+        "sectionKey": "rafter",
+        "length": 4.216370213557839,
+        "endFace": "front",
+        "axis": "endwall"
+      },
+      {
+        "id": "__292",
+        "start": "N198",
+        "end": "N201",
+        "type": "رفتر قاب دیوار انتهایی",
+        "sectionKey": "rafter",
+        "length": 4,
+        "endFace": "front",
+        "axis": "endwall"
+      },
+      {
+        "id": "__293",
+        "start": "N201",
+        "end": "N4",
+        "type": "رفتر قاب دیوار انتهایی",
+        "sectionKey": "rafter",
+        "length": 4.216370213557839,
+        "endFace": "front",
+        "axis": "endwall"
+      },
+      {
+        "id": "__294",
+        "start": "N182",
+        "end": "N197",
+        "type": "تیر افقی دیوار انتهایی",
+        "sectionKey": "endGirt",
+        "length": 4,
+        "endFace": "front",
+        "row": 1
+      },
+      {
+        "id": "__295",
+        "start": "N197",
+        "end": "N200",
+        "type": "تیر افقی دیوار انتهایی",
+        "sectionKey": "endGirt",
+        "length": 4,
+        "endFace": "front",
+        "row": 1
+      },
+      {
+        "id": "__296",
+        "start": "N200",
+        "end": "N189",
+        "type": "تیر افقی دیوار انتهایی",
+        "sectionKey": "endGirt",
+        "length": 4,
+        "endFace": "front",
+        "row": 1
+      },
+      {
+        "id": "__297",
+        "start": "N202",
+        "end": "N203",
+        "type": "ستونک میانی دیوار انتهایی",
+        "sectionKey": "endPost",
+        "length": 3,
+        "endFace": "rear",
+        "post": 1,
+        "segment": 1
+      },
+      {
+        "id": "__298",
+        "start": "N203",
+        "end": "N204",
+        "type": "ستونک میانی دیوار انتهایی",
+        "sectionKey": "endPost",
+        "length": 4.333333333333333,
+        "endFace": "rear",
+        "post": 1,
+        "segment": 2
+      },
+      {
+        "id": "__299",
+        "start": "N205",
+        "end": "N206",
+        "type": "ستونک میانی دیوار انتهایی",
+        "sectionKey": "endPost",
+        "length": 3,
+        "endFace": "rear",
+        "post": 2,
+        "segment": 1
+      },
+      {
+        "id": "__300",
+        "start": "N206",
+        "end": "N207",
+        "type": "ستونک میانی دیوار انتهایی",
+        "sectionKey": "endPost",
+        "length": 4.333333333333333,
+        "endFace": "rear",
+        "post": 2,
+        "segment": 2
+      },
+      {
+        "id": "__301",
+        "start": "N128",
+        "end": "N204",
+        "type": "رفتر قاب دیوار انتهایی",
+        "sectionKey": "rafter",
+        "length": 4.216370213557839,
+        "endFace": "rear",
+        "axis": "endwall"
+      },
+      {
+        "id": "__302",
+        "start": "N204",
+        "end": "N207",
+        "type": "رفتر قاب دیوار انتهایی",
+        "sectionKey": "rafter",
+        "length": 4,
+        "endFace": "rear",
+        "axis": "endwall"
+      },
+      {
+        "id": "__303",
+        "start": "N207",
+        "end": "N130",
+        "type": "رفتر قاب دیوار انتهایی",
+        "sectionKey": "rafter",
+        "length": 4.216370213557839,
+        "endFace": "rear",
+        "axis": "endwall"
+      },
+      {
+        "id": "__304",
+        "start": "N188",
+        "end": "N203",
+        "type": "تیر افقی دیوار انتهایی",
+        "sectionKey": "endGirt",
+        "length": 4,
+        "endFace": "rear",
+        "row": 1
+      },
+      {
+        "id": "__305",
+        "start": "N203",
+        "end": "N206",
+        "type": "تیر افقی دیوار انتهایی",
+        "sectionKey": "endGirt",
+        "length": 4,
+        "endFace": "rear",
+        "row": 1
+      },
+      {
+        "id": "__306",
+        "start": "N206",
+        "end": "N195",
+        "type": "تیر افقی دیوار انتهایی",
+        "sectionKey": "endGirt",
+        "length": 4,
+        "endFace": "rear",
+        "row": 1
+      },
+      {
+        "id": "__307",
+        "start": "N1",
+        "end": "N23",
+        "type": "مهاربند ضربدری دیوار",
+        "sectionKey": "wallBrace",
+        "length": 8.485281374238571,
+        "bay": 1,
+        "side": "left",
+        "candidate": true
+      },
+      {
+        "id": "__308",
+        "start": "N2",
+        "end": "N22",
+        "type": "مهاربند ضربدری دیوار",
+        "sectionKey": "wallBrace",
+        "length": 8.485281374238571,
+        "bay": 1,
+        "side": "left",
+        "candidate": true
+      },
+      {
+        "id": "__309",
+        "start": "N5",
+        "end": "N25",
+        "type": "مهاربند ضربدری دیوار",
+        "sectionKey": "wallBrace",
+        "length": 8.485281374238571,
+        "bay": 1,
+        "side": "right",
+        "candidate": true
+      },
+      {
+        "id": "__310",
+        "start": "N4",
+        "end": "N26",
+        "type": "مهاربند ضربدری دیوار",
+        "sectionKey": "wallBrace",
+        "length": 8.485281374238571,
+        "bay": 1,
+        "side": "right",
+        "candidate": true
+      },
+      {
+        "id": "__311",
+        "start": "N2",
+        "end": "N24",
+        "type": "مهاربند ضربدری سقف",
+        "sectionKey": "roofBrace",
+        "length": 8.717797887081346,
+        "bay": 1,
+        "side": "left",
+        "candidate": true
+      },
+      {
+        "id": "__312",
+        "start": "N3",
+        "end": "N23",
+        "type": "مهاربند ضربدری سقف",
+        "sectionKey": "roofBrace",
+        "length": 8.717797887081346,
+        "bay": 1,
+        "side": "left",
+        "candidate": true
+      },
+      {
+        "id": "__313",
+        "start": "N3",
+        "end": "N25",
+        "type": "مهاربند ضربدری سقف",
+        "sectionKey": "roofBrace",
+        "length": 8.717797887081346,
+        "bay": 1,
+        "side": "right",
+        "candidate": true
+      },
+      {
+        "id": "__314",
+        "start": "N4",
+        "end": "N24",
+        "type": "مهاربند ضربدری سقف",
+        "sectionKey": "roofBrace",
+        "length": 8.717797887081346,
+        "bay": 1,
+        "side": "right",
+        "candidate": true
+      },
+      {
+        "id": "__315",
+        "start": "N106",
+        "end": "N128",
+        "type": "مهاربند ضربدری دیوار",
+        "sectionKey": "wallBrace",
+        "length": 8.485281374238571,
+        "bay": 6,
+        "side": "left",
+        "candidate": true
+      },
+      {
+        "id": "__316",
+        "start": "N107",
+        "end": "N127",
+        "type": "مهاربند ضربدری دیوار",
+        "sectionKey": "wallBrace",
+        "length": 8.485281374238571,
+        "bay": 6,
+        "side": "left",
+        "candidate": true
+      },
+      {
+        "id": "__317",
+        "start": "N110",
+        "end": "N130",
+        "type": "مهاربند ضربدری دیوار",
+        "sectionKey": "wallBrace",
+        "length": 8.485281374238571,
+        "bay": 6,
+        "side": "right",
+        "candidate": true
+      },
+      {
+        "id": "__318",
+        "start": "N109",
+        "end": "N131",
+        "type": "مهاربند ضربدری دیوار",
+        "sectionKey": "wallBrace",
+        "length": 8.485281374238571,
+        "bay": 6,
+        "side": "right",
+        "candidate": true
+      },
+      {
+        "id": "__319",
+        "start": "N107",
+        "end": "N129",
+        "type": "مهاربند ضربدری سقف",
+        "sectionKey": "roofBrace",
+        "length": 8.717797887081346,
+        "bay": 6,
+        "side": "left",
+        "candidate": true
+      },
+      {
+        "id": "__320",
+        "start": "N108",
+        "end": "N128",
+        "type": "مهاربند ضربدری سقف",
+        "sectionKey": "roofBrace",
+        "length": 8.717797887081346,
+        "bay": 6,
+        "side": "left",
+        "candidate": true
+      },
+      {
+        "id": "__321",
+        "start": "N108",
+        "end": "N130",
+        "type": "مهاربند ضربدری سقف",
+        "sectionKey": "roofBrace",
+        "length": 8.717797887081346,
+        "bay": 6,
+        "side": "right",
+        "candidate": true
+      },
+      {
+        "id": "__322",
+        "start": "N109",
+        "end": "N129",
+        "type": "مهاربند ضربدری سقف",
+        "sectionKey": "roofBrace",
+        "length": 8.717797887081346,
+        "bay": 6,
+        "side": "right",
+        "candidate": true
+      }
+    ]
+  },
+  "savedAt": "2026-11-11T13:19:00.942Z",
+  "software": "SAHROUD STEEL",
+  "version": "2.9",
+  "loads": {
+    "deadLeft": 0.5,
+    "deadRight": 0.5,
+    "liveLeft": 0.75,
+    "liveRight": 0.75,
+    "snowLeft": 0,
+    "snowRight": 0,
+    "windLeft": 0,
+    "windRight": 0,
+    "windWall": 0,
+    "windDirection": "left-to-right",
+    "note": "",
+    "climate": {
+      "city": "shahroud",
+      "customCity": "شاهرود",
+      "elevation": "",
+      "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+      "groundSnow": "",
+      "basicWind": "",
+      "terrain": "",
+      "topography": "normal",
+      "openingState": "enclosed",
+      "openingArea": "25",
+      "envelopeArea": "",
+      "dominantOpening": "no"
+    },
+    "combinations": [
+      {
+        "name": "ترکیب ۱ ـ بارهای ثقلی",
+        "dead": 1.2,
+        "live": 1.6,
+        "snow": 0
+      },
+      {
+        "name": "ترکیب ۲ ـ بار مرده و برف",
+        "dead": 1.2,
+        "live": 0,
+        "snow": 1.6
+      },
+      {
+        "name": "ترکیب ۳ ـ بار مرده",
+        "dead": 1.4,
+        "live": 0,
+        "snow": 0
+      },
+      {
+        "name": "ترکیب ۴ ـ بار باد",
+        "dead": 0.8,
+        "live": 0,
+        "snow": 0
+      }
+    ]
+  },
+  "sections": {
+    "material": {
+      "grade": "ST37 / مقدار نیازمند تأیید",
+      "E_GPa": 200,
+      "Fy_MPa": 235
+    },
+    "column": {
+      "profile": "تیرورق",
+      "A_cm2": 30,
+      "Ix_cm4": 1000,
+      "Iy_cm4": 300,
+      "SxTop_cm3": 20,
+      "SxBottom_cm3": 800,
+      "Sy_cm3": 800
+    },
+    "rafter": {
+      "profile": "تیرورق",
+      "A_cm2": 60,
+      "Ix_cm4": 8000,
+      "Iy_cm4": 1500,
+      "SxTop_cm3": 800,
+      "SxBottom_cm3": 800,
+      "Sy_cm3": 800
+    },
+    "analysis3d": {
+      "G_GPa": 80,
+      "groups": {
+        "column": {
+          "A_cm2": 30,
+          "Iy_cm4": 300,
+          "Iz_cm4": 1000,
+          "J_cm4": 80
+        },
+        "rafter": {
+          "A_cm2": 60,
+          "Iy_cm4": 1500,
+          "Iz_cm4": 8000,
+          "J_cm4": 150
+        },
+        "roofPurlin": {
+          "A_cm2": 30,
+          "Iy_cm4": 1000,
+          "Iz_cm4": 300,
+          "J_cm4": 20
+        },
+        "wallGirt": {
+          "A_cm2": 6.94,
+          "Iy_cm4": 88.6,
+          "Iz_cm4": 88.6,
+          "J_cm4": 168
+        },
+        "endPost": {
+          "A_cm2": 11.64,
+          "Iy_cm4": 185.5,
+          "Iz_cm4": 185.5,
+          "J_cm4": 351
+        },
+        "endGirt": {
+          "A_cm2": 9.24,
+          "Iy_cm4": 142.9,
+          "Iz_cm4": 60.6,
+          "J_cm4": 170
+        },
+        "wallBrace": {
+          "A_cm2": 3.142,
+          "Iy_cm4": 0.785,
+          "Iz_cm4": 0.785,
+          "J_cm4": 1.571
+        },
+        "roofBrace": {
+          "A_cm2": 3.142,
+          "Iy_cm4": 0.785,
+          "Iz_cm4": 0.785,
+          "J_cm4": 1.571
+        },
+        "roofEdge": {
+          "A_cm2": 30,
+          "Iy_cm4": 1000,
+          "Iz_cm4": 300,
+          "J_cm4": 20
+        }
+      }
+    }
+  },
+  "openings": {
+    "front": {
+      "enabled": true,
+      "width": 5,
+      "height": 5,
+      "position": 0
+    },
+    "rear": {
+      "enabled": false,
+      "width": 3,
+      "height": 3,
+      "position": 0
+    },
+    "left": {
+      "enabled": false,
+      "width": 3,
+      "height": 3,
+      "position": 5
+    },
+    "right": {
+      "enabled": false,
+      "width": 3,
+      "height": 3,
+      "position": 5
+    }
+  },
+  "climateDatabase": {
+    "schema": "sahroud-steel-climate-db",
+    "version": 1,
+    "records": {
+      "shahroud": {
+        "id": "shahroud",
+        "name": "شاهرود",
+        "groundSnow": 1,
+        "basicWind": 90,
+        "elevation": null,
+        "source": "مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ ردیف ۱۸۳، جدول ۶-۷-۱ ردیف ۷۶ و بند ۶-۳-۲؛ نسخه PDF ارسالی کاربر، نیازمند تطبیق نهایی با نسخه رسمی.",
+        "sourceDate": "1398",
+        "status": "استخراج‌شده از نسخه PDF ارسالی؛ نسخه توزیعی، نه فایل رسمی قابل احراز",
+        "basicWindPressure": 0.38,
+        "snowRegion": 3
+      },
+      "semnan": {
+        "id": "semnan",
+        "name": "سمنان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "tehran": {
+        "id": "tehran",
+        "name": "تهران",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "mashhad": {
+        "id": "mashhad",
+        "name": "مشهد",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "tabriz": {
+        "id": "tabriz",
+        "name": "تبریز",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "isfahan": {
+        "id": "isfahan",
+        "name": "اصفهان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "yazd": {
+        "id": "yazd",
+        "name": "یزد",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "rasht": {
+        "id": "rasht",
+        "name": "رشت",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "sari": {
+        "id": "sari",
+        "name": "ساری",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "kerman": {
+        "id": "kerman",
+        "name": "کرمان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "arak": {
+        "id": "arak",
+        "name": "اراک",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "ardabil": {
+        "id": "ardabil",
+        "name": "اردبیل",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "urmia": {
+        "id": "urmia",
+        "name": "ارومیه",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "ahvaz": {
+        "id": "ahvaz",
+        "name": "اهواز",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "bandar-abbas": {
+        "id": "bandar-abbas",
+        "name": "بندرعباس",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "bushehr": {
+        "id": "bushehr",
+        "name": "بوشهر",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "birjand": {
+        "id": "birjand",
+        "name": "بیرجند",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "bojnord": {
+        "id": "bojnord",
+        "name": "بجنورد",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "hamedan": {
+        "id": "hamedan",
+        "name": "همدان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "sanandaj": {
+        "id": "sanandaj",
+        "name": "سنندج",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "kermanshah": {
+        "id": "kermanshah",
+        "name": "کرمانشاه",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "ilam": {
+        "id": "ilam",
+        "name": "ایلام",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "khorramabad": {
+        "id": "khorramabad",
+        "name": "خرم‌آباد",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "qazvin": {
+        "id": "qazvin",
+        "name": "قزوین",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "zanjan": {
+        "id": "zanjan",
+        "name": "زنجان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "gorgan": {
+        "id": "gorgan",
+        "name": "گرگان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "yasuj": {
+        "id": "yasuj",
+        "name": "یاسوج",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "shiraz": {
+        "id": "shiraz",
+        "name": "شیراز",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "zahedan": {
+        "id": "zahedan",
+        "name": "زاهدان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "zabol": {
+        "id": "zabol",
+        "name": "زابل",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "qom": {
+        "id": "qom",
+        "name": "قم",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "kish": {
+        "id": "kish",
+        "name": "کیش",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "abadan": {
+        "id": "abadan",
+        "name": "آبادان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "dezful": {
+        "id": "dezful",
+        "name": "دزفول",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "sabzevar": {
+        "id": "sabzevar",
+        "name": "سبزوار",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "neyshabur": {
+        "id": "neyshabur",
+        "name": "نیشابور",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "damghan": {
+        "id": "damghan",
+        "name": "دامغان",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "garmsar": {
+        "id": "garmsar",
+        "name": "گرمسار",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "torbat-heydariyeh": {
+        "id": "torbat-heydariyeh",
+        "name": "تربت حیدریه",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "chabahar": {
+        "id": "chabahar",
+        "name": "چابهار",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "bandar-anzali": {
+        "id": "bandar-anzali",
+        "name": "بندر انزلی",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "amol": {
+        "id": "amol",
+        "name": "آمل",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      },
+      "babol": {
+        "id": "babol",
+        "name": "بابل",
+        "groundSnow": null,
+        "basicWind": null,
+        "elevation": null,
+        "source": "",
+        "sourceDate": "",
+        "status": "نیازمند ورود و تطبیق با منبع رسمی"
+      }
+    }
+  },
+  "climateLoadEngine": {
+    "schema": "sahroud-steel-load-cases",
+    "version": 1,
+    "generatedAt": "2026-11-11T13:19:00.943Z",
+    "codeEdition": "مبحث ششم ۱۳۹۸",
+    "status": "preliminary-input-registry",
+    "note": "این فهرست فقط مقادیر واردشده را سازمان‌دهی می‌کند؛ بار آیین‌نامه‌ای یا ترکیب بار طراحی تولید نمی‌کند.",
+    "climate": {
+      "city": "shahroud",
+      "customCity": "شاهرود",
+      "elevation": "",
+      "groundSnow": "",
+      "basicWind": "",
+      "basicWindUnit": "km/h",
+      "groundSnowUnit": "kN/m2",
+      "terrain": "",
+      "topography": "normal",
+      "openingState": "enclosed",
+      "dominantOpening": "no"
+    },
+    "windDirection": "left-to-right",
+    "cases": [
+      {
+        "id": "left-dead",
+        "type": "dead",
+        "side": "left",
+        "value": 0.5,
+        "unit": "kN/m2",
+        "signMeaning": "مقدار ورودی؛ تفسیر علامت نیازمند قرارداد بارگذاری پروژه",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      },
+      {
+        "id": "left-live",
+        "type": "live",
+        "side": "left",
+        "value": 0.75,
+        "unit": "kN/m2",
+        "signMeaning": "مقدار ورودی؛ تفسیر علامت نیازمند قرارداد بارگذاری پروژه",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      },
+      {
+        "id": "left-snow",
+        "type": "snow-roof-input",
+        "side": "left",
+        "value": 0,
+        "unit": "kN/m2",
+        "signMeaning": "مقدار ورودی؛ تفسیر علامت نیازمند قرارداد بارگذاری پروژه",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      },
+      {
+        "id": "left-wind",
+        "type": "wind-roof-input",
+        "side": "left",
+        "value": 0,
+        "unit": "kN/m2",
+        "signMeaning": "علامت حفظ می‌شود؛ فشار/مکش نهایی و ضرایب خارجی/داخلی هنوز تعیین نشده‌اند",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      },
+      {
+        "id": "right-dead",
+        "type": "dead",
+        "side": "right",
+        "value": 0.5,
+        "unit": "kN/m2",
+        "signMeaning": "مقدار ورودی؛ تفسیر علامت نیازمند قرارداد بارگذاری پروژه",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      },
+      {
+        "id": "right-live",
+        "type": "live",
+        "side": "right",
+        "value": 0.75,
+        "unit": "kN/m2",
+        "signMeaning": "مقدار ورودی؛ تفسیر علامت نیازمند قرارداد بارگذاری پروژه",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      },
+      {
+        "id": "right-snow",
+        "type": "snow-roof-input",
+        "side": "right",
+        "value": 0,
+        "unit": "kN/m2",
+        "signMeaning": "مقدار ورودی؛ تفسیر علامت نیازمند قرارداد بارگذاری پروژه",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      },
+      {
+        "id": "right-wind",
+        "type": "wind-roof-input",
+        "side": "right",
+        "value": 0,
+        "unit": "kN/m2",
+        "signMeaning": "علامت حفظ می‌شود؛ فشار/مکش نهایی و ضرایب خارجی/داخلی هنوز تعیین نشده‌اند",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      },
+      {
+        "id": "wall-wind",
+        "type": "wind-wall-input",
+        "side": "walls",
+        "value": 0,
+        "unit": "kN/m2",
+        "signMeaning": "علامت حفظ می‌شود؛ جهت و توزیع نهایی باید در مدل بارگذاری تعیین شود",
+        "source": "ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸",
+        "city": "شاهرود",
+        "codeEdition": "مبحث ششم ۱۳۹۸",
+        "validationStatus": "user-input-unverified",
+        "eligibleForCodeDesign": false
+      }
+    ],
+    "restoredMeta": null
+  },
+  "girders": {
+    "column": {
+      "hw": 500,
+      "tw": 8,
+      "bb": 200,
+      "tb": 12,
+      "bt": 200,
+      "tt": 12
+    },
+    "rafter": {
+      "hw": 400,
+      "tw": 8,
+      "bb": 180,
+      "tb": 10,
+      "bt": 180,
+      "tt": 10
+    },
+    "stability": {
+      "column": {
+        "Lx": null,
+        "Ly": null,
+        "Kx": null,
+        "Ky": null
+      },
+      "rafter": {
+        "Lx": null,
+        "Ly": null,
+        "Kx": null,
+        "Ky": null
+      }
+    }
+  },
+  "wallTies": {
+    "lowerEnabled": false,
+    "lowerOffset": 1.5
+  },
+  "roofTies": {
+    "rows": 2,
+    "length": 6,
+    "area": 500,
+    "imin": 100000,
+    "fy": 240,
+    "e": 200000,
+    "k": 1
+  },
+  "roofPurlins": {
+    "family": "auto",
+    "pitchMin": 0.6,
+    "pitchMax": 1.5,
+    "pitchStep": 0.1,
+    "pitch": 1,
+    "fy": 240,
+    "e": 200000,
+    "deflectionLimit": 180,
+    "sectionHeight": 180,
+    "flange": 60,
+    "lip": 20,
+    "thickness": 2.5,
+    "rhsWidth": 80,
+    "rhsHeight": 160,
+    "rhsThickness": 3
+  },
+  "purlinCantileverConnection": {
+    "type": "clip",
+    "rows": "2",
+    "cols": "2",
+    "diameter": "16",
+    "hole": "18",
+    "fub": "800",
+    "plateThickness": "10",
+    "plateFy": "240",
+    "plateFu": "360",
+    "edge": "40",
+    "sideEdge": "35",
+    "plateWidth": "130",
+    "pitch": "60",
+    "gage": "60"
+  }
+}
