@@ -7,15 +7,15 @@
  const $=id=>document.getElementById(id),N=v=>{const x=Number(v);return Number.isFinite(x)&&x>=0?x:null;};
  const fmt=v=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:0});
  const defaultManualItems=[
-  {key:"foundationConcrete",label:"بتن فونداسیون و شناژ",unit:"مترمکعب"},
-  {key:"foundationRebar",label:"میلگرد فونداسیون",unit:"کیلوگرم"},
-  {key:"excavation",label:"خاکبرداری و تسطیح",unit:"مترمکعب"},
-  {key:"formwork",label:"قالب‌بندی فونداسیون",unit:"مترمربع"},
-  {key:"anchorBolts",label:"تعداد بولت و صفحه‌ستون (در صورت قیمت‌گذاری عددی)",unit:"عدد"},
-  {key:"floorConcrete",label:"بتن کف و کف‌سازی",unit:"مترمکعب"},
-  {key:"doors",label:"درب‌ها و کرکره‌ها",unit:"مترمربع"},
-  {key:"gutters",label:"آبرو و لوله‌های ناودانی",unit:"متر"},
-  {key:"electrical",label:"برق و روشنایی",unit:"مجموع"},
+  {key:"foundationConcrete",label:"بتن فونداسیون و شناژ",unit:"مترمکعب",priceCode:"concrete.ready",priceUnit:"تومان/مترمکعب"},
+  {key:"foundationRebar",label:"میلگرد فونداسیون",unit:"کیلوگرم",priceCode:"rebar.a3",priceUnit:"تومان/کیلوگرم"},
+  {key:"excavation",label:"خاکبرداری و تسطیح",unit:"مترمکعب",priceCode:"excavation",priceUnit:"تومان/مترمکعب"},
+  {key:"formwork",label:"قالب‌بندی فونداسیون",unit:"مترمربع",priceCode:"formwork",priceUnit:"تومان/مترمربع"},
+  {key:"anchorBolts",label:"تعداد بولت و صفحه‌ستون (در صورت قیمت‌گذاری عددی)",unit:"عدد",priceCode:"anchor.bolt",priceUnit:"تومان/عدد"},
+  {key:"floorConcrete",label:"بتن کف و کف‌سازی",unit:"مترمکعب",priceCode:"concrete.floor",priceUnit:"تومان/مترمکعب"},
+  {key:"doors",label:"درب‌ها و کرکره‌ها",unit:"مترمربع",priceCode:"door.industrial",priceUnit:"تومان/مترمربع"},
+  {key:"gutters",label:"آبرو و لوله‌های ناودانی",unit:"متر",priceCode:"gutter",priceUnit:"تومان/متر"},
+  {key:"electrical",label:"برق و روشنایی",unit:"مجموع",priceCode:"electrical.package",priceUnit:"تومان/مجموع"},
   {key:"other",label:"سایر هزینه‌های مستقیم",unit:"مجموع"}
  ];
  const state={prices:{},percent:{transport:0,fabrication:0,installation:0,paint:0,overhead:0,contingency:0,tax:0},steelPricingMode:"steel_only",manualItems:defaultManualItems.map(x=>({...x,quantity:"",unitPrice:""})),last:null};
@@ -41,7 +41,7 @@
    '<div class="notice">مقادیر از آخرین متره محاسبه‌شده گرفته می‌شوند. قیمت‌ها از بانک قیمت یا ورود دستی پیشنهاد می‌شوند؛ تا زمان تأیید کاربر، قیمت منبع بازار قطعی خرید تلقی نمی‌شود. اقلام نامعلوم یا فاقد مقدار/قیمت در جمع لحاظ نمی‌شوند و هشدار می‌گیرند.</div>'+
    '<div class="form-grid"><div class="field"><label for="costSteelMode">روش قیمت‌گذاری فولاد</label><select id="costSteelMode"><option value="steel_only">فقط اسکلت و ورق اتصال؛ پیچ و جوش جدا</option><option value="fabricated">قیمت هر کیلو فولاد ساخته‌شده شامل ساخت و اتصالات؛ اقلام پیچ و جوش جداگانه صفر شوند</option></select></div></div>'+
    '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:760px"><thead><tr><th>قلم</th><th>مقدار</th><th>واحد</th><th>قیمت واحد (تومان)</th><th>منبع پیشنهادی</th><th>هزینه</th></tr></thead><tbody id="costEstimateRows"></tbody></table></div>'+
-   '<h4>هزینه‌های تکمیلی اجرا و فونداسیون</h4><div class="notice">مقادیر این بخش هنوز از طراحی فونداسیون استخراج نشده‌اند؛ فقط پس از متره یا استعلام واقعی وارد کنید. مواردی را که قبلاً در اقلام دیگر یا قیمت ساخت منظور کرده‌اید دوباره ثبت نکنید.</div><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:720px"><thead><tr><th>شرح</th><th>مقدار</th><th>واحد</th><th>قیمت واحد (تومان)</th><th>هزینه</th></tr></thead><tbody id="costManualRows"></tbody></table></div>'+
+   '<h4>هزینه‌های تکمیلی اجرا و فونداسیون</h4><div class="notice">مقادیر این بخش هنوز از طراحی فونداسیون استخراج نشده‌اند؛ فقط پس از متره یا استعلام واقعی وارد کنید. مواردی را که قبلاً در اقلام دیگر یا قیمت ساخت منظور کرده‌اید دوباره ثبت نکنید.</div><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:720px"><thead><tr><th>شرح</th><th>مقدار</th><th>واحد</th><th>قیمت واحد (تومان)</th><th>منبع قیمت</th><th>هزینه</th></tr></thead><tbody id="costManualRows"></tbody></table></div>'+
    '<h4>هزینه‌های درصدی</h4><div class="form-grid">'+
    '<div class="field"><label for="costTransport">حمل‌ونقل (%)</label><input id="costTransport" type="number" min="0" step="0.1"></div>'+
    '<div class="field"><label for="costFabrication">ساخت/برش/سوراخ‌کاری (%)</label><input id="costFabrication" type="number" min="0" step="0.1"></div>'+
@@ -80,8 +80,13 @@
    const qc=document.createElement("td"),q=document.createElement("input");q.type="number";q.min="0";q.step="any";q.placeholder="مقدار";q.value=item.quantity??"";q.dataset.manualKey=item.key;q.dataset.manualField="quantity";qc.appendChild(q);tr.appendChild(qc);
    const uc=document.createElement("td"),unit=document.createElement("input");unit.type="text";unit.value=item.unit;unit.dataset.manualKey=item.key;unit.dataset.manualField="unit";uc.appendChild(unit);tr.appendChild(uc);
    const pc=document.createElement("td"),price=document.createElement("input");price.type="number";price.min="0";price.step="any";price.placeholder="قیمت واحد";price.value=item.unitPrice??"";price.dataset.manualKey=item.key;price.dataset.manualField="unitPrice";pc.appendChild(price);tr.appendChild(pc);
-   const total=document.createElement("td");total.dataset.manualTotal=item.key;total.textContent="—";tr.appendChild(total);
-   [q,unit,price].forEach(el=>el.addEventListener("change",()=>{item[el.dataset.manualField]=el.value;if(el.dataset.manualField==="quantity")item.quantitySource="manual";}));
+   const src=document.createElement("td"),quote=item.priceCode?marketPrice(item.priceCode,item.priceUnit):null;
+   if(quote){
+    const note=document.createElement("small");note.textContent=(quote.seller||quote.source||"منبع قیمت")+" | "+(quote.city||"شهر نامشخص")+" | "+(cityKey(quote.city)===cityKey(projectCity())?"هم‌شهر پروژه":"شهر دیگر")+" | "+(quote.verifiedByUser?"تأیید دستی":"تأییدنشده");src.appendChild(note);
+    const use=document.createElement("button");use.type="button";use.className="btn secondary";use.textContent="استفاده از قیمت بازار";use.addEventListener("click",()=>{item.unitPrice=String(quote.price);item.priceSource="market";renderManualItems();});src.appendChild(use);
+   }else src.textContent=item.priceSource==="manual"?"ورود دستی":"قیمت هم‌واحد ثبت نشده";
+   const total=document.createElement("td");total.dataset.manualTotal=item.key;total.textContent="—";tr.appendChild(src);tr.appendChild(total);
+   [q,unit,price].forEach(el=>el.addEventListener("change",()=>{item[el.dataset.manualField]=el.value;if(el.dataset.manualField==="quantity")item.quantitySource="manual";if(el.dataset.manualField==="unitPrice")item.priceSource="manual";}));
    body.appendChild(tr);
   });
  }
@@ -127,6 +132,21 @@
    const q=N(item.quantity),p=N(item.unitPrice);
    if((item.quantity!==""&&item.quantity!==undefined)||(item.unitPrice!==""&&item.unitPrice!==undefined)){
     if(!(q>0)||!(p>0)){missing.push(item.label+": مقدار یا قیمت واحد تکمیل نشده");return;}
+    if(item.priceSource==="market"&&item.priceCode){
+     const quote=marketPrice(item.priceCode,item.priceUnit);
+     if(quote&&String(item.unitPrice)===String(quote.price)){
+      if(cityKey(quote.city)!==cityKey(projectCity()))pricingWarnings.push(item.label+": قیمت بازار از شهر دیگری است؛ حمل تا محل پروژه باید بررسی شود.");
+      if(!quote.deliveryCity)pricingWarnings.push(item.label+": شهر تحویل قیمت بازار مشخص نیست.");
+      if(quote.deliveryCity&&cityKey(quote.deliveryCity)!==cityKey(projectCity()))pricingWarnings.push(item.label+": شهر تحویل قیمت بازار با شهر پروژه تطبیق ندارد.");
+      if(!quote.includesFreight&&quote.freightToman===null)pricingWarnings.push(item.label+": حمل در قیمت بازار نامشخص است.");
+      if(!quote.includesFreight&&quote.freightToman!==null&&Number(q)>0&&cityKey(quote.deliveryCity)===cityKey(projectCity())&&cityKey(projectCity())){
+       const freightKey=[quote.sourceUrl||"",quote.seller,quote.source,quote.city,quote.deliveryCity,quote.updatedAt].join("|");
+       if(!freightQuoteKeys.has(freightKey)){quotedFreightTotal+=Number(quote.freightToman)||0;freightQuoteKeys.add(freightKey);}
+      }
+      if(!quote.includesTax&&quote.taxPercent===null)pricingWarnings.push(item.label+": وضعیت مالیات قیمت بازار مشخص نیست.");
+      if(!quote.verifiedByUser)pricingWarnings.push(item.label+": قیمت بازار هنوز تأیید دستی نشده است.");
+     }else pricingWarnings.push(item.label+": قیمت پیشنهادی بانک قیمت دیگر در دسترس یا هم‌واحد نیست؛ قیمت را دوباره کنترل کنید.");
+    }
     const amount=q*p;subtotal+=amount;rows.push({key:item.key,label:item.label,quantity:q,unit:item.unit,unitPrice:p,cost:amount});
     const cell=document.querySelector('[data-manual-total="'+item.key+'"]');if(cell)cell.textContent=fmt(amount);
    }
