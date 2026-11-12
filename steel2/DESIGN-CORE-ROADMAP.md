@@ -41,3 +41,16 @@ The independent design-core module adds a versioned project brief and readiness 
 
 ## Current limitations
 The design brief is not a load generator, analysis engine, code checker, or optimizer. Existing first-order linear analysis remains preliminary. Do not use outputs as construction design until the relevant engineering modules are implemented and independently validated.
+
+
+## Wind zone geometry engine — 2026-11-12
+
+- Added `js/wind-zone-engine.js` as a geometry-only module.
+- Reads the structural model's established axes: X transverse span, Y vertical, Z longitudinal; front is negative Z and rear is positive Z.
+- Uses the model's current 0.8 m roof overhang and actual span/length/eaves/rise values.
+- Partitions each rectangular roof slope and each longitudinal wall into a non-overlapping 3×3 grid: four corner cells, four edge cells, and one interior cell. Each cell carries coordinates, dimensions, area, and an intentionally empty coefficient/source registry.
+- Reports gross gable-end area separately. The rectangular portion is shown only as a reference; triangular gable zoning is deliberately disabled pending verification against the applicable code figure.
+- The edge-depth inputs are mandatory and are not defaulted. They must be sourced from the official code provisions before use.
+- Area closure is checked for each partitioned rectangle. No Cp/CgCp values, pressure values, line loads, or 3D load transfers are generated.
+- `codeDesignEligible` and `loadTransferEnabled` remain false.
+- Next: verify zone-depth equations and roof/wall/gable zoning against the official 1398 Sixth Issue figures and examples; only then implement coefficient registry with exact clause/table/figure/page provenance and independently checked test cases.
