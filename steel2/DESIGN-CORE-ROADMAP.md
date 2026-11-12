@@ -102,3 +102,16 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 - The orientation selector is retained as a geometric/support-layout input; it does not establish panel span capacity, fastener capacity, girt/post adequacy, or a verified load path.
 - Wall-envelope choices are included in the existing `designBrief` project JSON and restored when a saved project is reopened. Older project files without these fields migrate to the four-face brick default.
 - No masonry dead load, out-of-plane wall pressure, panel load, restraint force, or connection action is generated or transferred to the structural solver. The envelope configuration is recorded only; `designEligible` and load transfer remain disabled pending wall build-up, thickness/weight, restraint details, openings, support spacing, product data, and independent load-path checks.
+
+
+## Masonry wall quantity and restraint-data audit — 2026-11-12
+
+- Added shared project inputs for masonry thickness, masonry unit weight, restraint-system category, and nominal horizontal/vertical restraint spacing. These values are intentionally blank/unknown by default; no unverified masonry properties are assumed.
+- Added `js/masonry-wall-audit.js` as a read-only audit. It reads the four independently selected facade materials, model geometry, and registered openings.
+- Gross longitudinal wall area is calculated as `length × eaves height`. Gross end-wall area includes the rectangular wall below the eaves plus the gable triangle: `span × eaves height + span × rise / 2`.
+- Valid openings fully contained within the rectangular wall zone are deducted from net area. Invalid/out-of-range openings are not deducted and are explicitly flagged. The gable triangle is included in gross area; this initial opening deduction does not assume openings in the gable zone.
+- For brick faces only, when both thickness and unit weight are supplied, the audit estimates total masonry self-weight as net area × thickness × unit weight. This is a quantity estimate, not a structural load distribution.
+- The audit counts adjacent steel secondary members as candidate geometry only. It does not claim masonry-to-steel anchorage, restraint adequacy, or load transfer from their existence.
+- Restraint category and nominal spacing are recorded as input-completeness gates. Even when supplied, engineering verification remains outstanding for out-of-plane pressure, slenderness, cracking, sliding/overturning, seismic detailing, bond beams, wall-post details, anchors, and connections.
+- No dead load, wind load, restraint force, solver nodal load, or member line load is generated or changed. `designEligible=false` and `loadTransferEnabled=false` are explicit.
+- Synthetic geometry test only: 12 m span, 36 m length, 6 m eaves, 1.2 m rise, 200 mm wall, 18 kN/m³ assumed test unit weight, and one 5 m × 5 m front opening produced 590.4 m² gross, 25.0 m² deducted opening, 565.4 m² net, and 2035.44 kN estimated masonry weight. This verifies arithmetic only; it is not project data, a code check, or a browser test.
