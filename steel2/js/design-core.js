@@ -30,7 +30,7 @@
       right:{material:"brick",orientation:"vertical"}
     },
     masonry:{
-      thicknessMm:"",unitWeightKNm3:"",
+      thicknessMm:350,unitWeightKNm3:"",brickLengthMm:"",brickHeightMm:"",brickDepthMm:"",mortarJointMm:"",plasterThicknessMm:"",
       restraintSystem:"unknown",horizontalTieSpacingM:"",verticalTieSpacingM:""
     }
   });
@@ -61,6 +61,11 @@
       '<h4>مشخصات مصالح و مهار دیوار آجری</h4><div class="form-grid">',
       '<div class="field"><label for="masonryThicknessMm">ضخامت اسمی دیوار آجری (mm)</label><input id="masonryThicknessMm" type="number" min="0" step="5" placeholder="از نقشه یا وضع موجود" /></div>',
       '<div class="field"><label for="masonryUnitWeight">وزن مخصوص حجمی مصالح بنایی (kN/m³)</label><input id="masonryUnitWeight" type="number" min="0" step="0.1" placeholder="از مشخصات مصالح / آزمایش" /></div>',
+      '<div class="field"><label for="masonryBrickLength">طول واحد آجر (mm)</label><input id="masonryBrickLength" type="number" min="1" step="1" placeholder="از نوع آجر واقعی" /></div>',
+      '<div class="field"><label for="masonryBrickHeight">ارتفاع واحد آجر (mm)</label><input id="masonryBrickHeight" type="number" min="1" step="1" placeholder="از نوع آجر واقعی" /></div>',
+      '<div class="field"><label for="masonryBrickDepth">عمق/ضخامت واحد آجر (mm)</label><input id="masonryBrickDepth" type="number" min="1" step="1" placeholder="از نوع آجر واقعی" /></div>',
+      '<div class="field"><label for="masonryMortarJoint">ضخامت بند ملات (mm)</label><input id="masonryMortarJoint" type="number" min="0" step="1" placeholder="از جزئیات اجرا" /></div>',
+      '<div class="field"><label for="masonryPlasterThickness">ضخامت اندود هر طرف (mm)</label><input id="masonryPlasterThickness" type="number" min="0" step="1" placeholder="در صورت اجرای اندود" /></div>',
       '<div class="field"><label for="masonryRestraintSystem">سیستم مهار دیوار به سازه</label><select id="masonryRestraintSystem"><option value="unknown">نامشخص / هنوز طراحی نشده</option><option value="columns-beams">مهار به ستون‌ها و کلاف‌های پیرامونی</option><option value="independent">قاب یا زیرسازی مستقل</option><option value="other">سیستم دیگر؛ نیازمند شرح</option></select></div>',
       '<div class="field"><label for="masonryHorizontalTieSpacing">فاصله قائم مهارهای افقی (m)</label><input id="masonryHorizontalTieSpacing" type="number" min="0" step="0.1" placeholder="در صورت وجود جزئیات" /></div>',
       '<div class="field"><label for="masonryVerticalTieSpacing">فاصله افقی مهارهای قائم (m)</label><input id="masonryVerticalTieSpacing" type="number" min="0" step="0.1" placeholder="در صورت وجود جزئیات" /></div>',
@@ -97,7 +102,7 @@
       };
     });
     data.masonry=data.masonry||clone(DEFAULTS.masonry);
-    const masonryFields={thicknessMm:"masonryThicknessMm",unitWeightKNm3:"masonryUnitWeight",restraintSystem:"masonryRestraintSystem",horizontalTieSpacingM:"masonryHorizontalTieSpacing",verticalTieSpacingM:"masonryVerticalTieSpacing"};
+    const masonryFields={thicknessMm:"masonryThicknessMm",unitWeightKNm3:"masonryUnitWeight",brickLengthMm:"masonryBrickLength",brickHeightMm:"masonryBrickHeight",brickDepthMm:"masonryBrickDepth",mortarJointMm:"masonryMortarJoint",plasterThicknessMm:"masonryPlasterThickness",restraintSystem:"masonryRestraintSystem",horizontalTieSpacingM:"masonryHorizontalTieSpacing",verticalTieSpacingM:"masonryVerticalTieSpacing"};
     Object.entries(masonryFields).forEach(([key,id])=>{const el=$(id);if(el)data.masonry[key]=el.value;});
     return clone(data);
   }
@@ -145,7 +150,7 @@
       if($("wall"+suffix+"Orientation"))$("wall"+suffix+"Orientation").value=valid(v.orientation,["vertical","horizontal","custom"],"vertical");
     });
     const masonry=d.masonry||DEFAULTS.masonry;
-    const masonryMap={masonryThicknessMm:"thicknessMm",masonryUnitWeight:"unitWeightKNm3",masonryRestraintSystem:"restraintSystem",masonryHorizontalTieSpacing:"horizontalTieSpacingM",masonryVerticalTieSpacing:"verticalTieSpacingM"};
+    const masonryMap={masonryThicknessMm:"thicknessMm",masonryUnitWeight:"unitWeightKNm3",masonryBrickLength:"brickLengthMm",masonryBrickHeight:"brickHeightMm",masonryBrickDepth:"brickDepthMm",masonryMortarJoint:"mortarJointMm",masonryPlasterThickness:"plasterThicknessMm",masonryRestraintSystem:"restraintSystem",masonryHorizontalTieSpacing:"horizontalTieSpacingM",masonryVerticalTieSpacing:"verticalTieSpacingM"};
     Object.entries(masonryMap).forEach(([id,key])=>{if($(id))$(id).value=masonry[key]??"";});
     update();
   }
@@ -181,7 +186,7 @@
     });
     const m=data.masonry&&typeof data.masonry==="object"?data.masonry:{};
     data.masonry={
-      thicknessMm:m.thicknessMm??"",unitWeightKNm3:m.unitWeightKNm3??"",
+      thicknessMm:m.thicknessMm??350,unitWeightKNm3:m.unitWeightKNm3??"",brickLengthMm:m.brickLengthMm??"",brickHeightMm:m.brickHeightMm??"",brickDepthMm:m.brickDepthMm??"",mortarJointMm:m.mortarJointMm??"",plasterThicknessMm:m.plasterThicknessMm??"",
       restraintSystem:valid(m.restraintSystem,["unknown","columns-beams","independent","other"],"unknown"),
       horizontalTieSpacingM:m.horizontalTieSpacingM??"",verticalTieSpacingM:m.verticalTieSpacingM??""
     };
