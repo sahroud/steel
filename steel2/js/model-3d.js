@@ -712,6 +712,8 @@
         // Roof pressure is transferred to purlins normal to each roof slope.
         // Side-wall pressure is transferred to longitudinal wall girts, normal to the wall.
         global=[0,0,0];
+        // A wind combination carries its factored gravity actions as well.
+        if(selected.key!=="wind")global[1]-=totalLineLoad*1000;
         if(m.sectionKey==="roofPurlin"){
           const half=Number(model.geometry.span)/2;
           const rise=Number(model.geometry.rise);
