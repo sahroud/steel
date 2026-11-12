@@ -194,6 +194,10 @@
             data.marketPrices = window.SteelMarketPrices.getData();
         }
 
+        if (window.SteelCodeReferences && typeof window.SteelCodeReferences.getData === "function") {
+            data.codeReferences = window.SteelCodeReferences.getData();
+        }
+
         return data;
     }
 
@@ -404,6 +408,10 @@
 
         if (window.SteelMarketPrices && typeof window.SteelMarketPrices.setData === "function") {
             window.SteelMarketPrices.setData(data.marketPrices || {});
+        }
+
+        if (window.SteelCodeReferences && typeof window.SteelCodeReferences.setData === "function") {
+            window.SteelCodeReferences.setData(data.codeReferences || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
