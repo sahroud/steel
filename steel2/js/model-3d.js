@@ -822,6 +822,10 @@
         note:"کنترل جمع کنش‌های انتهایی اعضای متصل در محورهای جهانی؛ این کنترل تعادل موضعی است و تأیید مقاومت یا اتصال نیست."
       };
     }
+    result.foundationModelFingerprint=JSON.stringify({
+      nodes:analysisModel.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),
+      members:analysisModel.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}])
+    });
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
