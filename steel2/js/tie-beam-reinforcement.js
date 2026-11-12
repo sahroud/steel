@@ -51,12 +51,14 @@
   if(!(As>0&&Number.isFinite(As)))return{ok:false,reason:"حل مساحت میلگرد معتبر نیست"};
   return{ok:true,AsRequiredMm2:As,nominalDepthFactor:0.85,assumption:"مقطع مستطیلی، میلگرد کششی تنها، بدون کنترل حداقل/حداکثر آرماتور آیین‌نامه‌ای"};
  }
- function routeResult(route,member,material){
-  const f=member?.localEndForces||[];
-  if(f.length<12)return{id:route.id,ok:false,reason:"نیروهای انتهایی عضو در نتیجه تحلیل موجود نیست"};
-  const M=Math.max(...[f[4],f[5],f[10],f[11]].map(v=>Math.abs(Number(v)||0)))/1000;
-  const V=Math.max(...[f[1],f[2],f[7],f[8]].map(v=>Math.abs(Number(v)||0)))/1000;
-  const N=Math.max(Math.abs(Number(f[0])||0),Math.abs(Number(f[6])||0))/1000;
+ function routeResult(route,members,material){
+  members=Array.isArray(members)?members.filter(Boolean):[members].filter(Boolean);
+  if(!members.length)return{id:route.id,ok:false,reason:"نیروهای انتهایی اعضای شناژ در نتیجه تحلیل موجود نیستند"};
+  const forceRows=members.map(member=>({id:member.id,f:member.localEndForces||[]}));
+  if(forceRows.some(x=>x.f.length<12))return{id:route.id,ok:false,reason:"نیروهای انتهایی یکی از قطعات شناژ موجود نیست"};
+  const M=Math.max(...forceRows.flatMap(x=>[x.f[4],x.f[5],x.f[10],x.f[11]]).map(v=>Math.abs(Number(v)||0)))/1000;
+  const V=Math.max(...forceRows.flatMap(x=>[x.f[1],x.f[2],x.f[7],x.f[8]]).map(v=>Math.abs(Number(v)||0)))/1000;
+  const N=Math.max(...forceRows.flatMap(x=>[x.f[0],x.f[6]]).map(v=>Math.abs(Number(v)||0)))/1000;
   const h=Number(route.heightM)*1000,b=Number(route.widthM)*1000,fc=Number(route.fcMPa)||25;
   const d=h-settings.coverMm-settings.stirrupDiaMm-settings.barDiaMm/2;
   const As=flexuralAs(M,b,d,fc,settings.fyMPa,settings.phiFlexure);
@@ -65,10 +67,21 @@
   const AsProvided=count?count*barA:null;
   const stirrupArea=settings.stirrupLegs*areaBar(settings.stirrupDiaMm);
   const spacing=V>0?stirrupArea*settings.fyMPa*d/(V*1000):null;
-  return{id:route.id,memberId:member.id,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,effectiveDepthMm:d,
-   AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,barCountEachFace:count,
-   AsProvidedMm2:AsProvided,flexure:As,stirrup:{diaMm:settings.stirrupDiaMm,legs:settings.stirrupLegs,areaMm2:stirrupArea,steelOnlySpacingMm:spacing},
-   note:"برای پوشش لنگرهای مثبت و منفی، تعداد محاسبه‌شده به‌صورت متقارن در هر وجه کششی پیشنهاد شده؛ این فرض باید با نمودار لنگر و آرایش واقعی مقطع تأیید شود."};
+  const foundation=window.SteelFoundationTakeoff?.getData?.()||{};
+  const footingDimension=material?.axis==="X"?Number(foundation.footingWidthM):Number(foundation.footingLengthM);
+  const footingExtension=Number.isFinite(footingDimension)&&footingDimension>0;
+  const straightBarLength=Number(material?.lengthM)+(footingExtension?footingDimension:0);
+  const barsBothFaces=count?2*count:null;
+  const totalStraightBarLengthM=barsBothFaces?barsBothFaces*straightBarLength:null;
+  const unitMassKgM=Math.pow(settings.barDiaMm,2)/162;
+  return{id:route.id,memberIds:forceRows.map(x=>x.id),segmentCount:members.length,ok:As.ok,MmaxKNm:M,VmaxKN:V,NmaxKN:N,
+   effectiveDepthMm:d,AsRequiredMm2:As.ok?As.AsRequiredMm2:null,barDiaMm:settings.barDiaMm,
+   barCountEachFace:count,AsProvidedMm2:AsProvided,
+   longitudinalBars:{countEachFace:count,totalCount:barsBothFaces,straightLengthPerBarM:straightBarLength,
+    totalStraightLengthM:totalStraightBarLengthM,approximateMassKg:totalStraightBarLengthM==null?null:totalStraightBarLengthM*unitMassKgM,
+    hookAllowanceIncluded:false,footingExtensionIncluded:footingExtension},
+   stirrup:{diaMm:settings.stirrupDiaMm,legs:settings.stirrupLegs,areaMm2:stirrupArea,steelOnlySpacingMm:spacing},
+   note:"نیروهای تمام قطعات مسیر پیوسته بررسی شده‌اند. برای پوشش لنگرهای مثبت و منفی، آرماتور کششی به‌صورت متقارن در دو وجه برآورد شده است. طول مستقیم میلگرد تا وجه بیرونی دو فونداسیون انتهایی برآورد شده؛ طول قلاب و خم به علت نیاز به ضابطه/جزئیات معتبر به مقدار طول اضافه نشده است."};
  }
  function render(requireLatest){
   read();
@@ -82,7 +95,8 @@
   const rows=tieData.routes.map(route=>{
    const info=included.get(route.id);
    if(!info)return{id:route.id,ok:false,reason:"این مسیر در آخرین تحلیل وارد نشده است: "+((latest.tieBeamIntegration?.skipped||[]).find(x=>x.id===route.id)?.reasons||["ممیزی/اتصال/گره نامعتبر"]).join("؛ ")};
-   return routeResult(route,memberMap.get(info.memberId),info);
+   const ids=info.memberIds||[info.memberId];
+   return routeResult(route,ids.map(id=>memberMap.get(id)),info);
   });
   lastReport={generatedAt:new Date().toISOString(),loadCase:latest.loadCaseLabel||latest.loadCase,settings:{...settings},rows,
    limitations:["این خروجی غربال اولیه است و طراحی اجرایی یا تأیید آیین‌نامه‌ای نیست.","مقادیر نیرو از تحلیل خطی عضو با مقطع ناخالص و ترک‌نخورده گرفته شده‌اند.","برای خمش، رابطه تعادل مقطع مستطیلی با φ و fy ورودی استفاده شده؛ حداقل/حداکثر آرماتور و کرنش نهایی کنترل نشده است.","برای برش، فقط سهم فولاد خاموت بدون مشارکت بتن محاسبه شده؛ فاصله مجاز آیین‌نامه‌ای و ضوابط لرزه‌ای کنترل نشده است.","پیچش، خستگی، ترک، خیز، مهاری، وصله، طول قلاب، تداخل میلگردها و جزئیات عبور از فونداسیون کنترل نشده‌اند."]};
@@ -92,6 +106,7 @@
    return"شناژ "+r.id+" — Mmax="+fmt(r.MmaxKNm)+" kN·m؛ Vmax="+fmt(r.VmaxKN)+" kN؛ Nmax="+fmt(r.NmaxKN)+" kN"+
     "\nعمق مؤثر تقریبی d="+fmt(r.effectiveDepthMm)+" mm؛ As لازم="+fmt(r.AsRequiredMm2)+" mm²؛ پیشنهاد محاسباتی: "+r.barCountEachFace+" میلگرد قطر "+r.barDiaMm+" در هر وجه کششی (As فراهم="+fmt(r.AsProvidedMm2)+" mm²)"+
     "\nخاموت: "+r.stirrup.legs+" شاخه قطر "+r.stirrup.diaMm+"؛ فاصله نظری از سهم فولاد برشی تنها="+(r.stirrup.steelOnlySpacingMm==null?"—":fmt(r.stirrup.steelOnlySpacingMm)+" mm")+
+    "\nمیلگرد طولی دو وجه: "+r.longitudinalBars.totalCount+" عدد؛ طول مستقیم هر میلگرد تا وجه بیرونی پی‌های انتهایی: "+(r.longitudinalBars.footingExtensionIncluded?fmt(r.longitudinalBars.straightLengthPerBarM)+" m":"ابعاد پی وارد نشده")+"؛ مجموع طول مستقیم: "+(r.longitudinalBars.totalStraightLengthM==null?"—":fmt(r.longitudinalBars.totalStraightLengthM)+" m")+"؛ وزن تقریبی بدون قلاب: "+(r.longitudinalBars.approximateMassKg==null?"—":fmt(r.longitudinalBars.approximateMassKg)+" kg")+
     "\n"+r.note;
   }).join("\n\n")+
   "\n\nمحدودیت‌ها:\n- "+lastReport.limitations.join("\n- ");
