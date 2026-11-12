@@ -28,7 +28,7 @@ function rectangleProperties(m,axis){
  return{E:m.E_GPa*1e9,G:m.G_GPa*1e9,A:b*h,Iy,Iz,J,axis,assumption:"مقطع مستطیلی؛ محور عمق قائم؛ J تقریبی سنت‌ونان"};
 }
 function audit(){
- const ns=new Map(bases().map(n=>[n.id,n])),m=material();
+ const ns=new Map(bases().map(n=>[n.id,n]));
  let valid=0,invalid=0,totalLength=0,totalVolume=0,totalWeight=0;
  const rows=state.routes.map(r=>{
   const a=ns.get(r.start),b=ns.get(r.end);let reasons=[];
@@ -44,7 +44,7 @@ function audit(){
    else axis=dx>dz?"X":"Z";
   }
   let p=null,V=0,W=0;
-  try{p=rectangleProperties(m,axis||"X");if(a&&b){V=L*r.widthM*r.heightM;W=V*m.densityKNm3;}}catch(e){reasons.push(e.message);}
+  try{p=rectangleProperties(r,axis||"X");if(a&&b){V=L*r.widthM*r.heightM;W=V*r.densityKNm3;}}catch(e){reasons.push(e.message);}
   const ok=reasons.length===0;
   if(ok){valid++;totalLength+=L;totalVolume+=V;totalWeight+=W;}else invalid++;
   return{id:r.id,start:r.start,end:r.end,axis,lengthM:L,volumeM3:V,selfWeightKN:W,section:p,valid:ok,reasons};
