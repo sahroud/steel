@@ -4,6 +4,50 @@
     "use strict";
 
     const $ = id => document.getElementById(id);
+    const STORAGE_KEY = "sahroudSteelProject.autosave.v1";
+    let persistTimer = null;
+
+    function persistSnapshot(data) {
+        try {
+            const previous = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+            const snapshot = Object.assign({}, data);
+            if (!snapshot.structuralModel && previous && previous.structuralModel) {
+                snapshot.structuralModel = previous.structuralModel;
+            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+            return true;
+        } catch (error) {
+            console.warn("ذخیره خودکار پروژه در این مرورگر ممکن نشد:", error);
+            return false;
+        }
+    }
+
+    function scheduleAutoSave() {
+        if (persistTimer) clearTimeout(persistTimer);
+        persistTimer = setTimeout(function () {
+            try { persistSnapshot(getData()); } catch (error) {
+                console.warn("ذخیره خودکار انجام نشد:", error);
+            }
+        }, 500);
+    }
+
+    function restoreLastProject() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return false;
+            const data = JSON.parse(raw);
+            loadData(data);
+            if (window.SteelDrawing && typeof window.SteelDrawing.drawFrame === "function") {
+                window.SteelDrawing.drawFrame();
+            }
+            setStatus("آخرین پروژه به‌طور خودکار از حافظه همین مرورگر بازیابی شد.");
+            return true;
+        } catch (error) {
+            console.warn("بازیابی خودکار پروژه انجام نشد:", error);
+            setStatus("بازیابی خودکار ممکن نشد؛ فایل پروژه را یک‌بار باز کنید.");
+            return false;
+        }
+    }
 
     function getNumber(id) {
         const el = $(id);
@@ -188,6 +232,7 @@
         }
 
         const data = getData();
+        persistSnapshot(data);
 
         const blob = new Blob(
             [JSON.stringify(data, null, 2)],
@@ -330,6 +375,7 @@
             window.SteelTies.drawAll();
         }
 
+        persistSnapshot(getData());
         setStatus(
             "پروژه بازیابی شد؛ تنظیمات قیدهای دیوار، قیدهای سقف، پرلین‌ها و اتصال کنسول نیز بازیابی شدند."
         );
@@ -382,7 +428,22 @@
             $("baseConnection").value =
                 $("baseConnection").value === "fixed" ? "fixed" : "pinned";
         }
+
+        document.addEventListener("input", function (event) {
+            if (event.target && event.target.closest && event.target.closest("main")) {
+                scheduleAutoSave();
+            }
+        });
+        document.addEventListener("change", function (event) {
+            if (event.target && event.target.closest && event.target.closest("main")) {
+                scheduleAutoSave();
+            }
+        });
     });
+
+    window.addEventListener("load", function () {
+        restoreLastProject();
+    }, { once: true });
 
     updateFrameCount();
 })();
