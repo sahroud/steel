@@ -394,7 +394,36 @@ function areaBar(d){return Math.PI*d*d/4;}
   "\n\nمحدودیت‌ها:\n- "+lastReport.limitations.join("\n- ");
   return lastReport;
  }
- function selfTest(){
+ function segmentDistance3D(a0,a1,b0,b1){
+  const u={x:a1.x-a0.x,y:a1.y-a0.y,z:a1.z-a0.z},v={x:b1.x-b0.x,y:b1.y-b0.y,z:b1.z-b0.z},w={x:a0.x-b0.x,y:a0.y-b0.y,z:a0.z-b0.z};
+  const dot=(p,q)=>p.x*q.x+p.y*q.y+p.z*q.z;
+  const A=dot(u,u),B=dot(u,v),C=dot(v,v),D=dot(u,w),E=dot(v,w),den=A*C-B*B;
+  if(A<1e-12&&C<1e-12)return Math.hypot(w.x,w.y,w.z);
+  let sc=0,tc=0,sN=0,sD=den,tN=0,tD=den;
+  if(A<1e-12){tc=Math.max(0,Math.min(1,E/C));}
+  else if(C<1e-12){sc=Math.max(0,Math.min(1,-D/A));}
+  else{
+   if(den<1e-12){sN=0;sD=1;tN=E;tD=C;}
+   else{sN=B*E-C*D;tN=A*E-B*D;if(sN<0){sN=0;tN=E;tD=C;}else if(sN>sD){sN=sD;tN=E+B;tD=C;}}
+   if(tN<0){tN=0;if(-D<0)sN=0;else if(-D>A)sN=sD;else{sN=-D;sD=A;}}
+   else if(tN>tD){tN=tD;if(-D+B<0)sN=0;else if(-D+B>A)sN=sD;else{sN=-D+B;sD=A;}}
+   sc=Math.abs(sN)<1e-12?0:sN/sD;tc=Math.abs(tN)<1e-12?0:tN/tD;
+  }
+  return Math.hypot(w.x+sc*u.x-tc*v.x,w.y+sc*u.y-tc*v.y,w.z+sc*u.z-tc*v.z);
+}
+function checkFootingBarClearance(tieBars,footingBars,requiredClearanceMm=0){
+  if(!Array.isArray(tieBars)||!Array.isArray(footingBars)||!tieBars.length||!footingBars.length||!Number.isFinite(requiredClearanceMm)||requiredClearanceMm<0)return{ok:false,reason:"برای کنترل تداخل، مسیر میلگردهای شناژ و شبکه پی و فاصله لازم باید مشخص باشند."};
+  const valid=bar=>bar&&bar.a&&bar.b&&[bar.a.x,bar.a.y,bar.a.z,bar.b.x,bar.b.y,bar.b.z,bar.diameterMm].every(Number.isFinite)&&bar.diameterMm>0;
+  if([...tieBars,...footingBars].some(bar=>!valid(bar)))return{ok:false,reason:"مختصات سه‌بعدی یا قطر یکی از میلگردها معتبر نیست."};
+  let minClear=Infinity,critical=null,conflicts=0,pairs=0;
+  for(const t of tieBars)for(const f of footingBars){
+   const center=segmentDistance3D(t.a,t.b,f.a,f.b),clear=center-(t.diameterMm+f.diameterMm)/2;pairs++;
+   if(clear<minClear){minClear=clear;critical={tieBar:t.id||null,footingBar:f.id||null,centerDistanceMm:center,clearDistanceMm:clear};}
+   if(clear+1e-8<requiredClearanceMm)conflicts++;
+  }
+  return{ok:conflicts===0,pairsChecked:pairs,minimumClearDistanceMm:minClear,requiredClearanceMm,conflictPairs:conflicts,criticalPair:critical,method:"کمترین فاصله محور به محور قطعات خطی سه‌بعدی منهای مجموع شعاع دو میلگرد؛ کنترل هندسی است و جایگزین کنترل مهاری، بتن‌ریزی، لرزه‌ای یا نقشه اجرایی نیست."};
+}
+function selfTest(){
   const pinned={length:6,localEndForces:[0,3600,0,0,0,0,0,3600,0,0,0,0],analysisLoad:{uniformLocal:[0,-1200,0]}};
   const cantileverX={length:6,localEndForces:[0,7200,0,0,0,21600,0,0,0,0,0,0],analysisLoad:{uniformLocal:[0,-1200,0]}};
   const cantileverZ={length:6,localEndForces:[0,0,7200,0,-21600,0,0,0,0,0,0,0],analysisLoad:{uniformLocal:[0,0,-1200]}};
@@ -428,18 +457,20 @@ function areaBar(d){return Math.PI*d*d/4;}
   const cageTest=validateBarCageGeometry(600,500,40,10,16,25,cageLayoutTest.coordinates);
   const cageBadTest=validateBarCageGeometry(600,500,40,10,16,25,[{xMm:45,yMm:45},{xMm:55,yMm:45}]);
   const pathTest=longitudinalBarPathDetail(6,1.8,300);
-  const checks={barCageGeometry:cageTest.ok&&cageTest.insideStirrupCage&&cageTest.spacingViolations===0,barCageRejectsClash:!cageBadTest.ok&&cageBadTest.spacingViolations>0,longitudinalFootingPath:pathTest.ok&&Math.abs(pathTest.straightLengthPerBarM-7.8)<1e-9&&Math.abs(pathTest.totalCutLengthPerBarM-8.4)<1e-9,closedStirrupCutLength:!!stirrupDetailTest.ok&&stirrupDetailTest.count===31&&stirrupDetailTest.cutLengthPerStirrupMm>0, torsionDesignValid:!!torsionDesignTest.ok&&torsionDesignTest.required&&torsionDesignTest.requiredAtPerSMm2PerMm>0&&torsionDesignTest.requiredAlMm2>0&&torsionDesignTest.recommendedSpacingMm>0,torsionMinimumThresholdSeparate:!!torsionDesignTest.required&&!torsionDesignTest.minimumRequired,torsionThresholdNoRebar:!!torsionDesignScreen(1e3,0,1e3,600,442,90000,1e3,500,442,85000,300000,25,400,1,torsionGeometryTest,areaBar(10),2*areaBar(10),200).ok&&!torsionDesignScreen(1e3,0,1e3,600,442,90000,1e3,500,442,85000,300000,25,400,1,torsionGeometryTest,areaBar(10),2*areaBar(10),200).required,torsionGeometryValid:!!torsionGeometryTest.ok&&Math.abs(torsionGeometryTest.AcpMm2-300000)<1e-9&&Math.abs(torsionGeometryTest.AohMm2-209100)<1e-9&&Math.abs(torsionGeometryTest.AoMm2-177735)<1e-9,torsionEndDemandExtracted:!!torsionTest&&Math.abs(torsionTest.maxAbsNm-1750000)<1e-9,shearScreenValid:shearTest.ok&&shearTest.maxNominalShearKN>0&&shearTest.minAvPerSmm2PerMm>0,
+  const footingClashTest=checkFootingBarClearance([{id:"tie",a:{x:-1000,y:100,z:0},b:{x:1000,y:100,z:0},diameterMm:16}],[{id:"grid",a:{x:0,y:100,z:-1000},b:{x:0,y:100,z:1000},diameterMm:16}],0);
+  const footingClearTest=checkFootingBarClearance([{id:"tie",a:{x:-1000,y:100,z:0},b:{x:1000,y:100,z:0},diameterMm:16}],[{id:"grid",a:{x:0,y:140,z:-1000},b:{x:0,y:140,z:1000},diameterMm:16}],0);
+  const checks={footingGridIntersectionDetected:!footingClashTest.ok&&footingClashTest.conflictPairs===1,footingGridVerticalClearance:footingClearTest.ok&&Math.abs(footingClearTest.minimumClearDistanceMm-24)<1e-8,barCageGeometry:cageTest.ok&&cageTest.insideStirrupCage&&cageTest.spacingViolations===0,barCageRejectsClash:!cageBadTest.ok&&cageBadTest.spacingViolations>0,longitudinalFootingPath:pathTest.ok&&Math.abs(pathTest.straightLengthPerBarM-7.8)<1e-9&&Math.abs(pathTest.totalCutLengthPerBarM-8.4)<1e-9,closedStirrupCutLength:!!stirrupDetailTest.ok&&stirrupDetailTest.count===31&&stirrupDetailTest.cutLengthPerStirrupMm>0, torsionDesignValid:!!torsionDesignTest.ok&&torsionDesignTest.required&&torsionDesignTest.requiredAtPerSMm2PerMm>0&&torsionDesignTest.requiredAlMm2>0&&torsionDesignTest.recommendedSpacingMm>0,torsionMinimumThresholdSeparate:!!torsionDesignTest.required&&!torsionDesignTest.minimumRequired,torsionThresholdNoRebar:!!torsionDesignScreen(1e3,0,1e3,600,442,90000,1e3,500,442,85000,300000,25,400,1,torsionGeometryTest,areaBar(10),2*areaBar(10),200).ok&&!torsionDesignScreen(1e3,0,1e3,600,442,90000,1e3,500,442,85000,300000,25,400,1,torsionGeometryTest,areaBar(10),2*areaBar(10),200).required,torsionGeometryValid:!!torsionGeometryTest.ok&&Math.abs(torsionGeometryTest.AcpMm2-300000)<1e-9&&Math.abs(torsionGeometryTest.AohMm2-209100)<1e-9&&Math.abs(torsionGeometryTest.AoMm2-177735)<1e-9,torsionEndDemandExtracted:!!torsionTest&&Math.abs(torsionTest.maxAbsNm-1750000)<1e-9,shearScreenValid:shearTest.ok&&shearTest.maxNominalShearKN>0&&shearTest.minAvPerSmm2PerMm>0,
    shearSpacingUsesCodeLimit:shearTest.recommendedSpacingMm===shearTest.maxSpacingByChapter11Mm&&shearTest.providedAvPerSmm2PerMm>=shearTest.minAvPerSmm2PerMm,
    shearMaximumCapacityRejectsExcess:shearHigh.ok&&!shearHigh.maxShearOK&&!shearHigh.shearOK,
    shearLowDemandNoMinimumStirrups:shearLow.ok&&!shearLow.minimumStirrupsTriggered,barLayerCapacity:layer.ok&&layer.maxBars===12,interactionCurveGenerated:ic.ok&&ic.points.length===102,multiLayerLayout:!!testLayout.ok&&testLayout.rowsPerFace===1&&Math.abs(testLayout.totalAsMm2-8*areaBar(16))<1e-8,perimeterCoordinatesValid:!!perimeterTest.ok&&perimeterTest.coordinates.length===10&&perimeterTest.sideBarCount===2&&perimeterTest.coordinates.every(p=>p.xMm>0&&p.xMm<600&&p.yMm>0&&p.yMm<500)&&perimeterTest.layers.reduce((a,x)=>a+x.count,0)===10,zeroAxialInteractionCapacity:!!midCapacity&&midCapacity.MnKNm>100&&midCapacity.MnKNm<180&&Number.isFinite(midCapacity.MnKNm),interactionSignConvention:Number.isFinite(tensileEnd)&&tensileEnd>0&&Number.isFinite(compressionEnd)&&compressionEnd<0,concurrentAxialForceDiagram:!!axialMid&&Math.abs(axialMid.Nn+7000)<1e-6,biaxialMomentResultant:!!biaxialMid&&Math.abs(biaxialMid.MyNm+7200)<1e-6&&Math.abs(biaxialMid.MzNm-5400)<1e-6&&Math.abs(biaxialMid.MresultantNm-9000)<1e-6&&Math.abs(biaxialMid.Nn+7000)<1e-6,flexuralEquilibrium:Math.abs(capacity-100)<1e-6,barAreaSufficient:provided+1e-9>=a,positiveShearSpacing:spacing>0&&Number.isFinite(spacing),
    pinnedMidspanMoment:Math.abs(ep.MmaxNm-5400)<1e-6,pinnedMaxShear:Math.abs(ep.VmaxN-3600)<1e-6,
    cantileverXMoment:Math.abs(ex.MmaxNm-21600)<1e-6,cantileverZMoment:Math.abs(ez.MmaxNm-21600)<1e-6};
-  return{passed:Object.values(checks).every(Boolean),checks,pathTest,cageTest,cageBadTest,stirrupDetailTest,torsionTest,torsionGeometryTest,torsionDesignTest,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,perimeterTest,shearScreenTest:shearTest,shearHighDemandTest:shearHigh,shearLowDemandTest:shearLow,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
+  return{passed:Object.values(checks).every(Boolean),checks,footingClashTest,footingClearTest,pathTest,cageTest,cageBadTest,stirrupDetailTest,torsionTest,torsionGeometryTest,torsionDesignTest,barLayerCapacity600mm:layer,interactionCurvePoints:ic.points?.length,multiLayerTestLayout:testLayout,perimeterTest,shearScreenTest:shearTest,shearHighDemandTest:shearHigh,shearLowDemandTest:shearLow,zeroAxialInteractionCapacity:midCapacity,axialMidSample:axialMid,biaxialMidSample:biaxialMid,AsRequiredMm2:a,phiMnKNm:capacity,bars16PerFace:barCount,AsProvidedMm2:provided,twoLeg10SteelOnlySpacingAt100kNmm:spacing,
    pinnedUniformLoadMomentNm:ep.MmaxNm,cantileverMomentNm:ex.MmaxNm};
  }
  function captureAnalysis(result){if(result&&Array.isArray(result.members)){latest=JSON.parse(JSON.stringify(result));render(false);}}
  function getData(){read();return{schemaVersion:2,settings:{...settings}};}
  function setData(d){if(d&&d.settings)settings={...defaults,...d.settings};try{const s=JSON.parse(localStorage.getItem("sahroudSteel.tieBeamRebarSettings.v1")||"null");if(s&&!d?.settings)settings={...defaults,...s};}catch(e){}write();}
- window.SteelTieBeamReinforcement={captureAnalysis,getData,setData,run:()=>render(true),selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelTieBeamReinforcement={captureAnalysis,getData,setData,run:()=>render(true),checkFootingBarClearance,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
  document.addEventListener("DOMContentLoaded",()=>{try{const s=JSON.parse(localStorage.getItem("sahroudSteel.tieBeamRebarSettings.v1")||"null");if(s)settings={...defaults,...s};}catch(e){}mount();});
 })();
