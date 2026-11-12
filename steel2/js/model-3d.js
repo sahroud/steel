@@ -112,7 +112,7 @@
           },
           loadInputs:window.SteelLoads?.getData?.()||null,
           purlinFabricationSchedule:(()=>{
-            const pieces=(window.SteelStructuralModel?.model?.members||[]).filter(x=>x.sectionKey==="roofPurlin"&&x.separatePiece);
+            const pieces=(window.SteelStructuralModel?.model?.members||[]).filter(x=>x.sectionKey==="roofPurlin"&&x.fabricationRecord);
             return {pieceCount:pieces.length,clipDeductionM:pieces[0]?.clipDeductionM??0,assemblyGapM:pieces[0]?.assemblyGapM??0,
               pieces:pieces.map(x=>({id:x.id,side:x.side,row:x.row,bay:x.bay,supportAxisLengthM:x.supportAxisLengthM,fabricationLengthM:x.fabricationLengthM}))};
           })(),
@@ -268,23 +268,31 @@
     const assemblyGap=val("modelPurlinAssemblyGap",0);
     if(clipDeduction<0||assemblyGap<0)throw new Error("کسر کلیپس و لقی مونتاژ پرلین نمی‌تواند منفی باشد.");
     purlinStations.forEach(station=>{
-      // Each purlin is a separate physical piece between two consecutive frame axes.
-      // Analytical endpoints stay at frame/rafter support nodes; cut length is stored separately.
+      // Each bay is one fabricated piece. End-bay pieces pass over the end frame.
       for(let bay=0;bay<frames.length-1;bay++){
         const z1=frames[bay],z2=frames[bay+1],axisLength=z2-z1;
-        const fabricationLength=axisLength-clipDeduction-assemblyGap;
+        const frontExtension=bay===0?over:0, rearExtension=bay===frames.length-2?over:0;
+        const fabricationLength=axisLength+frontExtension+rearExtension-clipDeduction-assemblyGap;
         if(!(fabricationLength>0))throw new Error("طول برش پرلین در دهانه "+(bay+1)+" مثبت نیست؛ ابعاد کلیپس و لقی مونتاژ را بررسی کنید.");
-        const n1=addNode(nodes,station.x,roofY(station.x),z1,"roof-secondary-support");
-        const n2=addNode(nodes,station.x,roofY(station.x),z2,"roof-secondary-support");
-        addMember(members,n1,n2,"پرلین مستقل بین دو قاب","roofPurlin",{
-          side:station.side,row:station.row,bay:bay+1,
-          tributaryWidth:station.tributaryWidth,
-          tributaryWidthLeft:station.tributaryWidthLeft,
-          tributaryWidthRight:station.tributaryWidthRight,
-          supportAxisLengthM:axisLength,clipDeductionM:clipDeduction,
-          assemblyGapM:assemblyGap,fabricationLengthM:fabricationLength,
-          separatePiece:true,endOverhang:0
-        });
+        const pieceId="PURLIN_"+station.row+"_"+station.side+"_BAY_"+(bay+1);
+        const path=[z1-frontExtension,z1,z2,z2+rearExtension].filter((z,i,arr)=>i===0||Math.abs(z-arr[i-1])>1e-8);
+        for(let seg=0;seg<path.length-1;seg++){
+          const za=path[seg],zb=path[seg+1];
+          const na=addNode(nodes,station.x,roofY(station.x),za,"roof-secondary-support");
+          const nb=addNode(nodes,station.x,roofY(station.x),zb,"roof-secondary-support");
+          addMember(members,na,nb,"پرلین مستقل عبوری از قاب انتهایی","roofPurlin",{
+            side:station.side,row:station.row,bay:bay+1,pieceId,
+            tributaryWidth:station.tributaryWidth,tributaryWidthLeft:station.tributaryWidthLeft,
+            tributaryWidthRight:station.tributaryWidthRight,supportAxisLengthM:axisLength,
+            clipDeductionM:clipDeduction,assemblyGapM:assemblyGap,
+            fabricationLengthM:fabricationLength,fabricationRecord:seg===0,
+            physicalPiece:true,separatePiece:true,continuousPieceSegment:true,
+            cutInsetStartM:seg===0?clipDeduction/2+assemblyGap/2:0,
+            cutInsetEndM:seg===path.length-2?clipDeduction/2+assemblyGap/2:0,
+            endOverhang:frontExtension+rearExtension,
+            frontOverhangM:frontExtension,rearOverhangM:rearExtension
+          });
+        }
       }
     });
     [-over,length+over].forEach(z=>{
@@ -388,9 +396,9 @@
       const a=model.nodes.find(n=>n.id===m.start),b=model.nodes.find(n=>n.id===m.end);if(!a||!b)return;
       let aa=a,bb=b;
       if(type==="roofPurlin"&&m.separatePiece){
-        const deduction=Math.max(0,Number(m.supportAxisLengthM||m.length)-Number(m.fabricationLengthM||m.length));
-        const inset=deduction/2,dir=Math.sign(b.z-a.z)||1;
-        aa={...a,z:a.z+dir*inset};bb={...b,z:b.z-dir*inset};
+        const dir=Math.sign(b.z-a.z)||1;
+        aa={...a,z:a.z+dir*Number(m.cutInsetStartM||0)};
+        bb={...b,z:b.z-dir*Number(m.cutInsetEndM||0)};
       }
       const p=P(aa),q=P(bb);
       el("line",{x1:p.x,y1:p.y,x2:q.x,y2:q.y,stroke:colors[type],"stroke-width":widths[type],"stroke-linecap":"round",opacity:type==="roofPurlin"||type==="wallGirt"?"0.88":"1"});
