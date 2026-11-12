@@ -634,7 +634,14 @@
       wind:{key:"wind",label:"باد ـ فشار خالص ورودی",direction:null,deadFactor:0}
     };
     let selected=cases[loadCase];
-    if(/^combo[0-2]$/.test(loadCase)){
+    if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
+      const f=loadCase.factors;
+      selected={key:"combo",label:String(loadCase.label||"ترکیب بار سه‌بعدی"),
+        direction:[0,-1,0],
+        factors:{dead:Number(f.dead)||0,live:Number(f.live)||0,snow:Number(f.snow)||0},
+        windFactor:Number(f.wind)||0,windSign:Number(loadCase.windSign)||1,
+        deadFactor:Number(f.dead)||0};
+    }else if(/^combo[0-2]$/.test(loadCase)){
       const comboIndex=Number(loadCase.slice(5));
       const combo=window.SteelLoads?.getData?.().combinations?.[comboIndex];
       if(!combo)throw new Error("ضرایب ترکیب بار انتخابی در دسترس نیستند.");
@@ -697,8 +704,10 @@
       const totalLineLoad=lineLoad+selfWeightLineLoad;
       const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
       let global;
-      if(selected.key==="wind"){
+      if(selected.key==="wind"||selected.windFactor>0){
         // Wind inputs are signed NET pressures (kN/m²), not basic wind speed.
+        const windFactor=selected.key==="wind"?1:selected.windFactor;
+        const windSign=selected.key==="wind"?1:selected.windSign;
         // Positive = pressure toward the enclosed building; negative = suction.
         // Roof pressure is transferred to purlins normal to each roof slope.
         // Side-wall pressure is transferred to longitudinal wall girts, normal to the wall.
@@ -708,16 +717,16 @@
           const rise=Number(model.geometry.rise);
           const slope=rise/half;
           const norm=Math.hypot(slope,1);
-          const left=Number(m.lineLoads?.windLeft||0)*1000;
-          const right=Number(m.lineLoads?.windRight||0)*1000;
+          const left=Number(m.lineLoads?.windLeft||0)*1000*windFactor*windSign;
+          const right=Number(m.lineLoads?.windRight||0)*1000*windFactor*windSign;
           global[0]+=left*slope/norm-right*slope/norm;
           global[1]-=(left+right)/norm;
         }else if(m.sectionKey==="wallGirt"){
-          const wall=Number(m.lineLoads?.wind||0)*1000;
+          const wall=Number(m.lineLoads?.wind||0)*1000*windFactor*windSign;
           global[0]+=m.side==="left"?wall:-wall;
         }else if(m.sectionKey==="endGirt"){
           // Positive pressure acts inward: +Z on the front face and -Z on the rear face.
-          const endWall=Number(m.lineLoads?.windEnd||0)*1000;
+          const endWall=Number(m.lineLoads?.windEnd||0)*1000*windFactor*windSign;
           global[2]+=m.endFace==="front"?endWall:-endWall;
         }
       }else{
