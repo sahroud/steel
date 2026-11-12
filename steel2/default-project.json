@@ -7162,7 +7162,9 @@
         "live": 0.5,
         "snow": 1.6
       }
-    ]
+    ],
+    "windEndFront": 0,
+    "windEndBack": 0
   },
   "sections": {
     "material": {
