@@ -47,7 +47,7 @@
   const plate=items.filter(x=>x.type==="plate").reduce((s,x)=>s+x.massKg,0);
   const bolts=items.filter(x=>x.type==="bolt").reduce((s,x)=>s+x.massKg,0);
   const weld=items.filter(x=>x.type==="weld").reduce((s,x)=>s+x.massKg,0);
-  const waste=n(settings.cutWastePct),wastePct=Number.isFinite(waste)&&waste>=0?waste:0;
+  const wasteRaw=String(settings.cutWastePct??"").trim(),waste=wasteRaw===""?NaN:n(wasteRaw),wastePct=Number.isFinite(waste)&&waste>=0?waste:0;
   const frameAndPlate=total+plate,procurement=(frameAndPlate*(1+wastePct/100));
   return {densityKgM3:density,cutWastePct:Number.isFinite(waste)&&waste>=0?waste:null,groups:Object.values(by),structuralSteelMassKg:total,connectionPlateMassKg:plate,boltShankMassKg:bolts,theoreticalWeldMetalMassKg:weld,frameAndPlateMassKg:frameAndPlate,cutWasteAllowanceKg:procurement-frameAndPlate,procurementMassExcludingBoltsAndWeldKg:procurement,totalKnownSteelMassIncludingBoltsAndWeldKg:procurement+bolts+weld,complete,items:clone(items),notes:[
   "وزن اعضای اسکلت از سطح مقطع A ثبت‌شده برای هر گروه و طول اعضای مدل هندسی محاسبه شده است؛ در صورت اشتباه یا ناقص بودن مقاطع ورودی، وزن نیز معتبر نخواهد بود.",
