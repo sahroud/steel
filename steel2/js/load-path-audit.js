@@ -16,7 +16,7 @@
   const lineCoverage=(arr,keys)=>arr.filter(m=>keys.every(k=>Number.isFinite(Number(m.lineLoads?.[k]))));
   const integrate=(arr,key)=>arr.reduce((s,m)=>s+n(m.lineLoads?.[key])*memberLength(m),0);
   const purlins=groups.roofPurlin, girts=groups.wallGirt, endGirts=groups.endGirt;
-  const purlinSupported=purlins.filter(m=>endpoints(m).every(p=>hasSharedAtNode(m,p,["rafter"])));
+  const purlinSupported=purlins.filter(m=>endpoints(m).every(p=>hasSharedAtNode(m,p,["rafter","roofEdge"])));
   const girtSupported=girts.filter(m=>endpoints(m).every(p=>hasSharedAtNode(m,p,["column"])));
   const endGirtSupported=endGirts.filter(m=>endpoints(m).every(p=>hasSharedAtNode(m,p,["endPost","rafter"])));
   const endWallTriangleArea=Number(g.span)*Number(g.rise)/2;
