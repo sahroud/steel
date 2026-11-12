@@ -32,6 +32,7 @@
             basicWind: "90",
             terrain: "",
             topography: "normal",
+            buildingUse: "warehouse-industrial-enclosed",
             openingState: "enclosed",
             openingArea: 25,
             envelopeArea: "",
@@ -147,35 +148,21 @@
                 </div>
             </div>
 
-            <h4>ج ـ وضعیت بازشوهای پوسته ساختمان</h4>
+            <h4>ج ـ کاربری و وضعیت پوسته ساختمان ـ فرض پایه نسخه اول</h4>
+            <div class="notice">
+                <b>کاربری مبنا: انبار یا سالن صنعتیِ بسته</b><br>
+                در این نسخه، وضعیت ساختمان به‌صورت بسته و با بازشوهای معمولیِ قابل‌بستن در نظر گرفته می‌شود.
+                این فرض فعلاً ثابت است و از فایل پروژه نیز قابل تغییر نیست؛ در نسخه‌های بعدی، انتخاب نوع کاربری و وضعیت بازشوها به تنظیمات پروژه افزوده خواهد شد.
+                بازشوهای دائمی یا غالب، درهای بزرگِ بازمانده و شرایط نیمه‌باز باید پیش از تحلیل به‌صورت جداگانه بررسی شوند.
+            </div>
             <div class="form-grid">
                 <div class="field">
-                    <label for="buildingOpeningState">طبقه‌بندی وضعیت بازشوها</label>
-                    <select id="buildingOpeningState">
-                        <option value="enclosed">بسته (بازشوها در حالت بهره‌برداری بسته‌اند)</option>
-                        <option value="partially-enclosed">نیمه‌باز / دارای بازشوی غالب</option>
-                        <option value="open">باز (دیوارها عمدتاً باز یا فاقد پوشش‌اند)</option>
-                        <option value="manual">نیازمند ارزیابی مهندس</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="buildingOpeningArea">مساحت کل بازشوهای مؤثر (m²)</label>
+                    <label for="buildingOpeningArea">مساحت تقریبی درها و بازشوهای معمولی (m²) ـ اطلاعات ثبت‌شده</label>
                     <input id="buildingOpeningArea" type="number" min="0" step="0.1" value="25">
                 </div>
                 <div class="field">
                     <label for="buildingEnvelopeArea">مساحت تقریبی پوسته مورد بررسی (m²)</label>
                     <input id="buildingEnvelopeArea" type="number" min="0" step="0.1" placeholder="مساحت دیوارها و پوسته">
-                </div>
-                <div class="field">
-                    <label for="buildingDominantOpening">وضعیت بازشوی غالب</label>
-                    <select id="buildingDominantOpening">
-                        <option value="no">ندارد / مشخص نیست</option>
-                        <option value="front">جبهه جلو</option>
-                        <option value="rear">جبهه عقب</option>
-                        <option value="left">دیوار طولی چپ</option>
-                        <option value="right">دیوار طولی راست</option>
-                        <option value="multiple">چند جبهه</option>
-                    </select>
                 </div>
             </div>
             <div class="notice" id="climateNotice">
@@ -334,7 +321,6 @@
             basicWind: "climateBasicWind",
             terrain: "climateTerrain",
             topography: "climateTopography",
-            openingState: "buildingOpeningState",
             openingArea: "buildingOpeningArea",
             envelopeArea: "buildingEnvelopeArea",
             dominantOpening: "buildingDominantOpening"
@@ -343,6 +329,8 @@
             const el = $(climateFields[key]);
             if (el) state.climate[key] = el.value;
         });
+        state.climate.buildingUse = "warehouse-industrial-enclosed";
+        state.climate.openingState = "enclosed";
         ["elevation", "groundSnow", "basicWind", "openingArea", "envelopeArea"].forEach(key => {
             const value = state.climate[key];
             if (value !== "" && !Number.isFinite(Number(value))) state.climate[key] = "";
@@ -572,9 +560,11 @@
 
         if (data.climate && typeof data.climate === "object") {
             Object.keys(state.climate).forEach(key => {
-                if (data.climate[key] !== undefined) state.climate[key] = data.climate[key];
+                if (data.climate[key] !== undefined && key !== "buildingUse" && key !== "openingState") state.climate[key] = data.climate[key];
             });
         }
+        state.climate.buildingUse = "warehouse-industrial-enclosed";
+        state.climate.openingState = "enclosed";
 
         if (Array.isArray(data.combinations)) {
             data.combinations.forEach((item, index) => {
@@ -616,7 +606,7 @@
                 elevation: "climateElevation", source: "climateSource",
                 groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
                 terrain: "climateTerrain", topography: "climateTopography",
-                openingState: "buildingOpeningState", openingArea: "buildingOpeningArea",
+                openingArea: "buildingOpeningArea",
                 envelopeArea: "buildingEnvelopeArea", dominantOpening: "buildingDominantOpening"
             };
             Object.keys(climateIds).forEach(key => {
@@ -700,9 +690,11 @@
         $("btnLoadReset").addEventListener("click", reset);
 
         summary();
+        state.climate.buildingUse = "warehouse-industrial-enclosed";
+        state.climate.openingState = "enclosed";
         const climateNotice = $("climateNotice");
         if (climateNotice) climateNotice.textContent =
-            "شهر انتخابی فقط برای شناسایی محل پروژه است. داده‌های باد و برف تا زمان ورود از منبع رسمی، خودکار فرض یا تولید نمی‌شوند.";
+            "کاربری مبنا در این نسخه: انبار یا سالن صنعتی بسته. داده‌های باد و برف تا زمان ورود از منبع رسمی، خودکار فرض یا تولید نمی‌شوند.";
     }
 
     window.SteelLoads = {
