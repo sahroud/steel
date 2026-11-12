@@ -40,10 +40,9 @@
     };
 
     const combinations = [
-        { name: "ترکیب ۱ ـ بارهای ثقلی", dead: 1.2, live: 1.6, snow: 0 },
-        { name: "ترکیب ۲ ـ بار مرده و برف", dead: 1.2, live: 0, snow: 1.6 },
-        { name: "ترکیب ۳ ـ بار مرده", dead: 1.4, live: 0, snow: 0 },
-        { name: "ترکیب ۴ ـ بار باد", dead: 0.8, live: 0, snow: 0 }
+        { name: "ULS-1 ـ 1.4D", dead: 1.4, live: 0, snow: 0 },
+        { name: "ULS-2 ـ 1.2D + 1.6L + 0.5S", dead: 1.2, live: 1.6, snow: 0.5 },
+        { name: "ULS-3 ـ 1.2D + 1.6S + 0.5L", dead: 1.2, live: 0.5, snow: 1.6 }
     ];
 
     let initialized = false;
