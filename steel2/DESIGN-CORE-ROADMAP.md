@@ -26,5 +26,15 @@ Develop a traceable engineering workflow for steel industrial buildings and port
 ## First implementation increment
 The independent design-core module adds a versioned project brief and readiness gate. It records project requirements without claiming that the existing solver can design them. The brief is intended to be saved with project JSON and restored on reopening.
 
+## Wind basis increment
+`js/wind-basis-engine.js` adds a geometry-based opening inventory for four facades. It records the selected operational opening scenario, computes gross wall areas from current span/length/eave/ridge-rise inputs, checks user-entered open areas against defined physical openings, and reports open-area ratios. It calculates only basic velocity pressure from the entered basic wind speed. It deliberately does not infer code enclosure classification from ratios, select internal/external pressure coefficients, generate wind load cases, or apply pressures to the 3D model. Its data is saved and restored with the project.
+
+## Next verification tasks
+- Benchmark wall and gable geometry against hand calculations.
+- Test closed, front-open and custom opening scenarios, including save/reopen.
+- Compare opening-area inventory with actual architectural drawings.
+- Implement code-based enclosure classification only after exact applicable clauses and thresholds are verified.
+- Implement external and internal pressure zones and all wind directions, then independently benchmark before connecting to the frame model.
+
 ## Current limitations
 The design brief is not a load generator, analysis engine, code checker, or optimizer. Existing first-order linear analysis remains preliminary. Do not use outputs as construction design until the relevant engineering modules are implemented and independently validated.
