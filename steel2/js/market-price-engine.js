@@ -7,6 +7,13 @@
  const KEY="sahroudSteel.marketPrices.v1";
  const $=id=>document.getElementById(id);
  const state={endpoint:"",intervalMinutes:60,autoRefresh:false,prices:[],lastFetchAt:null,lastError:""};
+ let autoTimer=null;
+ function configureAutoRefresh(){
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
+  if(state.autoRefresh&&state.endpoint){
+   autoTimer=setInterval(()=>{if(document.visibilityState==="visible")refresh();},state.intervalMinutes*60000);
+  }
+ }
  const units=["تومان/کیلوگرم","تومان/تن","تومان/مترمربع","تومان/مترمکعب","تومان/عدد","تومان/متر","تومان/کیسه"];
  const presets=[
   {code:"steel.ipe14",name:"تیرآهن IPE 14",unit:"تومان/کیلوگرم"},
@@ -47,6 +54,7 @@
   if($("marketPriceInterval"))$("marketPriceInterval").value=state.intervalMinutes;
   if($("marketPriceAuto"))$("marketPriceAuto").checked=state.autoRefresh;
   render();
+  configureAutoRefresh();
  }
  async function refresh(){
   state.endpoint=$("marketPriceEndpoint")?.value.trim()||state.endpoint;
@@ -115,11 +123,11 @@
   const footer=document.querySelector("footer");if(footer)footer.parentNode.insertBefore(panel,footer);else document.querySelector("main")?.appendChild(panel);
   $("marketPriceEndpoint").value=state.endpoint;$("marketPriceInterval").value=state.intervalMinutes;$("marketPriceAuto").checked=state.autoRefresh;
   $("marketPriceRefresh").addEventListener("click",refresh);$("marketPriceExport").addEventListener("click",exportCSV);$("marketPriceAdd").addEventListener("click",addManual);
-  $("marketPriceEndpoint").addEventListener("change",()=>{state.endpoint=$("marketPriceEndpoint").value.trim();persist();});
-  $("marketPriceInterval").addEventListener("change",()=>{state.intervalMinutes=Math.max(5,Math.min(1440,Number($("marketPriceInterval").value)||60));persist();});
-  $("marketPriceAuto").addEventListener("change",()=>{state.autoRefresh=$("marketPriceAuto").checked;persist();});
+  $("marketPriceEndpoint").addEventListener("change",()=>{state.endpoint=$("marketPriceEndpoint").value.trim();persist();configureAutoRefresh();});
+  $("marketPriceInterval").addEventListener("change",()=>{state.intervalMinutes=Math.max(5,Math.min(1440,Number($("marketPriceInterval").value)||60));persist();configureAutoRefresh();});
+  $("marketPriceAuto").addEventListener("change",()=>{state.autoRefresh=$("marketPriceAuto").checked;persist();configureAutoRefresh();});
   render();
-  if(state.autoRefresh&&state.endpoint)setInterval(()=>{if(document.visibilityState==="visible")refresh();},state.intervalMinutes*60000);
+  configureAutoRefresh();
  }
  window.SteelMarketPrices={getData,setData,refresh,addManual,render};
  document.addEventListener("DOMContentLoaded",mount);
