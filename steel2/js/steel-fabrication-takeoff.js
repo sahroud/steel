@@ -111,5 +111,14 @@
   window.SteelQuantityTakeoff.addItem=addItem;window.SteelQuantityTakeoff.removeAll=()=>{items=[];renderItems();};
  }
  document.addEventListener("DOMContentLoaded",render);
- window.SteelFabricationTakeoff={getData,setData,steelMass,addItem};
+ function enrich(report,model){
+  const mass=steelMass(model);
+  report.steelMassTakeoff=mass;
+  report.steelMemberSchedule=(report.steelMemberSchedule||[]).map(row=>{const m=mass.groups.find(x=>x.group===row.group);return {...row,label:m?.label||row.group,areaCm2:m?.areaCm2??null,massKg:m?.massKg??null};});
+  report.connectionFabricationItems=clone(items);
+  report.warnings.push(...mass.notes);
+  if(!mass.complete)report.warnings.push("وزن یک یا چند گروه فولادی محاسبه نشد؛ سطح مقطع A و طول اعضای آن گروه را تکمیل کنید.");
+  return report;
+ }
+ window.SteelFabricationTakeoff={getData,setData,steelMass,addItem,enrich};
 })();
