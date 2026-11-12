@@ -110,6 +110,8 @@
     update();
   }
   function update(){
+    const beforeScenario=getScenario();
+    if(beforeScenario==="custom")restored=readAreas();
     const result=audit(),g=geometry(),a=effectiveAreas();
     const scenarioNames={closed:"تمام بازشوهای قابل‌بستن بسته", "front-open":"درِ اصلی جلو باز",custom:"سناریوی سفارشی"};
     if($("windBasisScenario"))$("windBasisScenario").textContent=scenarioNames[a.scenario];
