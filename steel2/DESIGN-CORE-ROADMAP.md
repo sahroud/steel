@@ -29,6 +29,9 @@ The independent design-core module adds a versioned project brief and readiness 
 ## Wind basis increment
 `js/wind-basis-engine.js` adds a geometry-based opening inventory for four facades. It records the selected operational opening scenario, computes gross wall areas from current span/length/eave/ridge-rise inputs, checks user-entered open areas against defined physical openings, and reports open-area ratios. It calculates only basic velocity pressure from the entered basic wind speed. It deliberately does not infer code enclosure classification from ratios, select internal/external pressure coefficients, generate wind load cases, or apply pressures to the 3D model. Its data is saved and restored with the project.
 
+## Directional wind case register
+`js/directional-wind-engine.js` adds a four-direction (+X, −X, +Y, −Y) register. For each direction it stores manual, signed external Cp values for six broad surfaces and reports net pressures for positive and negative internal-pressure scenarios. It reads the shared coefficients from the existing climate-load registry and stores its inputs with the project. The axis labels are intentionally not mapped to physical front/rear/left/right until the model coordinate convention is verified. The register is a preliminary calculator only: no local edge/corner zones, code-derived coefficients, pressure-to-member tributary conversion, or 3D load transfer is implemented.
+
 ## Next verification tasks
 - Benchmark wall and gable geometry against hand calculations.
 - Test closed, front-open and custom opening scenarios, including save/reopen.
