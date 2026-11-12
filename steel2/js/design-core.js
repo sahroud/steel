@@ -22,7 +22,13 @@
     futureExpansion:"no", exposure:"normal", fireRequirement:"to-be-determined",
     codeEdition:"مقررات ملی ساختمان ایران؛ ویرایش و سال باید برای پروژه تثبیت شود",
     windDataVerified:false, snowDataVerified:false, geotechnicalReport:"unknown",
-    allowableSoilPressureKPa:"", designNotes:""
+    allowableSoilPressureKPa:"", designNotes:"",
+    wallEnvelope:{
+      front:{material:"brick",orientation:"vertical"},
+      rear:{material:"brick",orientation:"vertical"},
+      left:{material:"brick",orientation:"vertical"},
+      right:{material:"brick",orientation:"vertical"}
+    }
   });
   let data=Object.assign({},DEFAULTS);
   const clone=x=>JSON.parse(JSON.stringify(x));
@@ -40,6 +46,14 @@
       '<div class="field"><label for="designDoorState">وضعیت معمول درها هنگام باد طراحی</label><select id="designDoorState"><option value="closed">بسته (پیش‌فرض)</option><option value="normally-open">معمولاً باز</option><option value="intermittent-open">بازشدن متناوب</option><option value="permanently-open">دائماً باز</option><option value="unknown">نامشخص</option></select></div>',
       '<div class="field"><label for="designStructuralSystem">سیستم سازه‌ای مورد بررسی</label><select id="designStructuralSystem"><option value="auto-compare">مقایسه و انتخاب گزینه‌ها</option><option value="rigid-portal">قاب خمشی پرتال</option><option value="truss">خرپایی</option><option value="braced-frame">قاب مهاربندی‌شده</option><option value="hybrid">سیستم ترکیبی</option><option value="other">سایر</option></select></div>',
       '<div class="field"><label for="designExposure">شرایط محیطی و خوردگی</label><select id="designExposure"><option value="normal">عادی</option><option value="corrosive">خورنده صنعتی</option><option value="marine">ساحلی / نمکی</option><option value="chemical">مجاورت مواد شیمیایی</option><option value="high-humidity">رطوبت زیاد</option><option value="unknown">نامشخص</option></select></div></div>',
+      '<h4>پوسته و دیوارهای چهار طرف سوله</h4>',
+      '<div class="notice">پیش‌فرض پروژه شاهرود: دیوار آجری در هر چهار وجه. هر وجه را مستقل می‌توان به ورق فلزی یا ساندویچ‌پنل تغییر داد. برای پوشش‌های ورقی، امتداد قائم یا افقی قابل انتخاب است؛ انتخاب جهت به‌تنهایی ظرفیت پنل، فاصله تکیه‌گاه یا اتصال را تأیید نمی‌کند.</div>',
+      '<div class="form-grid">',
+      '<div class="field"><label for="wallFrontMaterial">دیوار انتهایی جلو</label><select id="wallFrontMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallFrontOrientation">امتداد پوشش</label><select id="wallFrontOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
+      '<div class="field"><label for="wallRearMaterial">دیوار انتهایی عقب</label><select id="wallRearMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallRearOrientation">امتداد پوشش</label><select id="wallRearOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
+      '<div class="field"><label for="wallLeftMaterial">دیوار طولی چپ</label><select id="wallLeftMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallLeftOrientation">امتداد پوشش</label><select id="wallLeftOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
+      '<div class="field"><label for="wallRightMaterial">دیوار طولی راست</label><select id="wallRightMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallRightOrientation">امتداد پوشش</label><select id="wallRightOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
+      '</div><div class="notice" id="wallEnvelopeNotice" aria-live="polite">چهار دیوار آجری؛ بارگذاری و انتقال بار پوشش هنوز غیرفعال است.</div>',
       '<h4>تجهیزات و توسعه آتی</h4><div class="form-grid">',
       '<div class="field"><label for="designCrane">جرثقیل سقفی</label><select id="designCrane"><option value="no">ندارد</option><option value="yes">دارد</option><option value="unknown">هنوز مشخص نیست</option></select></div>',
       '<div class="field"><label for="designCraneCapacity">ظرفیت نامی جرثقیل (kN)</label><input id="designCraneCapacity" type="number" min="0" step="1" placeholder="در صورت وجود" /></div>',
@@ -62,6 +76,15 @@
     data.windDataVerified=!!$("designWindVerified")?.checked;
     data.snowDataVerified=!!$("designSnowVerified")?.checked;
     data.geotechnicalReport=$("designGeotech")?.value||"unknown";
+    const faces={front:"Front",rear:"Rear",left:"Left",right:"Right"};
+    data.wallEnvelope=data.wallEnvelope||clone(DEFAULTS.wallEnvelope);
+    Object.entries(faces).forEach(([face,suffix])=>{
+      const material=$("wall"+suffix+"Material"),orientation=$("wall"+suffix+"Orientation");
+      data.wallEnvelope[face]={
+        material:valid(material?.value,["brick","metal-sheet","sandwich-panel","other"],"brick"),
+        orientation:valid(orientation?.value,["vertical","horizontal","custom"],"vertical")
+      };
+    });
     return clone(data);
   }
   function getReadiness(){
@@ -85,6 +108,14 @@
     const warning=d.doorState==="closed"&&d.enclosure!=="enclosed"?"توجه: بسته بودن درها به‌تنهایی طبقه‌بندی پوسته بسته را اثبات نمی‌کند. ":"";
     out.textContent=warning+(r.ready?"مبانی ورودی ثبت شده‌اند؛ کنترل آیین‌نامه‌ای و تحلیل همچنان لازم است.":"موارد باز: "+r.blockers.join(" | "));
     out.dataset.ready=String(r.ready);
+    const wallOut=$("wallEnvelopeNotice");
+    if(wallOut){
+      const names={front:"انتهایی جلو",rear:"انتهایی عقب",left:"طولی چپ",right:"طولی راست"};
+      const materials={brick:"آجرچینی","metal-sheet":"ورق فلزی","sandwich-panel":"ساندویچ‌پنل",other:"سیستم دیگر"};
+      const orientations={vertical:"قائم",horizontal:"افقی",custom:"اختصاصی/نامشخص"};
+      const walls=Object.entries(d.wallEnvelope||DEFAULTS.wallEnvelope).map(([face,v])=>names[face]+": "+materials[v.material]+"؛ امتداد "+orientations[v.orientation]).join(" | ");
+      wallOut.textContent=walls+" . وزن دیوار، مهار خارج از صفحه، تکیه‌گاه‌ها و اتصالات هنوز در مدل بارگذاری تأیید نشده‌اند؛ هیچ بار جدیدی به حل‌گر منتقل نمی‌شود.";
+    }
   }
   function renderValues(){
     const d=data,map={designOccupancy:d.occupancy,designOccupancyDescription:d.occupancyDescription,designEnclosure:d.enclosure,designDoorState:d.doorState,designStructuralSystem:d.structuralSystem,designCrane:d.crane,designCraneCapacity:d.craneCapacityKN,designCraneWheelLoad:d.craneWheelLoadKN,designMezzanine:d.mezzanine,designExpansion:d.futureExpansion,designExposure:d.exposure,designFire:d.fireRequirement,designCodeEdition:d.codeEdition,designSoilPressure:d.allowableSoilPressureKPa,designNotes:d.designNotes};
@@ -92,6 +123,13 @@
     if($("designWindVerified"))$("designWindVerified").checked=!!d.windDataVerified;
     if($("designSnowVerified"))$("designSnowVerified").checked=!!d.snowDataVerified;
     if($("designGeotech"))$("designGeotech").value=d.geotechnicalReport||"unknown";
+    const faces={front:"Front",rear:"Rear",left:"Left",right:"Right"};
+    const wall=d.wallEnvelope||DEFAULTS.wallEnvelope;
+    Object.entries(faces).forEach(([face,suffix])=>{
+      const v=wall[face]||DEFAULTS.wallEnvelope[face];
+      if($("wall"+suffix+"Material"))$("wall"+suffix+"Material").value=valid(v.material,["brick","metal-sheet","sandwich-panel","other"],"brick");
+      if($("wall"+suffix+"Orientation"))$("wall"+suffix+"Orientation").value=valid(v.orientation,["vertical","horizontal","custom"],"vertical");
+    });
     update();
   }
   function render(){
@@ -115,6 +153,15 @@
     data.futureExpansion=valid(data.futureExpansion,OPTIONS.tri,DEFAULTS.futureExpansion);
     data.exposure=valid(data.exposure,OPTIONS.exposure,DEFAULTS.exposure);
     data.fireRequirement=valid(data.fireRequirement,OPTIONS.fire,DEFAULTS.fireRequirement);
+    const savedWalls=data.wallEnvelope&&typeof data.wallEnvelope==="object"?data.wallEnvelope:{};
+    data.wallEnvelope={};
+    ["front","rear","left","right"].forEach(face=>{
+      const v=savedWalls[face]||DEFAULTS.wallEnvelope[face];
+      data.wallEnvelope[face]={
+        material:valid(v.material,["brick","metal-sheet","sandwich-panel","other"],"brick"),
+        orientation:valid(v.orientation,["vertical","horizontal","custom"],"vertical")
+      };
+    });
     if($("engineeringBriefPanel"))renderValues();
   }
   function validate(){
