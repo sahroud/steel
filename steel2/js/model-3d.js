@@ -7,7 +7,7 @@
     if (progressRunning) return;
     progressRunning = true;
     const panel = $("modelProgress"), text = $("modelProgressText"), elapsed = $("modelProgressElapsed");
-    const buttons = ["btnBuildFullModel", "btnCheck3DSections", "btnRunFull3D"];
+    const buttons = ["btnBuildFullModel", "btnCheck3DSections", "btnRunFull3D", "btnTestSpan10"];
     const started = performance.now();
     buttons.forEach(id => { if ($(id)) $(id).disabled = true; });
     if (panel) panel.hidden = false;
@@ -27,6 +27,8 @@
         if (elapsed) elapsed.textContent = duration.toFixed(2).replace(".", "٫") + " ثانیه";
         buttons.forEach(id => { if ($(id)) $(id).disabled = false; });
         progressRunning = false;
+        // نتیجه برای لحظه‌ای خوانا می‌ماند و سپس نوار از صفحه جمع می‌شود.
+        setTimeout(() => { if (panel) panel.hidden = true; }, 650);
       }
     }, 70);
   }
@@ -122,7 +124,9 @@
       });
     });
     $("btnTestSpan10").addEventListener("click", function () {
+      runWithProgress("در حال آماده‌سازی آزمایش مقایسه‌ای دهانه ۱۰ متر…", stage => {
       const box=$("fullModel3DResult"), spanField=$("span"), riseField=$("rise");
+      stage("تغییر موقت هندسه و تولید مدل آزمایشی…");
       const originalSpan=Number(spanField?.value), originalRise=Number(riseField?.value);
       try {
         const analysisModelMemberById=id=>(window.SteelStructuralModel?.model?.members||[]).find(x=>x.id===id)||null;
@@ -130,6 +134,7 @@
         spanField.value="10";
         if(typeof window.updateRoofGeometry==="function") window.updateRoofGeometry();
         build(); draw(); showSummary();
+        stage("حل مدل سه‌بعدی دهانه ۱۰ متر و استخراج نتایج…");
         const result=analyze3D("dead");
         const critical=result.criticalDisplacement||null;
         const report={
@@ -216,6 +221,11 @@
         if(typeof window.updateRoofGeometry==="function") window.updateRoofGeometry();
         try { build(); draw(); showSummary(); } catch(_) {}
       }
+      stage("آزمایش پایان یافت و هندسه اصلی بازگردانده شد.");
+      }, e => {
+        const box=$("fullModel3DResult");
+        if (box) { box.textContent="آزمایش دهانه ۱۰ متری انجام نشد: "+e.message; box.style.color="#b45309"; }
+      });
     });
     $("btnDownloadSpanTest").addEventListener("click", function () {
       const report=window.SteelStructuralModel?.lastSpanComparison;
