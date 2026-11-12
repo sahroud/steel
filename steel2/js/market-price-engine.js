@@ -6,7 +6,7 @@
  const KEY="sahroudSteel.marketPrices.v1", $=id=>document.getElementById(id);
  const state={endpoint:"",intervalMinutes:60,autoRefresh:false,prices:[],lastFetchAt:null,lastError:""};
  let autoTimer=null;
- const units=["تومان/کیلوگرم","تومان/تن","تومان/مترمربع","تومان/مترمکعب","تومان/عدد","تومان/متر","تومان/کیسه"];
+ const units=["تومان/کیلوگرم","تومان/تن","تومان/مترمربع","تومان/مترمکعب","تومان/عدد","تومان/متر","تومان/کیسه","تومان/مجموع"];
  const presets=[
   {code:"steel.ipe14",name:"تیرآهن IPE 14",unit:"تومان/کیلوگرم"},
   {code:"steel.sheet3",name:"ورق سیاه ۳ میلی‌متر",unit:"تومان/کیلوگرم"},
