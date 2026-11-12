@@ -167,13 +167,13 @@
   const sqrtFc=Math.min(Math.sqrt(fcMPa),8.3);
   const Tth=0.083*lambda*sqrtFc*Math.pow(geometry.AcpMm2,2)/geometry.pcpMm*Math.sqrt(axialFactor);
   const Tcr=0.33*lambda*sqrtFc*Math.pow(geometry.AcpMm2,2)/geometry.pcpMm*Math.sqrt(axialFactor);
-  const required=TuNm>=phiT*Tth;
+  const required=TuNm>=phiT*Tth;\n  const minimumRequired=TuNm>=phiT*Tcr;
   const AtPerS=required?TuNm*Math.tan(theta)/(2*geometry.AoMm2*fyMPa):0;
   const AlStrength=required?TuNm*geometry.phMm/(2*geometry.AoMm2*fyMPa*Math.tan(theta)):0;
   const minCombinedPerS=Math.max(0.062*Math.sqrt(fcMPa)*bwY/fyMPa,0.35*bwY/fyMPa);
   const sByTorsion=AtPerS>0?AtMm2/AtPerS:Infinity;
   const sGeometry=Math.min(geometry.phMm/8,300);
-  const sByMinimum=required?(AvMm2+2*AtMm2)/minCombinedPerS:Infinity;
+  const sByMinimum=minimumRequired?(AvMm2+2*AtMm2)/minCombinedPerS:Infinity;
   const recommendedSpacing=Math.min(sGeometry,sByTorsion,sByMinimum,Number.isFinite(spacingShearMm)&&spacingShearMm>0?spacingShearMm:Infinity);
   const providedAtPerS=AtMm2/recommendedSpacing;
   const providedCombined=(AvMm2+2*AtMm2)/recommendedSpacing;
@@ -184,14 +184,14 @@
   const combinedCapacityY=0.75*(VcY/(bwY*dY)+0.66*sqrtFc);
   const combinedCapacityZ=0.75*(VcZ/(bwZ*dZ)+0.66*sqrtFc);
   const combinedShearTorsionOK=combinedDemandY<=combinedCapacityY+1e-12&&combinedDemandZ<=combinedCapacityZ+1e-12;
-  const AlMinA=required?0.42*sqrtFc*geometry.AcpMm2/fyMPa-providedAtPerS*geometry.phMm:0;
-  const AlMinB=required?0.175*bwY*geometry.phMm/fyMPa:0;
-  const AlMinimum=required?Math.max(0,Math.min(AlMinA,AlMinB)):0;
+  const AlMinA=minimumRequired?0.42*sqrtFc*geometry.AcpMm2/fyMPa-providedAtPerS*geometry.phMm:0;
+  const AlMinB=minimumRequired?0.175*bwY*geometry.phMm/fyMPa:0;
+  const AlMinimum=minimumRequired?Math.max(0,Math.min(AlMinA,AlMinB)):0;
   const AlTorsion=required?Math.max(AlStrength,AlMinimum):0;
-  return{ok:true,phiT,TthKNm:Tth/1e6,TcrKNm:Tcr/1e6,TuKNm:TuNm/1e6,required,thresholdOK:!required,
+  return{ok:true,phiT,TthKNm:Tth/1e6,TcrKNm:Tcr/1e6,TuKNm:TuNm/1e6,required,minimumRequired,thresholdOK:!required,
    requiredAtPerSMm2PerMm:AtPerS,providedAtPerSMm2PerMm:providedAtPerS,requiredAlStrengthMm2:AlStrength,minimumAlMm2:AlMinimum,requiredAlMm2:AlTorsion,
    torsionTransverseCapacityKNm:torsionTransverseCapacity/1e6,transverseTorsionOK:!required||torsionTransverseCapacity+1e-6>=TuNm,
-   minimumCombinedAv2AtPerS:minCombinedPerS,providedCombinedAv2AtPerS:providedCombined,minimumCombinedSteelOK:!required||providedCombined+1e-9>=minCombinedPerS,
+   minimumCombinedAv2AtPerS:minCombinedPerS,providedCombinedAv2AtPerS:providedCombined,minimumCombinedSteelOK:!minimumRequired||providedCombined+1e-9>=minCombinedPerS,
    maxSpacingByTorsionMm:sGeometry,recommendedSpacingMm:recommendedSpacing,
    combinedStressDemandYMPa:combinedDemandY,combinedStressDemandZMPa:combinedDemandZ,combinedStressCapacityYMPa:combinedCapacityY,combinedStressCapacityZMPa:combinedCapacityZ,combinedShearTorsionOK,
    combinedShearTorsionChecked:true,assumption:"روابط پیچش آستانه/ترک‌خوردگی، خرپای فضایی و حداقل آرماتور از متن مبحث ۹ ویرایش ۱۳۹۹؛ θ=45° و φT=0.75. برش و پیچش از بیشینه‌های مستقل و محافظه‌کارانه ترکیب شده‌اند؛ ظرفیت طولی پیچشی واقعی و توزیع میلگردهای پیرامونی هنوز تأیید نشده است."};
@@ -332,7 +332,7 @@
     "\nعمق مؤثر تقریبی d="+fmt(r.effectiveDepthMm)+" mm؛ As لازم="+fmt(r.AsRequiredMm2)+" mm²؛ برآورد صرفاً از خمش نظری (پیش از حداقل آرماتور آیین‌نامه‌ای): "+r.barCountEachFace+" میلگرد قطر "+r.barDiaMm+" در هر وجه کششی (As فراهم="+fmt(r.AsProvidedMm2)+" mm²)"+
     "\nچیدمان طولی: "+(r.barLayer.singleLayerFits?"از نظر هندسی در یک ردیف جا می‌شود":"در یک ردیف جا نمی‌شود؛ آرایش چندلایه و بازنگری عمق مؤثر لازم است")+"؛ حداکثر تعداد در یک ردیف="+r.barLayer.maxBars+"؛ فاصله آزاد مفروض="+fmt(r.barLayer.clearSpacingMm)+" mm (غیرآیین‌نامه‌ای)"+
     "\\nهندسه مقطع برای مرحله پیچش: "+(r.torsion.sectionGeometry.ok?("Acp="+fmt(r.torsion.sectionGeometry.AcpMm2)+" mm²؛ pcp="+fmt(r.torsion.sectionGeometry.pcpMm)+" mm؛ Aoh="+fmt(r.torsion.sectionGeometry.AohMm2)+" mm²؛ ph="+fmt(r.torsion.sectionGeometry.phMm)+" mm؛ Ao مرجع="+fmt(r.torsion.sectionGeometry.AoMm2)+" mm²") : r.torsion.sectionGeometry.reason)+
-    "\\nکنترل مقدماتی پیچش: "+(r.torsion.design?.ok?(r.torsion.design.required?("Tu="+fmt(r.torsion.design.TuKNm)+" kN·m؛ φTth="+fmt(r.torsion.design.phiT*r.torsion.design.TthKNm)+" kN·m؛ پیچش فعال؛ At/s لازم="+fmt(r.torsion.design.requiredAtPerSMm2PerMm,4)+" mm²/mm؛ Al لازم="+fmt(r.torsion.design.requiredAlMm2)+" mm²؛ فاصله پیشنهادی ترکیبی="+fmt(r.torsion.design.recommendedSpacingMm)+" mm؛ حد Ph/8 و 300="+fmt(r.torsion.design.maxSpacingByTorsionMm)+" mm؛ ظرفیت عرضی پیچش="+fmt(r.torsion.design.torsionTransverseCapacityKNm)+" kN·m؛ کنترل طولی و تنش ترکیبی نهایی هنوز ناقص"):"Tu="+fmt(r.torsion.design.TuKNm)+" kN·m؛ کمتر از φTth="+fmt(r.torsion.design.phiT*r.torsion.design.TthKNm)+" kN·m؛ آرماتور حداقل پیچشی بر اساس آستانه فعال نیست") : (r.torsion.design?.reason||"محاسبه نشده"))+"\\nپیچش محلی: "+(r.torsion.available?("بیشینه |T|="+fmt(r.torsion.maxAbsKNm)+" kN·m در عضو "+r.torsion.criticalMemberId+"؛ ظرفیت و آرماتور پیچشی هنوز کنترل نشده است"):"مؤلفه پیچش در نتایج موجود نیست؛ کنترل نشده است")+
+    "\\nکنترل مقدماتی پیچش: "+(r.torsion.design?.ok?(r.torsion.design.required?("Tu="+fmt(r.torsion.design.TuKNm)+" kN·m؛ φTth="+fmt(r.torsion.design.phiT*r.torsion.design.TthKNm)+" kN·m؛ پیچش فعال؛ At/s لازم="+fmt(r.torsion.design.requiredAtPerSMm2PerMm,4)+" mm²/mm؛ Al لازم="+fmt(r.torsion.design.requiredAlMm2)+" mm²؛ فاصله پیشنهادی ترکیبی="+fmt(r.torsion.design.recommendedSpacingMm)+" mm؛ حد Ph/8 و 300="+fmt(r.torsion.design.maxSpacingByTorsionMm)+" mm؛ ظرفیت عرضی پیچش="+fmt(r.torsion.design.torsionTransverseCapacityKNm)+" kN·m؛ حداقل آرماتور پیچشی طبق Tcr="+(r.torsion.design.minimumRequired?"فعال":"فعال نیست")+"؛ کنترل ترکیبی برش-پیچش="+(r.torsion.design.combinedShearTorsionOK?"قبول مقدماتی":"رد مقدماتی")+"؛ کنترل طولی پیرامونی هنوز ناقص"):"Tu="+fmt(r.torsion.design.TuKNm)+" kN·m؛ کمتر از φTth="+fmt(r.torsion.design.phiT*r.torsion.design.TthKNm)+" kN·m؛ آرماتور حداقل پیچشی بر اساس آستانه فعال نیست") : (r.torsion.design?.reason||"محاسبه نشده"))+"\\nپیچش محلی: "+(r.torsion.available?("بیشینه |T|="+fmt(r.torsion.maxAbsKNm)+" kN·m در عضو "+r.torsion.criticalMemberId+"؛ ظرفیت و آرماتور پیچشی هنوز کنترل نشده است"):"مؤلفه پیچش در نتایج موجود نیست؛ کنترل نشده است")+
     "\nکنترل برش محلی y: "+(r.stirrup.shearY.ok?("Vu="+fmt(r.stirrup.shearY.VuKN)+" kN؛ φVn,max="+fmt(r.stirrup.shearY.maxNominalShearKN*r.stirrup.phi)+" kN؛ خاموت حداقل لازم="+(r.stirrup.shearY.minimumStirrupsTriggered?"بله":"خیر")+(r.stirrup.shearY.recommendedSpacingMm==null?"":"؛ فاصله پیشنهادی="+fmt(r.stirrup.shearY.recommendedSpacingMm)+" mm؛ φ(Vc+Vs)="+fmt(r.stirrup.shearY.phiCapacityKN)+" kN؛ حد فصل ۱۱="+fmt(r.stirrup.shearY.maxSpacingByChapter11Mm)+" mm")+(r.stirrup.shearY.shearOK?"؛ کنترل مقدماتی برقرار":"؛ کنترل برش/خاموت برقرار نیست")):r.stirrup.shearY.reason)+
     "\nکنترل برش محلی z: "+(r.stirrup.shearZ.ok?("Vu="+fmt(r.stirrup.shearZ.VuKN)+" kN؛ φVn,max="+fmt(r.stirrup.shearZ.maxNominalShearKN*r.stirrup.phi)+" kN؛ خاموت حداقل لازم="+(r.stirrup.shearZ.minimumStirrupsTriggered?"بله":"خیر")+(r.stirrup.shearZ.recommendedSpacingMm==null?"":"؛ فاصله پیشنهادی="+fmt(r.stirrup.shearZ.recommendedSpacingMm)+" mm؛ φ(Vc+Vs)="+fmt(r.stirrup.shearZ.phiCapacityKN)+" kN؛ حد فصل ۱۱="+fmt(r.stirrup.shearZ.maxSpacingByChapter11Mm)+" mm")+(r.stirrup.shearZ.shearOK?"؛ کنترل مقدماتی برقرار":"؛ کنترل برش/خاموت برقرار نیست")):r.stirrup.shearZ.reason)+
     "\nمیلگرد طولی دو وجه: "+r.longitudinalBars.totalCount+" عدد؛ طول مستقیم هر میلگرد تا وجه بیرونی پی‌های انتهایی: "+(r.longitudinalBars.footingExtensionIncluded?fmt(r.longitudinalBars.straightLengthPerBarM)+" m":"ابعاد پی وارد نشده")+"؛ مجموع طول مستقیم: "+(r.longitudinalBars.totalStraightLengthM==null?"—":fmt(r.longitudinalBars.totalStraightLengthM)+" m")+"؛ وزن تقریبی بدون قلاب: "+(r.longitudinalBars.approximateMassKg==null?"—":fmt(r.longitudinalBars.approximateMassKg)+" kg")+
