@@ -31,7 +31,7 @@
   {key:"bolt",label:"پیچ‌ها (وزن ساق نظری)",unit:"کیلوگرم",priceCode:"bolt",qty:r=>r.steelMassTakeoff?.boltShankMassKg??null,priceUnit:"تومان/کیلوگرم"},
   {key:"weld",label:"فلز جوش نظری",unit:"کیلوگرم",priceCode:"weld",qty:r=>r.steelMassTakeoff?.theoreticalWeldMetalMassKg??null,priceUnit:"تومان/کیلوگرم"}
  ];
- function projectCity(){const v=window.SteelMarketPrices?.getProjectCity?.()||document.getElementById("city")?.selectedOptions?.[0]?.textContent||"";return String(v).replace(/\s*\(پیش‌فرض\)\s*/g,"").trim();}
+ function projectCity(){const market=window.SteelMarketPrices;const v=market&&typeof market.getProjectCity==="function"?market.getProjectCity():(document.getElementById("city")?.selectedOptions?.[0]?.textContent||"");return String(v||"").replace(/\s*\(پیش‌فرض\)\s*/g,"").trim();}
  function cityKey(v){return String(v||"").replace(/\s*\(پیش‌فرض\)\s*/g,"").replace(/\s+/g,"").trim().toLowerCase();}
  function marketPrice(code,expectedUnit){const d=window.SteelMarketPrices?.getData?.(),city=cityKey(projectCity());const compatible=(d?.prices||[]).filter(p=>p.code===code&&p.unit===expectedUnit);compatible.sort((a,b)=>{const ac=city&&cityKey(a.city)===city?1:0,bc=city&&cityKey(b.city)===city?1:0;return bc-ac||new Date(b.updatedAt)-new Date(a.updatedAt);});return compatible[0]||null;}
  function render(){
