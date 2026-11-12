@@ -66,3 +66,11 @@ The design brief is not a load generator, analysis engine, code checker, or opti
 - Search results also exposed a worked example citing an edge-width expression from a prior/secondary source. It is deliberately not implemented: that is not a verified transcription of the 1398 official text and may apply to a different surface/component scope.
 - Accordingly, no code zone dimensions or coefficients have been asserted. The next engineering gate is to obtain and inspect the exact 1398 pages for roof/wall zoning, effective-area dependence, wind directions, and gable geometry. Only after page-level verification may coefficient registry entries be marked verified.
 - `codeDesignEligible` and `loadTransferEnabled` remain false.
+
+## Tributary geometry audit — 2026-11-12
+
+- Added `js/tributary-audit.js`, a separate geometry-only audit that reads the generated 3D model without modifying member loads or solver inputs.
+- Checks closure of the accumulated roof-purlin tributary surface against both roof slopes including the horizontal eave overhang converted to slope length and the longitudinal end overhang.
+- Checks longitudinal wall-girt tributary area against gross wall area, flags unusually large tributary heights for review, and verifies that purlin endpoints at frame stations reuse rafter node IDs.
+- Checks completeness of purlin and end-girt load-record fields, including separate left/right tributary widths at ridge purlins.
+- The audit is diagnostic only: it does not create pressures, derive code zones, change load values, transfer loads, or enable code-design eligibility. Geometric area closure does not prove that real cladding supports or connections follow the assumed load path.
