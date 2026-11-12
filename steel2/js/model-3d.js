@@ -416,14 +416,13 @@
     });
     // Assign tributary line loads to the geometric members from current area-load inputs.
     const loads=window.SteelLoads?.getData?.()||{};
-    const windSign=loads.windDirection==="right-to-left"?-1:1;
     const frameTrib=frames.map((z,i)=>i===0?(frames[1]-z)/2:i===frames.length-1?(z-frames[i-1])/2:(frames[i+1]-frames[i-1])/2);
     members.forEach(m=>{
       if(m.axis==="transverse"){
         const fi=(m.frame||1)-1,tw=frameTrib[fi]||spacing;
-        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:(loads.deadLeft||0)*tw,live:(loads.liveLeft||0)*tw,snow:(loads.snowLeft||0)*tw,wind:(loads.windLeft||0)*tw,unit:"kN/m",tributaryWidth:tw};
-        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw,live:(loads.liveRight||0)*tw,snow:(loads.snowRight||0)*tw,wind:(loads.windRight||0)*tw,unit:"kN/m",tributaryWidth:tw};
-        else m.lineLoads={wind:(loads.windWall||0)*windSign*tw,unit:"kN/m",tributaryWidth:tw};
+        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:(loads.deadLeft||0)*tw,live:(loads.liveLeft||0)*tw,snow:(loads.snowLeft||0)*tw,wind:0,unit:"kN/m",tributaryWidth:tw};
+        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw,live:(loads.liveRight||0)*tw,snow:(loads.snowRight||0)*tw,wind:0,unit:"kN/m",tributaryWidth:tw};
+        else m.lineLoads={wind:0,unit:"kN/m",tributaryWidth:tw};
       } else if(m.sectionKey==="roofPurlin"){
         const w=m.tributaryWidth||0;
         if(m.side==="ridge"){
@@ -433,15 +432,16 @@
             live:(loads.liveLeft||0)*wl+(loads.liveRight||0)*wr,
             snow:(loads.snowLeft||0)*wl+(loads.snowRight||0)*wr,
             wind:(loads.windLeft||0)*wl+(loads.windRight||0)*wr,
+            windLeft:(loads.windLeft||0)*wl,windRight:(loads.windRight||0)*wr,
             unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr
           };
         }else{
           const side=m.side==="left"?"Left":"Right";
-          m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,unit:"kN/m",tributaryWidth:w};
+          m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,windLeft:m.side==="left"?(loads.windLeft||0)*w:0,windRight:m.side==="right"?(loads.windRight||0)*w:0,unit:"kN/m",tributaryWidth:w};
         }
       } else if(m.sectionKey==="wallGirt"){
         const h=m.tributaryHeight||0;
-        m.lineLoads={wind:(loads.windWall||0)*windSign*h,unit:"kN/m",tributaryHeight:h};
+        m.lineLoads={wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h};
       }
     });
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
