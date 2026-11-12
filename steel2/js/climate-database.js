@@ -9,11 +9,11 @@ let records = {};
 cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:null,elevation:null,source:"",sourceDate:"",status:"نیازمند ورود و تطبیق با منبع رسمی"});
 function applyShahroudReference(){
  const r=records.shahroud;if(!r)return;
- r.name="شاهرود";r.basicWind=90;r.basicWindPressure=0.38;r.groundSnow=1.0;r.snowRegion=3;
+ r.name="شاهرود";r.basicWind=80;r.basicWindPressure=0.303;r.groundSnow=1.0;r.snowRegion=3;
  if(r.elevation===null||r.elevation===undefined)r.elevation=1350;
  r.siteCoordinates=r.siteCoordinates||{latitude:36.37478,longitude:54.88545};
  r.elevationSource=r.elevationSource||"برآورد تقریبی مرکز شهرک صنعتی؛ نیازمند کنترل با DEM یا برداشت نقشه‌برداری";
- r.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ و رکورد PDF پروژه برای سرعت باد؛ سرعت ۹۰ km/h نیازمند تطبیق نهایی با نسخه رسمی. ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود.";
+ r.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ و رکورد PDF پروژه برای سرعت باد؛ سرعت ۸۰ km/h مطابق جدول ۶-۱۰-۱ ویرایش ۱۳۹۸؛ q=۰٫۳۰۳ kN/m². ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود.";
  r.sourceDate="1398";r.status="سرعت باد و برف استخراج‌شده از رکورد پروژه؛ ارتفاع محل تقریبی و نیازمند کنترل نقشه‌برداری";
 }
 function currentClimate(){return window.SteelLoads?.getData?.().climate || {};}
@@ -31,7 +31,7 @@ function loadSelectedCity(){
  if($("climateSource"))$("climateSource").value=r.source||"";
  const status=$("climateNotice");
  if(status)status.textContent=(r.basicWind!==null||r.groundSnow!==null)
-   ?"مبحث ششم ۱۳۹۸ برای شاهرود: V=۹۰ km/h، q=۰٫۳۸ kN/m²، منطقه برف ۳ و Ps=۱٫۰ kN/m². Ps بار مبناست و بار نهایی بام باید جداگانه محاسبه شود."
+   ?"مبحث ششم ۱۳۹۸ برای شاهرود: V=۸۰ km/h، q=۰٫۳۰۳ kN/m²، منطقه برف ۳ و Ps=۱٫۰ kN/m². Ps بار مبناست و بار نهایی بام باید جداگانه محاسبه شود."
    :"برای این شهر هنوز داده عددی ثبت نشده است؛ مقادیر شهر قبلی پاک شدند تا اشتباهاً به این شهر تخصیص نیابند.";
  refreshStatus();
 }
@@ -96,13 +96,13 @@ function setData(data){
  refreshStatus();
 }
 applyShahroudReference();
-records.shahroud.basicWind=90;
-records.shahroud.basicWindPressure=0.38;
+records.shahroud.basicWind=80;
+records.shahroud.basicWindPressure=0.303;
 records.shahroud.groundSnow=1.0;
 records.shahroud.snowRegion=3;
-records.shahroud.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ ردیف ۱۸۳، جدول ۶-۷-۱ ردیف ۷۶ و بند ۶-۳-۲؛ نسخه PDF ارسالی کاربر، نیازمند تطبیق نهایی با نسخه رسمی.";
+records.shahroud.source="مبحث ششم ویرایش چهارم ۱۳۹۸؛ جدول ۶-۱۰-۱ برای سرعت مبنای باد شاهرود: ۸۰ km/h؛ فشار مبنا از رابطه ۶-۱۰-۲: حدود ۰٫۳۰۳ kN/m². مقدار برف طبق رکورد قبلی پروژه و جداگانه نیازمند تطبیق نهایی است.";
 records.shahroud.sourceDate="1398";
-records.shahroud.status="استخراج‌شده از نسخه PDF ارسالی؛ نسخه توزیعی، نه فایل رسمی قابل احراز";
+records.shahroud.status="سرعت باد با جدول ویرایش ۱۳۹۸ تطبیق داده شد؛ ارتفاع محل همچنان تقریبی است و بار برف نیازمند کنترل مستقل";
 window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity};
 document.addEventListener("DOMContentLoaded",()=>{ensureTools();addOptions();});
 })();
