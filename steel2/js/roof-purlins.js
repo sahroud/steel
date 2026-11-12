@@ -14,7 +14,7 @@
         pitchMin: 0.60,
         pitchMax: 1.50,
         pitchStep: 0.10,
-        pitch: 1.00,
+        pitch: 0.95,
         sectionHeight: 180,
         flange: 60,
         lip: 20,
