@@ -210,5 +210,5 @@ function selfTest(){
  ck("seismic cases use explicit seismic distributor input",()=>typeof runSeismic==="function"&&runSeismic.toString().includes("SteelSeismicEquivalentLateral"));
  return{passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests,analysisEnabled:false,designApproved:false};
 }
-root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,auditEquilibrium,run,runDirectionalWind,runSeismic,selfTest};
+root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,run,runDirectionalWind,runSeismic,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
