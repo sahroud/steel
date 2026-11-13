@@ -76,7 +76,8 @@
   const datum=footingDatumGeometry(0,0.5,0.8),secondary=footingDatumGeometry(3,0.5,0.8),tallTie=footingDatumGeometry(0,0.9,0.8);
   checks.sharedTopDatum=datum.ok&&datum.commonTopElevationM===0&&Math.abs(datum.extraExcavationBelowTieM-0.3)<1e-9;
   checks.footingBottomFormula=datum.ok&&Math.abs(datum.footingBottomElevationM+0.8)<1e-9&&Math.abs(datum.tieBottomElevationM+0.5)<1e-9;
-  checks.noExtraExcavationWhenTieDeeper=tallTie.ok&&tallTie.extraExcavationBelowTieM===0&&Math.abs(tallTie.footingBottomAboveTieBottomM-0.1)<1e-9;\n  return{passed:Object.values(checks).every(Boolean),checks,barCount:g.count,assumptions:g.assumptions,datumTests:{main:datum,secondary:secondary,tallTie}};
+  checks.noExtraExcavationWhenTieDeeper=tallTie.ok&&tallTie.extraExcavationBelowTieM===0&&Math.abs(tallTie.footingBottomAboveTieBottomM-0.1)<1e-9;
+  return{passed:Object.values(checks).every(Boolean),checks,barCount:g.count,assumptions:g.assumptions,datumTests:{main:datum,secondary:secondary,tallTie}};
 }
 function checkTieBeamRebarClearance(tieBars,requiredClearanceMm=0){
   readInputs();
