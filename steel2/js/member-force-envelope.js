@@ -46,7 +46,13 @@ function buildRows(model,samples){
    T:Math.max(Math.abs(envelopes[3].value),Math.abs(envelopes[9].value)),
    My:Math.max(Math.abs(envelopes[4].value),Math.abs(envelopes[10].value)),
    Mz:Math.max(Math.abs(envelopes[5].value),Math.abs(envelopes[11].value))};
-  return {...row,envelopes,peak,caseCount:valid.length};
+  const simultaneousCases=valid.map(e=>({
+   label:e.label,
+   endI:{N:e.values[0],Vy:e.values[1],Vz:e.values[2],T:e.values[3],My:e.values[4],Mz:e.values[5]},
+   endJ:{N:e.values[6],Vy:e.values[7],Vz:e.values[8],T:e.values[9],My:e.values[10],Mz:e.values[11]},
+   sourceVector:e.values.slice()
+  }));
+  return {...row,envelopes,peak,simultaneousCases,caseCount:valid.length};
  }).sort((a,b)=>String(a.sectionKey).localeCompare(String(b.sectionKey))||String(a.id).localeCompare(String(b.id)));
 }
 function auditCoverage(model,samples,rows){
@@ -174,9 +180,18 @@ function selfTest(){
  test("malformed force vector is excluded from envelope",()=>buildRows({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:[1,2,3]}]}])[0].caseCount===0);
  test("duplicate IDs in one case are reported",()=>auditCoverage({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:valid},{id:"A",localEndForces:valid}]}],[{id:"A",caseCount:1}]).duplicateMemberIdsByCase.length===1);
  test("inconsistent member sets across cases are reported",()=>auditCoverage({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:valid}]},{label:"SLS",members:[]}],[{id:"A",caseCount:1}]).analysisMemberSetMismatchCases.includes("SLS"));
+ test("simultaneous member actions preserve same-case axial and biaxial moments",()=>{const r=buildRows({members:[{id:"P"}]},[{label:"C1",members:[{id:"A",localEndForces:[100,2,3,4,50,60,-100,-2,-3,-4,-50,-60]}]},{label:"C2",members:[{id:"A",localEndForces:[200,4,6,8,5,6,-200,-4,-6,-8,-5,-6]}]}])[0];const d=getSimultaneousCaseDemand(r,"C1");return d?.endI.compression===100&&d.endI.My===50&&d.endI.Mz===60&&d.endI.Vy===2&&d.endI.T===4&&d.endJ.Mz===-60;});
+ test("simultaneous demand lookup does not synthesize a case from independent envelopes",()=>{const r=buildRows({members:[{id:"P"}]},[{label:"AXIAL",members:[{id:"A",localEndForces:[100,0,0,0,0,0,-100,0,0,0,0,0]}]},{label:"BENDING",members:[{id:"A",localEndForces:[0,0,0,0,0,900,0,0,0,0,0,-900]}]}])[0];const d=getSimultaneousCaseDemand(r,"AXIAL");return d.endI.Mz===0&&d.endI.compression===100;});
  test("invalid force vectors are reported with case identity",()=>auditCoverage({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:[1,2]}]}],[{id:"A",caseCount:0}]).invalidForceVectors[0]?.caseLabel==="ULS");
- return {passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"deterministic data-integrity tests only; no structural design approval"};
+ return {passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"simultaneous action preservation and deterministic data-integrity tests only; no structural design approval"};
 }
-root.SteelMemberForceEnvelope={run,getLast:()=>last,buildRows,auditCoverage,selfTest};
+function getSimultaneousCaseDemand(row,label){
+ const c=(row?.simultaneousCases||[]).find(x=>x.label===label);
+ if(!c)return null;
+ const endDemand=e=>({compression:Math.max(0,Number(e.N)||0),tension:Math.max(0,-(Number(e.N)||0)),
+  Vy:Number(e.Vy)||0,Vz:Number(e.Vz)||0,T:Number(e.T)||0,My:Number(e.My)||0,Mz:Number(e.Mz)||0});
+ return {label:c.label,endI:endDemand(c.endI),endJ:endDemand(c.endJ)};
+}
+root.SteelMemberForceEnvelope={run,getLast:()=>last,buildRows,auditCoverage,getSimultaneousCaseDemand,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
