@@ -76,5 +76,22 @@ function selfTest(){
  ];
  return {passed:tests.filter(x=>x[1]).length,failed:tests.filter(x=>!x[1]).length,tests:tests.map(x=>({name:x[0],ok:x[1]})),combinationCount:a.combinations.length};
 }
+function initPanel(){
+ if(typeof document==="undefined"||document.getElementById("m6CombinationTemplatesPanel"))return;
+ const main=document.querySelector("main");if(!main)return;
+ const p=document.createElement("section");p.className="panel";p.id="m6CombinationTemplatesPanel";
+ const fields=[["D","بار مرده D"],["L","بار زنده L"],["Lr","بار زنده بام Lr"],["S","برف S"],["R","باران R"],["W+","باد جهت مثبت W+"],["W-","باد جهت منفی W-"],["E+","زلزله جهت مثبت E+"],["E-","زلزله جهت منفی E-"],["T","دما/خودکرنشی T"]];
+ p.innerHTML="<div class='panel-title'><h3>مولد ترکیبات بار مبحث ششم ۱۳۹۸ (LRFD)</h3><span class='status'>قالب ضابطه‌ای؛ نیازمند بازبینی</span></div><p>شناسه حالت‌های بار را معرفی کنید. شناسه‌ها صرفاً ارجاع‌اند و به معنی وجود بار یا اثر محاسبه‌شده نیستند. برای حالت‌های صفر نیز حالت بار صریح با اثر صفر تعریف کنید.</p><div class='form-grid'>"+fields.map(([id,label])=>"<div class='field'><label>"+label+"</label><input data-m6-case='"+id+"' value='"+id+"' type='text'></div>").join("")+"</div><div class='form-grid'><div class='field'><label>قابل‌اعمال بودن اثر دما/خودکرنشی</label><select id='m6TemperatureApplicable'><option value=''>تعیین نشده</option><option value='false'>خیر، پس از بررسی مهندس</option><option value='true'>بله</option></select></div><label class='field'><input id='m6EngineerApproved' type='checkbox'> بازبینی و تأیید این مجموعه توسط مهندس مسئول</label></div><div class='button-grid'><button type='button' class='btn primary' id='btnGenerateM6Combinations'>تولید ترکیبات بار</button></div><div id='m6CombinationTemplateResults' class='notice'>هنوز ترکیبات تولید نشده‌اند.</div><div class='notice'>این ابزار ضرایب و شاخه‌های ترکیب را تولید می‌کند؛ بارهای اقلیمی، تحلیل سازه، حالات خاص، ضوابط بهره‌برداری و طراحی اعضا را انجام نمی‌دهد و تأیید طراحی صادر نمی‌کند.</div>";
+ const anchor=document.getElementById("climateDesignReadinessPanel")||main.querySelector("footer");if(anchor)anchor.insertAdjacentElement("afterend",p);else main.appendChild(p);
+ document.getElementById("btnGenerateM6Combinations").addEventListener("click",()=>{
+  const cases={};p.querySelectorAll("[data-m6-case]").forEach(el=>{cases[el.getAttribute("data-m6-case")]=el.value.split(",").map(x=>x.trim()).filter(Boolean);});
+  const t=document.getElementById("m6TemperatureApplicable").value;
+  const r=generate({code:"m6-1398",method:"LRFD",approvedByEngineer:document.getElementById("m6EngineerApproved").checked,temperatureApplicable:t===""?null:t==="true",cases});
+  const out=document.getElementById("m6CombinationTemplateResults");
+  if(!r.success){out.textContent="تولید متوقف شد: "+r.issues.join(" | ");return;}
+  out.innerHTML="<b>"+r.combinations.length+" شاخه ترکیب تولید شد؛ نیازمند تطبیق مهندسی.</b><ol>"+r.combinations.map(x=>"<li><b>"+x.id+"</b> — "+x.label+"<br><small>"+Object.entries(x.factors).map(([k,v])=>v+"×"+k).join(" + ")+"</small></li>").join("")+"</ol>";
+ });
+}
 root.SteelM6LoadCombinationTemplates={generate,selfTest};
+if(typeof document!=="undefined"){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initPanel);else initPanel();}
 })(typeof window!=="undefined"?window:globalThis);
