@@ -45,6 +45,20 @@ function createCases(input,model){
  });
  return{cases,caseCount:cases.length,levelForces,totalWeightKN:a.totalWeightKN,baseShearKN:V,distributionExponent:k,analysisEnabled:false,designApproved:false,limitations:["برش پایه، وزن ترازها، توان توزیع و مرجع باید توسط مهندس مسئول از آیین‌نامه/محاسبات پروژه تعیین و مستند شوند.","این ماژول فقط توزیع نیروی جانبی است؛ محاسبه طیف، ضریب رفتار، اهمیت، نامنظمی، پیچش اتفاقی، اثرات P-Delta و کنترل دریفت را انجام نمی‌دهد.","نیروها به گره‌های صریحاً معرفی‌شده در هر تراز اعمال می‌شوند؛ کف صلب و توزیع دیافراگمی فرض نشده است.","چهار حالت X+/X-/Z+/Z- جداگانه‌اند و نباید بدون ضوابط ترکیب بار با هم جمع شوند."]};
 }
+async function run(input){
+ const model=root.SteelStructuralModel?.getData?.()||root.SteelStructuralModel?.model;
+ if(!model||!Array.isArray(model.nodes))throw Error("مدل گره‌ای سه‌بعدی برای کنترل شناسه‌های زلزله در دسترس نیست.");
+ const built=createCases(input,model),solve=root.SteelStructuralModel?.analyze3D;
+ if(typeof solve!=="function")throw Error("حل‌گر سه‌بعدی در دسترس نیست.");
+ const results=[];
+ for(const c of built.cases){
+  const r=await solve(c);
+  if(!r||!Array.isArray(r.reactions))throw Error("واکنش حل‌گر برای "+c.id+" معتبر نیست.");
+  if(!r.equilibrium||r.equilibrium.ok!==true)throw Error("تعادل عددی حل‌گر برای "+c.id+" تأیید نشد.");
+  results.push({id:c.id,label:c.label,equilibrium:r.equilibrium,result:r});
+ }
+ return{success:true,caseCount:results.length,results,allCasesEquilibriumOK:results.every(x=>x.equilibrium?.ok===true),analysisEnabled:false,designApproved:false,scope:"تحلیل مقدماتی با نیروهای ورودی مستند؛ بدون تأیید آیین‌نامه‌ای یا طراحی."};
+}
 function selfTest(){
  const tests=[],ck=(name,fn)=>{try{tests.push({name,pass:!!fn()});}catch(e){tests.push({name,pass:false,error:e.message});}};
  const model={revision:"r1",nodes:[{id:"n1"},{id:"n2"},{id:"n3"}]};
@@ -67,5 +81,5 @@ function selfTest(){
  ck("analysis and approval remain disabled",()=>{const r=createCases(input,model);return !r.analysisEnabled&&!r.designApproved&&r.cases.every(c=>!c.analysisEnabled&&!c.designApproved);});
  return{passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests,analysisEnabled:false,designApproved:false};
 }
-root.SteelSeismicEquivalentLateral={audit,createCases,selfTest};
+root.SteelSeismicEquivalentLateral={audit,createCases,run,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
