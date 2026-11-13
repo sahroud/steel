@@ -9,7 +9,7 @@ let last=null;
 const groups=[
  ["all","همه اعضا"],["column","ستون‌ها"],["rafter","رفترها"],["roofPurlin","پرلین‌های سقف"],
  ["wallGirt","قیدهای دیوار"],["endPost","ستونک‌های انتهایی"],["endGirt","تیرهای انتهایی"],
- ["roofBrace","مهاربندهای سقف"],["wallBrace","مهاربندهای دیوار"]
+ ["roofBrace","مهاربندهای سقف"],["wallBrace","مهاربندهای دیوار"],["tieBeam","شناژهای بتنی"]
 ];
 const names=Object.fromEntries(groups);
 const fmt=v=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:2});
@@ -31,7 +31,7 @@ function maxAbs(samples,index){
 function buildRows(model,samples){
  const byId=new Map(),metaById=new Map((model.members||[]).map(m=>[String(m.id),m]));
  samples.forEach(sample=>(sample.members||[]).forEach(m=>{
-  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||"",length:Number(m.length||meta.length)||null,ends:[]});}
+  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||m.section?.sectionKey||"",length:Number(m.length||meta.length)||null,ends:[]});}
   const row=byId.get(String(m.id));
   row.ends.push({label:sample.label,values:Array.isArray(m.localEndForces)?m.localEndForces.slice(0,12):[]});
  }));
@@ -64,7 +64,7 @@ async function run(){
   }
   const rows=buildRows(model,samples);
   const bad=samples.filter(s=>!s.equilibrium?.ok);
-  last={generatedAt:new Date().toISOString(),codeBasis:window.SteelDesignCodes?.getData?.()||null,units:"N,N.m",cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),members:rows,memberCount:rows.length,allCasesEquilibriumOK:bad.length===0,limitations:["این خروجی تقاضای نیروهای انتهایی محلی اعضا در تحلیل خطی مرتبه اول است؛ ظرفیت یا نسبت بهره‌برداری آیین‌نامه‌ای محاسبه نمی‌شود.","ترکیبات فقط از فهرست فعلی پروژه و باد مثبت/منفی با ضریب ۱ در صورت وجود بار باد ساخته شده‌اند؛ کامل بودن ترکیبات آیین‌نامه‌ای تضمین نشده است.","کمانش، P-Delta، کمانش پیچشی-جانبی، اندرکنش نیروها، طبقه‌بندی مقطع و کنترل خیز/ارتعاش در این گزارش انجام نشده‌اند.","علامت و محورهای محلی اعضا باید با جهت‌گیری هندسی و خروجی نرم‌افزار تحلیل مستقل کنترل شوند."]};
+  last={generatedAt:new Date().toISOString(),codeBasis:window.SteelDesignCodes?.getData?.()||null,units:"N,N.m",cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),members:rows,memberCount:rows.length,allCasesEquilibriumOK:bad.length===0,limitations:["این خروجی تقاضای نیروهای انتهایی محلی اعضا در تحلیل خطی مرتبه اول است؛ ظرفیت یا نسبت بهره‌برداری آیین‌نامه‌ای محاسبه نمی‌شود.","ترکیبات ثقلی از فهرست فعلی پروژه گرفته شده‌اند؛ در صورت وجود فشار باد، دو حالت افزوده‌شده با ضریب واحد مثبت و منفی صرفاً سناریوی تحلیل مقدماتی‌اند و ترکیب‌بار آیین‌نامه‌ای کامل محسوب نمی‌شوند.","کمانش، P-Delta، کمانش پیچشی-جانبی، اندرکنش نیروها، طبقه‌بندی مقطع و کنترل خیز/ارتعاش در این گزارش انجام نشده‌اند.","علامت و محورهای محلی اعضا باید با جهت‌گیری هندسی و خروجی نرم‌افزار تحلیل مستقل کنترل شوند."]};
   render();
  }catch(e){box.textContent="خطا: "+e.message;}
  finally{btn.disabled=false;}
