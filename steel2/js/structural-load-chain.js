@@ -59,6 +59,52 @@ function extractSupportReactions(result,model){
   resultantMomentReference:"global origin (0,0,0); includes r x F for every support node",
   units:{force:"N",moment:"N.m"}};
 }
+function buildExternalLoadLedger(model,solverMembers,nodalLoads){
+ const issues=[],force=[0,0,0],moment=[0,0,0],memberRows=[],nodeRows=[];
+ const nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n]));
+ const add=(f,m,p)=>{for(let i=0;i<3;i++)force[i]+=f[i];moment[0]+=m[0]+p[1]*f[2]-p[2]*f[1];moment[1]+=m[1]+p[2]*f[0]-p[0]*f[2];moment[2]+=m[2]+p[0]*f[1]-p[1]*f[0];};
+ if(!Array.isArray(solverMembers)||solverMembers.length!==(model?.members||[]).length)issues.push("تعداد اعضای دارای بارِ حل‌شده با مدل مبنا برابر نیست.");
+ const memberMap=new Map((solverMembers||[]).map(m=>[String(m.id),m]));
+ (model?.members||[]).forEach(m=>{
+  const solved=memberMap.get(String(m.id)),q=solved?.analysisLoad?.globalUniform;
+  if(!Array.isArray(q)||q.length!==3||q.some(v=>!finite(v))){issues.push("بار گسترده جهانی برای عضو "+m.id+" موجود/معتبر نیست.");return;}
+  const ni=nodes.get(String(m.start)),nj=nodes.get(String(m.end));
+  if(!ni||!nj){issues.push("مختصات گره‌های عضو "+m.id+" موجود نیست.");return;}
+  const oi=m.endOffsets?.i||[0,0,0],oj=m.endOffsets?.j||[0,0,0];
+  if(oi.length!==3||oj.length!==3||[...oi,...oj].some(v=>!finite(v))){issues.push("بازوی انتهایی عضو "+m.id+" نامعتبر است.");return;}
+  const a=[ni.x+oi[0],ni.y+oi[1],ni.z+oi[2]],b=[nj.x+oj[0],nj.y+oj[1],nj.z+oj[2]];
+  if([...a,...b].some(v=>!finite(v))){issues.push("مختصات هندسی عضو "+m.id+" نامعتبر است.");return;}
+  const L=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]);
+  if(!(L>0)){issues.push("طول فیزیکی عضو "+m.id+" صفر/نامعتبر است.");return;}
+  const f=q.map(v=>v*L),p=a.map((v,i)=>(v+b[i])/2),m0=[0,0,0];
+  add(f,m0,p);memberRows.push({memberId:String(m.id),globalUniformNPerM:q.slice(),lengthM:L,resultantForceN:f,centroidM:p});
+ });
+ (nodalLoads||[]).forEach((load,index)=>{
+  const n=nodes.get(String(load?.nodeId)),v=load?.values;
+  if(!n||!Array.isArray(v)||v.length!==6||v.some(x=>!finite(x))){issues.push("بار گره‌ای شماره "+(index+1)+" ناقص یا نامعتبر است.");return;}
+  const f=v.slice(0,3),m=v.slice(3,6),p=[n.x,n.y,n.z];
+  if(p.some(x=>!finite(x))){issues.push("مختصات گره بارگذاری‌شده "+load.nodeId+" معتبر نیست.");return;}
+  add(f,m,p);nodeRows.push({nodeId:String(load.nodeId),forceN:f,momentNm:m,coordinatesM:p});
+ });
+ const vnorm=v=>Math.hypot(...v);
+ return{complete:issues.length===0,issues,memberCount:memberRows.length,nodalLoadCount:nodeRows.length,
+  members:memberRows,nodalLoads:nodeRows,resultant:{forceN:force,momentNm:moment,momentReference:"global origin (0,0,0)"},
+  method:"independent centroidal resultant of member globalUniform line loads plus explicit nodal loads; no solver assembled F vector used"};
+}
+function compareExternalLedger(ledger,equilibrium,tolerance=1e-6){
+ const issues=[];
+ if(!ledger?.complete)issues.push("دفتر بار خارجی کامل نیست.");
+ if(!equilibrium||!Array.isArray(equilibrium.appliedForceN)||!Array.isArray(equilibrium.appliedMomentNm))issues.push("بردار بار اعمال‌شده حل‌گر برای تطبیق موجود نیست.");
+ if(issues.length)return{ok:false,issues,forceRelativeDifference:null,momentRelativeDifference:null};
+ const difference=(a,b)=>a.map((v,i)=>v-b[i]),norm=v=>Math.hypot(...v);
+ const df=difference(ledger.resultant.forceN,equilibrium.appliedForceN),dm=difference(ledger.resultant.momentNm,equilibrium.appliedMomentNm);
+ const rf=norm(df)/Math.max(norm(ledger.resultant.forceN),norm(equilibrium.appliedForceN),1);
+ const rm=norm(dm)/Math.max(norm(ledger.resultant.momentNm),norm(equilibrium.appliedMomentNm),1);
+ if(rf>tolerance)issues.push("برآیند مستقل نیرو با بردار بار اعمال‌شده حل‌گر تطبیق ندارد.");
+ if(rm>tolerance)issues.push("برآیند مستقل لنگر با بردار بار اعمال‌شده حل‌گر تطبیق ندارد.");
+ return{ok:issues.length===0,issues,forceDifferenceN:df,momentDifferenceNm:dm,forceRelativeDifference:rf,momentRelativeDifference:rm,tolerance,
+  scope:"independent external-load resultant versus solver-reported applied resultant; not a full independent stiffness/load-vector assembly"};
+}
 function auditEquilibrium(eq,tolerance=1e-6){
  const issues=[];
  if(!eq||typeof eq!=="object")return{ok:false,issues:["گزارش تعادل حل‌گر موجود نیست."],relativeForceResidual:null,relativeMomentResidual:null};
@@ -152,6 +198,13 @@ function selfTest(){
  ck("inconsistent residual vector blocked",()=>!auditEquilibrium({...eqGood,forceResidualN:[0,1,0]}).ok);
  ck("reported residual ratio mismatch blocked",()=>!auditEquilibrium({...eqGood,relativeForceResidual:0.25}).ok);
  ck("valid equilibrium vectors independently rechecked",()=>auditEquilibrium(eqGood).ok);
+ const ledgerModel={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],members:[{id:"M",start:"A",end:"B"}]};
+ const ledger=buildExternalLoadLedger(ledgerModel,[{id:"M",analysisLoad:{globalUniform:[0,-100,0]}}],[{nodeId:"B",values:[10,0,0,0,0,5]}]);
+ ck("independent ledger integrates member line load and nodal load",()=>ledger.complete&&ledger.memberCount===1&&ledger.nodalLoadCount===1&&ledger.resultant.forceN[0]===10&&ledger.resultant.forceN[1]===-400&&ledger.resultant.momentNm[2]===20);
+ const eqLedger={appliedForceN:[10,-400,0],appliedMomentNm:[0,0,20]};
+ ck("external load ledger matches solver applied resultant",()=>compareExternalLedger(ledger,eqLedger).ok);
+ ck("external load ledger mismatch is detected",()=>!compareExternalLedger(ledger,{...eqLedger,appliedForceN:[10,-390,0]}).ok);
+ ck("missing member load prevents complete ledger",()=>!buildExternalLoadLedger(ledgerModel,[{id:"M"}],[]).complete);
  ck("demand-only status never implies design",()=>x.rows.every(r=>r.designStatus==="demand_only_not_designed")&&!("capacity" in x.rows[0]));
  ck("wind cases use directional adapter output",()=>typeof runDirectionalWind==="function"&&runDirectionalWind.toString().includes("SteelDirectionalWind3D"));
  ck("seismic cases use explicit seismic distributor input",()=>typeof runSeismic==="function"&&runSeismic.toString().includes("SteelSeismicEquivalentLateral"));
