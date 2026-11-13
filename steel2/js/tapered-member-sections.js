@@ -9,11 +9,11 @@ const $=id=>document.getElementById(id);
 const GROUPS=[["column","ستون"],["rafter","رفتر"]];
 const STATIONS=[["start","ابتدا"],["mid","میانه"],["end","انتها"]];
 const DIMS=[["d","عمق d (mm)"],["bf","عرض بال bf (mm)"],["tw","ضخامت جان tw (mm)"],["tf","ضخامت بال tf (mm)"]];
-let data={schemaVersion:1,groups:{column:{enabled:false,stations:{}},rafter:{enabled:false,stations:{}}}};
+let data={schemaVersion:1,segmentsPerMember:8,groups:{column:{enabled:false,stations:{}},rafter:{enabled:false,stations:{}}}};
 let audit=[];
 function clone(v){return JSON.parse(JSON.stringify(v));}
 function normalize(v){
- const out={schemaVersion:1,groups:{}};
+ const out={schemaVersion:1,segmentsPerMember:Math.max(2,Math.min(24,Math.floor(Number(v?.segmentsPerMember)||8))),groups:{}};
  GROUPS.forEach(([g])=>{
   const src=v?.groups?.[g]||{},stations={};
   STATIONS.forEach(([s])=>{stations[s]={};DIMS.forEach(([d])=>{const n=Number(src.stations?.[s]?.[d]);stations[s][d]=Number.isFinite(n)&&n>0?n:null;});});
@@ -54,7 +54,7 @@ function coordinate(group,member,nodes,project){
  return Math.max(0,Math.min(1,x<=half?x/half:(span-x)/half));
 }
 function segmentModel(model,project,segmentsPerMember){
- const count=Math.max(2,Math.min(24,Math.floor(Number(segmentsPerMember)||8)));
+ const count=Math.max(2,Math.min(24,Math.floor(Number(segmentsPerMember)||data.segmentsPerMember||8)));
  const original=Array.isArray(model?.members)?model.members:[];
  const nodes=Array.isArray(model?.nodes)?model.nodes:[];
  const byId=new Map(nodes.map(n=>[String(n.id),n]));
@@ -103,6 +103,7 @@ function resolveForMember(member,nodes,project,base){
  return {section,applied:true,coordinate:t,properties:p};
 }
 function read(){
+ const countEl=$("taper_segmentsPerMember");if(countEl)data.segmentsPerMember=Math.max(2,Math.min(24,Math.floor(Number(countEl.value)||8)));
  GROUPS.forEach(([g])=>{
   const enabled=$("taper_"+g+"_enabled");data.groups[g].enabled=!!enabled?.checked;
   STATIONS.forEach(([s])=>DIMS.forEach(([d])=>{
@@ -116,7 +117,7 @@ function getData(){return clone(data);}
 function setData(v){data=normalize(v);render();}
 function render(){
  const host=$("taperedSectionsContent");if(!host)return;
- host.innerHTML=GROUPS.map(([g,label])=>{
+ host.innerHTML="<div class='field'><label for='taper_segmentsPerMember'>تعداد قطعات تحلیل برای هر عضو متغیرمقطع</label><select id='taper_segmentsPerMember'>"+[4,6,8,12,16,20,24].map(n=>"<option value='"+n+"' "+(data.segmentsPerMember===n?"selected":"")+">"+n+" قطعه</option>").join("")+"</select></div>"+GROUPS.map(([g,label])=>{
   const q=data.groups[g];
   return '<details class="sub-panel" open><summary>'+label+' — تیرورق متغیرعمق</summary><label><input type="checkbox" id="taper_'+g+'_enabled" '+(q.enabled?'checked':'')+'> اعمال مقطع متغیر در تحلیل سه‌بعدی</label><div class="notice">سه ایستگاه از ابتدا تا انتهای عضو؛ ابعاد بین ایستگاه‌ها خطی درون‌یابی می‌شوند.</div><div class="form-grid">'+STATIONS.map(([s,sl])=>DIMS.map(([d,dl])=>'<div class="field"><label for="taper_'+g+'_'+s+'_'+d+'">'+sl+' — '+dl+'</label><input type="number" min="0" step="0.1" id="taper_'+g+'_'+s+'_'+d+'" value="'+(q.stations[s][d]??'')+'"></div>').join('')).join('')+'</div></details>';
  }).join('')+'<div class="button-grid"><button class="btn secondary" type="button" id="btnTaperAudit">کنترل هندسه و ایستگاه‌های مقطع</button></div><div id="taperedSectionsResults"></div>';
@@ -142,6 +143,7 @@ function selfTest(){
  const old=data;data=q;const mid=at("rafter",0.5);data=old;
  tests.push({name:"mid-station-interpolation",pass:Math.abs(mid.dimensions.d-400)<1e-9});
  tests.push({name:"disabled-by-default",pass:normalize({}).groups.column.enabled===false});
+ tests.push({name:"analysis-segment-count-default",pass:normalize({}).segmentsPerMember===8});
  const oldData=data;data=normalize({groups:{column:{enabled:true,stations:{start:{d:500,bf:200,tw:10,tf:16},mid:{d:400,bf:200,tw:10,tf:16},end:{d:300,bf:200,tw:10,tf:16}}}}});
  const segmented=segmentModel({nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:6,z:0}],members:[{id:"C1",start:"A",end:"B",sectionKey:"column",endReleases:{i:[4],j:[5]}}]}, {height:6,span:12},8);
  data=oldData;
