@@ -29,7 +29,7 @@ function calculate(i){
  const anchors=[];for(let r=0;r<i.rows;r++)for(let c=0;c<i.cols;c++)anchors.push({id:"AB-"+String(anchors.length+1).padStart(2,"0"),x:(c-(i.cols-1)/2)*i.pitchXmm/1000,z:(r-(i.rows-1)/2)*i.pitchZmm/1000});
  if(anchors.some(a=>Math.abs(a.x)>B/2||Math.abs(a.z)>L/2))throw Error("مختصات یکی از بولت‌ها خارج از صفحه‌ستون است.");
  const cells=[];for(let r=0;r<i.gridN;r++)for(let c=0;c<i.gridN;c++)cells.push({x:-B/2+(c+.5)*dx,z:-L/2+(r+.5)*dz,k:i.subgradeK*area});
- const q=[-i.tensionKN,i.momentXKNm,i.momentZKNm];
+ const q=[-i.tensionKN,-i.momentXKNm,-i.momentZKNm];
  const sumK=i.anchorK*anchors.length;
  let d=[i.tensionKN>0?-i.tensionKN/sumK:-1e-7,0,0];
  if(anchors.length>1){const sx=anchors.reduce((s,a)=>s+a.x*a.x,0),sz=anchors.reduce((s,a)=>s+a.z*a.z,0);if(sz>0)d[1]=-i.momentXKNm/(i.anchorK*sz);if(sx>0)d[2]=-i.momentZKNm/(i.anchorK*sx);}
