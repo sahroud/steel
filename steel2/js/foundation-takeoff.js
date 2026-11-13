@@ -661,8 +661,7 @@ function calculatePedestalRebar(baseCount){
    const drawFoot=(node)=>{
     const spec=footingSpecFor({nodeId:node.id,kind:node.kind}),p={x:Number(node.x),y:Number(node.y),z:Number(node.z)};
     isoBox(p.x,p.y,p.z,spec.width,spec.thickness,spec.length,"#cbd5e1");
-    const grid=buildFootingRebarGeometry([{nodeId:String(node.id),x:p.x,y:p.y,z:p.z}],spec.width,spec.length,spec.thickness,cover??50,footingSpecs.specs);
-    if(grid.ok)grid.bars.forEach(bar=>isoLine(bar.a,bar.b,bar.layer==="bottom"?"#dc2626":"#2563eb",2));
+    if(cover!==null&&Number.isFinite(cover)&&cover>=0){const grid=buildFootingRebarGeometry([{nodeId:String(node.id),x:p.x,y:p.y,z:p.z}],spec.width,spec.length,spec.thickness,cover,footingSpecs.specs);if(grid.ok)grid.bars.forEach(bar=>isoLine(bar.a,bar.b,bar.layer==="bottom"?"#dc2626":"#2563eb",2));}
    };
    routeFootings.forEach(x=>drawFoot(x.node));
    const firstSpec=footingSpecFor({nodeId:firstNode.id,kind:firstNode.kind}),lastSpec=footingSpecFor({nodeId:lastNode.id,kind:lastNode.kind});
@@ -713,8 +712,8 @@ function calculatePedestalRebar(baseCount){
   }));
   const footingLabel=footingSpecs.specs.length?footingSpecs.specs.map(s=>(s.layer==="bottom"?"تحتانی":"فوقانی")+" "+s.direction+" Ø"+s.diaMm+" @"+fmtSvg(s.spacingMm)).join("؛ "):"شبکه فونداسیون موجود نیست";
   const tieLabel=tie?(tie.count===null?"خروجی طراحی شناژ موجود نیست":tie.route.id+": "+tie.count+" بالا و "+tie.count+" پایین Ø"+tie.dia+"، خاموت Ø"+(tie.stirrupDia||10)):"شناژ ثبت نشده";
-  const clashLabel=Number.isFinite(clash.minimumClearDistanceMm)?(clash.ok?"کنترل هندسی اتصال: بدون تقاطع؛ حداقل فاصله آزاد "+fmtSvg(clash.minimumClearDistanceMm)+" mm ("+clash.pairsChecked+" جفت میلگرد بررسی شد).":"هشدار: "+clash.conflictPairs+" جفت میلگرد دارای تقاطع/فاصله ناکافی؛ زوج بحرانی "+(clash.criticalPair?.tieBar||"شناژ")+" و "+(clash.criticalPair?.footingBar||"شبکه پی")):(clash.reason||"کنترل برخورد انجام نشد.");
-  summary.textContent=(mode==="default"?"حالت پیش‌فرض اجرایی؛ ":"حالت طراحی؛ ")+"پی انتخابی "+(selectedBase?baseId(selectedBase):"نامشخص")+" | "+footingLabel+" | "+tieLabel+" | "+footingSpecs.basis+" | "+clashLabel+(cover===null?" پوشش بتن وارد نشده؛ جانمایی میلگردها در تصویر شماتیک است.":"")+(missing.length?" هشدار: "+missing.join(" "):"");
+  const clashLabel=Number.isFinite(clash.minimumClearDistanceMm)?(clash.ok?"کنترل هندسی تمام پی‌های مسیر: بدون تقاطع؛ حداقل فاصله آزاد "+fmtSvg(clash.minimumClearDistanceMm)+" mm ("+clash.footingCount+" پی، "+clash.pairsChecked+" جفت میلگرد).":"هشدار: "+clash.conflictPairs+" جفت میلگرد دارای تقاطع/فاصله ناکافی در "+(clash.footingCount||0)+" پی؛ زوج بحرانی "+(clash.criticalPair?.tieBar||"شناژ")+" و "+(clash.criticalPair?.footingBar||"شبکه پی")):(clash.reason||"کنترل برخورد انجام نشد.");
+  summary.textContent=(mode==="default"?"حالت پیش‌فرض اجرایی؛ ":"حالت طراحی؛ ")+"پی انتخابی "+(selectedBase?baseId(selectedBase):"نامشخص")+" | "+footingLabel+" | "+tieLabel+" | "+footingSpecs.basis+" | "+clashLabel+(cover===null?" پوشش بتن وارد نشده؛ میلگردهای پی در نمای سه‌بعدی رسم نشده‌اند.":"")+(missing.length?" هشدار: "+missing.join(" "):"");
  }
 
  function getData(){readInputs();return JSON.parse(JSON.stringify({...state,footingSchedule}));}
