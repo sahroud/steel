@@ -797,6 +797,11 @@
     if(window.SteelCrane3DMeshProposal&&model.geometry.craneRunway.enabled){
       model.geometry.craneRunway.meshProposal=window.SteelCrane3DMeshProposal.audit(model);
     }
+    if(window.SteelCrane3DIntegration&&model.geometry.craneRunway.enabled){
+      const integration=window.SteelCrane3DIntegration.integrate(model);
+      model.geometry.craneRunway.integrationAudit={success:integration.success,ready:integration.ready,analysisEnabled:false,issues:integration.issues||[],counts:integration.counts||null};
+      if(integration.success)model=integration.model;
+    }
     return model;
   }
   function draw() {
