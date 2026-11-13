@@ -63,17 +63,21 @@ function analyzeGroup(g){
  return engine.analyze(input);
 }
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function sectionDefaults(g){
+ const s=root.SteelSections?.read?.()||{},m=s[g]||{},p=s.analysis3d?.groups?.[g]||{};
+ return {Ag_mm2:Number(m.A_cm2)>0?Number(m.A_cm2)*100:null,Ix_mm4:Number(m.Ix_cm4)>0?Number(m.Ix_cm4)*1e4:null,Iy_mm4:Number(m.Iy_cm4)>0?Number(m.Iy_cm4)*1e4:null,J_mm4:Number(p.J_cm4)>0?Number(p.J_cm4)*1e4:null};
+}
 function render(){
  const host=$("compressionCapacityIntegrationContent");if(!host)return;
  host.innerHTML=GROUPS.map(([g,label])=>{
-  const d=data.groups[g]||{};
+  const d=data.groups[g]||{},defaults=sectionDefaults(g);
   return '<details class="sub-panel"><summary>'+label+' — ظرفیت فشاری محدود</summary><div class="form-grid">'+
-   FIELDS.map(([k,caption])=>'<div class="field"><label for="cc_'+g+'_'+k+'">'+caption+'</label><input type="number" min="0" step="any" id="cc_'+g+'_'+k+'" value="'+(d[k]??"")+'"></div>').join("")+
+   FIELDS.map(([k,caption])=>'<div class="field"><label for="cc_'+g+'_'+k+'">'+caption+'</label><input type="number" min="0" step="any" id="cc_'+g+'_'+k+'" value="'+(d[k]??defaults[k]??"")+'"></div>').join("")+
    '</div><div class="form-grid"><label><input type="checkbox" id="cc_'+g+'_sectionTypeReviewed" '+(d.sectionTypeReviewed?'checked':'')+'> تأیید شد مقطع واقعاً I دوبل‌متقارن است</label>'+
    '<label><input type="checkbox" id="cc_'+g+'_localSlendernessReviewed" '+(d.localSlendernessReviewed?'checked':'')+'> کنترل لاغری موضعی بال و جان طبق جدول معتبر انجام شده و مقطع غیرلاغر است</label></div>'+
    '<div class="field"><label for="cc_'+g+'_note">منبع هندسه، مهاربندی و کنترل لاغری</label><input type="text" id="cc_'+g+'_note" value="'+esc(d.note)+'" placeholder="شماره نقشه، جدول/بند، گزارش یا گواهی مصالح"></div></details>';
  }).join("")+
- '<div class="notice">E و G از پنل مصالح خوانده می‌شوند (در نبود مقدار، E=200000 MPa و G متناظر با ν=0.3 فقط به‌عنوان مقدار الاستیک پایه استفاده می‌شود). Fy از رجیستر گروه عضو یا پنل مصالح خوانده می‌شود، مگر آنکه جداگانه در این فرم وارد شود. تمام ابعاد هندسی و طول‌های مهارنشده باید از مقطع و نقشه مهاربندی واقعی برداشت شوند؛ Kها را بدون تحلیل/پیوست معتبر حدس نزنید.</div>'+
+ '<div class="notice">مساحت، ممان‌های اینرسی و J در صورت خالی بودن، از رجیستر مقطع همین گروه به‌صورت اولیه خوانده می‌شوند (A: cm²→mm² و ممان‌ها: cm⁴→mm⁴)؛ آن‌ها را با مشخصات واقعی مقطع تطبیق دهید. مقدار h0 و طول‌های مهارنشده باید از هندسه و نقشه واقعی برداشت شوند. E و G از پنل مصالح خوانده می‌شوند (در نبود مقدار، E=200000 MPa و G متناظر با ν=0.3 فقط مقدار الاستیک پایه است). Fy از رجیستر گروه عضو یا پنل مصالح خوانده می‌شود، مگر آنکه جداگانه در این فرم وارد شود. Kها را بدون تحلیل/پیوست معتبر حدس نزنید.</div>'+
  '<div class="button-grid"><button type="button" class="btn primary" id="btnCompressionCapacityRun">محاسبه مقاومت کمانش کلی ستون و رفتر</button></div><div id="compressionCapacityResults"></div>';
 }
 function renderResults(){
