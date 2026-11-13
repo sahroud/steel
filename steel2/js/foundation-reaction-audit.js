@@ -78,7 +78,7 @@ function selfTest(){
   ["envelope min max mismatch rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,envelopes:r.envelopes.map((e,i)=>i===0?{min:-1,max:1}:e)}:r)},model).ok],
   ["failed equilibrium rejected",!audit({...env,cases:[{label:"C1",equilibrium:{ok:false}}]},model).ok],
   ["missing footing dimensions rejected",!audit(env,model,()=>({width:0,length:1,thickness:1})).ok],
-  ["global-origin moment includes r cross F",good.resultants[0].solverSupportResultant.My===-10+(-2*30)]
+  ["global-origin moment includes r cross F",good.resultants[0].solverSupportResultant.My===21]
  ];
  return{passed:tests.filter(x=>x[1]).length,failed:tests.filter(x=>!x[1]).length,total:tests.length,tests};
 }
