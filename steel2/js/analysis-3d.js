@@ -308,12 +308,18 @@ function analyze(model,options){
  const forceResidual=appliedForce.map((v,i)=>v+supportForce[i]);
  // Equivalent end moments applied to the duplicated purlin bending rotations
  // must be included in the global moment equilibrium check as well.
+ const releasedRotationLoads=[],releasedRotationKeys=new Set();
  purlinEndRotationDof.forEach((ids,key)=>{
   const parts=String(key).split(":"),memberId=parts[0],end=parts[1];
   const member=members.find(x=>String(x.id)===memberId);
   const nodeId=member?(end==="i"?member.start:member.end):null;
-  const nodeIndex=nodeMap.get(nodeId);
-  if(nodeIndex!==undefined)addGlobal([0,0,0],[F[ids[0]],F[ids[1]],0],nodes[nodeIndex],appliedForce,appliedMoment);
+  const nodeIndex=nodeMap.get(nodeId),uniqueKey=String(nodeId)+"|"+ids.join(",");
+  if(nodeIndex!==undefined&&!releasedRotationKeys.has(uniqueKey)){
+   releasedRotationKeys.add(uniqueKey);
+   const momentNm=[F[ids[0]],F[ids[1]],0];
+   releasedRotationLoads.push({nodeId:String(nodeId),memberId:String(memberId),end,momentNm});
+   addGlobal([0,0,0],momentNm,nodes[nodeIndex],appliedForce,appliedMoment);
+  }
  });
  const momentResidual=appliedMoment.map((v,i)=>v+supportMoment[i]);
  const vectorNorm=v=>Math.hypot(...v);
@@ -338,7 +344,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>(fixed.has(i*6+d)?v:0)+springReactionByDof[i*6+d])})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,nodalSpringCount:nodalSprings.length,nodalSprings:nodalSprings.map(s=>({nodeId:s.nodeId,dof:s.dof,stiffness:s.stiffness,kind:s.kind,reaction:springReactionByDof[s.globalDof]})),connectorSpringCount:connectorSprings.length,connectorSprings:connectorSprings.map(s=>{const ui=D[s.globalDofI],uj=D[s.globalDofJ],relativeDisplacement=uj-ui;return {id:s.id,nodeI:s.nodeI,nodeJ:s.nodeJ,dof:s.dof,stiffness:s.stiffness,kind:s.kind,relativeDisplacement,springForceOnNodeI:s.stiffness*relativeDisplacement,springForceOnNodeJ:-s.stiffness*relativeDisplacement};}),displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","فنرهای گره‌ای خطی مستقل به زمین و فنرهای رابط دوگرهی بین گره‌های هم‌مکان؛ سختی ثابت، بدون تماس، لغزش، لقی یا هیسترزیس","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,nodalSpringCount:nodalSprings.length,nodalSprings:nodalSprings.map(s=>({nodeId:s.nodeId,dof:s.dof,stiffness:s.stiffness,kind:s.kind,reaction:springReactionByDof[s.globalDof]})),connectorSpringCount:connectorSprings.length,connectorSprings:connectorSprings.map(s=>{const ui=D[s.globalDofI],uj=D[s.globalDofJ],relativeDisplacement=uj-ui;return {id:s.id,nodeI:s.nodeI,nodeJ:s.nodeJ,dof:s.dof,stiffness:s.stiffness,kind:s.kind,relativeDisplacement,springForceOnNodeI:s.stiffness*relativeDisplacement,springForceOnNodeJ:-s.stiffness*relativeDisplacement};}),displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,equivalentReleasedRotationLoads:releasedRotationLoads,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","فنرهای گره‌ای خطی مستقل به زمین و فنرهای رابط دوگرهی بین گره‌های هم‌مکان؛ سختی ثابت، بدون تماس، لغزش، لقی یا هیسترزیس","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 
 function selfTest(){
