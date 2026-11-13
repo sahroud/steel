@@ -138,7 +138,10 @@ function selfTest(){
   sourceTraceabilityRetained:by.get("foundation-footing-concrete").source==="متره فونداسیون",
   missingSourceProducesWarning:buildSnapshot({}).warnings.length>=3,
   summaryRowsExplicitlyMarked:by.get("foundation-footing-concrete").aggregationRole==="summary"&&by.get("foundation-footing-rebar").aggregationRole==="summary",
-  footingDetailRowsNotMarkedAsSummary:by.get("footing-B1")?.aggregationRole!=="summary"
+  footingDetailRowsNotMarkedAsSummary:by.get("footing-B1")?.aggregationRole!=="summary",
+  anchorCountFallbackUsed:buildSnapshot({foundation:{quantities:{anchorsCount:12}}}).rows.find(x=>x.id==="foundation-anchor-count")?.quantity===12,
+  anchorModuleCountPreventsDuplicate:!buildSnapshot({foundation:{quantities:{anchorsCount:12}},anchor:{boltCount:16}}).rows.some(x=>x.id==="foundation-anchor-count"),
+  knownFootingFormworkRetainedWithoutTie:buildSnapshot({foundation:{quantities:{sideFormworkM2:10,tieSideFormworkM2:null}}}).rows.find(x=>x.id==="foundation-footing-pedestal-formwork")?.quantity===10
  };
  return{passed:Object.values(tests).filter(Boolean).length,failed:Object.values(tests).filter(x=>!x).length,tests};
 }
