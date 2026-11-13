@@ -8,10 +8,11 @@ const GROUPS=[["column","ستون"],["rafter","رفتر"],["endPost","ستونک
 function audit(envelope){
  const issues=[],warnings=[],rows=[];
  const env=envelope||root.SteelMemberForceEnvelope?.getLast?.();
- const members=env?.members||[];
+ const members=Array.isArray(env?.members)?env.members:[];
+ const missingGroups=[];
  GROUPS.forEach(([g,label])=>{
   const list=members.filter(m=>m.sectionKey===g);
-  if(!list.length){warnings.push(label+": عضو/نیروی استخراج‌شده در گزارش فعلی وجود ندارد.");return;}
+  if(!list.length){missingGroups.push(g);warnings.push(label+": عضو/نیروی استخراج‌شده در گزارش فعلی وجود ندارد؛ پوشش طراحی این گروه تأیید نشده است.");return;}
   const d=root.SteelMemberDesignInputs?.getForGroup?.(g)||{};
   const missing=[];
   [["t_mm","ضخامت مبنای مصالح"],["Fy","Fy"],["Fu","Fu"],["Lb","طول مهارنشده خمشی Lb"],["Cb","ضریب Cb"]].forEach(([k,n])=>{if(!(Number(d[k])>0))missing.push(n+" معتبر نیست.");});
@@ -24,7 +25,7 @@ function audit(envelope){
   if(missing.length)missing.forEach(x=>issues.push(label+": "+x));
   rows.push({group:g,label,count:list.length,ready:missing.length===0,missing,maximumMoment_Nm:Math.max(...demand.map(x=>x.M)),maximumShear_N:Math.max(...demand.map(x=>x.V)),demands:demand});
  });
- return {ready:issues.length===0&&rows.length>0,rows,issues,warnings,sourceCases:env?.cases?.length||0,disclaimer:"این کنترل فقط وجود داده‌های لازم برای ادامه طراحی خمش و برش را ممیزی می‌کند. مقادیر بیشینه مستقل لزوماً هم‌زمان نیستند. ظرفیت خمشی، کمانش پیچشی-جانبی، ظرفیت برشی جان، اثر سخت‌کننده‌ها، طبقه‌بندی مقطع و اندرکنش محاسبه نشده‌اند؛ نتیجه تأیید آیین‌نامه‌ای یا مجوز اجرا نیست."};
+ return {ready:issues.length===0&&rows.length===GROUPS.length&&missingGroups.length===0&&Number(env?.cases?.length)>0,rows,issues,warnings,missingGroups,sourceCases:env?.cases?.length||0,disclaimer:"این کنترل فقط وجود داده‌های لازم برای ادامه طراحی خمش و برش را ممیزی می‌کند. مقادیر بیشینه مستقل لزوماً هم‌زمان نیستند. ظرفیت خمشی، کمانش پیچشی-جانبی، ظرفیت برشی جان، اثر سخت‌کننده‌ها، طبقه‌بندی مقطع و اندرکنش محاسبه نشده‌اند؛ نتیجه تأیید آیین‌نامه‌ای یا مجوز اجرا نیست."};
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function renderResult(r){const host=$("flexureShearReadinessResults");if(!host)return;host.innerHTML="<h4>"+(r.ready?"داده‌های پایه موجودند":"موارد تکمیل‌نشده")+"</h4>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در ممیزی داده‌های موجود یافت نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+"<div style='overflow-x:auto'><table class='data-table'><thead><tr><th>گروه</th><th>تعداد اعضا</th><th>بیشینه |M| (kN.m)</th><th>بیشینه |V| (kN)</th><th>وضعیت داده</th></tr></thead><tbody>"+r.rows.map(x=>"<tr><td>"+esc(x.label)+"</td><td>"+x.count+"</td><td>"+(x.maximumMoment_Nm/1000).toFixed(2)+"</td><td>"+(x.maximumShear_N/1000).toFixed(2)+"</td><td>"+(x.ready?"کامل":"ناقص")+"</td></tr>").join("")+"</tbody></table></div><div class='notice'>"+esc(r.disclaimer)+"</div>";}
