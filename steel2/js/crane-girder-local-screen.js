@@ -76,7 +76,7 @@ function selfTest(){
  t("absolute-force bound is independent of sign reversal",()=>{const b={...member,localEndForces:member.localEndForces.map(v=>-v)};return audit({success:true,members:[b]},{G1:section}).results[0].governingYieldScreenRatio===r.results[0].governingYieldScreenRatio;});
  t("rejects missing section modulus",()=>!audit({success:true,members:[member]},{G1:{...section,Sy_m3:0}}).success);
  t("rejects missing source traceability",()=>!audit({success:true,members:[member]},{G1:{...section,source:""}}).success);
- t("ignores non-runway members",()=>audit({success:true,members:[{...member,sectionKey:"column"}]},{G1:section}).issues.some(x=>x.includes("پیدا نشد")));
+ t("ignores non-runway members",()=>audit({success:true,members:[{...member,sectionKey:"column",type:"column"}]},{G1:section}).issues.some(x=>x.includes("پیدا نشد")));
  t("reports stress screen above yield",()=>audit({success:true,members:[{...member,localEndForces:member.localEndForces.map(v=>v*1e5)}]},{G1:section}).results[0].screenStatus==="nominal-elastic-screen-exceeds-Fy");
  t("keeps code approval disabled",()=>r.analysisEnabled===false);
  t("documents unmodeled local buckling and web crippling",()=>r.limitations.some(x=>x.includes("web crippling"))&&r.limitations.some(x=>x.includes("کمانش موضعی")));
