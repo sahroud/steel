@@ -62,8 +62,8 @@ function selfTest(){
  test("wheel actions routed without changing force values",()=>{const r=routeWheelActions({craneType:"gantry",supportSystem:"slab"},[{id:"W1",verticalKN:42,longitudinalKN:3,transverseKN:2}]);return r.success&&r.actions[0].verticalKN===42&&r.actions[0].target==="floor_slab";});
  test("invalid wheel action blocked",()=>!routeWheelActions({craneType:"overhead",supportSystem:"runway_girder"},[{id:"W1",verticalKN:"bad"}]).success);
  test("classification never enables analysis or approval",()=>{const r=classify({craneType:"overhead",supportSystem:"runway_girder"});return !r.analysisEnabled&&!r.designApproved;});
- test("crane selector state round-trips",()=>{setData({id:"CR-02",craneType:"gantry",supportSystem:"independent_foundation"});const x=getData();return x.id==="CR-02"&&x.craneType==="gantry"&&x.supportSystem==="independent_foundation";});
- test("missing saved crane settings restore safe overhead defaults",()=>{setData({});const x=getData();return x.craneType==="overhead"&&x.supportSystem==="runway_girder";});
+ test("crane selector state round-trips",()=>{root.SteelCraneLoadPath.setData({id:"CR-02",craneType:"gantry",supportSystem:"independent_foundation"});const x=root.SteelCraneLoadPath.getData();return x.id==="CR-02"&&x.craneType==="gantry"&&x.supportSystem==="independent_foundation";});
+ test("missing saved crane settings restore safe overhead defaults",()=>{root.SteelCraneLoadPath.setData({});const x=root.SteelCraneLoadPath.getData();return x.craneType==="overhead"&&x.supportSystem==="runway_girder";});
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests,analysisEnabled:false,designApproved:false,note:"Classification and routing software tests only; no wheel-load calculation, FEM transfer, or engineering approval."};
 }
 root.SteelCraneLoadPath={classify,auditCases,routeWheelActions,readUI,getData:()=>({...uiState}),setData,ensurePanel,selfTest};
