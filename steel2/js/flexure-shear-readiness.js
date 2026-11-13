@@ -19,6 +19,7 @@ function audit(envelope){
  if(!Number.isFinite(modelMemberCount)||modelMemberCount<0)issues.push("تعداد اعضای مدل مرجع در گزارش ثبت نشده است.");
  else if(modelMemberCount!==members.length)issues.push("تعداد اعضای گزارش‌شده با مدل مرجع برابر نیست ("+members.length+" از "+modelMemberCount+").");
  if(Array.isArray(env?.unreportedMemberIds)&&env.unreportedMemberIds.length)issues.push("اعضای فاقد گزارش نیرو: "+env.unreportedMemberIds.slice(0,12).join("، ")+(env.unreportedMemberIds.length>12?" و موارد بیشتر":"")+".");
+ if(Array.isArray(env?.analysisMemberSetMismatchCases)&&env.analysisMemberSetMismatchCases.length)issues.push("شناسه اعضای تحلیل بین ترکیبات بار یکسان نیست: "+env.analysisMemberSetMismatchCases.join("، ")+".");
  GROUPS.forEach(([g,label])=>{
   const list=members.filter(m=>m.sectionKey===g);
   if(!list.length){missingGroups.push(g);warnings.push(label+": عضو/نیروی استخراج‌شده در گزارش فعلی وجود ندارد؛ پوشش طراحی این گروه تأیید نشده است.");return;}
