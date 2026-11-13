@@ -43,6 +43,28 @@ function audit(result,sectionsByMemberId){
  "نتیجه تحلیل خطی مرتبه اول است و اثرات مرتبه دوم، imperfection و تحلیل پایداری در آن نیست."
  ]};
 }
+function plateStabilityAudit(sectionsByMemberId){
+ const issues=[],rows=[],map=sectionsByMemberId||{},ids=Object.keys(map);
+ if(!ids.length)issues.push("اطلاعات هندسی تیر حمال وارد نشده است.");
+ ids.forEach(id=>{
+  const s=map[id]||{},n=k=>Number(s[k]);
+  const numeric=["d_m","bf_m","tw_m","tf_m","E_MPa","Fy_MPa","Lb_m","Cb","loadHeightFromShearCenter_m","Cw_m6","Iy_minor_m4","J_m4","bearingLength_m"];
+  numeric.forEach(k=>{if(s[k]===undefined||s[k]===null||s[k]===""||!Number.isFinite(n(k)))issues.push("عضو "+id+": ورودی عددی "+k+" ناقص یا نامعتبر است.");});
+  ["compressionFlangeRestraint","restraintSource","bearingDetailSource","webBearingCondition"].forEach(k=>{if(!String(s[k]||"").trim())issues.push("عضو "+id+": ورودی "+k+" الزامی است.");});
+  if(numeric.some(k=>s[k]===undefined||s[k]===null||s[k]===""||!Number.isFinite(n(k))))return;
+  ["d_m","bf_m","tw_m","tf_m","E_MPa","Fy_MPa","Lb_m","Cb","Cw_m6","Iy_minor_m4","J_m4","bearingLength_m"].forEach(k=>{if(!(n(k)>0))issues.push("عضو "+id+": "+k+" باید مثبت باشد.");});
+  if(n("d_m")<=2*n("tf_m"))issues.push("عضو "+id+": عمق آزاد جان باید مثبت باشد.");
+  if(n("bf_m")<=n("tw_m"))issues.push("عضو "+id+": عرض آزاد پیش‌آمدگی بال باید مثبت باشد.");
+  if(!["continuous","discrete","none","unknown"].includes(s.compressionFlangeRestraint))issues.push("عضو "+id+": نوع مهار بال فشاری نامعتبر است.");
+  if(!String(s.restraintSource||"").trim())issues.push("عضو "+id+": مرجع مهار جانبی بال فشاری الزامی است.");
+  if(!String(s.bearingDetailSource||"").trim())issues.push("عضو "+id+": مرجع جزئیات نشیمن/سخت‌کننده الزامی است.");
+  if(!String(s.webBearingCondition||"").trim())issues.push("عضو "+id+": وضعیت بارگذاری/نشیمن جان باید مستند شود.");
+  if(n("d_m")<=2*n("tf_m")||n("bf_m")<=n("tw_m")||n("E_MPa")<=0||n("Fy_MPa")<=0||n("tw_m")<=0||n("tf_m")<=0) return;
+  const clearWeb=n("d_m")-2*n("tf_m"),outstand=(n("bf_m")-n("tw_m"))/2,root=Math.sqrt(n("Fy_MPa")/n("E_MPa"));
+  rows.push({memberId:id,geometry_m:{depth:n("d_m"),flangeWidth:n("bf_m"),webThickness:n("tw_m"),flangeThickness:n("tf_m"),clearWebDepth:clearWeb,flangeOutstand:outstand,unbracedLength:n("Lb_m"),bearingLength:n("bearingLength_m")},dimensionlessRatios:{flangeOutstandOverThickness:outstand/n("tf_m"),clearWebDepthOverThickness:clearWeb/n("tw_m"),flangePlateNormalized:outstand/n("tf_m")*root,webPlateNormalized:clearWeb/n("tw_m")*root},stabilityInputs:{Cb:n("Cb"),compressionFlangeRestraint:s.compressionFlangeRestraint,restraintSource:s.restraintSource,loadHeightFromShearCenter_m:n("loadHeightFromShearCenter_m"),Cw_m6:n("Cw_m6"),Iy_minor_m4:n("Iy_minor_m4"),J_m4:n("J_m4")},bearingInputs:{webBearingCondition:s.webBearingCondition,bearingDetailSource:s.bearingDetailSource},codeClassification:null,LTBResistance:null,webCripplingResistance:null});
+ });
+ return {success:issues.length===0&&rows.length===ids.length,analysisEnabled:false,memberCount:ids.length,checkedCount:rows.length,issues,results:rows,limitations:["این خروجی فقط نسبت‌های هندسی صفحه‌ای و کامل‌بودن ورودی‌های لازم برای بررسی پایداری را گزارش می‌کند؛ هیچ طبقه‌بندی مقطع یا مقاومت کمانش محاسبه نمی‌شود.","کنترل کمانش پیچشی‌ـ‌جانبی نیازمند روش آیین‌نامه‌ای منتخب، شرایط مهار واقعی، بارگذاری و محل اعمال بار، Cb معتبر، خواص مقطع و تحلیل پایداری است؛ این موارد در این مرحله به مقاومت تبدیل نمی‌شوند.","لهیدگی/کمانش موضعی جان و بارگذاری موضعی بال به طول بارگذاری، شعاع گوشه، نوع بار/تکیه‌گاه، سخت‌کننده و جزئیات ساخت نیاز دارد؛ هنوز مقاومت محاسبه نمی‌شود.","نسبت‌های نرمال‌شده b/t و h/tw فقط شاخص هندسی هستند و بدون حدود آیین‌نامه‌ای و شرایط تکیه‌گاهی طبقه‌بندی نمی‌شوند."]};
+}
 function templateFor(result){
  const members=(result?.members||[]).filter(m=>m.sectionKey==="craneRunwayGirder"||m.type==="craneRunwayGirder");
  if(!members.length)return {success:false,issues:["عضو تیر حمالی در نتیجه تحلیل برای ساخت الگو پیدا نشد."]};
@@ -96,10 +118,13 @@ function selfTest(){
  t("rejects missing source traceability",()=>!audit({success:true,members:[member]},{G1:{...section,source:""}}).success);
  t("ignores non-runway members",()=>audit({success:true,members:[{...member,sectionKey:"column",type:"column"}]},{G1:section}).issues.some(x=>x.includes("پیدا نشد")));
  t("reports stress screen above yield",()=>audit({success:true,members:[{...member,localEndForces:member.localEndForces.map(v=>v*1e5)}]},{G1:section}).results[0].screenStatus==="nominal-elastic-screen-exceeds-Fy");
+ t("plate and stability audit reports normalized ratios without code classification",()=>{const q=plateStabilityAudit({G1:{d_m:.6,bf_m:.25,tw_m:.01,tf_m:.02,E_MPa:200000,Fy_MPa:235,Lb_m:3,Cb:1,compressionFlangeRestraint:"discrete",restraintSource:"DWG-1",loadHeightFromShearCenter_m:.1,Cw_m6:1e-7,Iy_minor_m4:1e-5,J_m4:1e-6,bearingLength_m:.12,bearingDetailSource:"DWG-2",webBearingCondition:"end reaction"}});return q.success&&q.results[0].dimensionlessRatios.flangeOutstandOverThickness>0&&q.results[0].codeClassification===null&&q.results[0].LTBResistance===null;});
+ t("plate and stability audit blocks missing restraint evidence",()=>!plateStabilityAudit({G1:{d_m:.6,bf_m:.25,tw_m:.01,tf_m:.02,E_MPa:200000,Fy_MPa:235,Lb_m:3,Cb:1,compressionFlangeRestraint:"discrete",loadHeightFromShearCenter_m:.1,Cw_m6:1e-7,Iy_minor_m4:1e-5,J_m4:1e-6,bearingLength_m:.12,bearingDetailSource:"DWG-2",webBearingCondition:"end reaction"}}).success);
+ t("plate and stability audit blocks invalid plate geometry",()=>!plateStabilityAudit({G1:{d_m:.02,bf_m:.005,tw_m:.01,tf_m:.02,E_MPa:200000,Fy_MPa:235,Lb_m:3,Cb:1,compressionFlangeRestraint:"none",restraintSource:"DWG-1",loadHeightFromShearCenter_m:.1,Cw_m6:1e-7,Iy_minor_m4:1e-5,J_m4:1e-6,bearingLength_m:.12,bearingDetailSource:"DWG-2",webBearingCondition:"end reaction"}}).success);
  t("keeps code approval disabled",()=>r.analysisEnabled===false);
  t("documents unmodeled local buckling and web crippling",()=>r.limitations.some(x=>x.includes("web crippling"))&&r.limitations.some(x=>x.includes("کمانش موضعی")));
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests,analysisEnabled:false,note:"Software regression only; not a code resistance verification."};
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCraneGirderLocalScreen={audit,templateFor,makeTemplate,readUI,setData,run,selfTest};
+root.SteelCraneGirderLocalScreen={audit,plateStabilityAudit,templateFor,makeTemplate,readUI,setData,run,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
