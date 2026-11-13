@@ -326,7 +326,7 @@ function analyze(model,options){
  const results=elements.map(e=>{
   const dg=e.ids.map(i=>D[i]),dl=restoreReleasedRotations(mul(e.T,dg.map(v=>[v])).map(r=>r[0]),e.releaseData),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
-  return {id:e.member.id,parentMemberId:e.member.parentMemberId||null,taperSegmentIndex:e.member.taperSegmentIndex||null,taperSegmentCount:e.member.taperSegmentCount||null,start:e.member.start,end:e.member.end,sectionKey:e.member.sectionKey||e.props.sectionKey||"",type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props,endReleases:e.endReleases};
+  return {id:e.member.id,parentMemberId:e.member.parentMemberId||null,taperSegmentIndex:e.member.taperSegmentIndex||null,taperSegmentCount:e.member.taperSegmentCount||null,start:e.member.start,end:e.member.end,sectionKey:e.member.sectionKey||e.props.sectionKey||"",type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props,endReleases:e.endReleases,endOffsets:{i:e.offsetI.slice(),j:e.offsetJ.slice()}};
  });
  let maxTranslation=0,maxDisplacement=null;
  nodes.forEach((n,i)=>{
