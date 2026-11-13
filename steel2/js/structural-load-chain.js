@@ -208,7 +208,7 @@ function selfTest(){
  const ledgerModel={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],members:[{id:"M",start:"A",end:"B"}]};
  const ledger=buildExternalLoadLedger(ledgerModel,[{id:"M",start:"A",end:"B",analysisLoad:{globalUniform:[0,-100,0]}},{id:"DYNAMIC",start:"A",end:"B",analysisLoad:{globalUniform:[0,0,5]}}],[{nodeId:"B",values:[10,0,0,0,0,5]}],[{nodeId:"A",memberId:"M",end:"i",momentNm:[0,0,7]}]);
  ck("independent ledger includes solved-only member, nodal load and released-rotation moment",()=>ledger.complete&&ledger.memberCount===2&&ledger.nodalLoadCount===1&&ledger.releasedRotationLoadCount===1&&ledger.resultant.forceN[0]===10&&ledger.resultant.forceN[1]===-400&&ledger.resultant.forceN[2]===20&&ledger.resultant.momentNm[2]===-788);
- const eqLedger={appliedForceN:[10,-400,20],appliedMomentNm:[0,0,-788]};
+ const eqLedger={appliedForceN:[10,-400,20],appliedMomentNm:[0,-40,-788]};
  ck("external load ledger matches solver applied resultant",()=>compareExternalLedger(ledger,eqLedger).ok);
  ck("external load ledger mismatch is detected",()=>!compareExternalLedger(ledger,{...eqLedger,appliedForceN:[10,-390,0]}).ok);
  ck("missing member load prevents complete ledger",()=>!buildExternalLoadLedger(ledgerModel,[{id:"M"}],[]).complete);
