@@ -12,6 +12,7 @@ function audit(p){
  p=p||{};const issues=[],s=Array.isArray(p.supportStations_m)?p.supportStations_m:[];
  if(!(Number.isFinite(+p.length_m)&&+p.length_m>0))issues.push("طول تیر حمال باید مثبت باشد.");
  if(s.length<2)issues.push("حداقل دو تکیه‌گاه/براکت لازم است.");
+ if(s.length>=2&&Number.isFinite(+p.length_m)&&+p.length_m>0&&(Math.abs(+s[0])>1e-8||Math.abs(+s[s.length-1]- +p.length_m)>1e-8))issues.push("برای این مدل تیر، تکیه‌گاه ابتدا و انتهای طول تیر باید صریحاً تعریف شوند؛ کنسول فقط با مدل هندسی جداگانه مجاز است.");
  if(s.some((x,i)=>!Number.isFinite(+x)||+x<0||+x>+p.length_m||(i&&+x<=+s[i-1])))issues.push("مختصات تکیه‌گاه‌ها باید صعودی، متمایز و داخل طول تیر باشند.");
  if(!String(p.supportStiffnessSource||"").trim())issues.push("مرجع سختی تکیه‌گاه/براکت لازم است.");
  if(!String(p.detailSource||"").trim())issues.push("مرجع نقشه جزئیات تیر حمال و براکت‌ها لازم است.");
@@ -27,14 +28,21 @@ function audit(p){
 function analyze(p,transfer){
  const a=audit(p);if(!a.ready)return {success:false,analysisEnabled:false,audit:a};
  if(!transfer?.success||!Array.isArray(transfer.cases)||!transfer.cases.length)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["ابتدا جاروب هم‌زمان دو ریل را اجرا کنید."]}};
+ const caseKeys=transfer.cases.map((c,i)=>String(c.caseId??c.id??i));
+ if(new Set(caseKeys).size!==caseKeys.length)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["شناسه حالت‌های بار دو ریل تکراری است؛ هم‌زمانی حالات قابل اثبات نیست."]}};
+ for(const [i,c] of transfer.cases.entries()){
+  for(const side of ["left","right"]){const loads=c.girderPointLoads?.[side];if(!Array.isArray(loads)||!loads.length)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["حالت "+caseKeys[i]+" برای تیر "+side+" فاقد بار چرخ است؛ تحلیل ناقص دو ریل متوقف شد."]}};
+   if(loads.some(x=>!Number.isFinite(Number(x.x_m))||Number(x.x_m)<0||Number(x.x_m)>Number(p.length_m)||!Number.isFinite(Number(x.P_N))||Number(x.P_N)===0))return {success:false,analysisEnabled:false,audit:{ready:false,issues:["مختصات یا مقدار بار چرخ در حالت "+caseKeys[i]+" و تیر "+side+" نامعتبر است."]}};
+  }
+ }
  const fem=root.SteelRailBeamFEM;if(!fem?.analyze)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["حل‌گر تیر FEM بارگذاری نشده است."]}};
  const results={left:[],right:[]},failures=[];
  for(const [caseIndex,c] of transfer.cases.entries())for(const side of ["left","right"]){
-  const loads=c.girderPointLoads?.[side];if(!Array.isArray(loads)||!loads.length)continue;
+  const loads=c.girderPointLoads[side];
   try{
    const r=fem.analyze({length_m:+p.length_m,E_MPa:+p[side+"E_MPa"],Ix_mm4:+p[side+"Ix_mm4"],supports:p.supportStations_m.map((x,i)=>({x_m:+x,kVertical_N_m:+p[side+"SpringStiffness_N_m"][i]})),pointLoads:loads.map(x=>({x_m:+x.x_m,P_N:+x.P_N}))});
    if(!r.equilibrium?.ok)throw Error("تعادل تیر حمال برقرار نیست.");
-   results[side].push({caseIndex,referencePosition_m:c.referencePosition_m,loadCount:loads.length,result:r});
+   results[side].push({caseIndex,caseId:caseKeys[caseIndex],referencePosition_m:c.referencePosition_m,loadCount:loads.length,result:r});
   }catch(e){failures.push({caseIndex,side,reason:String(e.message||e)});}
  }
  const envelopes={};
@@ -42,7 +50,7 @@ function analyze(p,transfer){
   const rows=results[side];envelopes[side]={solvedCases:rows.length,maxAbsNodalDeflection_m:0,governingDeflectionCase:null,maxAbsElementEndShear_N:0,governingShearCase:null,maxAbsElementEndMoment_Nm:0,governingMomentCase:null};
   rows.forEach(x=>{const d=Math.abs(x.result.maxNodalDeflection?.value||0);if(d>envelopes[side].maxAbsNodalDeflection_m){envelopes[side].maxAbsNodalDeflection_m=d;envelopes[side].governingDeflectionCase=x.caseIndex;}const shear=Math.max(0,...x.result.elements.flatMap(e=>[Math.abs(e.endActions[0]),Math.abs(e.endActions[2])])),moment=Math.max(0,...x.result.elements.flatMap(e=>[Math.abs(e.endActions[1]),Math.abs(e.endActions[3])]));if(shear>envelopes[side].maxAbsElementEndShear_N){envelopes[side].maxAbsElementEndShear_N=shear;envelopes[side].governingShearCase=x.caseIndex;}if(moment>envelopes[side].maxAbsElementEndMoment_Nm){envelopes[side].maxAbsElementEndMoment_Nm=moment;envelopes[side].governingMomentCase=x.caseIndex;}});
  }
- return {success:results.left.length>0&&results.right.length>0,analysisEnabled:false,method:"separate linear Euler-Bernoulli vertical FEM for two runway girders using synchronized rail reactions",length_m:+p.length_m,caseCount:transfer.cases.length,solvedCases:{left:results.left.length,right:results.right.length},failedCases:failures,envelopes,cases:results,units:{force:"N",length:"m",moment:"N.m",spring:"N/m"},limitations:["مدل تیر حمال یک‌بعدی، خطی، قائم و با EI ثابت است.","سختی براکت/اتصال فقط به شکل فنر قائم معادل وارد می‌شود.","بارهای افقی، پیچش، warping، خمش حول محور ضعیف و کمانش پیچشی-جانبی مدل نشده‌اند.","web crippling، خمش موضعی بال، سخت‌کننده، جوش، پیچ، خستگی و اثر ضربه کنترل نشده‌اند.","سختی عرضی پل جرثقیل بین دو ریل مدل نشده است.","خروجی مقدماتی است و تأیید آیین‌نامه‌ای یا طراحی اجرایی نیست."]};
+ return {success:failures.length===0&&results.left.length===transfer.cases.length&&results.right.length===transfer.cases.length,analysisEnabled:false,method:"separate linear Euler-Bernoulli vertical FEM for two runway girders using synchronized rail reactions",length_m:+p.length_m,caseCount:transfer.cases.length,solvedCases:{left:results.left.length,right:results.right.length},failedCases:failures,envelopes,cases:results,units:{force:"N",length:"m",moment:"N.m",spring:"N/m"},limitations:["مدل تیر حمال یک‌بعدی، خطی، قائم و با EI ثابت است.","سختی براکت/اتصال فقط به شکل فنر قائم معادل وارد می‌شود.","بارهای افقی، پیچش، warping، خمش حول محور ضعیف و کمانش پیچشی-جانبی مدل نشده‌اند.","web crippling، خمش موضعی بال، سخت‌کننده، جوش، پیچ، خستگی و اثر ضربه کنترل نشده‌اند.","سختی عرضی پل جرثقیل بین دو ریل مدل نشده است.","خروجی مقدماتی است و تأیید آیین‌نامه‌ای یا طراحی اجرایی نیست."]};
 }
 function readUI(){const p={};Object.keys(defaults).forEach(k=>{const e=$("runwayGirder_"+k);if(e)p[k]=e.value;});for(const k of ["length_m","leftE_MPa","leftIx_mm4","rightE_MPa","rightIx_mm4"])p[k]=Number(p[k]);p.supportStations_m=nums(p.supportStationsCsv);p.leftSpringStiffness_N_m=nums(p.leftSpringCsv);p.rightSpringStiffness_N_m=nums(p.rightSpringCsv);return p;}
 function setData(d){state={...defaults,...(d||{})};Object.keys(defaults).forEach(k=>{const e=$("runwayGirder_"+k);if(e)e.value=state[k]??"";});}
@@ -69,6 +77,9 @@ function selfTest(){
  test("both girders solved from same transfer case",()=>{const r=analyze(p,tr);return r.success&&r.solvedCases.left===1&&r.solvedCases.right===1;});
  test("same synchronized case index preserved",()=>{const r=analyze(p,tr);return r.cases.left[0].caseIndex===r.cases.right[0].caseIndex;});
  test("missing two-rail result blocked",()=>!analyze(p,null).success);
+ test("missing right-rail load in any synchronized case blocks whole run",()=>!analyze(p,{success:true,cases:[{girderPointLoads:{left:[{x_m:5,P_N:-1000}],right:[]}}]}).success);
+ test("support stations must include both girder ends",()=>!audit({...p,supportStations_m:[1,5,10]}).ready);
+ test("duplicate synchronized case identifiers rejected",()=>!analyze(p,{success:true,cases:[{caseId:"C1",girderPointLoads:{left:[{x_m:5,P_N:-1}],right:[{x_m:5,P_N:-1}]}},{caseId:"C1",girderPointLoads:{left:[{x_m:5,P_N:-1}],right:[{x_m:5,P_N:-1}]}}]}).success);
  test("design approval remains disabled",()=>analyze(p,tr).analysisEnabled===false);
  test("unresolved local limit states disclosed",()=>analyze(p,tr).limitations.some(x=>x.includes("web crippling")));
  test("equilibrium checked for both girder solutions",()=>{const r=analyze(p,tr);return r.cases.left[0].result.equilibrium.ok&&r.cases.right[0].result.equilibrium.ok;});
