@@ -246,6 +246,14 @@
     function resolveAnalysis3DSection(member) {
         if (!member || typeof member !== "object") throw new Error("مشخصات عضو برای تخصیص مقطع سه‌بعدی معتبر نیست.");
         const key = String(member.sectionKey || "");
+        if(member.craneIntegration===true){
+            const s=member.analysisSection||{};
+            const req=["E_Pa","G_Pa","A_m2","Iy_m4","Iz_m4","J_m4"];
+            const missing=req.find(k=>!(Number.isFinite(Number(s[k]))&&Number(s[k])>0));
+            if(missing)throw new Error("خاصیت "+missing+" برای عضو جرثقیل "+(member.id||"")+" ناقص است.");
+            if(!String(s.source||"").trim())throw new Error("مرجع خواص مقطع عضو جرثقیل "+(member.id||"")+" ثبت نشده است.");
+            return {E:Number(s.E_Pa),G:Number(s.G_Pa),A:Number(s.A_m2),Iy:Number(s.Iy_m4),Iz:Number(s.Iz_m4),J:Number(s.J_m4),sectionKey:key,sectionLabel:key==="craneRunwayGirder"?"تیر حمال جرثقیل":"براکت جرثقیل",profile:String(s.profile||"")};
+        }
         const labels = {column:"ستون",rafter:"رفتر",roofPurlin:"پرلین سقف",wallGirt:"قید افقی دیوار",endPost:"ستونک دیوار انتهایی",endGirt:"تیر افقی دیوار انتهایی",wallBrace:"مهاربند دیوار",roofBrace:"مهاربند سقف",roofEdge:"تیر لبه سقف"};
         if (!Object.prototype.hasOwnProperty.call(labels,key)) throw new Error("گروه مقطع عضو " + (member.id || "") + " مشخص نیست؛ sectionKey=" + key);
         const d=read(), p=d.analysis3d?.groups?.[key], E=Number(d.material?.E_GPa), G=Number(d.analysis3d?.G_GPa);
