@@ -1,0 +1,34 @@
+/* SAHROUD STEEL — flexure and shear readiness audit.
+ * Uses member-force envelopes only as demand evidence; no code resistance is calculated.
+ */
+(function(root){
+"use strict";
+const $=id=>document.getElementById(id);
+const GROUPS=[["column","ستون"],["rafter","رفتر"],["endPost","ستونک انتهایی"],["endGirt","تیر انتهایی"],["roofEdge","عضو لبه سقف"]];
+function audit(envelope){
+ const issues=[],warnings=[],rows=[];
+ const env=envelope||root.SteelMemberForceEnvelope?.getLast?.();
+ const members=env?.members||[];
+ GROUPS.forEach(([g,label])=>{
+  const list=members.filter(m=>m.sectionKey===g);
+  if(!list.length){warnings.push(label+": عضو/نیروی استخراج‌شده در گزارش فعلی وجود ندارد.");return;}
+  const d=root.SteelMemberDesignInputs?.getForGroup?.(g)||{};
+  const missing=[];
+  [["t_mm","ضخامت مبنای مصالح"],["Fy","Fy"],["Fu","Fu"],["Lb","طول مهارنشده خمشی Lb"],["Cb","ضریب Cb"]].forEach(([k,n])=>{if(!(Number(d[k])>0))missing.push(n+" معتبر نیست.");});
+  if(!(Number(d.Fu)>=Number(d.Fy)&&Number(d.Fy)>0))missing.push("رابطه Fu و Fy معتبر نیست.");
+  if(!String(d.bracingNote||"").trim())missing.push("شرح مهار جانبی/پیچشی ثبت نشده است.");
+  const noSection=list.filter(m=>!(Number(m.section?.A)>0&&Number(m.section?.Iy)>0&&Number(m.section?.Iz)>0&&Number(m.section?.J)>0));
+  if(noSection.length)missing.push(noSection.length+" عضو فاقد خواص کامل A/Iy/Iz/J در خروجی تحلیل است.");
+  const demand=list.map(m=>({id:m.id,M:Math.max(Number(m.peak?.My)||0,Number(m.peak?.Mz)||0),V:Math.max(Number(m.peak?.Vy)||0,Number(m.peak?.Vz)||0)}));
+  if(demand.every(x=>x.M===0&&x.V===0))warnings.push(label+": تقاضای خمش و برش در گزارش نیرو صفر است؛ بارگذاری و محورهای محلی بازبینی شوند.");
+  if(missing.length)missing.forEach(x=>issues.push(label+": "+x));
+  rows.push({group:g,label,count:list.length,ready:missing.length===0,missing,maximumMoment_Nm:Math.max(...demand.map(x=>x.M)),maximumShear_N:Math.max(...demand.map(x=>x.V)),demands:demand});
+ });
+ return {ready:issues.length===0&&rows.length>0,rows,issues,warnings,sourceCases:env?.cases?.length||0,disclaimer:"این کنترل فقط وجود داده‌های لازم برای ادامه طراحی خمش و برش را ممیزی می‌کند. مقادیر بیشینه مستقل لزوماً هم‌زمان نیستند. ظرفیت خمشی، کمانش پیچشی-جانبی، ظرفیت برشی جان، اثر سخت‌کننده‌ها، طبقه‌بندی مقطع و اندرکنش محاسبه نشده‌اند؛ نتیجه تأیید آیین‌نامه‌ای یا مجوز اجرا نیست."};
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function renderResult(r){const host=$("flexureShearReadinessResults");if(!host)return;host.innerHTML="<h4>"+(r.ready?"داده‌های پایه موجودند":"موارد تکمیل‌نشده")+"</h4>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در ممیزی داده‌های موجود یافت نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+"<div style='overflow-x:auto'><table class='data-table'><thead><tr><th>گروه</th><th>تعداد اعضا</th><th>بیشینه |M| (kN.m)</th><th>بیشینه |V| (kN)</th><th>وضعیت داده</th></tr></thead><tbody>"+r.rows.map(x=>"<tr><td>"+esc(x.label)+"</td><td>"+x.count+"</td><td>"+(x.maximumMoment_Nm/1000).toFixed(2)+"</td><td>"+(x.maximumShear_N/1000).toFixed(2)+"</td><td>"+(x.ready?"کامل":"ناقص")+"</td></tr>").join("")+"</tbody></table></div><div class='notice'>"+esc(r.disclaimer)+"</div>";}
+function init(){if($("flexureShearReadinessPanel"))return;const main=document.querySelector("main");if(!main)return;const p=document.createElement("section");p.className="panel";p.id="flexureShearReadinessPanel";p.innerHTML="<div class='panel-title'><h3>ممیزی آمادگی طراحی خمش و برش</h3><span class='status'>نیروهای تحلیل + ورودی مقاطع</span></div><div class='notice'>ابتدا تحلیل پوش نیروهای اعضا را اجرا کنید. این پنل تقاضاهای موجود را با ورودی‌های مصالح و مهاربندی تطبیق می‌دهد و ظرفیت آیین‌نامه‌ای محاسبه نمی‌کند.</div><div class='button-grid'><button type='button' class='btn secondary' id='btnFlexureShearReadiness'>ممیزی خمش و برش</button></div><div id='flexureShearReadinessResults'></div>";const anchor=$("compressionDesignPanel")||$("memberForceEnvelopePanel");if(anchor?.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);else main.appendChild(p);$("btnFlexureShearReadiness").addEventListener("click",()=>renderResult(audit()));}
+root.SteelFlexureShearReadiness={audit};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})(typeof window!=="undefined"?window:globalThis);
