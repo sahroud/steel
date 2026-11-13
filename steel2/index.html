@@ -234,6 +234,37 @@
         </div>
     </section>
 
+
+    <section class="panel" id="craneReadinessPanel">
+        <div class="panel-title"><h3>اطلاعات جرثقیل و تیر حمال</h3></div>
+        <div class="notice">
+            الگوی تکمیلی برگرفته از گزارش سوله‌پرداز: ظرفیت جرثقیل، وزن ارابه و پل، فاصله چرخ‌ها،
+            اثر ضربه قائم و نیروهای افقی، تعداد دفعات کار و کنترل خستگی.
+            این بخش فعلاً اطلاعات ورودی و نواقص را ممیزی می‌کند و هنوز واکنش چرخ یا ظرفیت تیر حمال را محاسبه نمی‌کند.
+        </div>
+        <label class="field"><input id="crane_enabled" type="checkbox"> این پروژه دارای جرثقیل سقفی است</label>
+        <div class="form-grid">
+            <div class="field"><label for="crane_ratedCapacity_t">ظرفیت اسمی جرثقیل (تن)</label><input id="crane_ratedCapacity_t" type="number" min="0" step="0.1"></div>
+            <div class="field"><label for="crane_trolleyMass_t">وزن ارابه (تن)</label><input id="crane_trolleyMass_t" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="crane_bridgeMass_t">وزن پل جرثقیل (تن)</label><input id="crane_bridgeMass_t" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="crane_runwaySpan_m">دهانه تیر حمال (متر)</label><input id="crane_runwaySpan_m" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="crane_wheelsPerSide">تعداد چرخ در هر سمت ارابه</label><input id="crane_wheelsPerSide" type="number" min="1" step="1"></div>
+            <div class="field"><label for="crane_wheelSpacing_m">فاصله چرخ‌ها (متر)</label><input id="crane_wheelSpacing_m" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="crane_verticalImpact">ضریب اثر دینامیکی قائم (ورودی مستند)</label><input id="crane_verticalImpact" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="crane_transverseCoeff">ضریب نیروی افقی عرضی (ورودی مستند)</label><input id="crane_transverseCoeff" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="crane_longitudinalCoeff">ضریب نیروی ترمز طولی (ورودی مستند)</label><input id="crane_longitudinalCoeff" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="crane_cranesCount">تعداد جرثقیل‌ها</label><input id="crane_cranesCount" type="number" min="1" step="1"></div>
+            <div class="field"><label for="crane_runwayElevation_m">تراز ریل از کف (متر)</label><input id="crane_runwayElevation_m" type="number" step="0.01"></div>
+            <div class="field"><label for="crane_dailyCycles">تعداد سیکل کاری روزانه</label><input id="crane_dailyCycles" type="number" min="0" step="1"></div>
+            <div class="field"><label for="crane_serviceYears">عمر بهره‌برداری (سال)</label><input id="crane_serviceYears" type="number" min="0" step="1"></div>
+            <div class="field"><label for="crane_manufacturer">سازنده / مدل جرثقیل</label><input id="crane_manufacturer" type="text"></div>
+            <div class="field"><label for="crane_standard">استاندارد / کلاس کاری اعلام‌شده</label><input id="crane_standard" type="text"></div>
+            <div class="field"><label for="crane_notes">توضیحات و مرجع کاتالوگ</label><input id="crane_notes" type="text"></div>
+        </div>
+        <div class="button-grid"><button id="crane_audit" class="btn secondary" type="button">ممیزی ورودی‌های جرثقیل</button></div>
+        <div id="crane_results"></div>
+    </section>
+
     <section class="panel" id="cantileverCheckPanel">
         <div class="panel-title">
             <h3>کنترل کنسول‌های رفتر</h3>
@@ -282,6 +313,7 @@
 })();
 </script>
 <script src="js/project.js?v=20261113-tension-persist2"></script>
+<script src="js/crane-readiness.js?v=20261113-crane-readiness1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/model-3d.js?v=20261113-tapered-seg4"></script>
 <script src="js/tributary-audit.js?v=20261112tributary1"></script>
