@@ -1,6 +1,6 @@
 /* SAHROUD STEEL - background worker for 3D frame analysis */
 "use strict";
-importScripts("./analysis-3d.js");
+importScripts("./analysis-3d.js?v=20261113-solver-released-moment-ledger1");
 self.onmessage=function(event){
   const data=event.data||{};
   try{
