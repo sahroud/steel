@@ -357,6 +357,9 @@ function selfTest(){
  const tests=[];
  const contract=analyze(makeModel(),base).localEndForceConvention;
  tests.push({name:"local-end-force-contract-metadata",ok:contract?.version===1&&contract.components.length===12&&contract.basis==="member-local"&&contract.verifiedSignCases.axialTension.endI==="negative Fx_i"&&contract.unverifiedSignCases.length===5});
+ const axes=analyze(makeModel(),base).members[0].localAxes;
+ const axisDot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),axisNorm=a=>Math.hypot(...a);
+ tests.push({name:"member-local-axes-orthonormal-and-right-handed",ok:!!axes&&["x","y","z"].every(k=>Array.isArray(axes[k])&&axes[k].length===3&&Math.abs(axisNorm(axes[k])-1)<1e-12)&&Math.abs(axisDot(axes.x,axes.y))<1e-12&&Math.abs(axisDot(axes.x,axes.z))<1e-12&&Math.abs(axisDot(axes.y,axes.z))<1e-12&&close(axisDot([axes.x[1]*axes.y[2]-axes.x[2]*axes.y[1],axes.x[2]*axes.y[0]-axes.x[0]*axes.y[2],axes.x[0]*axes.y[1]-axes.x[1]*axes.y[0]],axes.z),1,1e-12)});
  const run=(name,load,read,expected)=>{
   try{
    const result=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:load}]});
