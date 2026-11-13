@@ -702,6 +702,7 @@
         const audited=auditById.get(id);
         const reasons=[];
         if(!audited||!audited.valid)reasons.push(...(audited?.reasons||["ممیزی هندسی مسیر در دسترس نیست"]));
+         if(route.topAlignedToFooting!==true)reasons.push("اتصال خارج از مرکز لازم برای هم‌تراز شدن رویه بالای شناژ با رویه پی هنوز در حل‌گر مدل نشده است؛ برای جلوگیری از تحلیل با تراز نادرست، این شناژ وارد حل‌گر نشد.");
         if(!nodeIds.has(String(route.start))||!nodeIds.has(String(route.end)))reasons.push("گره ابتدا/انتها در مدل تحلیل فعلی وجود ندارد");
         if(!["rigid","pinned"].includes(route.startJoint)||!["rigid","pinned"].includes(route.endJoint))reasons.push("نوع اتصال هر دو انتها باید صریحاً گیردار یا مفصلی باشد");
         if(reasons.length){tieBeamIntegration.skipped.push({id,reasons});return;}
