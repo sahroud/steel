@@ -12,9 +12,9 @@ const FIELDS=[
  ["Kx","ضریب Kx"],["Ky","ضریب Ky"],["Kz","ضریب Kz"],["Fy_MPa","تنش تسلیم Fy (MPa)"]
 ];
 const $=id=>document.getElementById(id);
-let data={schemaVersion:1,groups:{column:{},rafter:{}}};
+let data={schemaVersion:1,groups:{column:{},rafter:{}},memberOverrides:{}};
 function normalize(v){
- const out={schemaVersion:1,groups:{}};
+ const out={schemaVersion:1,groups:{},memberOverrides:{}};
  GROUPS.forEach(([g])=>{
   const src=v?.groups?.[g]||{},dst={};
   FIELDS.forEach(([k])=>{const n=Number(src[k]);dst[k]=src[k]!==""&&src[k]!==null&&src[k]!==undefined&&Number.isFinite(n)?n:null;});
@@ -24,6 +24,8 @@ function normalize(v){
   dst.note=String(src.note||"");
   out.groups[g]=dst;
  });
+ const overrides=v?.memberOverrides||{};
+ Object.keys(overrides).forEach(id=>{const src=overrides[id]||{},row={};["Lx_mm","Ly_mm","Lz_mm"].forEach(k=>{const n=Number(src[k]);row[k]=src[k]!==null&&src[k]!==undefined&&src[k]!==""&&Number.isFinite(n)&&n>0?n:null;});out.memberOverrides[String(id)]=row;});
  return out;
 }
 function getData(){return JSON.parse(JSON.stringify(data));}
@@ -38,6 +40,8 @@ function readUI(){
   d.note=$("cc_"+g+"_note")?.value||"";
   data.groups[g]=d;
  });
+ const resultHost=$("compressionCapacityResults");
+ if(resultHost){resultHost.querySelectorAll("[data-member-length]").forEach(el=>{const id=el.getAttribute("data-member-id"),key=el.getAttribute("data-member-length");if(!id||!key)return;data.memberOverrides[id]=data.memberOverrides[id]||{Lx_mm:null,Ly_mm:null,Lz_mm:null};data.memberOverrides[id][key]=el.value===""?null:Number(el.value);});}
  return getData();
 }
 function setData(v){data=normalize(v);render();}
@@ -108,6 +112,20 @@ function render(){
  '<div class="notice">مساحت، ممان‌های اینرسی و J در صورت خالی بودن، از رجیستر مقطع همین گروه به‌صورت اولیه خوانده می‌شوند (A: cm²→mm² و ممان‌ها: cm⁴→mm⁴)؛ آن‌ها را با مشخصات واقعی مقطع تطبیق دهید. مقدار h0 و طول‌های مهارنشده باید از هندسه و نقشه واقعی برداشت شوند. E و G از پنل مصالح خوانده می‌شوند (در نبود مقدار، E=200000 MPa و G متناظر با ν=0.3 فقط مقدار الاستیک پایه است). Fy از رجیستر گروه عضو یا پنل مصالح خوانده می‌شود، مگر آنکه جداگانه در این فرم وارد شود. Kها را بدون تحلیل/پیوست معتبر حدس نزنید.</div>'+
  '<div class="button-grid"><button type="button" class="btn primary" id="btnCompressionCapacityRun">محاسبه مقاومت کمانش کلی ستون و رفتر</button></div><div id="compressionCapacityResults"></div>';
 }
+function capacityForMember(row){
+ const g=row.sectionKey;
+ if(g!=="column"&&g!=="rafter")return {ok:false,issues:["گروه عضو در موتور فعلی پشتیبانی نمی‌شود."]};
+ if(row.taperSegmentIndex!==null&&row.taperSegmentIndex!==undefined)return {ok:false,issues:["قطعه متعلق به عضو متغیرعمق است؛ ظرفیت منشوری مجاز نیست."]};
+ const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
+ if(tapered?.enabled===true)return {ok:false,issues:["گروه در مدل متغیرعمق فعال است."]};
+ const base=getInput(g),override=data.memberOverrides[String(row.id)]||{};
+ for(const k of ["Lx_mm","Ly_mm","Lz_mm"]){
+  if(!(Number(override[k])>0))return {ok:false,issues:["طول مهارنشده "+k+" برای این عضو باید جداگانه وارد و تأیید شود."]};
+  base[k]=Number(override[k]);
+ }
+ base.localSlendernessClass=base.localSlendernessReviewed?"non-slender":"unreviewed";
+ return root.SteelCompressionCapacity.analyze(base);
+}
 function renderResults(){
  const host=$("compressionCapacityResults");if(!host)return;
  const html=GROUPS.map(([g,label])=>{
@@ -119,8 +137,9 @@ function renderResults(){
  }).join("");
  const forceResult=root.SteelMemberForceEnvelope?.getLast?.();
  const demandRows=buildCompressionDemandRows(forceResult);
- const demandHtml=demandRows.length?'<h4>پوش تقاضای فشاری استخراج‌شده از تحلیل سه‌بعدی</h4><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>شناسه عضو/قطعه</th><th>گروه</th><th>بیشینه فشار (kN)</th><th>حالت بار حاکم</th></tr></thead><tbody>'+demandRows.map(r=>'<tr><td>'+esc(r.id)+'</td><td>'+esc(r.sectionKey)+'</td><td>'+r.compressionDemand_kN.toFixed(2)+'</td><td>'+esc(r.governingCase||"—")+'</td></tr>').join("")+'</tbody></table></div>':'<div class="notice">برای نمایش تقاضای فشاری، ابتدا تحلیل سه‌بعدی و استخراج پوش نیروها را اجرا کنید.</div>';
- host.innerHTML=html+demandHtml+'<div class="notice">تقاضای فشاری از قرارداد علامت نیروی محلی حل‌گر استخراج شده است: کشش (Nᵢ منفی و Nⱼ مثبت) فشار محسوب نمی‌شود؛ فشار (Nᵢ مثبت و Nⱼ منفی) با بیشینه دو انتها گزارش می‌شود. این قرارداد با آزمون عضو محوری کنترل شده است. هنوز نسبت تقاضا به ظرفیت گزارش نمی‌شود، زیرا ظرفیت باید برای طول مهارنشده، مقطع و شرایط مهار تک‌تک اعضا محاسبه شود. همچنین کمانش موضعی، اعضای مرکب، مقاطع نامتقارن/متغیرعمق، اندرکنش فشار و خمش، تحلیل مرتبه دوم و کنترل لرزه‌ای خارج از دامنه‌اند.</div>';
+ const demandHtml=demandRows.length?'<h4>تقاضای فشاری و ظرفیت کمانش کلی در سطح عضو</h4><p class="notice">برای هر عضو، سه طول مهارنشده را مستقل وارد کنید. خواص مقطع و مصالح از فرم گروه ستون/رفتر خوانده می‌شود؛ قبل از استفاده باید یکسان بودن آن‌ها با عضو انتخابی را کنترل کنید.</p><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>شناسه عضو/قطعه</th><th>گروه</th><th>فشار بیشینه (kN)</th><th>Lx (mm)</th><th>Ly (mm)</th><th>Lz (mm)</th><th>ظرفیت LRFD φPn (kN)</th><th>ظرفیت ASD (kN)</th><th>وضعیت</th></tr></thead><tbody>'+demandRows.map(r=>{const ov=data.memberOverrides[String(r.id)]||{},g=r.sectionKey;let cap=null,why="";if(r.compressionDemand_kN>0){try{cap=capacityForMember(r);if(!cap.ok)why=(cap.issues||[]).join("؛ ");}catch(e){why=e.message;}}return '<tr><td>'+esc(r.id)+'</td><td>'+esc(g)+'</td><td>'+r.compressionDemand_kN.toFixed(2)+'</td>'+["Lx_mm","Ly_mm","Lz_mm"].map(k=>'<td><input type="number" min="1" step="any" data-member-id="'+esc(r.id)+'" data-member-length="'+k+'" value="'+(ov[k]??"")+'" style="width:92px"></td>').join("")+'<td>'+(cap?.ok?cap.LRFD.designStrength_kN.toFixed(2):"—")+'</td><td>'+(cap?.ok?cap.ASD.allowableStrength_kN.toFixed(2):"—")+'</td><td>'+(cap?.ok?"ظرفیت محاسبه شد؛ مقایسه آیین‌نامه‌ای نشده":esc(why||"ابتدا طول‌های مهارنشده را وارد کنید"))+'</td></tr>';}).join("")+'</tbody></table></div><button type="button" class="btn" id="btnCompressionMemberRecalc">به‌روزرسانی ظرفیت اعضا</button>':'<div class="notice">برای نمایش تقاضای فشاری، ابتدا تحلیل سه‌بعدی و استخراج پوش نیروها را اجرا کنید.</div>';
+ host.innerHTML=html+demandHtml+'<div class="notice">تقاضای فشاری از قرارداد علامت نیروی محلی حل‌گر استخراج شده است: کشش (Nᵢ منفی و Nⱼ مثبت) فشار محسوب نمی‌شود؛ فشار (Nᵢ مثبت و Nⱼ منفی) با بیشینه دو انتها گزارش می‌شود. این قرارداد با آزمون عضو محوری کنترل شده است. هنوز نسبت تقاضا به ظرفیت گزارش نمی‌شود، زیرا ظرفیت باید برای طول مهارنشده، مقطع و شرایط مهار تک‌تک اعضا محاسبه شود. همچنین کمانش موضعی، اعضای مرکب، مقاطع نامتقارن/متغیرعمق، اندرکنش فشار و خمش، تحلیل مرتبه دوم و کنترل لرزه‌ای خارج از دامنه‌اند. ظرفیت‌های نمایش‌داده‌شده فقط مقاومت کمانش کلی بر مبنای طول‌های واردشده هستند و به معنی قبولی عضو نیستند؛ تقاضا و ظرفیت تا زمان تأیید مبنای ترکیب‌بار و همه کنترل‌های لازم نباید به‌صورت نسبت بهره‌برداری یا قبولی/ردی تفسیر شوند.</div>';
+ const recalc=$("btnCompressionMemberRecalc");if(recalc)recalc.addEventListener("click",()=>{readUI();renderResults();});
 }
 function init(){
  if($("compressionCapacityIntegrationPanel"))return;
