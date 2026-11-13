@@ -128,6 +128,7 @@ function capacityForMember(row){
 }
 function renderResults(){
  const host=$("compressionCapacityResults");if(!host)return;
+ readUI();
  const html=GROUPS.map(([g,label])=>{
   let r;try{r=analyzeGroup(g);}catch(e){return '<div class="notice"><b>'+label+'</b><p>'+esc(e.message)+'</p></div>';}
   if(!r.ok)return '<div class="notice"><b>'+label+' — ظرفیت محاسبه نشد</b><ul>'+r.issues.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div>';
@@ -150,6 +151,6 @@ function init(){
  anchor.insertAdjacentElement("afterend",p);render();
  $("btnCompressionCapacityRun")?.addEventListener("click",renderResults);
 }
-root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,selfTest,render};
+root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,capacityForMember,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,selfTest,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
