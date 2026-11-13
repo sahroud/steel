@@ -103,7 +103,8 @@ function render(){
  }
  renderDetail();
  const eq=last.allCasesEquilibriumOK?"تعادل همه تحلیل‌ها برقرار است":"هشدار: در برخی تحلیل‌ها تعادل عددی برقرار نیست";
- $("memberForceSummary").textContent="اعضا: "+last.memberCount+" | حالت‌های بار: "+last.cases.length+" | "+eq+" | نیرو: kN، لنگر: kN.m. مقادیر جدول بیشینه قدرمطلق هر مؤلفه‌اند و ممکن است از ترکیب‌های متفاوت باشند.";
+ const segmentationInfo=Number.isFinite(last.physicalMemberCount)&&last.physicalMemberCount!==last.modelMemberCount?" | "+last.modelMemberCount+" قطعه تحلیل برای "+last.physicalMemberCount+" عضو فیزیکی":"";
+ $("memberForceSummary").textContent="اعضای گزارش‌شده: "+last.memberCount+segmentationInfo+" | حالت‌های بار: "+last.cases.length+" | "+eq+" | نیرو: kN، لنگر: kN.m. مقادیر جدول بیشینه قدرمطلق هر مؤلفه‌اند و ممکن است از ترکیب‌های متفاوت باشند.";
  $("btnMemberForceJSON").disabled=false;
 }
 function renderDetail(){
