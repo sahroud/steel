@@ -81,7 +81,7 @@ function buildSnapshot(data){
  const ids=new Set(),duplicates=[];
  rows.forEach(r=>{if(ids.has(r.id))duplicates.push(r.id);ids.add(r.id);});
  const priced=new Map((c?.rows||[]).map(r=>[String(r.key),r]));
- const priceAliases={"steel-procurement-mass":"steel","steel-bolt-mass":"bolt","steel-weld-mass":"weld","masonry-brick-total":"brick","mortar-total":"mortar","roof-cover-area":"roof","panel-wall-area-total":"panel","sheet-wall-area-total":"sheet","plaster-area-total":"plaster"};
+ const priceAliases={"steel-procurement-mass":"steel","steel-bolt-mass":"bolt","steel-weld-mass":"weld","masonry-brick-total":"brick","mortar-total":"mortar","roof-cover-area":"roof","panel-wall-area-total":"panel","sheet-wall-area-total":"sheet","plaster-area-total":"plaster","foundation-total-concrete":"foundationConcrete","foundation-footing-rebar":"foundationRebar","foundation-pedestal-rebar":"pedestalRebar","foundation-tie-rebar":"tieRebar","foundation-excavation":"excavation","foundation-total-formwork":"formwork","anchor-bolt-count":"anchorBolts"};
  rows.forEach(r=>{const p=priced.get(r.id)||priced.get(priceAliases[r.id]||"");if(p)r.pricing={unitPrice:p.unitPrice,cost:p.cost,currency:"تومان",priceSource:p.priceSource||"برآورد مالی"};});
  (data.costInputs?.manualItems||[]).forEach(x=>{if(x&&x.quantitySource==="manual"&&String(x.quantity??"").trim()!=="")rows.push(item("manual-cost-"+String(x.key),"هزینه‌های تکمیلی",String(x.label||x.key),String(x.unit||"طبق ورودی"),x.quantity,"ورودی دستی برآورد","مقدار دستی مستقل",{unitPrice:finite(x.unitPrice)?Number(x.unitPrice):null,priceSource:x.priceSource||"manual"}));});
  const calculated=rows.filter(r=>r.status==="calculated").length;
@@ -131,7 +131,7 @@ function selfTest(){
  const d=buildSnapshot({quantity:{totals:{roofCoverAreaApproxM2:100},facades:[{face:"front",material:"brick",netAreaM2:20,masonryVolumeM3:7,estimatedBrickCount:2000,estimatedMortarVolumeM3:1,plasterAreaM2:40}]},
  foundation:{quantities:{footingConcreteM3:2,pedestalConcreteM3:null,tieConcreteM3:1,totalConcreteM3:3,excavationM3:null,footingFormworkM2:8,pedestalFormworkM2:null,tieSideFormworkM2:3,totalFormworkM2:11,sideFormworkM2:11,footingRebarKg:100,pedestalRebarKg:null,tieRebarKg:null,totalRebarKg:null,anchorsCount:24,footingSchedule:[{nodeId:"B1",width:1.25,length:2,thickness:0.8,excavationM3:5}]}},
  anchor:{boltCount:24,boltShankMassKg:80,nutCount:48,nutMassKg:1.2,washerCount:24,washerMassKg:0.2,basePlateCount:8,basePlateMassKg:120,totalCalculatedMassKg:201.4},
- steelMass:{groups:[{group:"column",label:"ستون",massKg:500}],connectionPlateMassKg:50,boltShankMassKg:10,theoreticalWeldMetalMassKg:5,procurementMassExcludingBoltsAndWeldKg:600,items:[]}});
+ steelMass:{groups:[{group:"column",label:"ستون",massKg:500}],connectionPlateMassKg:50,boltShankMassKg:10,theoreticalWeldMetalMassKg:5,procurementMassExcludingBoltsAndWeldKg:600,items:[]},cost:{rows:[{key:"foundationConcrete",unitPrice:100,cost:300},{key:"foundationRebar",unitPrice:200,cost:20000},{key:"excavation",unitPrice:50,cost:250},{key:"formwork",unitPrice:75,cost:825},{key:"anchorBolts",unitPrice:500,cost:12000}]}});
  const by=new Map(d.rows.map(r=>[r.id,r]));
  const tests={
   missingQuantityRemainsNull:by.get("foundation-excavation").quantity===null&&by.get("foundation-excavation").status==="pending",
@@ -152,7 +152,8 @@ function selfTest(){
   footingAndTrenchExcavationSeparated:by.get("footing-B1")?.quantity===2&&by.get("excavation-B1")?.quantity===5,
   totalConcreteAndFormworkAreSummaries:by.get("foundation-total-concrete")?.aggregationRole==="summary"&&by.get("foundation-total-formwork")?.aggregationRole==="summary",
   totalRebarRequiresAllComponents:by.get("foundation-total-rebar")?.quantity===null,
-  anchorNutWasherMassCaptured:by.get("anchor-nut-mass")?.quantity===1.2&&by.get("anchor-washer-mass")?.quantity===0.2&&by.get("anchor-total-mass")?.aggregationRole==="summary"
+  anchorNutWasherMassCaptured:by.get("anchor-nut-mass")?.quantity===1.2&&by.get("anchor-washer-mass")?.quantity===0.2&&by.get("anchor-total-mass")?.aggregationRole==="summary",
+  foundationCostAliasesAttached:by.get("foundation-total-concrete")?.pricing?.unitPrice===100&&by.get("foundation-footing-rebar")?.pricing?.unitPrice===200&&by.get("foundation-total-formwork")?.pricing?.unitPrice===75&&by.get("foundation-excavation")?.pricing?.unitPrice===50&&by.get("anchor-bolt-count")?.pricing?.unitPrice===500
  };
  return{passed:Object.values(tests).filter(Boolean).length,failed:Object.values(tests).filter(x=>!x).length,tests};
 }
