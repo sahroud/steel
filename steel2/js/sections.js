@@ -476,8 +476,8 @@
         ];
         const b=bands.find(x=>t<=x.max);
         if(!b)return {Fy_MPa:null,Fu_MPa:null,source:"خارج از بازه مرجع؛ گواهی مصالح لازم است"};
-        if(grade==="ST37-2")return {Fy_MPa:b.st37,Fu_MPa:340,FuRange_MPa:[340,470],source:"DIN 17100، St37-2؛ حداقل مقاومت تسلیم و حد پایین مقاومت کششی"};
-        if(grade==="ST52-3")return {Fy_MPa:b.st52,Fu_MPa:490,FuRange_MPa:[490,630],source:"DIN 17100، St52-3؛ حداقل مقاومت تسلیم و حد پایین مقاومت کششی"};
+        if(grade==="ST37-2")return {Fy_MPa:b.st37,Fu_MPa:340,FuRange_MPa:[340,470],source:"DIN 17100، St37-2 تاریخی؛ حداقل مقاومت تسلیم و حد پایین مقاومت کششی؛ پذیرش طبق پیوست ۱ مبحث ۱۰ و گواهی محصول باید کنترل شود"};
+        if(grade==="ST52-3")return {Fy_MPa:b.st52,Fu_MPa:490,FuRange_MPa:[490,630],source:"DIN 17100، St52-3؛ حداقل مقاومت تسلیم و حد پایین مقاومت کششی؛ پذیرش طبق پیوست ۱ مبحث ۱۰ و گواهی محصول باید کنترل شود"};
         return {Fy_MPa:null,Fu_MPa:null,source:"گرید سفارشی؛ گواهی/استاندارد محصول لازم است"};
     }
     function applySteelGradeDefaults(){
