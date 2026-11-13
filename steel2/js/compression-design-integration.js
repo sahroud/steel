@@ -56,6 +56,8 @@ function getInput(g){
 function analyzeGroup(g){
  const engine=root.SteelCompressionCapacity;
  if(!engine||typeof engine.analyze!=="function")throw Error("موتور مقاومت فشاری بارگذاری نشده است.");
+ const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
+ if(tapered?.enabled===true)return {ok:false,issues:["عضو "+(g==="column"?"ستون":"رفتر")+" به‌صورت متغیرعمق تعریف شده است؛ موتور فعلی فقط عضو منشوری را می‌پذیرد."]};
  const input=getInput(g);
  input.localSlendernessClass=input.localSlendernessReviewed?"non-slender":"unreviewed";
  return engine.analyze(input);
