@@ -31,7 +31,7 @@ function maxAbs(samples,index){
 function buildRows(model,samples){
  const byId=new Map(),metaById=new Map((model.members||[]).map(m=>[String(m.id),m]));
  samples.forEach(sample=>(sample.members||[]).forEach(m=>{
-  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||m.section?.sectionKey||"",length:Number(m.length||meta.length)||null,ends:[]});}
+  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||m.section?.sectionKey||"",profile:meta.profile||meta.sectionLabel||m.section?.profile||"",start:meta.start||m.start||null,end:meta.end||m.end||null,section:m.section||{},length:Number(m.length||meta.length)||null,ends:[]});}
   const row=byId.get(String(m.id));
   row.ends.push({label:sample.label,values:Array.isArray(m.localEndForces)?m.localEndForces.slice(0,12):[]});
  }));
@@ -100,10 +100,18 @@ function renderDetail(){
  const end=member?.ends?.find(e=>e.label===selectedCaseLabel&&e.values.length===12);
  if(!end){host.textContent="برای عضو و حالت انتخاب‌شده بردار نیروی معتبر در دسترس نیست.";return;}
  const labels=["Nᵢ (kN)","Vyᵢ (kN)","Vzᵢ (kN)","Tᵢ (kN.m)","Myᵢ (kN.m)","Mzᵢ (kN.m)","Nⱼ (kN)","Vyⱼ (kN)","Vzⱼ (kN)","Tⱼ (kN.m)","Myⱼ (kN.m)","Mzⱼ (kN.m)"];
- host.innerHTML='<div class="notice">عضو <b>'+esc(member.id)+'</b> — حالت بار <b>'+esc(end.label)+'</b>. تمام ۱۲ مؤلفه زیر متعلق به همین یک تحلیل و هم‌زمان هستند.</div>'+
+ const p=member.section||{};
+ const props=[["مساحت A (cm²)",Number(p.A)*1e4],["Iy (cm⁴)",Number(p.Iy)*1e8],["Iz (cm⁴)",Number(p.Iz)*1e8],["J (cm⁴)",Number(p.J)*1e8],["E (GPa)",Number(p.E)/1e9],["G (GPa)",Number(p.G)/1e9]];
+ const missing=props.filter(x=>!(Number.isFinite(x[1])&&x[1]>0)).map(x=>x[0]);
+ host.innerHTML='<div class="notice">عضو <b>'+esc(member.id)+'</b> — '+esc(member.profile||"مقطع ثبت‌نشده")+' — گره ابتدا: '+esc(member.start||"—")+' — گره انتها: '+esc(member.end||"—")+' — طول: '+fmt(member.length||0)+' m — حالت بار <b>'+esc(end.label)+'</b>. تمام ۱۲ مؤلفه زیر متعلق به همین یک تحلیل و هم‌زمان هستند.</div>'+
  '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>مؤلفه</th><th>مقدار</th></tr></thead><tbody>'+
  labels.map((label,i)=>'<tr><td>'+label+'</td><td>'+fmt(i%6<3?end.values[i]/1000:end.values[i]/1e6)+'</td></tr>').join("")+
- '</tbody></table></div>';
+ '</tbody></table></div>'+
+ '<h4>مشخصات مقطع دریافت‌شده از حل‌گر</h4><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>پارامتر</th><th>مقدار</th></tr></thead><tbody>'+
+ props.map(x=>'<tr><td>'+x[0]+'</td><td>'+fmt(x[1])+'</td></tr>').join("")+
+ '</tbody></table></div>'+
+ '<div class="notice">'+(missing.length?"مشخصات لازم برای طراحی ناقص است: "+missing.join("، "):"مشخصات هندسی و الاستیک پایه مقطع از حل‌گر دریافت شده است.")+
+ '؛ هنوز تنش تسلیم/گسیختگی معتبر، طبقه‌بندی مقطع، طول مهارنشده حول هر محور، ضریب طول مؤثر، مهار پیچشی و مهار جانبی، ضریب Cb و کنترل‌های بندهای ۱۰-۲-۲ تا ۱۰-۲-۷ برای این عضو ثبت و تأیید نشده‌اند.</div>';
 }
 function exportJSON(){if(!last)return;const blob=new Blob([JSON.stringify(last,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="sahroud-steel-member-force-envelope.json";a.click();URL.revokeObjectURL(url);}
 function init(){
