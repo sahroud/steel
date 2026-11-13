@@ -273,8 +273,8 @@
     <section class="panel" id="craneTrainAnalysisPanel">
         <div class="panel-title"><h3>تحلیل استاتیکی قطار چرخ جرثقیل روی تیر حمال</h3></div>
         <div class="notice">
-            این ابزار یک آرایش مشخص از بارهای چرخِ مستقل و مستند را در یک موقعیت ثابت روی تیر ساده دو سر مفصل تحلیل می‌کند.
-            فاصله‌ها از چرخ اول به‌صورت تجمعی و بار هر چرخ جداگانه وارد می‌شود. این ابزار هنوز پوش متحرک، تیر پیوسته، اثر دینامیکی یا طراحی تیر حمال را انجام نمی‌دهد.
+            این ابزار تحلیل موقعیت ثابت، پوش متحرک لنگر و پوش برش/واکنش یک قطار چرخ مستند را روی تیر ساده دو سر مفصل انجام می‌دهد.
+            فاصله‌ها از چرخ اول به‌صورت تجمعی و بار هر چرخ جداگانه وارد می‌شود. این ابزار هنوز تیر پیوسته، اثر دینامیکی یا طراحی تیر حمال را انجام نمی‌دهد.
         </div>
         <div class="form-grid">
             <div class="field"><label for="craneTrain_span_m">دهانه آزاد تیر حمال (متر)</label><input id="craneTrain_span_m" type="number" min="0.01" step="0.01" placeholder="مثلاً 6"></div>
@@ -284,7 +284,7 @@
             <div class="field"><label for="craneTrain_loadSource">منبع مستند بارهای تک‌تک چرخ‌ها</label><input id="craneTrain_loadSource" type="text" placeholder="کاتالوگ سازنده / محاسبات تأییدشده"></div>
             <div class="field"><label for="craneTrain_loadDocument">شماره صفحه یا مرجع نقشه</label><input id="craneTrain_loadDocument" type="text" placeholder="صفحه / شماره نقشه"></div>
         </div>
-        <div class="button-grid"><button id="craneTrain_calculate" class="btn secondary" type="button">تحلیل موقعیت فعلی چرخ‌ها</button><button id="craneTrain_envelope" class="btn primary" type="button">محاسبه پوش دقیق لنگر متحرک</button></div>
+        <div class="button-grid"><button id="craneTrain_calculate" class="btn secondary" type="button">تحلیل موقعیت فعلی چرخ‌ها</button><button id="craneTrain_envelope" class="btn primary" type="button">محاسبه پوش دقیق لنگر متحرک</button><button id="craneTrain_shearEnvelope" class="btn secondary" type="button">پوش برش و واکنش‌ها</button></div>
         <div id="craneTrain_results"></div>
         <div class="notice">واحد بار ورودی تن‌نیرو فرض شده و با ضریب تبدیل استاندارد 9.80665 به kN تبدیل می‌شود. خروجی صرفاً تحلیل استاتیکی مقدماتی است؛ برای طراحی اجرایی باید مدل واقعی تیر، تکیه‌گاه، پیچش، بارهای افقی، ضربه، خستگی و ضوابط مربوط جداگانه کنترل شوند.</div>
     </section>
