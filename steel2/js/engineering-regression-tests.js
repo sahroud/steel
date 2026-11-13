@@ -19,6 +19,26 @@ function run(){
  test("tapered analysis segmentation",()=>{const r=root.SteelTaperedSections.selfTest();return r.passed===5&&r.failed===0?"Geometry, interpolation, disabled default, configurable segmentation and end-release preservation pass":false;});
  test("tension audit rejects net area above gross area",()=>{const r=root.SteelTensionDesignReadiness.audit({groups:{roofBrace:{Ag_cm2:10,An_cm2:11,Ae_cm2:9,U:0.9,connectionType:"welded",connectionDetailsReviewed:true,blockShearReviewed:true}}});return r.issues.some(x=>x.includes("An نمی‌تواند"))?"Invalid net area rejected":false;});
  test("tension audit does not claim resistance",()=>{const r=root.SteelTensionDesignReadiness.audit({groups:{}});return !("Pn" in r)&&!r.capacity?"No tensile capacity is produced by readiness audit":false;});
+ test("tapered 3D axial convergence against analytical integral",()=>{
+  if(!root.SteelFrame3D?.analyze)return false;
+  const api=root.SteelTaperedSections,old=api.getData(),E=200e9,N=100000,L=6;
+  try{
+   api.setData({groups:{column:{enabled:true,stations:{start:{d:500,bf:200,tw:10,tf:16},mid:{d:400,bf:200,tw:10,tf:16},end:{d:300,bf:200,tw:10,tf:16}}}}});
+   const area=d=>(2*200*16+(d-2*16)*10)*1e-6;
+   const half=(a,b,len)=>Math.abs(a-b)<1e-12?len/a:len*Math.log(b/a)/(b-a);
+   const exact=N/E*(half(area(500),area(400),L/2)+half(area(400),area(300),L/2));
+   const errors=[];
+   [4,8,16].forEach(n=>{
+    const raw={nodes:[{id:"B",x:0,y:0,z:0},{id:"T",x:0,y:L,z:0}],members:[{id:"C",start:"B",end:"T",sectionKey:"column",type:"column"}]};
+    const model=api.segmentModel(raw,{height:L,span:12},n).model,props={};
+    model.members.forEach(m=>{props[m.id]=api.resolveForMember(m,model.nodes,{height:L,span:12},{E,G:77e9,A:.01,Iy:1e-5,Iz:1e-4,J:1e-6}).section;m.analysisLoad={uniformLocal:[0,0,0]};});
+    const result=root.SteelFrame3D.analyze(model,{sectionResolver:m=>props[m.id],supports:[{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}],nodalLoads:[{nodeId:"T",values:[0,-N,0,0,0,0]}]});
+    const delta=Math.abs(result.displacements.find(x=>x.nodeId==="T").values[1]);
+    errors.push(Math.abs(delta-exact)/exact*100);
+   });
+   return errors[0]>errors[1]&&errors[1]>errors[2]&&errors[1]<0.01?"4/8/16-segment axial displacement converges to analytical integral; 8-segment error "+errors[1].toFixed(4)+"%":false;
+  }finally{api.setData(old);}
+ });
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
  const host=document.getElementById("engineeringRegressionResults");if(host)host.innerHTML="<p>موفق: "+result.passed+" | ناموفق: "+result.failed+"</p><ul>"+checks.map(x=>"<li>"+(x.pass?"✓ ":"✗ ")+x.name+" — "+x.detail+"</li>").join("")+"</ul><div class='notice'>"+result.scope+"</div>";
  return result;
