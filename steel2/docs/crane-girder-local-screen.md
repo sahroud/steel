@@ -75,3 +75,8 @@ The separate **ممیزی مدارک خستگی تیر حمال** panel records 
 ## Welded and bolted connection evidence audit
 
 The **ممیزی مدارک اتصالات تیر حمال و براکت** panel captures individual connection IDs, load path and force source, connected-part grades/thicknesses, plate thickness, and the applicable weld or bolt details. Welded/mixed connections require weld type/size, electrode, WPS and inspection record. Bolted/mixed connections require diameter/grade, hole type, edge distance, pitch, count and arrangement source; slip-critical records also require faying-surface class. The module deliberately returns no capacity or utilization.
+
+
+## Runway serviceability criterion comparison
+
+The **کنترل تغییرمکان و سرویس‌پذیری ریل جرثقیل** panel compares explicitly entered service-load responses for vertical deflection, horizontal displacement, rotation/slope, and relative settlement against separately entered project limits. Each response, load-combination source, criterion source/clause, reviewer, and individual allowable-limit source is required. No generic deflection or rotation limits are prefilled. The result is a ratio against user-entered criteria only; it is not automatically extracted from the FEM and is not an assertion of code compliance.
