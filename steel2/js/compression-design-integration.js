@@ -138,7 +138,9 @@ function memberCapacityFromInput(row,base,override,taperedEnabled){
  return root.SteelCompressionCapacity.analyze(base);
 }
 function capacityForMember(row){
- const g=row.sectionKey,base=getInput(g),override=data.memberOverrides[String(row.id)]||{};
+ const g=row.sectionKey;
+ if(g!=="column"&&g!=="rafter")return {ok:false,issues:["گروه عضو در موتور فعلی پشتیبانی نمی‌شود."]};
+ const base=getInput(g),override=data.memberOverrides[String(row.id)]||{};
  const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
  return memberCapacityFromInput(row,base,override,tapered?.enabled===true);
 }
