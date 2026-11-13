@@ -1019,7 +1019,7 @@
     let selected=cases[loadCase];
     if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
       const f=loadCase.factors;
-      selected={key:"combo",label:String(loadCase.label||"ترکیب بار سه‌بعدی"),
+      selected={...loadCase,key:"combo",label:String(loadCase.label||"ترکیب بار سه‌بعدی"),
         direction:[0,-1,0],
         factors:{dead:Number(f.dead)||0,live:Number(f.live)||0,snow:Number(f.snow)||0,wind:Number(f.wind)||0},
         windFactor:Number(f.wind)||0,windSign:Number(loadCase.windSign)||1,
