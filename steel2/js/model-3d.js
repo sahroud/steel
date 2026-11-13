@@ -774,6 +774,16 @@
       throw new Error("شناسه گره تکراری در مدل: "+duplicateNodeIds.slice(0,8).join("، ")+
         "؛ تعداد گره‌ها: "+analysisModel.nodes.length);
     }
+    // Tapered columns/rafters are split into analysis elements before section assignment.
+    // Each segment receives its own midpoint section properties and self-weight.
+    let taperedSegmentationAudit=null;
+    if(window.SteelTaperedSections&&typeof window.SteelTaperedSections.segmentModel==="function"){
+      const segmented=window.SteelTaperedSections.segmentModel(analysisModel,
+        {span:Number(model.geometry?.span||$("span")?.value),height:Number($("height")?.value)},8);
+      analysisModel.nodes=segmented.model.nodes;
+      analysisModel.members=segmented.model.members;
+      taperedSegmentationAudit=segmented.audit;
+    }
     // Self-weight is added to the DEAD case only. Steel unit weight = 78.5 kN/m³.
     // Area A comes from the same assigned section properties used by the 3D solver.
     const steelUnitWeightKNm3=78.5;
@@ -864,6 +874,7 @@
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports);
+    if(taperedSegmentationAudit)result.taperedSegmentation=taperedSegmentationAudit;
     const sourceMembersById=new Map(analysisModel.members.map(m=>[String(m.id),m]));
     result.members.forEach(member=>{
       const source=sourceMembersById.get(String(member.id));
