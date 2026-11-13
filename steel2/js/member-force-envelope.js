@@ -167,6 +167,16 @@ function init(){
  if(footer)footer.insertAdjacentElement("beforebegin",p);else main.appendChild(p);
  $("btnMemberForceEnvelope").addEventListener("click",run);$("btnMemberForceJSON").addEventListener("click",exportJSON);$("memberForceGroup").addEventListener("change",()=>{if(last)render();});$("memberForceDetailMember").addEventListener("change",e=>{selectedMemberId=e.target.value;selectedCaseLabel="";if(last)render();});$("memberForceDetailCase").addEventListener("change",e=>{selectedCaseLabel=e.target.value;renderDetail();});
 }
-root.SteelMemberForceEnvelope={run,getLast:()=>last,buildRows,auditCoverage};
+function selfTest(){
+ const checks=[],test=(name,fn)=>{try{checks.push({name,pass:!!fn()});}catch(e){checks.push({name,pass:false,error:e.message});}};
+ const valid=Array(12).fill(0);
+ test("valid simultaneous 12-DOF vector is retained",()=>buildRows({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:valid}]}])[0].caseCount===1);
+ test("malformed force vector is excluded from envelope",()=>buildRows({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:[1,2,3]}]}])[0].caseCount===0);
+ test("duplicate IDs in one case are reported",()=>auditCoverage({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:valid},{id:"A",localEndForces:valid}]}],[{id:"A",caseCount:1}]).duplicateMemberIdsByCase.length===1);
+ test("inconsistent member sets across cases are reported",()=>auditCoverage({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:valid}]},{label:"SLS",members:[]}],[{id:"A",caseCount:1}]).analysisMemberSetMismatchCases.includes("SLS"));
+ test("invalid force vectors are reported with case identity",()=>auditCoverage({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:[1,2]}]}],[{id:"A",caseCount:0}]).invalidForceVectors[0]?.caseLabel==="ULS");
+ return {passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"deterministic data-integrity tests only; no structural design approval"};
+}
+root.SteelMemberForceEnvelope={run,getLast:()=>last,buildRows,auditCoverage,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
