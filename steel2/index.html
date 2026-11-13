@@ -269,6 +269,24 @@
         <div id="crane_results"></div>
     </section>
 
+
+    <section class="panel" id="craneTrainAnalysisPanel">
+        <div class="panel-title"><h3>تحلیل استاتیکی قطار چرخ جرثقیل روی تیر حمال</h3></div>
+        <div class="notice">
+            این ابزار یک آرایش مشخص از بارهای چرخِ مستقل و مستند را در یک موقعیت ثابت روی تیر ساده دو سر مفصل تحلیل می‌کند.
+            فاصله‌ها از چرخ اول به‌صورت تجمعی و بار هر چرخ جداگانه وارد می‌شود. این ابزار هنوز پوش متحرک، تیر پیوسته، اثر دینامیکی یا طراحی تیر حمال را انجام نمی‌دهد.
+        </div>
+        <div class="form-grid">
+            <div class="field"><label for="craneTrain_span_m">دهانه آزاد تیر حمال (متر)</label><input id="craneTrain_span_m" type="number" min="0.01" step="0.01" placeholder="مثلاً 6"></div>
+            <div class="field"><label for="craneTrain_firstWheelOffset_m">موقعیت چرخ اول از تکیه‌گاه چپ (متر)</label><input id="craneTrain_firstWheelOffset_m" type="number" step="0.01" value="0"></div>
+            <div class="field"><label for="craneTrain_positions_m">فاصله تجمعی چرخ‌ها از چرخ اول (متر، جداشده با ویرگول)</label><input id="craneTrain_positions_m" type="text" value="0, 1.5" placeholder="0, 1.5, 3.0"></div>
+            <div class="field"><label for="craneTrain_loads_t">بار مستقل هر چرخ (تن، به همان ترتیب)</label><input id="craneTrain_loads_t" type="text" placeholder="مثلاً 8.2, 7.9"></div>
+        </div>
+        <div class="button-grid"><button id="craneTrain_calculate" class="btn primary" type="button">تحلیل موقعیت فعلی چرخ‌ها</button></div>
+        <div id="craneTrain_results"></div>
+        <div class="notice">واحد بار ورودی تن‌نیرو فرض شده و با ضریب تبدیل استاندارد 9.80665 به kN تبدیل می‌شود. خروجی صرفاً تحلیل استاتیکی مقدماتی است؛ برای طراحی اجرایی باید مدل واقعی تیر، تکیه‌گاه، پیچش، بارهای افقی، ضربه، خستگی و ضوابط مربوط جداگانه کنترل شوند.</div>
+    </section>
+
     <section class="panel" id="cantileverCheckPanel">
         <div class="panel-title">
             <h3>کنترل کنسول‌های رفتر</h3>
@@ -318,6 +336,7 @@
 </script>
 <script src="js/project.js?v=20261113-tension-persist2"></script>
 <script src="js/crane-readiness.js?v=20261113-crane-readiness2"></script>
+<script src="js/crane-train-analysis.js?v=20261113-static-train1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/model-3d.js?v=20261113-tapered-seg4"></script>
 <script src="js/tributary-audit.js?v=20261112tributary1"></script>
