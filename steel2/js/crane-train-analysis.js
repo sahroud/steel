@@ -76,6 +76,43 @@ function movingEnvelope(input){
  });
  return {ok:true,span_m:L,maxPositiveMoment_kNm:Math.max(0,best.M_kNm),criticalSection_m:best.x_m,criticalFirstWheelOffset_m:best.offset_m,governingEvent:best.event,method:"پوش دقیق لنگر مثبت برای قطار بار متمرکز روی تیر ساده دو سر مفصل؛ نقاط ورود/خروج چرخ و نقاط عبور چرخ از مقطع، با بهینه‌سازی تحلیلی سهم درجه‌دوم بین مرزهای فعال‌بودن چرخ‌ها بررسی شده‌اند.",limitations:["فقط بارهای قائم متمرکز و یک قطار جرثقیل","تیر ساده دو سر مفصل و یک دهانه","بدون اثر ضربه، نیروهای افقی، وزن تیر/ریل، پیچش، خستگی یا طراحی مقطع"]};
 }
+function movingShearEnvelope(input){
+ const d={...defaults,...(input||{})},L=Number(d.span_m),positions=parseList(d.positions_m),loads=parseList(d.loads_t),issues=[];
+ if(!Number.isFinite(L)||L<=0)issues.push("دهانه معتبر تیر حمال وارد نشده است.");
+ if(!positions.length||positions.some(x=>!Number.isFinite(x)||x<0))issues.push("فاصله‌های تجمعی چرخ‌ها معتبر نیستند.");
+ if(positions.length&&positions[0]!==0)issues.push("فاصله چرخ اول باید صفر باشد.");
+ if(positions.some((x,i)=>i>0&&x<=positions[i-1]))issues.push("فاصله‌های چرخ باید صعودی و بدون تکرار باشند.");
+ if(loads.length!==positions.length||loads.some(x=>!Number.isFinite(x)||x<=0))issues.push("برای هر چرخ یک بار مثبت مستقل لازم است.");
+ if(!String(d.loadSource||"").trim()||!String(d.loadDocument||"").trim())issues.push("منبع و مرجع مستند بارهای چرخ الزامی است.");
+ if(issues.length)return {ok:false,issues};
+ const P=loads.map(x=>x*9.80665),events=new Set();
+ positions.forEach(p=>{events.add(-p);events.add(L-p);});
+ const offsets=[...events].sort((a,b)=>a-b);
+ let maxRA={value:-Infinity,offset:null},minRA={value:Infinity,offset:null};
+ let maxRB={value:-Infinity,offset:null},minRB={value:Infinity,offset:null};
+ let maxV={value:-Infinity,offset:null,x:null,side:""},minV={value:Infinity,offset:null,x:null,side:""};
+ const take=(target,value,offset,x,side)=>{if(value>target.value){target.value=value;target.offset=offset;target.x=x;target.side=side;}};
+ offsets.forEach(a=>{
+  const wheels=positions.map((p,i)=>({x:a+p,P:P[i],id:i+1})).filter(w=>w.x>=-1e-9&&w.x<=L+1e-9).sort((u,v)=>u.x-v.x);
+  const RA=wheels.reduce((v,w)=>v+w.P*(L-w.x)/L,0),RB=wheels.reduce((v,w)=>v+w.P*w.x/L,0);
+  take(maxRA,RA,a);take(minRA,-RA,a);take(maxRB,RB,a);take(minRB,-RB,a);
+  let V=RA;
+  const atLeft=wheels.filter(w=>Math.abs(w.x)<=1e-9);
+  atLeft.forEach(w=>V-=w.P);
+  take(maxV,V,a,0,"بلافاصله راست تکیه‌گاه چپ");
+  take(minV,-V,a,0,"بلافاصله راست تکیه‌گاه چپ");
+  wheels.filter(w=>w.x>1e-9&&w.x<L-1e-9).forEach(w=>{
+   take(maxV,V,a,w.x,"بلافاصله چپ چرخ "+w.id);
+   take(minV,-V,a,w.x,"بلافاصله چپ چرخ "+w.id);
+   V-=w.P;
+   take(maxV,V,a,w.x,"بلافاصله راست چرخ "+w.id);
+   take(minV,-V,a,w.x,"بلافاصله راست چرخ "+w.id);
+  });
+  take(maxV,V,a,L,"بلافاصله چپ تکیه‌گاه راست");
+  take(minV,-V,a,L,"بلافاصله چپ تکیه‌گاه راست");
+ });
+ return {ok:true,span_m:L,maxReactionLeft_kN:maxRA.value,minReactionLeft_kN:-minRA.value,maxReactionRight_kN:maxRB.value,minReactionRight_kN:-minRB.value,maxPositiveShear_kN:maxV.value,minNegativeShear_kN:-minV.value,maxAbsShear_kN:Math.max(maxV.value,-minV.value),governingShear:{value_kN:Math.max(maxV.value,-minV.value),offset_m:maxV.value>=-minV.value?maxV.offset:minV.offset,section_m:maxV.value>=-minV.value?maxV.x:minV.x,side:maxV.value>=-minV.value?maxV.side:minV.side},reactionPositions:{leftMax_m:maxRA.offset,rightMax_m:maxRB.offset},method:"پوش سراسری برش و واکنش برای یک قطار بار قائم روی تیر ساده: انتقال قطار در تمام بازه‌های تغییر عضویت چرخ‌ها به‌صورت قطعه‌ای خطی است؛ نقاط ورود و خروج چرخ از دو تکیه‌گاه ارزیابی شده‌اند. برش در دو سوی هر چرخ و دو انتهای دهانه کنترل شده است.",limitations:["یک قطار جرثقیل و یک تیر ساده تک‌دهانه","بارهای قائم متمرکز؛ بدون ضربه، بار افقی، وزن تیر/ریل، پیچش یا خستگی","این خروجی طراحی تیر یا تکیه‌گاه نیست"]};
+}
 function render(){
  const host=$("results");if(!host)return;
  const r=analyze(readUI());host.textContent="";
@@ -97,6 +134,13 @@ function render(){
  host.appendChild(table);
  const note=document.createElement("p");note.className="notice";note.textContent=r.method+" بار هر چرخ به تن‌نیرو تبدیل شده است. اثر ضربه، نیروهای افقی، وزن تیر، پیوستگی چنددهانه، پیچش، کمانش، خستگی و طراحی مقطع در این خروجی منظور نشده‌اند.";host.appendChild(note);
 }
+function showShearEnvelope(){
+ const host=$("results");if(!host)return;
+ const r=movingShearEnvelope(readUI()),box=document.createElement("div");box.className="notice";
+ if(!r.ok){box.textContent="پوش برش/واکنش محاسبه نشد: "+r.issues.join(" | ");host.appendChild(box);return;}
+ box.textContent="پوش قدرمطلق برش: "+r.maxAbsShear_kN.toFixed(3)+" kN؛ محل بحرانی: x="+r.governingShear.section_m.toFixed(3)+" m؛ موقعیت چرخ اول: "+r.governingShear.offset_m.toFixed(3)+" m؛ "+r.governingShear.side+". بیشینه واکنش چپ: "+r.maxReactionLeft_kN.toFixed(3)+" kN؛ بیشینه واکنش راست: "+r.maxReactionRight_kN.toFixed(3)+" kN. "+r.method+" محدودیت: "+r.limitations.join("؛ ");
+ host.appendChild(box);
+}
 function showEnvelope(){
  const host=$("results");if(!host)return;
  const r=movingEnvelope(readUI()),box=document.createElement("div");box.className="notice";
@@ -104,7 +148,7 @@ function showEnvelope(){
  box.textContent="پوش دقیق لنگر مثبت: "+r.maxPositiveMoment_kNm.toFixed(3)+" kN·m؛ مقطع بحرانی: "+r.criticalSection_m.toFixed(3)+" m؛ موقعیت چرخ اول: "+r.criticalFirstWheelOffset_m.toFixed(3)+" m. "+r.method+" محدودیت: "+r.limitations.join("؛ ");
  host.appendChild(box);
 }
-function init(){Object.keys(defaults).forEach(k=>$(k)?.addEventListener("input",render));$("calculate")?.addEventListener("click",render);$("envelope")?.addEventListener("click",showEnvelope);render();}
-root.SteelCraneTrainAnalysis={getData:readUI,setData,analyze,movingEnvelope,render};
+function init(){Object.keys(defaults).forEach(k=>$(k)?.addEventListener("input",render));$("calculate")?.addEventListener("click",render);$("envelope")?.addEventListener("click",showEnvelope);$("shearEnvelope")?.addEventListener("click",showShearEnvelope);render();}
+root.SteelCraneTrainAnalysis={getData:readUI,setData,analyze,movingEnvelope,movingShearEnvelope,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(window);
