@@ -71,6 +71,9 @@ function run(){
    return errors[0]>errors[1]&&errors[1]>errors[2]&&errors[1]<0.01?"4/8/16-segment axial displacement converges to analytical integral; 8-segment error "+errors[1].toFixed(4)+"%":false;
   }finally{api.setData(old);}
  });
+ test("crane readiness inactive by default",()=>root.SteelCraneReadiness.audit({enabled:false}).status==="not_applicable"?"Crane is not assumed present unless user enables it":false);
+ test("crane readiness flags incomplete data",()=>{const r=root.SteelCraneReadiness.audit({enabled:true});return r.status==="incomplete"&&r.missing.length>0?"Missing crane catalogue and geometry inputs are reported":false;});
+ test("crane readiness never invents design capacity",()=>{const r=root.SteelCraneReadiness.audit({enabled:true,ratedCapacity_t:30,trolleyMass_t:4.5,bridgeMass_t:25,runwaySpan_m:24,wheelsPerSide:2,wheelSpacing_m:1.5,verticalImpact:1.25,transverseCoeff:0.2,longitudinalCoeff:0.2,cranesCount:1,runwayElevation_m:9.5,dailyCycles:50,serviceYears:30,manufacturer:"sample",standard:"sample"});return r.ready===false&&r.status==="review_required"?"Complete inputs remain review-required; no wheel reactions or member capacities are claimed":false;});
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
  const host=document.getElementById("engineeringRegressionResults");if(host)host.innerHTML="<p>موفق: "+result.passed+" | ناموفق: "+result.failed+"</p><ul>"+checks.map(x=>"<li>"+(x.pass?"✓ ":"✗ ")+x.name+" — "+x.detail+"</li>").join("")+"</ul><div class='notice'>"+result.scope+"</div>";
  return result;
