@@ -98,6 +98,7 @@ function movingShearEnvelope(input){
   take(maxRA,RA,a);take(minRA,-RA,a);take(maxRB,RB,a);take(minRB,-RB,a);
   let V=RA;
   const atLeft=wheels.filter(w=>Math.abs(w.x)<=1e-9);
+  if(atLeft.length){take(maxV,V,a,0,"حد چپِ چرخِ واقع بر تکیه‌گاه چپ");take(minV,-V,a,0,"حد چپِ چرخِ واقع بر تکیه‌گاه چپ");}
   atLeft.forEach(w=>V-=w.P);
   take(maxV,V,a,0,"بلافاصله راست تکیه‌گاه چپ");
   take(minV,-V,a,0,"بلافاصله راست تکیه‌گاه چپ");
