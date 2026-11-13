@@ -506,7 +506,7 @@
     const contactMissing=calculateNominalWheelContactScreen({wheelContactWidth_mm:80,wheelContactLength_mm:40},{enabled:true,maxWheelLoad_t:10,wheelLoadSource:"",wheelLoadDocument:""});
     const fasteningGood=auditRunwayFasteningDetail({railBaseWidth_mm:140,railPadThickness_mm:8},{fasteningType:"clip",fasteningModel:"clip-X",clampsPerStation:2,boltsPerClamp:2,boltGrade:"8.8",boltDiameter_mm:16,seatPlateWidth_mm:180,seatPlateLength_mm:200,seatPlateThickness_mm:16,padMaterial:"elastomer",padHardness_ShoreA:70,detailSource:"detail F-01"});
     const fasteningBad=auditRunwayFasteningDetail({railBaseWidth_mm:200,railPadThickness_mm:0},{fasteningType:"clip",seatPlateWidth_mm:100,seatPlateLength_mm:-1,seatPlateThickness_mm:0,padMaterial:"",padHardness_ShoreA:120,detailSource:""});
-    const railLayoutGood=auditRunwayRailLayout({supportPitch_m:0.6,firstSupportOffset_m:0,continuity:"continuous",jointPositions_m:"12, 24",Ix_mm4:1.2e7,Iy_mm4:4.5e6,J_mm4:3.1e5,E_MPa:210000,propertySource:"rail catalog page 8"},24,{fasteningSpacing_mm:600});
+    const railLayoutGood=auditRunwayRailLayout({supportPitch_m:0.6,firstSupportOffset_m:0,continuity:"continuous",jointPositions_m:"12",Ix_mm4:1.2e7,Iy_mm4:4.5e6,J_mm4:3.1e5,E_MPa:210000,propertySource:"rail catalog page 8"},24,{fasteningSpacing_mm:600});
     const railLayoutBad=auditRunwayRailLayout({supportPitch_m:0,firstSupportOffset_m:2,continuity:"unknown",jointPositions_m:"24, 12, 25",Ix_mm4:-1,Iy_mm4:0,J_mm4:1,E_MPa:0,propertySource:""},24,{fasteningSpacing_mm:600});
     const checks=[
       normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,
