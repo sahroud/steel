@@ -81,11 +81,11 @@ function mount(){
  '<div class="field"><label>سختی قائم بستر k (kN/m³)</label><input id="pcSubgradeK" type="number" min="0.001" step="1000" placeholder="از داده ژئوتکنیک"></div>'+
  '<div class="field"><label>سختی محوری هر انکربولت (kN/m)</label><input id="pcAnchorK" type="number" min="0.001" step="1000" placeholder="از هندسه و مشخصات مهار"></div>'+
  '<div class="field"><label>تعداد تقسیم شبکه تماس (فرد ۵ تا ۴۱)</label><input id="pcGridN" type="number" min="5" max="41" step="2" value="21"></div></div>'+
- '<div class="button-grid"><button id="pcRun" class="btn primary" type="button">حل تماس جزئی</button><button id="pcCsv" class="btn secondary" type="button" disabled>گزارش CSV</button></div>'+
- '<div id="pcResult" class="notice">بارها و سختی‌های معتبر را وارد کنید.</div><div id="pcBoltRows" class="table-wrap"></div>'+
+ '<div class="button-grid"><button id="pcRun" class="btn primary" type="button">حل تماس جزئی</button><button id="pcSensitivity" class="btn secondary" type="button">بررسی حساسیت شبکه</button><button id="pcCsv" class="btn secondary" type="button" disabled>گزارش CSV</button></div>'+
+ '<div id="pcResult" class="notice">بارها و سختی‌های معتبر را وارد کنید.</div><div id="pcSensitivityResult" class="notice">پس از حل، حساسیت شبکه را بررسی کنید.</div><div id="pcBoltRows" class="table-wrap"></div>'+
  '<div class="notice">واحد سختی بستر kN/m³ است و با مدول عکس‌العمل خاک/بستر سازگار تعریف می‌شود، نه مقاومت فشاری بتن. نتایج با تغییر اندازه شبکه حساسیت‌سنجی شوند.</div>';
  a.parentNode.insertBefore(p,a.nextSibling);
- $("pcRun").addEventListener("click",run);$("pcCsv").addEventListener("click",csv);
+ $("pcRun").addEventListener("click",run);$("pcCsv").addEventListener("click",csv);$("pcSensitivity").addEventListener("click",runSensitivity);
 }
 let last=null;
 function read(){return{plateXmm:num("pcPlateX"),plateZmm:num("pcPlateZ"),rows:num("pcRows"),cols:num("pcCols"),pitchXmm:num("pcPitchX"),pitchZmm:num("pcPitchZ"),tensionKN:num("pcN"),momentXKNm:num("pcMx"),momentZKNm:num("pcMz"),subgradeK:num("pcSubgradeK"),anchorK:num("pcAnchorK"),gridN:num("pcGridN")};}
@@ -97,13 +97,22 @@ function run(){
  $("pcBoltRows").replaceChildren(t);$("pcCsv").disabled=false;return r;
  }catch(e){last=null;$("pcResult").textContent=e.message;$("pcBoltRows").replaceChildren();$("pcCsv").disabled=true;return null;}
 }
+function runSensitivity(){
+ try{const r=sensitivity(read());$("pcSensitivityResult").textContent="حساسیت شبکه (۵ تا ۴۱ تقسیم): "+r.runs.map(x=>"n="+x.gridN+"؛ qmax="+fmt(x.maxPressureMPa)+" MPa؛ Tbolt,max="+fmt(x.maxAnchorTensionKN)+" kN؛ سطح تماس="+fmt(100*x.contactRatio)+"٪").join(" | ")+" | اختلاف نسبی شبکه اول تا آخر: فشار="+(r.relativeDifference.maxPressure===null?"—":fmt(100*r.relativeDifference.maxPressure)+"٪")+"؛ کشش بولت="+(r.relativeDifference.maxAnchorTension===null?"—":fmt(100*r.relativeDifference.maxAnchorTension)+"٪")+". "+r.warning;return r;}
+ catch(e){$("pcSensitivityResult").textContent=e.message;return null;}
+}
 function csv(){if(!last)return;const r=last,rows=[["SAHROUD STEEL - Partial contact screening"],["method",r.method],["iterations",r.iterations],["residual",r.residual],["contact ratio",r.contact.ratio],["minimum pressure MPa",r.contact.minPressureMPa],["maximum pressure MPa",r.contact.maxPressureMPa],["concrete compression kN",r.contact.concreteCompressionKN],["total anchor tension kN",r.anchors.totalTensionKN],["maximum anchor tension kN",r.anchors.maxTensionKN],["bolt","x m","z m","tension kN","displacement mm"],...r.anchors.bolts.map(b=>[b.id,b.x,b.z,b.tensionKN,b.displacementMm]),["equilibrium residual vertical kN",r.equilibrium.verticalResidualKN],["equilibrium residual Mx kN.m",r.equilibrium.momentXResidualKNm],["equilibrium residual Mz kN.m",r.equilibrium.momentZResidualKNm],...r.limitations.map(x=>["limitation",x])];const data="\uFEFF"+rows.map(a=>a.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");const u=URL.createObjectURL(new Blob([data],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");a.href=u;a.download="SAHROUD-STEEL-Partial-Contact.csv";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+function sensitivity(i,gridSizes=[11,21,31,41]){
+ const runs=gridSizes.map(gridN=>calculate({...i,gridN}));
+ const ref=runs[runs.length-1];
+ return {method:"grid_refinement_sensitivity",runs:runs.map(r=>({gridN:r.input.gridN,contactRatio:r.contact.ratio,maxPressureMPa:r.contact.maxPressureMPa,maxAnchorTensionKN:r.anchors.maxTensionKN,totalAnchorTensionKN:r.anchors.totalTensionKN,residual:r.residual})),relativeDifference:{maxPressure:ref.contact.maxPressureMPa>0?Math.abs(runs[0].contact.maxPressureMPa-ref.contact.maxPressureMPa)/ref.contact.maxPressureMPa:null,maxAnchorTension:ref.anchors.maxTensionKN>0?Math.abs(runs[0].anchors.maxTensionKN-ref.anchors.maxTensionKN)/ref.anchors.maxTensionKN:null},warning:"این مقایسه فقط حساسیت شبکه عددی را نشان می‌دهد؛ همگرایی شبکه، صحت فرضیات فنری یا انطباق آیین‌نامه‌ای را اثبات نمی‌کند."};
+}
 function selfTest(){
  const base={plateXmm:400,plateZmm:400,rows:2,cols:2,pitchXmm:240,pitchZmm:240,tensionKN:0,momentXKNm:0,momentZKNm:0,subgradeK:20000,anchorK:10000,gridN:21};
  const c=calculate({...base,tensionKN:-100}),t=calculate({...base,tensionKN:40}),m=calculate({...base,momentXKNm:20});
  const checks=[["فشار محوری، تماس کامل و بدون کشش بولت",c.contact.ratio===1&&c.anchors.totalTensionKN===0],["کشش محوری، فعال‌شدن انکربولت‌ها",t.anchors.totalTensionKN>0&&t.contact.ratio===0],["لنگر، تماس جزئی و کشش بولت ایجاد می‌کند",m.contact.ratio>0&&m.contact.ratio<1&&m.anchors.totalTensionKN>0],["تعادل قائم در حد تلرانس",Math.abs(m.equilibrium.verticalResidualKN)<1e-6],["تعادل لنگر در حد تلرانس",Math.abs(m.equilibrium.momentXResidualKNm)<1e-6]];
  return{passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
-root.SteelBaseplatePartialContact={calculate,selfTest,getLast:()=>last?JSON.parse(JSON.stringify(last)):null};
+root.SteelBaseplatePartialContact={calculate,sensitivity,selfTest,getLast:()=>last?JSON.parse(JSON.stringify(last)):null};
 if(root.document){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
