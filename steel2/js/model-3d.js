@@ -316,7 +316,8 @@
     const span=val("span",20), length=val("length",30), spacing=val("spacing",5), height=val("height",6), rise=val("rise",2);
     const craneData=window.SteelCraneReadiness?.getData?.()||{};
     const craneEnabled=!!craneData.enabled;
-    const runwayElevation=Number(craneData.runwayElevation_m);\n    const psp=val("modelPurlinSpacing",1.2), gsp=val("modelGirtSpacing",1.5), endsp=val("modelEndPostSpacing",4);
+    const runwayElevation=Number(craneData.runwayElevation_m);
+    const psp=val("modelPurlinSpacing",1.2), gsp=val("modelGirtSpacing",1.5), endsp=val("modelEndPostSpacing",4);
     const braceBays=Math.max(0,Math.floor(val("modelBraceBays",1)));
     if ([span,length,spacing,height,psp,gsp,endsp].some(x=>!(x>0)) || rise<0) throw new Error("ابعاد اصلی و فاصله اعضای فرعی باید مثبت باشند.");
     const frames=[0]; for(let z=spacing;z<length-1e-8;z+=spacing) frames.push(z);
