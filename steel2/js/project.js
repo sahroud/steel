@@ -244,6 +244,10 @@
         if (window.SteelTieBeamLayout) data.tieBeamLayout = window.SteelTieBeamLayout.getData();
         if (window.SteelTieBeamReinforcement) data.tieBeamReinforcement = window.SteelTieBeamReinforcement.getData();
 
+        if (window.SteelCraneReadiness && typeof window.SteelCraneReadiness.getData === "function") {
+            data.craneReadiness = window.SteelCraneReadiness.getData();
+        }
+
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.getData === "function") {
             data.geotechnicalData = window.SteelGeotechnicalData.getData();
         }
@@ -500,6 +504,10 @@
 
         if (window.SteelTieBeamLayout) window.SteelTieBeamLayout.setData(data.tieBeamLayout || {});
         if (window.SteelTieBeamReinforcement) window.SteelTieBeamReinforcement.setData(data.tieBeamReinforcement || {});
+
+        if (window.SteelCraneReadiness && typeof window.SteelCraneReadiness.setData === "function") {
+            window.SteelCraneReadiness.setData(data.craneReadiness || {});
+        }
 
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.setData === "function") {
             window.SteelGeotechnicalData.setData(data.geotechnicalData || {});
