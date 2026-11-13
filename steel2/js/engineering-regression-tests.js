@@ -7,7 +7,8 @@ function run(){
  const checks=[];
  const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
  test("I-section geometry positive",()=>{const x=root.SteelSectionGeometry.calculateISection({d:300,bf:150,tw:8,tf:12});return x.A_cm2>0&&x.Ix_cm4>x.Iy_cm4&&x.J_cm4>0?"A/I/J positive; major-axis inertia exceeds minor-axis inertia":false;});
- test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISection({d:300,bf:150,tw:8,tf:12});return Math.abs(x.SxTop_cm3-x.SxBottom_cm3)<1e-10?"Top/bottom elastic moduli equal":false;});
+ test("tapered I-section moduli and web ratios",()=>{const x=root.SteelTaperedSections.calculate({d:300,bf:150,tw:8,tf:12});return x.SxTop_cm3>0&&x.SxBottom_cm3===x.SxTop_cm3&&x.Sy_cm3>0&&x.Aw_cm2>0&&x.flangeOutstandRatio>0&&x.webDepthThicknessRatio>0?"Elastic section moduli, web area and geometric slenderness ratios are available":false;});
+test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISection({d:300,bf:150,tw:8,tf:12});return Math.abs(x.SxTop_cm3-x.SxBottom_cm3)<1e-10?"Top/bottom elastic moduli equal":false;});
  test("I-section plastic moduli and web geometry",()=>{const x=root.SteelSectionGeometry.calculateISection({d:300,bf:150,tw:8,tf:12});return x.Zx_cm3>x.SxTop_cm3&&x.Zy_cm3>x.Sy_cm3&&x.Aw_cm2>0&&x.flangeOutstandRatio>0&&x.webDepthThicknessRatio>0?"Plastic geometric moduli, web area and width/thickness ratios are positive and consistent":false;});
  test("I-section invalid geometry rejected",()=>{try{root.SteelSectionGeometry.calculateISection({d:20,bf:10,tw:8,tf:11});return false;}catch(e){return "Invalid geometry rejected";}});
  test("material grade defaults exposed",()=>typeof root.SteelSections.getMaterialDefaults==="function"?"Material property helper available":false);
