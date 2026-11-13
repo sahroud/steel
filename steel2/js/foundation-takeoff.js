@@ -455,7 +455,7 @@ function calculatePedestalRebar(baseCount){
  }
  function checkSelectedTieFootingClash(base,route,mode,footingSpecs,tie,tieRow,model){
   if(!base||!route)return{ok:false,reason:"برای کنترل برخورد، یک فونداسیون و یک شناژ انتخاب کنید."};
-  const B=num(state.footingWidthM),L=num(state.footingLengthM),T=num(state.footingThicknessM),cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
+  const footing=footingSpecFor(base),B=footing.width,L=footing.length,T=footing.thickness,cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
   if(!(B>0&&L>0&&T>0&&cover!==null&&cover>=0))return{ok:false,reason:"برای کنترل سه‌بعدی، ابعاد پی و پوشش بتن واقعی را وارد کنید."};
   if(!footingSpecs?.specs?.length)return{ok:false,reason:"شبکه میلگرد فونداسیون برای کنترل برخورد تعریف نشده است."};
   const nodes=new Map((model.nodes||[]).map(n=>[String(n.id),n])),a=nodes.get(String(route.start)),b=nodes.get(String(route.end));
@@ -498,7 +498,7 @@ function calculatePedestalRebar(baseCount){
   const host=$("rebarDrawingCanvas"),summary=$("rebarDrawingSummary"),mode=$("rebarDrawingMode")?.value||"default";
   if(!host||!summary)return;
   readInputs();
-  const B=num(state.footingWidthM),L=num(state.footingLengthM),T=num(state.footingThicknessM),cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
+  let B=num(state.footingWidthM),L=num(state.footingLengthM),T=num(state.footingThicknessM);const cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
   const model=window.SteelStructuralModel?.getData?.()||{},layout=window.SteelTieBeamLayout?.getData?.()||{};
   const bases=lastReport?.rows?.length?lastReport.rows:(model.nodes||[]).filter(n=>n.kind==="base"||n.kind==="endwall-base");
   const routes=Array.isArray(layout.routes)?layout.routes:[];
@@ -515,6 +515,7 @@ function calculatePedestalRebar(baseCount){
    tieSelect.value=routes.some(r=>String(r.id)===previousTie)?previousTie:(routes[0]?.id||"");
   }
   const selectedBase=bases.find(n=>baseId(n)===(footingSelect?.value||""))||bases[0];
+   if(selectedBase){const fs=footingSpecFor(selectedBase);B=fs.width;L=fs.length;T=fs.thickness;}
   const selectedRoute=routes.find(r=>String(r.id)===(tieSelect?.value||""))||routes[0];
   const footingSpecs=drawingFootingSpecs(mode),tieSpecs=drawingTieSpecs(mode,selectedRoute?[selectedRoute]:[]);
   const tie=tieSpecs[0]||null;
