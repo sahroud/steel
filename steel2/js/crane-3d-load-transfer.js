@@ -157,5 +157,50 @@ function selfTest(){
  t("keeps analysis approval disabled",()=>r.analysisEnabled===false&&r.solverInputReady===true);
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
+function ensurePanel(){
+ if(!root.document||root.document.getElementById("crane3DLoadTransferPanel"))return;
+ const main=root.document.querySelector("main");if(!main)return;
+ const panel=root.document.createElement("section");panel.className="panel";panel.id="crane3DLoadTransferPanel";
+ panel.innerHTML='<div class="panel-title"><h3>انتقال بار جرثقیل به قاب سه‌بعدی</h3><span class="status">حالت‌های هم‌زمان</span></div>'+
+ '<div class="notice">ابتدا تحلیل دو ریل و مشخصات اتصال/مقاطع را تکمیل کنید. در JSON یکپارچه‌سازی، خروج از مرکزیت واکنش قائم و بار افقی را از نقشه وارد کنید. این بخش هر حالت را جداگانه آماده می‌کند؛ بیشینه‌های غیرهم‌زمان با هم جمع نمی‌شوند.</div>'+
+ '<div class="form-grid"><div class="field"><label for="crane3DLoadCaseSelect">حالت بار هم‌زمان</label><select id="crane3DLoadCaseSelect"><option value="">ابتدا آماده‌سازی حالات</option></select></div></div>'+
+ '<div class="button-grid"><button type="button" class="btn secondary" id="crane3DPrepareCases">آماده‌سازی حالات بار</button><button type="button" class="btn" id="crane3DAnalyzeCase">تحلیل حالت انتخابی در قاب سه‌بعدی</button></div>'+
+ '<div id="crane3DLoadTransferResult" class="notice">هنوز حالتی آماده نشده است.</div>';
+ const anchor=root.document.getElementById("shedLayoutPanel");
+ if(anchor)anchor.insertAdjacentElement("afterend",panel);else main.appendChild(panel);
+ let prepared=null;
+ const status=()=>root.document.getElementById("crane3DLoadTransferResult");
+ root.document.getElementById("crane3DPrepareCases").addEventListener("click",()=>{
+  try{
+   const model=root.SteelStructuralModel?.model||root.SteelStructuralModel?.build?.();
+   const transfer=root.SteelCraneTwoRailTransfer?.getLastResult?.();
+   const horizontal=root.SteelCraneHorizontalLoads?.getData?.()||{enabled:false};
+   const train=root.SteelCraneTrainAnalysis?.getData?.()||{};
+   const config=root.SteelCrane3DIntegration?.readUI?.()||{};
+   prepared=prepareAll(model,transfer,horizontal,train,config);
+   const select=root.document.getElementById("crane3DLoadCaseSelect");select.innerHTML="";
+   if(transfer?.cases)transfer.cases.forEach((c,i)=>{const option=root.document.createElement("option");option.value=String(i);option.textContent="حالت "+(i+1)+" ـ موقعیت قطار "+Number(c.referencePosition_m).toFixed(3)+" m";select.appendChild(option);});
+   status().textContent=prepared.success?"آماده‌سازی موفق: "+prepared.readyCount+" از "+prepared.total+" حالت دارای بار گره‌ای معتبر هستند. تحلیل هر حالت جداگانه انجام می‌شود.":("آماده‌سازی کامل نشد. حالات آماده: "+prepared.readyCount+"/"+prepared.total+"؛ موارد مسدود: "+prepared.issues.slice(0,8).join(" | "));
+  }catch(e){prepared=null;status().textContent="خطا: "+String(e.message||e);}
+ });
+ root.document.getElementById("crane3DAnalyzeCase").addEventListener("click",async()=>{
+  try{
+   const select=root.document.getElementById("crane3DLoadCaseSelect"),i=Number(select.value);
+   if(!prepared||!Number.isInteger(i)||!prepared.cases[i])throw Error("ابتدا حالات بار را آماده و یک حالت معتبر انتخاب کنید.");
+   if(!prepared.cases[i].success)throw Error("این حالت آماده نیست: "+prepared.cases[i].issues.join(" | "));
+   status().textContent="حل حالت انتخابی در پردازشگر سه‌بعدی در حال انجام است...";
+   const transfer=root.SteelCraneTwoRailTransfer.getLastResult();
+   const horizontal=root.SteelCraneHorizontalLoads?.getData?.()||{enabled:false};
+   const train=root.SteelCraneTrainAnalysis?.getData?.()||{};
+   const config=root.SteelCrane3DIntegration?.readUI?.()||{};
+   const r=await analyzeCase(i,transfer,horizontal,train,config);
+   if(!r.success)throw Error(r.transfer?.issues?.join(" | ")||"تحلیل حالت ناموفق بود.");
+   const q=r.result;
+   status().textContent="حل نرم‌افزاری انجام شد؛ گره بارگذاری: "+r.transfer.loadCount+"؛ بیشینه جابه‌جایی انتقالی: "+(q.maxTranslation??0).toExponential(4)+" m؛ تعادل نیرو: "+(q.equilibrium?.ok?"برقرار":"نیازمند بررسی")+"؛ تعادل لنگر: "+(q.equilibrium?.momentResidualNm||[]).map(v=>Number(v).toExponential(2)).join(", ")+" N.m. این نتیجه تأیید طراحی نیست.";
+  }catch(e){status().textContent="تحلیل متوقف شد: "+String(e.message||e);}
+ });
+}
 root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
+if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
+
