@@ -58,12 +58,12 @@ function mount(){
  <div class="notice" style="color:#a65d16">خروجی فعلی، N، برش محلی و لنگر محلی را از ساختار موجود می‌خواند. برش خارج از صفحه، پیچش و لنگر دوم فقط در صورت وجود صریح در خروجی حلگر ثبت می‌شوند. این بانک داده، ظرفیت یا تأیید آیین‌نامه‌ای اتصال صادر نمی‌کند.</div>`;
  const anchor=document.getElementById("connectionDesignPanel")||document.getElementById("cantileverCheckPanel");
  if(anchor?.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);else main.appendChild(p);
- let records=[];const $=id=>document.getElementById(id),fmt=v=>v===null?"—":Number(v).toLocaleString("fa-IR",{maximumFractionDigits:3});
+ let records=[];const $=id=>document.getElementById(id),fmt=v=>v===null?"—":Number(v).toLocaleString("fa-IR",{maximumFractionDigits:3}),esc=v=>String(v??"").replace(/[&<>"\']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","\'":"&#39;"}[ch]));
  function render(){
   const m=$("connDemandMember").value,e=$("connDemandEnd").value;
   const rows=records.filter(r=>(!m||r.memberName===m)&&(!e||r.end===e));
   $("connectionDemandSummary").textContent="رکوردهای قابل نمایش: "+rows.length+"؛ هر ردیف = یک عضو، یک انتها و یک ترکیب بار.";
-  $("connectionDemandTable").innerHTML=rows.length?`<table style="width:100%;min-width:850px;border-collapse:collapse"><thead><tr><th>ترکیب</th><th>عضو</th><th>انتها</th><th>N</th><th>Vy</th><th>Vz</th><th>T</th><th>My</th><th>Mz</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.combination}</td><td>${r.memberName}</td><td>${r.end}</td>${["N","Vy","Vz","T","My","Mz"].map(k=>"<td>"+fmt(r.actions[k])+"</td>").join("")}</tr>`).join("")}</tbody></table>`:"<p>رکوردی یافت نشد.</p>";
+  $("connectionDemandTable").innerHTML=rows.length?`<table style="width:100%;min-width:850px;border-collapse:collapse"><thead><tr><th>ترکیب</th><th>عضو</th><th>انتها</th><th>N</th><th>Vy</th><th>Vz</th><th>T</th><th>My</th><th>Mz</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.combination)}</td><td>${esc(r.memberName)}</td><td>${esc(r.end)}</td>${["N","Vy","Vz","T","My","Mz"].map(k=>"<td>"+fmt(r.actions[k])+"</td>").join("")}</tr>`).join("")}</tbody></table>`:"<p>رکوردی یافت نشد.</p>";
  }
  $("btnBuildConnectionDemand").addEventListener("click",()=>{
   try{records=collect(root.SteelAnalysis?.combinationResults);const s=$("connDemandMember"),old=s.value,names=[...new Set(records.map(r=>r.memberName))];s.innerHTML='<option value="">همه اعضا</option>'+names.map(n=>'<option>'+n.replace(/[&<>]/g,"")+'</option>').join("");s.value=old;$("btnExportConnectionDemand").disabled=false;render();}
