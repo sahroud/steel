@@ -320,6 +320,12 @@ function selfTest(){
   }catch(e){tests.push({name,ok:false,error:String(e.message||e)});}
  };
  run("axial-extension",[1000,0,0,0,0,0],r=>r.displacements.find(n=>n.nodeId==="TIP").values[0],1000*L/(E*A));
+ try{
+  const tensile=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[1000,0,0,0,0,0]}]}).members[0].localEndForces;
+  const compression=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[-1000,0,0,0,0,0]}]}).members[0].localEndForces;
+  const ok=tensile[0]<0&&tensile[6]>0&&compression[0]>0&&compression[6]<0;
+  tests.push({name:"axial-force-sign-convention",ok,tensionEndI:tensile[0],tensionEndJ:tensile[6],compressionEndI:compression[0],compressionEndJ:compression[6]});
+ }catch(e){tests.push({name:"axial-force-sign-convention",ok:false,error:String(e.message||e)});}
  run("cantilever-y-deflection",[0,-1000,0,0,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[1]),1000*Math.pow(L,3)/(3*E*Iz));
  run("torsional-rotation",[0,0,0,1000,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[3]),1000*L/(G*J));
 
