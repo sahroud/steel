@@ -45,7 +45,7 @@ function readUI(){
 function setData(data){const el=root.document?.getElementById?.("crane3DIntegrationJson");if(el&&data&&typeof data==="object")el.value=JSON.stringify(data,null,2);}
 
 function audit(model,input){const d=input||readUI();if(d.parseError)return {success:false,ready:false,analysisEnabled:false,issues:["JSON مشخصات تحلیل سه‌بعدی جرثقیل قابل خواندن نیست: "+d.parseError]};const r=prepare(model,d);return {...r,model:undefined};}
-function integrate(model,input){return prepare(model,input||readUI());}
+function integrate(model,input){const r=prepare(model,input||readUI());const host=root.document?.getElementById?.("crane3DIntegrationAudit");if(host){host.textContent=r.success?"اعضای واقعی تیر حمال و براکت به کپی مدل سه‌بعدی افزوده شدند؛ تعداد گره: "+r.counts.addedNodes+"، تیر حمال: "+r.counts.addedGirderMembers+"، براکت: "+r.counts.addedBracketMembers+". تحلیل/تأیید طراحی همچنان غیرفعال است.":("یکپارچه‌سازی انجام نشد: "+(r.issues||[]).join(" | "));}return r;}
 function selfTest(){
  const checks=[],t=(n,f)=>{try{checks.push({name:n,ok:!!f()});}catch(e){checks.push({name:n,ok:false,error:String(e.message||e)});}};
  const base={geometry:{span:12,frames:[0,6,12],craneRunway:{enabled:true,elevationM:5,axisOffsetM:.5}},nodes:[{id:"C1",x:0,y:5,z:0},{id:"C2",x:0,y:5,z:6},{id:"C3",x:0,y:5,z:12},{id:"R1",x:12,y:5,z:0},{id:"R2",x:12,y:5,z:6},{id:"R3",x:12,y:5,z:12}],members:[]};
