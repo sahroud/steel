@@ -36,7 +36,11 @@ function validatePatch(patch, index) {
   } else {
     let sum = 0;
     patch.load_shares.forEach((share, j) => {
-      if (!share || !share.receiving_element_id) errors.push(`${prefix}.load_shares[${j}].receiving_element_id is required`);
+      if (!share || typeof share !== "object") {
+        errors.push(`${prefix}.load_shares[${j}] must be an object`);
+        return;
+      }
+      if (!share.receiving_element_id) errors.push(`${prefix}.load_shares[${j}].receiving_element_id is required`);
       if (!finitePositive(share.share)) errors.push(`${prefix}.load_shares[${j}].share must be > 0`);
       else sum += share.share;
       if (!share.path_type) errors.push(`${prefix}.load_shares[${j}].path_type is required`);
