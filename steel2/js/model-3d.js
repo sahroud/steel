@@ -325,6 +325,16 @@
   }
   const RUNWAY_SECTION_FIELD_IDS={girderType:"craneRunwayGirderType",steelGrade:"craneRunwaySteelGrade",overallDepth_mm:"craneRunwayOverallDepth",flangeWidth_mm:"craneRunwayFlangeWidth",flangeThickness_mm:"craneRunwayFlangeThickness",webThickness_mm:"craneRunwayWebThickness",railDesignation:"craneRunwayRailDesignation",railMass_kg_m:"craneRunwayRailMass",railFastening:"craneRunwayRailFastening",stiffenerSpacing_m:"craneRunwayStiffenerSpacing",lateralRestraint:"craneRunwayLateralRestraint",detailSource:"craneRunwayDetailSource"};
   function readRunwaySectionInputs(){const out={};Object.entries(RUNWAY_SECTION_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(!el)return;const raw=String(el.value??"").trim();if(raw!=="")out[key]=["overallDepth_mm","flangeWidth_mm","flangeThickness_mm","webThickness_mm","railMass_kg_m","stiffenerSpacing_m"].includes(key)?Number(raw):raw;});return out;}
+  function calculateRunwayBuiltupIProperties(d){
+    if(!d||d.girderType!=="builtup-i")return {available:false,reason:"محاسبه خواص هندسی خودکار در این نسخه فقط برای تیرورق I متقارن با ورق‌های مستطیلی فعال است."};
+    const D=d.overallDepth_mm,b=d.flangeWidth_mm,tf=d.flangeThickness_mm,tw=d.webThickness_mm;
+    if(![D,b,tf,tw].every(v=>Number.isFinite(v)&&v>0)||2*tf>=D||b<=tw)return {available:false,reason:"ابعاد معتبر و سازگار برای محاسبه خواص هندسی موجود نیست."};
+    const hw=D-2*tf,A=2*b*tf+tw*hw;
+    const Ix=2*(b*Math.pow(tf,3)/12+b*tf*Math.pow(D/2-tf/2,2))+tw*Math.pow(hw,3)/12;
+    const Iy=2*(tf*Math.pow(b,3)/12)+hw*Math.pow(tw,3)/12;
+    const Sx=Ix/(D/2),Sy=Iy/(b/2),Japprox=(2*b*Math.pow(tf,3)+hw*Math.pow(tw,3))/3;
+    return {available:true,model:"symmetric_welded_I_rectangular_plates",webClearHeight_mm:hw,area_mm2:A,Ix_mm4:Ix,Iy_mm4:Iy,Sx_mm3:Sx,Sy_mm3:Sy,J_approx_mm4:Japprox,steelMass_kg_m:A*0.00785,excludesRailMass:true,limitations:"خواص هندسی ایده‌آل ورق‌های مستطیلی؛ بدون شعاع گوشه، جوش، اعوجاج، تنش پسماند، warping constant و اثر اتصال ریل. برای طراحی ظرفیت کافی نیست."};
+  }
   function auditRunwaySectionInputs(d){d=d||{};const required=Object.keys(RUNWAY_SECTION_FIELD_IDS),missing=required.filter(k=>d[k]===undefined||d[k]===null||d[k]===""),numeric=["overallDepth_mm","flangeWidth_mm","flangeThickness_mm","webThickness_mm","railMass_kg_m","stiffenerSpacing_m"],invalid=numeric.filter(k=>d[k]!==undefined&&(!Number.isFinite(d[k])||d[k]<=0)),dimensional=[];if(Number.isFinite(d.overallDepth_mm)&&Number.isFinite(d.flangeThickness_mm)&&2*d.flangeThickness_mm>=d.overallDepth_mm)dimensional.push("مجموع ضخامت دو بال باید از ارتفاع کل تیر کمتر باشد.");if(Number.isFinite(d.flangeWidth_mm)&&Number.isFinite(d.webThickness_mm)&&d.flangeWidth_mm<=d.webThickness_mm)dimensional.push("عرض بال نسبت به ضخامت جان نامعتبر است.");const ready=missing.length===0&&invalid.length===0&&dimensional.length===0&&d.steelGrade!=="other";return {ready,missing,invalid,dimensional,analysisEnabled:false,note:ready?"اطلاعات اولیه ثبت شده؛ طراحی مقاومت، خیز، خستگی، کمانش و اتصال هنوز انجام نشده است.":"اطلاعات مقطع/ریل ناقص یا نیازمند اصلاح است."};}
   function buildCraneRunwayGeometry(config){
     if(!config.enabled)return {geometryStatus:"disabled",axisOffsetM:null,supportType:"",beamSegments:[],brackets:[],supportNodes:[]};
@@ -341,7 +351,8 @@
       });
       for(let i=0;i<line.length-1;i++)beamSegments.push({id:"CRANE_"+side.key.toUpperCase()+"_BEAM_BAY_"+(i+1),side:side.key,bayIndex:i+1,start:line[i],end:line[i+1],lengthM:Math.abs(line[i+1].z-line[i].z),continuity:"separate_span_segment_between_adjacent_frames",analysisEnabled:false,connectionType:supportType||"unselected"});
     });
-    return {geometryStatus:supportType?"geometry_only_review_required":"geometry_only_connection_unselected",axisOffsetM:offsetM,supportType,beamSegments,brackets,supportNodes,sectionInputs,sectionAudit,analysisEnabled:false,geometryNote:"تیر حمال به قطعات مستقل بین قاب‌های مجاور تقسیم شده است؛ پیوستگی چنددهانه، سختی اتصال و انتقال نیرو هنوز مدل نشده‌اند."};
+    const sectionProperties=calculateRunwayBuiltupIProperties(sectionInputs);
+    return {geometryStatus:supportType?"geometry_only_review_required":"geometry_only_connection_unselected",axisOffsetM:offsetM,supportType,beamSegments,brackets,supportNodes,sectionInputs,sectionAudit,sectionProperties,analysisEnabled:false,geometryNote:"تیر حمال به قطعات مستقل بین قاب‌های مجاور تقسیم شده است؛ پیوستگی چنددهانه، سختی اتصال و انتقال نیرو هنوز مدل نشده‌اند."};
   }
   function runwayGeometrySelfTest(){
     const normal=runwayColumnLevels(0,[2,4,6],10,5,true);
@@ -351,6 +362,8 @@
     const noOffset=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5],runwayElevation:5,offsetM:NaN,supportType:""});
     const sectionGood=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
     const sectionBad=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:30,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
+    const properties=calculateRunwayBuiltupIProperties({girderType:"builtup-i",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12});
+    const boxProperties=calculateRunwayBuiltupIProperties({girderType:"box",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12});
     const checks=[
       normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,
       duplicate.filter(x=>x.y===5).length===1&&duplicate.filter(x=>x.kind==="runway-support").length===1,
@@ -358,7 +371,8 @@
       geometry.beamSegments.length===4&&geometry.brackets.length===6&&geometry.supportNodes.length===6&&geometry.beamSegments.every(x=>x.analysisEnabled===false)&&geometry.brackets.every(x=>x.analysisEnabled===false),
       noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0,
       sectionGood.ready===true&&sectionGood.analysisEnabled===false,
-      sectionBad.ready===false&&sectionBad.dimensional.length>0
+      sectionBad.ready===false&&sectionBad.dimensional.length>0,
+      properties.available&&properties.area_mm2>0&&properties.Ix_mm4>properties.Iy_mm4&&properties.steelMass_kg_m>0&&!boxProperties.available
     ];
     return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
