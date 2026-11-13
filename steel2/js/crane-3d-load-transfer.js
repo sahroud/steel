@@ -200,7 +200,7 @@ function ensurePanel(){
   }catch(e){status().textContent="تحلیل متوقف شد: "+String(e.message||e);}
  });
 }
+if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
 root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
-if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
 
