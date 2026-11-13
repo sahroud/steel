@@ -652,18 +652,22 @@ function calculatePedestalRebar(baseCount){
    isoPoly([{x:x0,y:y0,z:z0},{x:x1,y:y0,z:z0},{x:x1,y:y1,z:z0},{x:x0,y:y1,z:z0}],"#cbd5e1");
    isoPoly([{x:x1,y:y0,z:z0},{x:x1,y:y0,z:z1},{x:x1,y:y1,z:z1},{x:x1,y:y1,z:z0}],"#94a3b8");
   };
-  if(selectedBase&&selectedRoute&&a&&b&&B>0&&L>0&&T>0&&tie&&tie.count!==null){
-   const ux=(Number(b.x)-Number(a.x))/Math.max(0.001,Math.hypot(Number(b.x)-Number(a.x),Number(b.z)-Number(a.z)));
-   const uz=(Number(b.z)-Number(a.z))/Math.max(0.001,Math.hypot(Number(b.x)-Number(a.x),Number(b.z)-Number(a.z)));
-   const vx=uz,vz=-ux,beamW=tie.width||Number(state.tieWidthM)||0.6,beamH=tie.height||Number(state.tieHeightM)||0.5;
-   const pA={x:Number(a.x),y:Number(a.y),z:Number(a.z)},pB={x:Number(b.x),y:Number(b.y),z:Number(b.z)};
-   const drawFoot=(p)=>{
-    isoBox(p.x,p.y,p.z,B,T,L,"#cbd5e1");
-    const grid=buildFootingRebarGeometry([{nodeId:"iso",x:p.x,y:p.y,z:p.z}],B,L,T,cover??50,footingSpecs.specs);
+  const isoRoute=selectedRoute?footingsAlongStraightRoute(model.nodes||[],selectedRoute):{ok:false};
+  if(selectedBase&&selectedRoute&&isoRoute.ok&&B>0&&L>0&&T>0&&tie&&tie.count!==null){
+   const routeFootings=isoRoute.footings,firstNode=routeFootings[0].node,lastNode=routeFootings[routeFootings.length-1].node;
+   const dx=Number(lastNode.x)-Number(firstNode.x),dz=Number(lastNode.z)-Number(firstNode.z),routeLen=Math.hypot(dx,dz);
+   const ux=dx/routeLen,uz=dz/routeLen,vx=uz,vz=-ux,beamW=tie.width||Number(state.tieWidthM)||0.6,beamH=tie.height||Number(state.tieHeightM)||0.5;
+   const pA={x:Number(firstNode.x),y:Number(firstNode.y),z:Number(firstNode.z)},pB={x:Number(lastNode.x),y:Number(lastNode.y),z:Number(lastNode.z)};
+   const drawFoot=(node)=>{
+    const spec=footingSpecFor({nodeId:node.id,kind:node.kind}),p={x:Number(node.x),y:Number(node.y),z:Number(node.z)};
+    isoBox(p.x,p.y,p.z,spec.width,spec.thickness,spec.length,"#cbd5e1");
+    const grid=buildFootingRebarGeometry([{nodeId:String(node.id),x:p.x,y:p.y,z:p.z}],spec.width,spec.length,spec.thickness,cover??50,footingSpecs.specs);
     if(grid.ok)grid.bars.forEach(bar=>isoLine(bar.a,bar.b,bar.layer==="bottom"?"#dc2626":"#2563eb",2));
    };
-   drawFoot(pA);drawFoot(pB);
-   const halfProjection=(Math.abs(ux)*B+Math.abs(uz)*L)/2;const start={x:pA.x+ux*halfProjection,y:pA.y,z:pA.z+uz*halfProjection},end={x:pB.x-ux*halfProjection,y:pB.y,z:pB.z-uz*halfProjection};
+   routeFootings.forEach(x=>drawFoot(x.node));
+   const firstSpec=footingSpecFor({nodeId:firstNode.id,kind:firstNode.kind}),lastSpec=footingSpecFor({nodeId:lastNode.id,kind:lastNode.kind});
+   const firstProjection=(Math.abs(ux)*firstSpec.width+Math.abs(uz)*firstSpec.length)/2,lastProjection=(Math.abs(ux)*lastSpec.width+Math.abs(uz)*lastSpec.length)/2;
+   const start={x:pA.x+ux*firstProjection,y:pA.y,z:pA.z+uz*firstProjection},end={x:pB.x-ux*lastProjection,y:pB.y,z:pB.z-uz*lastProjection};
    const corners=[
     {x:start.x+vx*beamW/2,y:start.y,z:start.z+vz*beamW/2},
     {x:end.x+vx*beamW/2,y:end.y,z:end.z+vz*beamW/2},
@@ -690,7 +694,7 @@ function calculatePedestalRebar(baseCount){
     [ta,fb].forEach(q=>svg.push('<circle cx="'+q.x+'" cy="'+q.y+'" r="9" fill="#fff" stroke="'+mc+'" stroke-width="3"/>'));
     svg.push('<text x="'+Math.min(900,Math.max(100,(ta.x+fb.x)/2+18))+'" y="'+Math.max(875,(ta.y+fb.y)/2-14)+'" font-size="12" font-weight="bold" fill="'+mc+'">نزدیک‌ترین فاصله: '+fmtSvg(cp.clearDistanceMm)+' mm</text>');
    }
-   svg.push('<text x="500" y="1060" text-anchor="middle" font-size="12" fill="#334155">پی‌ها و مسیر از مدل انتخابی | شبکه پی: '+(mode==="default"?"پیش‌فرض":"داده طراحی")+' | قفس شناژ: '+tie.count+' میلگرد بالا و '+tie.count+' پایین</text>');
+   svg.push('<text x="500" y="1060" text-anchor="middle" font-size="12" fill="#334155">پی‌های مسیر: '+routeFootings.length+' عدد | شبکه پی: '+(mode==="default"?"پیش‌فرض":"داده طراحی")+' | قفس شناژ: '+tie.count+' میلگرد بالا و '+tie.count+' پایین</text>');
   }else{
    svg.push('<text x="500" y="940" text-anchor="middle" font-size="16" fill="#64748b">برای نمای سه‌بعدی، دو گره مسیر، ابعاد پی و داده آرماتور معتبر لازم است.</text>');
   }
