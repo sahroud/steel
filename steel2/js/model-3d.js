@@ -494,7 +494,7 @@
     const duplicate=runwayColumnLevels(0,[2,5,6],10,5,true);
     let rejected=false;try{runwayColumnLevels(0,[2,4],10,10,true);}catch(_){rejected=true;}
     const geometry=buildCraneRunwayGeometry({enabled:true,span:20,length:24,frames:[0,5,10],runwayElevation:5,offsetM:0.6,supportType:"simple",railLayoutInputs:{continuity:"continuous"},railLayoutAudit:auditRunwayRailLayout({supportPitch_m:0.6,firstSupportOffset_m:0,continuity:"continuous",jointPositions_m:"12",Ix_mm4:1.2e7,Iy_mm4:4.5e6,J_mm4:3.1e5,E_MPa:210000,propertySource:"rail catalog page 8"},24,{fasteningSpacing_mm:600})});
-    const noOffset=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5],runwayElevation:5,offsetM:NaN,supportType:"",sectionInputs:{girderType:"builtup-i",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12}});
+    const noOffset=buildCraneRunwayGeometry({enabled:true,span:20,length:24,frames:[0,5],runwayElevation:5,offsetM:NaN,supportType:"",sectionInputs:{girderType:"builtup-i",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12},railLayoutInputs:{continuity:"continuous"},railLayoutAudit:railLayoutGood});
     const sectionGood=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
     const sectionBad=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:30,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
     const properties=calculateRunwayBuiltupIProperties({girderType:"builtup-i",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12});
@@ -508,6 +508,8 @@
     const fasteningGood=auditRunwayFasteningDetail({railBaseWidth_mm:140,railPadThickness_mm:8},{fasteningType:"clip",fasteningModel:"clip-X",clampsPerStation:2,boltsPerClamp:2,boltGrade:"8.8",boltDiameter_mm:16,seatPlateWidth_mm:180,seatPlateLength_mm:200,seatPlateThickness_mm:16,padMaterial:"elastomer",padHardness_ShoreA:70,detailSource:"detail F-01"});
     const fasteningBad=auditRunwayFasteningDetail({railBaseWidth_mm:200,railPadThickness_mm:0},{fasteningType:"clip",seatPlateWidth_mm:100,seatPlateLength_mm:-1,seatPlateThickness_mm:0,padMaterial:"",padHardness_ShoreA:120,detailSource:""});
     const railLayoutGood=auditRunwayRailLayout({supportPitch_m:0.6,firstSupportOffset_m:0,continuity:"continuous",jointPositions_m:"12",Ix_mm4:1.2e7,Iy_mm4:4.5e6,J_mm4:3.1e5,E_MPa:210000,propertySource:"rail catalog page 8"},24,{fasteningSpacing_mm:600});
+    const railOffsetAligned=auditRunwayRailLayout({supportPitch_m:0.6,firstSupportOffset_m:0.3,continuity:"simple-spans",jointPositions_m:"0.9, 1.5",Ix_mm4:1.2e7,Iy_mm4:4.5e6,J_mm4:3.1e5,E_MPa:210000,propertySource:"rail catalog page 8"},24,{fasteningSpacing_mm:600});
+    const railTooSparse=auditRunwayRailLayout({supportPitch_m:30,firstSupportOffset_m:0,continuity:"continuous",Ix_mm4:1.2e7,Iy_mm4:4.5e6,J_mm4:3.1e5,E_MPa:210000,propertySource:"rail catalog page 8"},24,{fasteningSpacing_mm:600});
     const railLayoutBad=auditRunwayRailLayout({supportPitch_m:0,firstSupportOffset_m:2,continuity:"unknown",jointPositions_m:"24, 12, 25",Ix_mm4:-1,Iy_mm4:0,J_mm4:1,E_MPa:0,propertySource:""},24,{fasteningSpacing_mm:600});
     const checks=[
       normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,
@@ -515,7 +517,7 @@
       rejected,
       geometry.beamSegments.length===4&&geometry.brackets.length===6&&geometry.supportNodes.length===6&&geometry.beamSegments.every(x=>x.analysisEnabled===false)&&geometry.brackets.every(x=>x.analysisEnabled===false),
       geometry.railSegments.length===80&&geometry.railSegments.some(x=>x.jointAtStart)&&geometry.railSegments.every(x=>x.analysisEnabled===false),
-      noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0&&noOffset.sectionInputs.girderType==="builtup-i"&&noOffset.sectionProperties.available,
+      noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0&&noOffset.sectionInputs.girderType==="builtup-i"&&noOffset.sectionProperties.available&&noOffset.railSegments.length===80,
       sectionGood.ready===true&&sectionGood.analysisEnabled===false,
       sectionBad.ready===false&&sectionBad.dimensional.length>0,
       properties.available&&properties.area_mm2>0&&properties.Ix_mm4>properties.Iy_mm4&&properties.steelMass_kg_m>0&&!boxProperties.available,
@@ -528,7 +530,9 @@
       fasteningGood.ready&&fasteningGood.analysisEnabled===false,
       !fasteningBad.ready&&fasteningBad.missing.length>=1&&fasteningBad.invalid.length>=2&&fasteningBad.dimensional.length>=1,
       railLayoutGood.ready&&railLayoutGood.supportStations.length===41&&railLayoutGood.analysisEnabled===false,
-      !railLayoutBad.ready&&railLayoutBad.invalid.length>=3&&railLayoutBad.dimensional.length>=2
+      !railLayoutBad.ready&&railLayoutBad.invalid.length>=3&&railLayoutBad.dimensional.length>=2,
+      railOffsetAligned.ready&&railOffsetAligned.supportStations[0]===0.3,
+      !railTooSparse.ready&&railTooSparse.supportStations.length===1&&railTooSparse.dimensional.length>=1
     ];
     return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
