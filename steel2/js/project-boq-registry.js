@@ -120,7 +120,7 @@ function refresh(){
  const model=root.SteelStructuralModel?.getData?.()||root.SteelStructuralModel?.model||null;
  const data={quantity:root.SteelQuantityTakeoff?.lastResult||null,foundation:root.SteelFoundationTakeoff?.getLast?.()||null,
   anchor:root.SteelAnchorBaseplateTakeoff?.getLast?.()||null,steelMass:model?root.SteelFabricationTakeoff?.steelMass?.(model)||null:null,
-  cost:root.SteelCostEstimate?.getLast?.()||null,costInputs:root.SteelCostEstimate?.getData?.()||null,model};
+  cost:root.SteelCostEstimate?.getLast?.()||null,costInputs:root.SteelCostEstimate?.getData?.()||null,siteWork:root.SteelSiteWorkTakeoff?.getData?.()?.calculation||null,model};
  const snapshot=buildSnapshot(data);root.SteelProjectBOQ.lastSnapshot=snapshot;render(snapshot);return clone(snapshot);
 }
 function download(){
