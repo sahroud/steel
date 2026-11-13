@@ -31,9 +31,11 @@ function mapMemberLoad(member,record,geometry){
  }
  if(member.sectionKey==="endGirt"){
   const h=Number(member.lineLoads?.tributaryHeight);
-  if(!(h>0)||!["front","back"].includes(member.endFace))throw Error("وجه یا ارتفاع بارگیر قید انتهایی نامعتبر است.");
-  zero[2]=(member.endFace==="front"?1:-1)*pressure(member.endFace==="front"?"end-wall-front":"end-wall-back")*h;
-  return{globalKNm:zero,surfaceKeys:[member.endFace==="front"?"end-wall-front":"end-wall-back"]};
+  const face=member.endFace==="rear"?"back":member.endFace;
+  if(!(h>0)||!["front","back"].includes(face))throw Error("وجه یا ارتفاع بارگیر قید انتهایی نامعتبر است.");
+  const key=face==="front"?"end-wall-front":"end-wall-back";
+  zero[2]=(face==="front"?1:-1)*pressure(key)*h;
+  return{globalKNm:zero,surfaceKeys:[key]};
  }
  return{globalKNm:zero,surfaceKeys:[]};
 }
@@ -49,6 +51,8 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
  ck("right wall inward is -X",()=>mapMemberLoad({sectionKey:"wallGirt",side:"right",lineLoads:{tributaryHeight:2}},{direction:"x-negative",surfaces:p},g).globalKNm[0]===-10);
  ck("front end wall inward is +Z",()=>mapMemberLoad({sectionKey:"endGirt",endFace:"front",lineLoads:{tributaryHeight:2}},{direction:"z-positive",surfaces:p},g).globalKNm[2]===12);
  ck("rear end wall inward is -Z",()=>mapMemberLoad({sectionKey:"endGirt",endFace:"back",lineLoads:{tributaryHeight:2}},{direction:"z-negative",surfaces:p},g).globalKNm[2]===-14);
+ ck("model rear alias maps to back surface",()=>{const r=mapMemberLoad({sectionKey:"endGirt",endFace:"rear",lineLoads:{tributaryHeight:2}},{direction:"z-negative",surfaces:p},g);return r.globalKNm[2]===-14&&r.surfaceKeys[0]==="end-wall-back";});
+ ck("unknown end-wall face is rejected",()=>{try{mapMemberLoad({sectionKey:"endGirt",endFace:"side",lineLoads:{tributaryHeight:2}},{direction:"z-negative",surfaces:p},g);return false;}catch(e){return true;}});
  ck("negative pressure reverses wall vector",()=>mapMemberLoad({sectionKey:"wallGirt",side:"left",lineLoads:{tributaryHeight:1}},{direction:"x-positive",surfaces:{...p,"long-wall-left":-4}},g).globalKNm[0]===-4);
  ck("invalid tributary height blocked",()=>{try{mapMemberLoad({sectionKey:"wallGirt",side:"left",lineLoads:{}},{direction:"x-positive",surfaces:p},g);return false;}catch(e){return true;}});
  ck("invalid direction blocked",()=>{try{mapMemberLoad({sectionKey:"wallGirt",side:"left",lineLoads:{tributaryHeight:1}},{direction:"x-diagonal",surfaces:p},g);return false;}catch(e){return true;}});
