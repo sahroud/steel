@@ -17,12 +17,12 @@ function buildSnapshot(data){
  if(q){
   const t=q.totals||{};
   add("roof-cover-area","پوشش","مساحت تقریبی پوشش سقف","m²",t.roofCoverAreaApproxM2,"متره هندسه سوله","از سطح شیبدار هندسی؛ بازشو و فلاشینگ کسر نشده");
-  add("masonry-brick-total","مصالح","تعداد کل آجر تخمینی","عدد",t.estimatedBrickCount,"متره هندسه سوله","جمع دیوارهای آجری؛ برآورد حجمی", {aggregationRole:"summary"})
-  add("mortar-total","مصالح","حجم کل ملات نظری","m³",t.estimatedMortarVolumeM3,"متره هندسه سوله","حجم نظری بندها؛ نسبت اختلاط جداگانه لازم است", {aggregationRole:"summary"})
-  add("plaster-area-total","نازک‌کاری","سطح کل اندود دو طرف","m²",t.plasterAreaBothFacesM2,"متره هندسه سوله","بر اساس ضخامت اندود واردشده", {aggregationRole:"summary"})
-  add("masonry-volume-total","بنایی","حجم کل بنایی","m³",t.masonryVolumeM3,"متره هندسه سوله","جمع دیوارهای آجری", {aggregationRole:"summary"})
-  add("panel-wall-area-total","پوسته","مساحت کل ساندویچ‌پنل دیوار","m²",(q.facades||[]).filter(x=>x.material==="sandwich-panel").reduce((sum,x)=>sum+(finite(x.netAreaM2)?Number(x.netAreaM2):0),0),"متره هندسه سوله","جمع سطوح با جنس ساندویچ‌پنل", {aggregationRole:"summary"})
-  add("sheet-wall-area-total","پوسته","مساحت کل ورق فلزی دیوار","m²",(q.facades||[]).filter(x=>x.material==="metal-sheet").reduce((sum,x)=>sum+(finite(x.netAreaM2)?Number(x.netAreaM2):0),0),"متره هندسه سوله","جمع سطوح با جنس ورق فلزی", {aggregationRole:"summary"})
+  add("masonry-brick-total","مصالح","تعداد کل آجر تخمینی","عدد",t.estimatedBrickCount,"متره هندسه سوله","جمع دیوارهای آجری؛ برآورد حجمی", {aggregationRole:"summary"});
+  add("mortar-total","مصالح","حجم کل ملات نظری","m³",t.estimatedMortarVolumeM3,"متره هندسه سوله","حجم نظری بندها؛ نسبت اختلاط جداگانه لازم است", {aggregationRole:"summary"});
+  add("plaster-area-total","نازک‌کاری","سطح کل اندود دو طرف","m²",t.plasterAreaBothFacesM2,"متره هندسه سوله","بر اساس ضخامت اندود واردشده", {aggregationRole:"summary"});
+  add("masonry-volume-total","بنایی","حجم کل بنایی","m³",t.masonryVolumeM3,"متره هندسه سوله","جمع دیوارهای آجری", {aggregationRole:"summary"});
+  add("panel-wall-area-total","پوسته","مساحت کل ساندویچ‌پنل دیوار","m²",(q.facades||[]).filter(x=>x.material==="sandwich-panel").reduce((sum,x)=>sum+(finite(x.netAreaM2)?Number(x.netAreaM2):0),0),"متره هندسه سوله","جمع سطوح با جنس ساندویچ‌پنل", {aggregationRole:"summary"});
+  add("sheet-wall-area-total","پوسته","مساحت کل ورق فلزی دیوار","m²",(q.facades||[]).filter(x=>x.material==="metal-sheet").reduce((sum,x)=>sum+(finite(x.netAreaM2)?Number(x.netAreaM2):0),0),"متره هندسه سوله","جمع سطوح با جنس ورق فلزی", {aggregationRole:"summary"});
   (q.facades||[]).forEach(face=>{
    const label=({front:"جبهه جلو",rear:"جبهه عقب",left:"دیواره طولی چپ",right:"دیواره طولی راست"})[face.face]||String(face.face);
    add("facade-"+face.face+"-area","پوسته","مساحت خالص "+label,"m²",face.netAreaM2,"متره هندسه سوله","بازشو معتبر در صورت ثبت کسر شده");
@@ -43,7 +43,7 @@ function buildSnapshot(data){
   add("steel-plate-mass","اتصالات فولادی","وزن ورق‌های اتصال","kg",m.connectionPlateMassKg,"متره ساخت فولاد","اقلام دستی ثبت‌شده");
   add("steel-bolt-mass","اتصالات فولادی","وزن ساق پیچ‌ها","kg",m.boltShankMassKg,"متره ساخت فولاد","بدون سر، مهره و واشر مگر جدا ثبت شوند");
   add("steel-weld-mass","اتصالات فولادی","وزن نظری فلز جوش","kg",m.theoreticalWeldMetalMassKg,"متره ساخت فولاد","مدل نظری جوش گوشه");
-  add("steel-procurement-mass","خرید فولاد","وزن خرید اسکلت و ورق با پرت ثبت‌شده","kg",m.procurementMassExcludingBoltsAndWeldKg,"متره ساخت فولاد","پیچ و جوش جداگانه", {aggregationRole:"summary"})
+  add("steel-procurement-mass","خرید فولاد","وزن خرید اسکلت و ورق با پرت ثبت‌شده","kg",m.procurementMassExcludingBoltsAndWeldKg,"متره ساخت فولاد","پیچ و جوش جداگانه", {aggregationRole:"summary"});
   (m.items||[]).forEach(x=>add("fabrication-"+x.id,"ساخت و اتصالات",x.description,x.unit,x.count,"ثبت دستی ساخت",x.note||"ابعاد ثبت‌شده", {massKg:finite(x.massKg)?Number(x.massKg):null}));
  }else if(data.model)warnings.push("متره وزن اسکلت هنوز از مدل و مقاطع معتبر استخراج نشده است.");
  if(f?.quantities){
@@ -51,13 +51,13 @@ function buildSnapshot(data){
   add("foundation-tie-count","شناژ","تعداد شناژها","عدد",x.tieCount,"متره فونداسیون","طبق نقشه واردشده");
   add("foundation-tie-length","شناژ","طول کل شناژها","m",x.tieTotalLengthM,"متره فونداسیون","طول محور/اجرایی واردشده از نقشه");
   (x.footingSchedule||[]).forEach(row=>add("footing-"+row.nodeId,"فونداسیون","حجم بتن پی پایه "+row.nodeId,"m³",Number(row.width)*Number(row.length)*Number(row.thickness),"جدول مستقل پی‌ها","عرض × طول × ضخامت ثبت‌شده"));
-  add("foundation-footing-concrete","فونداسیون","بتن پی‌ها","m³",x.footingConcreteM3,"متره فونداسیون","ابعاد مستقل هر پایه", {aggregationRole:"summary"})
+  add("foundation-footing-concrete","فونداسیون","بتن پی‌ها","m³",x.footingConcreteM3,"متره فونداسیون","ابعاد مستقل هر پایه", {aggregationRole:"summary"});
   add("foundation-pedestal-concrete","فونداسیون","بتن پدستال‌ها","m³",x.pedestalConcreteM3,"متره فونداسیون","فقط با تکمیل سه بعد پدستال");
   add("foundation-tie-concrete","شناژ","بتن شناژها","m³",x.tieConcreteM3,"متره فونداسیون","طول و مقطع از ورودی نقشه؛ مسیر خودکار حدس زده نمی‌شود");
   add("foundation-excavation","خاکی","حجم خاکبرداری","m³",x.excavationM3,"متره فونداسیون","عمق و فضای کار باید وارد شده باشد");
   add("foundation-footing-pedestal-formwork","قالب‌بندی","قالب جانبی پی و پدستال","m²",finite(x.sideFormworkM2)&&finite(x.tieSideFormworkM2)?Number(x.sideFormworkM2)-Number(x.tieSideFormworkM2):null,"متره فونداسیون","قالب کف منظور نشده؛ از جمع قالب جانبی کل منهای شناژ");
   add("foundation-tie-formwork","قالب‌بندی","قالب جانبی شناژ","m²",x.tieSideFormworkM2,"متره فونداسیون","قالب کف شناژ منظور نشده");
-  add("foundation-footing-rebar","آرماتور","وزن شبکه آرماتور پی","kg",x.footingRebarKg,"متره فونداسیون","جزئیات قلاب/وصله فقط اگر در طول برش لحاظ شده باشد", {aggregationRole:"summary"})
+  add("foundation-footing-rebar","آرماتور","وزن شبکه آرماتور پی","kg",x.footingRebarKg,"متره فونداسیون","جزئیات قلاب/وصله فقط اگر در طول برش لحاظ شده باشد", {aggregationRole:"summary"});
   add("foundation-pedestal-rebar","آرماتور","وزن آرماتور پدستال","kg",x.pedestalRebarKg,"متره فونداسیون","بر اساس تعداد و طول برش واردشده");
   add("foundation-tie-rebar","آرماتور","وزن آرماتور شناژ","kg",x.tieRebarKg,"متره فونداسیون","بر اساس kg/m واردشده؛ نه جدول خم و برش کامل");
   if(!a)add("foundation-anchor-count","انکر","تعداد بولت بر اساس ورودی پایه","عدد",x.anchorsCount,"متره فونداسیون","تعداد بولت در هر پایه واردشده");
