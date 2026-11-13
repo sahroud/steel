@@ -1023,6 +1023,8 @@
         direction:[0,-1,0],
         factors:{dead:Number(f.dead)||0,live:Number(f.live)||0,snow:Number(f.snow)||0,wind:Number(f.wind)||0},
         windFactor:Number(f.wind)||0,windSign:Number(loadCase.windSign)||1,
+        directionalWindPressures:loadCase.directionalWindPressures||null,
+        directionalWindCaseId:loadCase.directionalWindCaseId||null,
         deadFactor:Number(f.dead)||0};
     }else if(/^combo[0-2]$/.test(loadCase)){
       const comboIndex=Number(loadCase.slice(5));
@@ -1196,16 +1198,20 @@
           const rise=Number(model.geometry.rise);
           const slope=rise/half;
           const norm=Math.hypot(slope,1);
-          const left=Number(m.lineLoads?.windLeft||0)*1000*windFactor*windSign;
-          const right=Number(m.lineLoads?.windRight||0)*1000*windFactor*windSign;
+          const dp=selected.directionalWindPressures?.surfaces;
+          const leftLine=dp?Number(dp["roof-left"])*Number(m.lineLoads?.tributaryWidthLeft||0):Number(m.lineLoads?.windLeft||0)*windSign;
+          const rightLine=dp?Number(dp["roof-right"])*Number(m.lineLoads?.tributaryWidthRight||0):Number(m.lineLoads?.windRight||0)*windSign;
+          const left=leftLine*1000*windFactor,right=rightLine*1000*windFactor;
           global[0]+=left*slope/norm-right*slope/norm;
           global[1]-=(left+right)/norm;
         }else if(m.sectionKey==="wallGirt"){
-          const wall=Number(m.lineLoads?.wind||0)*1000*windFactor*windSign;
+          const pressure=dp?Number(dp[m.side==="left"?"long-wall-left":"long-wall-right"])*Number(m.lineLoads?.tributaryHeight||0):Number(m.lineLoads?.wind||0)*windSign;
+          const wall=pressure*1000*windFactor;
           global[0]+=m.side==="left"?wall:-wall;
         }else if(m.sectionKey==="endGirt"){
           // Positive pressure acts inward: +Z on the front face and -Z on the rear face.
-          const endWall=Number(m.lineLoads?.windEnd||0)*1000*windFactor*windSign;
+          const pressure=dp?Number(dp[m.endFace==="front"?"end-wall-front":"end-wall-back"])*Number(m.lineLoads?.tributaryHeight||0):Number(m.lineLoads?.windEnd||0)*windSign;
+          const endWall=pressure*1000*windFactor;
           global[2]+=m.endFace==="front"?endWall:-endWall;
         }
       }else{
