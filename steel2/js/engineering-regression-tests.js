@@ -107,6 +107,7 @@ test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISecti
  test("crane load-path and horizontal ledger audit suite",()=>{const r=root.SteelCraneLoadPathAudit?.selfTest?.();return r&&r.passed===12&&r.failed===0?"Crane load-path audit and signed horizontal ledger: 12/12":false;});
  test("runway girder FEM regression suite",()=>{const r=root.SteelRunwayGirderFEM?.selfTest?.();return r&&r.passed===10&&r.failed===0?"Runway girder synchronized FEM and readiness guards: 10/10":false;});
  test("synchronized two-rail crane transfer regression suite",()=>{const r=root.SteelCraneTwoRailTransfer?.selfTest?.();return r&&r.passed===10&&r.failed===0?"Two-rail synchronized sweep, paired reactions, girder point-load transfer and input guards: 10/10":false;});
+ test("crane 3D mesh proposal exact node mapping and non-injection guard",()=>{const r=root.SteelCrane3DMeshProposal?.selfTest?.();return r&&r.passed===8&&r.failed===0?"Exact column-node mapping, proposal topology and solver isolation: 8/8":false;});
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
  const host=document.getElementById("engineeringRegressionResults");if(host)host.innerHTML="<p>موفق: "+result.passed+" | ناموفق: "+result.failed+"</p><ul>"+checks.map(x=>"<li>"+(x.pass?"✓ ":"✗ ")+x.name+" — "+x.detail+"</li>").join("")+"</ul><div class='notice'>"+result.scope+"</div>";
  return result;
