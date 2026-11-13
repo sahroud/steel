@@ -63,6 +63,34 @@ function analyzeGroup(g){
  return engine.analyze(input);
 }
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function buildCompressionDemandRows(forceResult){
+ const members=Array.isArray(forceResult?.members)?forceResult.members:[];
+ return members.map(m=>{
+  const ends=Array.isArray(m.ends)?m.ends.filter(e=>Array.isArray(e.values)&&e.values.length===12):[];
+  let demand=0,caseLabel="";
+  ends.forEach(e=>{
+   const ni=Number(e.values[0]),nj=Number(e.values[6]);
+   if(!Number.isFinite(ni)||!Number.isFinite(nj))return;
+   const candidate=Math.max(0,ni,-nj);
+   if(candidate>demand){demand=candidate;caseLabel=e.label||"";}
+  });
+  return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,caseCount:ends.length};
+ }).filter(r=>r.caseCount>0).sort((a,b)=>a.sectionKey.localeCompare(b.sectionKey)||a.id.localeCompare(b.id));
+}
+function selfTest(){
+ const rows=buildCompressionDemandRows({members:[
+  {id:"T1",sectionKey:"column",ends:[{label:"TENSION",values:[-1000,0,0,0,0,0,1000,0,0,0,0,0]}]},
+  {id:"C1",sectionKey:"column",ends:[{label:"C1",values:[800,0,0,0,0,0,-800,0,0,0,0,0]},{label:"C2",values:[1500,0,0,0,0,0,-1500,0,0,0,0,0]}]},
+  {id:"BAD",sectionKey:"rafter",ends:[{label:"BAD",values:[0,1,2]}]}
+ ]});
+ const tension=rows.find(r=>r.id==="T1"),compression=rows.find(r=>r.id==="C1");
+ const tests=[
+  {name:"tension is not classified as compression",pass:!!tension&&tension.compressionDemand_kN===0},
+  {name:"compression demand uses largest end compression",pass:!!compression&&compression.compressionDemand_kN===1.5&&compression.governingCase==="C2"},
+  {name:"invalid force vectors are ignored",pass:!rows.some(r=>r.id==="BAD")}
+ ];
+ return {passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests};
+}
 function sectionDefaults(g){
  const s=root.SteelSections?.read?.()||{},m=s[g]||{},p=s.analysis3d?.groups?.[g]||{};
  return {Ag_mm2:Number(m.A_cm2)>0?Number(m.A_cm2)*100:null,Ix_mm4:Number(m.Ix_cm4)>0?Number(m.Ix_cm4)*1e4:null,Iy_mm4:Number(m.Iy_cm4)>0?Number(m.Iy_cm4)*1e4:null,J_mm4:Number(p.J_cm4)>0?Number(p.J_cm4)*1e4:null};
@@ -89,7 +117,10 @@ function renderResults(){
    '<p>Pn='+r.Pn_kN.toFixed(2)+' kN | LRFD: φPn='+r.LRFD.designStrength_kN.toFixed(2)+' kN | ASD: Pn/Ω='+r.ASD.allowableStrength_kN.toFixed(2)+' kN</p>'+
    '<p>لاغری: λx='+r.slenderness.x.toFixed(1)+'، λy='+r.slenderness.y.toFixed(1)+'</p><ul>'+r.warnings.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div>';
  }).join("");
- host.innerHTML=html+'<div class="notice">این نسخه هنوز نیروی فشاری متناظر هر عضو را از پوش نیرو به ظرفیت متناظر همان عضو متصل نمی‌کند؛ بنابراین نسبت تقاضا به ظرفیت و قبولی/ردی ارائه نمی‌شود. همچنین کمانش موضعی، اعضای مرکب، مقاطع نامتقارن/متغیرعمق، اندرکنش فشار و خمش، تحلیل مرتبه دوم و کنترل لرزه‌ای خارج از دامنه‌اند.</div>';
+ const forceResult=root.SteelMemberForceEnvelope?.getLast?.();
+ const demandRows=buildCompressionDemandRows(forceResult);
+ const demandHtml=demandRows.length?'<h4>پوش تقاضای فشاری استخراج‌شده از تحلیل سه‌بعدی</h4><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>شناسه عضو/قطعه</th><th>گروه</th><th>بیشینه فشار (kN)</th><th>حالت بار حاکم</th></tr></thead><tbody>'+demandRows.map(r=>'<tr><td>'+esc(r.id)+'</td><td>'+esc(r.sectionKey)+'</td><td>'+r.compressionDemand_kN.toFixed(2)+'</td><td>'+esc(r.governingCase||"—")+'</td></tr>').join("")+'</tbody></table></div>':'<div class="notice">برای نمایش تقاضای فشاری، ابتدا تحلیل سه‌بعدی و استخراج پوش نیروها را اجرا کنید.</div>';
+ host.innerHTML=html+demandHtml+'<div class="notice">تقاضای فشاری از قرارداد علامت نیروی محلی حل‌گر استخراج شده است: کشش (Nᵢ منفی و Nⱼ مثبت) فشار محسوب نمی‌شود؛ فشار (Nᵢ مثبت و Nⱼ منفی) با بیشینه دو انتها گزارش می‌شود. این قرارداد با آزمون عضو محوری کنترل شده است. هنوز نسبت تقاضا به ظرفیت گزارش نمی‌شود، زیرا ظرفیت باید برای طول مهارنشده، مقطع و شرایط مهار تک‌تک اعضا محاسبه شود. همچنین کمانش موضعی، اعضای مرکب، مقاطع نامتقارن/متغیرعمق، اندرکنش فشار و خمش، تحلیل مرتبه دوم و کنترل لرزه‌ای خارج از دامنه‌اند.</div>';
 }
 function init(){
  if($("compressionCapacityIntegrationPanel"))return;
@@ -100,6 +131,6 @@ function init(){
  anchor.insertAdjacentElement("afterend",p);render();
  $("btnCompressionCapacityRun")?.addEventListener("click",renderResults);
 }
-root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,getSectionDefaults:sectionDefaults,render};
+root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,selfTest,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
