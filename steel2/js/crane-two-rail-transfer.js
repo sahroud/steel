@@ -69,7 +69,13 @@ function analyze(p){
    if(r.verticalReaction_N<e.minReaction_N){e.minReaction_N=r.verticalReaction_N;e.minCase=concurrent;}
   });
   const transfer={left:sideResults.left.map(r=>({x_m:r.x_m,P_N:-r.verticalReaction_N,source:"rail-support-reaction",casePosition_m:ref,station:r.station})),right:sideResults.right.map(r=>({x_m:r.x_m,P_N:-r.verticalReaction_N,source:"rail-support-reaction",casePosition_m:ref,station:r.station}))};
-  cases.push({referencePosition_m:ref,concurrentSupportReactions:sideResults,girderPointLoads:transfer});
+  const sourceDocuments={
+   geometrySource:String(p.geometrySource||""),
+   wheelTrackSource:String(p.wheelTrackSource||""),
+   supportStiffnessSource:String(p.supportStiffnessSource||""),
+   wheelSources:[...p.leftWheels.map(w=>({side:"left",offset_m:Number(w.offset_m),source:String(w.source||""),document:String(w.document||"")})),...p.rightWheels.map(w=>({side:"right",offset_m:Number(w.offset_m),source:String(w.source||""),document:String(w.document||"")}))]
+  };
+  cases.push({referencePosition_m:ref,concurrentSupportReactions:sideResults,girderPointLoads:transfer,sourceDocuments});
  }
  if(!solved)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["هیچ حالت هم‌زمان قابل حل نبود.",...failed.slice(0,5).map(x=>x.reason)]}};
  return {success:true,method:"synchronized two-rail vertical moving-load analysis using two independent continuous Euler-Bernoulli rail FEM models",geometry:a.geometry,positionCount:refs.length,solvedCases:solved,failedCases:failed.slice(0,30),supportReactionEnvelope:env,criticalCases:cases.filter((c,i)=>Object.values(env).some(list=>list.some(e=>e.maxCase===c||e.minCase===c))),cases,girderTransfer:{ready:true,meaning:"واکنش هر تکیه‌گاه ریل به بار متمرکز قائم روی تیر حمال همان سمت و همان مختصات طولی تبدیل شده است.",left:cases.map(c=>({referencePosition_m:c.referencePosition_m,loads:c.girderPointLoads.left})),right:cases.map(c=>({referencePosition_m:c.referencePosition_m,loads:c.girderPointLoads.right})),requiresNextStage:"تحلیل تیر حمال با خواص مقطع، تکیه‌گاه‌ها، محل براکت‌ها و اتصال مستند؛ این ماژول تیر حمال را حل نمی‌کند."},analysisEnabled:false,limitations:["دو ریل با جاروب در موقعیت طولی هم‌زمان تحلیل می‌شوند، اما مدل‌های خمشی هر ریل مستقل‌اند و سختی عرضی پل جرثقیل/تعامل دو ریل حل نمی‌شود.","فقط بار قائم استاتیکی و فنرهای قائم مستقل؛ نیروهای افقی، پیچش، ضربه، دینامیک، خستگی، تماس یک‌طرفه و چند جرثقیل لحاظ نشده‌اند.","فاصله ریل و مسیر چرخ صرفاً از داده مستند ثبت/مقایسه می‌شوند؛ اختلاف آن‌ها بدون تلرانس مصوب به‌عنوان قبولی/رد هندسی تفسیر نمی‌شود.","بارهای منتقل‌شده ورودی مرحله بعد تیر حمال هستند، نه تحلیل یا طراحی تیر حمال؛ هیچ بار به مدل سه‌بعدی قاب تزریق نشده است.","خروجی تحلیل مقدماتی است؛ analysisEnabled=false و تأیید آیین‌نامه‌ای/اجرایی نیست."]};
