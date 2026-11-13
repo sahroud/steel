@@ -142,6 +142,11 @@ function selfTest(){
  const old=data;data=q;const mid=at("rafter",0.5);data=old;
  tests.push({name:"mid-station-interpolation",pass:Math.abs(mid.dimensions.d-400)<1e-9});
  tests.push({name:"disabled-by-default",pass:normalize({}).groups.column.enabled===false});
+ const oldData=data;data=normalize({groups:{column:{enabled:true,stations:{start:{d:500,bf:200,tw:10,tf:16},mid:{d:400,bf:200,tw:10,tf:16},end:{d:300,bf:200,tw:10,tf:16}}}}});
+ const segmented=segmentModel({nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:6,z:0}],members:[{id:"C1",start:"A",end:"B",sectionKey:"column",endReleases:{i:[4],j:[5]}}]}, {height:6,span:12},8);
+ data=oldData;
+ tests.push({name:"piecewise-member-segmentation",pass:segmented.audit.generatedSegmentCount===8&&segmented.audit.addedNodeCount===7&&segmented.model.members[0].endReleases.i[0]===4&&segmented.model.members[7].endReleases.j[0]===5});
+
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests};
 }
 function init(){
