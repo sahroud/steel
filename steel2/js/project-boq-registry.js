@@ -114,8 +114,7 @@ function render(snapshot){
 }
 function csv(snapshot){
  const rows=[["بخش","شرح","واحد","مقدار","وضعیت","نقش ردیف","منبع","مبنای محاسبه","وزن افزوده (kg)"],...snapshot.rows.map(r=>[r.category,r.description,r.unit,r.quantity??"",r.status,r.aggregationRole,r.source,r.basis,r.massKg??""]),["ملاحظات",snapshot.pricingStatus],...snapshot.warnings.map(w=>["هشدار",w])];
- return"\uFEFF"+rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r
-");
+ return"\uFEFF"+rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
 }
 function refresh(){
  const model=root.SteelStructuralModel?.getData?.()||root.SteelStructuralModel?.model||null;
