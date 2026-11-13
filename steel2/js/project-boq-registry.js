@@ -51,6 +51,8 @@ function buildSnapshot(data){
   add("foundation-tie-count","شناژ","تعداد شناژها","عدد",x.tieCount,"متره فونداسیون","از مسیرهای تعریف‌شده یا ورودی نقشه",{aggregationRole:"summary"});
   add("foundation-tie-length","شناژ","طول کل شناژها","m",x.tieTotalLengthM,"متره فونداسیون","از مسیرهای تعریف‌شده یا ورودی نقشه؛ جمع‌بندی",{aggregationRole:"summary"});
   (x.tieRouteSchedule||[]).forEach(route=>{add("tie-route-"+route.id+"-length","شناژ","طول مسیر "+route.id,"m",route.lengthM,"هندسه مسیر شناژ","فاصله سه‌بعدی دو گره پایه");add("tie-route-"+route.id+"-concrete","شناژ","بتن مسیر "+route.id,"m³",route.concreteM3,"هندسه مسیر شناژ","طول × عرض × ارتفاع مقطع ثبت‌شده");add("tie-route-"+route.id+"-formwork","قالب‌بندی","قالب جانبی مسیر "+route.id,"m²",route.sideFormworkM2,"هندسه مسیر شناژ","دو وجه جانبی؛ قالب کف و سرهای آزاد منظور نشده");});
+  (x.tieRebarSchedule||[]).forEach(route=>{add("tie-rebar-"+route.id+"-longitudinal","آرماتور شناژ","وزن میلگردهای طولی ممتد شناژ "+route.id,"kg",route.longitudinalMassKg,"غربال آرماتور شناژ","میلگرد ممتد از داخل پی‌ها؛ تا وجه بیرونی پی ابتدا/انتها با افزوده قلاب ثبت‌شده");add("tie-rebar-"+route.id+"-stirrups","آرماتور شناژ","وزن خاموت‌های شناژ "+route.id,"kg",route.stirrupMassKg,"غربال آرماتور شناژ","تعداد و طول برش خاموت از مقطع و فاصله محاسبه‌شده؛ کنترل اجرایی جدا لازم است");});
+  if(Array.isArray(x.tieRebarTakeoffWarnings))warnings.push(...x.tieRebarTakeoffWarnings);
   if(Array.isArray(x.tieRouteWarnings))warnings.push(...x.tieRouteWarnings);
   (x.footingSchedule||[]).forEach(row=>{add("footing-"+row.nodeId,"فونداسیون","بتن پی پایه "+row.nodeId,"m³",Number(row.width)*Number(row.length)*Number(row.thickness),"جدول مستقل پی‌ها","عرض × طول × ضخامت ثبت‌شده");add("excavation-"+row.nodeId,"خاکی","خاکبرداری محل پی "+row.nodeId,"m³",row.excavationM3,"جدول مستقل پی‌ها","ابعاد پی + فضای کار ثبت‌شده × عمق خاکبرداری؛ بدون ترانشه شناژ");});
   add("foundation-footing-concrete","فونداسیون","بتن پی‌ها","m³",x.footingConcreteM3,"متره فونداسیون","ابعاد مستقل هر پایه", {aggregationRole:"summary"});
@@ -64,7 +66,7 @@ function buildSnapshot(data){
   add("foundation-total-formwork","قالب‌بندی","جمع قالب جانبی پی، پدستال و شناژ","m²",x.totalFormworkM2,"متره فونداسیون","ردیف جمع‌بندی؛ با اجزای قالب جمع نشود",{aggregationRole:"summary"});
   add("foundation-footing-rebar","آرماتور","وزن شبکه آرماتور پی","kg",x.footingRebarKg,"متره فونداسیون","جزئیات قلاب/وصله فقط اگر در طول برش لحاظ شده باشد", {aggregationRole:"summary"});
   add("foundation-pedestal-rebar","آرماتور","وزن آرماتور پدستال","kg",x.pedestalRebarKg,"متره فونداسیون","بر اساس تعداد و طول برش واردشده");
-  add("foundation-tie-rebar","آرماتور","وزن آرماتور شناژ","kg",x.tieRebarKg,"متره فونداسیون","بر اساس kg/m واردشده؛ نه جدول خم و برش کامل");
+  add("foundation-tie-rebar","آرماتور","جمع وزن آرماتور شناژ","kg",x.tieRebarKg,"متره فونداسیون/غربال آرماتور شناژ","در صورت تکمیل مسیر پیوسته، طول عبوری از پی‌ها، قلاب و خاموت؛ ردیف جمع‌بندی", {aggregationRole:"summary"});
   add("foundation-total-rebar","آرماتور","جمع وزن آرماتور پی، پدستال و شناژ","kg",x.totalRebarKg,"متره فونداسیون","فقط وقتی هر سه جزء محاسبه شده باشند؛ ردیف جمع‌بندی",{aggregationRole:"summary"});
   if(!finite(a?.boltCount))add("foundation-anchor-count","انکر","تعداد بولت بر اساس ورودی پایه","عدد",x.anchorsCount,"متره فونداسیون","تعداد بولت در هر پایه واردشده");
   (x.footingRebar?.rows||[]).forEach((r,i)=>add("foundation-rebar-"+i,"آرماتور","شبکه "+r.layer+" راستای "+r.direction,"kg",r.totalWeightKg,"جدول آرماتور پی","قطر، فاصله و طول مستقیم ثبت‌شده"));
@@ -140,13 +142,14 @@ function init(){
 }
 function selfTest(){
  const d=buildSnapshot({quantity:{totals:{roofCoverAreaApproxM2:100},facades:[{face:"front",material:"brick",netAreaM2:20,masonryVolumeM3:7,estimatedBrickCount:2000,estimatedMortarVolumeM3:1,plasterAreaM2:40}]},
- foundation:{quantities:{footingConcreteM3:2,pedestalConcreteM3:null,tieConcreteM3:1,totalConcreteM3:3,excavationM3:null,footingFormworkM2:8,pedestalFormworkM2:null,tieSideFormworkM2:3,totalFormworkM2:11,sideFormworkM2:11,footingRebarKg:100,pedestalRebarKg:null,tieRebarKg:null,totalRebarKg:null,anchorsCount:24,footingSchedule:[{nodeId:"B1",width:1.25,length:2,thickness:0.8,excavationM3:5}]}},
+ foundation:{quantities:{footingConcreteM3:2,pedestalConcreteM3:null,tieConcreteM3:1,totalConcreteM3:3,excavationM3:null,footingFormworkM2:8,pedestalFormworkM2:null,tieSideFormworkM2:3,totalFormworkM2:11,sideFormworkM2:11,footingRebarKg:100,pedestalRebarKg:null,tieRebarKg:null,totalRebarKg:null,anchorsCount:24,footingSchedule:[{nodeId:"B1",width:1.25,length:2,thickness:0.8,excavationM3:5}],tieRebarSchedule:[{id:"TB1",longitudinalMassKg:100,stirrupMassKg:20,totalMassKg:120,passesThroughFootings:true}]}},
  anchor:{boltCount:24,boltShankMassKg:80,nutCount:48,nutMassKg:1.2,washerCount:24,washerMassKg:0.2,basePlateCount:8,basePlateMassKg:120,totalCalculatedMassKg:201.4},
  steelMass:{groups:[{group:"column",label:"ستون",massKg:500}],connectionPlateMassKg:50,boltShankMassKg:10,theoreticalWeldMetalMassKg:5,procurementMassExcludingBoltsAndWeldKg:600,items:[]},cost:{rows:[{key:"foundationConcrete",unitPrice:100,cost:300},{key:"foundationRebar",unitPrice:200,cost:20000},{key:"excavation",unitPrice:50,cost:250},{key:"formwork",unitPrice:75,cost:825},{key:"anchorBolts",unitPrice:500,cost:12000}]},siteWork:{excavationM3:30,backfillM3:12,fillGrossM3:null,fillNetM3:null,slabConcreteM3:15,slabCementKg:5250,warnings:[]}});
  const by=new Map(d.rows.map(r=>[r.id,r]));
  const siteWorkBy=new Map(buildSnapshot({siteWork:{excavationM3:30,backfillM3:12,fillGrossM3:null,fillNetM3:null,slabConcreteM3:15,slabCementKg:5250,warnings:[]}}).rows.map(r=>[r.id,r]));
  const tests={
   siteWorkRowsCaptured:siteWorkBy.get("sitework-trench-excavation")?.quantity===30&&siteWorkBy.get("sitework-backfill")?.quantity===12&&siteWorkBy.get("sitework-floor-concrete")?.quantity===15&&siteWorkBy.get("sitework-floor-cement")?.quantity===5250,
+  continuousTieBarRowsCaptured:by.get("tie-rebar-TB1-longitudinal")?.quantity===100&&by.get("tie-rebar-TB1-stirrups")?.quantity===20&&by.get("foundation-tie-rebar")?.aggregationRole==="summary",
   missingSiteWorkQuantityRemainsPending:siteWorkBy.get("sitework-ground-fill-net")?.quantity===null&&siteWorkBy.get("sitework-ground-fill-net")?.status==="pending",
   missingQuantityRemainsNull:by.get("foundation-excavation").quantity===null&&by.get("foundation-excavation").status==="pending",
   noAggregateConcreteDoubleCount:by.get("foundation-total-concrete")?.aggregationRole==="summary"&&by.get("foundation-footing-concrete")?.aggregationRole==="summary",
