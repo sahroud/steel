@@ -292,7 +292,7 @@
       } catch(e) { $("fullModel3DReadiness").textContent="خطا در بررسی: "+e.message; }
       }, e => { $("fullModel3DReadiness").textContent = "خطا در بررسی: " + e.message; });
     });
-    ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays","craneRunwayAxisOffset","craneRunwaySupportType"].forEach(id => $(id)?.addEventListener("change", function () { try { build(); draw(); showSummary(); } catch (_) {} }));
+    ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays","craneRunwayAxisOffset","craneRunwaySupportType",...Object.values(RUNWAY_SECTION_FIELD_IDS)].forEach(id => $(id)?.addEventListener("change", function () { try { build(); draw(); showSummary(); const box=$("craneRunwaySectionAudit");if(box&&model?.geometry?.craneRunway){const a=model.geometry.craneRunway.sectionAudit||{};box.textContent="ممیزی مشخصات: "+(a.ready?"اطلاعات اولیه کامل است؛ طراحی هنوز انجام نشده":"نیازمند تکمیل/اصلاح — موارد ناقص: "+(a.missing||[]).join("، ")+"؛ خطاهای عددی: "+(a.invalid||[]).join("، ")+"؛ "+(a.dimensional||[]).join("، "));}} catch (_) {} }));
   }
   function val(id, fallback) { const e=$(id), n=e?Number(e.value):fallback; return Number.isFinite(n)?n:fallback; }
   function addNode(nodes,x,y,z,kind) { const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7); if(old){if(kind==="roof-edge")old.kind="roof-edge";return old;} const n={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"}; nodes.push(n); return n; }
@@ -309,9 +309,12 @@
     const sorted=values.sort((a,b)=>a-b).filter((y,i,a)=>i===0||Math.abs(y-a[i-1])>1e-7);
     return sorted.map(y=>({y,kind:enabled&&Math.abs(y-runwayY)<=1e-7?"runway-support":(Math.abs(y-baseY)<=1e-7?"base":(Math.abs(y-eaveY)<=1e-7?"eave":"column-girt-joint"))}));
   }
+  const RUNWAY_SECTION_FIELD_IDS={girderType:"craneRunwayGirderType",steelGrade:"craneRunwaySteelGrade",overallDepth_mm:"craneRunwayOverallDepth",flangeWidth_mm:"craneRunwayFlangeWidth",flangeThickness_mm:"craneRunwayFlangeThickness",webThickness_mm:"craneRunwayWebThickness",railDesignation:"craneRunwayRailDesignation",railMass_kg_m:"craneRunwayRailMass",railFastening:"craneRunwayRailFastening",stiffenerSpacing_m:"craneRunwayStiffenerSpacing",lateralRestraint:"craneRunwayLateralRestraint",detailSource:"craneRunwayDetailSource"};
+  function readRunwaySectionInputs(){const out={};Object.entries(RUNWAY_SECTION_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(!el)return;const raw=String(el.value??"").trim();if(raw!=="")out[key]=["overallDepth_mm","flangeWidth_mm","flangeThickness_mm","webThickness_mm","railMass_kg_m","stiffenerSpacing_m"].includes(key)?Number(raw):raw;});return out;}
+  function auditRunwaySectionInputs(d){d=d||{};const required=Object.keys(RUNWAY_SECTION_FIELD_IDS),missing=required.filter(k=>d[k]===undefined||d[k]===null||d[k]===""),numeric=["overallDepth_mm","flangeWidth_mm","flangeThickness_mm","webThickness_mm","railMass_kg_m","stiffenerSpacing_m"],invalid=numeric.filter(k=>d[k]!==undefined&&(!Number.isFinite(d[k])||d[k]<=0)),dimensional=[];if(Number.isFinite(d.overallDepth_mm)&&Number.isFinite(d.flangeThickness_mm)&&2*d.flangeThickness_mm>=d.overallDepth_mm)dimensional.push("مجموع ضخامت دو بال باید از ارتفاع کل تیر کمتر باشد.");if(Number.isFinite(d.flangeWidth_mm)&&Number.isFinite(d.webThickness_mm)&&d.flangeWidth_mm<=d.webThickness_mm)dimensional.push("عرض بال نسبت به ضخامت جان نامعتبر است.");const ready=missing.length===0&&invalid.length===0&&dimensional.length===0&&d.steelGrade!=="other";return {ready,missing,invalid,dimensional,analysisEnabled:false,note:ready?"اطلاعات اولیه ثبت شده؛ طراحی مقاومت، خیز، خستگی، کمانش و اتصال هنوز انجام نشده است.":"اطلاعات مقطع/ریل ناقص یا نیازمند اصلاح است."};}
   function buildCraneRunwayGeometry(config){
     if(!config.enabled)return {geometryStatus:"disabled",axisOffsetM:null,supportType:"",beamSegments:[],brackets:[],supportNodes:[]};
-    const {span,frames,runwayElevation,offsetM,supportType}=config;
+    const {span,frames,runwayElevation,offsetM,supportType,sectionInputs={},sectionAudit={}}=config;
     if(!(Number.isFinite(offsetM)&&offsetM>=0.05))return {geometryStatus:"awaiting_axis_offset",axisOffsetM:null,supportType,beamSegments:[],brackets:[],supportNodes:[],geometryNote:"فاصله محور تیر حمال از محور ستون باید از نقشه یا جزئیات سازنده وارد شود."};
     const sides=[{key:"left",columnX:0,beamX:-offsetM},{key:"right",columnX:span,beamX:span+offsetM}];
     const supportNodes=[],brackets=[],beamSegments=[];
@@ -324,7 +327,7 @@
       });
       for(let i=0;i<line.length-1;i++)beamSegments.push({id:"CRANE_"+side.key.toUpperCase()+"_BEAM_BAY_"+(i+1),side:side.key,bayIndex:i+1,start:line[i],end:line[i+1],lengthM:Math.abs(line[i+1].z-line[i].z),continuity:"separate_span_segment_between_adjacent_frames",analysisEnabled:false,connectionType:supportType||"unselected"});
     });
-    return {geometryStatus:supportType?"geometry_only_review_required":"geometry_only_connection_unselected",axisOffsetM:offsetM,supportType,beamSegments,brackets,supportNodes,analysisEnabled:false,geometryNote:"تیر حمال به قطعات مستقل بین قاب‌های مجاور تقسیم شده است؛ پیوستگی چنددهانه، سختی اتصال و انتقال نیرو هنوز مدل نشده‌اند."};
+    return {geometryStatus:supportType?"geometry_only_review_required":"geometry_only_connection_unselected",axisOffsetM:offsetM,supportType,beamSegments,brackets,supportNodes,sectionInputs,sectionAudit,analysisEnabled:false,geometryNote:"تیر حمال به قطعات مستقل بین قاب‌های مجاور تقسیم شده است؛ پیوستگی چنددهانه، سختی اتصال و انتقال نیرو هنوز مدل نشده‌اند."};
   }
   function runwayGeometrySelfTest(){
     const normal=runwayColumnLevels(0,[2,4,6],10,5,true);
@@ -332,12 +335,16 @@
     let rejected=false;try{runwayColumnLevels(0,[2,4],10,10,true);}catch(_){rejected=true;}
     const geometry=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5,10],runwayElevation:5,offsetM:0.6,supportType:"simple"});
     const noOffset=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5],runwayElevation:5,offsetM:NaN,supportType:""});
+    const sectionGood=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
+    const sectionBad=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:30,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
     const checks=[
       normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,
       duplicate.filter(x=>x.y===5).length===1&&duplicate.filter(x=>x.kind==="runway-support").length===1,
       rejected,
       geometry.beamSegments.length===4&&geometry.brackets.length===6&&geometry.supportNodes.length===6&&geometry.beamSegments.every(x=>x.analysisEnabled===false)&&geometry.brackets.every(x=>x.analysisEnabled===false),
-      noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0
+      noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0,
+      sectionGood.ready===true&&sectionGood.analysisEnabled===false,
+      sectionBad.ready===false&&sectionBad.dimensional.length>0
     ];
     return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
@@ -541,7 +548,9 @@
     const runwayOffsetInput=$("craneRunwayAxisOffset"),runwaySupportInput=$("craneRunwaySupportType");
     const runwayOffset=runwayOffsetInput&&String(runwayOffsetInput.value).trim()!==""?Number(runwayOffsetInput.value):NaN;
     const runwaySupportType=runwaySupportInput?.value||"";
-    const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType});
+    const runwaySectionInputs=readRunwaySectionInputs();
+    const runwaySectionAudit=auditRunwaySectionInputs(runwaySectionInputs);
+    const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType,sectionInputs:runwaySectionInputs,sectionAudit:runwaySectionAudit});
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry},roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
     return model;
   }
@@ -1079,7 +1088,7 @@
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
-    if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});if($("craneRunwayAxisOffset")&&g.craneRunway?.axisOffsetM!=null)$("craneRunwayAxisOffset").value=g.craneRunway.axisOffsetM;if($("craneRunwaySupportType"))$("craneRunwaySupportType").value=g.craneRunway?.supportType||"";}
+    if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});if($("craneRunwayAxisOffset")&&g.craneRunway?.axisOffsetM!=null)$("craneRunwayAxisOffset").value=g.craneRunway.axisOffsetM;if($("craneRunwaySupportType"))$("craneRunwaySupportType").value=g.craneRunway?.supportType||"";Object.entries(RUNWAY_SECTION_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.sectionInputs?.[key]??(key==="steelGrade"?"ST37":"");});}
     build();draw();showSummary();
   }
   function validate(){try{build();return "";}catch(e){return e.message;}}
