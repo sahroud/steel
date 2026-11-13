@@ -110,6 +110,7 @@
         box.textContent="تحلیل سه‌بعدی با موفقیت حل شد. حالت بار: "+result.loadCaseLabel+
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
+          (result.taperedSegmentation&&result.taperedSegmentation.splitMemberCount?" | اعضای متغیرمقطع تقسیم‌شده: "+result.taperedSegmentation.splitMemberCount+"؛ قطعات تحلیل افزوده: "+result.taperedSegmentation.generatedSegmentCount+"؛ گره‌های میانی: "+result.taperedSegmentation.addedNodeCount:"")+
           " | گره‌های دارای واکنش تکیه‌گاهی: "+result.reactions.length+
           (result.criticalDisplacement
             ? " | گره بحرانی: "+result.criticalDisplacement.nodeId+" ("+result.criticalDisplacement.kind+")"+
