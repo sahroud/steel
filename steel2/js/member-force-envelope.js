@@ -31,7 +31,7 @@ function maxAbs(samples,index){
 function buildRows(model,samples){
  const byId=new Map(),metaById=new Map((model.members||[]).map(m=>[String(m.id),m]));
  samples.forEach(sample=>(sample.members||[]).forEach(m=>{
-  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||m.section?.sectionKey||"",profile:meta.profile||meta.sectionLabel||m.section?.profile||"",start:meta.start||m.start||null,end:meta.end||m.end||null,section:m.section||{},length:Number(m.length||meta.length)||null,ends:[]});}
+  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,parentMemberId:m.parentMemberId||meta.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||meta.taperSegmentIndex||null,taperSegmentCount:m.taperSegmentCount||meta.taperSegmentCount||null,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||m.section?.sectionKey||"",profile:meta.profile||meta.sectionLabel||m.section?.profile||"",start:meta.start||m.start||null,end:meta.end||m.end||null,section:m.section||{},length:Number(m.length||meta.length)||null,ends:[]});}
   const row=byId.get(String(m.id));
   row.ends.push({label:sample.label,values:Array.isArray(m.localEndForces)?m.localEndForces.slice(0,12):[]});
  }));
@@ -47,6 +47,17 @@ function buildRows(model,samples){
    Mz:Math.max(Math.abs(envelopes[5].value),Math.abs(envelopes[11].value))};
   return {...row,envelopes,peak,caseCount:valid.length};
  }).sort((a,b)=>String(a.sectionKey).localeCompare(String(b.sectionKey))||String(a.id).localeCompare(String(b.id)));
+}
+function auditCoverage(model,samples,rows){
+ const first=Array.isArray(samples?.[0]?.members)?samples[0].members:[];
+ const expectedIds=new Set(first.map(m=>String(m.id)));
+ const reportedIds=new Set((rows||[]).map(r=>String(r.id)));
+ const unreportedMemberIds=[...expectedIds].filter(id=>!reportedIds.has(id));
+ const analysisMemberSetMismatchCases=(samples||[]).filter(s=>{
+  const ids=new Set((s.members||[]).map(m=>String(m.id)));
+  return ids.size!==expectedIds.size||[...expectedIds].some(id=>!ids.has(id));
+ }).map(s=>s.label||"حالت بدون نام");
+ return {modelMemberCount:expectedIds.size,physicalMemberCount:(model?.members||[]).length,unreportedMemberIds,analysisMemberSetMismatchCases};
 }
 async function run(){
  const box=$("memberForceEnvelopeResult"),btn=$("btnMemberForceEnvelope");
@@ -64,8 +75,8 @@ async function run(){
   }
   const rows=buildRows(model,samples);
   const bad=samples.filter(s=>!s.equilibrium?.ok);
-  const reportedIds=new Set(rows.map(r=>String(r.id))),unreportedMemberIds=(model.members||[]).map(m=>String(m.id)).filter(id=>!reportedIds.has(id));
-  last={generatedAt:new Date().toISOString(),codeBasis:window.SteelDesignCodes?.getData?.()||null,units:"N,N.m",cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),members:rows,memberCount:rows.length,modelMemberCount:(model.members||[]).length,unreportedMemberIds,allCasesEquilibriumOK:bad.length===0,limitations:["این خروجی تقاضای نیروهای انتهایی محلی اعضا در تحلیل خطی مرتبه اول است؛ ظرفیت یا نسبت بهره‌برداری آیین‌نامه‌ای محاسبه نمی‌شود.","ترکیبات ثقلی از فهرست فعلی پروژه گرفته شده‌اند؛ در صورت وجود فشار باد، دو حالت افزوده‌شده با ضریب واحد مثبت و منفی صرفاً سناریوی تحلیل مقدماتی‌اند و ترکیب‌بار آیین‌نامه‌ای کامل محسوب نمی‌شوند.","کمانش، P-Delta، کمانش پیچشی-جانبی، اندرکنش نیروها، طبقه‌بندی مقطع و کنترل خیز/ارتعاش در این گزارش انجام نشده‌اند.","علامت و محورهای محلی اعضا باید با جهت‌گیری هندسی و خروجی نرم‌افزار تحلیل مستقل کنترل شوند."]};
+  const coverage=auditCoverage(model,samples,rows);
+  last={generatedAt:new Date().toISOString(),codeBasis:window.SteelDesignCodes?.getData?.()||null,units:"N,N.m",cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),members:rows,memberCount:rows.length,modelMemberCount:coverage.modelMemberCount,physicalMemberCount:coverage.physicalMemberCount,unreportedMemberIds:coverage.unreportedMemberIds,analysisMemberSetMismatchCases:coverage.analysisMemberSetMismatchCases,allCasesEquilibriumOK:bad.length===0,limitations:["این خروجی تقاضای نیروهای انتهایی محلی اعضا در تحلیل خطی مرتبه اول است؛ ظرفیت یا نسبت بهره‌برداری آیین‌نامه‌ای محاسبه نمی‌شود.","ترکیبات ثقلی از فهرست فعلی پروژه گرفته شده‌اند؛ در صورت وجود فشار باد، دو حالت افزوده‌شده با ضریب واحد مثبت و منفی صرفاً سناریوی تحلیل مقدماتی‌اند و ترکیب‌بار آیین‌نامه‌ای کامل محسوب نمی‌شوند.","کمانش، P-Delta، کمانش پیچشی-جانبی، اندرکنش نیروها، طبقه‌بندی مقطع و کنترل خیز/ارتعاش در این گزارش انجام نشده‌اند.","علامت و محورهای محلی اعضا باید با جهت‌گیری هندسی و خروجی نرم‌افزار تحلیل مستقل کنترل شوند."]};
   render();
  }catch(e){box.textContent="خطا: "+e.message;}
  finally{btn.disabled=false;}
@@ -141,6 +152,6 @@ function init(){
  if(footer)footer.insertAdjacentElement("beforebegin",p);else main.appendChild(p);
  $("btnMemberForceEnvelope").addEventListener("click",run);$("btnMemberForceJSON").addEventListener("click",exportJSON);$("memberForceGroup").addEventListener("change",()=>{if(last)render();});$("memberForceDetailMember").addEventListener("change",e=>{selectedMemberId=e.target.value;selectedCaseLabel="";if(last)render();});$("memberForceDetailCase").addEventListener("change",e=>{selectedCaseLabel=e.target.value;renderDetail();});
 }
-root.SteelMemberForceEnvelope={run,getLast:()=>last};
+root.SteelMemberForceEnvelope={run,getLast:()=>last,buildRows,auditCoverage};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
