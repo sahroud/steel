@@ -120,7 +120,18 @@ function prepareAll(model,transferResult,horizontalInput,trainInput,config){
  const cases=transferResult.cases.map((_,i)=>prepareCase(model,transferResult,i,horizontalInput,trainInput,config));
  return {success:cases.every(x=>x.success),analysisEnabled:false,total:cases.length,readyCount:cases.filter(x=>x.success).length,blockedCount:cases.filter(x=>!x.success).length,cases,issues:cases.flatMap(x=>x.issues).slice(0,50)};
 }
+function auditCraneType(config){
+ const d=config||{};
+ if(!d.craneType)return {valid:true,legacyUnspecified:true,issues:[]};
+ if(!root.SteelCraneLoadPath?.classify)return {valid:false,issues:["ماژول تشخیص مسیر جرثقیل بارگذاری نشده است."]};
+ const r=root.SteelCraneLoadPath.classify({craneType:d.craneType,supportSystem:d.supportSystem||"runway_girder"});
+ if(!r.valid)return {valid:false,issues:r.issues};
+ if(r.craneType!=="overhead")return {valid:false,issues:["این انتقال FEM فقط برای جرثقیل سقفی و تیر حمال طراحی شده است؛ بار جرثقیل زمینی نباید به مدل تیر حمال سقفی تزریق شود."]};
+ return {valid:true,loadTarget:r.loadTarget,loadPath:r.loadPath,issues:[]};
+}
 async function analyzeCase(caseIndex,transferResult,horizontalInput,trainInput,config){
+ const routeAudit=auditCraneType(config);
+ if(!routeAudit.valid)return {success:false,analysisEnabled:false,issues:routeAudit.issues,routeAudit};
  const model=root.SteelStructuralModel?.model;
  const p=prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,config);
  if(!p.success)return {success:false,analysisEnabled:false,transfer:p};
@@ -130,6 +141,10 @@ async function analyzeCase(caseIndex,transferResult,horizontalInput,trainInput,c
 }
 function selfTest(){
  const checks=[],t=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
+ t("explicit overhead crane path is accepted for runway FEM",()=>{const old=root.SteelCraneLoadPath;root.SteelCraneLoadPath={classify:()=>({valid:true,craneType:"overhead",loadTarget:"crane_runway_and_frame",loadPath:["wheel","rail","runway_girder"]})};const r=auditCraneType({craneType:"overhead",supportSystem:"runway_girder"});root.SteelCraneLoadPath=old;return r.valid&&r.loadTarget==="crane_runway_and_frame";});
+ t("ground gantry crane is blocked from overhead runway FEM",()=>{const old=root.SteelCraneLoadPath;root.SteelCraneLoadPath={classify:()=>({valid:true,craneType:"gantry"})};const r=auditCraneType({craneType:"gantry",supportSystem:"slab"});root.SteelCraneLoadPath=old;return !r.valid;});
+ t("overhead crane on slab support is rejected",()=>{const old=root.SteelCraneLoadPath;root.SteelCraneLoadPath={classify:()=>({valid:false,issues:["invalid support"]})};const r=auditCraneType({craneType:"overhead",supportSystem:"slab"});root.SteelCraneLoadPath=old;return !r.valid;});
+ t("legacy crane configuration remains explicitly unspecified",()=>auditCraneType({}).valid&&auditCraneType({}).legacyUnspecified===true);
  const model={geometry:{length:10},nodes:[{id:"L0",x:-.5,y:5,z:0},{id:"L1",x:-.5,y:5,z:5},{id:"L2",x:-.5,y:5,z:10},{id:"R0",x:10.5,y:5,z:0},{id:"R1",x:10.5,y:5,z:5},{id:"R2",x:10.5,y:5,z:10}],members:[
   {id:"GL1",start:"L0",end:"L1",side:"left",sectionKey:"craneRunwayGirder",craneIntegration:true},{id:"GL2",start:"L1",end:"L2",side:"left",sectionKey:"craneRunwayGirder",craneIntegration:true},
   {id:"GR1",start:"R0",end:"R1",side:"right",sectionKey:"craneRunwayGirder",craneIntegration:true},{id:"GR2",start:"R1",end:"R2",side:"right",sectionKey:"craneRunwayGirder",craneIntegration:true}]};
@@ -203,6 +218,6 @@ function ensurePanel(){
  });
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,selfTest,getLastAnalysis:()=>lastAnalysis};
+root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,auditCraneType,selfTest,getLastAnalysis:()=>lastAnalysis};
 })(typeof window!=="undefined"?window:globalThis);
 
