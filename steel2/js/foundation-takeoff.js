@@ -400,6 +400,47 @@ function calculateFootingRebar(baseCount,B,L){
    return{route,count:null,dia:null,width,height,source:"خروجی طراحی موجود نیست"};
   });
  }
+ function checkSelectedTieFootingClash(base,route,mode,footingSpecs,tie,tieRow,model){
+  if(!base||!route)return{ok:false,reason:"برای کنترل برخورد، یک فونداسیون و یک شناژ انتخاب کنید."};
+  const B=num(state.footingWidthM),L=num(state.footingLengthM),T=num(state.footingThicknessM),cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
+  if(!(B>0&&L>0&&T>0&&cover!==null&&cover>=0))return{ok:false,reason:"برای کنترل سه‌بعدی، ابعاد پی و پوشش بتن واقعی را وارد کنید."};
+  if(!footingSpecs?.specs?.length)return{ok:false,reason:"شبکه میلگرد فونداسیون برای کنترل برخورد تعریف نشده است."};
+  const nodes=new Map((model.nodes||[]).map(n=>[String(n.id),n])),a=nodes.get(String(route.start)),b=nodes.get(String(route.end));
+  if(!a||!b)return{ok:false,reason:"مختصات دو انتهای شناژ در مدل موجود نیست."};
+  if(String(base.nodeId||base.id)!==String(route.start)&&String(base.nodeId||base.id)!==String(route.end))return{ok:false,reason:"فونداسیون انتخاب‌شده در ابتدا یا انتهای این مسیر شناژ نیست؛ کنترل این اتصال در این مرحله انجام نمی‌شود."};
+  const dx=Number(b.x)-Number(a.x),dz=Number(b.z)-Number(a.z),length=Math.hypot(dx,dz);
+  if(!(length>0))return{ok:false,reason:"طول افقی مسیر شناژ معتبر نیست."};
+  const ux=dx/length,uz=dz/length,vx=uz,vz=-ux;
+  const halfProjection=(Math.abs(ux)*B+Math.abs(uz)*L)/2;
+  const start={x:Number(a.x)-ux*halfProjection,y:Number(a.y),z:Number(a.z)-uz*halfProjection};
+  const end={x:Number(b.x)+ux*halfProjection,y:Number(b.y),z:Number(b.z)+uz*halfProjection};
+  const tieSettings=window.SteelTieBeamReinforcement?.getData?.()?.settings||{};
+  const barDia=Number(tie?.dia)||16,stirrupDia=Number(tie?.stirrupDia)||10,width=Number(tie?.width),height=Number(tie?.height);
+  if(!(width>0&&height>0&&barDia>0))return{ok:false,reason:"ابعاد یا قطر میلگرد شناژ معتبر نیست."};
+  let coordinates=null;
+  if(mode==="design"){
+   coordinates=Array.isArray(tieRow?.barLayer?.coordinates)?tieRow.barLayer.coordinates:null;
+   if(!coordinates?.length)return{ok:false,reason:"مختصات واقعی لایه‌های میلگرد خروجی طراحی شناژ موجود نیست؛ کنترل برخورد انجام نشد."};
+  }else{
+   const cov=Number(tieSettings.coverMm)||40,first=cov+stirrupDia+barDia/2,last=width*1000-first;
+   if(last<first)return{ok:false,reason:"عرض شناژ برای آرایش پیش‌فرض سه میلگرد در هر وجه کافی نیست."};
+   coordinates=[];
+   for(const face of ["bottom","top"])for(let i=0;i<3;i++)coordinates.push({xMm:first+(last-first)*i/2,yMm:face==="bottom"?first:height*1000-first,face});
+  }
+  const tieBars=coordinates.map((p,i)=>{
+   const cross=(Number(p.xMm)-width*500)/1000;
+   const vertical=height/2-Number(p.yMm)/1000;
+   return{id:String(route.id)+"-L"+(i+1),diameterMm:barDia,
+    a:{x:start.x+vx*cross,y:start.y+vertical,z:start.z+vz*cross},
+    b:{x:end.x+vx*cross,y:end.y+vertical,z:end.z+vz*cross}};
+  });
+  const grid=buildFootingRebarGeometry([{nodeId:String(base.nodeId||base.id),x:Number(base.x),y:Number(base.y),z:Number(base.z)}],B,L,T,cover,footingSpecs.specs);
+  if(!grid.ok)return grid;
+  const checker=window.SteelTieBeamReinforcement?.checkFootingBarClearance;
+  if(typeof checker!=="function")return{ok:false,reason:"ماژول کنترل فاصله سه‌بعدی میلگردها در دسترس نیست."};
+  const result=checker(tieBars,grid.bars,0);
+  return{...result,tieBarCount:tieBars.length,footingBarCount:grid.count,clearanceCriterion:"فقط عدم تماس/تقاطع هندسی (فاصله آزاد لازم آیین‌نامه‌ای هنوز اعمال نشده است).",assumptions:"شناژ مستقیم بین دو پایه، عبور میلگردها از محور مسیر، امتداد تا وجه بیرونی پی بر اساس تصویر نیم‌بعد مستطیل پی روی محور شناژ، بدون خم/قلاب/وصله/مهاری. شبکه پی بر مبنای گره پایه به‌عنوان تراز رویه پی ساخته شده است."};
+ }
  function renderRebarDrawing(){
   const host=$("rebarDrawingCanvas"),summary=$("rebarDrawingSummary"),mode=$("rebarDrawingMode")?.value||"default";
   if(!host||!summary)return;
@@ -426,6 +467,7 @@ function calculateFootingRebar(baseCount,B,L){
   const tie=tieSpecs[0]||null;
   const tieReport=window.SteelTieBeamReinforcement?.getLast?.();
   const tieRow=(tieReport?.rows||[]).find(r=>String(r.id)===String(selectedRoute?.id));
+  const clash=checkSelectedTieFootingClash(selectedBase,selectedRoute,mode,footingSpecs,tie,tieRow,model);
   const nodeMap=new Map((model.nodes||[]).map(n=>[String(n.id),n]));
   const a=selectedRoute?nodeMap.get(String(selectedRoute.start)):null,b=selectedRoute?nodeMap.get(String(selectedRoute.end)):null;
   const routeLength=a&&b?Math.hypot(Number(b.x)-Number(a.x),Number(b.y)-Number(a.y),Number(b.z)-Number(a.z)):null;
@@ -494,11 +536,12 @@ function calculateFootingRebar(baseCount,B,L){
   host.innerHTML=svg.join("");
   const footingLabel=footingSpecs.specs.length?footingSpecs.specs.map(s=>(s.layer==="bottom"?"تحتانی":"فوقانی")+" "+s.direction+" Ø"+s.diaMm+" @"+fmtSvg(s.spacingMm)).join("؛ "):"شبکه فونداسیون موجود نیست";
   const tieLabel=tie?(tie.count===null?"خروجی طراحی شناژ موجود نیست":tie.route.id+": "+tie.count+" بالا و "+tie.count+" پایین Ø"+tie.dia+"، خاموت Ø"+(tie.stirrupDia||10)):"شناژ ثبت نشده";
-  summary.textContent=(mode==="default"?"حالت پیش‌فرض اجرایی؛ ":"حالت طراحی؛ ")+"پی انتخابی "+(selectedBase?baseId(selectedBase):"نامشخص")+" | "+footingLabel+" | "+tieLabel+" | "+footingSpecs.basis+(cover===null?" پوشش بتن وارد نشده؛ جانمایی میلگردها در تصویر شماتیک است.":"")+(missing.length?" هشدار: "+missing.join(" "):"");
+  const clashLabel=clash.ok?"کنترل هندسی اتصال: بدون تقاطع؛ حداقل فاصله آزاد "+fmtSvg(clash.minimumClearDistanceMm)+" mm ("+clash.pairsChecked+" جفت میلگرد بررسی شد).":(clash.reason||("کنترل هندسی: "+clash.conflictPairs+" جفت دارای تقاطع/عدم فاصله."));
+  summary.textContent=(mode==="default"?"حالت پیش‌فرض اجرایی؛ ":"حالت طراحی؛ ")+"پی انتخابی "+(selectedBase?baseId(selectedBase):"نامشخص")+" | "+footingLabel+" | "+tieLabel+" | "+footingSpecs.basis+" | "+clashLabel+(cover===null?" پوشش بتن وارد نشده؛ جانمایی میلگردها در تصویر شماتیک است.":"")+(missing.length?" هشدار: "+missing.join(" "):"");
  }
 
  function getData(){readInputs();return JSON.parse(JSON.stringify(state));}
  function setData(d){if(!d||typeof d!=="object")return;keys.forEach(k=>{if(d[k]!==undefined)state[k]=d[k];const el=$(map[k]);if(el)el.value=state[k]??"";});}
  document.addEventListener("DOMContentLoaded",panel);
- window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,checkTieBeamRebarClearance,renderRebarDrawing,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
 })();
