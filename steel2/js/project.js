@@ -248,6 +248,8 @@
             data.craneReadiness = window.SteelCraneReadiness.getData();
         }
 
+        if (window.SteelCraneTrainAnalysis) data.craneTrainAnalysis = window.SteelCraneTrainAnalysis.getData();
+
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.getData === "function") {
             data.geotechnicalData = window.SteelGeotechnicalData.getData();
         }
@@ -508,6 +510,8 @@
         if (window.SteelCraneReadiness && typeof window.SteelCraneReadiness.setData === "function") {
             window.SteelCraneReadiness.setData(data.craneReadiness || {});
         }
+
+        if (window.SteelCraneTrainAnalysis) window.SteelCraneTrainAnalysis.setData(data.craneTrainAnalysis || {});
 
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.setData === "function") {
             window.SteelGeotechnicalData.setData(data.geotechnicalData || {});
