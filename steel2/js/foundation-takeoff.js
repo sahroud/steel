@@ -95,7 +95,10 @@
  function selfTest(){
   const bases=[{nodeId:"B1",x:0,y:0,z:0}],specs=[{layer:"bottom",direction:"X",diaMm:16,spacingMm:200},{layer:"bottom",direction:"Z",diaMm:16,spacingMm:200},{layer:"top",direction:"X",diaMm:14,spacingMm:200},{layer:"top",direction:"Z",diaMm:14,spacingMm:200}];
   const g=buildFootingRebarGeometry(bases,2,2,0.5,50,specs);
-  const checks={fourGridLayers:g.ok&&g.count>0&&new Set(g.bars.map(x=>x.layer+"-"+x.direction)).size===4,bottomTopElevation:g.ok&&g.bars.some(x=>x.layer==="bottom"&&Math.abs(x.a.y+0.442)<1e-9)&&g.bars.some(x=>x.layer==="top"&&Math.abs(x.a.y+0.057)<1e-9),gridBarsStayInsideFootprint:g.ok&&g.bars.every(x=>Math.abs(x.a.x)<=1&&Math.abs(x.a.z)<=1&&Math.abs(x.b.x)<=1&&Math.abs(x.b.z)<=1)};
+  const validSupports=[{id:"B1",x:0,y:0,z:0,kind:"base"},{id:"B2",x:4,y:0,z:0,kind:"endwall-base"}];
+  const validReactions=[{nodeId:"B1",values:[1,2,3,4,5,6]},{nodeId:"B2",values:[-1,-2,-3,-4,-5,-6]}];
+  const normalized=normalizeBaseReactions(validReactions,validSupports);
+  const checks={baseReactionsComplete:normalized.length===2&&normalized.every(x=>x.hasReaction),missingBaseReactionRejected:(()=>{try{normalizeBaseReactions(validReactions.slice(0,1),validSupports);return false;}catch(e){return true;}})(),duplicateReactionRejected:(()=>{try{normalizeBaseReactions([...validReactions,validReactions[0]],validSupports);return false;}catch(e){return true;}})(),nonfiniteReactionRejected:(()=>{try{normalizeBaseReactions([{nodeId:"B1",values:[1,2,3,4,5,NaN]},validReactions[1]],validSupports);return false;}catch(e){return true;}})(),fourGridLayers:g.ok&&g.count>0&&new Set(g.bars.map(x=>x.layer+"-"+x.direction)).size===4,bottomTopElevation:g.ok&&g.bars.some(x=>x.layer==="bottom"&&Math.abs(x.a.y+0.442)<1e-9)&&g.bars.some(x=>x.layer==="top"&&Math.abs(x.a.y+0.057)<1e-9),gridBarsStayInsideFootprint:g.ok&&g.bars.every(x=>Math.abs(x.a.x)<=1&&Math.abs(x.a.z)<=1&&Math.abs(x.b.x)<=1&&Math.abs(x.b.z)<=1)};
   const datum=footingDatumGeometry(0,0.5,0.8),secondary=footingDatumGeometry(3,0.5,0.8),tallTie=footingDatumGeometry(0,0.9,0.8);
   const mainSpec=defaultFootingSpec({kind:"base"}),secondarySpec=defaultFootingSpec({kind:"endwall-base"});
   const routeAudit=footingsAlongStraightRoute([{id:"A",kind:"base",x:0,y:0,z:0},{id:"M",kind:"base",x:3,y:0,z:0},{id:"B",kind:"endwall-base",x:6,y:0,z:0},{id:"OFF",kind:"base",x:3,y:0,z:0.2}],{start:"A",end:"B"});
@@ -126,6 +129,22 @@ function checkTieBeamRebarClearance(tieBars,requiredClearanceMm=0){
   const result=checker(tieBars,grid.bars,requiredClearanceMm);
   return{...result,footingGridBarCount:grid.count,baseCount:grid.baseCount,gridAssumptions:grid.assumptions};
 }
+function normalizeBaseReactions(reactions,supportNodes){
+ if(!Array.isArray(reactions)||!Array.isArray(supportNodes)||!supportNodes.length)throw new Error("واکنش یا فهرست گره‌های پایه معتبر نیست.");
+ const map=new Map();
+ for(const reaction of reactions){
+  if(!reaction||reaction.nodeId==null||map.has(String(reaction.nodeId)))throw new Error("شناسه واکنش خالی یا تکراری است.");
+  if(!Array.isArray(reaction.values)||reaction.values.length<6||reaction.values.slice(0,6).some(v=>!Number.isFinite(Number(v))))throw new Error("بردار واکنش شش‌مؤلفه‌ای نامعتبر است: "+reaction.nodeId);
+  map.set(String(reaction.nodeId),reaction.values.slice(0,6).map(Number));
+ }
+ const missing=supportNodes.filter(n=>!map.has(String(n.id))).map(n=>String(n.id));
+ if(missing.length)throw new Error("واکنش گره‌های پایه موجود نیست: "+missing.join(", "));
+ return supportNodes.map(n=>{
+  const xyz=[n.x,n.y,n.z].map(Number);
+  if(xyz.some(v=>!Number.isFinite(v)))throw new Error("مختصات گره پایه نامعتبر است: "+n.id);
+  return{nodeId:n.id,x:xyz[0],y:xyz[1],z:xyz[2],kind:n.kind,hasReaction:true,values:map.get(String(n.id)).slice()};
+ }).sort((a,b)=>a.z-b.z||a.x-b.x);
+}
 function modelFingerprint(model){
   return JSON.stringify({
    nodes:(model.nodes||[]).map(n=>[n.id,n.x,n.y,n.z,n.kind]),
@@ -143,26 +162,9 @@ function modelFingerprint(model){
    $("foundationTakeoffSummary").textContent="مدل، مقاطع یا بارها پس از آخرین تحلیل تغییر کرده‌اند (یا نتیجه با نسخه قدیمی حل‌گر تولید شده است). برای جلوگیری از متره اشتباه، ابتدا تحلیل سه‌بعدی را دوباره اجرا کنید.";
    return;
   }
-  const reactionMap=new Map();
-  for(const reaction of result.reactions){
-   if(!reaction||reaction.nodeId==null||reactionMap.has(String(reaction.nodeId))){
-    $("foundationTakeoffSummary").textContent="شناسه واکنش خالی یا تکراری است؛ استخراج فونداسیون متوقف شد.";return;
-   }
-   if(!Array.isArray(reaction.values)||reaction.values.length<6||reaction.values.slice(0,6).some(v=>!Number.isFinite(Number(v)))){
-    $("foundationTakeoffSummary").textContent="بردار واکنش شش‌مؤلفه‌ای نامعتبر برای گره "+reaction.nodeId+"؛ استخراج فونداسیون متوقف شد.";return;
-   }
-   reactionMap.set(String(reaction.nodeId),reaction.values.slice(0,6).map(Number));
-  }
-  const supportNodes=model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base");
-  const missing=supportNodes.filter(n=>!reactionMap.has(String(n.id))).map(n=>n.id);
-  if(!supportNodes.length||missing.length){
-   $("foundationTakeoffSummary").textContent=missing.length?"واکنش این گره‌های پایه در حل‌گر موجود نیست: "+missing.join("، ")+"؛ مقدار صفر جایگزین نشد.":"هیچ گره پایه‌ای در مدل وجود ندارد.";return;
-  }
-  const rows=supportNodes.map(n=>{
-   const values=reactionMap.get(String(n.id));
-   return {nodeId:n.id,x:Number(n.x),y:Number(n.y),z:Number(n.z),kind:n.kind,hasReaction:true,values:values.slice()};
-  }).sort((a,b)=>a.z-b.z||a.x-b.x);
-  if(!rows.length){$("foundationTakeoffSummary").textContent="هیچ گره پایه‌ای در مدل هندسی پیدا نشد؛ ساخت مدل و نوع تکیه‌گاه را بررسی کنید.";return;}
+  let rows;
+  try{rows=normalizeBaseReactions(result.reactions,model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base"));}
+  catch(e){$("foundationTakeoffSummary").textContent="استخراج فونداسیون متوقف شد: "+e.message+"؛ مقدار صفر جایگزین نمی‌شود.";return;}
   const body=$("foundationReactionRows");body.replaceChildren();
   rows.forEach(row=>{const tr=document.createElement("tr");const vals=[row.nodeId,fmt(row.x)+" / "+fmt(row.z),...row.values.slice(0,3).map(v=>fmt(v/1000)),...row.values.slice(3,6).map(v=>fmt(v/1e6))];vals.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);});
   const sum=[0,0,0,0,0,0];rows.forEach(x=>x.values.forEach((v,i)=>sum[i]+=v));
@@ -722,5 +724,5 @@ function calculatePedestalRebar(baseCount){
  function getData(){readInputs();return JSON.parse(JSON.stringify({...state,footingSchedule}));}
  function setData(d){if(!d||typeof d!=="object")return;footingSchedule=d.footingSchedule&&typeof d.footingSchedule==="object"?JSON.parse(JSON.stringify(d.footingSchedule)):{};keys.forEach(k=>{if(d[k]!==undefined)state[k]=d[k];const el=$(map[k]);if(el)el.value=state[k]??"";});if(!state.footingClass)state.footingClass="main";if(state.footingWidthM==="")state.footingWidthM="1.80";if(state.footingLengthM==="")state.footingLengthM="1.80";if(state.footingThicknessM==="")state.footingThicknessM="0.80";if(state.bottomBarDiaXmm==="")state.bottomBarDiaXmm="16";if(state.bottomBarSpacingXmm==="")state.bottomBarSpacingXmm="150";if(state.bottomBarDiaZmm==="")state.bottomBarDiaZmm="16";if(state.bottomBarSpacingZmm==="")state.bottomBarSpacingZmm="150";keys.forEach(k=>{const el=$(map[k]);if(el)el.value=state[k]??"";});}
  document.addEventListener("DOMContentLoaded",()=>{panel();$("ftClass")?.addEventListener("change",e=>applyFootingClass(e.target.value));});
- window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,footingDatumGeometry,defaultFootingSpec,footingSpecFor,footingsAlongStraightRoute,calculateFootingRebar,applyFootingClass,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,footingDatumGeometry,defaultFootingSpec,footingSpecFor,footingsAlongStraightRoute,calculateFootingRebar,applyFootingClass,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,normalizeBaseReactions,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
 })();
