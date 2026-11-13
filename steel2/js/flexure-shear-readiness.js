@@ -15,6 +15,10 @@ function audit(envelope){
  if(env?.allCasesEquilibriumOK!==true)issues.push("تعادل عددی همه ترکیبات بار به‌صورت موفق تأیید نشده است.");
  const failedCases=cases.filter(x=>x?.equilibrium?.ok!==true);
  if(failedCases.length)issues.push("تعادل عددی در "+failedCases.length+" حالت بار تأیید نشده یا نامشخص است.");
+ const modelMemberCount=Number(env?.modelMemberCount);
+ if(!Number.isFinite(modelMemberCount)||modelMemberCount<0)issues.push("تعداد اعضای مدل مرجع در گزارش ثبت نشده است.");
+ else if(modelMemberCount!==members.length)issues.push("تعداد اعضای گزارش‌شده با مدل مرجع برابر نیست ("+members.length+" از "+modelMemberCount+").");
+ if(Array.isArray(env?.unreportedMemberIds)&&env.unreportedMemberIds.length)issues.push("اعضای فاقد گزارش نیرو: "+env.unreportedMemberIds.slice(0,12).join("، ")+(env.unreportedMemberIds.length>12?" و موارد بیشتر":"")+".");
  GROUPS.forEach(([g,label])=>{
   const list=members.filter(m=>m.sectionKey===g);
   if(!list.length){missingGroups.push(g);warnings.push(label+": عضو/نیروی استخراج‌شده در گزارش فعلی وجود ندارد؛ پوشش طراحی این گروه تأیید نشده است.");return;}
@@ -32,7 +36,7 @@ function audit(envelope){
   if(missing.length)missing.forEach(x=>issues.push(label+": "+x));
   rows.push({group:g,label,count:list.length,ready:missing.length===0,missing,maximumMoment_Nm:Math.max(...demand.map(x=>x.M)),maximumShear_N:Math.max(...demand.map(x=>x.V)),demands:demand});
  });
- return {ready:issues.length===0&&rows.length===GROUPS.length&&missingGroups.length===0&&cases.length>0&&failedCases.length===0,rows,issues,warnings,missingGroups,failedCases:failedCases.map(x=>x.label),sourceCases:cases.length,disclaimer:"این کنترل فقط وجود داده‌های لازم برای ادامه طراحی خمش و برش را ممیزی می‌کند. مقادیر بیشینه مستقل لزوماً هم‌زمان نیستند. ظرفیت خمشی، کمانش پیچشی-جانبی، ظرفیت برشی جان، اثر سخت‌کننده‌ها، طبقه‌بندی مقطع و اندرکنش محاسبه نشده‌اند؛ نتیجه تأیید آیین‌نامه‌ای یا مجوز اجرا نیست."};
+ return {ready:issues.length===0&&rows.length===GROUPS.length&&missingGroups.length===0&&cases.length>0&&failedCases.length===0,rows,issues,warnings,missingGroups,failedCases:failedCases.map(x=>x.label),modelMemberCount:Number.isFinite(modelMemberCount)?modelMemberCount:null,sourceCases:cases.length,disclaimer:"این کنترل فقط وجود داده‌های لازم برای ادامه طراحی خمش و برش را ممیزی می‌کند. مقادیر بیشینه مستقل لزوماً هم‌زمان نیستند. ظرفیت خمشی، کمانش پیچشی-جانبی، ظرفیت برشی جان، اثر سخت‌کننده‌ها، طبقه‌بندی مقطع و اندرکنش محاسبه نشده‌اند؛ نتیجه تأیید آیین‌نامه‌ای یا مجوز اجرا نیست."};
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function renderResult(r){const host=$("flexureShearReadinessResults");if(!host)return;host.innerHTML="<h4>"+(r.ready?"داده‌های پایه موجودند":"موارد تکمیل‌نشده")+"</h4>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در ممیزی داده‌های موجود یافت نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+"<div style='overflow-x:auto'><table class='data-table'><thead><tr><th>گروه</th><th>تعداد اعضا</th><th>بیشینه |M| (kN.m)</th><th>بیشینه |V| (kN)</th><th>وضعیت داده</th></tr></thead><tbody>"+r.rows.map(x=>"<tr><td>"+esc(x.label)+"</td><td>"+x.count+"</td><td>"+(x.maximumMoment_Nm/1000).toFixed(2)+"</td><td>"+(x.maximumShear_N/1000).toFixed(2)+"</td><td>"+(x.ready?"کامل":"ناقص")+"</td></tr>").join("")+"</tbody></table></div><div class='notice'>"+esc(r.disclaimer)+"</div>";}
