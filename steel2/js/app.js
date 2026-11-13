@@ -486,7 +486,7 @@
                     <p>۵. این گزارش تحلیل مقدماتی است و جایگزین
                     کنترل طراحی اعضا، پایداری، کمانش، اثرات مرتبه دوم،
                     اتصالات، صفحه‌ستون و فونداسیون نیست.
-                    در ترکیب ۶، ضریب بار مرده مطابق رابطه مبحث ششم ۰٫۸D است؛ ضریب باد ۱٫۶W در نظر گرفته شده است.</p>
+                    در ترکیب ۶ مبحث ششم ۱۳۹۸، ضرایب این زیرمجموعه باید ۰٫۹D و ۱٫۴W باشند؛ این نسخه صرفاً همین زیرمجموعه محدود را تحلیل می‌کند.</p>
                 </div>
             `;
         }
@@ -535,8 +535,19 @@
         }
         const original = loadsApi.getData();
         if (!original) throw new Error("اطلاعات بارگذاری پروژه خوانده نشد.");
-        const hasWind = ["windLeft","windRight","windWall","windEndFront","windEndBack"]
-            .some(k => Math.abs(Number(original[k]) || 0) > 1e-12);
+        const windKeys = ["windLeft","windRight","windWall","windEndFront","windEndBack"];
+        const windValues = windKeys.map(k => original[k]);
+        if (windValues.some(v => v === "" || v === null || v === undefined || !Number.isFinite(Number(v)))) {
+            const msg = $("analysisMessage");
+            if (msg) msg.textContent = "تحلیل ترکیبات متوقف شد: فشارهای باد باید برای تمام سطوح مربوط صریح و عددی باشند.";
+            return {success:false,status:"insufficient_data"};
+        }
+        const hasWind = windValues.some(v => Math.abs(Number(v)) > 1e-12);
+        if (!hasWind) {
+            const msg = $("analysisMessage");
+            if (msg) msg.textContent = "تحلیل ترکیبات متوقف شد: تمام فشارهای باد صفرند؛ بار باد آیین‌نامه‌ای هنوز به فشارهای طراحی سقف و دیوار تبدیل و وارد نشده است. صفر را نمی‌توان جایگزین بار باد نامشخص کرد.";
+            return {success:false,status:"insufficient_data"};
+        }
         const signs = hasWind ? [1,-1] : [1];
         const cases = [{
             label:"ترکیب ۱ ـ 1.4D",
@@ -546,13 +557,13 @@
             signs.forEach(sign => cases.push({
                 label:"ترکیب ۳ ـ 1.2D + 1.6"+action.title+" + 0.8W"+(hasWind?(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"):""),
                 factors:{dead:1.2,live:action.key==="live"?1.6:0,
-                    snow:action.key==="snow"?1.6:0,wind:hasWind?0.8:0},
+                    snow:action.key==="snow"?1.6:0,wind:hasWind?0.7:0},
                 windSign:sign
             }));
         });
         if(hasWind) signs.forEach(sign => cases.push({
-            label:"ترکیب ۶ ـ 0.8D + 1.6W"+(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"),
-            factors:{dead:0.8,live:0,snow:0,wind:1.6},windSign:sign
+            label:"ترکیب ۶ ـ 0.9D + 1.4W"+(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"),
+            factors:{dead:0.9,live:0,snow:0,wind:1.4},windSign:sign
         }));
 
         const rows=[];
