@@ -48,6 +48,22 @@ function audit(envelope){
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function renderResult(r){const host=$("flexureShearReadinessResults");if(!host)return;host.innerHTML="<h4>"+(r.ready?"داده‌های پایه موجودند":"موارد تکمیل‌نشده")+"</h4>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در ممیزی داده‌های موجود یافت نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+"<div style='overflow-x:auto'><table class='data-table'><thead><tr><th>گروه</th><th>تعداد اعضا</th><th>بیشینه |M| (kN.m)</th><th>بیشینه |V| (kN)</th><th>وضعیت داده</th></tr></thead><tbody>"+r.rows.map(x=>"<tr><td>"+esc(x.label)+"</td><td>"+x.count+"</td><td>"+(x.maximumMoment_Nm/1000).toFixed(2)+"</td><td>"+(x.maximumShear_N/1000).toFixed(2)+"</td><td>"+(x.ready?"کامل":"ناقص")+"</td></tr>").join("")+"</tbody></table></div><div class='notice'>"+esc(r.disclaimer)+"</div>";}
 function init(){if($("flexureShearReadinessPanel"))return;const main=document.querySelector("main");if(!main)return;const p=document.createElement("section");p.className="panel";p.id="flexureShearReadinessPanel";p.innerHTML="<div class='panel-title'><h3>ممیزی آمادگی طراحی خمش و برش</h3><span class='status'>نیروهای تحلیل + ورودی مقاطع</span></div><div class='notice'>ابتدا تحلیل پوش نیروهای اعضا را اجرا کنید. این پنل تقاضاهای موجود را با ورودی‌های مصالح و مهاربندی تطبیق می‌دهد و ظرفیت آیین‌نامه‌ای محاسبه نمی‌کند.</div><div class='button-grid'><button type='button' class='btn secondary' id='btnFlexureShearReadiness'>ممیزی خمش و برش</button></div><div id='flexureShearReadinessResults'></div>";const anchor=$("compressionDesignPanel")||$("memberForceEnvelopePanel");if(anchor?.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);else main.appendChild(p);$("btnFlexureShearReadiness").addEventListener("click",()=>renderResult(audit()));}
-root.SteelFlexureShearReadiness={audit};
+function selfTest(){
+ const prior=root.SteelMemberDesignInputs;
+ root.SteelMemberDesignInputs={getForGroup:()=>({t_mm:10,Fy:235,Fu:340,Lb:3000,Cb:1,bracingNote:"نقشه مهاربندی آزمایشی"})};
+ const keys=["column","rafter","endPost","endGirt","roofEdge","roofPurlin","wallGirt","roofBrace","wallBrace"];
+ const members=keys.map((sectionKey,i)=>({id:"M"+i,sectionKey,caseCount:1,section:{A:0.01,Iy:1e-5,Iz:1e-4,J:1e-6},peak:{My:0,Mz:0,Vy:0,Vz:0}}));
+ const env={members,cases:[{label:"ULS",equilibrium:{ok:true}}],allCasesEquilibriumOK:true,modelMemberCount:members.length};
+ const r=audit(env);
+ if(prior===undefined)delete root.SteelMemberDesignInputs;else root.SteelMemberDesignInputs=prior;
+ const tests=[
+  {name:"all nine member groups are represented",pass:r.rows.length===9&&r.missingGroups.length===0},
+  {name:"purlins and girts require section-specific design path",pass:["roofPurlin","wallGirt"].every(k=>r.rows.find(x=>x.group===k)?.designPath==="section-specific"&&!r.rows.find(x=>x.group===k)?.ready)},
+  {name:"braces require axial resistance and connection design",pass:["roofBrace","wallBrace"].every(k=>r.rows.find(x=>x.group===k)?.designPath==="axial"&&!r.rows.find(x=>x.group===k)?.ready)},
+  {name:"missing capacity engines cannot produce an overall ready result",pass:r.ready===false}
+ ];
+ return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests,scope:"group coverage and readiness routing only"};
+}
+root.SteelFlexureShearReadiness={audit,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
