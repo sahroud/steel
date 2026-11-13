@@ -60,6 +60,16 @@
       '<div class="field"><label for="craneRunwayLateralRestraint">وضعیت مهار جانبی بال فشاری</label><select id="craneRunwayLateralRestraint"><option value="">نامشخص</option><option value="rail-only">فقط ریل (بدون تأیید مهار)</option><option value="dedicated">مهار جانبی مستقل مستند</option><option value="none">بدون مهار جانبی</option></select></div>' +
       '<div class="field"><label for="craneRunwayDetailSource">مرجع نقشه/کاتالوگ مقطع و ریل</label><input id="craneRunwayDetailSource" type="text" placeholder="شماره نقشه، صفحه یا کاتالوگ"></div></div>' +
       '<div id="craneRunwaySectionAudit" class="notice">ممیزی مشخصات تیر حمال هنوز انجام نشده است.</div>' +
+      '<h4>سخت‌کننده‌ها و ناحیه بار چرخ</h4><div class="notice">ابعاد و جزئیات باید از نقشه ساخت یا طراحی محاسباتی وارد شوند. این بخش فعلاً ممیزی هندسی/اطلاعاتی است، نه کنترل ظرفیت جان.</div>' +
+      '<div class="form-grid"><div class="field"><label for="craneRunwayEndStiffenerType">نوع سخت‌کننده انتهایی</label><select id="craneRunwayEndStiffenerType"><option value="">انتخاب نشده</option><option value="pair">جفت ورق دو طرف جان</option><option value="single">تک ورق</option><option value="other">سایر</option></select></div>' +
+      '<div class="field"><label for="craneRunwayIntermediateStiffenerType">نوع سخت‌کننده میانی</label><select id="craneRunwayIntermediateStiffenerType"><option value="">انتخاب نشده</option><option value="pair">جفت ورق دو طرف جان</option><option value="single">تک ورق</option><option value="none">بدون سخت‌کننده میانی</option></select></div>' +
+      '<div class="field"><label for="craneRunwayStiffenerWidth">عرض ورق سخت‌کننده (mm)</label><input id="craneRunwayStiffenerWidth" type="number" min="1" step="1" placeholder="از نقشه"></div>' +
+      '<div class="field"><label for="craneRunwayStiffenerThickness">ضخامت ورق سخت‌کننده (mm)</label><input id="craneRunwayStiffenerThickness" type="number" min="1" step="0.5" placeholder="از نقشه"></div>' +
+      '<div class="field"><label for="craneRunwayStiffenerWeldSize">اندازه گلوی جوش (mm)</label><input id="craneRunwayStiffenerWeldSize" type="number" min="1" step="0.5" placeholder="طبق جزئیات جوش"></div>' +
+      '<div class="field"><label for="craneRunwayBearingLength">طول نشیمن/پخش بار چرخ (mm)</label><input id="craneRunwayBearingLength" type="number" min="1" step="1" placeholder="طبق ریل و جزئیات"></div>' +
+      '<div class="field"><label for="craneRunwayWheelLoadOffset">فاصله محور بار چرخ از محور جان (mm)</label><input id="craneRunwayWheelLoadOffset" type="number" step="1" placeholder="علامت‌دار طبق نقشه"></div>' +
+      '<div class="field"><label for="craneRunwayStiffenerSource">مرجع نقشه سخت‌کننده/جوش/نشیمن</label><input id="craneRunwayStiffenerSource" type="text" placeholder="شماره نقشه و جزئیات"></div></div>' +
+      '<div id="craneRunwayWebAudit" class="notice">ممیزی سخت‌کننده و جان هنوز انجام نشده است.</div>' +
       '<div class="form-grid">' +
       '<div class="field"><label for="modelPurlinSpacing">فاصله پرلین‌های سقف (m)</label><input id="modelPurlinSpacing" type="number" min="0.3" step="0.05" value="0.95"></div>' +
       '<div class="field"><label for="modelPurlinClipDeduction">کسر مجموع دو انتهای کلیپس از طول برش هر پرلین (m)</label><input id="modelPurlinClipDeduction" type="number" min="0" step="0.005" value="0"></div>' +
@@ -306,7 +316,7 @@
       } catch(e) { $("fullModel3DReadiness").textContent="خطا در بررسی: "+e.message; }
       }, e => { $("fullModel3DReadiness").textContent = "خطا در بررسی: " + e.message; });
     });
-    ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays","craneRunwayAxisOffset","craneRunwaySupportType",...Object.values(RUNWAY_SECTION_FIELD_IDS)].forEach(id => $(id)?.addEventListener("change", function () { try { build(); draw(); showSummary(); const box=$("craneRunwaySectionAudit");if(box&&model?.geometry?.craneRunway){const a=model.geometry.craneRunway.sectionAudit||{};box.textContent="ممیزی مشخصات: "+(a.ready?"اطلاعات اولیه کامل است؛ طراحی هنوز انجام نشده":"نیازمند تکمیل/اصلاح — موارد ناقص: "+(a.missing||[]).join("، ")+"؛ خطاهای عددی: "+(a.invalid||[]).join("، ")+"؛ "+(a.dimensional||[]).join("، "));}} catch (_) {} }));
+    ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays","craneRunwayAxisOffset","craneRunwaySupportType",...Object.values(RUNWAY_SECTION_FIELD_IDS),...Object.values(RUNWAY_STIFFENER_FIELD_IDS)].forEach(id => $(id)?.addEventListener("change", function () { try { build(); draw(); showSummary(); const box=$("craneRunwaySectionAudit");if(box&&model?.geometry?.craneRunway){const a=model.geometry.craneRunway.sectionAudit||{};box.textContent="ممیزی مشخصات: "+(a.ready?"اطلاعات اولیه کامل است؛ طراحی هنوز انجام نشده":"نیازمند تکمیل/اصلاح — موارد ناقص: "+(a.missing||[]).join("، ")+"؛ خطاهای عددی: "+(a.invalid||[]).join("، ")+"؛ "+(a.dimensional||[]).join("، "));}} catch (_) {} }));
   }
   function val(id, fallback) { const e=$(id), n=e?Number(e.value):fallback; return Number.isFinite(n)?n:fallback; }
   function addNode(nodes,x,y,z,kind) { const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7); if(old){if(kind==="roof-edge")old.kind="roof-edge";return old;} const n={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"}; nodes.push(n); return n; }
@@ -325,6 +335,21 @@
   }
   const RUNWAY_SECTION_FIELD_IDS={girderType:"craneRunwayGirderType",steelGrade:"craneRunwaySteelGrade",overallDepth_mm:"craneRunwayOverallDepth",flangeWidth_mm:"craneRunwayFlangeWidth",flangeThickness_mm:"craneRunwayFlangeThickness",webThickness_mm:"craneRunwayWebThickness",railDesignation:"craneRunwayRailDesignation",railMass_kg_m:"craneRunwayRailMass",railFastening:"craneRunwayRailFastening",stiffenerSpacing_m:"craneRunwayStiffenerSpacing",lateralRestraint:"craneRunwayLateralRestraint",detailSource:"craneRunwayDetailSource"};
   function readRunwaySectionInputs(){const out={};Object.entries(RUNWAY_SECTION_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(!el)return;const raw=String(el.value??"").trim();if(raw!=="")out[key]=["overallDepth_mm","flangeWidth_mm","flangeThickness_mm","webThickness_mm","railMass_kg_m","stiffenerSpacing_m"].includes(key)?Number(raw):raw;});return out;}
+  const RUNWAY_STIFFENER_FIELD_IDS={endStiffenerType:"craneRunwayEndStiffenerType",intermediateStiffenerType:"craneRunwayIntermediateStiffenerType",stiffenerWidth_mm:"craneRunwayStiffenerWidth",stiffenerThickness_mm:"craneRunwayStiffenerThickness",stiffenerWeldSize_mm:"craneRunwayStiffenerWeldSize",bearingLength_mm:"craneRunwayBearingLength",wheelLoadOffset_mm:"craneRunwayWheelLoadOffset",stiffenerSource:"craneRunwayStiffenerSource"};
+  function readRunwayStiffenerInputs(){const out={};Object.entries(RUNWAY_STIFFENER_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(!el)return;const raw=String(el.value??"").trim();if(raw!=="")out[key]=["stiffenerWidth_mm","stiffenerThickness_mm","stiffenerWeldSize_mm","bearingLength_mm","wheelLoadOffset_mm"].includes(key)?Number(raw):raw;});return out;}
+  function auditRunwayWebDetail(section,detail){
+    section=section||{};detail=detail||{};
+    const required=["endStiffenerType","intermediateStiffenerType","stiffenerWidth_mm","stiffenerThickness_mm","stiffenerWeldSize_mm","bearingLength_mm","wheelLoadOffset_mm","stiffenerSource"];
+    const missing=required.filter(k=>detail[k]===undefined||detail[k]===null||detail[k]==="");
+    const numeric=["stiffenerWidth_mm","stiffenerThickness_mm","stiffenerWeldSize_mm","bearingLength_mm"],invalid=numeric.filter(k=>detail[k]!==undefined&&(!Number.isFinite(detail[k])||detail[k]<=0));
+    const dimensional=[];
+    if(Number.isFinite(section.webThickness_mm)&&Number.isFinite(detail.stiffenerThickness_mm)&&detail.stiffenerThickness_mm<section.webThickness_mm)dimensional.push("ضخامت سخت‌کننده از ضخامت جان کمتر است؛ نیازمند بازبینی جزئیات.");
+    if(Number.isFinite(section.overallDepth_mm)&&Number.isFinite(section.flangeThickness_mm)&&Number.isFinite(detail.stiffenerWidth_mm)&&detail.stiffenerWidth_mm>section.overallDepth_mm-2*section.flangeThickness_mm)dimensional.push("عرض ورق سخت‌کننده از ارتفاع آزاد جان بیشتر است.");
+    if(detail.intermediateStiffenerType==="none"&&Number.isFinite(section.stiffenerSpacing_m)&&section.stiffenerSpacing_m>0)dimensional.push("فاصله سخت‌کننده ثبت شده ولی نوع سخت‌کننده میانی «بدون سخت‌کننده» انتخاب شده است.");
+    const webSlenderness=Number.isFinite(section.overallDepth_mm)&&Number.isFinite(section.flangeThickness_mm)&&Number.isFinite(section.webThickness_mm)&&section.webThickness_mm>0?(section.overallDepth_mm-2*section.flangeThickness_mm)/section.webThickness_mm:null;
+    const ready=missing.length===0&&invalid.length===0&&dimensional.length===0;
+    return {ready,missing,invalid,dimensional,webSlenderness,analysisEnabled:false,note:"این ممیزی ظرفیت برشی/فشاری جان، تنش موضعی زیر چرخ، کمانش پانل، طراحی جوش یا لهیدگی جان را کنترل نمی‌کند."};
+  }
   function calculateRunwayBuiltupIProperties(d){
     if(!d||d.girderType!=="builtup-i")return {available:false,reason:"محاسبه خواص هندسی خودکار در این نسخه فقط برای تیرورق I متقارن با ورق‌های مستطیلی فعال است."};
     const D=d.overallDepth_mm,b=d.flangeWidth_mm,tf=d.flangeThickness_mm,tw=d.webThickness_mm;
@@ -339,7 +364,7 @@
   function buildCraneRunwayGeometry(config){
     if(!config.enabled)return {geometryStatus:"disabled",axisOffsetM:null,supportType:"",beamSegments:[],brackets:[],supportNodes:[]};
     const {span,frames,runwayElevation,offsetM,supportType,sectionInputs={},sectionAudit={}}=config;
-    if(!(Number.isFinite(offsetM)&&offsetM>=0.05))return {geometryStatus:"awaiting_axis_offset",axisOffsetM:null,supportType,beamSegments:[],brackets:[],supportNodes:[],sectionInputs,sectionAudit,sectionProperties:calculateRunwayBuiltupIProperties(sectionInputs),analysisEnabled:false,geometryNote:"فاصله محور تیر حمال از محور ستون باید از نقشه یا جزئیات سازنده وارد شود؛ مشخصات مقطع ثبت‌شده حفظ شده‌اند."};
+    if(!(Number.isFinite(offsetM)&&offsetM>=0.05))return {geometryStatus:"awaiting_axis_offset",axisOffsetM:null,supportType,beamSegments:[],brackets:[],supportNodes:[],sectionInputs,sectionAudit,sectionProperties:calculateRunwayBuiltupIProperties(sectionInputs),stiffenerInputs:config.stiffenerInputs||{},webAudit:config.webAudit||{},analysisEnabled:false,geometryNote:"فاصله محور تیر حمال از محور ستون باید از نقشه یا جزئیات سازنده وارد شود؛ مشخصات مقطع ثبت‌شده حفظ شده‌اند."};
     const sides=[{key:"left",columnX:0,beamX:-offsetM},{key:"right",columnX:span,beamX:span+offsetM}];
     const supportNodes=[],brackets=[],beamSegments=[];
     sides.forEach(side=>{
@@ -352,7 +377,7 @@
       for(let i=0;i<line.length-1;i++)beamSegments.push({id:"CRANE_"+side.key.toUpperCase()+"_BEAM_BAY_"+(i+1),side:side.key,bayIndex:i+1,start:line[i],end:line[i+1],lengthM:Math.abs(line[i+1].z-line[i].z),continuity:"separate_span_segment_between_adjacent_frames",analysisEnabled:false,connectionType:supportType||"unselected"});
     });
     const sectionProperties=calculateRunwayBuiltupIProperties(sectionInputs);
-    return {geometryStatus:supportType?"geometry_only_review_required":"geometry_only_connection_unselected",axisOffsetM:offsetM,supportType,beamSegments,brackets,supportNodes,sectionInputs,sectionAudit,sectionProperties,analysisEnabled:false,geometryNote:"تیر حمال به قطعات مستقل بین قاب‌های مجاور تقسیم شده است؛ پیوستگی چنددهانه، سختی اتصال و انتقال نیرو هنوز مدل نشده‌اند."};
+    return {geometryStatus:supportType?"geometry_only_review_required":"geometry_only_connection_unselected",axisOffsetM:offsetM,supportType,beamSegments,brackets,supportNodes,sectionInputs,sectionAudit,sectionProperties,stiffenerInputs:config.stiffenerInputs||{},webAudit:config.webAudit||{},analysisEnabled:false,geometryNote:"تیر حمال به قطعات مستقل بین قاب‌های مجاور تقسیم شده است؛ پیوستگی چنددهانه، سختی اتصال و انتقال نیرو هنوز مدل نشده‌اند."};
   }
   function runwayGeometrySelfTest(){
     const normal=runwayColumnLevels(0,[2,4,6],10,5,true);
@@ -364,6 +389,8 @@
     const sectionBad=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:30,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
     const properties=calculateRunwayBuiltupIProperties({girderType:"builtup-i",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12});
     const boxProperties=calculateRunwayBuiltupIProperties({girderType:"box",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12});
+    const webAuditGood=auditRunwayWebDetail({overallDepth_mm:800,flangeThickness_mm:20,webThickness_mm:12,stiffenerSpacing_m:1.5},{endStiffenerType:"pair",intermediateStiffenerType:"pair",stiffenerWidth_mm:100,stiffenerThickness_mm:12,stiffenerWeldSize_mm:6,bearingLength_mm:120,wheelLoadOffset_mm:0,stiffenerSource:"detail A"});
+    const webAuditBad=auditRunwayWebDetail({overallDepth_mm:800,flangeThickness_mm:20,webThickness_mm:12,stiffenerSpacing_m:1.5},{endStiffenerType:"pair",intermediateStiffenerType:"none",stiffenerWidth_mm:900,stiffenerThickness_mm:6,stiffenerWeldSize_mm:6,bearingLength_mm:0,wheelLoadOffset_mm:0,stiffenerSource:""});
     const checks=[
       normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,
       duplicate.filter(x=>x.y===5).length===1&&duplicate.filter(x=>x.kind==="runway-support").length===1,
@@ -372,7 +399,9 @@
       noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0&&noOffset.sectionInputs.girderType==="builtup-i"&&noOffset.sectionProperties.available,
       sectionGood.ready===true&&sectionGood.analysisEnabled===false,
       sectionBad.ready===false&&sectionBad.dimensional.length>0,
-      properties.available&&properties.area_mm2>0&&properties.Ix_mm4>properties.Iy_mm4&&properties.steelMass_kg_m>0&&!boxProperties.available
+      properties.available&&properties.area_mm2>0&&properties.Ix_mm4>properties.Iy_mm4&&properties.steelMass_kg_m>0&&!boxProperties.available,
+      webAuditGood.ready&&webAuditGood.webSlenderness>0&&webAuditGood.analysisEnabled===false,
+      !webAuditBad.ready&&webAuditBad.dimensional.length>=2&&webAuditBad.missing.includes("stiffenerSource")
     ];
     return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
@@ -578,7 +607,9 @@
     const runwaySupportType=runwaySupportInput?.value||"";
     const runwaySectionInputs=readRunwaySectionInputs();
     const runwaySectionAudit=auditRunwaySectionInputs(runwaySectionInputs);
-    const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType,sectionInputs:runwaySectionInputs,sectionAudit:runwaySectionAudit});
+    const runwayStiffenerInputs=readRunwayStiffenerInputs();
+    const runwayWebAudit=auditRunwayWebDetail(runwaySectionInputs,runwayStiffenerInputs);
+    const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType,sectionInputs:runwaySectionInputs,sectionAudit:runwaySectionAudit,stiffenerInputs:runwayStiffenerInputs,webAudit:runwayWebAudit});
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry},roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
     return model;
   }
@@ -1120,7 +1151,7 @@
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
-    if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});if($("craneRunwayAxisOffset")&&g.craneRunway?.axisOffsetM!=null)$("craneRunwayAxisOffset").value=g.craneRunway.axisOffsetM;if($("craneRunwaySupportType"))$("craneRunwaySupportType").value=g.craneRunway?.supportType||"";Object.entries(RUNWAY_SECTION_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.sectionInputs?.[key]??(key==="steelGrade"?"ST37":"");});}
+    if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});if($("craneRunwayAxisOffset")&&g.craneRunway?.axisOffsetM!=null)$("craneRunwayAxisOffset").value=g.craneRunway.axisOffsetM;if($("craneRunwaySupportType"))$("craneRunwaySupportType").value=g.craneRunway?.supportType||"";Object.entries(RUNWAY_SECTION_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.sectionInputs?.[key]??(key==="steelGrade"?"ST37":"");});Object.entries(RUNWAY_STIFFENER_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.stiffenerInputs?.[key]??"";});}
     build();draw();showSummary();
   }
   function validate(){try{build();return "";}catch(e){return e.message;}}
