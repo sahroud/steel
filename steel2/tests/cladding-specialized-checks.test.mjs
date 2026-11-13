@@ -1,0 +1,12 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
+const s=await readFile(new URL("../cladding-specialized-checks.js",import.meta.url),"utf8");
+const u="data:text/javascript;base64,"+Buffer.from(s).toString("base64");
+const {checkMasonryOutOfPlane,checkMetalSheetCladding,checkSandwichPanel,estimateGreenhouseFilmMembraneDemand}=await import(u);
+test("masonry strip demand",()=>{const r=checkMasonryOutOfPlane({clear_span_m:3,net_pressure_kpa:1,flexural_design_resistance_kNm_per_m:2,shear_design_resistance_kN_per_m:2,support_condition:"simply-supported",resistance_source:"design report"});assert.equal(r.demands.moment_kNm_per_m,1.125);assert.equal(r.demands.shear_kN_per_m,1.5);assert.equal(r.status,"passes_supplied_limits_only");});
+test("metal sheet independent fastener failure modes",()=>{const r=checkMetalSheetCladding({net_pressure_kpa:-1,fastener_tributary_area_m2:.2,fastener_tension_resistance_kN:1,sheet_pull_over_resistance_kN:.5,support_pull_out_resistance_kN:.8,sheet_tear_resistance_kN:.7,fastener_shear_demand_kN:.1,resistance_source:"tested assembly"});assert.equal(r.demands.fastener_tension_kN,.2);assert.equal(r.status,"passes_supplied_limits_only");});
+test("sandwich panel manufacturer envelope",()=>{const r=checkSandwichPanel({net_pressure_kpa:.8,span_m:2.5,manufacturer_design_pressure_kpa:1,manufacturer_max_span_m:3,fastener_design_tension_kN:.6,fastener_tributary_area_m2:.2,product_id:"panel-A",data_source:"load table rev 4"});assert.equal(r.status,"passes_supplied_limits_only");assert.equal(r.ratios.panel_pressure,.8);});
+test("greenhouse film demand without resistance is not approved",()=>{const r=estimateGreenhouseFilmMembraneDemand({span_m:6,sag_m:.6,net_pressure_kpa:.3,prestress_kN_per_m:.2,film_product_id:"film-200",data_source:"datasheet"});assert.equal(r.status,"demand_estimate_only");assert.ok(r.demands.estimated_peak_edge_resultant_kN_per_m>0);assert.ok(r.capacity_check.startsWith("not_performed"));});
+test("greenhouse invalid geometry blocked",()=>{const r=estimateGreenhouseFilmMembraneDemand({span_m:2,sag_m:1,net_pressure_kpa:.2,prestress_kN_per_m:.1,film_product_id:"F1",data_source:"D1"});assert.equal(r.status,"blocked");});
+test("missing provenance blocks checks",()=>{assert.equal(checkMetalSheetCladding({}).status,"blocked");assert.equal(checkSandwichPanel({}).status,"blocked");assert.equal(checkMasonryOutOfPlane({}).status,"blocked");});
