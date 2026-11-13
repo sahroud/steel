@@ -78,3 +78,16 @@ test("invalid support geometry is blocked", () => {
   });
   assert.equal(r.status, "blocked");
 });
+
+test("blocks unsupported gaps along a declared support edge", () => {
+  const r = rectangularPanelTributaryShares({
+    width_m: 6, height_m: 2,
+    supports: [
+      { id: "B1", edge: "bottom", start_m: 0, end_m: 2 },
+      { id: "B2", edge: "bottom", start_m: 3, end_m: 6 },
+      { id: "T", edge: "top", start_m: 0, end_m: 6 },
+    ],
+  });
+  assert.equal(r.status, "blocked");
+  assert.ok(r.errors.some(x => x.includes("contiguous")));
+});
