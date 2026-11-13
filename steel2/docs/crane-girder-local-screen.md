@@ -41,3 +41,17 @@ The sum of absolute components is a simplified upper-bound screen. It does not c
 This module does not perform code resistance design, section classification, local or lateral-torsional buckling, web crippling, patch loading, local flange bending, stiffener design, weld/bolt design, fatigue, impact/dynamic response, warping torsion, second-order analysis, or imperfection analysis. It does not use resistance factors or code load combinations. `analysisEnabled` remains false.
 
 Do not interpret a ratio below 1.0 as proof of safety or code compliance. Validate the section properties, axis convention, shear-area method, torsion model, load combinations, and all omitted limit states independently.
+
+
+## Plate geometry and stability-input audit
+
+The same per-member JSON template includes additional fields for:
+- overall depth `d_m`, flange width `bf_m`, web thickness `tw_m`, flange thickness `tf_m`
+- elastic modulus `E_MPa`, yield stress `Fy_MPa`
+- unbraced length `Lb_m`, `Cb`, compression-flange restraint category and its drawing source
+- load height from shear center, warping constant `Cw_m6`, minor-axis inertia `Iy_minor_m4`, and `J_m4`
+- bearing length, bearing/support condition, and drawing reference
+
+The additional button **ممیزی هندسه صفحات، مهار جانبی و نشیمن** reports flange outstand-to-thickness and clear-web-depth-to-thickness ratios, normalized plate geometry ratios using `sqrt(Fy/E)`, and completeness of the stability and bearing input evidence.
+
+It deliberately returns no code classification, lateral-torsional buckling resistance, or web-crippling resistance. Actual code limits, restraint model, load height convention, section warping data, bearing geometry and stiffener details must be verified before any resistance design can be implemented. A complete input record is not a passing design check.
