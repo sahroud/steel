@@ -56,7 +56,7 @@ function buildLoadCase(model,baseLoadCase,transferResult){
 }
 function selfTest(){
  const t=[],ck=(name,fn)=>{try{t.push({name,ok:!!fn()});}catch(e){t.push({name,ok:false,error:String(e.message||e)});}};
- const model={nodes:[{id:"C1",x:0,y:5,z:0,kind:"column"}],members:[]};
+ const model={nodes:[{id:"C1",x:0,y:5,z:0,kind:"column"},{id:"OTHER",x:2,y:0,z:0,kind:"frame"}],members:[]};
  const demand={success:true,transferType:"demand-only-global-coordinate",demands:[{connectionId:"BR1",caseId:"LC1",columnNodeId:"C1",coordinateSystem:"global",columnNodeCoordinate_m:[0,5,0],force_N:[1,2,3],momentAtColumnNode_Nm:[4,5,6],source:"3D model",document:"RPT-1"}]};
  const base={id:"LC1",nodalLoads:[{nodeId:"OTHER",values:[0,0,0,0,0,0]}]};
  ck("creates solver-compatible six-DOF nodal load",()=>{const r=buildLoadCase(model,base,demand),x=r.loadCase?.nodalLoads.find(n=>n.nodeId==="C1");return r.success&&x.values.join(",")==="1,2,3,4,5,6";});
