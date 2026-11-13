@@ -51,8 +51,8 @@
   $("rebarDrawingMode").addEventListener("change",renderRebarDrawing);
   $("footingRebarTarget").addEventListener("change",renderRebarDrawing);
   $("tieRebarTarget").addEventListener("change",renderRebarDrawing);
-  renderRebarDrawing();
   try{$("rebarDrawingMode").value=localStorage.getItem("sahroudSteel.rebarDrawingMode.v1")||"default";$("rebarDrawingMode").addEventListener("change",()=>{try{localStorage.setItem("sahroudSteel.rebarDrawingMode.v1",$("rebarDrawingMode").value);}catch(e){}});}catch(e){}
+  renderRebarDrawing();
  }
  function readInputs(){keys.forEach(k=>{const el=$(map[k]);if(el)state[k]=el.value;});}
  function selfTest(){
