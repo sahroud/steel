@@ -12,6 +12,7 @@
  const num=x=>{const n=Number(x);return Number.isFinite(n)&&n>0?n:null;};
  const signedNum=x=>{if(x===null||x===undefined||String(x).trim()==="")return null;const n=Number(x);return Number.isFinite(n)?n:null;};
  let lastReport=null;
+ let rebarIsoView={angle:0,zoom:1};
  function panel(){
   if($("foundationTakeoffPanel"))return;
   const root=$("costEstimatePanel")||$("quantityTakeoffPanel");if(!root)return;
@@ -479,7 +480,7 @@ function calculateFootingRebar(baseCount,B,L){
   const esc=s=>String(s??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
   const fmtSvg=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:2});
   const svg=[];
-  svg.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" width="100%" role="img" aria-label="جزئیات جداگانه قفس آرماتور فونداسیون و شناژ">');
+  svg.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1100" width="100%" role="img" aria-label="جزئیات جداگانه قفس آرماتور فونداسیون و شناژ">');
   svg.push('<rect width="1000" height="800" fill="#f8fafc"/>');
   const panel=(x,y,w,h,title)=>{svg.push('<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="8" fill="#fff" stroke="#94a3b8"/>');svg.push('<text x="'+(x+w/2)+'" y="'+(y+24)+'" text-anchor="middle" font-size="17" fill="#123b52">'+title+'</text>');};
   panel(20,40,465,330,"پلان فونداسیون انتخاب‌شده");
@@ -531,9 +532,72 @@ function calculateFootingRebar(baseCount,B,L){
    for(let i=0;i<n;i++){const x=x0+12+i*(w-24)/(n-1);svg.push('<line x1="'+x+'" y1="'+(y0+8)+'" x2="'+x+'" y2="'+(y0+h-8)+'" stroke="#0f766e" stroke-width="2"/>');}
    svg.push('<text x="747" y="650" text-anchor="middle" font-size="12" fill="#334155">'+esc(tie.route.id)+' | طول '+fmtSvg(routeLength)+' m | خاموت Ø'+st+' @'+fmtSvg(spacing)+' mm</text>');
   }else svg.push('<text x="747" y="555" text-anchor="middle" font-size="14" fill="#64748b">مختصات مسیر یا داده آرماتور شناژ موجود نیست</text>');
+
+  // Interactive isometric overview: dimensions and node positions come only from the active model inputs.
+  panel(20,810,960,260,"نمای سه‌بعدی شماتیک فونداسیون و شناژ — چرخش و بزرگ‌نمایی");
+  const isoControls='<div class="button-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button type="button" class="btn secondary" data-iso="left">چرخش چپ</button><button type="button" class="btn secondary" data-iso="right">چرخش راست</button><button type="button" class="btn secondary" data-iso="in">بزرگ‌نمایی +</button><button type="button" class="btn secondary" data-iso="out">کوچک‌نمایی −</button><button type="button" class="btn secondary" data-iso="reset">نمای اولیه</button></div>';
+  const projectIso=(x,y,z)=>{
+   const a=rebarIsoView.angle,ca=Math.cos(a),sa=Math.sin(a),rx=x*ca-z*sa,rz=x*sa+z*ca;
+   const sc=105*rebarIsoView.zoom;
+   return{x:500+(rx-rz)*0.72*sc,y:940+(rx+rz)*0.34*sc-y*0.92*sc};
+  };
+  const isoLine=(p1,p2,color,width=3,dash="")=>{const a=projectIso(p1.x,p1.y,p1.z),b=projectIso(p2.x,p2.y,p2.z);svg.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="'+color+'" stroke-width="'+width+'" '+(dash?'stroke-dasharray="'+dash+'"':'')+'/>');};
+  const isoPoly=(pts,fill,stroke="#475569")=>{svg.push('<polygon points="'+pts.map(p=>{const q=projectIso(p.x,p.y,p.z);return q.x+","+q.y;}).join(" ")+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5"/>');};
+  const isoBox=(cx,cy,cz,sx,sy,sz,fill)=>{
+   const x0=cx-sx/2,x1=cx+sx/2,z0=cz-sz/2,z1=cz+sz/2,y0=cy-sy,y1=cy;
+   isoPoly([{x:x0,y:y0,z:z0},{x:x1,y:y0,z:z0},{x:x1,y:y0,z:z1},{x:x0,y:y0,z:z1}],fill);
+   isoPoly([{x:x0,y:y0,z:z0},{x:x1,y:y0,z:z0},{x:x1,y:y1,z:z0},{x:x0,y:y1,z:z0}],"#cbd5e1");
+   isoPoly([{x:x1,y:y0,z:z0},{x:x1,y:y0,z:z1},{x:x1,y:y1,z:z1},{x:x1,y:y1,z:z0}],"#94a3b8");
+  };
+  if(selectedBase&&selectedRoute&&a&&b&&B>0&&L>0&&T>0&&tie&&tie.count!==null){
+   const ux=(Number(b.x)-Number(a.x))/Math.max(0.001,Math.hypot(Number(b.x)-Number(a.x),Number(b.z)-Number(a.z)));
+   const uz=(Number(b.z)-Number(a.z))/Math.max(0.001,Math.hypot(Number(b.x)-Number(a.x),Number(b.z)-Number(a.z)));
+   const vx=uz,vz=-ux,beamW=tie.width||Number(state.tieWidthM)||0.6,beamH=tie.height||Number(state.tieHeightM)||0.5;
+   const pA={x:Number(a.x),y:Number(a.y),z:Number(a.z)},pB={x:Number(b.x),y:Number(b.y),z:Number(b.z)};
+   const drawFoot=(p)=>{
+    isoBox(p.x,p.y,p.z,B,T,L,"#cbd5e1");
+    const grid=buildFootingRebarGeometry([{nodeId:"iso",x:p.x,y:p.y,z:p.z}],B,L,T,cover??50,footingSpecs.specs);
+    if(grid.ok)grid.bars.forEach(bar=>isoLine(bar.a,bar.b,bar.layer==="bottom"?"#dc2626":"#2563eb",2));
+   };
+   drawFoot(pA);drawFoot(pB);
+   const start={x:pA.x+ux*B/2,y:pA.y,z:pA.z+uz*L/2},end={x:pB.x-ux*B/2,y:pB.y,z:pB.z-uz*L/2};
+   const corners=[
+    {x:start.x+vx*beamW/2,y:start.y,z:start.z+vz*beamW/2},
+    {x:end.x+vx*beamW/2,y:end.y,z:end.z+vz*beamW/2},
+    {x:end.x-vx*beamW/2,y:end.y,z:end.z-vz*beamW/2},
+    {x:start.x-vx*beamW/2,y:start.y,z:start.z-vz*beamW/2}
+   ];
+   const top=corners.map(p=>({x:p.x,y:p.y,z:p.z}));
+   const bot=corners.map(p=>({x:p.x,y:p.y-beamH,z:p.z}));
+   isoPoly(top,"#dbeafe");for(let j=0;j<4;j++)isoPoly([top[j],top[(j+1)%4],bot[(j+1)%4],bot[j]],"#cbd5e1");
+   const cov=(Number(tieSettings?.coverMm)||40)/1000,barYtop=start.y-cov,barYbot=start.y-beamH+cov;
+   for(let k=0;k<tie.count;k++){
+    const off=(tie.count===1?0:(k/(tie.count-1)-0.5)*(beamW-2*cov));
+    for(const yy of [barYtop,barYbot])isoLine({x:start.x+vx*off,y:yy,z:start.z+vz*off},{x:end.x+vx*off,y:yy,z:end.z+vz*off},"#dc2626",3);
+   }
+   const spacing=(Number(selectedRoute.reinforcement?.stirrupSpacingMm)||200)/1000,n=Math.min(35,Math.max(2,Math.floor(Math.hypot(pB.x-pA.x,pB.z-pA.z)/Math.max(spacing,0.05))+1));
+   for(let i=0;i<n;i++){
+    const t=i/(n-1),cx=start.x+(end.x-start.x)*t,cz=start.z+(end.z-start.z)*t,yy=start.y-cov;
+    const q=[{x:cx+vx*(beamW/2-cov),y:yy,z:cz+vz*(beamW/2-cov)},{x:cx+vx*(beamW/2-cov),y:yy-beamH+2*cov,z:cz+vz*(beamW/2-cov)},{x:cx-vx*(beamW/2-cov),y:yy-beamH+2*cov,z:cz-vz*(beamW/2-cov)},{x:cx-vx*(beamW/2-cov),y:yy,z:cz-vz*(beamW/2-cov)}];
+    for(let j=0;j<4;j++)isoLine(q[j],q[(j+1)%4],"#0f766e",2);
+   }
+   svg.push('<text x="500" y="1060" text-anchor="middle" font-size="12" fill="#334155">پی‌ها و مسیر از مدل انتخابی | شبکه پی: '+(mode==="default"?"پیش‌فرض":"داده طراحی")+' | قفس شناژ: '+tie.count+' میلگرد بالا و '+tie.count+' پایین</text>');
+  }else{
+   svg.push('<text x="500" y="940" text-anchor="middle" font-size="16" fill="#64748b">برای نمای سه‌بعدی، دو گره مسیر، ابعاد پی و داده آرماتور معتبر لازم است.</text>');
+  }
+
   svg.push('<text x="500" y="785" text-anchor="middle" font-size="11" fill="#64748b">ترسیم شماتیک؛ بدون خم، قلاب، وصله، مهاری و کنترل نهایی اجرایی. فاصله خاموت 200 میلی‌متر در حالت پیش‌فرض موقت است.</text>');
   svg.push('</svg>');
-  host.innerHTML=svg.join("");
+  host.innerHTML=isoControls+svg.join("");
+  host.querySelectorAll("[data-iso]").forEach(btn=>btn.addEventListener("click",()=>{
+   const action=btn.getAttribute("data-iso");
+   if(action==="left")rebarIsoView.angle-=Math.PI/12;
+   if(action==="right")rebarIsoView.angle+=Math.PI/12;
+   if(action==="in")rebarIsoView.zoom=Math.min(1.8,rebarIsoView.zoom*1.15);
+   if(action==="out")rebarIsoView.zoom=Math.max(0.55,rebarIsoView.zoom/1.15);
+   if(action==="reset")rebarIsoView={angle:0,zoom:1};
+   renderRebarDrawing();
+  }));
   const footingLabel=footingSpecs.specs.length?footingSpecs.specs.map(s=>(s.layer==="bottom"?"تحتانی":"فوقانی")+" "+s.direction+" Ø"+s.diaMm+" @"+fmtSvg(s.spacingMm)).join("؛ "):"شبکه فونداسیون موجود نیست";
   const tieLabel=tie?(tie.count===null?"خروجی طراحی شناژ موجود نیست":tie.route.id+": "+tie.count+" بالا و "+tie.count+" پایین Ø"+tie.dia+"، خاموت Ø"+(tie.stirrupDia||10)):"شناژ ثبت نشده";
   const clashLabel=clash.ok?"کنترل هندسی اتصال: بدون تقاطع؛ حداقل فاصله آزاد "+fmtSvg(clash.minimumClearDistanceMm)+" mm ("+clash.pairsChecked+" جفت میلگرد بررسی شد).":(clash.reason||("کنترل هندسی: "+clash.conflictPairs+" جفت دارای تقاطع/عدم فاصله."));
