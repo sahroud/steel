@@ -37,8 +37,8 @@ function audit(p){
  const girderCovers=transferIds.length>0&&transferIds.every(x=>girderSourceIds.includes(x));
  add("all-transfer-cases-reach-3d-frame",frameCovers,"تمام شناسه‌های حالت انتقال دو ریل باید در نتایج قاب سه‌بعدی موجود باشند.");
  add("all-transfer-cases-reach-runway-girders",girderCovers,"تمام شناسه‌های حالت انتقال باید در نتایج تیر حمال نیز موجود باشند.");
- const frameNoOrphans=frameIds.every(x=>transferSet.has(x));
- const girderNoOrphans=girderIds.every(x=>transferSet.has(x));
+ const frameNoOrphans=frameSourceIds.every(x=>transferSet.has(x));
+ const girderNoOrphans=girderSourceIds.every(x=>transferSet.has(x));
  add("no-unmatched-frame-cases",frameNoOrphans,"حالت تحلیل سه‌بعدی بدون حالت انتقال متناظر پذیرفته نیست.");
  add("no-unmatched-girder-cases",girderNoOrphans,"حالت تحلیل تیر حمال بدون حالت انتقال متناظر پذیرفته نیست.");
  const railPair=(transfer.cases||[]).every(c=>c.leftRailPresent===true&&c.rightRailPresent===true);
