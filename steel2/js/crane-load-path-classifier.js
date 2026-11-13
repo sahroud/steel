@@ -35,6 +35,19 @@ function routeWheelActions(crane,inputActions){
  if(invalid.length)return {success:false,issues:["هر واکنش چرخ باید شناسه و مؤلفه‌های نیروی عددی معتبر داشته باشد."],actions:[],analysisEnabled:false};
  return {success:true,loadTarget:c.loadTarget,loadPath:c.loadPath,actions:actions.map(a=>({id:String(a.id),target:c.loadTarget,verticalKN:Number(a.verticalKN),longitudinalKN:Number(a.longitudinalKN||0),transverseKN:Number(a.transverseKN||0)})),note:"این فقط برچسب‌گذاری مسیر بار است؛ نیروها به مدل FEM تزریق نشده‌اند.",analysisEnabled:false,designApproved:false};
 }
+const defaults={id:"CRANE-1",craneType:"overhead",supportSystem:"runway_girder"};
+let uiState={...defaults};
+function readUI(){return {id:document.getElementById("cranePath_id")?.value||uiState.id,craneType:document.getElementById("cranePath_type")?.value||uiState.craneType,supportSystem:document.getElementById("cranePath_support")?.value||uiState.supportSystem};}
+function setData(data){uiState={...defaults,...(data||{})};const a=document.getElementById("cranePath_id"),b=document.getElementById("cranePath_type"),c=document.getElementById("cranePath_support");if(a)a.value=uiState.id;if(b)b.value=uiState.craneType;if(c)c.value=uiState.supportSystem;}
+function ensurePanel(){
+ if(document.getElementById("craneLoadPathPanel"))return;
+ const host=document.getElementById("craneReadinessPanel");if(!host)return;
+ const p=document.createElement("section");p.className="panel";p.id="craneLoadPathPanel";
+ p.innerHTML='<div class="panel-title"><h3>تعیین مسیر انتقال بار چرخ جرثقیل</h3><span class="status">ممیزی مسیر بار</span></div><div class="notice">نوع جرثقیل و تکیه‌گاه مسیر چرخ را انتخاب کنید. این کنترل از اعمال اشتباه بار چرخ جرثقیل سقفی به بتن کف جلوگیری می‌کند؛ به‌تنهایی تحلیل یا تأیید ظرفیت نیست.</div><div class="form-grid"><div class="field"><label for="cranePath_id">شناسه جرثقیل</label><input id="cranePath_id" value="CRANE-1"></div><div class="field"><label for="cranePath_type">نوع جرثقیل</label><select id="cranePath_type"><option value="overhead">سقفی</option><option value="gantry">دروازه‌ای زمینی</option><option value="floor_rail">تجهیز روی ریل زمینی</option></select></div><div class="field"><label for="cranePath_support">سیستم تکیه‌گاهی مسیر چرخ</label><select id="cranePath_support"><option value="runway_girder">ریل و تیر حمال جرثقیل</option><option value="slab">دال کف سوله</option><option value="grade_beam">تیر/نوار بتنی زمینی</option><option value="independent_foundation">فونداسیون مستقل ریل</option></select></div></div><div class="button-grid"><button id="cranePath_audit" class="btn secondary" type="button">ممیزی مسیر انتقال بار</button></div><div id="cranePath_result" class="notice">پیش‌فرض: جرثقیل سقفی؛ بار چرخ به تیر حمال و قاب منتقل می‌شود.</div>';
+ host.insertAdjacentElement("afterend",p);setData(uiState);
+ p.querySelectorAll("input,select").forEach(e=>e.addEventListener("change",()=>{uiState=readUI();root.dispatchEvent(new CustomEvent("sahroud-crane-load-path-change",{detail:uiState}));}));
+ document.getElementById("cranePath_audit").addEventListener("click",()=>{const r=classify(readUI());document.getElementById("cranePath_result").textContent=(r.valid?"مسیر معتبر برای بررسی بعدی: ":"مسیر نامعتبر: ")+ (r.valid?r.loadPath.join(" ← "):r.issues.join(" | "));});
+}
 function selfTest(){
  const tests=[],test=(name,fn)=>{try{tests.push({name,ok:!!fn()});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
  test("overhead crane routes to runway girder",()=>classify({craneType:"overhead",supportSystem:"runway_girder"}).loadTarget==="crane_runway_and_frame");
@@ -51,5 +64,6 @@ function selfTest(){
  test("classification never enables analysis or approval",()=>{const r=classify({craneType:"overhead",supportSystem:"runway_girder"});return !r.analysisEnabled&&!r.designApproved;});
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests,analysisEnabled:false,designApproved:false,note:"Classification and routing software tests only; no wheel-load calculation, FEM transfer, or engineering approval."};
 }
-root.SteelCraneLoadPath={classify,auditCases,routeWheelActions,selfTest};
+root.SteelCraneLoadPath={classify,auditCases,routeWheelActions,readUI,getData:()=>({...uiState}),setData,ensurePanel,selfTest};
+if(typeof document!=="undefined"){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
 })(typeof window!=="undefined"?window:globalThis);
