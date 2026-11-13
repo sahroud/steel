@@ -66,6 +66,19 @@ function makeTransform(a,b,reference){
  for(let block=0;block<4;block++)for(let i=0;i<3;i++)for(let j=0;j<3;j++)T[block*3+i][block*3+j]=R[i][j];
  return {T,L,axes:{x:ex,y:ey,z:ez}};
 }
+function rigidArmTransform(r){
+ const [x,y,z]=r||[0,0,0];
+ if(![x,y,z].every(Number.isFinite))throw Error("بردار بازوی صلب باید سه مؤلفه عددی معتبر داشته باشد.");
+ const S=[[0,-z,y],[z,0,-x],[-y,x,0]],B=zeros(6,6);
+ for(let i=0;i<3;i++){B[i][i]=1;B[i+3][i+3]=1;for(let j=0;j<3;j++)B[i][j+3]=-S[i][j];}
+ return B;
+}
+function memberArmTransform(member){
+ const oi=member.endOffsets?.i||[0,0,0],oj=member.endOffsets?.j||[0,0,0];
+ const Bi=rigidArmTransform(oi),Bj=rigidArmTransform(oj),B=zeros(12,12);
+ for(let i=0;i<6;i++)for(let j=0;j<6;j++){B[i][j]=Bi[i][j];B[i+6][j+6]=Bj[i][j];}
+ return {B,offsetI:oi.slice(),offsetJ:oj.slice()};
+}
 function equivalentUniformLoad(q,L){
  const [qx,qy,qz]=q, f=Array(12).fill(0);
  f[0]=qx*L/2;f[6]=qx*L/2;
@@ -164,12 +177,15 @@ function analyze(model,options){
   const ia=nodeMap.get(m.start),ib=nodeMap.get(m.end);if(ia===undefined||ib===undefined)throw Error("گره ابتدا یا انتهای عضو "+m.id+" یافت نشد.");
   const p=props(m);if(!p)throw Error("مقطع عضو "+m.id+" ("+m.type+") تخصیص نیافته است.");
   for(const key of ["E","G","A","Iy","Iz","J"])if(!(Number.isFinite(Number(p[key]))&&Number(p[key])>0))throw Error("خاصیت "+key+" برای عضو "+m.id+" ناقص یا نامعتبر است.");
-  const a=[nodes[ia].x,nodes[ia].y,nodes[ia].z],b=[nodes[ib].x,nodes[ib].y,nodes[ib].z];
+  const jointA=[nodes[ia].x,nodes[ia].y,nodes[ia].z],jointB=[nodes[ib].x,nodes[ib].y,nodes[ib].z];
+  const arm=memberArmTransform(m);
+  const a=sub(jointA,scale(arm.offsetI,-1)),b=sub(jointB,scale(arm.offsetJ,-1));
   const tr=makeTransform(a,b,options.referenceAxis),kl=frameLocalStiffness(p,tr.L);
   const ids=Array.from({length:6},(_,i)=>ia*6+i).concat(Array.from({length:6},(_,i)=>ib*6+i));
   const endReleases=normalizeEndReleases(m,options);
   const releaseData=condenseMemberEndReleases(kl,Array(12).fill(0),endReleases);
-  const kg=mul(transpose(tr.T),mul(releaseData.K,tr.T));
+  const Tjoint=mul(tr.T,arm.B);
+  const kg=mul(transpose(Tjoint),mul(releaseData.K,Tjoint));
   if(options.releasePurlinRafterRotation===true&&(m.sectionKey||"")==="roofPurlin"){
    const ri=purlinEndRotationDof.get(String(m.id)+":i"),rj=purlinEndRotationDof.get(String(m.id)+":j");
    if(ri){ids[3]=ri[0];ids[4]=ri[1];}
@@ -181,9 +197,9 @@ function analyze(model,options){
   const fl=equivalentUniformLoad(q,tr.L);
   const releasedLoad=condenseMemberEndReleases(kl,fl,endReleases);
   if(releaseData.released.length)releaseData.Fs=releasedLoad.Fs;
-  const fg=mul(transpose(tr.T),releasedLoad.F.map(v=>[v])).map(r=>r[0]);
+  const fg=mul(transpose(Tjoint),releasedLoad.F.map(v=>[v])).map(r=>r[0]);
   ids.forEach((id,i)=>F[id]+=fg[i]);
-  elements.push({member:m,ids,kl,T:tr.T,L:tr.L,axes:tr.axes,fl,props:p,releaseData,endReleases});
+  elements.push({member:m,ids,kl,T:Tjoint,L:tr.L,axes:tr.axes,fl,props:p,releaseData,endReleases,offsetI:arm.offsetI,offsetJ:arm.offsetJ});
  }
  (options.nodalLoads||[]).forEach(load=>{
   const ni=nodeMap.get(load.nodeId);if(ni===undefined)throw Error("گره بارگذاری‌شده یافت نشد: "+load.nodeId);
@@ -322,7 +338,15 @@ function selfTest(){
   analyze(model,{...base});
   tests.push({name:"reject-double-torsion-release",ok:false});
  }catch(e){tests.push({name:"reject-double-torsion-release",ok:String(e.message||e).includes("پیچش")});}
+
+ try{
+  const B=rigidArmTransform([0,-0.25,0]);
+  const d=[0,0,0,1,0,0],u=mul(B,d.map(v=>[v])).map(r=>r[0]);
+  const F=[0,0,1000,0,0,0],jointF=mul(transpose(B),F.map(v=>[v])).map(r=>r[0]);
+  const ok=close(u[2],0.25,1e-12)&&close(jointF[3],-250,1e-12);
+  tests.push({name:"rigid-arm-rotation-translation-and-force-moment-transfer",ok,physicalEndDisplacementZ:u[2],jointMomentXNm:jointF[3],expectedDisplacementZM:0.25,expectedMomentXNm:-250});
+ }catch(e){tests.push({name:"rigid-arm-rotation-translation-and-force-moment-transfer",ok:false,error:String(e.message||e)});}
  return{schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"آزمون‌های تحلیلی عضو منفرد برای کنترل واحدها و قرارداد علامت؛ جایگزین اعتبارسنجی مستقل، آزمون همگرایی یا کنترل آیین‌نامه‌ای نیست."};
 }
-root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
+root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,rigidArmTransform,memberArmTransform,equivalentUniformLoad,solve};
 })(typeof window!=="undefined"?window:globalThis);
