@@ -392,9 +392,9 @@ function calculateFootingRebar(baseCount,B,L){
  function drawingTieSpecs(mode,routes){
   const report=window.SteelTieBeamReinforcement?.getLast?.(),rows=new Map((report?.rows||[]).map(r=>[String(r.id),r]));
   return routes.map(route=>{
-   if(mode==="default")return{route,count:3,dia:16,width:Number(route.widthM)||Number(state.tieWidthM)||0.60,height:Number(route.heightM)||Number(state.tieHeightM)||0.50,source:"پیش‌فرض نمایشی"};
+   if(mode==="default")return{route,count:3,dia:16,width:Number(route.widthM)||Number(state.tieWidthM)||0.60,height:Number(route.heightM)||Number(state.tieHeightM)||0.50,stirrupDia:Number(route.reinforcement?.stirrupDiaMm)||10,source:"پیش‌فرض نمایشی"};
    const row=rows.get(String(route.id)),count=Number(row?.barCountEachFace),dia=Number(row?.barDiaMm),width=Number(route.widthM),height=Number(route.heightM);
-   if(row?.ok&&Number.isInteger(count)&&count>0&&dia>0)return{route,count,dia,width,height,source:"گزارش آخرین محاسبه آرماتور شناژ"};
+   if(row?.ok&&Number.isInteger(count)&&count>0&&dia>0)return{route,count,dia,width,height,stirrupDia:Number(report?.settings?.stirrupDiaMm)||Number(route.reinforcement?.stirrupDiaMm)||10,source:"گزارش آخرین محاسبه آرماتور شناژ"};
    return{route,count:null,dia:null,width,height,source:"خروجی طراحی موجود نیست"};
   });
  }
@@ -447,7 +447,7 @@ function calculateFootingRebar(baseCount,B,L){
     svg.push('<rect x="'+x+'" y="'+y+'" width="'+ww+'" height="'+hh+'" fill="#e2e8f0" stroke="#94a3b8"/>');
     svg.push('<rect x="'+(x+pad)+'" y="'+(y+pad)+'" width="'+(ww-2*pad)+'" height="'+(hh-2*pad)+'" rx="8" fill="none" stroke="#0f766e" stroke-width="3"/>');
     for(let i=0;i<chosen.count;i++){const cx=x+pad+10+(chosen.count===1?0:i*(ww-2*pad-20)/(chosen.count-1));svg.push('<circle cx="'+cx+'" cy="'+(y+pad+7)+'" r="6" fill="#dc2626"/><circle cx="'+cx+'" cy="'+(y+hh-pad-7)+'" r="6" fill="#dc2626"/>');}
-    svg.push('<text x="480" y="595" text-anchor="middle" font-size="13" fill="#334155">'+esc(chosen.route.id)+' | '+chosen.count+' بالا + '+chosen.count+' پایین، Ø'+chosen.dia+' | مقطع '+fmtSvg(w)+' × '+fmtSvg(h)+' m</text>');
+    svg.push('<text x="480" y="595" text-anchor="middle" font-size="13" fill="#334155">'+esc(chosen.route.id)+' | '+chosen.count+' بالا + '+chosen.count+' پایین، Ø'+chosen.dia+' | خاموت بسته Ø'+(chosen.stirrupDia||10)+' | مقطع '+fmtSvg(w)+' × '+fmtSvg(h)+' m</text>');
    }else svg.push('<text x="490" y="510" text-anchor="middle" font-size="14" fill="#64748b">مقادیر طراحی شناژ موجود نیست؛ گزارش طراحی را اجرا کنید.</text>');
   }else svg.push('<text x="490" y="510" text-anchor="middle" font-size="14" fill="#64748b">مسیر شناژی ثبت نشده است؛ فقط جزئیات فونداسیون قابل نمایش است.</text>');
   svg.push('<text x="490" y="615" text-anchor="middle" font-size="10" fill="#64748b">شماتیک برای نمایش آرایش میلگرد؛ فاقد مقیاس اجرایی، خم، قلاب، وصله و جزئیات مهاری</text>');
