@@ -140,7 +140,7 @@ function renderDetail(){
  const missing=props.filter(x=>!(Number.isFinite(x[1])&&x[1]>0)).map(x=>x[0]);
  const design=window.SteelMemberDesignInputs?.getForGroup?.(member.sectionKey)||{};
  const designFields=[["ضخامت مبنای مصالح (mm)",design.t_mm],["Fy (MPa)",design.Fy],["Fu (MPa)",design.Fu],["منبع خواص مصالح",design.materialSource],["Kx",design.Kx],["Ky",design.Ky],["Lcx (m)",design.Lcx],["Lcy (m)",design.Lcy],["Lb (m)",design.Lb],["Cb",design.Cb]];
- host.innerHTML='<div class="notice">عضو <b>'+esc(member.id)+'</b> — '+esc(member.profile||"مقطع ثبت‌نشده")+' — گره ابتدا: '+esc(member.start||"—")+' — گره انتها: '+esc(member.end||"—")+' — طول: '+fmt(member.length||0)+' m — حالت بار <b>'+esc(end.label)+'</b>. تمام ۱۲ مؤلفه زیر متعلق به همین یک تحلیل و هم‌زمان هستند.</div>'+
+ host.innerHTML='<div class="notice">عضو <b>'+esc(member.id)+'</b> — '+esc(member.profile||"مقطع ثبت‌نشده")+' — گره ابتدا: '+esc(member.start||"—")+' — گره انتها: '+esc(member.end||"—")+' — طول: '+fmt(member.length||0)+' m — حالت بار <b>'+esc(end.label)+'</b>. تمام ۱۲ مؤلفه زیر متعلق به همین یک تحلیل و هم‌زمان هستند.<br>نسخه قرارداد نیرو: '+(member.localEndForceConventionVersion||"نامشخص")+'؛ محورهای محلی: '+esc(axisSummary)+'</div>'+
  '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>مؤلفه</th><th>مقدار</th></tr></thead><tbody>'+
  labels.map((label,i)=>'<tr><td>'+label+'</td><td>'+fmt(i%6<3?end.values[i]/1000:end.values[i]/1e6)+'</td></tr>').join("")+
  '</tbody></table></div>'+
