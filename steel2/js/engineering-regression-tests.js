@@ -17,6 +17,8 @@ function run(){
  test("tapered-section interpolation",()=>{const r=root.SteelTaperedSections.selfTest();return r.passed===3&&r.failed===0?"Geometry, midpoint interpolation and disabled-default tests pass":false;});
  test("tapered sections disabled by default",()=>root.SteelTaperedSections.getData().groups.column.enabled===false&&root.SteelTaperedSections.getData().groups.rafter.enabled===false?"Existing project sections remain unchanged unless explicitly enabled":false);
  test("tapered analysis segmentation",()=>{const r=root.SteelTaperedSections.selfTest();return r.passed===4&&r.failed===0?"Eight-segment member subdivision, intermediate nodes and end-release preservation pass":false;});
+ test("tension audit rejects net area above gross area",()=>{const r=root.SteelTensionDesignReadiness.audit({groups:{roofBrace:{Ag_cm2:10,An_cm2:11,Ae_cm2:9,U:0.9,connectionType:"welded",connectionDetailsReviewed:true,blockShearReviewed:true}}});return r.issues.some(x=>x.includes("An نمی‌تواند"))?"Invalid net area rejected":false;});
+ test("tension audit does not claim resistance",()=>{const r=root.SteelTensionDesignReadiness.audit({groups:{}});return !("Pn" in r)&&!r.capacity?"No tensile capacity is produced by readiness audit":false;});
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
  const host=document.getElementById("engineeringRegressionResults");if(host)host.innerHTML="<p>موفق: "+result.passed+" | ناموفق: "+result.failed+"</p><ul>"+checks.map(x=>"<li>"+(x.pass?"✓ ":"✗ ")+x.name+" — "+x.detail+"</li>").join("")+"</ul><div class='notice'>"+result.scope+"</div>";
  return result;
