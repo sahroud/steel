@@ -17,8 +17,12 @@ function calculateISection(v){
  const Ix=(bf*Math.pow(d,3)-(bf-tw)*Math.pow(hw,3))/12;
  const Iy=(2*tf*Math.pow(bf,3)+hw*Math.pow(tw,3))/12;
  const Sx=Ix/(d/2),Sy=Iy/(bf/2);
+ const Zx=bf*tf*(d-tf)+tw*Math.pow(hw,2)/4;
+ const Zy=bf*bf*tf/2+tw*tw*hw/4;
+ const Aw=tw*hw;
+ const flangeOutstandRatio=(bf-tw)/(2*tf),webDepthThicknessRatio=hw/tw;
  const J=(2*bf*Math.pow(tf,3)+hw*Math.pow(tw,3))/3;
- return {A_cm2:A/100,Ix_cm4:Ix/1e4,Iy_cm4:Iy/1e4,SxTop_cm3:Sx/1e3,SxBottom_cm3:Sx/1e3,Sy_cm3:Sy/1e3,J_cm4:J/1e4,webHeight_mm:hw,assumptions:["مقطع I متقارن و منشوری","گوشه‌های تیز؛ بدون لحاظ شعاع نورد، پخ یا جوش","J برآورد نوارهای نازک باز؛ بدون ثابت تابیدگی Cw","برای رفتر متغیرالعمق/تیرورق شیبدار، این مدل به‌تنهایی کافی نیست"]};
+ return {A_cm2:A/100,Ix_cm4:Ix/1e4,Iy_cm4:Iy/1e4,SxTop_cm3:Sx/1e3,SxBottom_cm3:Sx/1e3,Sy_cm3:Sy/1e3,Zx_cm3:Zx/1e3,Zy_cm3:Zy/1e3,Aw_cm2:Aw/100,flangeOutstandRatio,webDepthThicknessRatio,J_cm4:J/1e4,webHeight_mm:hw,assumptions:["مقطع I متقارن و منشوری","گوشه‌های تیز؛ بدون لحاظ شعاع نورد، پخ یا جوش","J برآورد نوارهای نازک باز؛ بدون ثابت تابیدگی Cw","برای رفتر متغیرالعمق/تیرورق شیبدار، این مدل به‌تنهایی کافی نیست"]};
 }
 function read(){
  keys.forEach(([k])=>{const row={};fields.forEach(([f])=>row[f]=$( "sga_"+k+"_"+f)?.value===""?null:Number($("sga_"+k+"_"+f)?.value));data.groups[k]=row;});
@@ -34,8 +38,8 @@ function compare(group,calc){
 }
 function run(){
  read();const out=[];
- keys.forEach(([k,label])=>{try{const c=calculateISection(data.groups[k]);last[k]=c;const cmp=compare(k,c);out.push("<h4>"+label+"</h4><p>A="+fmt(c.A_cm2)+" cm² | Ix="+fmt(c.Ix_cm4)+" cm⁴ | Iy="+fmt(c.Iy_cm4)+" cm⁴</p><p>Sx="+fmt(c.SxTop_cm3)+" cm³ | Sy="+fmt(c.Sy_cm3)+" cm³ | J≈"+fmt(c.J_cm4)+" cm⁴</p>");if(cmp.length)out.push("<table class='data-table'><thead><tr><th>خاصیت</th><th>ثبت‌شده</th><th>محاسبه هندسی</th><th>اختلاف %</th></tr></thead><tbody>"+cmp.map(x=>"<tr><td>"+x.name+"</td><td>"+fmt(x.entered,3)+"</td><td>"+fmt(x.calculated,3)+"</td><td>"+fmt(x.deltaPct,2)+"</td></tr>").join("")+"</tbody></table>");else out.push("<p>خواص ثبت‌شده برای مقایسه موجود نیست.</p>");}catch(e){out.push("<h4>"+label+"</h4><p style='color:#b45309'>"+e.message+"</p>");}});
- const host=$("sectionGeometryAuditResults");if(host)host.innerHTML=out.join("")+"<div class='notice'>این محاسبه فقط کنترل هندسی مقطع I متقارن منشوری است. اختلاف خواص باید بررسی شود؛ هیچ مقداری خودکار جایگزین داده اصلی نمی‌شود. برای رفترهای متغیرعمق، مقاطع نامتقارن، ورق تقویتی و مقاطع سردنورد از این مدل استفاده نکنید.</div>";
+ keys.forEach(([k,label])=>{try{const c=calculateISection(data.groups[k]);last[k]=c;const cmp=compare(k,c);out.push("<h4>"+label+"</h4><p>A="+fmt(c.A_cm2)+" cm² | Ix="+fmt(c.Ix_cm4)+" cm⁴ | Iy="+fmt(c.Iy_cm4)+" cm⁴</p><p>Sx="+fmt(c.SxTop_cm3)+" cm³ | Sy="+fmt(c.Sy_cm3)+" cm³ | Zx="+fmt(c.Zx_cm3)+" cm³ | Zy="+fmt(c.Zy_cm3)+" cm³</p><p>مساحت جان Aw="+fmt(c.Aw_cm2)+" cm² | نسبت پیشانی بال="+fmt(c.flangeOutstandRatio)+" | نسبت لاغری هندسی جان="+fmt(c.webDepthThicknessRatio)+" | J≈"+fmt(c.J_cm4)+" cm⁴</p>");if(cmp.length)out.push("<table class='data-table'><thead><tr><th>خاصیت</th><th>ثبت‌شده</th><th>محاسبه هندسی</th><th>اختلاف %</th></tr></thead><tbody>"+cmp.map(x=>"<tr><td>"+x.name+"</td><td>"+fmt(x.entered,3)+"</td><td>"+fmt(x.calculated,3)+"</td><td>"+fmt(x.deltaPct,2)+"</td></tr>").join("")+"</tbody></table>");else out.push("<p>خواص ثبت‌شده برای مقایسه موجود نیست.</p>");}catch(e){out.push("<h4>"+label+"</h4><p style='color:#b45309'>"+e.message+"</p>");}});
+ const host=$("sectionGeometryAuditResults");if(host)host.innerHTML=out.join("")+"<div class='notice'>این محاسبه فقط خواص هندسی مقطع I متقارن منشوری شامل مدول پلاستیک هندسی، مساحت جان و نسبت‌های ابعادی را گزارش می‌کند. اختلاف خواص باید بررسی شود؛ هیچ مقداری خودکار جایگزین داده اصلی نمی‌شود. Zx و Zy به‌تنهایی ظرفیت خمشی نیستند و نسبت‌های هندسی نیز بدون ضوابط لاغری موضعی مبحث دهم، طبقه‌بندی مقطع محسوب نمی‌شوند. برای رفترهای متغیرعمق، مقاطع نامتقارن، ورق تقویتی و مقاطع سردنورد از این مدل استفاده نکنید.</div>";
  return {results:last};
 }
 function render(){
