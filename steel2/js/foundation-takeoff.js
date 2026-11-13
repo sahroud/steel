@@ -585,6 +585,12 @@ function calculateFootingRebar(baseCount,B,L){
     const q=[{x:cx+vx*(beamW/2-cov),y:yy,z:cz+vz*(beamW/2-cov)},{x:cx+vx*(beamW/2-cov),y:yy-beamH+2*cov,z:cz+vz*(beamW/2-cov)},{x:cx-vx*(beamW/2-cov),y:yy-beamH+2*cov,z:cz-vz*(beamW/2-cov)},{x:cx-vx*(beamW/2-cov),y:yy,z:cz-vz*(beamW/2-cov)}];
     for(let j=0;j<4;j++)isoLine(q[j],q[(j+1)%4],"#0f766e",2);
    }
+   if(clash?.criticalPair?.tiePoint&&clash?.criticalPair?.footingPoint){
+    const cp=clash.criticalPair,ta=projectIso(cp.tiePoint.x,cp.tiePoint.y,cp.tiePoint.z),fb=projectIso(cp.footingPoint.x,cp.footingPoint.y,cp.footingPoint.z),mc=cp.clearDistanceMm<0?"#dc2626":"#d97706";
+    svg.push('<line x1="'+ta.x+'" y1="'+ta.y+'" x2="'+fb.x+'" y2="'+fb.y+'" stroke="'+mc+'" stroke-width="4" stroke-dasharray="5 3"/>');
+    [ta,fb].forEach(q=>svg.push('<circle cx="'+q.x+'" cy="'+q.y+'" r="9" fill="#fff" stroke="'+mc+'" stroke-width="3"/>'));
+    svg.push('<text x="'+Math.min(900,Math.max(100,(ta.x+fb.x)/2+18))+'" y="'+Math.max(875,(ta.y+fb.y)/2-14)+'" font-size="12" font-weight="bold" fill="'+mc+'">نزدیک‌ترین فاصله: '+fmtSvg(cp.clearDistanceMm)+' mm</text>');
+   }
    svg.push('<text x="500" y="1060" text-anchor="middle" font-size="12" fill="#334155">پی‌ها و مسیر از مدل انتخابی | شبکه پی: '+(mode==="default"?"پیش‌فرض":"داده طراحی")+' | قفس شناژ: '+tie.count+' میلگرد بالا و '+tie.count+' پایین</text>');
   }else{
    svg.push('<text x="500" y="940" text-anchor="middle" font-size="16" fill="#64748b">برای نمای سه‌بعدی، دو گره مسیر، ابعاد پی و داده آرماتور معتبر لازم است.</text>');
