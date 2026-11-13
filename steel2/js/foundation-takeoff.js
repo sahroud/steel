@@ -186,124 +186,109 @@ function modelFingerprint(model){
  function screenBearing(q){
   const box=$("foundationBearingSummary"),body=$("foundationBearingRows");
   if(body)body.replaceChildren();
-  if(!lastReport||!Array.isArray(lastReport.rows)||!lastReport.rows.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
-  if(!footingScheduleIsUniform()){const box=$("foundationBearingSummary");if(box)box.textContent="غربال باربری تا زمان تکمیل کنترل مستقل هر پایه غیرفعال است؛ ابعاد جدول مستقل با ابعاد عمومی متفاوت است.";return null;}
-  const B=num(state.footingWidthM),L=num(state.footingLengthM),t=num(state.footingThicknessM);
+  if(!lastReport?.rows?.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
+  if(!scheduleDimensionsValid(lastReport.rows)){if(box)box.textContent="ابعاد یک یا چند پی نامعتبر است؛ همه ابعاد را اصلاح کنید.";return null;}
   const allow=num(state.soilAllowableKPa),gammaC=num(state.concreteUnitWeightKNm3);
   const offsetX=signedNum(state.columnOffsetXM),offsetZ=signedNum(state.columnOffsetZM);
-  const cover=state.soilCoverDepthM===""?0:Number(state.soilCoverDepthM);
-  const gammaS=cover>0?num(state.soilUnitWeightKNm3):0;
-  if(!B||!L||!t||!allow||!gammaC||offsetX===null||offsetZ===null||cover<0||!Number.isFinite(cover)||(cover>0&&!gammaS)){
-   if(box)box.textContent="برای غربال فشار زیر پی، ابعاد پی، فشار مجاز ناخالص، وزن مخصوص بتن و مختصات محور ستون نسبت به مرکز پی در هر دو راستای X و Z را وارد کنید؛ اگر ستون دقیقاً وسط است، صفر وارد کنید. در صورت وجود خاک پوششی، وزن مخصوص آن نیز لازم است.";
+  const cover=state.soilCoverDepthM===""?0:Number(state.soilCoverDepthM),gammaS=cover>0?num(state.soilUnitWeightKNm3):0;
+  if(!allow||!gammaC||offsetX===null||offsetZ===null||cover<0||!Number.isFinite(cover)||(cover>0&&!gammaS)){
+   if(box)box.textContent="برای غربال فشار زیر پی، فشار مجاز ناخالص، وزن مخصوص بتن و مختصات محور ستون نسبت به مرکز هر پی در دو راستا را وارد کنید؛ اگر ستون وسط است صفر وارد کنید. خاک پوششی اختیاری است.";
    return null;
   }
-  const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM);
-  const pedComplete=!!(pw&&pl&&ph);
+  const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM),pedComplete=!!(pw&&pl&&ph);
   if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
-  if(pw>B||pl>L){if(box)box.textContent="ابعاد پدستال از ابعاد پی بزرگ‌تر است؛ ورودی‌ها را اصلاح کنید.";return null;}
-  if(Math.abs(offsetX)+(pedComplete?pw:0)/2>B/2+1e-9||Math.abs(offsetZ)+(pedComplete?pl:0)/2>L/2+1e-9){if(box)box.textContent="محور ستون/ابعاد پدستال از محدوده پی خارج می‌شود؛ ابعاد و جابه‌جایی‌ها را بررسی کنید.";return null;}
-  const pedestalWeight=pedComplete?gammaC*pw*pl*ph:0,concreteWeight=gammaC*B*L*t+pedestalWeight;
-  const soilWeight=cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
-  const permanentWeight=concreteWeight+soilWeight,area=B*L;
   const cases=[];
   lastReport.rows.forEach(row=>{
+   const d=footingSpecFor(row),B=d.width,L=d.length,t=d.thickness;
+   const valid= B>0&&L>0&&t>0&&(!pedComplete||(pw<=B&&pl<=L&&Math.abs(offsetX)+pw/2<=B/2+1e-9&&Math.abs(offsetZ)+pl/2<=L/2+1e-9));
+   const pedestalWeight=pedComplete&&valid?gammaC*pw*pl*ph:0;
+   const concreteWeight=valid?gammaC*B*L*t+pedestalWeight:0;
+   const soilWeight=valid&&cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
    const source=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
    source.forEach(item=>{
-    const v=item.values||[],N=Number(v[1])/1000,MxBase=Number(v[3])/1e6,MzBase=Number(v[5])/1e6,Mx=MxBase-offsetZ*(N+pedestalWeight),Mz=MzBase+offsetX*(N+pedestalWeight);
-    if(![N,Mx,Mz].every(Number.isFinite))return;
-    const totalN=N+permanentWeight;
+    const v=item.values||[],N=Number(v[1])/1000,MxBase=Number(v[3])/1e6,MzBase=Number(v[5])/1e6;
+    if(![N,MxBase,MzBase].every(Number.isFinite))return;
     let status="",qmin=null,qmax=null,eX=null,eZ=null;
-    if(totalN<=0){status="کشش/بالاکشیدگی؛ فشار فشاری قابل محاسبه نیست";}
+    if(!valid)status="ابعاد پی/پدستال یا خروج از مرکز ستون نامعتبر است";
     else{
-     eX=Math.abs(Mz)/totalN;eZ=Math.abs(Mx)/totalN;
-     const bending=6*Math.abs(Mx)/(B*L*L)+6*Math.abs(Mz)/(L*B*B);
-     qmin=totalN/area-bending;qmax=totalN/area+bending;
-     const kern=eX<=B/6+1e-9&&eZ<=L/6+1e-9;
-     if(qmin<0||!kern)status="تماس کامل برقرار نیست؛ تحلیل تماس جزئی/غیرخطی لازم است";
-     else if(qmax>allow)status="فشار بیشینه از ظرفیت مجاز واردشده بیشتر است";
-     else status="غربال اولیه: فشار در محدوده مجاز واردشده";
+     const Mx=MxBase-offsetZ*(N+pedestalWeight),Mz=MzBase+offsetX*(N+pedestalWeight),totalN=N+concreteWeight+soilWeight;
+     if(totalN<=0)status="کشش/بالاکشیدگی؛ فشار فشاری قابل محاسبه نیست";
+     else{
+      eX=Math.abs(Mz)/totalN;eZ=Math.abs(Mx)/totalN;
+      const bending=6*Math.abs(Mx)/(B*L*L)+6*Math.abs(Mz)/(L*B*B);
+      qmin=totalN/(B*L)-bending;qmax=totalN/(B*L)+bending;
+      if(qmin<0||eX>B/6+1e-9||eZ>L/6+1e-9)status="تماس کامل برقرار نیست؛ تحلیل تماس جزئی لازم است";
+      else if(qmax>allow)status="فشار بیشینه از ظرفیت مجاز واردشده بیشتر است";
+      else status="غربال اولیه: فشار در محدوده مجاز واردشده";
+     }
     }
-    const record={nodeId:row.nodeId,label:item.label,NkN:N,totalNkN:totalN,baseMxKNm:MxBase,baseMzKNm:MzBase,offsetXFromFootingCenterM:offsetX,offsetZFromFootingCenterM:offsetZ,effectiveMxKNm:Mx,effectiveMzKNm:Mz,eXM:eX,eZM:eZ,qminKPa:qmin,qmaxKPa:qmax,allowableKPa:allow,status,concreteWeightKN:concreteWeight,soilCoverWeightKN:soilWeight};
-    cases.push(record);
-    if(body){const tr=document.createElement("tr");[record.nodeId,record.label,fmt(N),eX===null?"—":fmt(eX)+" / "+fmt(eZ),qmin===null?"—":fmt(qmin),qmax===null?"—":fmt(qmax),status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);}
+    const rec={nodeId:row.nodeId,label:item.label,footing:{B,L,t},NkN:N,eXM:eX,eZM:eZ,qminKPa:qmin,qmaxKPa:qmax,allowableKPa:allow,concreteWeightKN:concreteWeight,soilCoverWeightKN:soilWeight,status};
+    cases.push(rec);
+    if(body){const tr=document.createElement("tr");[rec.nodeId,rec.label,fmt(B)+"×"+fmt(L),fmt(N),eX===null?"—":fmt(eX)+" / "+fmt(eZ),qmin===null?"—":fmt(qmin),qmax===null?"—":fmt(qmax),status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);}
    });
   });
   const failed=cases.filter(x=>x.status!=="غربال اولیه: فشار در محدوده مجاز واردشده").length;
-  if(box)box.textContent="غربال فشار برای "+cases.length+" حالت-پایه انجام شد. وزن بتن پی/پدستال افزوده‌شده: "+fmt(concreteWeight)+" kN برای هر پی؛ خاک پوششی: "+fmt(soilWeight)+" kN برای هر پی. موارد نیازمند بررسی بیشتر: "+failed+". این نتیجه فقط کنترل فشار خطی با فرض پی مستطیلی صلب، تماس کامل و بار متمرکز در مرکز پدستال است؛ در صورت خروج از هسته، کشش خاک مجاز فرض نشده و نتیجه قبولی صادر نمی‌شود.";
-  return {basis:"preliminary_gross_bearing_full_contact_with_column_offset",allowableKPa:allow,footing:{B,L,t},columnOffsetXM:offsetX,columnOffsetZM:offsetZ,concreteUnitWeightKNm3:gammaC,soilUnitWeightKNm3:gammaS||null,soilCoverDepthM:cover,concreteWeightPerFootingKN:concreteWeight,soilCoverWeightPerFootingKN:soilWeight,cases,limitations:["فقط واکنش‌های خطی موجود در پوش مقدماتی؛ ضرایب ترکیبات هنوز با آیین‌نامه رسمی تطبیق نهایی نشده‌اند.","اثر خروج از مرکز محور ستون در صفحه پی با مختصات واردشده و رابطه r×F فقط برای مؤلفه قائم Fy به لنگرهای Mx و Mz افزوده شده است؛ اثر ارتفاع انتقال نیرو، خروج از مرکز افقی نیروها و جزئیات واقعی صفحه‌ستون/پدستال کامل مدل نشده است.","پی به‌صورت مستطیلی صلب و فشار خاک خطی با تماس کامل فرض شده است.","در صورت qmin منفی یا خروج از هسته، تماس جزئی خاک، uplift و اندرکنش خاک-سازه تحلیل نشده و نتیجه قبولی صادر نمی‌شود.","وزن خاک پوششی فقط روی سطح خالص پی خارج از پدستال برآورد شده؛ سربار سطحی، آب زیرزمینی، شناژ، خاکبرداری، اثر زلزله و کنترل لغزش/واژگونی لحاظ نشده‌اند.","این غربال جایگزین طراحی ژئوتکنیکی و سازه‌ای فونداسیون نیست."]};
+  if(box)box.textContent="غربال فشار مستقل برای "+cases.length+" حالت-پایه انجام شد؛ ابعاد هر پی از جدول همان گره خوانده شد. موارد نیازمند بررسی بیشتر: "+failed+". این فقط کنترل خطی با فرض پی صلب و تماس کامل است، نه تأیید طراحی.";
+  return{basis:"preliminary_per_base_gross_bearing_full_contact",allowableKPa:allow,cases,limitations:["ابعاد هر پی مستقل از جدول پایه‌ها خوانده شده است.","فشار خطی با فرض پی صلب و تماس کامل؛ در خروج از هسته تحلیل تماس جزئی لازم است.","ترکیبات بار و ضرایب آیین‌نامه‌ای نهایی نشده‌اند؛ وزن خاک و پدستال ساده‌سازی شده‌اند.","این غربال جایگزین طراحی ژئوتکنیکی و سازه‌ای پی نیست."]};
  }
  function screenSliding(){
   const box=$("foundationSlidingSummary"),body=$("foundationSlidingRows");
   if(body)body.replaceChildren();
-  if(!lastReport||!Array.isArray(lastReport.rows)||!lastReport.rows.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
-  if(!footingScheduleIsUniform()){const box=$("foundationSlidingSummary");if(box)box.textContent="غربال لغزش تا زمان تکمیل کنترل مستقل هر پایه غیرفعال است؛ ابعاد جدول مستقل با ابعاد عمومی متفاوت است.";return null;}
-  const B=num(state.footingWidthM),L=num(state.footingLengthM),t=num(state.footingThicknessM),gammaC=num(state.concreteUnitWeightKNm3),mu=num(state.slidingFrictionMu);
+  if(!lastReport?.rows?.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
+  if(!scheduleDimensionsValid(lastReport.rows)){if(box)box.textContent="ابعاد یک یا چند پی نامعتبر است.";return null;}
+  const gammaC=num(state.concreteUnitWeightKNm3),mu=num(state.slidingFrictionMu);
   const cover=state.soilCoverDepthM===""?0:Number(state.soilCoverDepthM),gammaS=cover>0?num(state.soilUnitWeightKNm3):0;
-  if(!B||!L||!t||!gammaC||!mu||!Number.isFinite(cover)||cover<0||(cover>0&&!gammaS)){
-   if(box)box.textContent="برای غربال لغزش، ابعاد پی، وزن مخصوص بتن، ضریب اصطکاک معتبر و در صورت وجود خاک پوششی، وزن مخصوص آن لازم است.";
+  if(!gammaC||!mu||!Number.isFinite(cover)||cover<0||(cover>0&&!gammaS)){
+   if(box)box.textContent="برای غربال لغزش، وزن مخصوص بتن، ضریب اصطکاک مستند و در صورت وجود خاک پوششی وزن مخصوص آن لازم است.";
    return null;
   }
   const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM),pedComplete=!!(pw&&pl&&ph);
   if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
-  if(pw>B||pl>L){if(box)box.textContent="ابعاد پدستال از ابعاد پی بزرگ‌تر است.";return null;}
-  const concrete=gammaC*(B*L*t+(pedComplete?pw*pl*ph:0));
-  const soil=cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
-  const added=concrete+soil,records=[];
+  const records=[];
   lastReport.rows.forEach(row=>{
-   const cases=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
-   cases.forEach(item=>{
+   const d=footingSpecFor(row),B=d.width,L=d.length,t=d.thickness,valid=B>0&&L>0&&t>0&&(!pedComplete||(pw<=B&&pl<=L));
+   const concrete=valid?gammaC*(B*L*t+(pedComplete?pw*pl*ph:0)):0;
+   const soil=valid&&cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
+   const source=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
+   source.forEach(item=>{
     const v=item.values||[],fx=Number(v[0])/1000,fz=Number(v[2])/1000,fy=Number(v[1])/1000;
     if(![fx,fz,fy].every(Number.isFinite))return;
-    const H=Math.hypot(fx,fz),N=fy+added,resistance=mu*Math.max(N,0),ratio=H>1e-9?resistance/H:null;
-    let status;
-    if(N<=0)status="نیروی قائم فشاری کافی وجود ندارد؛ لغزش قابل تأیید نیست";
-    else if(H<=1e-9)status="در این حالت بار، نیروی افقی پایه ناچیز است";
-    else if(resistance>=H)status="مقاومت اصطکاکی اسمی از تقاضا بیشتر است؛ کنترل آیین‌نامه‌ای باقی است";
-    else status="تقاضای افقی از مقاومت اصطکاکی اسمی بیشتر است";
-    const rec={nodeId:row.nodeId,label:item.label,HkN:H,NkN:N,mu,resistanceKN:resistance,resistanceDemandRatio:ratio,status};
-    records.push(rec);
-    if(body){const tr=document.createElement("tr");[rec.nodeId,rec.label,fmt(H),fmt(N),fmt(resistance),ratio===null?"—":fmt(ratio),status].forEach(x=>{const td=document.createElement("td");td.textContent=x;tr.appendChild(td);});body.appendChild(tr);}
+    const H=Math.hypot(fx,fz),N=fy+concrete+soil,resistance=mu*Math.max(N,0),ratio=H>1e-9?resistance/H:null;
+    let status=!valid?"ابعاد پی/پدستال نامعتبر است":N<=0?"نیروی قائم فشاری کافی وجود ندارد؛ لغزش قابل تأیید نیست":H<=1e-9?"در این حالت بار، نیروی افقی پایه ناچیز است":resistance>=H?"مقاومت اصطکاکی اسمی از تقاضا بیشتر است؛ کنترل آیین‌نامه‌ای باقی است":"تقاضای افقی از مقاومت اصطکاکی اسمی بیشتر است";
+    const rec={nodeId:row.nodeId,label:item.label,footing:{B,L,t},HkN:H,NkN:N,mu,resistanceKN:resistance,resistanceDemandRatio:ratio,status};records.push(rec);
+    if(body){const tr=document.createElement("tr");[rec.nodeId,rec.label,fmt(B)+"×"+fmt(L),fmt(H),fmt(N),fmt(resistance),ratio===null?"—":fmt(ratio),status].forEach(x=>{const td=document.createElement("td");td.textContent=x;tr.appendChild(td);});body.appendChild(tr);}
    });
   });
-  const fail=records.filter(x=>x.status.startsWith("تقاضای افقی")||x.status.startsWith("نیروی قائم")).length;
-  if(box)box.textContent="غربال لغزش برای "+records.length+" حالت-پایه با μ="+fmt(mu)+" انجام شد؛ وزن بتن و خاک پوششی هر پی به‌صورت ساده افزوده شده است. موارد دارای هشدار/عدم کفایت اصطکاک اسمی: "+fail+". نسبت μN/H فقط نسبت اسمی مقاومت به تقاضاست و معیار قبولی آیین‌نامه‌ای یا ضریب اطمینان طراحی نیست.";
-  return {basis:"preliminary_isolated_footing_base_friction_only",frictionCoefficient:mu,addedWeightPerFootingKN:added,cases:records,limitations:["کنترل فقط برای پی منفرد و اصطکاک کف پی؛ اثر شناژها و عملکرد گروهی پی‌ها منظور نشده است.","چسبندگی خاک، فشار جانبی، کلید برشی، شمع، آب زیرزمینی و اثرات هیدرواستاتیک لحاظ نشده‌اند.","ضریب اصطکاک باید مستند به گزارش ژئوتکنیک و شرایط تماس واقعی باشد.","هیچ ضریب اطمینان یا ترکیب بار نهایی آیین‌نامه‌ای اعمال نشده است؛ این نتیجه تأیید طراحی نیست."]};
+  const fail=records.filter(x=>x.status.startsWith("تقاضای افقی")||x.status.startsWith("نیروی قائم")||x.status.startsWith("ابعاد")).length;
+  if(box)box.textContent="غربال لغزش مستقل برای "+records.length+" حالت-پایه با μ="+fmt(mu)+" انجام شد؛ وزن و ابعاد هر پی جداگانه لحاظ شده است. هشدارها/عدم کفایت اسمی: "+fail+". نسبت μN/H معیار قبولی آیین‌نامه‌ای نیست.";
+  return{basis:"preliminary_per_base_isolated_footing_friction_only",frictionCoefficient:mu,cases:records,limitations:["ابعاد و وزن هر پی مستقل لحاظ شده؛ اثر شناژها و عملکرد گروهی پی‌ها منظور نشده است.","چسبندگی، فشار جانبی، کلید برشی، شمع و آب زیرزمینی لحاظ نشده‌اند.","ضریب اصطکاک باید از گزارش ژئوتکنیک گرفته شود.","ضرایب اطمینان و ترکیبات نهایی آیین‌نامه‌ای اعمال نشده‌اند."]};
  }
  function screenUplift(){
   const box=$("foundationUpliftSummary"),body=$("foundationUpliftRows");
   if(body)body.replaceChildren();
-  if(!lastReport||!Array.isArray(lastReport.rows)||!lastReport.rows.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
-  if(!footingScheduleIsUniform()){const box=$("foundationUpliftSummary");if(box)box.textContent="غربال بالاکشیدگی تا زمان تکمیل کنترل مستقل هر پایه غیرفعال است؛ ابعاد جدول مستقل با ابعاد عمومی متفاوت است.";return null;}
-  const B=num(state.footingWidthM),L=num(state.footingLengthM),t=num(state.footingThicknessM),gammaC=num(state.concreteUnitWeightKNm3);
-  const cover=state.soilCoverDepthM===""?0:Number(state.soilCoverDepthM),gammaS=cover>0?num(state.soilUnitWeightKNm3):0;
-  if(!B||!L||!t||!gammaC||!Number.isFinite(cover)||cover<0||(cover>0&&!gammaS)){
-   if(box)box.textContent="برای غربال بالاکشیدگی، ابعاد پی، وزن مخصوص بتن و در صورت وجود خاک پوششی، ضخامت و وزن مخصوص خاک لازم است.";
-   return null;
-  }
+  if(!lastReport?.rows?.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
+  if(!scheduleDimensionsValid(lastReport.rows)){if(box)box.textContent="ابعاد یک یا چند پی نامعتبر است.";return null;}
+  const gammaC=num(state.concreteUnitWeightKNm3),cover=state.soilCoverDepthM===""?0:Number(state.soilCoverDepthM),gammaS=cover>0?num(state.soilUnitWeightKNm3):0;
+  if(!gammaC||!Number.isFinite(cover)||cover<0||(cover>0&&!gammaS)){if(box)box.textContent="برای غربال بالاکشیدگی، وزن مخصوص بتن و در صورت وجود خاک پوششی ضخامت و وزن مخصوص آن لازم است.";return null;}
   const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM),pedComplete=!!(pw&&pl&&ph);
   if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
-  if(pw>B||pl>L){if(box)box.textContent="ابعاد پدستال از ابعاد پی بزرگ‌تر است.";return null;}
-  const concrete=gammaC*(B*L*t+(pedComplete?pw*pl*ph:0));
-  const soil=cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
-  const resistance=concrete+soil,records=[];
+  const records=[];
   lastReport.rows.forEach(row=>{
-   const cases=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
-   cases.forEach(item=>{
-    const fy=Number((item.values||[])[1])/1000;
-    if(!Number.isFinite(fy))return;
+   const d=footingSpecFor(row),B=d.width,L=d.length,t=d.thickness,valid=B>0&&L>0&&t>0&&(!pedComplete||(pw<=B&&pl<=L));
+   const concrete=valid?gammaC*(B*L*t+(pedComplete?pw*pl*ph:0)):0;
+   const soil=valid&&cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
+   const resistance=concrete+soil,source=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
+   source.forEach(item=>{
+    const fy=Number((item.values||[])[1])/1000;if(!Number.isFinite(fy))return;
     const demand=Math.max(0,-fy),net=demand-resistance,ratio=resistance>0?demand/resistance:null;
-    let status;
-    if(demand<=1e-9)status="در این حالت واکنش قائم، بالاکشیدگی ندارد";
-    else if(net<=0)status="وزن پی و خاک پوششی از تقاضای قائم بیشتر است؛ کنترل مهار و آیین‌نامه باقی است";
-    else status="کسری مقاومت ثقلی؛ نیروی مهار/انکر لازم بررسی شود";
-    const rec={nodeId:row.nodeId,label:item.label,structureUpliftDemandKN:demand,footingAndCoverWeightKN:resistance,residualUpliftKN:Math.max(0,net),demandToWeightRatio:ratio,status};
-    records.push(rec);
-    if(body){const tr=document.createElement("tr");[rec.nodeId,rec.label,fmt(demand),fmt(resistance),fmt(rec.residualUpliftKN),ratio===null?"—":fmt(ratio),status].forEach(x=>{const td=document.createElement("td");td.textContent=x;tr.appendChild(td);});body.appendChild(tr);}
+    const status=!valid?"ابعاد پی/پدستال نامعتبر است":demand<=1e-9?"در این حالت واکنش قائم، بالاکشیدگی ندارد":net<=0?"وزن پی و خاک پوششی از تقاضا بیشتر است؛ کنترل مهار باقی است":"کسری مقاومت ثقلی؛ نیروی مهار/انکر لازم بررسی شود";
+    const rec={nodeId:row.nodeId,label:item.label,footing:{B,L,t},structureUpliftDemandKN:demand,footingAndCoverWeightKN:resistance,residualUpliftKN:Math.max(0,net),demandToWeightRatio:ratio,status};records.push(rec);
+    if(body){const tr=document.createElement("tr");[rec.nodeId,rec.label,fmt(B)+"×"+fmt(L),fmt(demand),fmt(resistance),fmt(rec.residualUpliftKN),ratio===null?"—":fmt(ratio),status].forEach(x=>{const td=document.createElement("td");td.textContent=x;tr.appendChild(td);});body.appendChild(tr);}
    });
   });
   const residual=records.filter(x=>x.residualUpliftKN>1e-9).length;
-  if(box)box.textContent="غربال بالاکشیدگی برای "+records.length+" حالت-پایه انجام شد. وزن ثقلی محاسبه‌شده هر پی (بتن + خاک پوششی واردشده): "+fmt(resistance)+" kN؛ موارد دارای کسری مقاومت ثقلی: "+residual+". این محاسبه ظرفیت بولت، صفحه‌ستون، مهار بتن، مخروط شکست، وزن خاک اطراف، آب زیرزمینی یا ضرایب آیین‌نامه‌ای را بررسی نمی‌کند و حتی در صورت صفر بودن کسری، به‌معنای تأیید مهار نیست.";
-  return {basis:"preliminary_gravity_uplift_screen_only",concreteWeightPerFootingKN:concrete,soilCoverWeightPerFootingKN:soil,gravityResistancePerFootingKN:resistance,cases:records,limitations:["علامت Fy بر اساس قرارداد واکنش حل‌گر تفسیر شده و باید با یک حالت بارگذاری معلوم تطبیق شود.","فقط وزن بتن پی/پدستال و خاک پوششی واردشده لحاظ شده؛ خاک اطراف، شناژها، آب زیرزمینی و سایر بارهای دائمی لحاظ نشده‌اند.","ظرفیت کششی بولت، صفحه‌ستون، مهار بتن، شکست مخروطی/لبه‌ای و اندرکنش گروهی پی‌ها بررسی نشده است.","ترکیبات بار و ضرایب آیین‌نامه‌ای هنوز تأیید نهایی نشده‌اند؛ این غربال طراحی یا تأیید نهایی نیست."]};
+  if(box)box.textContent="غربال بالاکشیدگی مستقل برای "+records.length+" حالت-پایه انجام شد؛ وزن هر پی جداگانه محاسبه شد. موارد دارای کسری مقاومت ثقلی: "+residual+". ظرفیت انکر و شکست بتن کنترل نشده است.";
+  return{basis:"preliminary_per_base_gravity_uplift_screen_only",cases:records,limitations:["ابعاد هر پی جداگانه لحاظ شده؛ فقط وزن بتن پی/پدستال و خاک پوششی واردشده محاسبه شده است.","ظرفیت کششی بولت، صفحه‌ستون، مهار بتن، شکست مخروطی/لبه‌ای، آب زیرزمینی و اثر گروهی پی‌ها بررسی نشده است.","ترکیبات بار و ضرایب آیین‌نامه‌ای نهایی نشده‌اند؛ این غربال تأیید طراحی نیست."]};
  }
  function buildFootingRebarGeometry(baseRows,B,L,T,coverMm,specs){
   if(!Array.isArray(baseRows)||!baseRows.length||![B,L,T,coverMm].every(Number.isFinite)||B<=0||L<=0||T<=0||coverMm<0)return{ok:false,reason:"مختصات پایه‌ها، ابعاد پی، ضخامت و پوشش بتن باید معتبر باشند."};
