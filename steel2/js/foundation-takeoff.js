@@ -322,36 +322,40 @@ function footingGridSpecs(state){
  }
  return out;
 }
-function calculateFootingRebar(baseCount,B,L){
-  const cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
-  const specs=[
-   {layer:"تحتانی",direction:"موازی X",dia:num(state.bottomBarDiaXmm),spacing:num(state.bottomBarSpacingXmm),perp:"Z",parallel:"X"},
-   {layer:"تحتانی",direction:"موازی Z",dia:num(state.bottomBarDiaZmm),spacing:num(state.bottomBarSpacingZmm),perp:"X",parallel:"Z"},
-   {layer:"فوقانی",direction:"موازی X",dia:num(state.topBarDiaXmm),spacing:num(state.topBarSpacingXmm),perp:"Z",parallel:"X"},
-   {layer:"فوقانی",direction:"موازی Z",dia:num(state.topBarDiaZmm),spacing:num(state.topBarSpacingZmm),perp:"X",parallel:"Z"}
-  ];
-  const any=specs.some(x=>String(x.dia??"")!==""||String(x.spacing??"")!=="")||String(state.rebarCoverMm??"").trim()!=="";
-  const box=$("foundationRebarSummary"),body=$("foundationRebarRows");if(body)body.replaceChildren();
-  if(!any){if(box)box.textContent="ورودی شبکه آرماتور وارد نشده است؛ وزن آرماتور پی در متره خالی می‌ماند.";return null;}
-  if(cover===null||!Number.isFinite(cover)||cover<0){if(box)box.textContent="پوشش بتن باید از نقشه اجرایی وارد شود.";return null;}
-  const cx=B*1000-2*cover,cz=L*1000-2*cover;if(cx<=0||cz<=0){if(box)box.textContent="پوشش بتن از ابعاد پی بیشتر است؛ ورودی‌ها را بررسی کنید.";return null;}
-  const rows=[];
-  for(const sp of specs){
-   const rawDia=state[sp.layer==="تحتانی"?(sp.parallel==="X"?"bottomBarDiaXmm":"bottomBarDiaZmm"):(sp.parallel==="X"?"topBarDiaXmm":"topBarDiaZmm")];
-   const rawSpacing=state[sp.layer==="تحتانی"?(sp.parallel==="X"?"bottomBarSpacingXmm":"bottomBarSpacingZmm"):(sp.parallel==="X"?"topBarSpacingXmm":"topBarSpacingZmm")];
-   if(String(rawDia??"").trim()===""&&String(rawSpacing??"").trim()==="")continue;
-   if(!sp.dia||!sp.spacing){if(box)box.textContent="هر شبکه/جهت انتخاب‌شده باید هم قطر و هم فاصله مثبت داشته باشد؛ شبکه‌های غیرموجود را کاملاً خالی بگذارید.";return null;}
-   const clearPerp=sp.perp==="Z"?cz:cx,clearParallel=sp.parallel==="X"?cx:cz;
-   const count=Math.floor(clearPerp/sp.spacing)+1,cutLengthM=clearParallel/1000,unitWeightKgM=sp.dia*sp.dia/162;
-   rows.push({layer:sp.layer,direction:sp.direction,countPerFooting:count,cutLengthM,totalLengthM:count*cutLengthM*baseCount,unitWeightKgM,totalWeightKg:count*cutLengthM*baseCount*unitWeightKgM});
+function calculateFootingRebar(baseRows){
+ const cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
+ const defs=[
+  {layer:"تحتانی",direction:"موازی X",diaKey:"bottomBarDiaXmm",spacingKey:"bottomBarSpacingXmm",parallel:"X"},
+  {layer:"تحتانی",direction:"موازی Z",diaKey:"bottomBarDiaZmm",spacingKey:"bottomBarSpacingZmm",parallel:"Z"},
+  {layer:"فوقانی",direction:"موازی X",diaKey:"topBarDiaXmm",spacingKey:"topBarSpacingXmm",parallel:"X"},
+  {layer:"فوقانی",direction:"موازی Z",diaKey:"topBarDiaZmm",spacingKey:"topBarSpacingZmm",parallel:"Z"}
+ ];
+ const any=defs.some(x=>String(state[x.diaKey]??"").trim()!==""||String(state[x.spacingKey]??"").trim()!=="")||String(state.rebarCoverMm??"").trim()!=="";
+ const box=$("foundationRebarSummary"),body=$("foundationRebarRows");if(body)body.replaceChildren();
+ if(!any){if(box)box.textContent="ورودی شبکه آرماتور وارد نشده است؛ وزن آرماتور پی در متره خالی می‌ماند.";return null;}
+ if(cover===null||!Number.isFinite(cover)||cover<0){if(box)box.textContent="پوشش بتن باید از نقشه اجرایی وارد شود.";return null;}
+ const rows=[];
+ for(const sp of defs){
+  const rawDia=state[sp.diaKey],rawSpacing=state[sp.spacingKey];
+  if(String(rawDia??"").trim()===""&&String(rawSpacing??"").trim()==="")continue;
+  const dia=num(rawDia),spacing=num(rawSpacing);
+  if(!dia||!spacing){if(box)box.textContent="هر شبکه/جهت انتخاب‌شده باید هم قطر و هم فاصله مثبت داشته باشد.";return null;}
+  let totalCount=0,totalLengthM=0;
+  for(const base of baseRows){
+   const d=footingSpecFor(base),perp=(sp.parallel==="X"?d.width:d.length)*1000-2*cover,parallel=(sp.parallel==="X"?d.length:d.width)*1000-2*cover;
+   if(perp<=0||parallel<=0||d.thickness*1000<=2*cover+dia){if(box)box.textContent="پوشش و قطر میلگرد با ابعاد پی "+base.nodeId+" سازگار نیست.";return null;}
+   const count=Math.floor(perp/spacing)+1;totalCount+=count;totalLengthM+=count*parallel/1000;
   }
-  if(!rows.length){if(box)box.textContent="هیچ قطر و فاصله معتبری برای شبکه انتخاب‌شده وارد نشده است.";return null;}
-  rows.forEach(r=>{if(body){const tr=document.createElement("tr");[r.layer,r.direction,fmt(r.countPerFooting*baseCount),fmt(r.cutLengthM),fmt(r.totalLengthM),fmt(r.totalWeightKg)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);}});
-  const totalWeightKg=rows.reduce((a,r)=>a+r.totalWeightKg,0),bottom=rows.filter(r=>r.layer==="تحتانی").reduce((a,r)=>a+r.totalWeightKg,0),top=rows.filter(r=>r.layer==="فوقانی").reduce((a,r)=>a+r.totalWeightKg,0);
-  if(box)box.textContent="وزن تقریبی شبکه‌ها برای "+baseCount+" پی: تحتانی "+fmt(bottom)+" kg، فوقانی "+fmt(top)+" kg، مجموع "+fmt(totalWeightKg)+" kg. فقط شاخه‌های مستقیم با وزن واحد d²/162؛ قلاب، وصله، خم، پرت، تقویت موضعی و آرماتور پدستال منظور نشده‌اند.";
-  return {basis:"straight_top_and_bottom_mat_bars_only",coverMm:cover,rows,totalBottomWeightKg:bottom,totalTopWeightKg:top,totalWeightKg,limitations:["شبکه‌های فوقانی و تحتانی فقط در صورت ورود مشخصات واقعی نقشه متره می‌شوند؛ ورودی خالی به معنی عدم متره آن شبکه است.","طول برش مستقیم برابر بعد پی منهای دو برابر پوشش است؛ قلاب، خم، وصله و طول مهاری منظور نشده‌اند.","تعداد میلگرد با فاصله حداکثرِ ورودی و یک میلگرد در لبه محاسبه شده است؛ آرایش اجرایی باید با نقشه تطبیق داده شود.","وزن واحد تقریبی d²/162 kg/m است؛ وزن اسمی استاندارد محصول می‌تواند اندکی متفاوت باشد.","این متره، طراحی یا کنترل مقاومت خمشی/برشی/پانچ و ضوابط لرزه‌ای نیست."]};
+  const unitWeightKgM=dia*dia/162;
+  rows.push({layer:sp.layer,direction:sp.direction,diameterMm:dia,spacingMm:spacing,totalCount,totalLengthM,unitWeightKgM,totalWeightKg:totalLengthM*unitWeightKgM});
  }
- function calculatePedestalRebar(baseCount){
+ if(!rows.length){if(box)box.textContent="هیچ قطر و فاصله معتبری برای شبکه انتخاب‌شده وارد نشده است.";return null;}
+ rows.forEach(r=>{if(body){const tr=document.createElement("tr");[r.layer,r.direction,fmt(r.totalCount),"متغیر بر اساس ابعاد هر پایه",fmt(r.totalLengthM),fmt(r.totalWeightKg)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);}});
+ const totalWeightKg=rows.reduce((a,r)=>a+r.totalWeightKg,0),bottom=rows.filter(r=>r.layer==="تحتانی").reduce((a,r)=>a+r.totalWeightKg,0),top=rows.filter(r=>r.layer==="فوقانی").reduce((a,r)=>a+r.totalWeightKg,0);
+ if(box)box.textContent="وزن تقریبی شبکه‌ها برای "+baseRows.length+" پی با ابعاد مستقل هر پایه: تحتانی "+fmt(bottom)+" kg، فوقانی "+fmt(top)+" kg، مجموع "+fmt(totalWeightKg)+" kg. فقط شاخه مستقیم؛ بدون قلاب، وصله، خم و تقویت موضعی.";
+ return{basis:"per_base_footing_schedule_straight_mat_bars",coverMm:cover,rows,totalBottomWeightKg:bottom,totalTopWeightKg:top,totalWeightKg,limitations:["ابعاد هر پی از جدول مستقل پایه‌ها خوانده می‌شود.","فقط میلگردهای مستقیم شبکه با وزن واحد تقریبی d²/162 متره شده‌اند.","قلاب، وصله، خم، مهاری، پرت، تقویت موضعی و کنترل مقاومت در این متره نیستند."]};
+}
+function calculatePedestalRebar(baseCount){
   const specs=[
    {key:"longitudinal",label:"میلگرد طولی",diaKey:"pedestalLongBarDiaMm",countKey:"pedestalLongBarsPerBase",lengthKey:"pedestalLongBarCutLengthM"},
    {key:"ties",label:"خاموت",diaKey:"pedestalTieBarDiaMm",countKey:"pedestalTiesPerBase",lengthKey:"pedestalTieCutLengthM"}
@@ -375,13 +379,15 @@ function calculateFootingRebar(baseCount,B,L){
  function quantify(){
   readInputs();
   const count=lastReport?.rows?.length||0,w=num(state.footingWidthM),l=num(state.footingLengthM),t=num(state.footingThicknessM);
+   if(lastReport?.rows?.length&&!scheduleDimensionsValid(lastReport.rows)){$("foundationQuantitySummary").textContent="ابعاد یکی از پی‌های جدول مستقل معتبر نیست؛ ابعاد را اصلاح کنید.";return;}
+   const footingRows=(lastReport?.rows||[]).map(row=>({row,spec:footingSpecFor(row)}));
   if(!lastReport){$("foundationQuantitySummary").textContent="ابتدا واکنش‌های آخرین تحلیل را استخراج کنید تا تعداد پی‌ها مشخص شود.";return;}
   if(!count||!w||!l||!t){$("foundationQuantitySummary").textContent="برای محاسبه حجم بتن، عرض، طول و ضخامت واقعی پی را وارد کنید. هیچ ابعادی به‌صورت پیش‌فرض فرض نشده است.";return;}
   const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM);
-  const pedComplete=pw&&pl&&ph,footingConcrete=count*w*l*t,pedConcrete=pedComplete?count*pw*pl*ph:0;
+  const pedComplete=pw&&pl&&ph,footingConcrete=footingRows.reduce((s,x)=>s+x.spec.width*x.spec.length*x.spec.thickness,0),pedConcrete=pedComplete?count*pw*pl*ph:0;
   const excavationDepth=num(state.excavationDepthM),clearance=state.workingSpaceM===""?null:Number(state.workingSpaceM);
   const excavation=excavationDepth!==null&&clearance!==null&&clearance>=0?count*(w+2*clearance)*(l+2*clearance)*excavationDepth:null;
-  const formFoot=count*2*(w+l)*t,formPed=pedComplete?count*2*(pw+pl)*ph:0;
+  const formFoot=footingRows.reduce((s,x)=>s+2*(x.spec.width+x.spec.length)*x.spec.thickness,0),formPed=pedComplete?count*2*(pw+pl)*ph:0;
   const anchors=state.anchorsPerBase!==""&&Number.isInteger(Number(state.anchorsPerBase))&&Number(state.anchorsPerBase)>=0?count*Number(state.anchorsPerBase):null;
   const tieCount=state.tieCount!==""&&Number.isInteger(Number(state.tieCount))&&Number(state.tieCount)>=0?Number(state.tieCount):null;
   const tieLength=state.tieTotalLengthM!==""&&Number(state.tieTotalLengthM)>=0?Number(state.tieTotalLengthM):null;
@@ -394,9 +400,9 @@ function calculateFootingRebar(baseCount,B,L){
   const tieRebar=tieSectionComplete&&state.tieRebarKgPerM!==""&&Number(state.tieRebarKgPerM)>=0?tieLength*Number(state.tieRebarKgPerM):null;
   const totalConcrete=footingConcrete+(pedComplete?pedConcrete:0)+(tieConcrete!==null?tieConcrete:0);
   const totalFormwork=formFoot+formPed+(tieFormwork!==null?tieFormwork:0);
-  const rebar=calculateFootingRebar(count,w,l);
+  const rebar=calculateFootingRebar(lastReport.rows);
   const pedestalRebar=calculatePedestalRebar(count);
-   const q={baseCount:count,footingConcreteM3:footingConcrete,pedestalConcreteM3:pedComplete?pedConcrete:null,tieCount,tieTotalLengthM:tieLength,tieConcreteM3:tieConcrete,tieSideFormworkM2:tieFormwork,tieRebarKg:tieRebar,footingRebarKg:rebar?.totalWeightKg??null,footingRebar:rebar,pedestalRebarKg:pedestalRebar?.totalWeightKg??null,pedestalRebar,totalConcreteM3:totalConcrete,excavationM3:excavation,sideFormworkM2:totalFormwork,anchorsCount:anchors,sharedTopDatum:datumSummary,dimensions:{w,l,t,pw:pw||null,pl:pl||null,ph:ph||null,excavationDepthM:excavationDepth,workingSpaceM:clearance,tieWidthM:tw||null,tieHeightM:th||null}};
+   const q={baseCount:count,footingConcreteM3:footingConcrete,pedestalConcreteM3:pedComplete?pedConcrete:null,tieCount,tieTotalLengthM:tieLength,tieConcreteM3:tieConcrete,tieSideFormworkM2:tieFormwork,tieRebarKg:tieRebar,footingRebarKg:rebar?.totalWeightKg??null,footingRebar:rebar,pedestalRebarKg:pedestalRebar?.totalWeightKg??null,pedestalRebar,totalConcreteM3:totalConcrete,excavationM3:excavation,sideFormworkM2:totalFormwork,anchorsCount:anchors,sharedTopDatum:datumSummary,footingSchedule:footingRows.map(x=>({nodeId:x.row.nodeId,...x.spec})),dimensions:{w,l,t,pw:pw||null,pl:pl||null,ph:ph||null,excavationDepthM:excavationDepth,workingSpaceM:clearance,tieWidthM:tw||null,tieHeightM:th||null}};
   lastReport.quantities=q;
   lastReport.foundationBearing=screenBearing(q);
   lastReport.foundationSliding=screenSliding();
