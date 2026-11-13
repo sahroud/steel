@@ -409,7 +409,7 @@ function selfTest(){
   const kBeam=3*E*Iz/Math.pow(L,3),kConnector=1.8e5,P=-1000;
   const model={nodes:[{id:"A1",x:0,y:0,z:0},{id:"B1",x:L,y:0,z:0},{id:"A2",x:0,y:0,z:0},{id:"B2",x:L,y:0,z:0}],members:[{id:"M1",start:"A1",end:"B1",type:"validation"},{id:"M2",start:"A2",end:"B2",type:"validation"}]};
   const result=analyze(model,{sectionResolver:()=>section,supports:[{nodeId:"A1",fixedDofs:[0,1,2,3,4,5]},{nodeId:"A2",fixedDofs:[0,1,2,3,4,5]}],nodalLoads:[{nodeId:"B1",values:[0,P,0,0,0,0]}],connectorSprings:[{id:"PAD",nodeI:"B1",nodeJ:"B2",dof:1,stiffness:kConnector}]});
-  const u1=result.displacements.find(n=>n.nodeId==="B1").values[1],u2=result.displacements.find(n=>n.nodeId==="B2").values[1],expectedRelative=P/(kBeam+2*kConnector),spring=result.connectorSprings[0];
+  const u1=result.displacements.find(n=>n.nodeId==="B1").values[1],u2=result.displacements.find(n=>n.nodeId==="B2").values[1],expectedRelative=-P/(kBeam+2*kConnector),spring=result.connectorSprings[0];
   const ok=close(u2-u1,expectedRelative,1e-7)&&close(spring.springForceOnNodeI,kConnector*expectedRelative,1e-7)&&close(spring.springForceOnNodeI+spring.springForceOnNodeJ,0,1e-12)&&result.equilibrium.ok;
   tests.push({name:"coincident-node-connector-spring",ok,relativeDisplacementM:u2-u1,expectedRelativeDisplacementM:expectedRelative,forceOnNodeIN:spring.springForceOnNodeI,equilibrium:result.equilibrium.ok});
  }catch(e){tests.push({name:"coincident-node-connector-spring",ok:false,error:String(e.message||e)});}
