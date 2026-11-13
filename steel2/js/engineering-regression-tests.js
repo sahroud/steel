@@ -19,6 +19,8 @@ function run(){
  test("tapered analysis segmentation",()=>{const r=root.SteelTaperedSections.selfTest();return r.passed===5&&r.failed===0?"Geometry, interpolation, disabled default, configurable segmentation and end-release preservation pass":false;});
  test("tension audit rejects net area above gross area",()=>{const r=root.SteelTensionDesignReadiness.audit({groups:{roofBrace:{Ag_cm2:10,An_cm2:11,Ae_cm2:9,U:0.9,connectionType:"welded",connectionDetailsReviewed:true,blockShearReviewed:true}}});return r.issues.some(x=>x.includes("An نمی‌تواند"))?"Invalid net area rejected":false;});
  test("tension audit does not claim resistance",()=>{const r=root.SteelTensionDesignReadiness.audit({groups:{}});return !("Pn" in r)&&!r.capacity?"No tensile capacity is produced by readiness audit":false;});
+ test("compression audit reports missing effective lengths",()=>{const r=root.SteelCompressionDesignReadiness.audit({groups:{}});return r.issues.some(x=>x.includes("طول واقعی عضو"))&&!("Pn" in r)&&!("Fcr" in r)?"Missing compression inputs detected; no buckling resistance is fabricated":false;});
+ test("compression audit rejects undocumented restraint",()=>{const r=root.SteelCompressionDesignReadiness.audit({groups:{column:{memberLength_m:6,Kx:1,Ky:1,Lcx:6,Lcy:6,localSlendernessReviewed:true}}});return r.issues.some(x=>x.includes("مهاربندی"))?"Undocumented bracing assumptions are flagged":false;});
  test("tapered 3D axial convergence against analytical integral",()=>{
   if(!root.SteelFrame3D?.analyze)return false;
   const api=root.SteelTaperedSections,old=api.getData(),E=200e9,N=100000,L=6;
