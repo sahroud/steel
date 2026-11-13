@@ -10,6 +10,9 @@ function run(){
  test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISection({d:300,bf:150,tw:8,tf:12});return Math.abs(x.SxTop_cm3-x.SxBottom_cm3)<1e-10?"Top/bottom elastic moduli equal":false;});
  test("I-section invalid geometry rejected",()=>{try{root.SteelSectionGeometry.calculateISection({d:20,bf:10,tw:8,tf:11});return false;}catch(e){return "Invalid geometry rejected";}});
  test("material grade defaults exposed",()=>typeof root.SteelSections.getMaterialDefaults==="function"?"Material property helper available":false);
+ test("ST37 thickness bands",()=>{const fn=root.SteelSections.getMaterialDefaults;const values=[10,30,50,70,90].map(t=>fn("ST37-2",t).Fy_MPa);return values.join(",")==="235,225,215,205,195"?"235/225/215/205/195 MPa across DIN thickness bands":false;});
+ test("ST37 out-of-range guard",()=>root.SteelSections.getMaterialDefaults("ST37-2",110).Fy_MPa===null?"No default beyond 100 mm":false);
+ test("ST52 thickness bands",()=>{const fn=root.SteelSections.getMaterialDefaults;const values=[10,30,50,70,90].map(t=>fn("ST52-3",t).Fy_MPa);return values.join(",")==="355,345,335,325,315"?"355/345/335/325/315 MPa across DIN thickness bands":false;});
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
  const host=document.getElementById("engineeringRegressionResults");if(host)host.innerHTML="<p>موفق: "+result.passed+" | ناموفق: "+result.failed+"</p><ul>"+checks.map(x=>"<li>"+(x.pass?"✓ ":"✗ ")+x.name+" — "+x.detail+"</li>").join("")+"</ul><div class='notice'>"+result.scope+"</div>";
  return result;
