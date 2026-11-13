@@ -25,7 +25,7 @@ function audit(input){
  if(!d.enabled)return {status:"not_applicable",ready:false,readyFor3D:false,issues:["بار افقی جرثقیل در این پروژه فعال نشده است."]};
  const issues=[],train=root.SteelCraneTrainAnalysis?.getData?.()||{};
  const positions=parse(train.positions_m);
- const runway=Number(root.SteelCraneReadiness?.getData?.().runwayElevation_m);
+ const runway=Number(d.runwayElevation_m??root.SteelCraneReadiness?.getData?.().runwayElevation_m);
  if(!positions.length||positions.some(v=>!Number.isFinite(v))||positions[0]!==0||positions.some((v,i)=>i>0&&v<=positions[i-1]))
   issues.push("ابتدا هندسه قطار چرخ معتبر و صعودی را در بخش تحلیل قطار چرخ ثبت کنید.");
  if(!Number.isFinite(runway)||runway<=0)issues.push("تراز واقعی ریل باید در ورودی‌های جرثقیل ثبت شود.");
@@ -82,7 +82,7 @@ function selfTest(){
  try{
   train?.setData?.({positions_m:"0, 1.5, 3",loads_t:"1,1,1",span_m:"6"});
   crane?.setData?.({enabled:true,runwayElevation_m:"8"});
-  const good=audit({enabled:true,transverseLoads_kN:"10, 10, 8",longitudinalLoads_kN:"2, 2, 2",source:"manufacturer drawing",document:"DWG-01",transverseSign:"+X",longitudinalSign:"-Z"});
+  const good=audit({enabled:true,transverseLoads_kN:"10, 10, 8",longitudinalLoads_kN:"2, 2, 2",source:"manufacturer drawing",document:"DWG-01",runwayElevation_m:"8",transverseSign:"+X",longitudinalSign:"-Z"});
   const mismatch=audit({enabled:true,transverseLoads_kN:"10,10",longitudinalLoads_kN:"2,2,2",source:"catalog",document:"p.4"});
   const undocumented=audit({enabled:true,transverseLoads_kN:"10,10,8",longitudinalLoads_kN:"2,2,2"});
   const checks=[
