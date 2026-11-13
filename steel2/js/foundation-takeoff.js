@@ -101,6 +101,10 @@
   const routeAudit=footingsAlongStraightRoute([{id:"A",kind:"base",x:0,y:0,z:0},{id:"M",kind:"base",x:3,y:0,z:0},{id:"B",kind:"endwall-base",x:6,y:0,z:0},{id:"OFF",kind:"base",x:3,y:0,z:0.2}],{start:"A",end:"B"});
   checks.allIntermediateFootingsDetected=routeAudit.ok&&routeAudit.footings.map(x=>x.node.id).join(",")==="A,M,B";
   checks.offAxisFootingExcluded=routeAudit.ok&&!routeAudit.footings.some(x=>x.node.id==="OFF");
+  const axisGrid=buildFootingRebarGeometry([{nodeId:"AX",x:0,y:0,z:0}],2,3,0.8,50,[{layer:"bottom",direction:"X",diaMm:16,spacingMm:200},{layer:"bottom",direction:"Z",diaMm:16,spacingMm:200}]);
+  const axisX=axisGrid.bars.filter(x=>x.direction==="X"),axisZ=axisGrid.bars.filter(x=>x.direction==="Z");
+  checks.axisLengthsMatchPlan=axisGrid.ok&&axisX.length===16&&axisZ.length===11&&Math.abs((axisX[0].b.x-axisX[0].a.x)-1.9)<1e-9&&Math.abs((axisZ[0].b.z-axisZ[0].a.z)-2.9)<1e-9;
+  checks.actualSpacingDoesNotExceedInput=axisGrid.ok&&axisX.every((x,i)=>i===0||Math.abs(axisX[i].a.z-axisX[i-1].a.z)*1000<=200.000001)&&axisZ.every((x,i)=>i===0||Math.abs(axisZ[i].a.x-axisZ[i-1].a.x)*1000<=200.000001);
   checks.sharedTopDatum=datum.ok&&datum.commonTopElevationM===0&&Math.abs(datum.extraExcavationBelowTieM-0.3)<1e-9;
   checks.footingBottomFormula=datum.ok&&Math.abs(datum.footingBottomElevationM+0.8)<1e-9&&Math.abs(datum.tieBottomElevationM+0.5)<1e-9;
   checks.noExtraExcavationWhenTieDeeper=tallTie.ok&&tallTie.extraExcavationBelowTieM===0&&Math.abs(tallTie.footingBottomAboveTieBottomM-0.1)<1e-9;
@@ -308,10 +312,10 @@ function modelFingerprint(model){
    if(![row.x,row.y,row.z].every(Number.isFinite))return{ok:false,reason:"مختصات سه‌بعدی یکی از پایه‌ها موجود نیست."};
    for(const sp of layers){
     if(!sp||!["bottom","top"].includes(sp.layer)||!["X","Z"].includes(sp.direction)||![sp.diaMm,sp.spacingMm].every(Number.isFinite)||sp.diaMm<=0||sp.spacingMm<=0)continue;
-    const available=(sp.direction==="X"?L:B)*1000-2*coverMm;
-    const cross=(sp.direction==="X"?B:L)*1000-2*coverMm;
+    const available=(sp.direction==="X"?B:L)*1000-2*coverMm;
+    const cross=(sp.direction==="X"?L:B)*1000-2*coverMm;
     if(available<=0||cross<=0||T*1000<=2*coverMm+sp.diaMm)return{ok:false,reason:"پوشش و قطر میلگرد با ابعاد پی سازگار نیست."};
-    const count=Math.floor(cross/sp.spacingMm)+1;
+    const count=Math.ceil(cross/sp.spacingMm)+1;
     const y=row.y+(sp.layer==="bottom"?-T*1000+coverMm+sp.diaMm/2:-coverMm-sp.diaMm/2)/1000;
     for(let i=0;i<count;i++){
      const offset=-cross/2+(count===1?0:i*cross/(count-1));
@@ -352,9 +356,9 @@ function calculateFootingRebar(baseRows){
   if(!dia||!spacing){if(box)box.textContent="هر شبکه/جهت انتخاب‌شده باید هم قطر و هم فاصله مثبت داشته باشد.";return null;}
   let totalCount=0,totalLengthM=0;
   for(const base of baseRows){
-   const d=footingSpecFor(base),perp=(sp.parallel==="X"?d.width:d.length)*1000-2*cover,parallel=(sp.parallel==="X"?d.length:d.width)*1000-2*cover;
+   const d=footingSpecFor(base),perp=(sp.parallel==="X"?d.length:d.width)*1000-2*cover,parallel=(sp.parallel==="X"?d.width:d.length)*1000-2*cover;
    if(perp<=0||parallel<=0||d.thickness*1000<=2*cover+dia){if(box)box.textContent="پوشش و قطر میلگرد با ابعاد پی "+base.nodeId+" سازگار نیست.";return null;}
-   const count=Math.floor(perp/spacing)+1;totalCount+=count;totalLengthM+=count*parallel/1000;
+   const count=Math.ceil(perp/spacing)+1;totalCount+=count;totalLengthM+=count*parallel/1000;
   }
   const unitWeightKgM=dia*dia/162;
   rows.push({layer:sp.layer,direction:sp.direction,diameterMm:dia,spacingMm:spacing,totalCount,totalLengthM,unitWeightKgM,totalWeightKg:totalLengthM*unitWeightKgM});
@@ -586,7 +590,7 @@ function calculatePedestalRebar(baseCount){
    svg.push('<rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>');
    footingSpecs.specs.forEach(sp=>{
     const dim=sp.direction==="X"?L:B,available=Math.max(0,dim*1000-2*(cover??0));
-    const count=Math.max(1,Math.floor(available/sp.spacingMm+1e-9)+1);
+    const count=Math.max(1,Math.ceil(available/sp.spacingMm)+1);
     for(let i=0;i<count;i++){
      const p=count===1?0:i/(count-1);
      if(sp.direction==="X"){const y=y0+8+p*(h-16);svg.push('<line x1="'+(x0+8)+'" y1="'+y+'" x2="'+(x0+w-8)+'" y2="'+y+'" stroke="'+(sp.layer==="bottom"?"#dc2626":"#2563eb")+'" stroke-width="2"/>');}
