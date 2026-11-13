@@ -6,7 +6,8 @@
 function run(){
  const checks=[];
  const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
- test("crane type-specific wheel load path classifier",()=>{const r=root.SteelCraneLoadPath?.selfTest?.();return r&&r.passed===12&&r.failed===0?"Overhead wheel loads route to runway/frame, ground cranes route to explicit floor/grade-beam/foundation support, and invalid routing is blocked: 12/12":false;});
+ test("crane type-specific wheel load path classifier",()=>{const r=root.SteelCraneLoadPath?.selfTest?.();return r&&r.passed===14&&r.failed===0?"Crane type routing, invalid support blocking, and project selector state round-trip: 14/14":false;});
+ test("crane FEM transfer rejects ground crane routing",()=>{const x=root.SteelCrane3DLoadTransfer?.selfTest?.();return x?.passed===15&&x.failed===0?"Explicit overhead-only runway FEM gate and load-transfer regression checks: 15/15":false;});
  test("site earthwork and floor concrete takeoff",()=>{const x=root.SteelSiteWorkTakeoff?.selfTest?.();return x?.passed===7&&x.failed===0?"Cut/fill, blinding concrete and 150 mm, 350 kg/m³ floor quantity guards pass":false;});
  test("site work quantities registered in project BOQ",()=>{const x=root.SteelProjectBOQ?.selfTest?.();return x?.passed===23&&x.failed===0?"Earthwork and floor quantities remain separate and missing values stay pending":false;});
  test("I-section geometry positive",()=>{const x=root.SteelSectionGeometry.calculateISection({d:300,bf:150,tw:8,tf:12});return x.A_cm2>0&&x.Ix_cm4>x.Iy_cm4&&x.J_cm4>0?"A/I/J positive; major-axis inertia exceeds minor-axis inertia":false;});
