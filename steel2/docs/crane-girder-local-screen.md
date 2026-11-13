@@ -55,3 +55,14 @@ The same per-member JSON template includes additional fields for:
 The additional button **ممیزی هندسه صفحات، مهار جانبی و نشیمن** reports flange outstand-to-thickness and clear-web-depth-to-thickness ratios, normalized plate geometry ratios using `sqrt(Fy/E)`, and completeness of the stability and bearing input evidence.
 
 It deliberately returns no code classification, lateral-torsional buckling resistance, or web-crippling resistance. Actual code limits, restraint model, load height convention, section warping data, bearing geometry and stiffener details must be verified before any resistance design can be implemented. A complete input record is not a passing design check.
+
+
+## Design-basis evidence gate
+
+A separate **مبنای آیین‌نامه‌ای تیر حمال جرثقیل** panel records the selected primary code from the controlled registry, exact edition, clause/table/figure, page or controlled-text locator, LRFD/ASD method, section form, section and geometry sources, material product standard/grade/certificate, load-combination source, compression-flange restraint drawing, and support/bracket details. An optional supplementary reference must be registered as supplementary and must include its clause and a clearly scoped purpose. A supplementary foreign specification cannot silently replace Iranian mandatory requirements.
+
+The gate requires explicit confirmation that the official text and applicable errata have been checked. It returns only `sourceBasisComplete`; it never returns a capacity, design approval, or enables analysis. Registry matching is not legal verification of the current edition.
+
+## Expanded local stability input audit
+
+The plate/stability audit now rejects `none` or `unknown` compression-flange restraint states and requires positive unbraced length, `Cb`, section stability properties, bearing length, web-panel length, and explicit records for root radius, stiffener type/source, web-panel source, restraint source, and bearing detail. It still reports geometry ratios only. These added inputs are evidence collection for later code-specific checks, not resistance calculations.
