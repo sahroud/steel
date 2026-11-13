@@ -11,9 +11,13 @@ function mapReaction(values){
  if(!Array.isArray(values)||values.length<6||values.slice(0,6).some(v=>!Number.isFinite(Number(v))))throw Error("بردار واکنش شش‌مؤلفه‌ای معتبر نیست.");
  return {
   N_tensionPositive_kN:-Number(values[1])/1000,
+  Vx_kN:-Number(values[0])/1000,
+  Vz_kN:-Number(values[2])/1000,
   Mx_kNm:-Number(values[3])/1000,
+  Ty_kNm:-Number(values[4])/1000,
   Mz_kNm:-Number(values[5])/1000,
-  supportReaction:{Fx_kN:Number(values[0])/1000,Fy_kN:Number(values[1])/1000,Fz_kN:Number(values[2])/1000,Mx_kNm:Number(values[3])/1000,My_kNm:Number(values[4])/1000,Mz_kNm:Number(values[5])/1000}
+  supportReaction:{Fx_kN:Number(values[0])/1000,Fy_kN:Number(values[1])/1000,Fz_kN:Number(values[2])/1000,Mx_kNm:Number(values[3])/1000,My_kNm:Number(values[4])/1000,Mz_kNm:Number(values[5])/1000},
+  columnAction:{N_tensionPositive_kN:-Number(values[1])/1000,Vx_kN:-Number(values[0])/1000,Vz_kN:-Number(values[2])/1000,Mx_kNm:-Number(values[3])/1000,Ty_kNm:-Number(values[4])/1000,Mz_kNm:-Number(values[5])/1000}
  };
 }
 async function extract(){
@@ -62,7 +66,7 @@ function selected(){
 }
 function render(){
  try{const s=selected(),m=s.mapped;
- $("brtResult").textContent="گره "+s.row.nodeId+" | "+s.case.label+" | N کششی مثبت: "+fmt(m.N_tensionPositive_kN)+" kN | Mx: "+fmt(m.Mx_kNm)+" kN.m | Mz: "+fmt(m.Mz_kNm)+" kN.m | واکنش قائم تکیه‌گاه Fy: "+fmt(m.supportReaction.Fy_kN)+" kN. تعادل ترکیب: "+(s.case.equilibrium?.ok?"معتبر در کنترل تعادل حلگر":"نیازمند بررسی");
+ $("brtResult").textContent="گره "+s.row.nodeId+" | "+s.case.label+" | N کششی مثبت: "+fmt(m.N_tensionPositive_kN)+" kN | Vx: "+fmt(m.Vx_kN)+" kN | Vz: "+fmt(m.Vz_kN)+" kN | Mx: "+fmt(m.Mx_kNm)+" kN.m | Mz: "+fmt(m.Mz_kNm)+" kN.m | پیچش حول Y: "+fmt(m.Ty_kNm)+" kN.m. علامت‌ها برای کنش ستون بر صفحه‌ستون معکوس شده‌اند. تعادل ترکیب: "+(s.case.equilibrium?.ok?"معتبر در کنترل تعادل حلگر":"نیازمند بررسی");
  return s;
  }catch(e){$("brtResult").textContent=e.message;return null;}
 }
@@ -71,7 +75,10 @@ function apply(){
   const s=selected();
   if(!$("pcN")||!$("pcMx")||!$("pcMz"))throw Error("پنل تحلیل تماس جزئی بارگذاری نشده است.");
   $("pcN").value=s.mapped.N_tensionPositive_kN;$("pcMx").value=s.mapped.Mx_kNm;$("pcMz").value=s.mapped.Mz_kNm;
-  $("pcResult").textContent="بارهای هم‌زمان از گره "+s.row.nodeId+" و ترکیب «"+s.case.label+"» منتقل شدند. اکنون حل تماس جزئی را اجرا کنید.";
+  const anchorFields={adTension:s.mapped.N_tensionPositive_kN,adMx:s.mapped.Mx_kNm,adMz:s.mapped.Mz_kNm,adVx:s.mapped.Vx_kN,adVz:s.mapped.Vz_kN};
+  let anchorTransferred=false;
+  if(Object.keys(anchorFields).every(id=>$(id))){Object.entries(anchorFields).forEach(([id,value])=>$(id).value=value);anchorTransferred=true;}
+  $("pcResult").textContent="بارهای محوری و خمشی هم‌زمان به غربال تماس صفحه‌ستون منتقل شدند."+(anchorTransferred?" پنج مؤلفه N، Mx، Mz، Vx و Vz نیز در پنل گروه بولت قرار گرفتند؛ تیک تأیید قرارداد علامت را خودتان پس از کنترل فعال کنید.":" پنل گروه بولت در دسترس نبود.")+" مؤلفه پیچش My="+fmt(s.mapped.Ty_kNm)+" kN.m در غربال فعلی گروه بولت لحاظ نمی‌شود و باید جداگانه بررسی شود.";
   $("baseplatePartialContactPanel").scrollIntoView?.({behavior:"smooth",block:"center"});
  }catch(e){$("brtResult").textContent=e.message;}
 }
@@ -81,7 +88,10 @@ function selfTest(){
  ["تبدیل واکنش قائم به N کششی مثبت",m.N_tensionPositive_kN===-200],
  ["تبدیل علامت لنگر Mx",m.Mx_kNm===-400],
  ["تبدیل علامت لنگر Mz",m.Mz_kNm===600],
- ["حفظ واکنش‌های افقی و My",m.supportReaction.Fx_kN===1&&m.supportReaction.Fz_kN===-3&&m.supportReaction.My_kNm===5],
+ ["حفظ واکنش‌های خام حل‌گر",m.supportReaction.Fx_kN===1&&m.supportReaction.Fz_kN===-3&&m.supportReaction.My_kNm===5],
+ ["معکوس‌کردن برش‌های کنش ستون",m.Vx_kN===-1&&m.Vz_kN===3],
+ ["معکوس‌کردن پیچش کنش ستون",m.Ty_kNm===-5],
+ ["خروجی کامل شش‌مؤلفه‌ای کنش ستون",m.columnAction.N_tensionPositive_kN===-200&&m.columnAction.Mx_kNm===-400&&m.columnAction.Mz_kNm===600],
  ["رد بردار واکنش ناقص",(()=>{try{mapReaction([1,2]);return false;}catch(e){return true;}})()]
  ];
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
