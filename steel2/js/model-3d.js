@@ -111,7 +111,7 @@
       '<div class="form-grid"><div class="field"><label for="craneRunwayRailSupportStiffness">سختی قائم ایستگاه‌ها (N/m، جداشده با ویرگول)</label><input id="craneRunwayRailSupportStiffness" type="text" placeholder="مثلاً 1.2e8, 1.2e8, 1.2e8"></div>' +
       '<div class="field"><label for="craneRunwayRailSupportStiffnessSource">مرجع سختی قائم بست/پد</label><input id="craneRunwayRailSupportStiffnessSource" type="text" placeholder="گزارش آزمایش/کاتالوگ، صفحه و شرایط آزمون"></div></div>' +
       '<div class="field"><label for="craneRunwayRailWheelLoads">بارهای قائم چرخ در موقعیت مشخص (JSON)</label><textarea id="craneRunwayRailWheelLoads" rows="5" placeholder="[{&quot;x_m&quot;:6,&quot;P_N&quot;:-98066.5,&quot;source&quot;:&quot;نقشه جرثقیل&quot;,&quot;document&quot;:&quot;صفحه 4&quot;}]" style="direction:ltr;text-align:left"></textarea><small>هر عضو: x_m، P_N (نیوتن؛ رو به پایین منفی)، source و document. مختصات نسبت به ابتدای مسیر همان ریل است.</small></div>' +
-      '<div class="button-grid"><button type="button" id="btnAnalyzeCraneRailFEM" class="btn secondary">ممیزی و اجرای تحلیل مقدماتی ریل</button></div>' +
+      '<div class="button-grid"><button type="button" id="btnAnalyzeCraneRailFEM" class="btn secondary">ممیزی و اجرای تحلیل مقدماتی ریل</button><button type="button" id="btnRailFEMSelfTest" class="btn secondary">آزمون نرم‌افزاری حل‌گر ریل</button></div>' +
       '<div id="craneRunwayRailFEMResult" class="notice">تحلیل تیر ریل هنوز اجرا نشده است.</div>' +
       '<div class="form-grid">' +
       '<div class="field"><label for="modelPurlinSpacing">فاصله پرلین‌های سقف (m)</label><input id="modelPurlinSpacing" type="number" min="0.3" step="0.05" value="0.95"></div>' +
@@ -346,6 +346,12 @@
       setTimeout(()=>URL.revokeObjectURL(url),1500);
     });
 
+
+    $("btnRailFEMSelfTest")?.addEventListener("click", function () {
+      const box=$("craneRunwayRailFEMResult");if(!box)return;
+      try {const result=window.SteelRailBeamFEM?.selfTest?.();if(!result)throw Error("ماژول آزمون حل‌گر ریل بارگذاری نشده است.");box.textContent="آزمون نرم‌افزاری حل‌گر ریل: "+result.passed+"/"+result.total+" موفق؛ ناموفق: "+result.failed+"\\n"+result.tests.map(t=>(t.ok?"✓ ":"✗ ")+t.name+(t.error?" — "+t.error:"")).join("\\n")+"\\nاین آزمون‌ها جایگزین اعتبارسنجی مستقل مهندسی نیستند.";box.style.color=result.failed===0?"#166534":"#b45309";}
+      catch(e){box.textContent="اجرای آزمون حل‌گر ریل ناموفق بود: "+e.message;box.style.color="#b45309";}
+    });
     $("btnAnalyzeCraneRailFEM")?.addEventListener("click", function () {
       const box=$("craneRunwayRailFEMResult");if(!box)return;
       try {
