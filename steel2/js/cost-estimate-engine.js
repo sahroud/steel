@@ -15,6 +15,7 @@
   {key:"formwork",label:"قالب‌بندی فونداسیون",unit:"مترمربع",priceCode:"formwork",priceUnit:"تومان/مترمربع"},
   {key:"anchorBolts",label:"تعداد بولت و صفحه‌ستون (در صورت قیمت‌گذاری عددی)",unit:"عدد",priceCode:"anchor.bolt",priceUnit:"تومان/عدد"},
   {key:"floorConcrete",label:"بتن کف سوله (۱۵ سانتی‌متر؛ مقدار از متره)",unit:"مترمکعب",priceCode:"concrete.floor",priceUnit:"تومان/مترمکعب"},
+  {key:"blindingConcrete",label:"بتن مگر زیر فونداسیون (ضخامت و پیش‌آمدگی از نقشه)",unit:"مترمکعب",priceCode:"concrete.ready",priceUnit:"تومان/مترمکعب"},
   {key:"siteworkExcavation",label:"خاکبرداری نوار شناژ تا زیر بتن مگر",unit:"مترمکعب"},
   {key:"siteworkBackfill",label:"خاکریزی فضای باقی‌مانده پس از بتن‌ریزی",unit:"مترمکعب"},
   {key:"siteworkGroundFill",label:"خاکریزی زمین گود تا تراز کف سوله",unit:"مترمکعب"},
@@ -109,7 +110,7 @@
  }
  function refreshFromSiteWork(report){
   if(!report)return;
-  const links={floorConcrete:report.slabConcreteM3,siteworkExcavation:report.excavationM3,siteworkBackfill:report.backfillM3,siteworkGroundFill:report.fillNetM3};
+  const links={floorConcrete:report.slabConcreteM3,blindingConcrete:report.blindingConcreteM3,siteworkExcavation:report.excavationM3,siteworkBackfill:report.backfillM3,siteworkGroundFill:report.fillNetM3};
   let changed=false;
   state.manualItems.forEach(item=>{
    if(!Object.prototype.hasOwnProperty.call(links,item.key)||item.quantitySource==="manual"||item.quantitySource==="anchorSchedule")return;
