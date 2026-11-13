@@ -137,6 +137,10 @@
             data.memberDesignInputs = window.SteelMemberDesignInputs.readUI();
         }
 
+        if (window.SteelTensionDesignReadiness && typeof window.SteelTensionDesignReadiness.readUI === "function") {
+            data.tensionDesignReadiness = window.SteelTensionDesignReadiness.readUI();
+        }
+
         if (window.SteelSectionGeometry &&
             typeof window.SteelSectionGeometry.read === "function") {
             data.sectionGeometryAudit = window.SteelSectionGeometry.read();
@@ -500,6 +504,10 @@
         if (window.SteelMemberDesignInputs &&
             typeof window.SteelMemberDesignInputs.setData === "function") {
             window.SteelMemberDesignInputs.setData(data.memberDesignInputs || {});
+        }
+
+        if (window.SteelTensionDesignReadiness && typeof window.SteelTensionDesignReadiness.setData === "function") {
+            window.SteelTensionDesignReadiness.setData(data.tensionDesignReadiness || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
