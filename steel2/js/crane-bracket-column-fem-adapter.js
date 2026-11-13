@@ -14,34 +14,44 @@ function buildLoadCase(model,baseLoadCase,transferResult){
  if(!Array.isArray(baseLoadCase?.nodalLoads))issues.push("nodalLoads حالت بار پایه باید آرایه باشد؛ بارهای موجود نباید حذف شوند.");
  if(!transferResult?.success||transferResult.transferType!=="demand-only-global-coordinate"||!Array.isArray(transferResult.demands))issues.push("خروجی انتقال تقاضای معتبر در دسترس نیست.");
  const expectedCase=String(baseLoadCase?.id||baseLoadCase?.caseId||"");
- const prior=new Set(baseLoadCase?.craneBracketColumnDemandIds||[]);
- const rows=transferResult?.demands||[],aggregate=new Map(),used=[];
+ if(!expectedCase)issues.push("حالت بار مقصد باید شناسه id یا caseId داشته باشد.");
+ const priorRaw=baseLoadCase?.craneBracketColumnDemandIds??[];
+ if(!Array.isArray(priorRaw))issues.push("فهرست شناسه‌های تقاضای تزریق‌شده در حالت بار باید آرایه باشد.");
+ const prior=new Set(Array.isArray(priorRaw)?priorRaw.map(String):[]);
+ if(prior.size!==(Array.isArray(priorRaw)?priorRaw.length:0))issues.push("شناسه‌های قبلی تقاضای جرثقیل در metadata تکراری‌اند.");
+ const baseSeen=new Set();
+ (Array.isArray(baseLoadCase?.nodalLoads)?baseLoadCase.nodalLoads:[]).forEach((load,i)=>{
+  const nodeId=String(load?.nodeId??"");
+  if(!nodeId||!nodes.has(nodeId))issues.push("بار گره‌ای پایه شماره "+(i+1)+" به گره معتبر مدل ارجاع نمی‌دهد.");
+  if(baseSeen.has(nodeId))issues.push("بار گره‌ای پایه برای گره "+nodeId+" تکراری است؛ ابتدا آن‌ها را به‌صورت صریح تجمیع کنید.");
+  baseSeen.add(nodeId);
+  if(!Array.isArray(load?.values)||load.values.length!==6||load.values.some(v=>!finite(v)))issues.push("بار گره‌ای پایه شماره "+(i+1)+" باید دقیقاً شش مؤلفه عددی محدود داشته باشد.");
+ });
+ const rows=transferResult?.demands||[],aggregate=new Map(),used=[],batchSeen=new Set();
  rows.forEach((d,i)=>{
-  const id=String(d.connectionId||""),caseId=String(d.caseId||""),nodeId=String(d.columnNodeId||"");
+  const id=String(d?.connectionId||""),caseId=String(d?.caseId||""),nodeId=String(d?.columnNodeId||""),key=id+"|"+caseId;
   if(!id||!caseId||!nodeId)issues.push("رکورد "+(i+1)+": شناسه اتصال/حالت بار/گره ناقص است.");
-  if(expectedCase&&caseId!==expectedCase)issues.push(id+": شناسه حالت بار با حالت بار مقصد تطبیق ندارد.");
-  if(!expectedCase)issues.push("حالت بار مقصد باید شناسه id یا caseId داشته باشد.");
-  if(prior.has(id+"|"+caseId))issues.push(id+": این تقاضا قبلاً در همین حالت بار تزریق شده است.");
+  if(batchSeen.has(key))issues.push(id+": رکورد اتصال/حالت بار در همین بسته تکراری است.");
+  batchSeen.add(key);
+  if(caseId!==expectedCase)issues.push(id+": شناسه حالت بار با حالت بار مقصد تطبیق ندارد.");
+  if(prior.has(key))issues.push(id+": این تقاضا قبلاً در همین حالت بار تزریق شده است.");
   const node=nodes.get(nodeId);
   if(!node)issues.push(id+": گره مقصد در مدل سه‌بعدی وجود ندارد: "+nodeId);
-  if(!v3(d.columnNodeCoordinate_m)||!v3(d.force_N)||!v3(d.momentAtColumnNode_Nm))issues.push(id+": مختصات و بردارهای شش‌مؤلفه‌ای نامعتبرند.");
-  if(d.coordinateSystem!=="global")issues.push(id+": دستگاه مختصات global نیست.");
+  if(!v3(d?.columnNodeCoordinate_m)||!v3(d?.force_N)||!v3(d?.momentAtColumnNode_Nm))issues.push(id+": مختصات و بردارهای شش‌مؤلفه‌ای نامعتبرند.");
+  if(d?.coordinateSystem!=="global")issues.push(id+": دستگاه مختصات global نیست.");
   if(node&&v3(d.columnNodeCoordinate_m)&&![node.x,node.y,node.z].every(finite))issues.push(id+": مختصات گره مدل نامعتبر است.");
   if(node&&v3(d.columnNodeCoordinate_m)&&[node.x,node.y,node.z].every(finite)&&!d.columnNodeCoordinate_m.every((v,j)=>close(v,[node.x,node.y,node.z][j])))issues.push(id+": مختصات ثبت‌شده با مختصات واقعی گره مدل تطبیق ندارد.");
-  if(!d.source||!d.document)issues.push(id+": ردیابی منبع و سند ناقص است.");
-  if(node&&v3(d.force_N)&&v3(d.momentAtColumnNode_Nm)){
+  if(!String(d?.source||"").trim()||!String(d?.document||"").trim())issues.push(id+": ردیابی منبع و سند ناقص است.");
+  if(node&&v3(d?.force_N)&&v3(d?.momentAtColumnNode_Nm)){
    const old=aggregate.get(nodeId)||[0,0,0,0,0,0];
    d.force_N.forEach((v,j)=>old[j]+=v);d.momentAtColumnNode_Nm.forEach((v,j)=>old[j+3]+=v);
-   aggregate.set(nodeId,old);used.push(id+"|"+caseId);
+   aggregate.set(nodeId,old);used.push(key);
   }
  });
  if(issues.length)return {success:false,ready:false,analysisEnabled:false,designApproved:false,issues,loadCase:null};
- const existingIds=new Set((baseLoadCase.craneBracketColumnDemandIds||[]).map(String));
- const duplicate=used.find(x=>existingIds.has(x));
- if(duplicate)return {success:false,ready:false,analysisEnabled:false,designApproved:false,issues:["تقاضای تکراری در حالت بار پایه: "+duplicate],loadCase:null};
- const nodalLoads=baseLoadCase.nodalLoads.map(x=>({...x,values:x.values.slice(),sources:Array.isArray(x.sources)?x.sources.slice():x.sources}));
+ const nodalLoads=baseLoadCase.nodalLoads.map(x=>({...x,values:x.values.slice()}));
  aggregate.forEach((values,nodeId)=>nodalLoads.push({nodeId,values,sources:rows.filter(d=>String(d.columnNodeId)===nodeId).map(d=>({kind:"crane-bracket-column-demand",connectionId:d.connectionId,caseId:d.caseId,source:d.source,document:d.document}))}));
- const out={...baseLoadCase,nodalLoads,craneBracketColumnDemandIds:[...existingIds,...used],craneBracketColumnDemandTransfer:{coordinateSystem:"global",units:{force:"N",moment:"N.m"},connectionCount:rows.length,aggregatedNodeCount:aggregate.size,analysisEnabled:false,designApproved:false}};
+ const out={...baseLoadCase,nodalLoads,craneBracketColumnDemandIds:[...prior,...used],craneBracketColumnDemandTransfer:{coordinateSystem:"global",units:{force:"N",moment:"N.m"},connectionCount:rows.length,aggregatedNodeCount:aggregate.size,analysisEnabled:false,designApproved:false}};
  return {success:true,ready:true,analysisEnabled:false,designApproved:false,loadCase:out,addedDemandCount:rows.length,aggregatedNodeCount:aggregate.size,issues:[],note:"حالت بار جدید ساخته شد؛ هنوز به حل‌گر ارسال نشده است. پیش از حل، هم‌زمانی بارها، نبود بارگذاری تکراری و قرارداد اتصال باید بررسی شود."};
 }
 function selfTest(){
@@ -59,6 +69,10 @@ function selfTest(){
  ck("rejects repeated injection into same load case",()=>{const first=buildLoadCase(model,base,demand);return !buildLoadCase(model,first.loadCase,demand).success;});
  ck("requires global coordinate declaration",()=>!buildLoadCase(model,base,{...demand,demands:[{...demand.demands[0],coordinateSystem:"local"}]}).success);
  ck("does not auto-run solver or approve design",()=>{const r=buildLoadCase(model,base,demand);return r.success&&r.analysisEnabled===false&&r.designApproved===false;});
+ ck("rejects duplicate connection/case rows inside one transfer batch",()=>!buildLoadCase(model,base,{...demand,demands:[demand.demands[0],demand.demands[0]]}).success);
+ ck("rejects malformed or unknown pre-existing nodal loads",()=>!buildLoadCase(model,{...base,nodalLoads:[{nodeId:"MISSING",values:[0,0,0,0,0,0]}]},demand).success);
+ ck("rejects duplicate pre-existing nodal-load node entries",()=>!buildLoadCase(model,{...base,nodalLoads:[{nodeId:"C1",values:[0,0,0,0,0,0]},{nodeId:"C1",values:[0,0,0,0,0,0]}]},demand).success);
+ ck("rejects nonfinite base nodal-load components",()=>!buildLoadCase(model,{...base,nodalLoads:[{nodeId:"C1",values:[0,0,0,0,0,Infinity]}]},demand).success);
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t,analysisEnabled:false,designApproved:false};
 }
 root.SteelCraneBracketColumnFEMAdapter={buildLoadCase,selfTest};
