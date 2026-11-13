@@ -31,7 +31,7 @@ function maxAbs(samples,index){
 function buildRows(model,samples){
  const byId=new Map(),metaById=new Map((model.members||[]).map(m=>[String(m.id),m]));
  samples.forEach(sample=>(sample.members||[]).forEach(m=>{
-  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,parentMemberId:m.parentMemberId||meta.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||meta.taperSegmentIndex||null,taperSegmentCount:m.taperSegmentCount||meta.taperSegmentCount||null,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||m.section?.sectionKey||"",profile:meta.profile||meta.sectionLabel||m.section?.profile||"",start:meta.start||m.start||null,end:meta.end||m.end||null,section:m.section||{},length:Number(m.length||meta.length)||null,ends:[]});}
+  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,localAxes:m.localAxes||null,localEndForceConventionVersion:Number(m.localEndForceConventionVersion)||null,parentMemberId:m.parentMemberId||meta.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||meta.taperSegmentIndex||null,taperSegmentCount:m.taperSegmentCount||meta.taperSegmentCount||null,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||m.section?.sectionKey||"",profile:meta.profile||meta.sectionLabel||m.section?.profile||"",start:meta.start||m.start||null,end:meta.end||m.end||null,section:m.section||{},length:Number(m.length||meta.length)||null,ends:[]});}
   const row=byId.get(String(m.id));
   const raw=Array.isArray(m.localEndForces)?m.localEndForces.slice(0,12):[];
   row.ends.push({label:sample.label,values:raw.length===12&&raw.every(Number.isFinite)?raw:[],invalidForceVector:!(raw.length===12&&raw.every(Number.isFinite))});
@@ -90,13 +90,13 @@ async function run(){
    const s=specs[i];
    const result=await window.SteelStructuralModel.analyze3D({label:s.label,factors:s.factors,windSign:s.windSign||1});
    if(!result?.success||!Array.isArray(result.members))throw Error("تحلیل ناموفق در حالت "+s.label);
-   samples.push({label:s.label,members:result.members,equilibrium:result.equilibrium});
+   samples.push({label:s.label,members:result.members,equilibrium:result.equilibrium,localEndForceConvention:result.localEndForceConvention||null});
    box.textContent="تحلیل "+(i+1)+" از "+specs.length+" — "+s.label;
   }
   const rows=buildRows(model,samples);
   const bad=samples.filter(s=>!s.equilibrium?.ok);
   const coverage=auditCoverage(model,samples,rows);
-  last={generatedAt:new Date().toISOString(),codeBasis:window.SteelDesignCodes?.getData?.()||null,units:"N,N.m",cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),members:rows,memberCount:rows.length,modelMemberCount:coverage.modelMemberCount,physicalMemberCount:coverage.physicalMemberCount,unreportedMemberIds:coverage.unreportedMemberIds,extraMemberIds:coverage.extraMemberIds,analysisMemberSetMismatchCases:coverage.analysisMemberSetMismatchCases,duplicateMemberIdsByCase:coverage.duplicateMemberIdsByCase,invalidForceVectors:coverage.invalidForceVectors,allCasesEquilibriumOK:bad.length===0,limitations:["این خروجی تقاضای نیروهای انتهایی محلی اعضا در تحلیل خطی مرتبه اول است؛ ظرفیت یا نسبت بهره‌برداری آیین‌نامه‌ای محاسبه نمی‌شود.","ترکیبات ثقلی از فهرست فعلی پروژه گرفته شده‌اند؛ در صورت وجود فشار باد، دو حالت افزوده‌شده با ضریب واحد مثبت و منفی صرفاً سناریوی تحلیل مقدماتی‌اند و ترکیب‌بار آیین‌نامه‌ای کامل محسوب نمی‌شوند.","کمانش، P-Delta، کمانش پیچشی-جانبی، اندرکنش نیروها، طبقه‌بندی مقطع و کنترل خیز/ارتعاش در این گزارش انجام نشده‌اند.","علامت و محورهای محلی اعضا باید با جهت‌گیری هندسی و خروجی نرم‌افزار تحلیل مستقل کنترل شوند."]};
+  last={generatedAt:new Date().toISOString(),codeBasis:window.SteelDesignCodes?.getData?.()||null,units:"N,N.m",localEndForceConvention:samples[0]?.localEndForceConvention||null,cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),members:rows,memberCount:rows.length,modelMemberCount:coverage.modelMemberCount,physicalMemberCount:coverage.physicalMemberCount,unreportedMemberIds:coverage.unreportedMemberIds,extraMemberIds:coverage.extraMemberIds,analysisMemberSetMismatchCases:coverage.analysisMemberSetMismatchCases,duplicateMemberIdsByCase:coverage.duplicateMemberIdsByCase,invalidForceVectors:coverage.invalidForceVectors,allCasesEquilibriumOK:bad.length===0,limitations:["این خروجی تقاضای نیروهای انتهایی محلی اعضا در تحلیل خطی مرتبه اول است؛ ظرفیت یا نسبت بهره‌برداری آیین‌نامه‌ای محاسبه نمی‌شود.","ترکیبات ثقلی از فهرست فعلی پروژه گرفته شده‌اند؛ در صورت وجود فشار باد، دو حالت افزوده‌شده با ضریب واحد مثبت و منفی صرفاً سناریوی تحلیل مقدماتی‌اند و ترکیب‌بار آیین‌نامه‌ای کامل محسوب نمی‌شوند.","کمانش، P-Delta، کمانش پیچشی-جانبی، اندرکنش نیروها، طبقه‌بندی مقطع و کنترل خیز/ارتعاش در این گزارش انجام نشده‌اند.","قرارداد محورها و ترتیب مؤلفه‌ها در گزارش ذخیره می‌شود؛ علامت‌های خمشی و برشی هنوز به‌صورت مستقل با مثال‌های مرجع اعتبارسنجی نشده‌اند و نباید برای اندرکنش آیین‌نامه‌ای مصرف شوند."]};
   render();
  }catch(e){box.textContent="خطا: "+e.message;}
  finally{btn.disabled=false;}
@@ -134,6 +134,8 @@ function renderDetail(){
  if(!end){host.textContent="برای عضو و حالت انتخاب‌شده بردار نیروی معتبر در دسترس نیست.";return;}
  const labels=["Nᵢ (kN)","Vyᵢ (kN)","Vzᵢ (kN)","Tᵢ (kN.m)","Myᵢ (kN.m)","Mzᵢ (kN.m)","Nⱼ (kN)","Vyⱼ (kN)","Vzⱼ (kN)","Tⱼ (kN.m)","Myⱼ (kN.m)","Mzⱼ (kN.m)"];
  const p=member.section||{};
+ const axes=member.localAxes||{};
+ const axisSummary=["x","y","z"].map(k=>k.toUpperCase()+"=["+(Array.isArray(axes[k])?axes[k].map(v=>Number(v).toFixed(4)).join(", "):"ثبت‌نشده")+"]").join("؛ ");
  const props=[["مساحت A (cm²)",Number(p.A)*1e4],["Iy (cm⁴)",Number(p.Iy)*1e8],["Iz (cm⁴)",Number(p.Iz)*1e8],["J (cm⁴)",Number(p.J)*1e8],["E (GPa)",Number(p.E)/1e9],["G (GPa)",Number(p.G)/1e9]];
  const missing=props.filter(x=>!(Number.isFinite(x[1])&&x[1]>0)).map(x=>x[0]);
  const design=window.SteelMemberDesignInputs?.getForGroup?.(member.sectionKey)||{};
