@@ -63,7 +63,7 @@ function validate(){
 }
 function render(){
  const host=$("memberDesignInputsContent");if(!host)return;
- host.innerHTML='<div class="notice">این قسمت پارامترهای طراحی اعضای فولادی نوردشده را به تفکیک گروه ثبت می‌کند. گرید از پنل مصالح به ارث می‌رسد؛ ضخامت هر گروه را جداگانه وارد کنید تا Fy/Fu پیش‌فرض متناسب با ضخامت محاسبه شود. ورود دستی Fy/Fu بر مقدار ارث‌رسیده اولویت دارد. مقادیر گروهی فقط زمانی قابل استفاده‌اند که برای همه اعضای آن گروه یکسان باشند.</div>'+
+ host.innerHTML='<div class="notice">این قسمت پارامترهای طراحی اعضای فولادی نوردشده را به تفکیک گروه ثبت می‌کند. گرید از پنل مصالح به ارث می‌رسد؛ ضخامت هر گروه را جداگانه وارد کنید تا Fy/Fu پیش‌فرض متناسب با ضخامت محاسبه شود. ورود دستی Fy/Fu بر مقدار ارث‌رسیده اولویت دارد؛ اگر ضخامت گروه را وارد نکنید، ضخامت عمومی پنل مصالح به ارث می‌رسد و باید یکسان بودن ضخامت اعضای گروه را کنترل کنید. مقادیر گروهی فقط زمانی قابل استفاده‌اند که برای همه اعضای آن گروه یکسان باشند.</div>'+
  '<div style="overflow-x:auto"><table class="data-table" style="min-width:1150px;width:100%"><thead><tr><th>گروه عضو</th>'+fields.map(x=>'<th>'+x[1]+'</th>').join("")+'<th>اعمال به همه اعضای گروه</th><th>شرح مهاربندی/منبع</th></tr></thead><tbody>'+
  groups.map(g=>{const x=data.groups[g.key]||{};return '<tr><td>'+g.label+'</td>'+
  fields.map(([k])=>'<td><input type="number" step="any" min="0" id="mdi_'+g.key+'_'+k+'" value="'+(x[k]??"")+'" style="width:90px"></td>').join("")+
