@@ -1,6 +1,6 @@
 /* SAHROUD STEEL - background worker for 3D frame analysis */
 "use strict";
-importScripts("./analysis-3d.js?v=20261113-solver-force-contract3");
+importScripts("./analysis-3d.js?v=20261113-solver-force-signs4");
 self.onmessage=function(event){
   const data=event.data||{};
   try{
