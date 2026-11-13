@@ -330,7 +330,16 @@
     const normal=runwayColumnLevels(0,[2,4,6],10,5,true);
     const duplicate=runwayColumnLevels(0,[2,5,6],10,5,true);
     let rejected=false;try{runwayColumnLevels(0,[2,4],10,10,true);}catch(_){rejected=true;}
-    return {passed:[normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,duplicate.filter(x=>x.y===5).length===1&&duplicate.filter(x=>x.kind==="runway-support").length===1,rejected].filter(Boolean).length,total:3};
+    const geometry=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5,10],runwayElevation:5,offsetM:0.6,supportType:"simple"});
+    const noOffset=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5],runwayElevation:5,offsetM:NaN,supportType:""});
+    const checks=[
+      normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,
+      duplicate.filter(x=>x.y===5).length===1&&duplicate.filter(x=>x.kind==="runway-support").length===1,
+      rejected,
+      geometry.beamSegments.length===4&&geometry.brackets.length===6&&geometry.supportNodes.length===6&&geometry.beamSegments.every(x=>x.analysisEnabled===false)&&geometry.brackets.every(x=>x.analysisEnabled===false),
+      noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0
+    ];
+    return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
   function build() {
     const span=val("span",20), length=val("length",30), spacing=val("spacing",5), height=val("height",6), rise=val("rise",2);
