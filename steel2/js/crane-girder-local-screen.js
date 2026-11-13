@@ -43,6 +43,21 @@ function audit(result,sectionsByMemberId){
  "نتیجه تحلیل خطی مرتبه اول است و اثرات مرتبه دوم، imperfection و تحلیل پایداری در آن نیست."
  ]};
 }
+function templateFor(result){
+ const members=(result?.members||[]).filter(m=>m.sectionKey==="craneRunwayGirder"||m.type==="craneRunwayGirder");
+ if(!members.length)return {success:false,issues:["عضو تیر حمالی در نتیجه تحلیل برای ساخت الگو پیدا نشد."]};
+ const blank={A_m2:"",Sy_m3:"",Sz_m3:"",Avy_m2:"",Avz_m2:"",J_m4:"",torsionRadius_m:"",Fy_MPa:"",source:"",geometrySource:"",shearAreaMethod:"",torsionMethod:""};
+ const data={};members.forEach(m=>{data[String(m.id)]={...blank};});
+ return {success:true,memberCount:members.length,data};
+}
+function makeTemplate(){
+ const latest=root.SteelCrane3DLoadTransfer?.getLastAnalysis?.();
+ const r=templateFor(latest?.result),el=root.document?.getElementById?.("craneGirderLocalScreenJson");
+ if(r.success&&el)el.value=JSON.stringify(r.data,null,2);
+ const host=root.document?.getElementById?.("craneGirderLocalScreenResult");
+ if(host)host.textContent=r.success?"الگوی "+r.memberCount+" عضو ساخته شد؛ مقادیر مقطع، فولاد و مراجع مستند را تکمیل کنید.":r.issues.join(" | ");
+ return r;
+}
 function readUI(){
  const el=root.document?.getElementById?.("craneGirderLocalScreenJson");
  if(!el||!String(el.value||"").trim())return {};
@@ -63,8 +78,9 @@ function ensurePanel(){
  panel.innerHTML='<div class="panel-title"><h3>غربال تنش اسمی موضعی تیر حمال</h3><span class="status">پس از تحلیل سه‌بعدی</span></div>'+
  '<div class="notice">پس از اجرای تحلیل یک حالت جرثقیل در قاب سه‌بعدی، مشخصات واقعی هر عضو تیر حمال را با کلید شناسه عضو وارد کنید. واحدها SI هستند. این ابزار فقط غربال تنش اسمی الاستیک است و کنترل کمانش، تنش موضعی جان/بال، خستگی و اتصالات نیست.</div>'+
  '<div class="field"><label for="craneGirderLocalScreenJson">مشخصات مقطع اعضا (JSON بر اساس شناسه عضو)</label><textarea id="craneGirderLocalScreenJson" rows="10" placeholder="{ &quot;شناسه-عضو&quot;: { &quot;A_m2&quot;: 0.01, &quot;Sy_m3&quot;: 0.0001, &quot;Sz_m3&quot;: 0.0002, &quot;Avy_m2&quot;: 0.005, &quot;Avz_m2&quot;: 0.005, &quot;J_m4&quot;: 1e-6, &quot;torsionRadius_m&quot;: 0.1, &quot;Fy_MPa&quot;: 240, &quot;source&quot;: &quot;...&quot;, &quot;geometrySource&quot;: &quot;...&quot;, &quot;shearAreaMethod&quot;: &quot;...&quot;, &quot;torsionMethod&quot;: &quot;...&quot; } }"></textarea></div>'+
- '<div class="button-grid"><button type="button" class="btn primary" id="craneGirderLocalScreenRun">اجرای غربال تنش اعضای تیر حمال</button></div><pre id="craneGirderLocalScreenResult" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>';
+ '<div class="button-grid"><button type="button" class="btn secondary" id="craneGirderLocalScreenTemplate">ساخت الگوی شناسه اعضا از تحلیل اخیر</button><button type="button" class="btn primary" id="craneGirderLocalScreenRun">اجرای غربال تنش اعضای تیر حمال</button></div><pre id="craneGirderLocalScreenResult" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>';
  const anchor=root.document.getElementById("crane3DLoadTransferPanel");if(anchor)anchor.insertAdjacentElement("afterend",panel);else main.appendChild(panel);
+ root.document.getElementById("craneGirderLocalScreenTemplate").addEventListener("click",makeTemplate);
  root.document.getElementById("craneGirderLocalScreenRun").addEventListener("click",run);
 }
 function selfTest(){
@@ -73,6 +89,7 @@ function selfTest(){
  const section={A_m2:.01,Sy_m3:.0001,Sz_m3:.0002,Avy_m2:.005,Avz_m2:.005,J_m4:1e-6,torsionRadius_m:.1,Fy_MPa:240,source:"SEC-1",geometrySource:"DWG-1",shearAreaMethod:"section properties",torsionMethod:"Saint-Venant constant"};
  const r=audit({success:true,members:[member]},{G1:section});
  t("calculates both member-end demands",()=>r.success&&r.results[0].ends.length===2);
+ t("creates a per-member data-entry template",()=>{const q=templateFor({members:[member,{...member,id:"G2"}]});return q.success&&q.memberCount===2&&!!q.data.G1&&!!q.data.G2&&q.data.G1.A_m2==="";});
  t("computes transparent SI normal and shear stress equations",()=>{const e=r.results[0].ends[0],sigma=10000/.01+5000/.0001+6000/.0002,tau=20000/.005+30000/.005+4000*.1/1e-6;return Math.abs(e.nominalUpperBound_Pa.normal-sigma)<1e-6&&Math.abs(e.nominalUpperBound_Pa.shear-tau)<1e-6;});
  t("absolute-force bound is independent of sign reversal",()=>{const b={...member,localEndForces:member.localEndForces.map(v=>-v)};return audit({success:true,members:[b]},{G1:section}).results[0].governingYieldScreenRatio===r.results[0].governingYieldScreenRatio;});
  t("rejects missing section modulus",()=>!audit({success:true,members:[member]},{G1:{...section,Sy_m3:0}}).success);
@@ -84,5 +101,5 @@ function selfTest(){
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests,analysisEnabled:false,note:"Software regression only; not a code resistance verification."};
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCraneGirderLocalScreen={audit,readUI,setData,run,selfTest};
+root.SteelCraneGirderLocalScreen={audit,templateFor,makeTemplate,readUI,setData,run,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
