@@ -33,6 +33,7 @@ function analyze(input){
  const supports=p.supports||[],loads=p.pointLoads||[];
  if(supports.length<2)throw Error("حداقل دو ایستگاه تکیه‌گاهی فنری لازم است.");
  supports.forEach((s,i)=>{if(!(Number.isFinite(Number(s.x_m))&&Number(s.x_m)>=0&&Number(s.x_m)<=length&&Number.isFinite(Number(s.kVertical_N_m))&&Number(s.kVertical_N_m)>0))throw Error("مختصات و سختی قائم تکیه‌گاه شماره "+(i+1)+" باید معتبر و سختی مثبت باشد.");if(s.kRotational_Nm_rad!==undefined&&s.kRotational_Nm_rad!==null&&!(Number.isFinite(Number(s.kRotational_Nm_rad))&&Number(s.kRotational_Nm_rad)>=0))throw Error("سختی دورانی تکیه‌گاه باید صفر یا مثبت باشد.");});
+ if(new Set(supports.map(s=>Number(s.x_m).toFixed(8))).size<2)throw Error("حداقل دو موقعیت مکانی مستقل برای تکیه‌گاه‌های قائم لازم است.");
  loads.forEach((l,i)=>{if(!(Number.isFinite(Number(l.x_m))&&Number(l.x_m)>=0&&Number(l.x_m)<=length&&Number.isFinite(Number(l.P_N))))throw Error("مختصات و مقدار بار چرخ شماره "+(i+1)+" نامعتبر است.");});
  const n=mesh.length,nd=2*n,K=Array.from({length:nd},()=>Array(nd).fill(0)),F=Array(nd).fill(0),elements=[];
  for(let e=0;e<n-1;e++){
