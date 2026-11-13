@@ -780,7 +780,7 @@
     let taperedSegmentationAudit=null;
     if(window.SteelTaperedSections&&typeof window.SteelTaperedSections.segmentModel==="function"){
       const segmented=window.SteelTaperedSections.segmentModel(analysisModel,
-        {span:Number(model.geometry?.span||$("span")?.value),height:Number($("height")?.value)},8);
+        {span:Number(model.geometry?.span||$("span")?.value),height:Number($("height")?.value)},window.SteelTaperedSections.getData?.().segmentsPerMember||8);
       analysisModel.nodes=segmented.model.nodes;
       analysisModel.members=segmented.model.members;
       taperedSegmentationAudit=segmented.audit;
