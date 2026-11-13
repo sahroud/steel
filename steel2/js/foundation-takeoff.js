@@ -58,7 +58,7 @@
  function selfTest(){
   const bases=[{nodeId:"B1",x:0,y:0,z:0}],specs=[{layer:"bottom",direction:"X",diaMm:16,spacingMm:200},{layer:"bottom",direction:"Z",diaMm:16,spacingMm:200},{layer:"top",direction:"X",diaMm:14,spacingMm:200},{layer:"top",direction:"Z",diaMm:14,spacingMm:200}];
   const g=buildFootingRebarGeometry(bases,2,2,0.5,50,specs);
-  const checks={fourGridLayers:g.ok&&g.count>0&&new Set(g.bars.map(x=>x.layer+"-"+x.direction)).size===4,bottomTopElevation:g.ok&&g.bars.some(x=>x.layer==="bottom"&&x.a.y<0.1)&&g.bars.some(x=>x.layer==="top"&&x.a.y>0.4),gridBarsStayInsideFootprint:g.ok&&g.bars.every(x=>Math.abs(x.a.x)<=1&&Math.abs(x.a.z)<=1&&Math.abs(x.b.x)<=1&&Math.abs(x.b.z)<=1)};
+  const checks={fourGridLayers:g.ok&&g.count>0&&new Set(g.bars.map(x=>x.layer+"-"+x.direction)).size===4,bottomTopElevation:g.ok&&g.bars.some(x=>x.layer==="bottom"&&Math.abs(x.a.y-0.058)<1e-9)&&g.bars.some(x=>x.layer==="top"&&Math.abs(x.a.y+0.058)<1e-9),gridBarsStayInsideFootprint:g.ok&&g.bars.every(x=>Math.abs(x.a.x)<=1&&Math.abs(x.a.z)<=1&&Math.abs(x.b.x)<=1&&Math.abs(x.b.z)<=1)};
   return{passed:Object.values(checks).every(Boolean),checks,barCount:g.count,assumptions:g.assumptions};
 }
 function checkTieBeamRebarClearance(tieBars,requiredClearanceMm=0){
@@ -261,7 +261,7 @@ function modelFingerprint(model){
     const cross=(sp.direction==="X"?B:L)*1000-2*coverMm;
     if(available<=0||cross<=0||T*1000<=2*coverMm+sp.diaMm)return{ok:false,reason:"پوشش و قطر میلگرد با ابعاد پی سازگار نیست."};
     const count=Math.floor(cross/sp.spacingMm)+1;
-    const y=row.y+(sp.layer==="bottom"?coverMm+sp.diaMm/2:T*1000-coverMm-sp.diaMm/2)/1000;
+    const y=row.y+(sp.layer==="bottom"?-T*1000+coverMm+sp.diaMm/2:-coverMm-sp.diaMm/2)/1000;
     for(let i=0;i<count;i++){
      const offset=-cross/2+(count===1?0:i*cross/(count-1));
      const a=sp.direction==="X"?{x:row.x-available/2000,y,z:row.z+offset/1000}:{x:row.x+offset/1000,y,z:row.z-available/2000};
@@ -270,7 +270,7 @@ function modelFingerprint(model){
     }
    }
   }
-  return{ok:bars.length>0,bars,count:bars.length,baseCount:baseRows.length,assumptions:"مرکز هر پی منطبق بر مختصات گره پایه فرض شده؛ میلگردها مستقیم و بدون خم/قلاب/وصله مدل شده‌اند. تراز y گره پایه مبنای تراز رویه پی است و شبکه بالا/پایین با پوشش واردشده جانمایی می‌شود. این هندسه برای کنترل برخورد اولیه است، نه نقشه اجرایی."};
+  return{ok:bars.length>0,bars,count:bars.length,baseCount:baseRows.length,assumptions:"مرکز هر پی منطبق بر مختصات گره پایه فرض شده؛ میلگردها مستقیم و بدون خم/قلاب/وصله مدل شده‌اند. تراز y گره پایه مبنای تراز رویه پی است؛ محور y در مدل رو به بالا است، بنابراین شبکه تحتانی در تراز y منفی‌تر و شبکه فوقانی نزدیک‌تر به رویه پی قرار می‌گیرد. این هندسه برای کنترل برخورد اولیه است، نه نقشه اجرایی."};
 }
 function footingGridSpecs(state){
  const out=[];
