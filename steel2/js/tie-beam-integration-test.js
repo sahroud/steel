@@ -16,6 +16,8 @@
   const B1={id:"B_TOP",x:B0.x,y:3,z:B0.z,kind:"column-top"};
   const w=0.60*0.50*25*1000; // 7,500 N/m; concrete self-weight exactly once.
   const beam={id:"TB_TEST",start:A0.id,end:B0.id,type:"concrete-tie-beam",sectionKey:"tieBeam",
+    // Joint datum = top of footing and top of tie beam; centroidal axis is h/2 below.
+    endOffsets:{i:[0,-0.25,0],j:[0,-0.25,0]},
     analysisLoad:{uniformLocal:along?[0,-w,0]:[0,0,-w]}};
   if(joint==="pinned")beam.endReleases={i:[4,5],j:[4,5]};
   const model={nodes:[A0,A1,B0,B1],members:[
@@ -39,10 +41,12 @@
   const expectedWeight=w*6;
   const reactionError=Math.abs(verticalReaction-expectedWeight)/expectedWeight;
   const momentOK=joint==="pinned"?maxMoment<1e-5:maxMoment>1;
+  const offsetOK=Array.isArray(beam.endOffsets?.i)&&beam.endOffsets.i[1]===-0.25&&beam.endOffsets.j[1]===-0.25;
   return {axis,joint,success:result.success,equilibrium:result.equilibrium.ok,
+   centroidOffsetDownM:0.25,topAlignmentVerified:offsetOK,
    expectedSelfWeightN:expectedWeight,verticalSupportReactionN:verticalReaction,
    relativeVerticalReactionError:reactionError,maxTieEndBendingMomentNm:maxMoment,
-   endReleases:tie.endReleases,passed:result.success&&result.equilibrium.ok&&reactionError<1e-6&&momentOK};
+   endReleases:tie.endReleases,passed:result.success&&result.equilibrium.ok&&reactionError<1e-6&&momentOK&&offsetOK};
  }
  function run(){
   const cases=[];
@@ -52,7 +56,7 @@
   }
   return {schemaVersion:1,total:cases.length,passed:cases.filter(x=>x.passed).length,
    failed:cases.filter(x=>!x.passed).length,cases,
-   note:"مدل مستقل دو ستونک و یک شناژ؛ وزن بتن 7.5 kN/m فقط یک‌بار به‌صورت بار گسترده وارد شده است. این آزمون، اتصال واقعی آرماتورها، ظرفیت پی، مهاری، ترک‌خوردگی بتن یا ضوابط لرزه‌ای را تأیید نمی‌کند."};
+   note:"مدل مستقل دو ستونک و یک شناژ؛ رویه بالای شناژ با تراز بالای پی هم‌سطح و محور هندسی شناژ 0.25m پایین‌تر از گره‌های پایه مدل شده است. وزن بتن 7.5 kN/m فقط یک‌بار به‌صورت بار گسترده وارد شده است. این آزمون، اتصال واقعی آرماتورها، ظرفیت پی، مهاری، ترک‌خوردگی بتن یا ضوابط لرزه‌ای را تأیید نمی‌کند."};
  }
  root.SteelTieBeamIntegrationTest={run};
 })(typeof window!=="undefined"?window:globalThis);
