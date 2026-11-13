@@ -75,10 +75,10 @@ function apply(){
   const s=selected();
   if(!$("pcN")||!$("pcMx")||!$("pcMz"))throw Error("پنل تحلیل تماس جزئی بارگذاری نشده است.");
   $("pcN").value=s.mapped.N_tensionPositive_kN;$("pcMx").value=s.mapped.Mx_kNm;$("pcMz").value=s.mapped.Mz_kNm;
-  const anchorFields={adTension:s.mapped.N_tensionPositive_kN,adMx:s.mapped.Mx_kNm,adMz:s.mapped.Mz_kNm,adVx:s.mapped.Vx_kN,adVz:s.mapped.Vz_kN};
+  const anchorFields={adTension:s.mapped.N_tensionPositive_kN,adMx:s.mapped.Mx_kNm,adMz:s.mapped.Mz_kNm,adVx:s.mapped.Vx_kN,adVz:s.mapped.Vz_kN,adTy:s.mapped.Ty_kNm};
   let anchorTransferred=false;
   if(Object.keys(anchorFields).every(id=>$(id))){Object.entries(anchorFields).forEach(([id,value])=>$(id).value=value);anchorTransferred=true;}
-  $("pcResult").textContent="بارهای محوری و خمشی هم‌زمان به غربال تماس صفحه‌ستون منتقل شدند."+(anchorTransferred?" پنج مؤلفه N، Mx، Mz، Vx و Vz نیز در پنل گروه بولت قرار گرفتند؛ تیک تأیید قرارداد علامت را خودتان پس از کنترل فعال کنید.":" پنل گروه بولت در دسترس نبود.")+" مؤلفه پیچش My="+fmt(s.mapped.Ty_kNm)+" kN.m در غربال فعلی گروه بولت لحاظ نمی‌شود و باید جداگانه بررسی شود.";
+  $("pcResult").textContent="بارهای محوری و خمشی هم‌زمان به غربال تماس صفحه‌ستون منتقل شدند."+(anchorTransferred?" پنج مؤلفه N، Mx، Mz، Vx و Vz نیز در پنل گروه بولت قرار گرفتند؛ تیک تأیید قرارداد علامت را خودتان پس از کنترل فعال کنید.":" پنل گروه بولت در دسترس نبود.")+" مؤلفه پیچش حول Y="+fmt(s.mapped.Ty_kNm)+" kN.m منتقل و ثبت شد، اما در توزیع نیروی بولت یا ظرفیت آن محاسبه نمی‌شود؛ کنترل مستقل گروه بولت لازم است.";
   $("baseplatePartialContactPanel").scrollIntoView?.({behavior:"smooth",block:"center"});
  }catch(e){$("brtResult").textContent=e.message;}
 }
