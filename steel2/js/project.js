@@ -236,6 +236,9 @@
         if (window.SteelAnchorBaseplateTakeoff && typeof window.SteelAnchorBaseplateTakeoff.getData === "function") {
             data.anchorBaseplateTakeoff = window.SteelAnchorBaseplateTakeoff.getData();
         }
+        if (window.SteelAnchorDemandScreen && typeof window.SteelAnchorDemandScreen.getData === "function") {
+            data.anchorDemandScreen = window.SteelAnchorDemandScreen.getData();
+        }
 
         if (window.SteelFootingStructuralScreen && typeof window.SteelFootingStructuralScreen.getData === "function") {
             data.footingStructuralScreen = window.SteelFootingStructuralScreen.getData();
@@ -506,6 +509,9 @@
 
         if (window.SteelAnchorBaseplateTakeoff && typeof window.SteelAnchorBaseplateTakeoff.setData === "function") {
             window.SteelAnchorBaseplateTakeoff.setData(data.anchorBaseplateTakeoff || {});
+        }
+        if (window.SteelAnchorDemandScreen && typeof window.SteelAnchorDemandScreen.setData === "function") {
+            window.SteelAnchorDemandScreen.setData(data.anchorDemandScreen || {});
         }
 
         if (window.SteelFootingStructuralScreen && typeof window.SteelFootingStructuralScreen.setData === "function") {
