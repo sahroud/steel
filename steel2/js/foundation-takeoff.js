@@ -49,6 +49,7 @@
   $("btnFoundationCSV").addEventListener("click",exportCSV);
   $("btnRefreshRebarDrawing").addEventListener("click",renderRebarDrawing);
   $("rebarDrawingMode").addEventListener("change",renderRebarDrawing);
+  renderRebarDrawing();
   try{$("rebarDrawingMode").value=localStorage.getItem("sahroudSteel.rebarDrawingMode.v1")||"default";$("rebarDrawingMode").addEventListener("change",()=>{try{localStorage.setItem("sahroudSteel.rebarDrawingMode.v1",$("rebarDrawingMode").value);}catch(e){}});}catch(e){}
  }
  function readInputs(){keys.forEach(k=>{const el=$(map[k]);if(el)state[k]=el.value;});}
@@ -380,7 +381,7 @@ function calculateFootingRebar(baseCount,B,L){
   if(!report?.records?.length)return{specs:[],basis:"خروجی غربال سازه‌ای فونداسیون موجود نیست؛ ابتدا غربال را اجرا کنید و قطر میلگردهای تحتانی را ثبت کنید."};
   const specs=[];
   for(const dir of ["X","Z"]){
-   const tokens=report.records.filter(r=>r&&Number.isFinite(r.spacingByStrengthMm)&&r.spacingByStrengthMm>0&&String(r.direction||"").includes(dir));
+   const tokens=report.records.filter(r=>r&&Number.isFinite(r.spacingByStrengthMm)&&r.spacingByStrengthMm>0&&String(r.direction||"").includes(dir==="X"?"موازی X":"موازی Z"));
    if(!tokens.length)continue;
    const dia=Number(dir==="X"?state.bottomBarDiaXmm:state.bottomBarDiaZmm);
    if(!(dia>0))continue;
