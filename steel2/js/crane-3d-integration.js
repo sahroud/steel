@@ -42,6 +42,8 @@ function readUI(){
  if(!el||!String(el.value||"").trim())return {};
  try{return JSON.parse(el.value);}catch(e){return {parseError:String(e.message||e)};}
 }
+function setData(data){const el=root.document?.getElementById?.("crane3DIntegrationJson");if(el&&data&&typeof data==="object")el.value=JSON.stringify(data,null,2);}
+
 function audit(model,input){const d=input||readUI();if(d.parseError)return {success:false,ready:false,analysisEnabled:false,issues:["JSON مشخصات تحلیل سه‌بعدی جرثقیل قابل خواندن نیست: "+d.parseError]};const r=prepare(model,d);return {...r,model:undefined};}
 function integrate(model,input){return prepare(model,input||readUI());}
 function selfTest(){
@@ -62,5 +64,5 @@ function selfTest(){
  t("does not approve design or analysis",()=>r.analysisEnabled===false&&r.model.geometry.craneRunway.integrated3D.analysisEnabled===false);
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
-root.SteelCrane3DIntegration={prepare,integrate,audit,readUI,selfTest};
+root.SteelCrane3DIntegration={prepare,integrate,audit,readUI,setData,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
