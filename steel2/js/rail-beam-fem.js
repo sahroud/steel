@@ -90,6 +90,44 @@ function analyzeIfReady(input){
  const result=analyze({...input,supports,pointLoads});
  return {...result,inputAudit:audit,analysisEnabled:false,note:"نتیجه تحلیل عددی مقدماتی است؛ برای طراحی/تأیید اجرایی کافی نیست."};
 }
+
+function movingLoadEnvelope(input){
+ const p=input||{},L=Number(p.length_m),step=Number(p.step_m),wheels=Array.isArray(p.wheels)?p.wheels:[];
+ const issues=[];
+ if(!(Number.isFinite(step)&&step>0))issues.push("گام جاروب بار متحرک باید مثبت و بر حسب متر باشد.");
+ if(!wheels.length)issues.push("حداقل یک چرخ مستند برای قطار متحرک لازم است.");
+ wheels.forEach((w,i)=>{if(!(Number.isFinite(Number(w.offset_m))&&Number(w.offset_m)>=0&&Number.isFinite(Number(w.P_N))))issues.push("آفست یا بار چرخ متحرک شماره "+(i+1)+" نامعتبر است.");if(!String(w.source||"").trim()||!String(w.document||"").trim())issues.push("منبع و شماره مرجع برای چرخ متحرک شماره "+(i+1)+" لازم است.");});
+ if(wheels.some((w,i)=>i&&Number(w.offset_m)<Number(wheels[i-1].offset_m)))issues.push("آفست چرخ‌ها باید به ترتیب صعودی از چرخ مبنا ثبت شوند.");
+ const baseLoad=wheels.length?{x_m:0,P_N:Number(wheels[0].P_N),source:wheels[0].source,document:wheels[0].document}:null;
+ const baseAudit=auditReadiness({...p,pointLoads:baseLoad?[baseLoad]:[]});
+ issues.push(...baseAudit.issues.filter(x=>!x.includes("قطار چرخ مستند")));
+ if(issues.length)return {success:false,analysisEnabled:false,audit:{ready:false,issues},note:"جاروب بار متحرک اجرا نشد."};
+ const maxOffset=Math.max(...wheels.map(w=>Number(w.offset_m))),rawCount=Math.ceil((L+maxOffset)/step)+1;
+ if(rawCount>1200)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["تعداد موقعیت‌های جاروب بیش از ۱۲۰۰ است؛ گام بزرگ‌تری انتخاب کنید."]}};
+ const positions=new Set();
+ for(let x=-maxOffset;x<=L+step*1e-8;x+=step)positions.add(Number(x.toFixed(10)));
+ // Include exact wheel entry/exit and support-crossing positions in addition to the regular grid.
+ (p.supportStations_m||[]).forEach(s=>wheels.forEach(w=>positions.add(Number((Number(s)-Number(w.offset_m)).toFixed(10)))));
+ wheels.forEach(w=>{positions.add(Number((-Number(w.offset_m)).toFixed(10)));positions.add(Number((L-Number(w.offset_m)).toFixed(10)));});
+ const sorted=[...positions].filter(x=>x>=-maxOffset-1e-8&&x<=L+1e-8).sort((a,b)=>a-b);
+ if(sorted.length>1500)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["تعداد موقعیت‌های ویژه و نمونه‌برداری‌شده بیش از ۱۵۰۰ است."]}};
+ const supportEnvelope=(p.supportStations_m||[]).map((x,i)=>({station:i+1,x_m:Number(x),maxReaction_N:-Infinity,minReaction_N:Infinity,maxCase:null,minCase:null}));
+ let maxDef={positive_m:-Infinity,negative_m:Infinity,maxCase:null,minCase:null},cases=0,failed=[];
+ sorted.forEach(ref=>{const active=wheels.map(w=>({...w,x_m:ref+Number(w.offset_m)})).filter(w=>w.x_m>=-1e-9&&w.x_m<=L+1e-9);
+  if(!active.length)return;
+  try{
+   const loads=active.map(w=>({x_m:Math.max(0,Math.min(L,w.x_m)),P_N:Number(w.P_N)}));
+   const result=analyze({...p,pointLoads:loads});
+   if(!result.equilibrium.ok){failed.push({referencePosition_m:ref,reason:"تعادل کلی برقرار نیست"});return;}
+   cases++;
+   const concurrent=result.supports.map(s=>({station:s.station,x_m:s.x_m,verticalReaction_N:s.verticalReaction_N}));
+   result.supports.forEach((r,i)=>{const e=supportEnvelope[i];if(r.verticalReaction_N>e.maxReaction_N){e.maxReaction_N=r.verticalReaction_N;e.maxCase={referencePosition_m:ref,activeWheelCount:active.length,concurrentReactions:concurrent};}if(r.verticalReaction_N<e.minReaction_N){e.minReaction_N=r.verticalReaction_N;e.minCase={referencePosition_m:ref,activeWheelCount:active.length,concurrentReactions:concurrent};}});
+   result.nodes.forEach(n=>{if(n.verticalDisplacement_m>maxDef.positive_m){maxDef.positive_m=n.verticalDisplacement_m;maxDef.maxCase={referencePosition_m:ref,x_m:n.x_m};}if(n.verticalDisplacement_m<maxDef.negative_m){maxDef.negative_m=n.verticalDisplacement_m;maxDef.minCase={referencePosition_m:ref,x_m:n.x_m};}});
+  }catch(e){failed.push({referencePosition_m:ref,reason:String(e.message||e)});}
+ });
+ if(!cases)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["هیچ موقعیت بارگذاری معتبری برای حل به دست نیامد.",...failed.slice(0,5).map(x=>x.reason)]}};
+ return {success:true,method:"sampled moving wheel-train envelope using repeated continuous-beam FEM solves",length_m:L,step_m:step,positionCount:sorted.length,solvedCases:cases,skippedCases:sorted.length-cases-failed.length,failedCases:failed.slice(0,20),wheels:wheels.map(w=>({offset_m:Number(w.offset_m),P_N:Number(w.P_N),source:w.source,document:w.document})),supportReactionEnvelope:supportEnvelope,maxNodalDisplacement_m:maxDef,analysisEnabled:false,limitations:["This is a spatially sampled envelope, not a mathematically exact continuous moving-load envelope; extrema may lie between sampled positions.","Linear Euler-Bernoulli model with documented independent vertical support springs only.","No impact/dynamic amplification, fatigue, lateral force, torsion, wheel/rail contact nonlinearity, rail-joint release or multiple cranes.","Only one rail is analyzed; concurrent two-rail transfer to runway girders is not implemented.","No design approval or code compliance is implied."]};
+}
 function selfTest(){
  const tests=[],test=(name,fn)=>{try{const detail=fn();tests.push({name,ok:detail!==false,detail:detail===true?"passed":detail});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
  const base={length_m:10,E_MPa:200000,Ix_mm4:1e8,meshPositions_m:[0,5,10],supports:[{x_m:0,kVertical_N_m:1e12},{x_m:10,kVertical_N_m:1e12}],pointLoads:[{x_m:5,P_N:-1000}]};
@@ -102,7 +140,11 @@ function selfTest(){
  test("readiness-gated-rail-analysis-remains-unapproved",()=>{const r=analyzeIfReady({length_m:10,E_MPa:200000,Ix_mm4:1e8,propertySource:"rail catalog p.2",continuity:"continuous",supportStations_m:[0,10],verticalSpringStiffness_N_m:[1e12,1e12],supportStiffnessSource:"verified connector test",pointLoads:[{x_m:5,P_N:-1000,source:"crane drawing",document:"sheet 2"}]});return r.success&&r.equilibrium.ok&&r.analysisEnabled===false;});
 
  test("continuous two-span rail with unequal support springs and multiple wheel loads",()=>{const r=analyze({length_m:12,E_MPa:200000,Ix_mm4:1.5e8,meshPositions_m:[0,6,12],supports:[{x_m:0,kVertical_N_m:8e8},{x_m:6,kVertical_N_m:1.1e9},{x_m:12,kVertical_N_m:7e8}],pointLoads:[{x_m:3,P_N:-12000},{x_m:9,P_N:-8000}]});return r.success&&r.supports.length===3&&r.loads.length===2&&r.equilibrium.ok;});
+
+ test("moving wheel train sampled envelope keeps concurrent support reactions",()=>{const r=movingLoadEnvelope({length_m:12,E_MPa:200000,Ix_mm4:1.5e8,propertySource:"catalog p.3",continuity:"continuous",supportStations_m:[0,6,12],verticalSpringStiffness_N_m:[1e12,1e12,1e12],supportStiffnessSource:"support test p.2",step_m:0.5,wheels:[{offset_m:0,P_N:-10000,source:"crane drawing",document:"p.4"},{offset_m:2,P_N:-8000,source:"crane drawing",document:"p.4"}]});return r.success&&r.solvedCases>0&&r.supportReactionEnvelope.length===3&&r.supportReactionEnvelope.every(x=>x.maxCase&&x.maxCase.concurrentReactions.length===3)&&r.analysisEnabled===false;});
+ test("moving wheel train rejects undocumented wheel",()=>{const r=movingLoadEnvelope({length_m:10,E_MPa:200000,Ix_mm4:1e8,propertySource:"catalog",continuity:"continuous",supportStations_m:[0,10],verticalSpringStiffness_N_m:[1e12,1e12],supportStiffnessSource:"test",step_m:1,wheels:[{offset_m:0,P_N:-1000,source:"",document:""}]});return !r.success&&r.audit.issues.some(x=>x.includes("منبع")||x.includes("مرجع"));});
+ test("moving wheel train rejects excessive sampling",()=>{const r=movingLoadEnvelope({length_m:100,E_MPa:200000,Ix_mm4:1e8,propertySource:"catalog",continuity:"continuous",supportStations_m:[0,100],verticalSpringStiffness_N_m:[1e12,1e12],supportStiffnessSource:"test",step_m:0.01,wheels:[{offset_m:0,P_N:-1000,source:"catalog",document:"p.1"}]});return !r.success&&r.audit.issues.some(x=>x.includes("۱۲۰۰"));});
  return {schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"Deterministic mathematical/software checks only; not independent engineering validation or code compliance."};
 }
-root.SteelRailBeamFEM={analyze,auditReadiness,analyzeIfReady,selfTest};
+root.SteelRailBeamFEM={analyze,auditReadiness,analyzeIfReady,movingLoadEnvelope,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
