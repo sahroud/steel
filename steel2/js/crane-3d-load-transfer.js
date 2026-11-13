@@ -172,7 +172,7 @@ function ensurePanel(){
  const status=()=>root.document.getElementById("crane3DLoadTransferResult");
  root.document.getElementById("crane3DPrepareCases").addEventListener("click",()=>{
   try{
-   const model=root.SteelStructuralModel?.model||root.SteelStructuralModel?.build?.();
+   const model=root.SteelStructuralModel?.build?.()||root.SteelStructuralModel?.model;
    const transfer=root.SteelCraneTwoRailTransfer?.getLastResult?.();
    const horizontal=root.SteelCraneHorizontalLoads?.getData?.()||{enabled:false};
    const train=root.SteelCraneTrainAnalysis?.getData?.()||{};
