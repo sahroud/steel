@@ -48,17 +48,19 @@ function buildSnapshot(data){
  }else if(data.model)warnings.push("متره وزن اسکلت هنوز از مدل و مقاطع معتبر استخراج نشده است.");
  if(f?.quantities){
   const x=f.quantities;
-  add("foundation-tie-count","شناژ","تعداد شناژها","عدد",x.tieCount,"متره فونداسیون","طبق نقشه واردشده");
-  add("foundation-tie-length","شناژ","طول کل شناژها","m",x.tieTotalLengthM,"متره فونداسیون","طول محور/اجرایی واردشده از نقشه");
+  add("foundation-tie-count","شناژ","تعداد شناژها","عدد",x.tieCount,"متره فونداسیون","از مسیرهای تعریف‌شده یا ورودی نقشه",{aggregationRole:"summary"});
+  add("foundation-tie-length","شناژ","طول کل شناژها","m",x.tieTotalLengthM,"متره فونداسیون","از مسیرهای تعریف‌شده یا ورودی نقشه؛ جمع‌بندی",{aggregationRole:"summary"});
+  (x.tieRouteSchedule||[]).forEach(route=>{add("tie-route-"+route.id+"-length","شناژ","طول مسیر "+route.id,"m",route.lengthM,"هندسه مسیر شناژ","فاصله سه‌بعدی دو گره پایه");add("tie-route-"+route.id+"-concrete","شناژ","بتن مسیر "+route.id,"m³",route.concreteM3,"هندسه مسیر شناژ","طول × عرض × ارتفاع مقطع ثبت‌شده");add("tie-route-"+route.id+"-formwork","قالب‌بندی","قالب جانبی مسیر "+route.id,"m²",route.sideFormworkM2,"هندسه مسیر شناژ","دو وجه جانبی؛ قالب کف و سرهای آزاد منظور نشده");});
+  if(Array.isArray(x.tieRouteWarnings))warnings.push(...x.tieRouteWarnings);
   (x.footingSchedule||[]).forEach(row=>{add("footing-"+row.nodeId,"فونداسیون","بتن پی پایه "+row.nodeId,"m³",Number(row.width)*Number(row.length)*Number(row.thickness),"جدول مستقل پی‌ها","عرض × طول × ضخامت ثبت‌شده");add("excavation-"+row.nodeId,"خاکی","خاکبرداری محل پی "+row.nodeId,"m³",row.excavationM3,"جدول مستقل پی‌ها","ابعاد پی + فضای کار ثبت‌شده × عمق خاکبرداری؛ بدون ترانشه شناژ");});
   add("foundation-footing-concrete","فونداسیون","بتن پی‌ها","m³",x.footingConcreteM3,"متره فونداسیون","ابعاد مستقل هر پایه", {aggregationRole:"summary"});
   add("foundation-pedestal-concrete","فونداسیون","بتن پدستال‌ها","m³",x.pedestalConcreteM3,"متره فونداسیون","فقط با تکمیل سه بعد پدستال");
-  add("foundation-tie-concrete","شناژ","بتن شناژها","m³",x.tieConcreteM3,"متره فونداسیون","طول و مقطع از ورودی نقشه؛ مسیر خودکار حدس زده نمی‌شود");
+  add("foundation-tie-concrete","شناژ","بتن شناژها","m³",x.tieConcreteM3,"متره فونداسیون","از مسیرهای تعریف‌شده یا ورودی نقشه؛ جمع‌بندی",{aggregationRole:"summary"});
   add("foundation-total-concrete","فونداسیون و شناژ","جمع بتن پی، پدستال و شناژ","m³",x.totalConcreteM3,"متره فونداسیون","ردیف جمع‌بندی؛ با اجزای بتن جمع نشود",{aggregationRole:"summary"});
   add("foundation-excavation","خاکی","حجم خاکبرداری","m³",x.excavationM3,"متره فونداسیون","عمق و فضای کار باید وارد شده باشد");
   add("foundation-footing-formwork","قالب‌بندی","قالب جانبی پی‌ها","m²",x.footingFormworkM2,"متره فونداسیون","سطح جانبی پی‌ها؛ قالب کف منظور نشده");
   add("foundation-pedestal-formwork","قالب‌بندی","قالب جانبی پدستال‌ها","m²",x.pedestalFormworkM2,"متره فونداسیون","فقط در صورت ورود هر سه بعد پدستال؛ قالب کف منظور نشده");
-  add("foundation-tie-formwork","قالب‌بندی","قالب جانبی شناژ","m²",x.tieSideFormworkM2,"متره فونداسیون","قالب کف شناژ منظور نشده");
+  add("foundation-tie-formwork","قالب‌بندی","قالب جانبی شناژ","m²",x.tieSideFormworkM2,"متره فونداسیون","جمع‌بندی دو وجه جانبی؛ قالب کف منظور نشده",{aggregationRole:"summary"});
   add("foundation-total-formwork","قالب‌بندی","جمع قالب جانبی پی، پدستال و شناژ","m²",x.totalFormworkM2,"متره فونداسیون","ردیف جمع‌بندی؛ با اجزای قالب جمع نشود",{aggregationRole:"summary"});
   add("foundation-footing-rebar","آرماتور","وزن شبکه آرماتور پی","kg",x.footingRebarKg,"متره فونداسیون","جزئیات قلاب/وصله فقط اگر در طول برش لحاظ شده باشد", {aggregationRole:"summary"});
   add("foundation-pedestal-rebar","آرماتور","وزن آرماتور پدستال","kg",x.pedestalRebarKg,"متره فونداسیون","بر اساس تعداد و طول برش واردشده");
@@ -150,6 +152,7 @@ function selfTest(){
   anchorModuleCountPreventsDuplicate:!buildSnapshot({foundation:{quantities:{anchorsCount:12}},anchor:{boltCount:16}}).rows.some(x=>x.id==="foundation-anchor-count"),
   knownFootingFormworkRetainedWithoutTie:buildSnapshot({foundation:{quantities:{footingFormworkM2:10,tieSideFormworkM2:null}}}).rows.find(x=>x.id==="foundation-footing-formwork")?.quantity===10,
   footingAndTrenchExcavationSeparated:by.get("footing-B1")?.quantity===2&&by.get("excavation-B1")?.quantity===5,
+  incompleteConcreteTotalRemainsUnknown:buildSnapshot({foundation:{quantities:{footingConcreteM3:2,pedestalConcreteM3:null,tieConcreteM3:null,totalConcreteM3:null}}}).rows.find(x=>x.id==="foundation-total-concrete")?.quantity===null,
   totalConcreteAndFormworkAreSummaries:by.get("foundation-total-concrete")?.aggregationRole==="summary"&&by.get("foundation-total-formwork")?.aggregationRole==="summary",
   totalRebarRequiresAllComponents:by.get("foundation-total-rebar")?.quantity===null,
   anchorNutWasherMassCaptured:by.get("anchor-nut-mass")?.quantity===1.2&&by.get("anchor-washer-mass")?.quantity===0.2&&by.get("anchor-total-mass")?.aggregationRole==="summary",
