@@ -5,7 +5,9 @@
 "use strict";
 function run(){
  const checks=[];
- const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};\n test("site earthwork and floor concrete takeoff",()=>{const x=root.SteelSiteWorkTakeoff?.selfTest?.();return x?.passed===5&&x.failed===0?"Cut/fill and 150 mm, 350 kg/m³ floor quantity guards pass":false;});\n test("site work quantities registered in project BOQ",()=>{const x=root.SteelProjectBOQ?.selfTest?.();return x?.passed===23&&x.failed===0?"Earthwork and floor quantities remain separate and missing values stay pending":false;});
+ const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
+ test("site earthwork and floor concrete takeoff",()=>{const x=root.SteelSiteWorkTakeoff?.selfTest?.();return x?.passed===5&&x.failed===0?"Cut/fill and 150 mm, 350 kg/m³ floor quantity guards pass":false;});
+ test("site work quantities registered in project BOQ",()=>{const x=root.SteelProjectBOQ?.selfTest?.();return x?.passed===23&&x.failed===0?"Earthwork and floor quantities remain separate and missing values stay pending":false;});
  test("I-section geometry positive",()=>{const x=root.SteelSectionGeometry.calculateISection({d:300,bf:150,tw:8,tf:12});return x.A_cm2>0&&x.Ix_cm4>x.Iy_cm4&&x.J_cm4>0?"A/I/J positive; major-axis inertia exceeds minor-axis inertia":false;});
  test("tapered I-section moduli and web ratios",()=>{const x=root.SteelTaperedSections.calculate({d:300,bf:150,tw:8,tf:12});return x.SxTop_cm3>0&&x.SxBottom_cm3===x.SxTop_cm3&&x.Sy_cm3>0&&x.Aw_cm2>0&&x.flangeOutstandRatio>0&&x.webDepthThicknessRatio>0?"Elastic section moduli, web area and geometric slenderness ratios are available":false;});
 test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISection({d:300,bf:150,tw:8,tf:12});return Math.abs(x.SxTop_cm3-x.SxBottom_cm3)<1e-10?"Top/bottom elastic moduli equal":false;});
