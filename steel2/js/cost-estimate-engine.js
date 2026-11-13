@@ -172,6 +172,7 @@
   extras.tax=afterRisk*pct.tax/100;
   const total=afterRisk+extras.tax;
   state.lastCost={generatedAt:new Date().toISOString(),currency:"تومان",projectCity:projectCity(),rows,marketFreightTotal:quotedFreightTotal,pricingWarnings:[...new Set(pricingWarnings)],materialSubtotal:subtotal,percentageInputs:clone(pct),percentageCosts:extras,totalCost:total,missing,pricingMode:state.steelPricingMode,notice:"برآورد مقدماتی؛ قیمت‌های تأییدنشده، مقادیر ناقص و هزینه‌های فاقد داده در جمع لحاظ نشده‌اند."};
+  window.SteelProjectBOQ?.refresh?.();
   $("costEstimateSummary").textContent="شهر اجرای پروژه: "+(projectCity()||"نامشخص")+"\nجمع اقلام دارای قیمت: "+fmt(subtotal)+" تومان\nحمل: "+fmt(extras.transport)+" | ساخت: "+fmt(extras.fabrication)+(state.steelPricingMode==="fabricated"?" (در قیمت ساخت هر کیلو منظور شده)":"")+" | نصب: "+fmt(extras.installation)+" | رنگ: "+fmt(extras.paint)+"\nبالاسری: "+fmt(extras.overhead)+" | ذخیره ریسک: "+fmt(extras.contingency)+" | مالیات: "+fmt(extras.tax)+"\nبرآورد کل اقلام قیمت‌گذاری‌شده: "+fmt(total)+" تومان\n"+(missing.length?"موارد خارج از جمع:\n"+missing.join("\n"):"تمام اقلام دارای مقدار قیمت‌گذاری شده‌اند.")+(pricingWarnings.length?"\n\nهشدارهای قیمت و تأمین:\n"+[...new Set(pricingWarnings)].join("\n"):"")+"\n\nاین رقم قیمت قطعی پیمان یا پیشنهاد فروشنده نیست."
   $("btnExportCost").disabled=false;
  }
