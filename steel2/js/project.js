@@ -142,6 +142,10 @@
             data.sectionGeometryAudit = window.SteelSectionGeometry.read();
         }
 
+        if (window.SteelTaperedSections && typeof window.SteelTaperedSections.read === "function") {
+            data.taperedMemberSections = window.SteelTaperedSections.read();
+        }
+
         if (window.SteelOpenings &&
             typeof window.SteelOpenings.getData === "function") {
             data.openings = window.SteelOpenings.getData();
@@ -439,6 +443,10 @@
         if (data.sectionGeometryAudit && window.SteelSectionGeometry &&
             typeof window.SteelSectionGeometry.setData === "function") {
             window.SteelSectionGeometry.setData(data.sectionGeometryAudit);
+        }
+
+        if (window.SteelTaperedSections && typeof window.SteelTaperedSections.setData === "function") {
+            window.SteelTaperedSections.setData(data.taperedMemberSections || {});
         }
 
         if (data.openings && window.SteelOpenings &&
