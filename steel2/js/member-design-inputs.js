@@ -6,7 +6,7 @@
 const groups=[
  {key:"column",label:"ستون‌ها"},{key:"rafter",label:"رفترها"},
  {key:"endPost",label:"ستونک‌های انتهایی"},{key:"endGirt",label:"تیرهای انتهایی"},
- {key:"roofBrace",label:"مهاربندهای سقف"},{key:"wallBrace",label:"مهاربندهای دیوار"}
+ {key:"roofBrace",label:"مهاربندهای سقف"},{key:"wallBrace",label:"مهاربندهای دیوار"},{key:"roofEdge",label:"اعضای لبه سقف"}
 ];
 const fields=[
  ["Fy","Fy (MPa)"],["Fu","Fu (MPa)"],["Kx","Kx"],["Ky","Ky"],
