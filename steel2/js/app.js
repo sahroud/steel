@@ -134,13 +134,13 @@
             signs.forEach(sign => {
                 cases.push({
                     name: "ترکیب ۳ ـ 1.2D + 1.6(" +
-                        action.title + ") + 0.8W، " +
+                        action.title + ") + 0.7W، " +
                         (sign > 0 ? "جهت اول باد" : "جهت معکوس باد"),
                     data: makeCombinationData(original, {
                         deadFactor: 1.2,
                         liveFactor: action.key === "live" ? 1.6 : 0,
                         snowFactor: action.key === "snow" ? 1.6 : 0,
-                        windFactor: 0.8,
+                        windFactor: 0.7,
                         windSign: sign
                     })
                 });
@@ -149,11 +149,11 @@
 
         signs.forEach(sign => {
             cases.push({
-                name: "ترکیب ۶ ـ 0.8D + 1.6W، " +
+                name: "ترکیب ۶ ـ 0.9D + 1.4W، " +
                     (sign > 0 ? "جهت اول باد" : "جهت معکوس باد"),
                 data: makeCombinationData(original, {
-                    deadFactor: 0.8,
-                    windFactor: 1.6,
+                    deadFactor: 0.9,
+                    windFactor: 1.4,
                     windSign: sign
                 })
             });
@@ -268,7 +268,14 @@
         const original = JSON.parse(
             JSON.stringify(window.SteelLoads.getData())
         );
-
+        const windKeys = ["windLeft","windRight","windWall","windEndFront","windEndBack"];
+        const windValues = windKeys.map(k => original[k]);
+        if (windValues.some(v => v === "" || v === null || v === undefined || !Number.isFinite(Number(v))) ||
+            !windValues.some(v => Math.abs(Number(v)) > 1e-12)) {
+            const message = $("analysisMessage");
+            if (message) message.textContent = "تحلیل ترکیبات دوبعدی متوقف شد: فشار باد باید صریح، عددی و محاسبه‌شده باشد؛ صفرهای پیش‌فرض جایگزین بار باد نامشخص نیستند.";
+            return {success:false,status:"insufficient_data"};
+        }
         const cases = buildCombinationCases(original);
         const results = [];
         let failure = null;
