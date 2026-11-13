@@ -5,7 +5,7 @@
 (function(root){
 "use strict";
 const $=id=>document.getElementById(id);
-let last=null;
+let last=null,selectedMemberId="",selectedCaseLabel="";
 const groups=[
  ["all","همه اعضا"],["column","ستون‌ها"],["rafter","رفترها"],["roofPurlin","پرلین‌های سقف"],
  ["wallGirt","قیدهای دیوار"],["endPost","ستونک‌های انتهایی"],["endGirt","تیرهای انتهایی"],
@@ -70,12 +70,40 @@ async function run(){
  finally{btn.disabled=false;}
 }
 function render(){
- const filter=$("memberForceGroup")?.value||"all",rows=(last?.members||[]).filter(r=>filter==="all"||r.sectionKey===filter);
+ const filter=$("memberForceGroup")?.value||"all",all=last?.members||[];
+ const rows=all.filter(r=>filter==="all"||r.sectionKey===filter);
  const body=$("memberForceRows");
  body.innerHTML=rows.map(r=>'<tr><td>'+esc(r.id)+'</td><td>'+esc(r.sectionKey)+'</td><td>'+fmt(r.length||0)+'</td><td>'+fmt(r.peak.N/1000)+'</td><td>'+fmt(r.peak.Vy/1000)+'</td><td>'+fmt(r.peak.Vz/1000)+'</td><td>'+fmt(r.peak.My/1e6)+'</td><td>'+fmt(r.peak.Mz/1e6)+'</td><td>'+r.caseCount+'</td></tr>').join("")||'<tr><td colspan="9">عضوی برای این گروه پیدا نشد.</td></tr>';
+ const memberSelect=$("memberForceDetailMember"),caseSelect=$("memberForceDetailCase");
+ if(memberSelect){
+  const prior=selectedMemberId||memberSelect.value;
+  memberSelect.innerHTML=all.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.id)+' — '+esc(r.sectionKey)+'</option>').join("");
+  selectedMemberId=all.some(r=>String(r.id)===String(prior))?String(prior):String(all[0]?.id||"");
+  memberSelect.value=selectedMemberId;
+ }
+ if(caseSelect){
+  const prior=selectedCaseLabel||caseSelect.value;
+  const selected=all.find(r=>String(r.id)===selectedMemberId);
+  const labels=selected?.ends?.filter(e=>e.values.length===12).map(e=>e.label)||[];
+  caseSelect.innerHTML=labels.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join("");
+  selectedCaseLabel=labels.includes(prior)?prior:(labels[0]||"");
+  caseSelect.value=selectedCaseLabel;
+ }
+ renderDetail();
  const eq=last.allCasesEquilibriumOK?"تعادل همه تحلیل‌ها برقرار است":"هشدار: در برخی تحلیل‌ها تعادل عددی برقرار نیست";
- $("memberForceSummary").textContent="اعضا: "+last.memberCount+" | حالت‌های بار: "+last.cases.length+" | "+eq+" | نیرو: kN، لنگر: kN.m. مقادیر جدول بیشینه قدرمطلق هر مؤلفه‌اند و ممکن است از ترکیب‌های متفاوت باشند؛ برای طراحی اندرکنش، بردار کامل هر انتها و یک ترکیب واحد باید خوانده شود.";
+ $("memberForceSummary").textContent="اعضا: "+last.memberCount+" | حالت‌های بار: "+last.cases.length+" | "+eq+" | نیرو: kN، لنگر: kN.m. مقادیر جدول بیشینه قدرمطلق هر مؤلفه‌اند و ممکن است از ترکیب‌های متفاوت باشند.";
  $("btnMemberForceJSON").disabled=false;
+}
+function renderDetail(){
+ const host=$("memberForceSimultaneousDetail");if(!host||!last)return;
+ const member=(last.members||[]).find(r=>String(r.id)===String(selectedMemberId));
+ const end=member?.ends?.find(e=>e.label===selectedCaseLabel&&e.values.length===12);
+ if(!end){host.textContent="برای عضو و حالت انتخاب‌شده بردار نیروی معتبر در دسترس نیست.";return;}
+ const labels=["Nᵢ (kN)","Vyᵢ (kN)","Vzᵢ (kN)","Tᵢ (kN.m)","Myᵢ (kN.m)","Mzᵢ (kN.m)","Nⱼ (kN)","Vyⱼ (kN)","Vzⱼ (kN)","Tⱼ (kN.m)","Myⱼ (kN.m)","Mzⱼ (kN.m)"];
+ host.innerHTML='<div class="notice">عضو <b>'+esc(member.id)+'</b> — حالت بار <b>'+esc(end.label)+'</b>. تمام ۱۲ مؤلفه زیر متعلق به همین یک تحلیل و هم‌زمان هستند.</div>'+
+ '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>مؤلفه</th><th>مقدار</th></tr></thead><tbody>'+
+ labels.map((label,i)=>'<tr><td>'+label+'</td><td>'+fmt(i%6<3?end.values[i]/1000:end.values[i]/1e6)+'</td></tr>').join("")+
+ '</tbody></table></div>';
 }
 function exportJSON(){if(!last)return;const blob=new Blob([JSON.stringify(last,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="sahroud-steel-member-force-envelope.json";a.click();URL.revokeObjectURL(url);}
 function init(){
@@ -89,9 +117,13 @@ function init(){
  '<div class="notice" id="memberForceForceNote">ابتدا مدل کامل و مشخصات مقاطع سه‌بعدی را آماده کنید.</div>'+
  '<div class="notice" id="memberForceEnvelopeResult">هنوز تحلیلی اجرا نشده است.</div>'+
  '<div style="overflow-x:auto"><table class="data-table" style="min-width:850px;width:100%"><thead><tr><th>شناسه</th><th>گروه</th><th>طول m</th><th>N kN</th><th>Vy kN</th><th>Vz kN</th><th>My kN.m</th><th>Mz kN.m</th><th>حالت‌های معتبر</th></tr></thead><tbody id="memberForceRows"><tr><td colspan="9">پس از تحلیل نتایج نمایش داده می‌شود.</td></tr></tbody></table></div>'+
- '<div class="notice">برای هر عضو، خروجی JSON شامل تمام ۱۲ مؤلفه نیروی انتهایی در هر ترکیب نگهداری می‌شود. در گام بعدی همین تقاضاها به کنترل مقاومت مقاطع، کمانش و خیز متصل می‌شوند؛ تا آن زمان هیچ نسبت قبولی/ردی خودکار اعلام نمی‌شود.</div>';
+ '<div class="panel-title"><h4>بردار نیروهای هم‌زمان برای یک عضو و یک حالت بار</h4></div>'+
+ '<div class="form-grid"><div class="field"><label for="memberForceDetailMember">انتخاب عضو</label><select id="memberForceDetailMember"></select></div><div class="field"><label for="memberForceDetailCase">انتخاب حالت بار</label><select id="memberForceDetailCase"></select></div></div>'+
+ '<div id="memberForceSimultaneousDetail" class="notice">پس از تحلیل، عضو و حالت بار را انتخاب کنید.</div>'+
+ '<div class="notice">این بردار هم‌زمان برای آماده‌سازی کنترل اندرکنش طبق بند ۱۰-۲-۷ مبحث دهم ارائه می‌شود؛ خود کنترل اندرکنش و ظرفیت هنوز پیاده‌سازی نشده است.</div>'+
+ '<div class="notice">برای هر عضو، خروجی JSON شامل تمام ۱۲ مؤلفه نیروی انتهایی در هر ترکیب نگهداری می‌شود. تا تکمیل روابط مقاومت و اعتبارسنجی مستقل، نسبت قبولی/ردی خودکار اعلام نمی‌شود.</div>';
  if(footer)footer.insertAdjacentElement("beforebegin",p);else main.appendChild(p);
- $("btnMemberForceEnvelope").addEventListener("click",run);$("btnMemberForceJSON").addEventListener("click",exportJSON);$("memberForceGroup").addEventListener("change",()=>{if(last)render();});
+ $("btnMemberForceEnvelope").addEventListener("click",run);$("btnMemberForceJSON").addEventListener("click",exportJSON);$("memberForceGroup").addEventListener("change",()=>{if(last)render();});$("memberForceDetailMember").addEventListener("change",e=>{selectedMemberId=e.target.value;selectedCaseLabel="";if(last)render();});$("memberForceDetailCase").addEventListener("change",e=>{selectedCaseLabel=e.target.value;renderDetail();});
 }
 root.SteelMemberForceEnvelope={run,getLast:()=>last};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
