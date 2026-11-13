@@ -66,3 +66,12 @@ The gate requires explicit confirmation that the official text and applicable er
 ## Expanded local stability input audit
 
 The plate/stability audit now rejects `none` or `unknown` compression-flange restraint states and requires positive unbraced length, `Cb`, section stability properties, bearing length, web-panel length, and explicit records for root radius, stiffener type/source, web-panel source, restraint source, and bearing detail. It still reports geometry ratios only. These added inputs are evidence collection for later code-specific checks, not resistance calculations.
+
+
+## Fatigue evidence audit
+
+The separate **ممیزی مدارک خستگی تیر حمال** panel records crane duty class/source, service cycles per day, operating days/year, design service years, fatigue code/clause, detail category and source, stress-range method/source, load-spectrum source, weld condition, inspection basis, and documented spectrum bins. It calculates only the nominal service-cycle count and checks that the entered spectrum does not exceed it. It does not calculate an S-N resistance, fatigue life, or cumulative damage.
+
+## Welded and bolted connection evidence audit
+
+The **ممیزی مدارک اتصالات تیر حمال و براکت** panel captures individual connection IDs, load path and force source, connected-part grades/thicknesses, plate thickness, and the applicable weld or bolt details. Welded/mixed connections require weld type/size, electrode, WPS and inspection record. Bolted/mixed connections require diameter/grade, hole type, edge distance, pitch, count and arrangement source; slip-critical records also require faying-surface class. The module deliberately returns no capacity or utilization.
