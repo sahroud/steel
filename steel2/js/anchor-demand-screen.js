@@ -68,7 +68,8 @@ function run(){
   r.input={...vals,tensionCapacity:tc,shearCapacity:vc,signConfirmed:true};r.limitations=["توزیع کشش الاستیک با صفحه صلب و بدون prying است؛ توزیع واقعی ممکن است متفاوت باشد.","برش بین بولت‌ها مساوی فرض شده و اثر اصطکاک تماس، کلید برشی و لغزش لحاظ نشده است.","ظرفیت فولادی، شکست مخروطی بتن، pullout، pry-out، side-face blowout، فاصله لبه، فاصله محوری، اثر گروه، لرزه‌ای، خستگی و اندرکنش آیین‌نامه‌ای کنترل نشده‌اند.","ظرفیت‌های اختیاری صرفاً از ورودی کاربر خوانده می‌شوند و نرم‌افزار صحت آن‌ها را تأیید نمی‌کند."];
   last=r;const body=$("anchorDemandRows");body.replaceChildren();
   r.bolts.forEach(b=>{const tr=document.createElement("tr");[b.mark,fmt(b.x),fmt(b.z),fmt(b.tensionKN),fmt(b.shearXKN),fmt(b.shearZKN),fmt(b.shearResultKN),b.capacityStatus].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);});
-  const torsionText=" | پیچش Y: "+fmt(r.torsionYKNm)+" kN.m (در این غربال توزیع/طراحی نشده؛ کنترل مستقل لازم است)";\n  const tText=tc>0?"نسبت بیشینه کشش/ظرفیت: "+fmt(r.maxTensionKN/tc):"ظرفیت کششی وارد نشده";
+  const torsionText=" | پیچش Y: "+fmt(r.torsionYKNm)+" kN.m (در این غربال توزیع/طراحی نشده؛ کنترل مستقل لازم است)";
+  const tText=tc>0?"نسبت بیشینه کشش/ظرفیت: "+fmt(r.maxTensionKN/tc):"ظرفیت کششی وارد نشده";
   const vText=vc>0?"نسبت بیشینه برش/ظرفیت: "+fmt(r.maxShearKN/vc):"ظرفیت برشی وارد نشده";
   $("anchorDemandSummary").textContent="تعداد بولت: "+r.bolts.length+" | بیشینه کشش یک بولت: "+fmt(r.maxTensionKN)+" kN | بیشینه برش یک بولت: "+fmt(r.maxShearKN)+" kN | "+tText+" | "+vText+torsionText+" | فقط غربال تقاضا؛ نه تأیید طراحی.";
   $("btnAnchorDemandCSV").disabled=false;return r;
