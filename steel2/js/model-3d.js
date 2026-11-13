@@ -797,7 +797,14 @@
           "؛ شناسه‌های پایانی گره‌ها: "+sample+
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
-      const section=m.sectionKey==="tieBeam"?m.analysisSection:window.SteelSections.resolveAnalysis3DSection(m);
+      let section=m.sectionKey==="tieBeam"?m.analysisSection:window.SteelSections.resolveAnalysis3DSection(m);
+      if(m.sectionKey!=="tieBeam"&&window.SteelTaperedSections&&typeof window.SteelTaperedSections.resolveForMember==="function"){
+        const taper=window.SteelTaperedSections.resolveForMember(m,analysisModel.nodes,{span:Number($("span")?.value),height:Number($("height")?.value)},section);
+        section=taper.section;
+        if(taper.applied){
+          m.taperApplied=true;m.taperCoordinate=taper.coordinate;m.taperProperties=taper.properties;
+        }
+      }
       sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile};
       let selfWeightLineLoad=0;
       if(selected.deadFactor>0){
