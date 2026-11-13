@@ -536,6 +536,10 @@ function calculateFootingRebar(baseCount,B,L){
   // Interactive isometric overview: dimensions and node positions come only from the active model inputs.
   panel(20,810,960,260,"نمای سه‌بعدی شماتیک فونداسیون و شناژ — چرخش و بزرگ‌نمایی");
   const isoControls='<div class="button-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button type="button" class="btn secondary" data-iso="left">چرخش چپ</button><button type="button" class="btn secondary" data-iso="right">چرخش راست</button><button type="button" class="btn secondary" data-iso="in">بزرگ‌نمایی +</button><button type="button" class="btn secondary" data-iso="out">کوچک‌نمایی −</button><button type="button" class="btn secondary" data-iso="reset">نمای اولیه</button></div>';
+  const clashStatus=Number.isFinite(clash?.minimumClearDistanceMm)
+   ?(clash.ok?"کنترل هندسی: بدون تقاطع | حداقل فاصله آزاد "+fmtSvg(clash.minimumClearDistanceMm)+" mm":"هشدار برخورد: "+clash.conflictPairs+" جفت | "+(clash.criticalPair?.tieBar||"شناژ")+" ↔ "+(clash.criticalPair?.footingBar||"شبکه پی"))
+   :(clash?.reason||"کنترل برخورد به داده‌های کامل نیاز دارد.");
+  svg.push('<text x="500" y="840" text-anchor="middle" font-size="13" font-weight="bold" fill="'+(Number.isFinite(clash?.minimumClearDistanceMm)?(clash.ok?"#047857":"#b91c1c"):"#92400e")+'">'+esc(clashStatus)+'</text>');
   const projectIso=(x,y,z)=>{
    const a=rebarIsoView.angle,ca=Math.cos(a),sa=Math.sin(a),rx=x*ca-z*sa,rz=x*sa+z*ca;
    const sc=105*rebarIsoView.zoom;
@@ -600,7 +604,7 @@ function calculateFootingRebar(baseCount,B,L){
   }));
   const footingLabel=footingSpecs.specs.length?footingSpecs.specs.map(s=>(s.layer==="bottom"?"تحتانی":"فوقانی")+" "+s.direction+" Ø"+s.diaMm+" @"+fmtSvg(s.spacingMm)).join("؛ "):"شبکه فونداسیون موجود نیست";
   const tieLabel=tie?(tie.count===null?"خروجی طراحی شناژ موجود نیست":tie.route.id+": "+tie.count+" بالا و "+tie.count+" پایین Ø"+tie.dia+"، خاموت Ø"+(tie.stirrupDia||10)):"شناژ ثبت نشده";
-  const clashLabel=clash.ok?"کنترل هندسی اتصال: بدون تقاطع؛ حداقل فاصله آزاد "+fmtSvg(clash.minimumClearDistanceMm)+" mm ("+clash.pairsChecked+" جفت میلگرد بررسی شد).":(clash.reason||("کنترل هندسی: "+clash.conflictPairs+" جفت دارای تقاطع/عدم فاصله."));
+  const clashLabel=Number.isFinite(clash.minimumClearDistanceMm)?(clash.ok?"کنترل هندسی اتصال: بدون تقاطع؛ حداقل فاصله آزاد "+fmtSvg(clash.minimumClearDistanceMm)+" mm ("+clash.pairsChecked+" جفت میلگرد بررسی شد).":"هشدار: "+clash.conflictPairs+" جفت میلگرد دارای تقاطع/فاصله ناکافی؛ زوج بحرانی "+(clash.criticalPair?.tieBar||"شناژ")+" و "+(clash.criticalPair?.footingBar||"شبکه پی")):(clash.reason||"کنترل برخورد انجام نشد.");
   summary.textContent=(mode==="default"?"حالت پیش‌فرض اجرایی؛ ":"حالت طراحی؛ ")+"پی انتخابی "+(selectedBase?baseId(selectedBase):"نامشخص")+" | "+footingLabel+" | "+tieLabel+" | "+footingSpecs.basis+" | "+clashLabel+(cover===null?" پوشش بتن وارد نشده؛ جانمایی میلگردها در تصویر شماتیک است.":"")+(missing.length?" هشدار: "+missing.join(" "):"");
  }
 
