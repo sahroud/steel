@@ -562,7 +562,7 @@
         }];
         [{key:"live",title:"Lr"},{key:"snow",title:"S"}].forEach(action => {
             signs.forEach(sign => cases.push({
-                label:"ترکیب ۳ ـ 1.2D + 1.6"+action.title+" + 0.8W"+(hasWind?(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"):""),
+                label:"ترکیب ۳ ـ 1.2D + 1.6"+action.title+" + 0.7W"+(hasWind?(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"):""),
                 factors:{dead:1.2,live:action.key==="live"?1.6:0,
                     snow:action.key==="snow"?1.6:0,wind:hasWind?0.7:0},
                 windSign:sign
