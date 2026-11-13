@@ -523,6 +523,7 @@
         if (window.SteelCraneHorizontalLoads) window.SteelCraneHorizontalLoads.setData(data.craneHorizontalLoads || {});
         if (window.SteelCraneTwoRailTransfer) window.SteelCraneTwoRailTransfer.setData(data.craneTwoRailTransfer || {});
         if (window.SteelRunwayGirderFEM) window.SteelRunwayGirderFEM.setData(data.runwayGirderFEM || {});
+        if (window.SteelCrane3DIntegration) window.SteelCrane3DIntegration.setData(data.crane3DIntegration || {});
 
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.setData === "function") {
             window.SteelGeotechnicalData.setData(data.geotechnicalData || {});
