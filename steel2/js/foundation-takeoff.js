@@ -97,9 +97,12 @@
   const g=buildFootingRebarGeometry(bases,2,2,0.5,50,specs);
   const checks={fourGridLayers:g.ok&&g.count>0&&new Set(g.bars.map(x=>x.layer+"-"+x.direction)).size===4,bottomTopElevation:g.ok&&g.bars.some(x=>x.layer==="bottom"&&Math.abs(x.a.y+0.442)<1e-9)&&g.bars.some(x=>x.layer==="top"&&Math.abs(x.a.y+0.057)<1e-9),gridBarsStayInsideFootprint:g.ok&&g.bars.every(x=>Math.abs(x.a.x)<=1&&Math.abs(x.a.z)<=1&&Math.abs(x.b.x)<=1&&Math.abs(x.b.z)<=1)};
   const datum=footingDatumGeometry(0,0.5,0.8),secondary=footingDatumGeometry(3,0.5,0.8),tallTie=footingDatumGeometry(0,0.9,0.8);
+  const mainSpec=defaultFootingSpec({kind:"base"}),secondarySpec=defaultFootingSpec({kind:"endwall-base"});
   checks.sharedTopDatum=datum.ok&&datum.commonTopElevationM===0&&Math.abs(datum.extraExcavationBelowTieM-0.3)<1e-9;
   checks.footingBottomFormula=datum.ok&&Math.abs(datum.footingBottomElevationM+0.8)<1e-9&&Math.abs(datum.tieBottomElevationM+0.5)<1e-9;
   checks.noExtraExcavationWhenTieDeeper=tallTie.ok&&tallTie.extraExcavationBelowTieM===0&&Math.abs(tallTie.footingBottomAboveTieBottomM-0.1)<1e-9;
+  checks.mainFootingDefault=mainSpec.width==="1.80"&&mainSpec.length==="1.80"&&mainSpec.thickness==="0.80";
+  checks.secondaryFootingDefault=secondarySpec.width==="1.40"&&secondarySpec.length==="1.40"&&secondarySpec.thickness==="0.80";
   return{passed:Object.values(checks).every(Boolean),checks,barCount:g.count,assumptions:g.assumptions,datumTests:{main:datum,secondary:secondary,tallTie}};
 }
 function checkTieBeamRebarClearance(tieBars,requiredClearanceMm=0){
