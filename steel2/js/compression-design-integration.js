@@ -90,10 +90,19 @@ function selfTest(){
   {id:"BAD",sectionKey:"rafter",ends:[{label:"BAD",values:[0,1,2]}]}
  ]});
  const tension=rows.find(r=>r.id==="T1"),compression=rows.find(r=>r.id==="C1");
+ const base={sectionPropertiesMatchReviewed:true,sectionType:"doubly-symmetric-I",sectionTypeReviewed:true,localSlendernessReviewed:true,localSlendernessClass:"non-slender",Ag_mm2:10000,Ix_mm4:8e8,Iy_mm4:1e8,J_mm4:2e6,h0_mm:500,Kx:1,Ky:1,Kz:1,Fy_MPa:235,E_MPa:200000,G_MPa:76923,nu:0.3};
+ const good=memberCapacityFromInput({id:"M1",sectionKey:"column"}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
+ const missing=memberCapacityFromInput({id:"M2",sectionKey:"column"}, {...base}, {},false);
+ const mismatch=memberCapacityFromInput({id:"M3",sectionKey:"column"}, {...base,sectionPropertiesMatchReviewed:false}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
+ const tapered=memberCapacityFromInput({id:"M4",sectionKey:"column",taperSegmentIndex:1}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
  const tests=[
   {name:"tension is not classified as compression",pass:!!tension&&tension.compressionDemand_kN===0},
   {name:"compression demand uses largest end compression",pass:!!compression&&compression.compressionDemand_kN===1.5&&compression.governingCase==="C2"},
-  {name:"invalid force vectors are ignored",pass:!rows.some(r=>r.id==="BAD")}
+  {name:"invalid force vectors are ignored",pass:!rows.some(r=>r.id==="BAD")},
+  {name:"member capacity calculated with explicit unbraced lengths",pass:good.ok&&good.LRFD.designStrength_kN>0},
+  {name:"missing member unbraced lengths are blocked",pass:!missing.ok},
+  {name:"unconfirmed section-property mapping is blocked",pass:!mismatch.ok},
+  {name:"tapered analysis segment is blocked",pass:!tapered.ok}
  ];
  return {passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests};
 }
@@ -115,20 +124,23 @@ function render(){
  '<div class="notice">مساحت، ممان‌های اینرسی و J در صورت خالی بودن، از رجیستر مقطع همین گروه به‌صورت اولیه خوانده می‌شوند (A: cm²→mm² و ممان‌ها: cm⁴→mm⁴)؛ آن‌ها را با مشخصات واقعی مقطع تطبیق دهید. مقدار h0 و طول‌های مهارنشده باید از هندسه و نقشه واقعی برداشت شوند. E و G از پنل مصالح خوانده می‌شوند (در نبود مقدار، E=200000 MPa و G متناظر با ν=0.3 فقط مقدار الاستیک پایه است). Fy از رجیستر گروه عضو یا پنل مصالح خوانده می‌شود، مگر آنکه جداگانه در این فرم وارد شود. Kها را بدون تحلیل/پیوست معتبر حدس نزنید.</div>'+
  '<div class="button-grid"><button type="button" class="btn primary" id="btnCompressionCapacityRun">محاسبه مقاومت کمانش کلی ستون و رفتر</button></div><div id="compressionCapacityResults"></div>';
 }
-function capacityForMember(row){
+function memberCapacityFromInput(row,base,override,taperedEnabled){
  const g=row.sectionKey;
  if(g!=="column"&&g!=="rafter")return {ok:false,issues:["گروه عضو در موتور فعلی پشتیبانی نمی‌شود."]};
  if(row.taperSegmentIndex!==null&&row.taperSegmentIndex!==undefined)return {ok:false,issues:["قطعه متعلق به عضو متغیرعمق است؛ ظرفیت منشوری مجاز نیست."]};
- if(data.groups[g]?.sectionPropertiesMatchReviewed!==true)return {ok:false,issues:["یکسان بودن خواص هندسی ثبت‌شده با این عضو هنوز تأیید نشده است."]};
- const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
- if(tapered?.enabled===true)return {ok:false,issues:["گروه در مدل متغیرعمق فعال است."]};
- const base=getInput(g),override=data.memberOverrides[String(row.id)]||{};
+ if(taperedEnabled===true)return {ok:false,issues:["گروه در مدل متغیرعمق فعال است."]};
+ if(base.sectionPropertiesMatchReviewed!==true)return {ok:false,issues:["یکسان بودن خواص هندسی ثبت‌شده با این عضو هنوز تأیید نشده است."]};
  for(const k of ["Lx_mm","Ly_mm","Lz_mm"]){
-  if(!(Number(override[k])>0))return {ok:false,issues:["طول مهارنشده "+k+" برای این عضو باید جداگانه وارد و تأیید شود."]};
+  if(!(Number(override?.[k])>0))return {ok:false,issues:["طول مهارنشده "+k+" برای این عضو باید جداگانه وارد و تأیید شود."]};
   base[k]=Number(override[k]);
  }
  base.localSlendernessClass=base.localSlendernessReviewed?"non-slender":"unreviewed";
  return root.SteelCompressionCapacity.analyze(base);
+}
+function capacityForMember(row){
+ const g=row.sectionKey,base=getInput(g),override=data.memberOverrides[String(row.id)]||{};
+ const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
+ return memberCapacityFromInput(row,base,override,tapered?.enabled===true);
 }
 function renderResults(){
  const host=$("compressionCapacityResults");if(!host)return;
@@ -155,6 +167,6 @@ function init(){
  anchor.insertAdjacentElement("afterend",p);render();
  $("btnCompressionCapacityRun")?.addEventListener("click",renderResults);
 }
-root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,capacityForMember,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,selfTest,render};
+root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,capacityForMember,memberCapacityFromInput,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,selfTest,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
