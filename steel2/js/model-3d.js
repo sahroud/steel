@@ -1199,8 +1199,10 @@
           const slope=rise/half;
           const norm=Math.hypot(slope,1);
           const dp=selected.directionalWindPressures?.surfaces;
-          const leftLine=dp?Number(dp["roof-left"])*Number(m.lineLoads?.tributaryWidthLeft||0):Number(m.lineLoads?.windLeft||0)*windSign;
-          const rightLine=dp?Number(dp["roof-right"])*Number(m.lineLoads?.tributaryWidthRight||0):Number(m.lineLoads?.windRight||0)*windSign;
+          const leftWidth=m.side==="ridge"?Number(m.lineLoads?.tributaryWidthLeft||0):(m.side==="left"?Number(m.lineLoads?.tributaryWidth||0):0);
+          const rightWidth=m.side==="ridge"?Number(m.lineLoads?.tributaryWidthRight||0):(m.side==="right"?Number(m.lineLoads?.tributaryWidth||0):0);
+          const leftLine=dp?Number(dp["roof-left"])*leftWidth:Number(m.lineLoads?.windLeft||0)*windSign;
+          const rightLine=dp?Number(dp["roof-right"])*rightWidth:Number(m.lineLoads?.windRight||0)*windSign;
           const left=leftLine*1000*windFactor,right=rightLine*1000*windFactor;
           global[0]+=left*slope/norm-right*slope/norm;
           global[1]-=(left+right)/norm;
