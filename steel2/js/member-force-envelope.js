@@ -103,6 +103,8 @@ function renderDetail(){
  const p=member.section||{};
  const props=[["مساحت A (cm²)",Number(p.A)*1e4],["Iy (cm⁴)",Number(p.Iy)*1e8],["Iz (cm⁴)",Number(p.Iz)*1e8],["J (cm⁴)",Number(p.J)*1e8],["E (GPa)",Number(p.E)/1e9],["G (GPa)",Number(p.G)/1e9]];
  const missing=props.filter(x=>!(Number.isFinite(x[1])&&x[1]>0)).map(x=>x[0]);
+ const design=window.SteelMemberDesignInputs?.getForGroup?.(member.sectionKey)||{};
+ const designFields=[["Fy (MPa)",design.Fy],["Fu (MPa)",design.Fu],["Kx",design.Kx],["Ky",design.Ky],["Lcx (m)",design.Lcx],["Lcy (m)",design.Lcy],["Lb (m)",design.Lb],["Cb",design.Cb]];
  host.innerHTML='<div class="notice">عضو <b>'+esc(member.id)+'</b> — '+esc(member.profile||"مقطع ثبت‌نشده")+' — گره ابتدا: '+esc(member.start||"—")+' — گره انتها: '+esc(member.end||"—")+' — طول: '+fmt(member.length||0)+' m — حالت بار <b>'+esc(end.label)+'</b>. تمام ۱۲ مؤلفه زیر متعلق به همین یک تحلیل و هم‌زمان هستند.</div>'+
  '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>مؤلفه</th><th>مقدار</th></tr></thead><tbody>'+
  labels.map((label,i)=>'<tr><td>'+label+'</td><td>'+fmt(i%6<3?end.values[i]/1000:end.values[i]/1e6)+'</td></tr>').join("")+
@@ -111,7 +113,12 @@ function renderDetail(){
  props.map(x=>'<tr><td>'+x[0]+'</td><td>'+fmt(x[1])+'</td></tr>').join("")+
  '</tbody></table></div>'+
  '<div class="notice">'+(missing.length?"مشخصات لازم برای طراحی ناقص است: "+missing.join("، "):"مشخصات هندسی و الاستیک پایه مقطع از حل‌گر دریافت شده است.")+
- '؛ هنوز تنش تسلیم/گسیختگی معتبر، طبقه‌بندی مقطع، طول مهارنشده حول هر محور، ضریب طول مؤثر، مهار پیچشی و مهار جانبی، ضریب Cb و کنترل‌های بندهای ۱۰-۲-۲ تا ۱۰-۲-۷ برای این عضو ثبت و تأیید نشده‌اند.</div>';
+ '؛ پارامترهای ورودی گروهی از رجیستر پروژه:</div>'+
+ '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>پارامتر</th><th>مقدار ثبت‌شده</th></tr></thead><tbody>'+
+ designFields.map(x=>'<tr><td>'+x[0]+'</td><td>'+(Number.isFinite(Number(x[1]))?fmt(Number(x[1])):"ثبت نشده")+'</td></tr>').join("")+
+ '</tbody></table></div>'+
+ '<div class="notice">'+(design.applyToAll?"تأیید شده که این پارامترهای گروهی برای تمام اعضای گروه یکسان‌اند؛ این تأیید باید با نقشه‌های مهاربندی و جزئیات واقعی تطبیق داده شود.":"پارامترهای گروهی برای این عضو به‌عنوان ورودی طراحی تأیید نشده‌اند.")+
+ '؛ طبقه‌بندی مقطع و ضوابط موضعی هنوز باید از ابعاد واقعی مقطع تعیین شوند. این رجیستر فقط داده ورودی را نگهداری می‌کند و هیچ ظرفیت یا نسبت بهره‌برداری محاسبه نمی‌کند.</div>';
 }
 function exportJSON(){if(!last)return;const blob=new Blob([JSON.stringify(last,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="sahroud-steel-member-force-envelope.json";a.click();URL.revokeObjectURL(url);}
 function init(){
