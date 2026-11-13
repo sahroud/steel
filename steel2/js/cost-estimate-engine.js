@@ -94,12 +94,13 @@
  }
  function refreshFromFoundation(report){
   if(!report)return;
-  const links={foundationConcrete:report.totalConcreteM3,foundationRebar:report.footingRebarKg,pedestalRebar:report.pedestalRebarKg,excavation:report.excavationM3,formwork:report.sideFormworkM2,anchorBolts:report.anchorsCount,tieRebar:report.tieRebarKg};
+  const links={foundationConcrete:report.totalConcreteM3,foundationRebar:report.footingRebarKg,pedestalRebar:report.pedestalRebarKg,excavation:report.excavationM3,formwork:report.totalFormworkM2,anchorBolts:report.anchorsCount,tieRebar:report.tieRebarKg};
   let changed=false;
   state.manualItems.forEach(item=>{
-   if(Object.prototype.hasOwnProperty.call(links,item.key)&&links[item.key]!==null&&links[item.key]!==undefined&&item.quantitySource!=="manual"&&item.quantitySource!=="anchorSchedule"){
-    item.quantity=String(links[item.key]);item.quantitySource="foundation";changed=true;
-   }
+   if(!Object.prototype.hasOwnProperty.call(links,item.key)||item.quantitySource==="manual"||item.quantitySource==="anchorSchedule")return;
+   const value=links[item.key];
+   if(value===null||value===undefined||!Number.isFinite(Number(value))){if(item.quantitySource==="foundation"){item.quantity="";item.quantitySource="pending";changed=true;}return;}
+   item.quantity=String(value);item.quantitySource="foundation";changed=true;
   });
   if(changed)renderManualItems();
  }
