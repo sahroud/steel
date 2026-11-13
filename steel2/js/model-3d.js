@@ -296,9 +296,25 @@
   function addMember(members,a,b,type,sectionKey,extra) {
     members.push({id:type.toUpperCase().replace(/[^A-Z0-9]+/g,"_")+"_"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
   }
+  function runwayColumnLevels(baseY,girtHeights,eaveY,runwayY,enabled){
+    const values=[baseY,...girtHeights,eaveY];
+    if(enabled){
+      if(!(Number.isFinite(runwayY)&&runwayY>baseY+1e-7&&runwayY<eaveY-1e-7))
+        throw new Error("تراز ریل جرثقیل باید بالاتر از کف ستون و پایین‌تر از تراز کنج باشد؛ گره تراز ریل ساخته نشد.");
+      values.push(runwayY);
+    }
+    const sorted=values.sort((a,b)=>a-b).filter((y,i,a)=>i===0||Math.abs(y-a[i-1])>1e-7);
+    return sorted.map(y=>({y,kind:enabled&&Math.abs(y-runwayY)<=1e-7?"runway-support":(Math.abs(y-baseY)<=1e-7?"base":(Math.abs(y-eaveY)<=1e-7?"eave":"column-girt-joint"))}));
+  }
+  function runwayGeometrySelfTest(){
+    const normal=runwayColumnLevels(0,[2,4,6],10,5,true);
+    const duplicate=runwayColumnLevels(0,[2,5,6],10,5,true);
+    let rejected=false;try{runwayColumnLevels(0,[2,4],10,10,true);}catch(_){rejected=true;}
+    return {passed:[normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,duplicate.filter(x=>x.y===5).length===1&&duplicate.filter(x=>x.kind==="runway-support").length===1,rejected].filter(Boolean).length,total:3};
+  }
   function build() {
     const span=val("span",20), length=val("length",30), spacing=val("spacing",5), height=val("height",6), rise=val("rise",2);
-    const psp=val("modelPurlinSpacing",1.2), gsp=val("modelGirtSpacing",1.5), endsp=val("modelEndPostSpacing",4);
+    const craneData=window.SteelCraneReadiness?.getData?.()||{};\n    const craneEnabled=!!craneData.enabled;\n    const runwayElevation=Number(craneData.runwayElevation_m);\n    const psp=val("modelPurlinSpacing",1.2), gsp=val("modelGirtSpacing",1.5), endsp=val("modelEndPostSpacing",4);
     const braceBays=Math.max(0,Math.floor(val("modelBraceBays",1)));
     if ([span,length,spacing,height,psp,gsp,endsp].some(x=>!(x>0)) || rise<0) throw new Error("ابعاد اصلی و فاصله اعضای فرعی باید مثبت باشند.");
     const frames=[0]; for(let z=spacing;z<length-1e-8;z+=spacing) frames.push(z);
@@ -322,9 +338,7 @@
       const lt=addNode(nodes,-over*cs,height-over*sn,z,"cantilever"),rt=addNode(nodes,span+over*cs,height-over*sn,z,"cantilever");
       // Split each main column at every wall-girt elevation. The girt and
       // column must reuse the exact same node IDs to transfer forces.
-      const leftColumnLevels=[bl,...girtHeights.map(y=>addNode(nodes,0,y,z,"column-girt-joint")),el];
-      const rightColumnLevels=[br,...girtHeights.map(y=>addNode(nodes,span,y,z,"column-girt-joint")),er];
-      for(let j=0;j<leftColumnLevels.length-1;j++)
+      const leftLevels=runwayColumnLevels(0,girtHeights,height,runwayElevation,craneEnabled);\n      const rightLevels=leftLevels;\n      const leftColumnLevels=leftLevels.map(v=>addNode(nodes,0,v.y,z,v.kind));\n      const rightColumnLevels=rightLevels.map(v=>addNode(nodes,span,v.y,z,v.kind));\n      for(let j=0;j<leftColumnLevels.length-1;j++)
         addMember(members,leftColumnLevels[j],leftColumnLevels[j+1],"ستون قاب","column",{frame:fi+1,axis:"transverse",segment:j+1});
       for(let j=0;j<rightColumnLevels.length-1;j++)
         addMember(members,rightColumnLevels[j],rightColumnLevels[j+1],"ستون قاب","column",{frame:fi+1,axis:"transverse",segment:j+1});
@@ -334,7 +348,7 @@
         const isOverhang=mid<0||mid>span;
         addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",segment:j+1,connectedPurlinNodes:true});
       }
-      frameNodes.push({z,bl,el,r,er,br,lt,rt});
+      const runwayLeft=craneEnabled?addNode(nodes,0,runwayElevation,z,"runway-support"):null;\n      const runwayRight=craneEnabled?addNode(nodes,span,runwayElevation,z,"runway-support"):null;\n      frameNodes.push({z,bl,el,r,er,br,lt,rt,runwayLeft,runwayRight});
     });
     // Build one physical purlin line at each roof station. The ridge is shared
     // by both slopes and must be represented once, with left/right tributary widths.
@@ -486,7 +500,7 @@
         m.lineLoads={windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure};
       }
     });
-    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
+    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0},roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
     return model;
   }
   function draw() {
@@ -593,7 +607,7 @@
   function showSummary(){
     if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
     const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
-    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی اعضا تبدیل می‌شوند؛ بارهای مرده، زنده و برف و سه ترکیب ثقلی ULS-1 تا ULS-3 در حل‌گر خطی قابل تحلیل‌اند. بار باد و ترکیبات دارای باد/زلزله هنوز در حل‌گر اعمال نمی‌شوند. پرلین‌های سقف به‌صورت قطعات مجزا بین دو قاب ساخته شده‌اند؛ در تحلیل، انتقال جابه‌جایی در محل تکیه‌گاه برقرار و هر سه دوران انتهای هر قطعه آزاد شده است تا پرلین دهانه مجاور پیوسته فرض نشود. این مدل، مفصل ایده‌آل است و سختی واقعی کلیپس/پیچ، لغزش و اثر خروج از مرکزیت را شامل نمی‌شود؛ سایر گره‌های مشترک فعلاً صلب‌اند. مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
+    const runway=model.geometry.craneRunway;\n    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی."+(runway?.enabled?" گره‌های آماده اتصال تیر حمال: "+runway.supportNodeCount+" در تراز "+runway.elevationM+" متر؛ هنوز تیر حمال/براکت به مدل افزوده نشده است.":"") + "<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی اعضا تبدیل می‌شوند؛ بارهای مرده، زنده و برف و سه ترکیب ثقلی ULS-1 تا ULS-3 در حل‌گر خطی قابل تحلیل‌اند. بار باد و ترکیبات دارای باد/زلزله هنوز در حل‌گر اعمال نمی‌شوند. پرلین‌های سقف به‌صورت قطعات مجزا بین دو قاب ساخته شده‌اند؛ در تحلیل، انتقال جابه‌جایی در محل تکیه‌گاه برقرار و هر سه دوران انتهای هر قطعه آزاد شده است تا پرلین دهانه مجاور پیوسته فرض نشود. این مدل، مفصل ایده‌آل است و سختی واقعی کلیپس/پیچ، لغزش و اثر خروج از مرکزیت را شامل نمی‌شود؛ سایر گره‌های مشترک فعلاً صلب‌اند. مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
   }
   function validate3DSections(){
     if(!model)build();
@@ -1024,6 +1038,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,getProposedUnbracedLengths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,getProposedUnbracedLengths,runwayGeometrySelfTest,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
