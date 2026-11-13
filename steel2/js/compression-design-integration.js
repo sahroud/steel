@@ -29,6 +29,7 @@ function normalize(v){
 function getData(){return JSON.parse(JSON.stringify(data));}
 function readUI(){
  GROUPS.forEach(([g])=>{
+  if(!$("cc_"+g+"_Ag_mm2"))return;
   const d={};
   FIELDS.forEach(([k])=>{const el=$("cc_"+g+"_"+k);d[k]=el&&el.value!==""?Number(el.value):null;});
   d.sectionTypeReviewed=$("cc_"+g+"_sectionTypeReviewed")?.checked===true;
