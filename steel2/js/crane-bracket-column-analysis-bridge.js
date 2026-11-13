@@ -29,10 +29,7 @@ function runPrepared(prepared,options){
  if(!prepared?.success||!prepared.ready||!prepared.loadCase||!prepared.caseId)throw Error("حالت بار آماده و معتبر برای حل وجود ندارد.");
  const chain=root.SteelStructuralLoadChain;
  if(!chain||typeof chain.run!=="function")throw Error("زنجیره استخراج واکنش و ممیزی تعادل بارگذاری نشده است.");
- const result=await chain.run([{id:prepared.caseId,label:String(prepared.loadCase.label||prepared.caseId),loadCase:prepared.loadCase}]);
- return {success:result?.success===true,analysisExecuted:true,analysisEnabled:false,designApproved:false,
-  caseId:prepared.caseId,addedDemandCount:prepared.addedDemandCount,aggregatedNodeCount:prepared.aggregatedNodeCount,
-  result,scope:"حل خطی مرتبه اول واقعی از مسیر SteelStructuralModel.analyze3D و ممیزی واکنش/تعادل؛ بدون P-Delta، طراحی ظرفیت یا تأیید مهندسی."};
+ return chain.run([{id:prepared.caseId,label:String(prepared.loadCase.label||prepared.caseId),loadCase:prepared.loadCase}]).then(result=>({success:result?.success===true,analysisExecuted:true,analysisEnabled:false,designApproved:false,caseId:prepared.caseId,addedDemandCount:prepared.addedDemandCount,aggregatedNodeCount:prepared.aggregatedNodeCount,result,scope:"حل خطی مرتبه اول واقعی از مسیر SteelStructuralModel.analyze3D و ممیزی واکنش/تعادل بار؛ بدون P-Delta، طراحی ظرفیت یا تأیید مهندسی."}));
 }
 function selfTest(){
  const tests=[],ck=(name,fn)=>{try{tests.push({name,ok:!!fn()});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
