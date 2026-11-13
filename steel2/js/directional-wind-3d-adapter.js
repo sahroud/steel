@@ -4,6 +4,10 @@ const DIRS=["x-positive","x-negative","z-positive","z-negative"];
 const SURFACES=["roof-left","roof-right","long-wall-left","long-wall-right","end-wall-front","end-wall-back"];
 const finite=v=>typeof v==="number"&&Number.isFinite(v);
 function audit(){const w=root.SteelDirectionalWind?.getData?.(),issues=[];if(!w)issues.push("دفتر باد جهت‌دار در دسترس نیست.");if(w&&!w.ready)issues.push("ضرایب جهت‌دار کامل یا معتبر نیستند: "+String(w.status||"نامشخص"));const m=root.SteelStructuralModel?.getData?.();if(!m?.members?.length)issues.push("مدل سه‌بعدی اعضا در دسترس نیست.");const counts={roofPurlin:(m?.members||[]).filter(x=>x.sectionKey==="roofPurlin").length,wallGirt:(m?.members||[]).filter(x=>x.sectionKey==="wallGirt").length,endGirt:(m?.members||[]).filter(x=>x.sectionKey==="endGirt").length};if(m&&Object.values(counts).some(v=>!v))issues.push("هر سه گروه پرلین سقف، قید دیوار طولی و قید دیوار انتهایی لازم‌اند.");if(m){const badRoof=m.members.filter(x=>x.sectionKey==="roofPurlin").some(x=>!(Number(x.tributaryWidth)>0)&&!(Number(x.tributaryWidthLeft)>0||Number(x.tributaryWidthRight)>0));const badWall=m.members.filter(x=>x.sectionKey==="wallGirt"||x.sectionKey==="endGirt").some(x=>!(Number(x.tributaryHeight)>0));if(badRoof)issues.push("عرض بارگیر معتبر برای بخشی از پرلین‌ها موجود نیست.");if(badWall)issues.push("ارتفاع بارگیر معتبر برای بخشی از قیدهای دیوار موجود نیست.");}if(w)DIRS.forEach(d=>SURFACES.forEach(s=>{const p=w.directions?.[d]?.surfaces?.[s];if(!p||!finite(p.netWithPositiveInternal)||!finite(p.netWithNegativeInternal))issues.push("فشار خالص ناقص: "+d+"/"+s);}));return{ready:issues.length===0,issues,counts,analysisEnabled:false,designApproved:false,codeDesignEligible:false};}
+function combineGlobalLoads(base,wind,factor){
+ if(!Array.isArray(base)||!Array.isArray(wind)||base.length!==3||wind.length!==3||!base.concat(wind).every(finite)||!finite(factor))throw Error("بردارهای بار جهانی یا ضریب باد نامعتبرند.");
+ return base.map((v,i)=>v+wind[i]*factor);
+}
 function mapMemberLoad(member,record,geometry){
  if(!member||!record||!record.surfaces||!geometry)throw Error("عضو، فشارهای سطحی و هندسه برای انتقال باد لازم‌اند.");
  if(!DIRS.includes(record.direction))throw Error("جهت باد نامعتبر است.");
@@ -48,6 +52,7 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
  ck("negative pressure reverses wall vector",()=>mapMemberLoad({sectionKey:"wallGirt",side:"left",lineLoads:{tributaryHeight:1}},{direction:"x-positive",surfaces:{...p,"long-wall-left":-4}},g).globalKNm[0]===-4);
  ck("invalid tributary height blocked",()=>{try{mapMemberLoad({sectionKey:"wallGirt",side:"left",lineLoads:{}},{direction:"x-positive",surfaces:p},g);return false;}catch(e){return true;}});
  ck("invalid direction blocked",()=>{try{mapMemberLoad({sectionKey:"wallGirt",side:"left",lineLoads:{tributaryHeight:1}},{direction:"x-diagonal",surfaces:p},g);return false;}catch(e){return true;}});
+ ck("gravity and wind vectors are superposed",()=>{const r=combineGlobalLoads([0,-10,0],[5,-2,3],2);return r[0]===10&&r[1]===-14&&r[2]===6;});
  return{passed:t.filter(x=>x.pass).length,failed:t.filter(x=>!x.pass).length,tests:t,analysisEnabled:false,designApproved:false};}
-root.SteelDirectionalWind3D={audit,createCases,run,selfTest,mapMemberLoad};
+root.SteelDirectionalWind3D={audit,createCases,run,selfTest,mapMemberLoad,combineGlobalLoads};
 })(typeof window!=="undefined"?window:globalThis);
