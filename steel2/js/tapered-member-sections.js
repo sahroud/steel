@@ -53,6 +53,45 @@ function coordinate(group,member,nodes,project){
  const half=span/2;
  return Math.max(0,Math.min(1,x<=half?x/half:(span-x)/half));
 }
+function segmentModel(model,project,segmentsPerMember){
+ const count=Math.max(2,Math.min(24,Math.floor(Number(segmentsPerMember)||8)));
+ const original=Array.isArray(model?.members)?model.members:[];
+ const nodes=Array.isArray(model?.nodes)?model.nodes:[];
+ const byId=new Map(nodes.map(n=>[String(n.id),n]));
+ const output=[],addedNodes=[];
+ let splitMembers=0,generatedSegments=0;
+ original.forEach(member=>{
+  const group=member?.sectionKey;
+  if(!GROUPS.some(([g])=>g===group)||!data.groups[group]?.enabled){output.push(member);return;}
+  const a=byId.get(String(member.start)),b=byId.get(String(member.end));
+  if(!a||!b){output.push(member);return;}
+  // Divide each physical member into equal-length analysis elements. A segment's
+  // section is evaluated at its own midpoint by resolveForMember().
+  const localNodes=[a];
+  for(let i=1;i<count;i++){
+   const t=i/count,id=String(member.id)+"_TAPER_N"+i;
+   if(byId.has(id))throw Error("شناسه گره تقسیم مقطع متغیر تکراری است: "+id);
+   const n={id,x:interpolate(Number(a.x),Number(b.x),t),y:interpolate(Number(a.y),Number(b.y),t),z:interpolate(Number(a.z),Number(b.z),t),kind:"taper-analysis"};
+   localNodes.push(n);addedNodes.push(n);byId.set(id,n);
+  }
+  localNodes.push(b);
+  for(let i=0;i<count;i++){
+   const first=i===0,last=i===count-1;
+   const piece={
+    ...member,id:String(member.id)+"_TAPER_"+String(i+1).padStart(2,"0"),
+    start:localNodes[i].id,end:localNodes[i+1].id,
+    length:Math.hypot(localNodes[i+1].x-localNodes[i].x,localNodes[i+1].y-localNodes[i].y,localNodes[i+1].z-localNodes[i].z),
+    parentMemberId:String(member.id),taperSegmentIndex:i+1,taperSegmentCount:count
+   };
+   if(member.endReleases)piece.endReleases={i:first?(member.endReleases.i||[]):[],j:last?(member.endReleases.j||[]):[]};
+   if(member.endOffsets)piece.endOffsets={i:first?(member.endOffsets.i||[0,0,0]):[0,0,0],j:last?(member.endOffsets.j||[0,0,0]):[0,0,0]};
+   delete piece.analysisLoad;delete piece.taperApplied;delete piece.taperCoordinate;delete piece.taperProperties;
+   output.push(piece);generatedSegments++;
+  }
+  splitMembers++;
+ });
+ return {model:{...model,nodes:nodes.concat(addedNodes),members:output},audit:{enabledGroups:GROUPS.filter(([g])=>data.groups[g].enabled).map(([g])=>g),originalMemberCount:original.length,splitMemberCount:splitMembers,generatedSegmentCount:generatedSegments,addedNodeCount:addedNodes.length,segmentsPerMember:count,note:"تقسیم‌بندی خطی برای تقریب سختی متغیرمقطع؛ نیازمند آزمون همگرایی و اعتبارسنجی با مدل مرجع است."}};
+}
 function resolveForMember(member,nodes,project,base){
  const group=member?.sectionKey;
  if(!GROUPS.some(([g])=>g===group)||!data.groups[group]?.enabled)return {section:base,applied:false};
@@ -114,6 +153,6 @@ function init(){
  if(anchor?.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);else main.appendChild(p);
  render();
 }
-root.SteelTaperedSections={calculate,at,resolveForMember,getData,read,setData,runAudit,selfTest};
+root.SteelTaperedSections={calculate,at,segmentModel,resolveForMember,getData,read,setData,runAudit,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
