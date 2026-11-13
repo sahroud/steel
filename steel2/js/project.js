@@ -248,7 +248,8 @@
             data.craneReadiness = window.SteelCraneReadiness.getData();
         }
 
-        if (window.SteelCraneTrainAnalysis) data.craneTrainAnalysis = window.SteelCraneTrainAnalysis.getData();\n        if (window.SteelCraneHorizontalLoads) data.craneHorizontalLoads = window.SteelCraneHorizontalLoads.getData();
+        if (window.SteelCraneTrainAnalysis) data.craneTrainAnalysis = window.SteelCraneTrainAnalysis.getData();
+        if (window.SteelCraneHorizontalLoads) data.craneHorizontalLoads = window.SteelCraneHorizontalLoads.getData();
 
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.getData === "function") {
             data.geotechnicalData = window.SteelGeotechnicalData.getData();
@@ -511,7 +512,8 @@
             window.SteelCraneReadiness.setData(data.craneReadiness || {});
         }
 
-        if (window.SteelCraneTrainAnalysis) window.SteelCraneTrainAnalysis.setData(data.craneTrainAnalysis || {});\n        if (window.SteelCraneHorizontalLoads) window.SteelCraneHorizontalLoads.setData(data.craneHorizontalLoads || {});
+        if (window.SteelCraneTrainAnalysis) window.SteelCraneTrainAnalysis.setData(data.craneTrainAnalysis || {});
+        if (window.SteelCraneHorizontalLoads) window.SteelCraneHorizontalLoads.setData(data.craneHorizontalLoads || {});
 
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.setData === "function") {
             window.SteelGeotechnicalData.setData(data.geotechnicalData || {});
