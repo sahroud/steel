@@ -471,7 +471,7 @@
         const t=Number(thick?.value||10),g=grade.value;
         if(g==="ST37-2"){
             const fyValue=t<=16?235:t<=40?225:t<=100?215:null;
-            if(fyValue!==null)fy.value=String(fyValue);
+            fy.value=fyValue===null?"":String(fyValue);
             fu.value="340";
             if(note)note.textContent="ST37-2 بر مبنای DIN 17100: برای ضخامت انتخابی "+t+" mm، مقدار مرجع Fy="+(fyValue===null?"نیازمند ورود از گواهی":fyValue)+" MPa و Fu=340 MPa (حد پایین بازه مرجع 340–470) است. برای ضخامت بیش از ۱۰۰ میلی‌متر یا محصول با استاندارد دیگر، مقادیر را از گواهی مصالح وارد کنید.";
         }else if(g==="ST52-3"){
