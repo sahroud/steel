@@ -39,6 +39,55 @@ function audit(envelope,model,options){
   independentCaseDemands:true,combinesEnvelopeExtrema:false,analysisEnabled:false,designApproved:false,
   limitation:"این پل فقط واکنش‌های هم‌زمان هر گره/حالت بار را نگاشت می‌کند. پیچش My/Ty حفظ شده ولی غربال فعلی گروه انکربولت آن را طراحی نمی‌کند؛ ظرفیت صفحه‌ستون، انکر، بتن، پی و خاک محاسبه یا تأیید نمی‌شود."};
 }
+
+function auditStructuralRun(runResult,model,options){
+ const issues=[];
+ if(runResult?.success!==true||!Array.isArray(runResult.results)||!runResult.results.length)
+  return {ok:false,ready:false,issues:["خروجی موفق SteelStructuralLoadChain.run با آرایه نتایج لازم است."],demands:[],analysisEnabled:false,designApproved:false};
+ const labels=new Set(),cases=[],rowsByNode=new Map();
+ runResult.results.forEach((item,index)=>{
+  const label=String(item?.label||item?.id||"");
+  if(!label||labels.has(label)){issues.push("شناسه حالت بار خالی یا تکراری در نتیجه زنجیره: "+label);return;}
+  labels.add(label);
+  if(item?.equilibrium?.ok!==true){issues.push("تعادل حالت بار تأیید نشده است: "+label);return;}
+  if(!Array.isArray(item.reactions)){issues.push("واکنش‌های حالت بار موجود نیست: "+label);return;}
+  cases.push({label,equilibrium:item.equilibrium});
+  item.reactions.forEach(reaction=>{
+   const nodeId=String(reaction?.nodeId??"");
+   const v=reaction?.solverReaction;
+   if(!nodeId||!v||![v.Fx,v.Fy,v.Fz,v.Mx,v.My,v.Mz].every(finite)){
+    issues.push("واکنش شش‌مؤلفه‌ای نامعتبر در حالت "+label);return;
+   }
+   const coordinates=reaction.coordinatesM||{};
+   if(![coordinates.x,coordinates.y,coordinates.z].every(finite)){
+    issues.push("مختصات گره واکنش نامعتبر است: "+nodeId);return;
+   }
+   let row=rowsByNode.get(nodeId);
+   if(!row){row={nodeId,x:coordinates.x,y:coordinates.y,z:coordinates.z,kind:reaction.kind,caseReactions:[]};rowsByNode.set(nodeId,row);}
+   else if(["x","y","z"].some(k=>Math.abs(row[k]-coordinates[k])>1e-8))issues.push("مختصات گره در حالات بار یکسان نیست: "+nodeId);
+   row.caseReactions.push({label,values:[v.Fx,v.Fy,v.Fz,v.Mx,v.My,v.Mz]});
+  });
+ });
+ const rows=[...rowsByNode.values()];
+ rows.forEach(row=>{
+  row.envelopes=Array.from({length:6},(_,k)=>{
+   const values=row.caseReactions.map(c=>c.values[k]);
+   return {min:Math.min(...values),max:Math.max(...values)};
+  });
+  if(row.caseReactions.length!==cases.length)issues.push("واکنش همه حالات بار برای گره "+row.nodeId+" موجود نیست.");
+ });
+ const envelope={cases,rows};
+ const auditFn=root.SteelFoundationReactionAudit?.audit;
+ if(typeof auditFn!=="function")issues.push("ممیزی پوش واکنش فونداسیون بارگذاری نشده است.");
+ const base=typeof auditFn==="function"?auditFn(envelope,model,options?.footingSpecFor):null;
+ if(base&&!base.ok)issues.push(...base.issues);
+ const mapped=audit(envelope,model,options);
+ if(!mapped.ok)issues.push(...mapped.issues);
+ return {ok:issues.length===0,ready:issues.length===0,issues,demands:mapped.demands||[],caseCount:cases.length,
+  supportCount:rows.length,source:"SteelStructuralLoadChain.run",envelope,
+  independentCaseDemands:true,combinesEnvelopeExtrema:false,analysisEnabled:false,designApproved:false,
+  limitation:"این تبدیل فقط واکنش‌های واقعی هر حالت بار را به قالب ممیزی فونداسیون تبدیل می‌کند؛ ظرفیت صفحه‌ستون، انکر، بتن، پی و خاک طراحی نشده است."};
+}
 function getDemand(result,nodeId,caseId){
  if(!result?.ok)throw Error("ابتدا ممیزی موفق پل واکنش را اجرا کنید.");
  const matches=result.demands.filter(d=>d.nodeId===String(nodeId)&&d.caseId===String(caseId));
@@ -63,8 +112,11 @@ function selfTest(){
   ck("selects exact node and case only",()=>getDemand(audit(env,model),"B1","ULS-2").columnActionN_Nm[5]===-12000);
   ck("blocks selection from failed audit",()=>{try{getDemand({ok:false,demands:[]},"B1","ULS-1");return false;}catch(e){return true;}});
   ck("never enables analysis or design approval",()=>{const r=audit(env,model);return !r.analysisEnabled&&!r.designApproved&&r.demands.every(d=>d.torsionDesignRequired);});
+  ck("adapts structural load-chain output without mixing cases",()=>{const run={success:true,results:env.cases.map((c,i)=>({id:c.label,label:c.label,equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:values[0]*(i+1),Fy:values[1],Fz:values[2],Mx:values[3],My:values[4],Mz:values[5]}}]}))};const r=auditStructuralRun(run,model);return r.ok&&r.demands.length===2&&r.demands[0].caseId!==r.demands[1].caseId;});
+  ck("rejects structural run with failed equilibrium",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:false},reactions:[]}]};return !auditStructuralRun(run,model).ok;});
+  ck("rejects incomplete structural reaction vector",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},solverReaction:{Fx:1}}]}]};return !auditStructuralRun(run,model).ok;});
  }finally{root.SteelFoundationReactionAudit=old;}
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks,analysisEnabled:false,designApproved:false};
 }
-root.SteelFoundationReactionBridge={audit,getDemand,mapSix,selfTest};
+root.SteelFoundationReactionBridge={audit,auditStructuralRun,getDemand,mapSix,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
