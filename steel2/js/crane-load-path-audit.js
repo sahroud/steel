@@ -33,12 +33,13 @@ function auditGeometry(model){
 }
 function horizontalLedger(horizontal,train){
  const d=horizontal||{},issues=[],positions=String(train?.positions_m??"").split(/[,،;；\s]+/).filter(Boolean).map(Number);
- const parse=s=>String(s??"").split(",").map(x=>x.trim()).map(Number);
+ const parse=s=>String(s??"").trim()===""?[]:String(s).split(",").map(x=>x.trim()).map(Number);
  const transverse=parse(d.transverseLoads_kN),longitudinal=parse(d.longitudinalLoads_kN);
  if(!d.enabled)return {ready:false,issues:["ثبت نیروهای افقی غیرفعال است."],loads:[]};
  if(!positions.length||positions.some(x=>!Number.isFinite(x)||x<0)||positions.some((x,i)=>i>0&&x<=positions[i-1]))issues.push("مختصات قطار چرخ معتبر نیست.");
  if(transverse.length!==positions.length||transverse.some(x=>!Number.isFinite(x)||x<0))issues.push("فهرست نیروهای عرضی باید برای هر چرخ یک مقدار نامنفی داشته باشد.");
  if(longitudinal.length!==positions.length||longitudinal.some(x=>!Number.isFinite(x)||x<0))issues.push("فهرست نیروهای طولی باید برای هر چرخ یک مقدار نامنفی داشته باشد.");
+ if(!transverse.some(x=>x>0)&&!longitudinal.some(x=>x>0))issues.push("حداقل یک نیروی افقی باید بزرگ‌تر از صفر باشد.");
  if(!["+X","-X"].includes(d.transverseSign))issues.push("علامت محور X نامعتبر است.");
  if(!["+Z","-Z"].includes(d.longitudinalSign))issues.push("علامت محور Z نامعتبر است.");
  if(!String(d.source||"").trim()||!String(d.document||"").trim())issues.push("منبع و شماره سند نیروهای افقی الزامی است.");
@@ -67,6 +68,8 @@ function selfTest(){
  t("horizontal wheel force count aligned with wheel train",()=>ledger.ready&&ledger.loads.length===2);
  t("kN converted to N",()=>ledger.loads[0].globalForce_N[0]===-10000&&ledger.loads[1].globalForce_N[2]===3000);
  t("global force signs preserved",()=>ledger.loads[0].globalForce_N[0]<0&&ledger.loads[0].globalForce_N[2]>0);
+ t("empty horizontal force lists rejected",()=>!horizontalLedger({...validH,transverseLoads_kN:"",longitudinalLoads_kN:""},tr).ready);
+ t("all-zero horizontal actions rejected",()=>!horizontalLedger({...validH,transverseLoads_kN:"0,0",longitudinalLoads_kN:"0,0"},tr).ready);
  t("missing horizontal source rejected",()=>!horizontalLedger({...validH,source:""},tr).ready);
  t("mismatched wheel force count rejected",()=>!horizontalLedger({...validH,transverseLoads_kN:"10"},tr).ready);
  t("no nodal loads injected before load-path approval",()=>!blocked.success&&blocked.loads.length===0&&blocked.analysisEnabled===false);
