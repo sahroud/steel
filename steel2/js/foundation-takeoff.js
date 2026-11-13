@@ -429,7 +429,7 @@ function calculateFootingRebar(baseCount,B,L){
   }
   const tieBars=coordinates.map((p,i)=>{
    const cross=(Number(p.xMm)-width*500)/1000;
-   const vertical=height/2-Number(p.yMm)/1000;
+   const vertical=Number(p.yMm)/1000-height/2;
    return{id:String(route.id)+"-L"+(i+1),diameterMm:barDia,
     a:{x:start.x+vx*cross,y:start.y+vertical,z:start.z+vz*cross},
     b:{x:end.x+vx*cross,y:end.y+vertical,z:end.z+vz*cross}};
