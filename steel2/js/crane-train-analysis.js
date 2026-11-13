@@ -88,32 +88,35 @@ function movingShearEnvelope(input){
  const P=loads.map(x=>x*9.80665),events=new Set();
  positions.forEach(p=>{events.add(-p);events.add(L-p);});
  const offsets=[...events].sort((a,b)=>a-b);
- let maxRA={value:-Infinity,offset:null},minRA={value:-Infinity,offset:null};
- let maxRB={value:-Infinity,offset:null},minRB={value:-Infinity,offset:null};
- let maxV={value:-Infinity,offset:null,x:null,side:""},minV={value:-Infinity,offset:null,x:null,side:""};
+ let maxRA={value:0,offset:null},minRA={value:0,offset:null};
+ let maxRB={value:0,offset:null},minRB={value:0,offset:null};
+ let maxV={value:0,offset:null,x:null,side:""},minV={value:0,offset:null,x:null,side:""};
  const take=(target,value,offset,x,side)=>{if(value>target.value){target.value=value;target.offset=offset;target.x=x;target.side=side;}};
- offsets.forEach(a=>{
-  const wheels=positions.map((p,i)=>({x:a+p,P:P[i],id:i+1})).filter(w=>w.x>=-1e-9&&w.x<=L+1e-9).sort((u,v)=>u.x-v.x);
-  const RA=wheels.reduce((v,w)=>v+w.P*(L-w.x)/L,0),RB=wheels.reduce((v,w)=>v+w.P*w.x/L,0);
-  take(maxRA,RA,a);take(minRA,-RA,a);take(maxRB,RB,a);take(minRB,-RB,a);
-  let V=RA;
-  const atLeft=wheels.filter(w=>Math.abs(w.x)<=1e-9);
-  if(atLeft.length){take(maxV,V,a,0,"حد چپِ چرخِ واقع بر تکیه‌گاه چپ");take(minV,-V,a,0,"حد چپِ چرخِ واقع بر تکیه‌گاه چپ");}
-  atLeft.forEach(w=>V-=w.P);
-  take(maxV,V,a,0,"بلافاصله راست تکیه‌گاه چپ");
-  take(minV,-V,a,0,"بلافاصله راست تکیه‌گاه چپ");
-  wheels.filter(w=>w.x>1e-9&&w.x<L-1e-9).forEach(w=>{
-   take(maxV,V,a,w.x,"بلافاصله چپ چرخ "+w.id);
-   take(minV,-V,a,w.x,"بلافاصله چپ چرخ "+w.id);
-   V-=w.P;
-   take(maxV,V,a,w.x,"بلافاصله راست چرخ "+w.id);
-   take(minV,-V,a,w.x,"بلافاصله راست چرخ "+w.id);
+ // Between consecutive support-entry/exit events, the active wheel set and order are fixed.
+ // Reactions and each inter-wheel shear plateau are affine in train translation;
+ // their extrema on that interval therefore occur at its two endpoints.
+ for(let k=0;k<offsets.length-1;k++){
+  const lo=offsets[k],hi=offsets[k+1],mid=(lo+hi)/2;
+  const active=positions.map((p,i)=>({id:i+1,p,P:P[i]})).filter(w=>mid+w.p>0&&mid+w.p<L);
+  [lo,hi].forEach(a=>{
+   const wheels=active.map(w=>({id:w.id,x:a+w.p,P:w.P}));
+   const RA=wheels.reduce((v,w)=>v+w.P*(L-w.x)/L,0),RB=wheels.reduce((v,w)=>v+w.P*w.x/L,0);
+   take(maxRA,RA,a);take(minRA,-RA,a);take(maxRB,RB,a);take(minRB,-RB,a);
+   let V=RA;
+   take(maxV,V,a,0,"بلافاصله راست تکیه‌گاه چپ / حد یک‌طرفه");
+   take(minV,-V,a,0,"بلافاصله راست تکیه‌گاه چپ / حد یک‌طرفه");
+   wheels.forEach(w=>{
+    take(maxV,V,a,w.x,"بلافاصله چپ چرخ "+w.id);
+    take(minV,-V,a,w.x,"بلافاصله چپ چرخ "+w.id);
+    V-=w.P;
+    take(maxV,V,a,w.x,"بلافاصله راست چرخ "+w.id);
+    take(minV,-V,a,w.x,"بلافاصله راست چرخ "+w.id);
+   });
+   take(maxV,V,a,L,"بلافاصله چپ تکیه‌گاه راست / حد یک‌طرفه");
+   take(minV,-V,a,L,"بلافاصله چپ تکیه‌گاه راست / حد یک‌طرفه");
   });
-  take(maxV,V,a,L,"بلافاصله چپ تکیه‌گاه راست");
-  take(minV,-V,a,L,"بلافاصله چپ تکیه‌گاه راست");
-  wheels.filter(w=>Math.abs(w.x-L)<=1e-9).forEach(w=>{take(maxV,V-w.P,a,L,"حد راستِ چرخِ واقع بر تکیه‌گاه راست");take(minV,-(V-w.P),a,L,"حد راستِ چرخِ واقع بر تکیه‌گاه راست");});
- });
- return {ok:true,span_m:L,maxReactionLeft_kN:maxRA.value,minReactionLeft_kN:-minRA.value,maxReactionRight_kN:maxRB.value,minReactionRight_kN:-minRB.value,maxPositiveShear_kN:maxV.value,minNegativeShear_kN:-minV.value,maxAbsShear_kN:Math.max(maxV.value,-minV.value),governingShear:{value_kN:Math.max(maxV.value,-minV.value),offset_m:maxV.value>=-minV.value?maxV.offset:minV.offset,section_m:maxV.value>=-minV.value?maxV.x:minV.x,side:maxV.value>=-minV.value?maxV.side:minV.side},reactionPositions:{leftMax_m:maxRA.offset,rightMax_m:maxRB.offset},method:"پوش سراسری برش و واکنش برای یک قطار بار قائم روی تیر ساده: انتقال قطار در تمام بازه‌های تغییر عضویت چرخ‌ها به‌صورت قطعه‌ای خطی است؛ نقاط ورود و خروج چرخ از دو تکیه‌گاه ارزیابی شده‌اند. برش در دو سوی هر چرخ و دو انتهای دهانه کنترل شده است.",limitations:["یک قطار جرثقیل و یک تیر ساده تک‌دهانه","بارهای قائم متمرکز؛ بدون ضربه، بار افقی، وزن تیر/ریل، پیچش یا خستگی","این خروجی طراحی تیر یا تکیه‌گاه نیست"]};
+ }
+ return {ok:true,span_m:L,maxReactionLeft_kN:maxRA.value,minReactionLeft_kN:-minRA.value,maxReactionRight_kN:maxRB.value,minReactionRight_kN:-minRB.value,maxPositiveShear_kN:maxV.value,minNegativeShear_kN:-minV.value,maxAbsShear_kN:Math.max(maxV.value,-minV.value),governingShear:{value_kN:Math.max(maxV.value,-minV.value),offset_m:maxV.value>=-minV.value?maxV.offset:minV.offset,section_m:maxV.value>=-minV.value?maxV.x:minV.x,side:maxV.value>=-minV.value?maxV.side:minV.side},reactionPositions:{leftMax_m:maxRA.offset,rightMax_m:maxRB.offset},method:"پوش دقیق سراسری برش و واکنش برای یک قطار بار قائم روی تیر ساده؛ بازه انتقال به نواحی با مجموعه چرخ‌های فعال ثابت تقسیم شده است. در هر بازه، واکنش‌ها و سطوح برش نسبت به انتقال خطی‌اند و دو انتهای بازه، با حدود یک‌طرفه در ورود/خروج چرخ‌ها، ارزیابی می‌شوند.",limitations:["یک قطار جرثقیل و یک تیر ساده تک‌دهانه","بارهای قائم متمرکز؛ بدون ضربه، بار افقی، وزن تیر/ریل، پیچش یا خستگی","این خروجی طراحی تیر یا تکیه‌گاه نیست"]};
 }
 function render(){
  const host=$("results");if(!host)return;
