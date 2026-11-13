@@ -19,7 +19,7 @@ function audit(data){
  add("site-elevation-source","منبع ارتفاع محل (نقشه‌برداری/مدل ارتفاعی معتبر) ثبت نشده است.",!!String(c.elevationSource||"").trim());
  const requiredLoads=["deadLeft","deadRight","liveLeft","liveRight","snowLeft","snowRight","windLeft","windRight","windWall","windEndFront","windEndBack"];
  requiredLoads.forEach(k=>add("load:"+k,"ورودی بار "+k+" صریح و عددی نیست.",finite(loads[k])));
- const code=root.SteelDesignCodeRegistry?.getData?.()||root.SteelDesignCodeRegistry?.get?.()||{};
+ const code=root.SteelDesignCodes?.getData?.()||{};
  const codeText=JSON.stringify(code);
  const hasLoadCode=/مبحث ششم|Mabhas.?6|NB.?RI.?6/i.test(codeText);
  add("load-code-edition","ویرایش مبحث ششم در پیکربندی فعال پروژه به‌طور صریح ثبت نشده است.",hasLoadCode);
@@ -34,7 +34,7 @@ function audit(data){
 }
 function selfTest(){
  const base={climate:{city:"shahroud",customCity:"شاهرود",basicWind:90,groundSnow:1,elevation:1350,sourceDocument:"Mabhas 6",sourceClause:"Table 6-10-1",sourceVerified:true,elevationSource:"survey"},deadLeft:1,deadRight:1,liveLeft:0,liveRight:0,snowLeft:1,snowRight:1,windLeft:0,windRight:0,windWall:0,windEndFront:0,windEndBack:0};
- const good=audit(base),bad=audit({...base,climate:{...base.climate,groundSnow:"",sourceVerified:false},windLeft:""});
+ const prior=root.SteelDesignCodes;root.SteelDesignCodes={getData:()=>({codes:[{id:"m6",name:"مبحث ششم",edition:"۱۳۹۸"}]})};\n const good=audit(base),bad=audit({...base,climate:{...base.climate,groundSnow:"",sourceVerified:false},windLeft:""});
  const tests=[
   ["complete documented inputs reach review-only state",good.ready&&good.status==="evidence-complete-review-required"&&!good.designApproved],
   ["missing snow and wind data are blocked",!bad.ready&&bad.missing.includes("ground-snow")&&bad.missing.includes("load:windLeft")],
@@ -45,7 +45,7 @@ function selfTest(){
   ["negative ground snow is rejected",!audit({...base,climate:{...base.climate,groundSnow:-1}}).ready],
   ["audit never enables analysis or approves design",!good.analysisEnabled&&!good.designApproved&&!bad.analysisEnabled&&!bad.designApproved]
  ];
- return {passed:tests.filter(x=>x[1]).length,failed:tests.filter(x=>!x[1]).length,tests:tests.map(x=>({name:x[0],ok:x[1]}))};
+ root.SteelDesignCodes=prior;\n return {passed:tests.filter(x=>x[1]).length,failed:tests.filter(x=>!x[1]).length,tests:tests.map(x=>({name:x[0],ok:x[1]}))};
 }
 function render(){
  const host=document.getElementById("climateDesignReadinessResults");if(!host)return;
