@@ -569,6 +569,20 @@
         [sa,sb].forEach(c=>el("circle",{cx:c.x,cy:c.y,r:2.6,fill:"#f59e0b",stroke:"#78350f","stroke-width":0.8}));
       }
     }));
+    const runway=g.craneRunway;
+    if(runway?.enabled&&Array.isArray(runway.beamSegments)){
+      runway.beamSegments.forEach(segment=>{
+        const a=P(segment.start),b=P(segment.end);
+        el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:"#7c3aed","stroke-width":4,"stroke-linecap":"round","stroke-dasharray":"7 3"});
+      });
+      (runway.brackets||[]).forEach(bracket=>{
+        const a=P(bracket.from),b=P(bracket.to);
+        el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:"#a855f7","stroke-width":3,"stroke-dasharray":"3 3"});
+      });
+      (runway.supportNodes||[]).forEach(node=>{
+        const p=P(node);el("circle",{cx:p.x,cy:p.y,r:3.5,fill:"#7c3aed",stroke:"#ffffff","stroke-width":1});
+      });
+    }
     const title=el("text",{x:W/2,y:25,"text-anchor":"middle",fill:"#123b52","font-size":17,"font-family":"Tahoma,Arial"});title.textContent="مدل سه‌بعدی جانمایی اجزای سوله";
     const note=el("text",{x:W/2,y:455,"text-anchor":"middle",fill:"#64748b","font-size":11,"font-family":"Tahoma,Arial"});note.textContent="نمای شماتیک آکسونومتریک ـ مقیاس تصویری";
     return true;
