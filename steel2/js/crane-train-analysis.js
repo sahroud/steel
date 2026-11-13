@@ -88,9 +88,9 @@ function movingShearEnvelope(input){
  const P=loads.map(x=>x*9.80665),events=new Set();
  positions.forEach(p=>{events.add(-p);events.add(L-p);});
  const offsets=[...events].sort((a,b)=>a-b);
- let maxRA={value:-Infinity,offset:null},minRA={value:Infinity,offset:null};
- let maxRB={value:-Infinity,offset:null},minRB={value:Infinity,offset:null};
- let maxV={value:-Infinity,offset:null,x:null,side:""},minV={value:Infinity,offset:null,x:null,side:""};
+ let maxRA={value:-Infinity,offset:null},minRA={value:-Infinity,offset:null};
+ let maxRB={value:-Infinity,offset:null},minRB={value:-Infinity,offset:null};
+ let maxV={value:-Infinity,offset:null,x:null,side:""},minV={value:-Infinity,offset:null,x:null,side:""};
  const take=(target,value,offset,x,side)=>{if(value>target.value){target.value=value;target.offset=offset;target.x=x;target.side=side;}};
  offsets.forEach(a=>{
   const wheels=positions.map((p,i)=>({x:a+p,P:P[i],id:i+1})).filter(w=>w.x>=-1e-9&&w.x<=L+1e-9).sort((u,v)=>u.x-v.x);
