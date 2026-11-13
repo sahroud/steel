@@ -20,6 +20,9 @@ function audit(envelope){
  else if(modelMemberCount!==members.length)issues.push("تعداد اعضای گزارش‌شده با مدل مرجع برابر نیست ("+members.length+" از "+modelMemberCount+").");
  if(Array.isArray(env?.unreportedMemberIds)&&env.unreportedMemberIds.length)issues.push("اعضای فاقد گزارش نیرو: "+env.unreportedMemberIds.slice(0,12).join("، ")+(env.unreportedMemberIds.length>12?" و موارد بیشتر":"")+".");
  if(Array.isArray(env?.analysisMemberSetMismatchCases)&&env.analysisMemberSetMismatchCases.length)issues.push("شناسه اعضای تحلیل بین ترکیبات بار یکسان نیست: "+env.analysisMemberSetMismatchCases.join("، ")+".");
+ if(Array.isArray(env?.duplicateMemberIdsByCase)&&env.duplicateMemberIdsByCase.length)issues.push("شناسه عضو در یک یا چند ترکیب بار تکراری است؛ تا رفع تکرار، پوش نیرو قابل اتکا نیست.");
+ if(Array.isArray(env?.invalidForceVectors)&&env.invalidForceVectors.length)issues.push("بردار ۱۲ مؤلفه‌ای نیروی انتهایی برای "+env.invalidForceVectors.length+" عضو/حالت بار ناقص یا نامعتبر است.");
+ if(Array.isArray(env?.extraMemberIds)&&env.extraMemberIds.length)issues.push("شناسه‌های اضافی خارج از مجموعه مرجع تحلیل یافت شد: "+env.extraMemberIds.slice(0,12).join("، ")+".");
  GROUPS.forEach(([g,label,path])=>{
   const list=members.filter(m=>m.sectionKey===g);
   if(!list.length){missingGroups.push(g);warnings.push(label+": عضو/نیروی استخراج‌شده در گزارش فعلی وجود ندارد؛ پوشش طراحی این گروه تأیید نشده است.");return;}
