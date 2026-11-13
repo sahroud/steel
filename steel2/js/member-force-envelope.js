@@ -9,7 +9,7 @@ let last=null,selectedMemberId="",selectedCaseLabel="";
 const groups=[
  ["all","همه اعضا"],["column","ستون‌ها"],["rafter","رفترها"],["roofPurlin","پرلین‌های سقف"],
  ["wallGirt","قیدهای دیوار"],["endPost","ستونک‌های انتهایی"],["endGirt","تیرهای انتهایی"],
- ["roofBrace","مهاربندهای سقف"],["wallBrace","مهاربندهای دیوار"],["tieBeam","شناژهای بتنی"]
+ ["roofBrace","مهاربندهای سقف"],["wallBrace","مهاربندهای دیوار"],["roofEdge","اعضای لبه سقف"],["tieBeam","شناژهای بتنی"]
 ];
 const names=Object.fromEntries(groups);
 const fmt=v=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:2});
