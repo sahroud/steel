@@ -417,11 +417,11 @@ function checkFootingBarClearance(tieBars,footingBars,requiredClearanceMm=0){
   if([...tieBars,...footingBars].some(bar=>!valid(bar)))return{ok:false,reason:"مختصات سه‌بعدی یا قطر یکی از میلگردها معتبر نیست."};
   let minClear=Infinity,critical=null,conflicts=0,pairs=0;
   for(const t of tieBars)for(const f of footingBars){
-   const center=segmentDistance3D(t.a,t.b,f.a,f.b),clear=center-(t.diameterMm+f.diameterMm)/2;pairs++;
+   const center=segmentDistance3D(t.a,t.b,f.a,f.b)*1000,clear=center-(t.diameterMm+f.diameterMm)/2;pairs++;
    if(clear<minClear){minClear=clear;critical={tieBar:t.id||null,footingBar:f.id||null,centerDistanceMm:center,clearDistanceMm:clear};}
    if(clear+1e-8<requiredClearanceMm)conflicts++;
   }
-  return{ok:conflicts===0,pairsChecked:pairs,minimumClearDistanceMm:minClear,requiredClearanceMm,conflictPairs:conflicts,criticalPair:critical,method:"کمترین فاصله محور به محور قطعات خطی سه‌بعدی منهای مجموع شعاع دو میلگرد؛ کنترل هندسی است و جایگزین کنترل مهاری، بتن‌ریزی، لرزه‌ای یا نقشه اجرایی نیست."};
+  return{ok:conflicts===0,pairsChecked:pairs,minimumClearDistanceMm:minClear,requiredClearanceMm,conflictPairs:conflicts,criticalPair:critical,method:"مختصات ابتدا/انتها بر حسب متر و قطر میلگرد بر حسب میلی‌متر است؛ فاصله محور به محور به میلی‌متر تبدیل و سپس مجموع شعاع‌ها کسر می‌شود. کنترل هندسی است و جایگزین کنترل مهاری، بتن‌ریزی، لرزه‌ای یا نقشه اجرایی نیست."};
 }
 function selfTest(){
   const pinned={length:6,localEndForces:[0,3600,0,0,0,0,0,3600,0,0,0,0],analysisLoad:{uniformLocal:[0,-1200,0]}};
@@ -457,8 +457,8 @@ function selfTest(){
   const cageTest=validateBarCageGeometry(600,500,40,10,16,25,cageLayoutTest.coordinates);
   const cageBadTest=validateBarCageGeometry(600,500,40,10,16,25,[{xMm:45,yMm:45},{xMm:55,yMm:45}]);
   const pathTest=longitudinalBarPathDetail(6,1.8,300);
-  const footingClashTest=checkFootingBarClearance([{id:"tie",a:{x:-1000,y:100,z:0},b:{x:1000,y:100,z:0},diameterMm:16}],[{id:"grid",a:{x:0,y:100,z:-1000},b:{x:0,y:100,z:1000},diameterMm:16}],0);
-  const footingClearTest=checkFootingBarClearance([{id:"tie",a:{x:-1000,y:100,z:0},b:{x:1000,y:100,z:0},diameterMm:16}],[{id:"grid",a:{x:0,y:140,z:-1000},b:{x:0,y:140,z:1000},diameterMm:16}],0);
+  const footingClashTest=checkFootingBarClearance([{id:"tie",a:{x:-1,y:0.1,z:0},b:{x:1,y:0.1,z:0},diameterMm:16}],[{id:"grid",a:{x:0,y:0.1,z:-1},b:{x:0,y:0.1,z:1},diameterMm:16}],0);
+  const footingClearTest=checkFootingBarClearance([{id:"tie",a:{x:-1,y:0.1,z:0},b:{x:1,y:0.1,z:0},diameterMm:16}],[{id:"grid",a:{x:0,y:0.14,z:-1},b:{x:0,y:0.14,z:1},diameterMm:16}],0);
   const checks={footingGridIntersectionDetected:!footingClashTest.ok&&footingClashTest.conflictPairs===1,footingGridVerticalClearance:footingClearTest.ok&&Math.abs(footingClearTest.minimumClearDistanceMm-24)<1e-8,barCageGeometry:cageTest.ok&&cageTest.insideStirrupCage&&cageTest.spacingViolations===0,barCageRejectsClash:!cageBadTest.ok&&cageBadTest.spacingViolations>0,longitudinalFootingPath:pathTest.ok&&Math.abs(pathTest.straightLengthPerBarM-7.8)<1e-9&&Math.abs(pathTest.totalCutLengthPerBarM-8.4)<1e-9,closedStirrupCutLength:!!stirrupDetailTest.ok&&stirrupDetailTest.count===31&&stirrupDetailTest.cutLengthPerStirrupMm>0, torsionDesignValid:!!torsionDesignTest.ok&&torsionDesignTest.required&&torsionDesignTest.requiredAtPerSMm2PerMm>0&&torsionDesignTest.requiredAlMm2>0&&torsionDesignTest.recommendedSpacingMm>0,torsionMinimumThresholdSeparate:!!torsionDesignTest.required&&!torsionDesignTest.minimumRequired,torsionThresholdNoRebar:!!torsionDesignScreen(1e3,0,1e3,600,442,90000,1e3,500,442,85000,300000,25,400,1,torsionGeometryTest,areaBar(10),2*areaBar(10),200).ok&&!torsionDesignScreen(1e3,0,1e3,600,442,90000,1e3,500,442,85000,300000,25,400,1,torsionGeometryTest,areaBar(10),2*areaBar(10),200).required,torsionGeometryValid:!!torsionGeometryTest.ok&&Math.abs(torsionGeometryTest.AcpMm2-300000)<1e-9&&Math.abs(torsionGeometryTest.AohMm2-209100)<1e-9&&Math.abs(torsionGeometryTest.AoMm2-177735)<1e-9,torsionEndDemandExtracted:!!torsionTest&&Math.abs(torsionTest.maxAbsNm-1750000)<1e-9,shearScreenValid:shearTest.ok&&shearTest.maxNominalShearKN>0&&shearTest.minAvPerSmm2PerMm>0,
    shearSpacingUsesCodeLimit:shearTest.recommendedSpacingMm===shearTest.maxSpacingByChapter11Mm&&shearTest.providedAvPerSmm2PerMm>=shearTest.minAvPerSmm2PerMm,
    shearMaximumCapacityRejectsExcess:shearHigh.ok&&!shearHigh.maxShearOK&&!shearHigh.shearOK,
