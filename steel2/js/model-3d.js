@@ -339,7 +339,7 @@
   function buildCraneRunwayGeometry(config){
     if(!config.enabled)return {geometryStatus:"disabled",axisOffsetM:null,supportType:"",beamSegments:[],brackets:[],supportNodes:[]};
     const {span,frames,runwayElevation,offsetM,supportType,sectionInputs={},sectionAudit={}}=config;
-    if(!(Number.isFinite(offsetM)&&offsetM>=0.05))return {geometryStatus:"awaiting_axis_offset",axisOffsetM:null,supportType,beamSegments:[],brackets:[],supportNodes:[],geometryNote:"فاصله محور تیر حمال از محور ستون باید از نقشه یا جزئیات سازنده وارد شود."};
+    if(!(Number.isFinite(offsetM)&&offsetM>=0.05))return {geometryStatus:"awaiting_axis_offset",axisOffsetM:null,supportType,beamSegments:[],brackets:[],supportNodes:[],sectionInputs,sectionAudit,sectionProperties:calculateRunwayBuiltupIProperties(sectionInputs),analysisEnabled:false,geometryNote:"فاصله محور تیر حمال از محور ستون باید از نقشه یا جزئیات سازنده وارد شود؛ مشخصات مقطع ثبت‌شده حفظ شده‌اند."};
     const sides=[{key:"left",columnX:0,beamX:-offsetM},{key:"right",columnX:span,beamX:span+offsetM}];
     const supportNodes=[],brackets=[],beamSegments=[];
     sides.forEach(side=>{
@@ -359,7 +359,7 @@
     const duplicate=runwayColumnLevels(0,[2,5,6],10,5,true);
     let rejected=false;try{runwayColumnLevels(0,[2,4],10,10,true);}catch(_){rejected=true;}
     const geometry=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5,10],runwayElevation:5,offsetM:0.6,supportType:"simple"});
-    const noOffset=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5],runwayElevation:5,offsetM:NaN,supportType:""});
+    const noOffset=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5],runwayElevation:5,offsetM:NaN,supportType:"",sectionInputs:{girderType:"builtup-i",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12}});
     const sectionGood=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
     const sectionBad=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:30,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
     const properties=calculateRunwayBuiltupIProperties({girderType:"builtup-i",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12});
@@ -369,7 +369,7 @@
       duplicate.filter(x=>x.y===5).length===1&&duplicate.filter(x=>x.kind==="runway-support").length===1,
       rejected,
       geometry.beamSegments.length===4&&geometry.brackets.length===6&&geometry.supportNodes.length===6&&geometry.beamSegments.every(x=>x.analysisEnabled===false)&&geometry.brackets.every(x=>x.analysisEnabled===false),
-      noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0,
+      noOffset.geometryStatus==="awaiting_axis_offset"&&noOffset.beamSegments.length===0&&noOffset.sectionInputs.girderType==="builtup-i"&&noOffset.sectionProperties.available,
       sectionGood.ready===true&&sectionGood.analysisEnabled===false,
       sectionBad.ready===false&&sectionBad.dimensional.length>0,
       properties.available&&properties.area_mm2>0&&properties.Ix_mm4>properties.Iy_mm4&&properties.steelMass_kg_m>0&&!boxProperties.available
