@@ -783,6 +783,7 @@
       analysisModel.nodes=segmented.model.nodes;
       analysisModel.members=segmented.model.members;
       taperedSegmentationAudit=segmented.audit;
+      analysisModel.nodes.slice(model.nodes.length).forEach(n=>nodeById.set(n.id,n));
     }
     // Self-weight is added to the DEAD case only. Steel unit weight = 78.5 kN/m³.
     // Area A comes from the same assigned section properties used by the 3D solver.
