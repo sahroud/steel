@@ -14,7 +14,7 @@
   {key:"excavation",label:"خاکبرداری و تسطیح",unit:"مترمکعب",priceCode:"excavation",priceUnit:"تومان/مترمکعب"},
   {key:"formwork",label:"قالب‌بندی فونداسیون",unit:"مترمربع",priceCode:"formwork",priceUnit:"تومان/مترمربع"},
   {key:"anchorBolts",label:"تعداد بولت و صفحه‌ستون (در صورت قیمت‌گذاری عددی)",unit:"عدد",priceCode:"anchor.bolt",priceUnit:"تومان/عدد"},
-  {key:"floorConcrete",label:"بتن کف و کف‌سازی",unit:"مترمکعب",priceCode:"concrete.floor",priceUnit:"تومان/مترمکعب"},
+  {key:"floorConcrete",label:"بتن کف سوله (۱۵ سانتی‌متر؛ مقدار از متره)",unit:"مترمکعب",priceCode:"concrete.floor",priceUnit:"تومان/مترمکعب"},\n  {key:"siteworkExcavation",label:"خاکبرداری نوار شناژ تا زیر بتن مگر",unit:"مترمکعب"},\n  {key:"siteworkBackfill",label:"خاکریزی فضای باقی‌مانده پس از بتن‌ریزی",unit:"مترمکعب"},\n  {key:"siteworkGroundFill",label:"خاکریزی زمین گود تا تراز کف سوله",unit:"مترمکعب"},
   {key:"doors",label:"درب‌ها و کرکره‌ها",unit:"مترمربع",priceCode:"door.industrial",priceUnit:"تومان/مترمربع"},
   {key:"gutters",label:"آبرو و لوله‌های ناودانی",unit:"متر",priceCode:"gutter",priceUnit:"تومان/متر"},
   {key:"electrical",label:"برق و روشنایی",unit:"مجموع",priceCode:"electrical.package",priceUnit:"تومان/مجموع"},
@@ -104,6 +104,18 @@
   });
   if(changed)renderManualItems();
  }
+ function refreshFromSiteWork(report){
+  if(!report)return;
+  const links={floorConcrete:report.slabConcreteM3,siteworkExcavation:report.excavationM3,siteworkBackfill:report.backfillM3,siteworkGroundFill:report.fillNetM3};
+  let changed=false;
+  state.manualItems.forEach(item=>{
+   if(!Object.prototype.hasOwnProperty.call(links,item.key)||item.quantitySource==="manual"||item.quantitySource==="anchorSchedule")return;
+   const value=links[item.key];
+   if(value===null||value===undefined||!Number.isFinite(Number(value))){if(item.quantitySource==="siteWork"){item.quantity="";item.quantitySource="pending";changed=true;}return;}
+   item.quantity=String(value);item.quantitySource="siteWork";changed=true;
+  });
+  if(changed)renderManualItems();
+ }
  function refreshFromAnchorTakeoff(report){
   if(!report||report.boltCount===null||report.boltCount===undefined)return;
   const item=state.manualItems.find(x=>x.key==="anchorBolts");
@@ -186,5 +198,5 @@
  function getData(){return clone({prices:state.prices,percent:state.percent,steelPricingMode:state.steelPricingMode,manualItems:state.manualItems});}
  function setData(d){if(!d||typeof d!=="object")return;state.prices=d.prices||{};state.percent={...state.percent,...(d.percent||{})};state.steelPricingMode=d.steelPricingMode||"steel_only";if(Array.isArray(d.manualItems))state.manualItems=defaultManualItems.map(def=>({...def,...(d.manualItems.find(x=>x.key===def.key)||{})}));if($("costSteelMode"))$("costSteelMode").value=state.steelPricingMode;Object.keys(state.percent).forEach(k=>{const el=$("cost"+k[0].toUpperCase()+k.slice(1));if(el)el.value=state.percent[k];});renderRows();renderManualItems();}
  document.addEventListener("DOMContentLoaded",()=>{render();});
- window.SteelCostEstimate={getData,setData,calculate,refreshFromBOQ:(report)=>{if(report&&typeof report==="object"){state.last=report;renderRows();}},refreshFromFoundation,refreshFromAnchorTakeoff,getLast:()=>clone(state.lastCost||null)};
+ window.SteelCostEstimate={getData,setData,calculate,refreshFromBOQ:(report)=>{if(report&&typeof report==="object"){state.last=report;renderRows();}},refreshFromFoundation,refreshFromSiteWork,refreshFromAnchorTakeoff,getLast:()=>clone(state.lastCost||null)};
 })();
