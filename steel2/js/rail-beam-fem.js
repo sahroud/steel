@@ -117,7 +117,7 @@ function movingLoadEnvelope(input){
   if(!active.length)return;
   try{
    const loads=active.map(w=>({x_m:Math.max(0,Math.min(L,w.x_m)),P_N:Number(w.P_N)}));
-   const result=analyze({...p,pointLoads:loads});
+   const result=analyze({...p,supports:(p.supportStations_m||[]).map((x,i)=>({x_m:Number(x),kVertical_N_m:Number(p.verticalSpringStiffness_N_m[i])})),pointLoads:loads});
    if(!result.equilibrium.ok){failed.push({referencePosition_m:ref,reason:"تعادل کلی برقرار نیست"});return;}
    cases++;
    const concurrent=result.supports.map(s=>({station:s.station,x_m:s.x_m,verticalReaction_N:s.verticalReaction_N}));
