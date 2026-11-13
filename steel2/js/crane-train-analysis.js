@@ -90,6 +90,7 @@ function movingShearEnvelope(input){
  const offsets=[...events].sort((a,b)=>a-b);
  let maxRA={value:0,offset:null},minRA={value:0,offset:null};
  let maxRB={value:0,offset:null},minRB={value:0,offset:null};
+ let leftMaxCase={value:0,offset:null,RA_kN:0,RB_kN:0},rightMaxCase={value:0,offset:null,RA_kN:0,RB_kN:0};
  let maxV={value:0,offset:null,x:null,side:""},minV={value:0,offset:null,x:null,side:""};
  const take=(target,value,offset,x,side)=>{if(value>target.value){target.value=value;target.offset=offset;target.x=x;target.side=side;}};
  // Between consecutive support-entry/exit events, the active wheel set and order are fixed.
@@ -102,6 +103,8 @@ function movingShearEnvelope(input){
    const wheels=active.map(w=>({id:w.id,x:a+w.p,P:w.P}));
    const RA=wheels.reduce((v,w)=>v+w.P*(L-w.x)/L,0),RB=wheels.reduce((v,w)=>v+w.P*w.x/L,0);
    take(maxRA,RA,a);take(minRA,-RA,a);take(maxRB,RB,a);take(minRB,-RB,a);
+   if(RA>leftMaxCase.value)leftMaxCase={value:RA,offset:a,RA_kN:RA,RB_kN:RB};
+   if(RB>rightMaxCase.value)rightMaxCase={value:RB,offset:a,RA_kN:RA,RB_kN:RB};
    let V=RA;
    take(maxV,V,a,0,"بلافاصله راست تکیه‌گاه چپ / حد یک‌طرفه");
    take(minV,-V,a,0,"بلافاصله راست تکیه‌گاه چپ / حد یک‌طرفه");
@@ -116,7 +119,7 @@ function movingShearEnvelope(input){
    take(minV,-V,a,L,"بلافاصله چپ تکیه‌گاه راست / حد یک‌طرفه");
   });
  }
- return {ok:true,span_m:L,maxReactionLeft_kN:maxRA.value,minReactionLeft_kN:-minRA.value,maxReactionRight_kN:maxRB.value,minReactionRight_kN:-minRB.value,maxPositiveShear_kN:maxV.value,minNegativeShear_kN:-minV.value,maxAbsShear_kN:Math.max(maxV.value,minV.value),governingShear:{value_kN:maxV.value>=minV.value?maxV.value:-minV.value,offset_m:maxV.value>=minV.value?maxV.offset:minV.offset,section_m:maxV.value>=minV.value?maxV.x:minV.x,side:maxV.value>=minV.value?maxV.side:minV.side},reactionPositions:{leftMax_m:maxRA.offset,rightMax_m:maxRB.offset},method:"پوش دقیق سراسری برش و واکنش برای یک قطار بار قائم روی تیر ساده؛ بازه انتقال به نواحی با مجموعه چرخ‌های فعال ثابت تقسیم شده است. در هر بازه، واکنش‌ها و سطوح برش نسبت به انتقال خطی‌اند و دو انتهای بازه، با حدود یک‌طرفه در ورود/خروج چرخ‌ها، ارزیابی می‌شوند.",limitations:["یک قطار جرثقیل و یک تیر ساده تک‌دهانه","بارهای قائم متمرکز؛ بدون ضربه، بار افقی، وزن تیر/ریل، پیچش یا خستگی","این خروجی طراحی تیر یا تکیه‌گاه نیست"]};
+ return {ok:true,span_m:L,maxReactionLeft_kN:maxRA.value,minReactionLeft_kN:-minRA.value,maxReactionRight_kN:maxRB.value,minReactionRight_kN:-minRB.value,maxPositiveShear_kN:maxV.value,minNegativeShear_kN:-minV.value,maxAbsShear_kN:Math.max(maxV.value,minV.value),governingShear:{value_kN:maxV.value>=minV.value?maxV.value:-minV.value,offset_m:maxV.value>=minV.value?maxV.offset:minV.offset,section_m:maxV.value>=minV.value?maxV.x:minV.x,side:maxV.value>=minV.value?maxV.side:minV.side},reactionPositions:{leftMax_m:maxRA.offset,rightMax_m:maxRB.offset},leftMaxReactionCase:leftMaxCase,rightMaxReactionCase:rightMaxCase,method:"پوش دقیق سراسری برش و واکنش برای یک قطار بار قائم روی تیر ساده؛ بازه انتقال به نواحی با مجموعه چرخ‌های فعال ثابت تقسیم شده است. در هر بازه، واکنش‌ها و سطوح برش نسبت به انتقال خطی‌اند و دو انتهای بازه، با حدود یک‌طرفه در ورود/خروج چرخ‌ها، ارزیابی می‌شوند.",limitations:["یک قطار جرثقیل و یک تیر ساده تک‌دهانه","بارهای قائم متمرکز؛ بدون ضربه، بار افقی، وزن تیر/ریل، پیچش یا خستگی","این خروجی طراحی تیر یا تکیه‌گاه نیست"]};
 }
 function render(){
  const host=$("results");if(!host)return;
