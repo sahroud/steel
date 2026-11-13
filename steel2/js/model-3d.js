@@ -1193,27 +1193,25 @@
         global=[0,0,0];
         // A wind combination carries its factored gravity actions as well.
         if(selected.key!=="wind")global[1]-=totalLineLoad*1000;
-        if(m.sectionKey==="roofPurlin"){
-          const half=Number(model.geometry.span)/2;
-          const rise=Number(model.geometry.rise);
-          const slope=rise/half;
-          const norm=Math.hypot(slope,1);
-          const dp=selected.directionalWindPressures?.surfaces;
+        const directional=selected.directionalWindPressures
+          ?window.SteelDirectionalWind3D?.mapMemberLoad?.(m,selected.directionalWindPressures,model.geometry)
+          :null;
+        if(selected.directionalWindPressures&&!directional)
+          throw new Error("مبدل بار باد جهت‌دار بارگذاری نشده یا عضو پشتیبانی نمی‌شود: "+m.id);
+        if(directional){
+          global=directional.globalKNm.map(v=>v*1000*windFactor);
+        }else if(m.sectionKey==="roofPurlin"){
+          const half=Number(model.geometry.span)/2,rise=Number(model.geometry.rise),slope=rise/half,norm=Math.hypot(slope,1);
           const leftWidth=m.side==="ridge"?Number(m.lineLoads?.tributaryWidthLeft||0):(m.side==="left"?Number(m.lineLoads?.tributaryWidth||0):0);
           const rightWidth=m.side==="ridge"?Number(m.lineLoads?.tributaryWidthRight||0):(m.side==="right"?Number(m.lineLoads?.tributaryWidth||0):0);
-          const leftLine=dp?Number(dp["roof-left"])*leftWidth:Number(m.lineLoads?.windLeft||0)*windSign;
-          const rightLine=dp?Number(dp["roof-right"])*rightWidth:Number(m.lineLoads?.windRight||0)*windSign;
-          const left=leftLine*1000*windFactor,right=rightLine*1000*windFactor;
+          const left=Number(m.lineLoads?.windLeft||0)*windSign*1000*windFactor,right=Number(m.lineLoads?.windRight||0)*windSign*1000*windFactor;
           global[0]+=left*slope/norm-right*slope/norm;
           global[1]-=(left+right)/norm;
         }else if(m.sectionKey==="wallGirt"){
-          const pressure=dp?Number(dp[m.side==="left"?"long-wall-left":"long-wall-right"])*Number(m.lineLoads?.tributaryHeight||0):Number(m.lineLoads?.wind||0)*windSign;
-          const wall=pressure*1000*windFactor;
+          const wall=Number(m.lineLoads?.wind||0)*windSign*1000*windFactor;
           global[0]+=m.side==="left"?wall:-wall;
         }else if(m.sectionKey==="endGirt"){
-          // Positive pressure acts inward: +Z on the front face and -Z on the rear face.
-          const pressure=dp?Number(dp[m.endFace==="front"?"end-wall-front":"end-wall-back"])*Number(m.lineLoads?.tributaryHeight||0):Number(m.lineLoads?.windEnd||0)*windSign;
-          const endWall=pressure*1000*windFactor;
+          const endWall=Number(m.lineLoads?.windEnd||0)*windSign*1000*windFactor;
           global[2]+=m.endFace==="front"?endWall:-endWall;
         }
       }else{
