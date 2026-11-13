@@ -184,6 +184,8 @@ function modelFingerprint(model){
    const env=await sm.analyzeFoundationEnvelope();
    if(!env||!Array.isArray(env.rows)||!env.rows.length)throw new Error("پوش واکنش معتبری دریافت نشد.");
    if(env.foundationModelFingerprint!==modelFingerprint(model))throw new Error("مدل یا مقاطع هنگام تحلیل تغییر کرده‌اند؛ پوش برای جلوگیری از استفاده اشتباه رد شد.");
+   const reactionAudit=window.SteelFoundationReactionAudit?.audit?.(env,model,footingSpecFor);
+   if(!reactionAudit?.ok)throw new Error("ممیزی کامل‌بودن پوش واکنش ناموفق است: "+(reactionAudit?.issues||["ماژول ممیزی در دسترس نیست."]).join("؛ "));
    const body=$("foundationReactionRows");body.replaceChildren();
    const fmtPair=(e,k)=>{const scale=k<3?1000:1e6;return fmt(e.min/scale)+" / "+fmt(e.max/scale);};
    const rows=env.rows.map(row=>{
@@ -192,7 +194,7 @@ function modelFingerprint(model){
     body.appendChild(tr);
     return {...row,values:row.envelopes.map(e=>Math.abs(e.min)>Math.abs(e.max)?e.min:e.max)};
    });
-   lastReport={generatedAt:env.generatedAt,loadCase:"پوش مقدماتی "+env.cases.length+" حالت بار",supportType:env.supportType,units:"kN,kN.m",rows,total:null,equilibrium:env.cases.map(x=>x.equilibrium),cases:env.cases,windCasesIncluded:env.windCasesIncluded,limitations:env.limitations,quantities:null};
+   lastReport={generatedAt:env.generatedAt,loadCase:"پوش مقدماتی "+env.cases.length+" حالت بار",supportType:env.supportType,units:"kN,kN.m",rows,total:null,equilibrium:env.cases.map(x=>x.equilibrium),cases:env.cases,reactionAudit,windCasesIncluded:env.windCasesIncluded,limitations:env.limitations,quantities:null};
    const eqBad=env.cases.filter(x=>x.equilibrium&&!x.equilibrium.ok).length;
    summary.textContent="پوش مقدماتی استخراج شد: "+env.cases.length+" حالت بار، "+rows.length+" گره پایه. "+(env.windCasesIncluded?"باد مثبت و منفی با ضریب ۱٫۰ نیز بررسی شده است. ":"ورودی باد غیرصفر شناسایی نشد؛ فقط ترکیبات ثقلی اجرا شدند. ")+(eqBad?"هشدار: کنترل تعادل در "+eqBad+" حالت برقرار نیست. ":"کنترل تعادل در حالت‌های گزارش‌شده برقرار است. ")+"برای هر مؤلفه، کمینه و بیشینه با نام حالت حاکم در خروجی CSV ذخیره می‌شود. این پوش مقدماتی و غیرقابل استفاده به‌عنوان ترکیبات نهایی آیین‌نامه‌ای است.";
    $("btnFoundationCSV").disabled=false;renderFootingSchedule();quantify();
