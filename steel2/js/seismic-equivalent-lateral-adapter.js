@@ -16,6 +16,7 @@ function audit(input,model){
  if(!Array.isArray(input.levels)||!input.levels.length)issues.push("حداقل یک تراز جرم/بار جانبی لازم است.");
  const nodeIds=new Set((model?.nodes||[]).map(n=>String(n.id)));
  const levelIds=new Set();
+ const nodeLevelOwners=new Map();
  let totalWeight=0;
  (input.levels||[]).forEach((l,i)=>{
   if(!l||typeof l!=="object"){issues.push("تراز شماره "+(i+1)+" نامعتبر است.");return;}
@@ -25,7 +26,7 @@ function audit(input,model){
   if(!(finite(h)&&h>0))issues.push("ارتفاع تراز "+(id||i+1)+" باید مثبت باشد.");
   if(!(finite(w)&&w>0))issues.push("وزن لرزه‌ای تراز "+(id||i+1)+" باید مثبت و مستند باشد.");else totalWeight+=w;
   if(!Array.isArray(l.nodeIds)||!l.nodeIds.length)issues.push("گره‌های بارگذاری تراز "+(id||i+1)+" مشخص نشده‌اند.");
-  else{const seen=new Set();l.nodeIds.forEach(n=>{const key=String(n);if(!nodeIds.has(key))issues.push("گره بارگذاری در مدل یافت نشد: "+key);if(seen.has(key))issues.push("گره در یک تراز تکرار شده است: "+key);seen.add(key);});}
+  else{const seen=new Set();l.nodeIds.forEach(n=>{const key=String(n);if(!nodeIds.has(key))issues.push("گره بارگذاری در مدل یافت نشد: "+key);if(seen.has(key))issues.push("گره در یک تراز تکرار شده است: "+key);const owner=nodeLevelOwners.get(key);if(owner&&owner!==id)issues.push("گره به بیش از یک تراز نسبت داده شده است: "+key+" ("+owner+" و "+id+")");else if(!owner)nodeLevelOwners.set(key,id);seen.add(key);});}
  });
  if(!(totalWeight>0&&finite(totalWeight)))issues.push("مجموع وزن لرزه‌ای ترازها معتبر نیست.");
  if(model?.nodes?.length&&input.modelRevision&&model.revision&&String(input.modelRevision)!==String(model.revision))issues.push("نسخه مدل با نسخه مبنای محاسبات زلزله یکسان نیست.");
@@ -75,6 +76,8 @@ function selfTest(){
  ck("missing source blocked",()=>{const x=JSON.parse(JSON.stringify(input));delete x.source.clause;return !audit(x,model).ready;});
  ck("missing model node blocked",()=>{const x=JSON.parse(JSON.stringify(input));x.levels[0].nodeIds=["missing"];return !audit(x,model).ready;});
  ck("duplicate level blocked",()=>{const x=JSON.parse(JSON.stringify(input));x.levels[1].id="L1";return !audit(x,model).ready;});
+ ck("node assigned to multiple levels blocked",()=>{const x=JSON.parse(JSON.stringify(input));x.levels[1].nodeIds=["n2"];return !audit(x,model).ready;});
+ ck("distinct nodes across levels accepted",()=>audit(input,model).ready);
  ck("nonpositive base shear blocked",()=>{const x={...input,baseShearKN:0};return !audit(x,model).ready;});
  ck("nonpositive level weight blocked",()=>{const x=JSON.parse(JSON.stringify(input));x.levels[0].weightKN=0;return !audit(x,model).ready;});
  ck("stale model revision blocked",()=>{const x={...input,modelRevision:"old"};return !audit(x,model).ready;});
