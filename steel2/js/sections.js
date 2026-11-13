@@ -464,21 +464,32 @@
         });
     }
 
+    function getMaterialDefaults(grade,thicknessMm){
+        const t=Number(thicknessMm);
+        if(!(Number.isFinite(t)&&t>0))return {Fy_MPa:null,Fu_MPa:null,source:"ضخامت نامعتبر"};
+        const bands=[
+            {max:16,st37:235,st52:355},
+            {max:40,st37:225,st52:345},
+            {max:63,st37:215,st52:335},
+            {max:80,st37:205,st52:325},
+            {max:100,st37:195,st52:315}
+        ];
+        const b=bands.find(x=>t<=x.max);
+        if(!b)return {Fy_MPa:null,Fu_MPa:null,source:"خارج از بازه مرجع؛ گواهی مصالح لازم است"};
+        if(grade==="ST37-2")return {Fy_MPa:b.st37,Fu_MPa:340,FuRange_MPa:[340,470],source:"DIN 17100، St37-2؛ حداقل مقاومت تسلیم و حد پایین مقاومت کششی"};
+        if(grade==="ST52-3")return {Fy_MPa:b.st52,Fu_MPa:490,FuRange_MPa:[490,630],source:"DIN 17100، St52-3؛ حداقل مقاومت تسلیم و حد پایین مقاومت کششی"};
+        return {Fy_MPa:null,Fu_MPa:null,source:"گرید سفارشی؛ گواهی/استاندارد محصول لازم است"};
+    }
     function applySteelGradeDefaults(){
         const grade=$("steelGrade"),thick=$("steelThickness"),fy=$("steelFy"),fu=$("steelFu"),note=$("steelGradeNotice"),custom=$("steelGradeCustom");
         if(!grade||!fy||!fu)return;
         if(custom)custom.style.display=grade.value==="CUSTOM"?"block":"none";
-        const t=Number(thick?.value||10),g=grade.value;
-        if(g==="ST37-2"){
-            const fyValue=t<=16?235:t<=40?225:t<=100?215:null;
-            fy.value=fyValue===null?"":String(fyValue);
-            fu.value="340";
-            if(note)note.textContent="ST37-2 بر مبنای DIN 17100: برای ضخامت انتخابی "+t+" mm، مقدار مرجع Fy="+(fyValue===null?"نیازمند ورود از گواهی":fyValue)+" MPa و Fu=340 MPa (حد پایین بازه مرجع 340–470) است. برای ضخامت بیش از ۱۰۰ میلی‌متر یا محصول با استاندارد دیگر، مقادیر را از گواهی مصالح وارد کنید.";
-        }else if(g==="ST52-3"){
-            fy.value="355";fu.value="490";
-            if(note)note.textContent="ST52-3: مقادیر اولیه Fy=355 و Fu=490 MPa صرفاً حداقل‌های مرجع متداول‌اند؛ وابستگی به ضخامت، کیفیت/زیرگرید و استاندارد محصول باید با گواهی کنترل شود.";
-        }else{
-            if(note)note.textContent="گرید سفارشی انتخاب شده است؛ نام دقیق فولاد و مقادیر Fy و Fu را از استاندارد محصول یا گواهی کارخانه وارد کنید.";
+        const t=Number(thick?.value||10),g=grade.value,defaults=getMaterialDefaults(g,t);
+        if(defaults.Fy_MPa!==null)fy.value=String(defaults.Fy_MPa);else fy.value="";
+        if(defaults.Fu_MPa!==null)fu.value=String(defaults.Fu_MPa);else fu.value="";
+        if(note){
+            if(g==="CUSTOM")note.textContent="گرید سفارشی انتخاب شده است؛ نام دقیق فولاد و مقادیر Fy و Fu را از استاندارد محصول یا گواهی کارخانه وارد کنید.";
+            else note.textContent=defaults.source+"؛ ضخامت "+t+" mm، Fy="+(defaults.Fy_MPa??"نامشخص")+" MPa، Fu حداقل="+(defaults.Fu_MPa??"نامشخص")+" MPa (بازه کششی مرجع "+(defaults.FuRange_MPa?.join("–")||"نامشخص")+"). این اعداد جایگزین گواهی مصالح نیستند.";
         }
     }
     function installMaterialGradeControls(){
@@ -495,6 +506,7 @@
     window.SteelSections = {
         read,
         getDataSI,
+        getMaterialDefaults,
         getAnalysis3DProperties: function(){
             const d=read(),a=d.analysis3d||{};
             const toSI=(v,factor)=>Number.isFinite(v)&&v>0?v*factor:null;
