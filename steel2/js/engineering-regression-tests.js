@@ -13,6 +13,9 @@ function run(){
  test("ST37 thickness bands",()=>{const fn=root.SteelSections.getMaterialDefaults;const values=[10,30,50,70,90].map(t=>fn("ST37-2",t).Fy_MPa);return values.join(",")==="235,225,215,205,195"?"235/225/215/205/195 MPa across DIN thickness bands":false;});
  test("ST37 out-of-range guard",()=>root.SteelSections.getMaterialDefaults("ST37-2",110).Fy_MPa===null?"No default beyond 100 mm":false);
  test("ST52 thickness bands",()=>{const fn=root.SteelSections.getMaterialDefaults;const values=[10,30,50,70,90].map(t=>fn("ST52-3",t).Fy_MPa);return values.join(",")==="355,345,335,325,315"?"355/345/335/325/315 MPa across DIN thickness bands":false;});
+ test("tapered-section module exposed",()=>typeof root.SteelTaperedSections?.resolveForMember==="function"?"Three-station member resolver available":false);
+ test("tapered-section interpolation",()=>{const r=root.SteelTaperedSections.selfTest();return r.passed===3&&r.failed===0?"Geometry, midpoint interpolation and disabled-default tests pass":false;});
+ test("tapered sections disabled by default",()=>root.SteelTaperedSections.getData().groups.column.enabled===false&&root.SteelTaperedSections.getData().groups.rafter.enabled===false?"Existing project sections remain unchanged unless explicitly enabled":false);
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
  const host=document.getElementById("engineeringRegressionResults");if(host)host.innerHTML="<p>موفق: "+result.passed+" | ناموفق: "+result.failed+"</p><ul>"+checks.map(x=>"<li>"+(x.pass?"✓ ":"✗ ")+x.name+" — "+x.detail+"</li>").join("")+"</ul><div class='notice'>"+result.scope+"</div>";
  return result;
