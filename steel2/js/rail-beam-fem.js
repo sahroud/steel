@@ -68,8 +68,8 @@ function selfTest(){
  const tests=[],test=(name,fn)=>{try{const detail=fn();tests.push({name,ok:detail!==false,detail:detail===true?"passed":detail});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
  const base={length_m:10,E_MPa:200000,Ix_mm4:1e8,meshPositions_m:[0,5,10],supports:[{x_m:0,kVertical_N_m:1e12},{x_m:10,kVertical_N_m:1e12}],pointLoads:[{x_m:5,P_N:-1000}]};
  test("simply-supported-midpoint-load-reaction-equilibrium",()=>{const r=analyze(base);return Math.abs(r.supports[0].verticalReaction_N-500)<1e-3&&Math.abs(r.supports[1].verticalReaction_N-500)<1e-3&&r.equilibrium.ok;});
- test("midpoint-deflection-approaches-closed-form",()=>{const r=analyze(base),expected=-1000*Math.pow(10,3)/(48*(200000e6*1e8/1e6));return Math.abs(r.nodes[1].verticalDisplacement_m-expected)<1e-8;});
- test("hermite-point-load-between-nodes",()=>{const r=analyze({...base,meshPositions_m:[0,10],pointLoads:[{x_m:3.7,P_N:-1000}]});const a=r.loads[0];return a.element===1&&a.localCoordinate>0&&a.localCoordinate<1&&Math.abs(a.equivalentNodalLoads.reduce((x,y)=>x+y,0)+1000)<1e-8;});
+ test("midpoint-deflection-approaches-closed-form",()=>{const r=analyze(base),expected=-1000*Math.pow(10,3)/(48*(200000*1e8/1e6));return Math.abs(r.nodes[1].verticalDisplacement_m-expected)<1e-8;});
+ test("hermite-point-load-between-nodes",()=>{const r=analyze({...base,meshPositions_m:[0,10],pointLoads:[{x_m:3.7,P_N:-1000}]});const a=r.loads[0];return a.element===1&&a.localCoordinate>0&&a.localCoordinate<1&&Math.abs(a.equivalentNodalLoads[0]+a.equivalentNodalLoads[2]+1000)<1e-8;});
  test("reject-missing-support-stiffness",()=>{try{analyze({...base,supports:[{x_m:0,kVertical_N_m:0},{x_m:10,kVertical_N_m:1e12}]});return false;}catch(e){return String(e.message).includes("مثبت");}});
  test("reject-singular-unrestrained-beam",()=>{try{analyze({...base,supports:[]});return false;}catch(e){return true;}});
  return {schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"Deterministic mathematical/software checks only; not independent engineering validation or code compliance."};
