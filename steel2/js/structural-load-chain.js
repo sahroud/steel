@@ -59,12 +59,36 @@ function extractSupportReactions(result,model){
   resultantMomentReference:"global origin (0,0,0); includes r x F for every support node",
   units:{force:"N",moment:"N.m"}};
 }
-function auditEquilibrium(eq){
+function auditEquilibrium(eq,tolerance=1e-6){
  const issues=[];
- if(!eq||eq.ok!==true)issues.push("حل‌گر تعادل کلی را تأیید نکرده است.");
- ["relativeForceResidual","relativeMomentResidual"].forEach(k=>{if(!finite(eq?.[k]))issues.push("شاخص تعادل معتبر/موجود نیست: "+k);});
- return{ok:issues.length===0,issues,relativeForceResidual:eq?.relativeForceResidual??null,relativeMomentResidual:eq?.relativeMomentResidual??null};
+ if(!eq||typeof eq!=="object")return{ok:false,issues:["گزارش تعادل حل‌گر موجود نیست."],relativeForceResidual:null,relativeMomentResidual:null};
+ const vectorKeys=["appliedForceN","supportReactionN","forceResidualN","appliedMomentNm","supportMomentNm","momentResidualNm"];
+ const vectors={};
+ vectorKeys.forEach(k=>{
+  const v=eq[k];
+  if(!Array.isArray(v)||v.length!==3||v.some(x=>!finite(x)))issues.push("بردار تعادل سه‌مؤلفه‌ای نامعتبر/مفقود است: "+k);
+  else vectors[k]=v;
+ });
+ const norm=v=>Math.hypot(...v);
+ let forceRatio=null,momentRatio=null;
+ if(vectorKeys.every(k=>vectors[k])){
+  const fExpected=vectors.appliedForceN.map((v,i)=>v+vectors.supportReactionN[i]);
+  const mExpected=vectors.appliedMomentNm.map((v,i)=>v+vectors.supportMomentNm[i]);
+  const close=(a,b)=>Math.abs(a-b)<=1e-8*Math.max(1,Math.abs(a),Math.abs(b));
+  if(fExpected.some((v,i)=>!close(v,vectors.forceResidualN[i])))issues.push("بردار باقیمانده نیرو با جمع بار و واکنش سازگار نیست.");
+  if(mExpected.some((v,i)=>!close(v,vectors.momentResidualNm[i])))issues.push("بردار باقیمانده لنگر با جمع بار و واکنش سازگار نیست.");
+  forceRatio=norm(vectors.forceResidualN)/Math.max(norm(vectors.appliedForceN),norm(vectors.supportReactionN),1);
+  momentRatio=norm(vectors.momentResidualNm)/Math.max(norm(vectors.appliedMomentNm),norm(vectors.supportMomentNm),1);
+ }
+ if(!finite(eq.relativeForceResidual)||!finite(eq.relativeMomentResidual))issues.push("شاخص نسبی تعادل معتبر/موجود نیست.");
+ else if(forceRatio!==null&&(!closeNumber(eq.relativeForceResidual,forceRatio)||!closeNumber(eq.relativeMomentResidual,momentRatio)))issues.push("شاخص‌های نسبی گزارش‌شده با بردارهای تعادل سازگار نیستند.");
+ if(forceRatio!==null&&forceRatio>tolerance)issues.push("باقیمانده نیروی نسبی از حد مجاز ممیزی بیشتر است.");
+ if(momentRatio!==null&&momentRatio>tolerance)issues.push("باقیمانده لنگر نسبی از حد مجاز ممیزی بیشتر است.");
+ if(eq.ok!==true)issues.push("حل‌گر تعادل کلی را تأیید نکرده است.");
+ if(eq.ok===true&&(forceRatio===null||momentRatio===null))issues.push("پرچم موفقیت حل‌گر بدون بردارهای قابل ممیزی پذیرفته نمی‌شود.");
+ return{ok:issues.length===0,issues,relativeForceResidual:forceRatio??eq.relativeForceResidual??null,relativeMomentResidual:momentRatio??eq.relativeMomentResidual??null,tolerance,method:"independent re-evaluation of returned global equilibrium vectors; not independent load assembly"};
 }
+function closeNumber(a,b){return Math.abs(a-b)<=1e-8*Math.max(1,Math.abs(a),Math.abs(b));}
 async function run(loadCases){
  const api=root.SteelStructuralModel,model=api?.getData?.();
  const contract=auditSolverContract(api,model);
@@ -121,9 +145,13 @@ function selfTest(){
  ck("missing support reaction blocked",()=>{try{extractSupportReactions({reactions:[res.reactions[0]]},model);return false;}catch(e){return true;}});
  ck("duplicate reaction blocked",()=>{try{extractSupportReactions({reactions:[res.reactions[0],res.reactions[0],res.reactions[1]]},model);return false;}catch(e){return true;}});
  ck("nonfinite reaction blocked",()=>{try{extractSupportReactions({reactions:[{nodeId:"B1",values:[0,0,0,0,0,NaN]},{nodeId:"B2",values:[0,0,0,0,0,0]}]},model);return false;}catch(e){return true;}});
- ck("failed equilibrium blocked",()=>!auditEquilibrium({ok:false,relativeForceResidual:0,relativeMomentResidual:0}).ok);
- ck("missing equilibrium metrics blocked",()=>!auditEquilibrium({ok:true}).ok);
- ck("valid equilibrium accepted",()=>auditEquilibrium({ok:true,relativeForceResidual:1e-10,relativeMomentResidual:2e-10}).ok);
+ const eqGood={ok:true,appliedForceN:[0,-1000,0],supportReactionN:[0,1000,0],forceResidualN:[0,0,0],appliedMomentNm:[0,0,0],supportMomentNm:[0,0,0],momentResidualNm:[0,0,0],relativeForceResidual:0,relativeMomentResidual:0};
+ ck("failed equilibrium blocked",()=>!auditEquilibrium({...eqGood,ok:false}).ok);
+ ck("missing equilibrium vectors blocked",()=>!auditEquilibrium({ok:true,relativeForceResidual:0,relativeMomentResidual:0}).ok);
+ ck("high residual blocked despite solver ok flag",()=>!auditEquilibrium({...eqGood,appliedForceN:[0,-1000,0],supportReactionN:[0,900,0],forceResidualN:[0,-100,0],relativeForceResidual:0.1}).ok);
+ ck("inconsistent residual vector blocked",()=>!auditEquilibrium({...eqGood,forceResidualN:[0,1,0]}).ok);
+ ck("reported residual ratio mismatch blocked",()=>!auditEquilibrium({...eqGood,relativeForceResidual:0.25}).ok);
+ ck("valid equilibrium vectors independently rechecked",()=>auditEquilibrium(eqGood).ok);
  ck("demand-only status never implies design",()=>x.rows.every(r=>r.designStatus==="demand_only_not_designed")&&!("capacity" in x.rows[0]));
  ck("wind cases use directional adapter output",()=>typeof runDirectionalWind==="function"&&runDirectionalWind.toString().includes("SteelDirectionalWind3D"));
  ck("seismic cases use explicit seismic distributor input",()=>typeof runSeismic==="function"&&runSeismic.toString().includes("SteelSeismicEquivalentLateral"));
