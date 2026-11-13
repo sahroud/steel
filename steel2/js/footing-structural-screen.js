@@ -23,7 +23,7 @@
    '<label class="check-row" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><input id="fsReactionSign" type="checkbox"><span>قرارداد علامت واکنش قائم و افقی حل‌گر با یک حالت بار معلوم کنترل شده است؛ فشار فشاری پایه مثبت در نظر گرفته می‌شود.</span></label>'+
    '<div class="button-grid"><button id="btnFootingStructuralScreen" class="btn primary" type="button">اجرای غربال خمش، برش و پانچ</button><button id="btnFootingStructuralCSV" class="btn secondary" type="button" disabled>دریافت CSV کنترل پی</button></div>'+
    '<div id="footingStructuralSummary" class="notice">برای شروع، پوش واکنش‌ها را استخراج کنید و ابعاد پی، پدستال، پوشش بتن و مشخصات مصالح را وارد کنید.</div>'+
-   '<h4>نتایج هر پایه و هر حالت بار</h4><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:1000px"><thead><tr><th>پایه / حالت</th><th>ابعاد پی B×L×t (m)</th><th>جهت</th><th>لنگر تقاضا (kN.m/m)</th><th>As لازم (mm²/m)</th><th>As موجود (mm²/m)</th><th>فاصله متناظر با As خمشی (mm)</th><th>برش یک‌طرفه Vu / φVc (kN/m)</th><th>پانچ Vu / φVc (kN)</th><th>وضعیت</th></tr></thead><tbody id="footingStructuralRows"></tbody></table></div>'+
+   '<h4>نتایج هر پایه و هر حالت بار</h4><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:1000px"><thead><tr><th>پایه / حالت</th><th>ابعاد پی B×L×t (m)</th><th>جهت</th><th>لنگر تقاضا (kN.m/m)</th><th>As لازم (mm²/m)</th><th>As موجود (mm²/m)</th><th>تعداد میلگرد در عرض پی</th><th>فاصله واقعی میلگرد (mm)</th><th>فاصله متناظر با As لازم (mm)</th><th>برش یک‌طرفه Vu / φVc (kN/m)</th><th>پانچ Vu / φVc (kN)</th><th>وضعیت</th></tr></thead><tbody id="footingStructuralRows"></tbody></table></div>'+
    '<div class="notice" id="footingStructuralLimits">این غربال از فشار بیشینه یکنواخت روی طره‌ها استفاده می‌کند؛ محافظه‌کارانه و ساده‌سازی‌شده است و جای تحلیل دقیق فشار متغیر، طراحی کامل پی و کنترل آیین‌نامه‌ای را نمی‌گیرد.</div>';
   root.parentNode.insertBefore(p,root.nextSibling);
   $("fsFc").value=state.fcMPa;$("fsFy").value=state.fyMPa;$("fsMinRatio").value=state.minimumSteelRatioPct??"";$("fsReactionSign").checked=!!state.reactionSignConfirmed;
@@ -97,7 +97,7 @@
   const records=[],footingSummary=[];
   const addRow=rec=>{
    records.push(rec);const tr=document.createElement("tr");
-   [rec.nodeId+" / "+rec.caseLabel,rec.footingDimensions||"—",rec.direction,rec.MuKNmPerM===null?"—":fmt(rec.MuKNmPerM),rec.AsRequired===null?"—":fmt(rec.AsRequired),rec.AsProvided===null?"وارد نشده":fmt(rec.AsProvided),rec.spacingByStrengthMm===null?"—":fmt(rec.spacingByStrengthMm),rec.oneWayDemand===null?"—":fmt(rec.oneWayDemand)+" / "+fmt(rec.oneWayCapacity),rec.punchDemand===null?"—":fmt(rec.punchDemand)+" / "+fmt(rec.punchCapacity),rec.status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);
+   [rec.nodeId+" / "+rec.caseLabel,rec.footingDimensions||"—",rec.direction,rec.MuKNmPerM===null?"—":fmt(rec.MuKNmPerM),rec.AsRequired===null?"—":fmt(rec.AsRequired),rec.AsProvided===null?"وارد نشده":fmt(rec.AsProvided),rec.barCount===undefined?"—":fmt(rec.barCount),rec.actualSpacingMm===undefined?"—":fmt(rec.actualSpacingMm),rec.spacingByStrengthMm===null?"—":fmt(rec.spacingByStrengthMm),rec.oneWayDemand===null?"—":fmt(rec.oneWayDemand)+" / "+fmt(rec.oneWayCapacity),rec.punchDemand===null?"—":fmt(rec.punchDemand)+" / "+fmt(rec.punchCapacity),rec.status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);
   };
   foundation.rows.forEach(row=>{
    const spec=window.SteelFoundationTakeoff?.footingSpecFor?.(row);
@@ -126,7 +126,7 @@
     ];
     specs.forEach(s=>{
      const leff=Math.max(0,s.projection-s.d/1000),Mu=qmax*s.projection*s.projection/2;
-     const AsFlex=requiredAs(Mu,fc,fy,s.d),AsMin=minRatio===null?null:minRatio/100*1000*t*1000,AsDesign=AsFlex===null?null:Math.max(AsFlex,AsMin??0),barArea=Math.PI*s.dia*s.dia/4,cross=(s.direction.startsWith("طره X")?L:B)*1000-2*cover,barCount=Math.ceil(cross/s.spacing)+1,actualSpacing=barCount>1?cross/(barCount-1):0,AsProv=barArea*1000/actualSpacing;
+     const AsFlex=requiredAs(Mu,fc,fy,s.d),AsMin=minRatio===null?null:minRatio/100*1000*t*1000,AsDesign=AsFlex===null?null:Math.max(AsFlex,AsMin??0),barArea=Math.PI*s.dia*s.dia/4,cross=(s.direction.startsWith("طره X")?B:L)*1000-2*cover,barCount=Math.ceil(cross/s.spacing)+1,actualSpacing=barCount>1?cross/(barCount-1):0,AsProv=barArea*1000/actualSpacing;
      const spacingByStrength=AsDesign&&AsDesign>0?barArea*1000/AsDesign:null;
      const vu=qmax*leff,vc=0.75*0.17*Math.sqrt(fc)*s.d;
      const flex=AsFlex===null?"As لازم قابل محاسبه نیست":AsProv>=AsDesign?"فولاد موجود از نیاز طراحی خمشی کمتر نیست":"فولاد موجود از نیاز طراحی خمشی کمتر است";
