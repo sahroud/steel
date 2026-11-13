@@ -129,7 +129,7 @@ function init(){
 }
 function selfTest(){
  const d=buildSnapshot({quantity:{totals:{roofCoverAreaApproxM2:100},facades:[{face:"front",material:"brick",netAreaM2:20,masonryVolumeM3:7,estimatedBrickCount:2000,estimatedMortarVolumeM3:1,plasterAreaM2:40}]},
- foundation:{quantities:{footingConcreteM3:2,pedestalConcreteM3:null,tieConcreteM3:1,totalConcreteM3:3,excavationM3:null,footingFormworkM2:8,pedestalFormworkM2:null,tieSideFormworkM2:3,totalFormworkM2:11,sideFormworkM2:11,footingRebarKg:100,pedestalRebarKg:null,tieRebarKg:null,totalRebarKg:null,anchorsCount:24,footingSchedule:[{nodeId:"B1",width:2,length:2,thickness:0.8,excavationM3:5}]}},
+ foundation:{quantities:{footingConcreteM3:2,pedestalConcreteM3:null,tieConcreteM3:1,totalConcreteM3:3,excavationM3:null,footingFormworkM2:8,pedestalFormworkM2:null,tieSideFormworkM2:3,totalFormworkM2:11,sideFormworkM2:11,footingRebarKg:100,pedestalRebarKg:null,tieRebarKg:null,totalRebarKg:null,anchorsCount:24,footingSchedule:[{nodeId:"B1",width:1.25,length:2,thickness:0.8,excavationM3:5}]}},
  anchor:{boltCount:24,boltShankMassKg:80,nutCount:48,nutMassKg:1.2,washerCount:24,washerMassKg:0.2,basePlateCount:8,basePlateMassKg:120,totalCalculatedMassKg:201.4},
  steelMass:{groups:[{group:"column",label:"ستون",massKg:500}],connectionPlateMassKg:50,boltShankMassKg:10,theoreticalWeldMetalMassKg:5,procurementMassExcludingBoltsAndWeldKg:600,items:[]}});
  const by=new Map(d.rows.map(r=>[r.id,r]));
@@ -148,7 +148,7 @@ function selfTest(){
   footingDetailRowsNotMarkedAsSummary:by.get("footing-B1")?.aggregationRole!=="summary",
   anchorCountFallbackUsed:buildSnapshot({foundation:{quantities:{anchorsCount:12}}}).rows.find(x=>x.id==="foundation-anchor-count")?.quantity===12,
   anchorModuleCountPreventsDuplicate:!buildSnapshot({foundation:{quantities:{anchorsCount:12}},anchor:{boltCount:16}}).rows.some(x=>x.id==="foundation-anchor-count"),
-  knownFootingFormworkRetainedWithoutTie:buildSnapshot({foundation:{quantities:{sideFormworkM2:10,tieSideFormworkM2:null}}}).rows.find(x=>x.id==="foundation-footing-pedestal-formwork")?.quantity===10,
+  knownFootingFormworkRetainedWithoutTie:buildSnapshot({foundation:{quantities:{footingFormworkM2:10,tieSideFormworkM2:null}}}).rows.find(x=>x.id==="foundation-footing-formwork")?.quantity===10,
   footingAndTrenchExcavationSeparated:by.get("footing-B1")?.quantity===3.2&&by.get("excavation-B1")?.quantity===5,
   totalConcreteAndFormworkAreSummaries:by.get("foundation-total-concrete")?.aggregationRole==="summary"&&by.get("foundation-total-formwork")?.aggregationRole==="summary",
   totalRebarRequiresAllComponents:by.get("foundation-total-rebar")?.quantity===null,
