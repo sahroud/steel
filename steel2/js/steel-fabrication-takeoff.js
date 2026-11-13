@@ -29,7 +29,7 @@
    note="حجم نظری جوش گوشه با مقطع مثلثی؛ اضافه‌مصرف، نفوذ و پرت الکترود لحاظ نشده است.";
   }else throw Error("نوع قلم متره ناشناخته است.");
   items.push({id:"FAB-"+Date.now()+"-"+(items.length+1),type,description:String(data.description||"").trim()||({plate:"ورق اتصال",bolt:"پیچ اتصال",weld:"جوش گوشه"}[type]),count:type==="weld"?1:count,unit,dimensions:type==="plate"?{widthMm:n(data.widthMm),heightMm:n(data.heightMm),thicknessMm:n(data.thicknessMm)}:type==="bolt"?{diameterMm:n(data.diameterMm),lengthMm:n(data.lengthMm)}:{lengthM:n(data.lengthM),legMm:n(data.legMm)},volumeM3:volume,massKg:mass,note});
-  renderItems();
+  renderItems();window.SteelProjectBOQ?.refresh?.();
  }
  function steelMass(model){
   const sectionData=window.SteelSections?.read?.(),groups=sectionData?.analysis3d?.groups||{},density=n(settings.densityKgM3);
@@ -60,7 +60,7 @@
   const out=$("fabricationItemsList");if(!out)return;
   if(!items.length){out.textContent="هنوز قلم اتصال یا ساخت دستی ثبت نشده است.";return;}
   out.innerHTML=items.map((x,i)=>'<div class="notice" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span>'+String(i+1)+'. '+x.description+' — '+x.count+' '+x.unit+' — '+fmt(x.massKg)+' kg</span><button type="button" class="btn secondary" data-remove-fab="'+i+'">حذف</button></div>').join("");
-  out.querySelectorAll("[data-remove-fab]").forEach(b=>b.addEventListener("click",()=>{items.splice(Number(b.dataset.removeFab),1);renderItems();}));
+  out.querySelectorAll("[data-remove-fab]").forEach(b=>b.addEventListener("click",()=>{items.splice(Number(b.dataset.removeFab),1);renderItems();window.SteelProjectBOQ?.refresh?.();}));
  }
  function render(){
   const panel=$("quantityTakeoffPanel");if(!panel||$("fabricationTakeoffSubpanel"))return;
@@ -108,7 +108,7 @@
    const esc=v=>'"'+String(v??"").replace(/"/g,'""')+'"';return out+"\r\n"+rows.map(r=>r.map(esc).join(",")).join("\r\n");};
   const oldRender=window.SteelQuantityTakeoff;
   window.SteelQuantityTakeoff.getData=getData;window.SteelQuantityTakeoff.setData=setData;
-  window.SteelQuantityTakeoff.addItem=addItem;window.SteelQuantityTakeoff.removeAll=()=>{items=[];renderItems();};
+  window.SteelQuantityTakeoff.addItem=addItem;window.SteelQuantityTakeoff.removeAll=()=>{items=[];renderItems();window.SteelProjectBOQ?.refresh?.();};
  }
  document.addEventListener("DOMContentLoaded",render);
  function enrich(report,model){
