@@ -78,6 +78,7 @@
                         <option value="ST52-3">ST52-3</option>
                         <option value="CUSTOM">سایر / مشخصات سفارشی</option>
                     </select>
+                    <input id="steelGradeCustom" type="text" placeholder="نام دقیق گرید / استاندارد" style="display:none;margin-top:6px">
                     <small class="geometry-hint">گرید انتخابی برای فولاد نوردشده؛ برای ورق و مقاطع سردنورد، گواهی محصول ملاک است.</small>
                 </div>
                 <div class="field">
@@ -259,8 +260,11 @@
     function setData(data) {
         if (!data || typeof data !== "object") return;
 
+        const storedGrade=String(data.material?.grade||"ST37-2");
+        const normalizedGrade=/ST52/i.test(storedGrade)?"ST52-3":/ST37|S235/i.test(storedGrade)?"ST37-2":"CUSTOM";
         const fields = {
-            steelGrade: data.material?.grade,
+            steelGrade: normalizedGrade,
+            steelGradeCustom: normalizedGrade==="CUSTOM"?storedGrade:"",
             steelE: data.material?.E_GPa,
             steelFy: data.material?.Fy_MPa,
             steelFu: data.material?.Fu_MPa,
@@ -463,8 +467,9 @@
     }
 
     function applySteelGradeDefaults(){
-        const grade=$("steelGrade"),thick=$("steelThickness"),fy=$("steelFy"),fu=$("steelFu"),note=$("steelGradeNotice");
+        const grade=$("steelGrade"),thick=$("steelThickness"),fy=$("steelFy"),fu=$("steelFu"),note=$("steelGradeNotice"),custom=$("steelGradeCustom");
         if(!grade||!fy||!fu)return;
+        if(custom)custom.style.display=grade.value==="CUSTOM"?"block":"none";
         const t=Number(thick?.value||10),g=grade.value;
         if(g==="ST37-2"){
             const fyValue=t<=16?235:t<=40?225:t<=100?215:null;
