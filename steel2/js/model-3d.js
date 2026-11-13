@@ -702,7 +702,7 @@
         const audited=auditById.get(id);
         const reasons=[];
         if(!audited||!audited.valid)reasons.push(...(audited?.reasons||["ممیزی هندسی مسیر در دسترس نیست"]));
-         if(route.topAlignedToFooting!==true)reasons.push("اتصال خارج از مرکز لازم برای هم‌تراز شدن رویه بالای شناژ با رویه پی هنوز در حل‌گر مدل نشده است؛ برای جلوگیری از تحلیل با تراز نادرست، این شناژ وارد حل‌گر نشد.");
+         if(!(Number(route.heightM)>0))reasons.push("ارتفاع شناژ برای تعیین محور هندسی و بازوی صلب معتبر نیست.");
         if(!nodeIds.has(String(route.start))||!nodeIds.has(String(route.end)))reasons.push("گره ابتدا/انتها در مدل تحلیل فعلی وجود ندارد");
         if(!["rigid","pinned"].includes(route.startJoint)||!["rigid","pinned"].includes(route.endJoint))reasons.push("نوع اتصال هر دو انتها باید صریحاً گیردار یا مفصلی باشد");
         if(reasons.length){tieBeamIntegration.skipped.push({id,reasons});return;}
@@ -737,6 +737,9 @@
           analysisModel.members.push({
             id:memberId,start:ni.id,end:nj.id,type:"شناژ بتنی",
             sectionKey:"tieBeam",endReleases:releases,
+            // Base-node joint is located at the common footing/tie top datum.
+            // The beam physical centroidal axis is h/2 below that joint.
+            endOffsets:{i:[0,-Number(route.heightM)/2,0],j:[0,-Number(route.heightM)/2,0]},
             tieBeamDensityKNm3:Number(route.densityKNm3),
             analysisSection:{E:p.E,G:p.G,A:p.A,Iy:p.Iy,Iz:p.Iz,J:p.J,sectionKey:"tieBeam",sectionLabel:"مقطع مستطیلی شناژ "+route.widthM+"×"+route.heightM+" m"}
           });
@@ -753,7 +756,9 @@
           volumeM3:segmentLength*route.widthM*route.heightM,
           selfWeightKN:segmentLength*route.widthM*route.heightM*route.densityKNm3,
           reinforcement:route.reinforcement||tieData.reinforcement,detailingWarnings:warnings,
-          stiffnessBasis:"gross_uncracked_rectangular_concrete_section",
+          stiffnessBasis:"gross_uncracked_rectangular_concrete_section_with_rigid_end_offsets",
+          topAlignment:"رویه بالای شناژ و رویه بالای پی هم‌تراز؛ محور هندسی عضو به‌اندازه نصف ارتفاع شناژ پایین‌تر است",
+          centroidOffsetDownM:Number(route.heightM)/2,
           continuity:"مسیر در گره‌های پایه میانی به قطعات متصل با پیوستگی دوران تقسیم شده است"});
         if(warnings.length)tieBeamIntegration.reinforcementWarnings.push({id,warnings});
       });
