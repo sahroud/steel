@@ -40,12 +40,12 @@ function drawing(k,p){
 }
 function drawing3D(k,p){
  const sc=95,ox=340,oy=270,P=(x,y,z)=>({x:ox+(x*.82+z*.48)*sc,y:oy-(y*.82-z*.30)*sc});
- const n=k.node,cl=Math.min(1.25,k.column.length),rl=Math.min(1.55,k.rafter.length);
- const a=P(n.x,n.y,n.z),b=P(n.x+k.column.vector.x*cl,n.y+k.column.vector.y*cl,n.z+k.column.vector.z*cl),d=P(n.x+k.rafter.vector.x*rl,n.y+k.rafter.vector.y*rl,n.z+k.rafter.vector.z*rl);
+ const cl=Math.min(1.25,k.column.length),rl=Math.min(1.55,k.rafter.length);
+ const a=P(0,0,0),b=P(k.column.vector.x*cl,k.column.vector.y*cl,k.column.vector.z*cl),d=P(k.rafter.vector.x*rl,k.rafter.vector.y*rl,k.rafter.vector.z*rl);
  const w=Math.min(.85,Math.max(.35,(p.w||500)/1000)),h=Math.min(1,Math.max(.4,(p.h||650)/1000));
- const pts=[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([x,y])=>P(n.x+x,n.y+y,n.z)).map(q=>q.x+","+q.y).join(" ");
+ const pts=[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([x,y])=>P(x,y,0)).map(q=>q.x+","+q.y).join(" ");
  const rows=Math.max(2,Math.min(5,Number(p.rows)||4)),cols=Math.max(2,Math.min(5,Number(p.cols)||3)),bolts=[];
- for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){const x=(j/(cols-1)-.5)*w*.65,y=(i/(rows-1)-.5)*h*.65;bolts.push(P(n.x+x,n.y+y,n.z+.025));}
+ for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){const x=(j/(cols-1)-.5)*w*.65,y=(i/(rows-1)-.5)*h*.65;bolts.push(P(x,y,.025));}
  return '<svg viewBox="0 0 700 410" role="img" aria-label="شماتیک سه بعدی اتصال زانویی" style="width:100%;height:auto;background:#f8fafc"><line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="#176b9b" stroke-width="32"/><line x1="'+a.x+'" y1="'+a.y+'" x2="'+d.x+'" y2="'+d.y+'" stroke="#d97706" stroke-width="27"/><polygon points="'+pts+'" fill="#0f766e" fill-opacity=".22" stroke="#0f766e" stroke-width="3"/>'+bolts.map(q=>'<circle cx="'+q.x+'" cy="'+q.y+'" r="5" fill="#fff" stroke="#111827" stroke-width="2"/>').join("")+'<circle cx="'+a.x+'" cy="'+a.y+'" r="6" fill="#b91c1c"/><text x="18" y="26" fill="#176b9b">ستون '+k.column.id+'</text><text x="510" y="26" fill="#b45309">رفتر '+k.rafter.id+'</text><text x="18" y="390" fill="#334155">ایزومتریک مفهومی؛ نه نقشه ساخت</text></svg>';
 }
 function test(){
