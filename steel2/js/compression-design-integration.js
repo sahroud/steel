@@ -19,6 +19,7 @@ function normalize(v){
   const src=v?.groups?.[g]||{},dst={};
   FIELDS.forEach(([k])=>{const n=Number(src[k]);dst[k]=src[k]!==""&&src[k]!==null&&src[k]!==undefined&&Number.isFinite(n)?n:null;});
   dst.sectionTypeReviewed=src.sectionTypeReviewed===true;
+  dst.sectionPropertiesMatchReviewed=src.sectionPropertiesMatchReviewed===true;
   dst.localSlendernessReviewed=src.localSlendernessReviewed===true;
   dst.localSlendernessClass=src.localSlendernessClass==="non-slender"?"non-slender":"unreviewed";
   dst.note=String(src.note||"");
@@ -35,6 +36,7 @@ function readUI(){
   const d={};
   FIELDS.forEach(([k])=>{const el=$("cc_"+g+"_"+k);d[k]=el&&el.value!==""?Number(el.value):null;});
   d.sectionTypeReviewed=$("cc_"+g+"_sectionTypeReviewed")?.checked===true;
+  d.sectionPropertiesMatchReviewed=$("cc_"+g+"_sectionPropertiesMatchReviewed")?.checked===true;
   d.localSlendernessReviewed=$("cc_"+g+"_localSlendernessReviewed")?.checked===true;
   d.localSlendernessClass=d.localSlendernessReviewed?"non-slender":"unreviewed";
   d.note=$("cc_"+g+"_note")?.value||"";
@@ -106,6 +108,7 @@ function render(){
   return '<details class="sub-panel"><summary>'+label+' — ظرفیت فشاری محدود</summary><div class="form-grid">'+
    FIELDS.map(([k,caption])=>'<div class="field"><label for="cc_'+g+'_'+k+'">'+caption+'</label><input type="number" min="0" step="any" id="cc_'+g+'_'+k+'" value="'+(d[k]??defaults[k]??"")+'"></div>').join("")+
    '</div><div class="form-grid"><label><input type="checkbox" id="cc_'+g+'_sectionTypeReviewed" '+(d.sectionTypeReviewed?'checked':'')+'> تأیید شد مقطع واقعاً I دوبل‌متقارن است</label>'+
+   '<label><input type="checkbox" id="cc_'+g+'_sectionPropertiesMatchReviewed" '+(d.sectionPropertiesMatchReviewed?'checked':'')+'> تأیید شد خواص هندسی ثبت‌شده دقیقاً به اعضای این گروه تعلق دارد</label>'+
    '<label><input type="checkbox" id="cc_'+g+'_localSlendernessReviewed" '+(d.localSlendernessReviewed?'checked':'')+'> کنترل لاغری موضعی بال و جان طبق جدول معتبر انجام شده و مقطع غیرلاغر است</label></div>'+
    '<div class="field"><label for="cc_'+g+'_note">منبع هندسه، مهاربندی و کنترل لاغری</label><input type="text" id="cc_'+g+'_note" value="'+esc(d.note)+'" placeholder="شماره نقشه، جدول/بند، گزارش یا گواهی مصالح"></div></details>';
  }).join("")+
@@ -116,6 +119,7 @@ function capacityForMember(row){
  const g=row.sectionKey;
  if(g!=="column"&&g!=="rafter")return {ok:false,issues:["گروه عضو در موتور فعلی پشتیبانی نمی‌شود."]};
  if(row.taperSegmentIndex!==null&&row.taperSegmentIndex!==undefined)return {ok:false,issues:["قطعه متعلق به عضو متغیرعمق است؛ ظرفیت منشوری مجاز نیست."]};
+ if(data.groups[g]?.sectionPropertiesMatchReviewed!==true)return {ok:false,issues:["یکسان بودن خواص هندسی ثبت‌شده با این عضو هنوز تأیید نشده است."]};
  const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
  if(tapered?.enabled===true)return {ok:false,issues:["گروه در مدل متغیرعمق فعال است."]};
  const base=getInput(g),override=data.memberOverrides[String(row.id)]||{};
