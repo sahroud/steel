@@ -343,8 +343,8 @@ function selfTest(){
   const B=rigidArmTransform([0,-0.25,0]);
   const d=[0,0,0,1,0,0],u=mul(B,d.map(v=>[v])).map(r=>r[0]);
   const F=[0,0,1000,0,0,0],jointF=mul(transpose(B),F.map(v=>[v])).map(r=>r[0]);
-  const ok=close(u[2],0.25,1e-12)&&close(jointF[3],-250,1e-12);
-  tests.push({name:"rigid-arm-rotation-translation-and-force-moment-transfer",ok,physicalEndDisplacementZ:u[2],jointMomentXNm:jointF[3],expectedDisplacementZM:0.25,expectedMomentXNm:-250});
+  const ok=close(u[2],-0.25,1e-12)&&close(jointF[3],-250,1e-12);
+  tests.push({name:"rigid-arm-rotation-translation-and-force-moment-transfer",ok,physicalEndDisplacementZ:u[2],jointMomentXNm:jointF[3],expectedDisplacementZM:-0.25,expectedMomentXNm:-250});
  }catch(e){tests.push({name:"rigid-arm-rotation-translation-and-force-moment-transfer",ok:false,error:String(e.message||e)});}
  return{schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"آزمون‌های تحلیلی عضو منفرد برای کنترل واحدها و قرارداد علامت؛ جایگزین اعتبارسنجی مستقل، آزمون همگرایی یا کنترل آیین‌نامه‌ای نیست."};
 }
