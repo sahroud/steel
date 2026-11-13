@@ -72,15 +72,22 @@
             <h4>الف ـ مشخصات فولاد</h4>
             <div class="form-grid">
                 <div class="field">
-                    <label for="steelGrade">نوع فولاد</label>
-                    <input id="steelGrade" type="text"
-                        value="ST37 / مقدار نیازمند تأیید">
-                    <div class="field">
-                    <label for="steelG">مدول برشی G (GPa)</label>
-                    <input id="steelG" type="number" min="1" step="0.1"
-                        value="80" placeholder="مقدار معتبر مصالح">
+                    <label for="steelGrade">گرید فولاد ساختمانی</label>
+                    <select id="steelGrade">
+                        <option value="ST37-2" selected>ST37-2 (پیش‌فرض)</option>
+                        <option value="ST52-3">ST52-3</option>
+                        <option value="CUSTOM">سایر / مشخصات سفارشی</option>
+                    </select>
+                    <small class="geometry-hint">گرید انتخابی برای فولاد نوردشده؛ برای ورق و مقاطع سردنورد، گواهی محصول ملاک است.</small>
                 </div>
-            </div>
+                <div class="field">
+                    <label for="steelThickness">ضخامت مبنای کنترل خواص (mm)</label>
+                    <input id="steelThickness" type="number" min="0.1" step="0.1" value="10">
+                </div>
+                <div class="field">
+                    <label for="steelG">مدول برشی G (GPa)</label>
+                    <input id="steelG" type="number" min="1" step="0.1" value="80">
+                </div>
                 <div class="field">
                     <label for="steelE">مدول الاستیسیته E (GPa)</label>
                     <input id="steelE" type="number"
@@ -88,15 +95,16 @@
                 </div>
                 <div class="field">
                     <label for="steelFy">تنش تسلیم Fy (MPa)</label>
-                    <input id="steelFy" type="number"
-                        min="1" step="1" value="235">
+                    <input id="steelFy" type="number" min="1" step="1" value="235">
+                </div>
+                <div class="field">
+                    <label for="steelFu">مقاومت کششی نهایی Fu (MPa)</label>
+                    <input id="steelFu" type="number" min="1" step="1" value="340">
                 </div>
             </div>
 
-            <div class="notice">
-                مقدار ۲۳۵ مگاپاسکال نمونه اولیه است.
-                مقدار واقعی باید با توجه به استاندارد محصول،
-                ضخامت ورق و گواهی مصالح تعیین شود.
+            <div class="notice" id="steelGradeNotice">
+                پیش‌فرض ST37-2 بر مبنای DIN 17100: برای ضخامت ۱۰ میلی‌متر Fy=235 MPa و Fu=340 MPa درج شده است. مقادیر گواهی کارخانه و استاندارد محصول بر این پیش‌فرض مقدم‌اند.
             </div>
 
             ${memberFields("column", "ب ـ مشخصات مقطع ستون‌ها")}
@@ -176,9 +184,11 @@
     function read() {
         return {
             material: {
-                grade: $("steelGrade").value.trim(),
+                grade: $("steelGrade").value==="CUSTOM" ? ($("steelGradeCustom")?.value.trim()||"CUSTOM") : $("steelGrade").value,
+                thickness_mm: Number($("steelThickness")?.value),
                 E_GPa: Number($("steelE").value),
-                Fy_MPa: Number($("steelFy").value)
+                Fy_MPa: Number($("steelFy").value),
+                Fu_MPa: Number($("steelFu")?.value)
             },
             column: readMember("column"),
             rafter: readMember("rafter"),
@@ -224,7 +234,8 @@
             material: {
                 grade: d.material.grade,
                 E: d.material.E_GPa * 1e9,
-                Fy: d.material.Fy_MPa * 1e6
+                Fy: d.material.Fy_MPa * 1e6,
+                Fu: d.material.Fu_MPa * 1e6
             },
             column: convertMemberToSI(d.column),
             rafter: convertMemberToSI(d.rafter)
@@ -252,6 +263,8 @@
             steelGrade: data.material?.grade,
             steelE: data.material?.E_GPa,
             steelFy: data.material?.Fy_MPa,
+            steelFu: data.material?.Fu_MPa,
+            steelThickness: data.material?.thickness_mm,
 
             columnProfile: data.column?.profile,
             columnA: data.column?.A_cm2,
@@ -324,6 +337,10 @@
             Number.isFinite(d.material.Fy_MPa) &&
             d.material.Fy_MPa > 0,
             "تنش تسلیم معتبر نیست.");
+        check("steelFu",
+            Number.isFinite(d.material.Fu_MPa) &&
+            d.material.Fu_MPa >= d.material.Fy_MPa,
+            "مقاومت کششی Fu باید معتبر و بزرگ‌تر یا مساوی Fy باشد.");
 
         function validateMember(prefix, member, title) {
             check(prefix + "Profile", !!member.profile,
@@ -445,8 +462,30 @@
         });
     }
 
+    function applySteelGradeDefaults(){
+        const grade=$("steelGrade"),thick=$("steelThickness"),fy=$("steelFy"),fu=$("steelFu"),note=$("steelGradeNotice");
+        if(!grade||!fy||!fu)return;
+        const t=Number(thick?.value||10),g=grade.value;
+        if(g==="ST37-2"){
+            const fyValue=t<=16?235:t<=40?225:t<=100?215:null;
+            if(fyValue!==null)fy.value=String(fyValue);
+            fu.value="340";
+            if(note)note.textContent="ST37-2 بر مبنای DIN 17100: برای ضخامت انتخابی "+t+" mm، مقدار مرجع Fy="+(fyValue===null?"نیازمند ورود از گواهی":fyValue)+" MPa و Fu=340 MPa (حد پایین بازه مرجع 340–470) است. برای ضخامت بیش از ۱۰۰ میلی‌متر یا محصول با استاندارد دیگر، مقادیر را از گواهی مصالح وارد کنید.";
+        }else if(g==="ST52-3"){
+            fy.value="355";fu.value="490";
+            if(note)note.textContent="ST52-3: مقادیر اولیه Fy=355 و Fu=490 MPa صرفاً حداقل‌های مرجع متداول‌اند؛ وابستگی به ضخامت، کیفیت/زیرگرید و استاندارد محصول باید با گواهی کنترل شود.";
+        }else{
+            if(note)note.textContent="گرید سفارشی انتخاب شده است؛ نام دقیق فولاد و مقادیر Fy و Fu را از استاندارد محصول یا گواهی کارخانه وارد کنید.";
+        }
+    }
+    function installMaterialGradeControls(){
+        $("steelGrade")?.addEventListener("change",applySteelGradeDefaults);
+        $("steelThickness")?.addEventListener("change",()=>{if($("steelGrade")?.value==="ST37-2")applySteelGradeDefaults();});
+        applySteelGradeDefaults();
+    }
     function init() {
         createPanel();
+        installMaterialGradeControls();
         installAnalysisChecks();
     }
 
