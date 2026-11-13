@@ -39,13 +39,17 @@
    '<div class="button-grid"><button id="btnFoundationReactions" class="btn secondary" type="button">استخراج واکنش یک حالت بار</button><button id="btnFoundationEnvelope" class="btn primary" type="button">تحلیل پوش واکنش همه ترکیبات مقدماتی</button><button id="btnFoundationQuantities" class="btn secondary" type="button">محاسبه متره هندسی فونداسیون</button><button id="btnFoundationCSV" class="btn secondary" type="button" disabled>خروجی CSV واکنش و متره</button></div>'+
    '<div id="foundationTakeoffSummary" class="notice">هنوز واکنش تحلیل سه‌بعدی استخراج نشده است.</div>'+
    '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:920px"><thead><tr><th>گره پایه</th><th>مختصات X/Z (متر)</th><th>Fx min/max (kN)</th><th>Fy min/max (kN)</th><th>Fz min/max (kN)</th><th>Mx min/max (kN.m)</th><th>My min/max (kN.m)</th><th>Mz min/max (kN.m)</th></tr></thead><tbody id="foundationReactionRows"></tbody></table></div>'+
-   '<div id="foundationQuantitySummary" class="notice">برای متره، ابعاد واقعی پی را وارد کنید.</div>';
+   '<div id="foundationQuantitySummary" class="notice">برای متره، ابعاد واقعی پی را وارد کنید.</div>'+
+   '<h4>ترسیم آرماتور شناژ و فونداسیون</h4><div class="notice">حالت ترسیم مستقل از متره و طراحی است. حالت پیش‌فرض فقط آرایش نمایشی درخواستی را نشان می‌دهد؛ حالت طراحی از خروجی غربال/آرماتور ثبت‌شده استفاده می‌کند و اگر داده کافی موجود نباشد، بخش مربوطه را ترسیم نمی‌کند.</div><div class="form-grid"><div class="field"><label for="rebarDrawingMode">مبنای ترسیم میلگردها</label><select id="rebarDrawingMode"><option value="default" selected>آرایش پیش‌فرض اجرایی</option><option value="design">مقادیر طراحی/محاسبات نرم‌افزار</option></select></div></div><div class="button-grid"><button id="btnRefreshRebarDrawing" class="btn secondary" type="button">به‌روزرسانی ترسیم</button></div><div id="rebarDrawingSummary" class="notice">آرایش پیش‌فرض انتخاب شده است.</div><div id="rebarDrawingCanvas" class="drawing-area" style="overflow-x:auto;min-height:320px"></div>';
   root.parentNode.insertBefore(p,root.nextSibling);
   keys.forEach(k=>{const el=$(map[k]);if(el){el.value=state[k]??"";el.addEventListener("change",()=>{state[k]=el.value;});}});
   $("btnFoundationReactions").addEventListener("click",extract);
   $("btnFoundationEnvelope").addEventListener("click",extractEnvelope);
   $("btnFoundationQuantities").addEventListener("click",quantify);
   $("btnFoundationCSV").addEventListener("click",exportCSV);
+  $("btnRefreshRebarDrawing").addEventListener("click",renderRebarDrawing);
+  $("rebarDrawingMode").addEventListener("change",renderRebarDrawing);
+  try{$("rebarDrawingMode").value=localStorage.getItem("sahroudSteel.rebarDrawingMode.v1")||"default";$("rebarDrawingMode").addEventListener("change",()=>{try{localStorage.setItem("sahroudSteel.rebarDrawingMode.v1",$("rebarDrawingMode").value);}catch(e){}});}catch(e){}
  }
  function readInputs(){keys.forEach(k=>{const el=$(map[k]);if(el)state[k]=el.value;});}
  function selfTest(){
@@ -98,6 +102,7 @@ function modelFingerprint(model){
   $("foundationTakeoffSummary").textContent="حالت بار تحلیل‌شده: "+lastReport.loadCase+" | نوع تکیه‌گاه: "+lastReport.supportType+" | تعداد کل پایه‌های مدل: "+rows.length+" | پایه‌های دارای واکنش غیرصفر: "+rows.filter(x=>x.hasReaction).length+" | مختصات بر حسب متر؛ نیرو kN و لنگر kN.m. جمع واکنش‌ها: Fx "+fmt(sum[0]/1000)+", Fy "+fmt(sum[1]/1000)+", Fz "+fmt(sum[2]/1000)+" kN. این جمع فقط مربوط به همین حالت بار است؛ برای طراحی پی باید همه ترکیبات بار و پوش نیروها بررسی شوند.";
   $("btnFoundationCSV").disabled=false;
   quantify();
+  renderRebarDrawing();
  }
  async function extractEnvelope(){
   const button=$("btnFoundationEnvelope"),summary=$("foundationTakeoffSummary");
@@ -363,8 +368,97 @@ function calculateFootingRebar(baseCount,B,L){
   const csv="\uFEFF"+lines.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Foundation-Takeoff.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
+
+ function drawingFootingSpecs(mode){
+  if(mode==="default")return{specs:[
+   {layer:"bottom",direction:"X",diaMm:16,spacingMm:150},
+   {layer:"bottom",direction:"Z",diaMm:16,spacingMm:150}
+  ],basis:"پیش‌فرض کاربر: فقط شبکه تحتانی، Ø16 با فاصله 150 میلی‌متر در دو راستا."};
+  const manual=footingGridSpecs(state);
+  if(manual.length)return{specs:manual,basis:"مقادیر قطر و فاصله ثبت‌شده در ورودی آرماتور فونداسیون."};
+  const report=window.SteelFootingStructuralScreen?.getLast?.();
+  if(!report?.records?.length)return{specs:[],basis:"خروجی غربال سازه‌ای فونداسیون موجود نیست؛ ابتدا غربال را اجرا کنید و قطر میلگردهای تحتانی را ثبت کنید."};
+  const specs=[];
+  for(const dir of ["X","Z"]){
+   const tokens=report.records.filter(r=>r&&Number.isFinite(r.spacingByStrengthMm)&&r.spacingByStrengthMm>0&&String(r.direction||"").includes(dir));
+   if(!tokens.length)continue;
+   const dia=Number(dir==="X"?state.bottomBarDiaXmm:state.bottomBarDiaZmm);
+   if(!(dia>0))continue;
+   specs.push({layer:"bottom",direction:dir,diaMm:dia,spacingMm:Math.min(...tokens.map(r=>r.spacingByStrengthMm))});
+  }
+  return{specs,basis:"فاصله از As لازمِ غربال مقدماتی و قطر واردشده در ورودی فونداسیون؛ این خروجی طراحی نهایی یا تأیید آیین‌نامه‌ای نیست."};
+ }
+ function drawingTieSpecs(mode,routes){
+  const report=window.SteelTieBeamReinforcement?.getLast?.(),rows=new Map((report?.rows||[]).map(r=>[String(r.id),r]));
+  return routes.map(route=>{
+   if(mode==="default")return{route,count:3,dia:16,width:Number(route.widthM)||Number(state.tieWidthM)||0.60,height:Number(route.heightM)||Number(state.tieHeightM)||0.50,source:"پیش‌فرض نمایشی"};
+   const row=rows.get(String(route.id)),count=Number(row?.barCountEachFace),dia=Number(row?.barDiaMm),width=Number(route.widthM),height=Number(route.heightM);
+   if(row?.ok&&Number.isInteger(count)&&count>0&&dia>0)return{route,count,dia,width,height,source:"گزارش آخرین محاسبه آرماتور شناژ"};
+   return{route,count:null,dia:null,width,height,source:"خروجی طراحی موجود نیست"};
+  });
+ }
+ function renderRebarDrawing(){
+  const host=$("rebarDrawingCanvas"),summary=$("rebarDrawingSummary"),mode=$("rebarDrawingMode")?.value||"default";
+  if(!host||!summary)return;
+  readInputs();
+  const B=num(state.footingWidthM),L=num(state.footingLengthM),T=num(state.footingThicknessM),cover=state.rebarCoverMm===""?null:Number(state.rebarCoverMm);
+  const bases=lastReport?.rows?.length?lastReport.rows:(window.SteelStructuralModel?.getData?.()?.nodes||[]).filter(n=>n.kind==="base"||n.kind==="endwall-base");
+  const layout=window.SteelTieBeamLayout?.getData?.()||{},routes=Array.isArray(layout.routes)?layout.routes:[];
+  const f=drawingFootingSpecs(mode),ties=drawingTieSpecs(mode,routes);
+  const missing=[];
+  if(!B||!L||!T)missing.push("ابعاد واقعی پی برای ترسیم پلان و مقطع وارد نشده است.");
+  if(mode==="design"&&!f.specs.length)missing.push("شبکه طراحی‌شده فونداسیون در دسترس نیست؛ ورودی قطر/فاصله یا خروجی غربال را تکمیل کنید.");
+  if(mode==="design"&&ties.some(x=>x.count===null))missing.push("برای بعضی شناژها گزارش طراحی آرماتور وجود ندارد؛ ابتدا تحلیل سه‌بعدی و محاسبه آرماتور شناژ را اجرا کنید.");
+  const svg=[];
+  const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const fmtSvg=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:2});
+  svg.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 650" width="100%" role="img" aria-label="ترسیم شماتیک آرماتور فونداسیون و شناژ">');
+  svg.push('<rect x="0" y="0" width="980" height="650" fill="#f8fafc"/>');
+  svg.push('<text x="245" y="28" text-anchor="middle" font-size="18" fill="#123b52">پلان جانمایی پی‌ها و مسیر شناژها</text>');
+  svg.push('<rect x="20" y="45" width="450" height="300" rx="8" fill="#fff" stroke="#94a3b8"/>');
+  const validBases=bases.filter(n=>[Number(n.x),Number(n.z)].every(Number.isFinite));
+  if(validBases.length){
+   const xs=validBases.map(n=>Number(n.x)),zs=validBases.map(n=>Number(n.z)),minX=Math.min(...xs)-(B||0.5),maxX=Math.max(...xs)+(B||0.5),minZ=Math.min(...zs)-(L||0.5),maxZ=Math.max(...zs)+(L||0.5);
+   const scale=Math.min(390/Math.max(maxX-minX,0.5),240/Math.max(maxZ-minZ,0.5));
+   const px=x=>45+(x-minX)*scale,pz=z=>65+(z-minZ)*scale;
+   const nodeMap=new Map(validBases.map(n=>[String(n.nodeId||n.id),n]));
+   routes.forEach(r=>{const a=nodeMap.get(String(r.start)),b=nodeMap.get(String(r.end));if(a&&b)svg.push('<line x1="'+px(Number(a.x))+'" y1="'+pz(Number(a.z))+'" x2="'+px(Number(b.x))+'" y2="'+pz(Number(b.z))+'" stroke="#64748b" stroke-width="'+Math.max(3,(Number(r.widthM)||0.6)*scale*0.22)+'" stroke-linecap="round"/>');});
+   validBases.forEach(n=>{const cx=px(Number(n.x)),cy=pz(Number(n.z));if(B&&L)svg.push('<rect x="'+(cx-B*scale/2)+'" y="'+(cy-L*scale/2)+'" width="'+(B*scale)+'" height="'+(L*scale)+'" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.5"/>');svg.push('<circle cx="'+cx+'" cy="'+cy+'" r="3.5" fill="#0f172a"/><text x="'+cx+'" y="'+(cy-8)+'" text-anchor="middle" font-size="10" fill="#0f172a">'+esc(n.nodeId||n.id)+'</text>');});
+  }else svg.push('<text x="245" y="190" text-anchor="middle" font-size="14" fill="#64748b">گره پایه برای پلان موجود نیست</text>');
+  svg.push('<text x="245" y="330" text-anchor="middle" font-size="11" fill="#475569">پلان شماتیک؛ مختصات از مدل پایه‌ها، ابعاد پی از ورودی پروژه</text>');
+  svg.push('<text x="735" y="28" text-anchor="middle" font-size="18" fill="#123b52">جزئیات شبکه آرماتور پی (پلان)</text>');
+  svg.push('<rect x="500" y="45" width="460" height="300" rx="8" fill="#fff" stroke="#94a3b8"/>');
+  if(B&&L&&f.specs.length){
+   const x0=610,y0=105,w=240,h=170;
+   svg.push('<rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>');
+   f.specs.forEach(sp=>{
+    const count=Math.max(1,Math.floor(((sp.direction==="X"?L:B)*1000-2*(cover??50))/sp.spacingMm)+1);
+    for(let i=0;i<count;i++){const p=count===1?0:i/(count-1);if(sp.direction==="X"){const y=y0+10+p*(h-20);svg.push('<line x1="'+(x0+8)+'" y1="'+y+'" x2="'+(x0+w-8)+'" y2="'+y+'" stroke="'+(sp.layer==="bottom"?"#dc2626":"#2563eb")+'" stroke-width="1.5"/>');}else{const x=x0+10+p*(w-20);svg.push('<line x1="'+x+'" y1="'+(y0+8)+'" x2="'+x+'" y2="'+(y0+h-8)+'" stroke="'+(sp.layer==="bottom"?"#dc2626":"#2563eb")+'" stroke-width="1.5"/>');}}
+   });
+   svg.push('<text x="730" y="295" text-anchor="middle" font-size="12" fill="#334155">'+fmtSvg(B)+' × '+fmtSvg(L)+' m | '+(mode==="default"?"شبکه تحتانی Ø16 @150 در دو جهت":"بر اساس داده‌های موجود طراحی")+'</text>');
+  }else svg.push('<text x="730" y="190" text-anchor="middle" font-size="14" fill="#64748b">'+(mode==="design"?"داده شبکه طراحی‌شده موجود نیست":"برای ترسیم شبکه، ابعاد واقعی پی لازم است")+'</text>');
+  svg.push('<text x="245" y="385" text-anchor="middle" font-size="18" fill="#123b52">مقطع عرضی شناژ و آرایش میلگرد طولی</text>');
+  svg.push('<rect x="20" y="400" width="940" height="225" rx="8" fill="#fff" stroke="#94a3b8"/>');
+  if(ties.length){
+   const chosen=ties.find(t=>t.count!==null)||ties[0],w=chosen.width,h=chosen.height;
+   if(chosen.count!==null&&w>0&&h>0){
+    const x=300,y=440,ww=360,hh=130,pad=20;
+    svg.push('<rect x="'+x+'" y="'+y+'" width="'+ww+'" height="'+hh+'" fill="#e2e8f0" stroke="#94a3b8"/>');
+    svg.push('<rect x="'+(x+pad)+'" y="'+(y+pad)+'" width="'+(ww-2*pad)+'" height="'+(hh-2*pad)+'" rx="8" fill="none" stroke="#0f766e" stroke-width="3"/>');
+    for(let i=0;i<chosen.count;i++){const cx=x+pad+10+(chosen.count===1?0:i*(ww-2*pad-20)/(chosen.count-1));svg.push('<circle cx="'+cx+'" cy="'+(y+pad+7)+'" r="6" fill="#dc2626"/><circle cx="'+cx+'" cy="'+(y+hh-pad-7)+'" r="6" fill="#dc2626"/>');}
+    svg.push('<text x="480" y="595" text-anchor="middle" font-size="13" fill="#334155">'+esc(chosen.route.id)+' | '+chosen.count+' بالا + '+chosen.count+' پایین، Ø'+chosen.dia+' | مقطع '+fmtSvg(w)+' × '+fmtSvg(h)+' m</text>');
+   }else svg.push('<text x="490" y="510" text-anchor="middle" font-size="14" fill="#64748b">مقادیر طراحی شناژ موجود نیست؛ گزارش طراحی را اجرا کنید.</text>');
+  }else svg.push('<text x="490" y="510" text-anchor="middle" font-size="14" fill="#64748b">مسیر شناژی ثبت نشده است؛ فقط جزئیات فونداسیون قابل نمایش است.</text>');
+  svg.push('<text x="490" y="615" text-anchor="middle" font-size="10" fill="#64748b">شماتیک برای نمایش آرایش میلگرد؛ فاقد مقیاس اجرایی، خم، قلاب، وصله و جزئیات مهاری</text>');
+  svg.push('</svg>');
+  host.innerHTML=svg.join("");
+  const footingLabel=mode==="default"?"فونداسیون: فقط شبکه تحتانی Ø16 @150 در دو جهت":"فونداسیون: "+(f.specs.length?f.specs.map(s=>(s.layer==="bottom"?"تحتانی":"فوقانی")+" "+s.direction+" Ø"+s.diaMm+" @"+fmtSvg(s.spacingMm)).join("؛ "):"داده طراحی موجود نیست");
+  const tieLabel=ties.length?ties.map(t=>t.count===null?(t.route.id+": داده طراحی موجود نیست"):(t.route.id+": "+t.count+" بالا و "+t.count+" پایین Ø"+t.dia)).join("؛ "):"شناژ: مسیر ثبت نشده";
+  summary.textContent=(mode==="default"?"حالت پیش‌فرض اجرایی انتخاب شده. ":"حالت مقادیر طراحی انتخاب شده. ")+footingLabel+" | "+tieLabel+" | "+f.basis+(missing.length?" هشدار: "+missing.join(" "):"");
+ }
+
  function getData(){readInputs();return JSON.parse(JSON.stringify(state));}
  function setData(d){if(!d||typeof d!=="object")return;keys.forEach(k=>{if(d[k]!==undefined)state[k]=d[k];const el=$(map[k]);if(el)el.value=state[k]??"";});}
  document.addEventListener("DOMContentLoaded",panel);
- window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,checkTieBeamRebarClearance,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,checkTieBeamRebarClearance,renderRebarDrawing,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
 })();
