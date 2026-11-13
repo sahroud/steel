@@ -1199,8 +1199,8 @@
         if(selected.directionalWindPressures&&!directional)
           throw new Error("مبدل بار باد جهت‌دار بارگذاری نشده یا عضو پشتیبانی نمی‌شود: "+m.id);
         if(directional){
-          const windGlobal=directional.globalKNm.map(v=>v*1000*windFactor);
-          global=global.map((v,i)=>v+windGlobal[i]);
+          const windGlobal=directional.globalKNm.map(v=>v*1000);
+          global=window.SteelDirectionalWind3D.combineGlobalLoads(global,windGlobal,windFactor);
         }else if(m.sectionKey==="roofPurlin"){
           const half=Number(model.geometry.span)/2,rise=Number(model.geometry.rise),slope=rise/half,norm=Math.hypot(slope,1);
           const leftWidth=m.side==="ridge"?Number(m.lineLoads?.tributaryWidthLeft||0):(m.side==="left"?Number(m.lineLoads?.tributaryWidth||0):0);
