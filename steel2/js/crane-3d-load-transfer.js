@@ -98,9 +98,12 @@ function prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,c
     if(z< -EPS||z>length+EPS)return;
     const sides=sideMode==="both"?["left","right"]:[sideMode];
     sides.forEach(side=>{
+     const pointSource={kind:"crane-wheel-horizontal",side,wheelIndex:w.wheelIndex,casePosition_m:c.referencePosition_m,source:w.source,document:w.document};
+     const exactNode=nodeFor(model,side,z);
+     if(exactNode){const M=cross(hOffset,w.globalForce_N);add(nodal,exactNode.id,[...w.globalForce_N,...M],pointSource);return;}
      const row=memberAt(model,side,z);
      if(!row){issues.push("بار افقی چرخ "+w.wheelIndex+" در موقعیت z="+z+" روی عضو تیر حمال "+side+" قرار نگرفت.");return;}
-     addPointOnGirder(model,row,z,w.globalForce_N,hOffset,nodal,{kind:"crane-wheel-horizontal",side,wheelIndex:w.wheelIndex,casePosition_m:c.referencePosition_m,source:w.source,document:w.document},issues);
+     addPointOnGirder(model,row,z,w.globalForce_N,hOffset,nodal,pointSource,issues);
     });
    });
   }
@@ -143,6 +146,14 @@ function selfTest(){
  t("rejects unspecified horizontal rail side",()=>!prepareCase(model,transfer,0,h,train,{...cfg,horizontalApplicationSides:""}).success);
  t("rejects unmatched vertical support station",()=>{const bad=JSON.parse(JSON.stringify(transfer));bad.cases[0].girderPointLoads.left[0].x_m=4.8;return !prepareCase(model,bad,0,h,train,cfg).success;});
  t("rejects incomplete load source chain",()=>{const bad=JSON.parse(JSON.stringify(transfer));bad.cases[0].sourceDocuments.wheelSources[0].document="";return !prepareCase(model,bad,0,h,train,cfg).success;});
+ t("maps horizontal force at an exact support node without duplicate member mapping",()=>{const exact=prepareCase(model,transfer,0,{...h,enabled:true}, {positions_m:"4"},cfg);return exact.success&&exact.nodalLoads.some(n=>n.nodeId==="L1"&&Math.abs(n.values[0])>0);});
+ const beam={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:10}],members:[{id:"M",start:"A",end:"B",side:"left",sectionKey:"craneRunwayGirder",craneIntegration:true}]};
+ const oneRail={success:true,cases:[{referencePosition_m:0,girderPointLoads:{left:[],right:[]},sourceDocuments}]};
+ const point=prepareCase(beam,oneRail,0,{...h,transverseLoads_kN:"1",longitudinalLoads_kN:"0"}, {positions_m:"5"}, {...cfg,horizontalApplicationSides:"left",horizontalWheelOffset_m:[0,0,0]});
+ const solver=point.success?root.SteelFrame3D.analyze(beam,{sectionResolver:()=>({E:2e11,G:7.7e10,A:.01,Iy:2e-4,Iz:1e-4,J:1e-5}),supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]}],nodalLoads:point.nodalLoads}):null;
+ const expected=1000*25*25/(6*2e11*1e-4);
+ const actual=solver?.displacements.find(n=>n.nodeId==="B")?.values[0];
+ t("consistent horizontal point load matches cantilever closed-form deflection",()=>!!solver?.success&&solver.equilibrium.ok&&Math.abs(actual-expected)<expected*1e-7);
  t("keeps analysis approval disabled",()=>r.analysisEnabled===false&&r.solverInputReady===true);
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
