@@ -78,6 +78,7 @@
   }));
  }
  function scheduleDimensionsValid(rows){return rows.every(r=>{const d=footingSpecFor(r);return d.width>0&&d.length>0&&d.thickness>0;});}
+ function footingScheduleIsUniform(){if(!lastReport?.rows?.length)return true;const dims=lastReport.rows.map(r=>footingSpecFor(r));return dims.every(d=>Math.abs(d.width-num(state.footingWidthM))<1e-9&&Math.abs(d.length-num(state.footingLengthM))<1e-9&&Math.abs(d.thickness-num(state.footingThicknessM))<1e-9);}
 
  function footingDatumGeometry(topElevationM,tieHeightM,footingDepthM){
   if(![topElevationM,tieHeightM,footingDepthM].every(Number.isFinite)||tieHeightM<=0||footingDepthM<=0)return{ok:false,reason:"تراز بالا، ارتفاع شناژ و ضخامت پی باید معتبر باشند."};
@@ -176,6 +177,7 @@ function modelFingerprint(model){
   const box=$("foundationBearingSummary"),body=$("foundationBearingRows");
   if(body)body.replaceChildren();
   if(!lastReport||!Array.isArray(lastReport.rows)||!lastReport.rows.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
+  if(!footingScheduleIsUniform()){const box=$("foundationBearingSummary");if(box)box.textContent="غربال باربری تا زمان تکمیل کنترل مستقل هر پایه غیرفعال است؛ ابعاد جدول مستقل با ابعاد عمومی متفاوت است.";return null;}
   const B=num(state.footingWidthM),L=num(state.footingLengthM),t=num(state.footingThicknessM);
   const allow=num(state.soilAllowableKPa),gammaC=num(state.concreteUnitWeightKNm3);
   const offsetX=signedNum(state.columnOffsetXM),offsetZ=signedNum(state.columnOffsetZM);
@@ -224,6 +226,7 @@ function modelFingerprint(model){
   const box=$("foundationSlidingSummary"),body=$("foundationSlidingRows");
   if(body)body.replaceChildren();
   if(!lastReport||!Array.isArray(lastReport.rows)||!lastReport.rows.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
+  if(!footingScheduleIsUniform()){const box=$("foundationSlidingSummary");if(box)box.textContent="غربال لغزش تا زمان تکمیل کنترل مستقل هر پایه غیرفعال است؛ ابعاد جدول مستقل با ابعاد عمومی متفاوت است.";return null;}
   const B=num(state.footingWidthM),L=num(state.footingLengthM),t=num(state.footingThicknessM),gammaC=num(state.concreteUnitWeightKNm3),mu=num(state.slidingFrictionMu);
   const cover=state.soilCoverDepthM===""?0:Number(state.soilCoverDepthM),gammaS=cover>0?num(state.soilUnitWeightKNm3):0;
   if(!B||!L||!t||!gammaC||!mu||!Number.isFinite(cover)||cover<0||(cover>0&&!gammaS)){
@@ -260,6 +263,7 @@ function modelFingerprint(model){
   const box=$("foundationUpliftSummary"),body=$("foundationUpliftRows");
   if(body)body.replaceChildren();
   if(!lastReport||!Array.isArray(lastReport.rows)||!lastReport.rows.length){if(box)box.textContent="ابتدا پوش واکنش را استخراج کنید.";return null;}
+  if(!footingScheduleIsUniform()){const box=$("foundationUpliftSummary");if(box)box.textContent="غربال بالاکشیدگی تا زمان تکمیل کنترل مستقل هر پایه غیرفعال است؛ ابعاد جدول مستقل با ابعاد عمومی متفاوت است.";return null;}
   const B=num(state.footingWidthM),L=num(state.footingLengthM),t=num(state.footingThicknessM),gammaC=num(state.concreteUnitWeightKNm3);
   const cover=state.soilCoverDepthM===""?0:Number(state.soilCoverDepthM),gammaS=cover>0?num(state.soilUnitWeightKNm3):0;
   if(!B||!L||!t||!gammaC||!Number.isFinite(cover)||cover<0||(cover>0&&!gammaS)){
