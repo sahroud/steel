@@ -63,7 +63,9 @@ function selfTest(){
   {name:"all nine member groups are represented",pass:r.rows.length===9&&r.missingGroups.length===0},
   {name:"purlins and girts require section-specific design path",pass:["roofPurlin","wallGirt"].every(k=>r.rows.find(x=>x.group===k)?.designPath==="section-specific"&&!r.rows.find(x=>x.group===k)?.ready)},
   {name:"braces require axial resistance and connection design",pass:["roofBrace","wallBrace"].every(k=>r.rows.find(x=>x.group===k)?.designPath==="axial"&&!r.rows.find(x=>x.group===k)?.ready)},
-  {name:"missing capacity engines cannot produce an overall ready result",pass:r.ready===false}
+  {name:"missing capacity engines cannot produce an overall ready result",pass:r.ready===false},
+  {name:"duplicate member IDs block readiness",pass:audit({...env,duplicateMemberIdsByCase:[{caseLabel:"ULS",memberId:"M1"}]}).issues.some(x=>x.includes("تکراری"))},
+  {name:"invalid 12-DOF vectors block readiness",pass:audit({...env,invalidForceVectors:[{caseLabel:"ULS",memberId:"M1"}]}).issues.some(x=>x.includes("۱۲ مؤلفه‌ای"))}
  ];
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests,scope:"group coverage and readiness routing only"};
 }
