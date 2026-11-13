@@ -23,7 +23,7 @@
    '<label class="check-row" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><input id="fsReactionSign" type="checkbox"><span>قرارداد علامت واکنش قائم و افقی حل‌گر با یک حالت بار معلوم کنترل شده است؛ فشار فشاری پایه مثبت در نظر گرفته می‌شود.</span></label>'+
    '<div class="button-grid"><button id="btnFootingStructuralScreen" class="btn primary" type="button">اجرای غربال خمش، برش و پانچ</button><button id="btnFootingStructuralCSV" class="btn secondary" type="button" disabled>دریافت CSV کنترل پی</button></div>'+
    '<div id="footingStructuralSummary" class="notice">برای شروع، پوش واکنش‌ها را استخراج کنید و ابعاد پی، پدستال، پوشش بتن و مشخصات مصالح را وارد کنید.</div>'+
-   '<h4>نتایج هر پایه و هر حالت بار</h4><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:1000px"><thead><tr><th>پایه / حالت</th><th>جهت</th><th>لنگر تقاضا (kN.m/m)</th><th>As لازم (mm²/m)</th><th>As موجود (mm²/m)</th><th>فاصله متناظر با As خمشی (mm)</th><th>برش یک‌طرفه Vu / φVc (kN/m)</th><th>پانچ Vu / φVc (kN)</th><th>وضعیت</th></tr></thead><tbody id="footingStructuralRows"></tbody></table></div>'+
+   '<h4>نتایج هر پایه و هر حالت بار</h4><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:1000px"><thead><tr><th>پایه / حالت</th><th>ابعاد پی B×L×t (m)</th><th>جهت</th><th>لنگر تقاضا (kN.m/m)</th><th>As لازم (mm²/m)</th><th>As موجود (mm²/m)</th><th>فاصله متناظر با As خمشی (mm)</th><th>برش یک‌طرفه Vu / φVc (kN/m)</th><th>پانچ Vu / φVc (kN)</th><th>وضعیت</th></tr></thead><tbody id="footingStructuralRows"></tbody></table></div>'+
    '<div class="notice" id="footingStructuralLimits">این غربال از فشار بیشینه یکنواخت روی طره‌ها استفاده می‌کند؛ محافظه‌کارانه و ساده‌سازی‌شده است و جای تحلیل دقیق فشار متغیر، طراحی کامل پی و کنترل آیین‌نامه‌ای را نمی‌گیرد.</div>';
   root.parentNode.insertBefore(p,root.nextSibling);
   $("fsFc").value=state.fcMPa;$("fsFy").value=state.fyMPa;$("fsReactionSign").checked=!!state.reactionSignConfirmed;
@@ -40,82 +40,116 @@
   const As=(-B-Math.sqrt(disc))/(2*A);
   return Number.isFinite(As)&&As>0?As:null;
  }
+ function clipPolygon(poly,axis,bound,greater){
+  const out=[];if(!poly.length)return out;
+  const inside=p=>greater?p[axis]>=bound-1e-10:p[axis]<=bound+1e-10;
+  for(let i=0;i<poly.length;i++){
+   const a=poly[i],b=poly[(i+1)%poly.length],ia=inside(a),ib=inside(b);
+   if(ia&&ib)out.push(b);
+   else if(ia&&!ib||!ia&&ib){
+    const den=b[axis]-a[axis];
+    if(Math.abs(den)>1e-12){const t=(bound-a[axis])/den,q=[a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])];out.push(q);}
+    if(!ia&&ib)out.push(b);
+   }
+  }
+  return out;
+ }
+ function polygonArea(poly){
+  if(poly.length<3)return 0;let a=0;
+  for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];a+=p[0]*q[1]-q[0]*p[1];}
+  return Math.abs(a)/2;
+ }
+ function clipSegmentLength(a,b,xmin,xmax,zmin,zmax){
+  const dx=b[0]-a[0],dz=b[1]-a[1],p=[-dx,dx,-dz,dz],q=[a[0]-xmin,xmax-a[0],a[1]-zmin,zmax-a[1]];
+  let lo=0,hi=1;
+  for(let i=0;i<4;i++){
+   if(Math.abs(p[i])<1e-12){if(q[i]<0)return 0;continue;}
+   const r=q[i]/p[i];if(p[i]<0)lo=Math.max(lo,r);else hi=Math.min(hi,r);
+   if(lo>hi)return 0;
+  }
+  return Math.hypot(dx,dz)*Math.max(0,hi-lo);
+ }
+ function clippedPunchGeometry(B,L,cx,cz,ox,oz,d){
+  const hw=(cx+d)/2,hl=(cz+d)/2;
+  const poly=[[ox-hw,oz-hl],[ox+hw,oz-hl],[ox+hw,oz+hl],[ox-hw,oz+hl]];
+  const xmin=-B/2,xmax=B/2,zmin=-L/2,zmax=L/2;
+  let clipped=poly;
+  clipped=clipPolygon(clipped,0,xmin,true);clipped=clipPolygon(clipped,0,xmax,false);
+  clipped=clipPolygon(clipped,1,zmin,true);clipped=clipPolygon(clipped,1,zmax,false);
+  let b0=0;
+  for(let i=0;i<poly.length;i++)b0+=clipSegmentLength(poly[i],poly[(i+1)%poly.length],xmin,xmax,zmin,zmax);
+  return{area:polygonArea(clipped),b0,fullPerimeter:2*((cx+d)+(cz+d)),clipped: b0<2*((cx+d)+(cz+d))-1e-8};
+ }
  function run(){
   const summary=$("footingStructuralSummary"),body=$("footingStructuralRows");body.replaceChildren();last=null;
   const foundation=window.SteelFoundationTakeoff?.getLast?.(),inputs=window.SteelFoundationTakeoff?.getData?.();
   if(!foundation?.rows?.length){summary.textContent="ابتدا تحلیل سه‌بعدی و استخراج پوش واکنش فونداسیون را اجرا کنید.";return;}
-  const scheduled=foundation.rows.map(row=>({id:row.nodeId,spec:window.SteelFoundationTakeoff?.footingSpecFor?.(row)}));
-  const validSpecs=scheduled.filter(x=>x.spec&&[x.spec.width,x.spec.length,x.spec.thickness].every(v=>Number.isFinite(v)&&v>0));
-  const uniqueDims=new Set(validSpecs.map(x=>[x.spec.width,x.spec.length,x.spec.thickness].join("|")));
-  if(validSpecs.length!==foundation.rows.length||uniqueDims.size>1){
-   const detail=scheduled.map(x=>x.id+": "+(x.spec?[x.spec.width,x.spec.length,x.spec.thickness].join("×")+" m":"ابعاد نامعتبر/تعریف‌نشده")).join("؛ ");
-   summary.textContent="این نسخه از غربال سازه‌ای هنوز برای همه پایه‌ها یک ابعاد مشترک به‌کار می‌برد و برای پی‌های با ابعاد متفاوت قابل استفاده نیست. برای جلوگیری از نتیجه گمراه‌کننده، محاسبه متوقف شد. ابعاد هر پایه: "+detail+". مرحله بعد باید محاسبه خمش، برش و پانچ را مستقل برای هر پی انجام دهد.";
-   return;
-  }
   if(!state.reactionSignConfirmed){summary.textContent="ابتدا قرارداد علامت واکنش‌ها را با یک حالت بار معلوم کنترل کنید و سپس گزینه تأیید را فعال کنید. در غیر این صورت تشخیص فشار و کشش ممکن است وارونه شود.";return;}
-  const fc=positive(state.fcMPa),fy=positive(state.fyMPa),B=positive(inputs?.footingWidthM),L=positive(inputs?.footingLengthM),t=positive(inputs?.footingThicknessM),cx=positive(inputs?.pedestalWidthM),cz=positive(inputs?.pedestalLengthM),cover=positive(inputs?.rebarCoverMm),gammaC=positive(inputs?.concreteUnitWeightKNm3);
+  const fc=positive(state.fcMPa),fy=positive(state.fyMPa),cover=positive(inputs?.rebarCoverMm),gammaC=positive(inputs?.concreteUnitWeightKNm3);
+  const cx=positive(inputs?.pedestalWidthM),cz=positive(inputs?.pedestalLengthM),pedH=positive(inputs?.pedestalHeightM);
   const dx=positive(inputs?.bottomBarDiaXmm),sx=positive(inputs?.bottomBarSpacingXmm),dz=positive(inputs?.bottomBarDiaZmm),sz=positive(inputs?.bottomBarSpacingZmm);
   const ox=inputs?.columnOffsetXM===""?null:Number(inputs?.columnOffsetXM),oz=inputs?.columnOffsetZM===""?null:Number(inputs?.columnOffsetZM);
-  if(!fc||!fy||!B||!L||!t||!cx||!cz||!cover||!gammaC||!dx||!dz||!Number.isFinite(ox)||!Number.isFinite(oz)){
-   summary.textContent="ورودی لازم: f'c، fy، ابعاد پی و پدستال، ضخامت پی، پوشش بتن، وزن مخصوص بتن و جابه‌جایی محور ستون در X و Z (برای ستون مرکزی صفر وارد کنید).";return;
+  if(!fc||!fy||!cover||!gammaC||!cx||!cz||!pedH||!dx||!sx||!dz||!sz||!Number.isFinite(ox)||!Number.isFinite(oz)){
+   summary.textContent="ورودی لازم: f'c، fy، ابعاد و ارتفاع پدستال، پوشش بتن، وزن مخصوص بتن، شبکه میلگرد تحتانی در دو راستا و خروج از مرکز ستون (برای ستون مرکزی صفر وارد کنید).";return;
   }
-  if(cx>B||cz>L||Math.abs(ox)+cx/2>B/2+1e-9||Math.abs(oz)+cz/2>L/2+1e-9){summary.textContent="پدستال یا محور ستون در محدوده پی قرار نمی‌گیرد؛ ابعاد و خروج از مرکز را اصلاح کنید.";return;}
-  const dX=t*1000-cover-dz/2,dZ=t*1000-cover-dx/2;
-  if(dX<=0||dZ<=0){summary.textContent="عمق مؤثر پی نامعتبر است؛ ضخامت، پوشش و قطر میلگرد را بررسی کنید.";return;}
   const gammaS=positive(inputs?.soilUnitWeightKNm3),soilCover=inputs?.soilCoverDepthM===""?0:Number(inputs?.soilCoverDepthM);
   if(!Number.isFinite(soilCover)||soilCover<0||(soilCover>0&&!gammaS)){summary.textContent="ضخامت یا وزن مخصوص خاک پوششی نامعتبر است.";return;}
-  const pedH=positive(inputs?.pedestalHeightM);
-  if(!pedH){summary.textContent="ارتفاع پدستال را نیز از نقشه وارد کنید تا وزن بتن و هندسه انتقال بار ناقص نماند.";return;}
-  const pedestalWeight=gammaC*cx*cz*pedH,concreteWeight=gammaC*B*L*t+pedestalWeight;
-  const soilWeight=soilCover>0?gammaS*Math.max(0,B*L-cx*cz)*soilCover:0;
-  const added=concreteWeight+soilWeight,area=B*L,records=[];
-  const addRow=(rec)=>{records.push(rec);const tr=document.createElement("tr");[rec.nodeId+" / "+rec.caseLabel,rec.direction,fmt(rec.MuKNmPerM),rec.AsRequired===null?"—":fmt(rec.AsRequired),rec.AsProvided===null?"وارد نشده":fmt(rec.AsProvided),rec.spacingByStrengthMm===null?"—":fmt(rec.spacingByStrengthMm),rec.oneWayDemand===null?"—":fmt(rec.oneWayDemand)+" / "+fmt(rec.oneWayCapacity),rec.punchDemand===null?"—":fmt(rec.punchDemand)+" / "+fmt(rec.punchCapacity),rec.status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);};
+  const records=[],footingSummary=[];
+  const addRow=rec=>{
+   records.push(rec);const tr=document.createElement("tr");
+   [rec.nodeId+" / "+rec.caseLabel,rec.footingDimensions||"—",rec.direction,rec.MuKNmPerM===null?"—":fmt(rec.MuKNmPerM),rec.AsRequired===null?"—":fmt(rec.AsRequired),rec.AsProvided===null?"وارد نشده":fmt(rec.AsProvided),rec.spacingByStrengthMm===null?"—":fmt(rec.spacingByStrengthMm),rec.oneWayDemand===null?"—":fmt(rec.oneWayDemand)+" / "+fmt(rec.oneWayCapacity),rec.punchDemand===null?"—":fmt(rec.punchDemand)+" / "+fmt(rec.punchCapacity),rec.status].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);
+  };
   foundation.rows.forEach(row=>{
-   const cases=Array.isArray(row.caseReactions)?row.caseReactions:[];
+   const spec=window.SteelFoundationTakeoff?.footingSpecFor?.(row);
+   if(!spec||![spec.width,spec.length,spec.thickness].every(v=>Number.isFinite(v)&&v>0)){
+    addRow({nodeId:row.nodeId,caseLabel:"—",footingDimensions:"نامعتبر",direction:"—",MuKNmPerM:null,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:null,punchCapacity:null,status:"ابعاد مستقل این پی معتبر نیست؛ کنترل انجام نشد"});return;
+   }
+   const B=spec.width,L=spec.length,t=spec.thickness;
+   const pedestalFits=cx<=B&&cz<=L&&Math.abs(ox)+cx/2<=B/2+1e-9&&Math.abs(oz)+cz/2<=L/2+1e-9;
+   if(!pedestalFits){addRow({nodeId:row.nodeId,caseLabel:"—",footingDimensions:B+"×"+L+"×"+t,direction:"—",MuKNmPerM:null,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:null,punchCapacity:null,status:"پدستال/خروج از مرکز در محدوده این پی قرار ندارد"});return;}
+   const dX=t*1000-cover-dz/2,dZ=t*1000-cover-dx/2;
+   if(dX<=0||dZ<=0){addRow({nodeId:row.nodeId,caseLabel:"—",footingDimensions:B+"×"+L+"×"+t,direction:"—",MuKNmPerM:null,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:null,punchCapacity:null,status:"عمق مؤثر نامعتبر است"});return;}
+   const pedestalWeight=gammaC*cx*cz*pedH,concreteWeight=gammaC*B*L*t+pedestalWeight;
+   const soilWeight=soilCover>0?gammaS*Math.max(0,B*L-cx*cz)*soilCover:0;
+   const added=concreteWeight+soilWeight,area=B*L;
+   const cases=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:foundation.loadCase||"حالت موجود",values:row.values||[]}];
    cases.forEach(item=>{
-    const v=item.values||[],N=Number(v[1])/1000,fx=Number(v[0])/1000,fz=Number(v[2])/1000;
-    const mx0=Number(v[3])/1e6,mz0=Number(v[5])/1e6;
-    if(![N,fx,fz,mx0,mz0].every(Number.isFinite)||N<=0)return;
+    const v=item.values||[],N=Number(v[1])/1000,mx0=Number(v[3])/1e6,mz0=Number(v[5])/1e6;
+    if(![N,mx0,mz0].every(Number.isFinite)){addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:"—",MuKNmPerM:null,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:null,punchCapacity:null,status:"واکنش ناقص یا نامعتبر"});return;}
+    if(N<=0){addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:"—",MuKNmPerM:null,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:null,punchCapacity:null,status:"واکنش قائم فشاری مثبت نیست؛ کنترل تماس/بالاکشیدگی جداگانه لازم است"});return;}
     const Mx=mx0-oz*(N+pedestalWeight),Mz=mz0+ox*(N+pedestalWeight),totalN=N+added;
     const q0=totalN/area,bend=6*Math.abs(Mx)/(B*L*L)+6*Math.abs(Mz)/(L*B*B),qmax=q0+bend,qmin=q0-bend;
-    if(qmin<0)return;
+    if(qmin<0){addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:"—",MuKNmPerM:null,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:null,punchCapacity:null,status:"تماس کامل برقرار نیست؛ کنترل خمش/برش با این مدل فشار متوقف شد"});return;}
     const specs=[
-     {direction:"طره در X؛ میلگرد موازی Z",projection:Math.max(0,(B-cx)/2+Math.abs(ox)),d:dX,dia:dz,spacing:sz},
-     {direction:"طره در Z؛ میلگرد موازی X",projection:Math.max(0,(L-cz)/2+Math.abs(oz)),d:dZ,dia:dx,spacing:sx}
+     {direction:"طره X؛ میلگرد موازی Z",projection:(B-cx)/2+Math.abs(ox),d:dX,dia:dz,spacing:sz},
+     {direction:"طره Z؛ میلگرد موازی X",projection:(L-cz)/2+Math.abs(oz),d:dZ,dia:dx,spacing:sx}
     ];
-    let statusParts=[];
     specs.forEach(s=>{
-     const leff=Math.max(0,s.projection-s.d/1000);
-     const Mu=qmax*s.projection*s.projection/2;
-     const As=requiredAs(Mu,fc,fy,s.d);
-     const AsProv=s.dia&&s.spacing?Math.PI*s.dia*s.dia/4*1000/s.spacing:null,spacingByStrength=As&&s.dia?Math.PI*s.dia*s.dia/4*1000/As:null;
-     const vu=qmax*leff;
-     const vc=0.75*0.17*Math.sqrt(fc)*1000*s.d/1000;
-     const oneWay=leff<=0?"مقطع بحرانی در بیرون طره نیست":vu<=vc?"برش یک‌طرفه در غربال ساده کمتر از ظرفیت اسمی است":"برش یک‌طرفه از ظرفیت اسمی غربال بیشتر است";
-     const flex=As===null?"As لازم قابل محاسبه نیست":AsProv===null?"آرماتور موجود وارد نشده":AsProv>=As?"As واردشده از As لازم محاسباتی کمتر نیست":"As واردشده از As لازم محاسباتی کمتر است";
-     statusParts.push(s.direction+": "+flex+"؛ "+oneWay);
-     addRow({nodeId:row.nodeId,caseLabel:item.label,direction:s.direction,MuKNmPerM:Mu,AsRequired:As,AsProvided:AsProv,spacingByStrengthMm:spacingByStrength,oneWayDemand:vu,oneWayCapacity:vc,punchDemand:null,punchCapacity:null,status:flex+"؛ "+oneWay});
+     const leff=Math.max(0,s.projection-s.d/1000),Mu=qmax*s.projection*s.projection/2;
+     const As=requiredAs(Mu,fc,fy,s.d),AsProv=Math.PI*s.dia*s.dia/4*1000/s.spacing;
+     const spacingByStrength=As&&As>0?Math.PI*s.dia*s.dia/4*1000/As:null;
+     const vu=qmax*leff,vc=0.75*0.17*Math.sqrt(fc)*s.d;
+     const flex=As===null?"As لازم قابل محاسبه نیست":AsProv>=As?"As موجود از نیاز خمشی این غربال کمتر نیست":"As موجود از نیاز خمشی این غربال کمتر است";
+     const oneWay=leff<=0?"مقطع بحرانی برش یک‌طرفه خارج از طره قرار می‌گیرد":vu<=vc?"تقاضای برش یک‌طرفه کمتر از ظرفیت فرضی است":"تقاضای برش یک‌طرفه از ظرفیت فرضی بیشتر است";
+     addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:s.direction,MuKNmPerM:Mu,AsRequired:As,AsProvided:AsProv,spacingByStrengthMm:spacingByStrength,oneWayDemand:vu,oneWayCapacity:vc,punchDemand:null,punchCapacity:null,qmaxKPa:qmax,status:flex+"؛ "+oneWay});
     });
-    const dPunch=Math.min(dX,dZ),perimeter=2*((cx*1000+dPunch)+(cz*1000+dPunch));
-    const insideW=(cx+dPunch/1000),insideL=(cz+dPunch/1000),insideArea=insideW*insideL;
-    const punchValid=Math.abs(ox)+cx/2+dPunch/2000<=B/2+1e-9&&Math.abs(oz)+cz/2+dPunch/2000<=L/2+1e-9;
-    const qavg=totalN/area,Vu=punchValid?Math.max(0,(N+pedestalWeight)*(1-insideArea/area)):null;
-    const Vc=punchValid?0.75*0.33*Math.sqrt(fc)*perimeter*dPunch/1000:null;
-    const punchStatus=!punchValid?"محیط بحرانی پانچ در محدوده پی جا نمی‌شود":Vu<=Vc?"پانچ در غربال محوری ساده کمتر از ظرفیت اسمی است":"پانچ از ظرفیت اسمی غربال بیشتر است";
-    statusParts.push(punchStatus);
-    addRow({nodeId:row.nodeId,caseLabel:item.label,direction:"پانچ پیرامون پدستال",MuKNmPerM:0,AsRequired:null,AsProvided:null,oneWayDemand:null,oneWayCapacity:null,spacingByStrengthMm:null,punchDemand:Vu,punchCapacity:Vc,status:punchStatus});
+    const dPunch=Math.min(dX,dZ),pg=clippedPunchGeometry(B,L,cx,cz,ox,oz,dPunch);
+    const Vu=Math.max(0,N+pedestalWeight-qmax*pg.area),Vc=0.75*0.33*Math.sqrt(fc)*pg.b0*1000*dPunch/1000;
+    const punchStatus=pg.b0<=1e-8?"محیط بحرانی پانچ در داخل پی طول مؤثر ندارد":Vu<=Vc?"تقاضای پانچ کمتر از ظرفیت فرضی است":"تقاضای پانچ از ظرفیت فرضی بیشتر است";
+    addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:"پانچ پیرامون پدستال"+(pg.clipped?"؛ محیط بریده‌شده در لبه پی":""),MuKNmPerM:0,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:Vu,punchCapacity:Vc,punchPerimeterMm:pg.b0*1000,punchAreaM2:pg.area,qmaxKPa:qmax,status:punchStatus});
    });
+   footingSummary.push({nodeId:row.nodeId,widthM:B,lengthM:L,thicknessM:t,concreteWeightKN:concreteWeight,soilCoverWeightKN:soilWeight});
   });
-  if(!records.length){summary.textContent="هیچ حالت فشاری با تماس کامل خاک برای غربال خمش و برش موجود نیست؛ پوش واکنش، علامت‌ها و کنترل فشار زیر پی را بررسی کنید.";return;}
-  const warning=records.filter(r=>/کمتر است|بیشتر است|جا نمی‌شود|قابل محاسبه نیست/.test(r.status)).length;
-  summary.textContent="غربال سازه‌ای برای "+records.length+" ردیف محاسباتی انجام شد؛ f'c="+fmt(fc)+" MPa، fy="+fmt(fy)+" MPa، وزن پی و خاک پوششی هر پایه="+fmt(added)+" kN. ردیف‌های دارای هشدار محاسباتی: "+warning+". برای خمش، فشار بیشینه روی کل طره یکنواخت فرض شده؛ برای برش و پانچ از روابط ساده‌شده بتن مسلح با ضرایب φ فرضی 0.75 و برای خمش 0.90 استفاده شده است. این ضرایب و روابط هنوز با ضوابط رسمی پروژه تطبیق نشده‌اند.";
+  if(!records.length){summary.textContent="هیچ ردیف محاسباتی تولید نشد؛ داده واکنش‌ها و ابعاد پایه‌ها را بررسی کنید.";return;}
+  const warning=records.filter(r=>/کمتر است|بیشتر است|نامعتبر|برقرار نیست|متوقف شد|نیست؛|ناقص/.test(r.status)).length;
+  summary.textContent="غربال مقدماتی مستقل برای "+footingSummary.length+" پی با ابعاد اختصاصی اجرا شد؛ "+records.length+" ردیف کنترل و "+warning+" ردیف هشدار. f'c="+fmt(fc)+" MPa، fy="+fmt(fy)+" MPa. وزن پی، پدستال و خاک پوششی برای هر پایه جداگانه محاسبه شده است. محیط پانچ در لبه‌های پی به‌صورت هندسی بریده شده؛ اثر لنگر نامتعادل پانچ هنوز منظور نشده است. هیچ‌یک از این نتایج تأیید آیین‌نامه‌ای یا مجوز اجرا نیست.";
   $("btnFootingStructuralCSV").disabled=false;
-  last={generatedAt:new Date().toISOString(),basis:"preliminary_mechanics_screen_not_code_design",fcMPa:fc,fyMPa:fy,phiFlexure:0.9,phiShear:0.75,addedWeightPerFootingKN:added,records,limitations:["واکنش قائم مثبت به‌عنوان فشار فرض شده و نیازمند تطبیق مستقل با حالت بار معلوم است.","فشار بیشینه خطی خاک به‌صورت یکنواخت روی طره‌ها اعمال شده؛ توزیع واقعی فشار و لنگر دو محوره در عرض هر طره به‌صورت دقیق انتگرال‌گیری نشده است.","کنترل پانچ، انتقال لنگر نامتعادل، اثر برش یک‌طرفه دوطرفه دقیق، اثر ستون خارج از مرکز روی پیرامون بحرانی و ابعاد ستون/صفحه‌ستون واقعی را کامل مدل نمی‌کند.","روابط و ضرایب مقاومت 0.90 و 0.75 یک فرض غربال مقدماتی هستند و هنوز با ویرایش رسمی آیین‌نامه پروژه تطبیق نشده‌اند.","حداقل آرماتور، طول مهاری، وصله، قلاب، ترک، خیز، دوام، آرماتور بالایی/موضعی، پانچ اطراف صفحه‌ستون و جزئیات شناژ بررسی نشده‌اند.","ترکیبات بار و ضرایب تحلیل فعلی نهایی/تأییدشده نیستند؛ این گزارش تأیید طراحی یا مجوز اجرا نیست."]};
+  last={generatedAt:new Date().toISOString(),basis:"preliminary_per_base_mechanics_screen_not_code_design",fcMPa:fc,fyMPa:fy,phiFlexure:0.9,phiShear:0.75,footings:footingSummary,records,limitations:["ابعاد B×L×t و وزن بتن هر پی از جدول مستقل همان پایه خوانده شده است.","فشار خطی با فرض پی صلب و تماس کامل؛ در خروج از هسته مرکزی کنترل خمش/برش متوقف می‌شود.","فشار بیشینه یکنواخت روی طره‌ها اعمال شده؛ انتگرال‌گیری دقیق فشار متغیر و سهم وزن پی در خمش موضعی انجام نشده است.","پانچ با محیط مستطیلی در d/2 و طول مؤثر بریده‌شده در لبه پی غربال شده؛ اثر لنگر نامتعادل، انتقال برش نامتقارن، گوشه‌ها و ضوابط دقیق محیط بحرانی آیین‌نامه‌ای کامل نیست.","روابط و ضرایب φ فرضی 0.90 و 0.75 هستند و هنوز با ویرایش رسمی آیین‌نامه پروژه تطبیق نشده‌اند.","حداقل آرماتور، طول مهاری، وصله، قلاب، ترک، دوام، آرماتور بالایی/موضعی، پانچ اطراف صفحه‌ستون و جزئیات شناژ بررسی نشده‌اند.","ترکیبات بار موجود در نرم‌افزار هنوز ترکیبات نهایی/تأییدشده آیین‌نامه‌ای نیستند؛ این گزارش تأیید طراحی یا مجوز اجرا نیست."]};
   save();
  }
  function exportCSV(){
   if(!last)run();if(!last)return;
-  const rows=[["گزارش غربال سازه‌ای پی منفرد"],["مبنای گزارش",last.basis],["fc MPa",last.fcMPa],["fy MPa",last.fyMPa],["φ flexure",last.phiFlexure],["φ shear",last.phiShear],["پایه/حالت","جهت","Mu kN.m/m","As required mm2/m","As provided mm2/m","spacing from flexural As mm","Vu one-way kN/m","φVc one-way kN/m","Vu punching kN","φVc punching kN","status"],...last.records.map(r=>[r.nodeId+" / "+r.caseLabel,r.direction,r.MuKNmPerM,r.AsRequired,r.AsProvided,r.spacingByStrengthMm,r.oneWayDemand,r.oneWayCapacity,r.punchDemand,r.punchCapacity,r.status]),...last.limitations.map(x=>["محدودیت",x])];
+  const rows=[["گزارش غربال سازه‌ای پی منفرد"],["مبنای گزارش",last.basis],["fc MPa",last.fcMPa],["fy MPa",last.fyMPa],["φ flexure",last.phiFlexure],["φ shear",last.phiShear],["پایه/حالت","ابعاد پی B×L×t (m)","جهت","Mu kN.m/m","As required mm2/m","As provided mm2/m","spacing from flexural As mm","Vu one-way kN/m","φVc one-way kN/m","Vu punching kN","φVc punching kN","punch perimeter mm","punch area m2","status"],...last.records.map(r=>[r.nodeId+" / "+r.caseLabel,r.footingDimensions,r.direction,r.MuKNmPerM,r.AsRequired,r.AsProvided,r.spacingByStrengthMm,r.oneWayDemand,r.oneWayCapacity,r.punchDemand,r.punchCapacity,r.punchPerimeterMm,r.punchAreaM2,r.status]),...last.limitations.map(x=>["محدودیت",x])];
   const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Footing-Structural-Screen.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
