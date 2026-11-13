@@ -15,7 +15,7 @@ function distribute(input){
  const {rows,cols,pitchX,pitchZ,tension,momentX,momentZ,shearX,shearZ,torsionY}=input;
  if(!Number.isInteger(rows)||!Number.isInteger(cols)||rows<1||cols<1||rows*cols>64)throw Error("تعداد ردیف و ستون بولت باید عدد صحیح و حداکثر ۶۴ بولت باشد.");
  if((cols>1&&!(pitchX>0))||(rows>1&&!(pitchZ>0)))throw Error("فاصله محور بولت‌ها باید در هر آرایش چندردیفه/چندستونه مثبت باشد.");
- if([tension,momentX,momentZ,shearX,shearZ,torsionY].some(v=>v===null))throw Error("تمام پنج مؤلفه نیروی هم‌زمان را وارد کنید؛ برای مؤلفه صفر عدد صفر بنویسید.");
+ if([tension,momentX,momentZ,shearX,shearZ,torsionY].some(v=>v===null))throw Error("تمام شش مؤلفه نیروی هم‌زمان را وارد کنید؛ برای مؤلفه صفر عدد صفر بنویسید.");
  const bolts=coordinates(rows,cols,pitchX,pitchZ),n=bolts.length;
  const sx2=bolts.reduce((s,b)=>s+b.x*b.x,0),sz2=bolts.reduce((s,b)=>s+b.z*b.z,0);
  const results=bolts.map(b=>{
@@ -58,7 +58,7 @@ function panel(){
  $("btnAnchorDemandRun").addEventListener("click",run);$("btnAnchorDemandCSV").addEventListener("click",exportCSV);
 }
 function run(){
- const map={rows:"adRows",cols:"adCols",pitchX:"adPitchX",pitchZ:"adPitchZ",tension:"adTension",momentX:"adMx",momentZ:"adMz",shearX:"adVx",shearZ:"adVz",tensionCapacity:"adTcap",shearCapacity:"adVcap"};
+ const map={rows:"adRows",cols:"adCols",pitchX:"adPitchX",pitchZ:"adPitchZ",tension:"adTension",momentX:"adMx",momentZ:"adMz",shearX:"adVx",shearZ:"adVz",torsionY:"adTy",tensionCapacity:"adTcap",shearCapacity:"adVcap"};
  ids.forEach(k=>state[k]=$(map[k])?.value??state[k]);state.signConfirmed=!!$("adSign")?.checked;
  const vals={};["rows","cols","pitchX","pitchZ","tension","momentX","momentZ","shearX","shearZ","torsionY"].forEach(k=>vals[k]=num(state[k]));
  try{
@@ -86,8 +86,9 @@ function setData(d){if(d&&typeof d==="object"){state={...state,...d};}}
 function selfTest(){
  const r=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:40,momentX:0,momentZ:0,shearX:20,shearZ:0,torsionY:0});
  const checks=[["توزیع نیروی محوری برابر",r.bolts.every(b=>Math.abs(b.tensionKN-10)<1e-9)],["جمع برش X برابر ورودی",Math.abs(r.bolts.reduce((s,b)=>s+b.shearXKN,0)-20)<1e-9],["تقارن بدون لنگر",Math.abs(r.maxTensionKN-10)<1e-9]];
- const m=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:20,momentZ:0,shearX:0,shearZ:0});
- checks.push(["لنگر حول X کشش ردیف‌ها را تفکیک می‌کند",m.bolts.some(b=>b.tensionKN>0)&&m.bolts.some(b=>b.tensionKN===0)]);\n const t=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:0,momentZ:0,shearX:0,shearZ:0,torsionY:12});\n checks.push(["پیچش حفظ می‌شود ولی بدون محاسبه صریح توزیع، طراحی‌نشده می‌ماند",t.torsionYKNm===12&&t.torsionDistributionStatus==="not_distributed_requires_separate_3D_anchor_group_check"]);
+ const m=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:20,momentZ:0,shearX:0,shearZ:0,torsionY:0});
+ checks.push(["لنگر حول X کشش ردیف‌ها را تفکیک می‌کند",m.bolts.some(b=>b.tensionKN>0)&&m.bolts.some(b=>b.tensionKN===0)]);
+ const t=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:0,momentZ:0,shearX:0,shearZ:0,torsionY:12});\n checks.push(["پیچش حفظ می‌شود ولی بدون محاسبه صریح توزیع، طراحی‌نشده می‌ماند",t.torsionYKNm===12&&t.torsionDistributionStatus==="not_distributed_requires_separate_3D_anchor_group_check"]);
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
 root.SteelAnchorDemandScreen={distribute,run,getData,setData,getLast:()=>last?JSON.parse(JSON.stringify(last)):null,selfTest};
