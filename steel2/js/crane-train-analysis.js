@@ -13,13 +13,14 @@ function setData(d){state={...defaults,...(d||{})};Object.keys(defaults).forEach
 function analyze(input){
  const d={...defaults,...(input||{})},L=Number(d.span_m),offset=Number(d.firstWheelOffset_m);
  const positions=parseList(d.positions_m),loads=parseList(d.loads_t),issues=[];
- if(!(L>0)&&Number.isFinite(L))issues.push("دهانه تیر باید بزرگ‌تر از صفر باشد.");
  if(!Number.isFinite(L)||L<=0)issues.push("دهانه معتبر تیر حمال وارد نشده است.");
  if(!Number.isFinite(offset))issues.push("موقعیت چرخ اول معتبر نیست.");
  if(!positions.length||positions.some(x=>!Number.isFinite(x)||x<0))issues.push("فاصله‌های چرخ باید فهرست عددی نامنفی باشند.");
  if(positions.length&&positions[0]!==0)issues.push("فاصله چرخ اول باید صفر باشد؛ سایر فاصله‌ها نسبت به آن سنجیده می‌شوند.");
  if(positions.some((x,i)=>i>0&&x<=positions[i-1]))issues.push("فاصله‌های تجمعی چرخ‌ها باید صعودی و بدون تکرار باشند.");
- if(loads.length!==positions.length||loads.some(x=>!Number.isFinite(x)||x<=0))issues.push("برای هر چرخ دقیقاً یک بار مثبت و مستقل بر حسب تن وارد کنید.");\n if(!String(d.loadSource||"").trim())issues.push("منبع مستند بارهای چرخ را وارد کنید.");\n if(!String(d.loadDocument||"").trim())issues.push("شماره صفحه کاتالوگ یا مرجع نقشه بار چرخ الزامی است.");
+ if(loads.length!==positions.length||loads.some(x=>!Number.isFinite(x)||x<=0))issues.push("برای هر چرخ دقیقاً یک بار مثبت و مستقل بر حسب تن وارد کنید.");
+ if(!String(d.loadSource||"").trim())issues.push("منبع مستند بارهای چرخ را وارد کنید.");
+ if(!String(d.loadDocument||"").trim())issues.push("شماره صفحه کاتالوگ یا مرجع نقشه بار چرخ الزامی است.");
  if(issues.length)return {ok:false,issues};
  const wheels=positions.map((p,i)=>({id:i+1,x:offset+p,P:loads[i]*9.80665,load_t:loads[i]}));
  const active=wheels.filter(w=>w.x>=-1e-9&&w.x<=L+1e-9);
