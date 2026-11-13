@@ -290,11 +290,9 @@
 
         Object.entries(fields).forEach(([id, value]) => {
             const element = $(id);
-
-            if (element && value !== undefined && value !== null) {
-                element.value = value;
-            }
+            if (element && value !== undefined && value !== null) element.value = value;
         });
+        if($("steelGradeCustom"))$("steelGradeCustom").style.display=normalizedGrade==="CUSTOM"?"block":"none";
 
         // داده‌های قدیمی سه‌بعدی پس از بازیابی فیلدهای اصلی، فقط خانه‌های خالی را تکمیل می‌کنند.
         if(data.analysis3d){
