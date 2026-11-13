@@ -77,6 +77,18 @@ async function run(loadCases){
   analysisEnabled:false,designApproved:false,
   scope:"پل استخراج واکنش و تقاضای پایه از قرارداد واقعی حل‌گر؛ بدون طراحی ظرفیت و بدون تأیید مهندسی."};
 }
+async function runDirectionalWind(){
+ const wind=root.SteelDirectionalWind3D;
+ if(!wind||typeof wind.createCases!=="function")throw Error("سازنده حالت‌های باد جهت‌دار در دسترس نیست.");
+ const built=wind.createCases();
+ return run(built.cases.map(c=>({id:c.id,label:c.label,loadCase:c})));
+}
+async function runSeismic(input){
+ const seismic=root.SteelSeismicEquivalentLateral,api=root.SteelStructuralModel,model=api?.getData?.();
+ if(!seismic||typeof seismic.createCases!=="function")throw Error("توزیع‌کننده زلزله در دسترس نیست.");
+ const built=seismic.createCases(input,model);
+ return run(built.cases.map(c=>({id:c.id,label:c.label,loadCase:c})));
+}
 function selfTest(){
  const tests=[],ck=(name,fn)=>{try{tests.push({name,pass:!!fn()});}catch(e){tests.push({name,pass:false,error:e.message});}};
  const model={nodes:[{id:"B1",x:0,y:0,z:0,kind:"base"},{id:"B2",x:4,y:0,z:0,kind:"endwall-base"},{id:"N",x:0,y:3,z:0,kind:"frame"}],members:[{id:"C1",start:"B1",end:"N"},{id:"C2",start:"B2",end:"N"}]};
@@ -97,7 +109,9 @@ function selfTest(){
  ck("missing equilibrium metrics blocked",()=>!auditEquilibrium({ok:true}).ok);
  ck("valid equilibrium accepted",()=>auditEquilibrium({ok:true,relativeForceResidual:1e-10,relativeMomentResidual:2e-10}).ok);
  ck("demand-only status never implies design",()=>x.rows.every(r=>r.designStatus==="demand_only_not_designed")&&!("capacity" in x.rows[0]));
+ ck("wind cases use directional adapter output",()=>typeof runDirectionalWind==="function"&&runDirectionalWind.toString().includes("SteelDirectionalWind3D"));
+ ck("seismic cases use explicit seismic distributor input",()=>typeof runSeismic==="function"&&runSeismic.toString().includes("SteelSeismicEquivalentLateral"));
  return{passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests,analysisEnabled:false,designApproved:false};
 }
-root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,auditEquilibrium,run,selfTest};
+root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,auditEquilibrium,run,runDirectionalWind,runSeismic,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
