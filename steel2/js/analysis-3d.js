@@ -12,7 +12,7 @@ const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const norm=a=>Math.sqrt(dot(a,a));
 const scale=(a,s)=>a.map(v=>v*s);
-const LOCAL_END_FORCE_CONVENTION={version:1,components:["Fx_i","Fy_i","Fz_i","Mx_i","My_i","Mz_i","Fx_j","Fy_j","Fz_j","Mx_j","My_j","Mz_j"],units:{force:"N",moment:"N.m"},basis:"member-local",axes:{x:"unit vector from physical end i toward physical end j",referenceAxis:"options.referenceAxis when supplied, otherwise [0,0,1]; replaced by [0,1,0] when abs(dot(ex,reference)/norm(reference)) > 0.95",y:"normalize(referenceAxis cross x)",z:"x cross y"},definition:"localEndForces = k_local * d_local - equivalentLocalLoad after declared end-release condensation; these are solver element end actions, not automatically code section-force signs",verifiedSignCases:{axialTension:{endI:"negative Fx_i",endJ:"positive Fx_j"},axialCompression:{endI:"positive Fx_i",endJ:"negative Fx_j"}},unverifiedSignCases:["Fy","Fz","Mx","My","Mz"]};
+const LOCAL_END_FORCE_CONVENTION={version:1,components:["Fx_i","Fy_i","Fz_i","Mx_i","My_i","Mz_i","Fx_j","Fy_j","Fz_j","Mx_j","My_j","Mz_j"],units:{force:"N",moment:"N.m"},basis:"member-local",axes:{x:"unit vector from physical end i toward physical end j",referenceAxis:"options.referenceAxis when supplied, otherwise [0,0,1]; replaced by [0,1,0] when abs(dot(ex,reference)/norm(reference)) > 0.95",y:"normalize(referenceAxis cross x)",z:"x cross y"},definition:"localEndForces = k_local * d_local - equivalentLocalLoad after declared end-release condensation; these are solver element end actions, not automatically code section-force signs",verifiedSignCases:{axialTension:{endI:"negative Fx_i",endJ:"positive Fx_j"},axialCompression:{endI:"positive Fx_i",endJ:"negative Fx_j"},cantileverTipNegativeLocalY:{endI:"positive Fy_i and positive Mz_i",endJ:"negative Fy_j and zero Mz_j"},cantileverTipPositiveLocalZ:{endI:"negative Fz_i and positive My_i",endJ:"positive Fz_j and zero My_j"},cantileverTipPositiveLocalXTorque:{endI:"negative Mx_i",endJ:"positive Mx_j"}},unverifiedSignCases:[]};
 const sub=(a,b)=>a.map((v,i)=>v-b[i]);
 function solve(A,b){
  const n=b.length;
@@ -374,6 +374,21 @@ function selfTest(){
   const ok=tensile[0]<0&&tensile[6]>0&&compression[0]>0&&compression[6]<0;
   tests.push({name:"axial-force-sign-convention",ok,tensionEndI:tensile[0],tensionEndJ:tensile[6],compressionEndI:compression[0],compressionEndJ:compression[6]});
  }catch(e){tests.push({name:"axial-force-sign-convention",ok:false,error:String(e.message||e)});}
+ try{
+  const result=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[0,-1000,0,0,0,0]}]});
+  const v=result.members[0].localEndForces,ok=close(v[1],1000,1e-7)&&close(v[7],-1000,1e-7)&&close(v[5],1000*L,1e-7)&&close(v[11],0,1e-7)&&result.equilibrium.ok;
+  tests.push({name:"local-y-shear-and-bending-end-force-signs",ok,endIFy:v[1],endJFy:v[7],endIMz:v[5],endJMz:v[11],equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"local-y-shear-and-bending-end-force-signs",ok:false,error:String(e.message||e)});}
+ try{
+  const result=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[0,0,1000,0,0,0]}]});
+  const v=result.members[0].localEndForces,ok=close(v[2],-1000,1e-7)&&close(v[8],1000,1e-7)&&close(v[4],1000*L,1e-7)&&close(v[10],0,1e-7)&&result.equilibrium.ok;
+  tests.push({name:"local-z-shear-and-bending-end-force-signs",ok,endIFz:v[2],endJFz:v[8],endIMy:v[4],endJMy:v[10],equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"local-z-shear-and-bending-end-force-signs",ok:false,error:String(e.message||e)});}
+ try{
+  const result=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[0,0,0,1000,0,0]}]});
+  const v=result.members[0].localEndForces,ok=close(v[3],-1000,1e-7)&&close(v[9],1000,1e-7)&&result.equilibrium.ok;
+  tests.push({name:"local-torsion-end-force-signs",ok,endIMx:v[3],endJMx:v[9],equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"local-torsion-end-force-signs",ok:false,error:String(e.message||e)});}
  run("cantilever-y-deflection",[0,-1000,0,0,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[1]),1000*Math.pow(L,3)/(3*E*Iz));
  run("torsional-rotation",[0,0,0,1000,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[3]),1000*L/(G*J));
 
