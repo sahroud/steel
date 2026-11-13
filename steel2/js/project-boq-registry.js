@@ -13,7 +13,7 @@ function item(id,category,description,unit,quantity,source,basis,extra){
 function buildSnapshot(data){
  const rows=[],warnings=[];
  const add=(...args)=>rows.push(item(...args));
- const q=data.quantity||null,f=data.foundation||null,a=data.anchor||null,m=data.steelMass||null,c=data.cost||null;
+ const q=data.quantity||null,f=data.foundation||null,a=data.anchor||null,m=data.steelMass||null,c=data.cost||null,sw=data.siteWork||null;
  if(q){
   const t=q.totals||{};
   add("roof-cover-area","پوشش","مساحت تقریبی پوشش سقف","m²",t.roofCoverAreaApproxM2,"متره هندسه سوله","از سطح شیبدار هندسی؛ بازشو و فلاشینگ کسر نشده");
@@ -69,6 +69,15 @@ function buildSnapshot(data){
   if(!finite(a?.boltCount))add("foundation-anchor-count","انکر","تعداد بولت بر اساس ورودی پایه","عدد",x.anchorsCount,"متره فونداسیون","تعداد بولت در هر پایه واردشده");
   (x.footingRebar?.rows||[]).forEach((r,i)=>add("foundation-rebar-"+i,"آرماتور","شبکه "+r.layer+" راستای "+r.direction,"kg",r.totalWeightKg,"جدول آرماتور پی","قطر، فاصله و طول مستقیم ثبت‌شده"));
  }else warnings.push("متره فونداسیون هنوز پس از استخراج واکنش‌ها محاسبه نشده است.");
+ if(sw){
+  add("sitework-trench-excavation","خاکی","خاکبرداری نوار شناژ تا زیر بتن مگر","m³",sw.excavationM3,"متره عملیات خاکی","طول مسیر × عرض ترانشه × عمق؛ عرض مبنا ۱٫۵ برابر عرض پی عمود بر مسیر؛ هم‌پوشانی کسر نشده");
+  add("sitework-backfill","خاکی","خاکریزی فضای باقی‌مانده ترانشه پس از بتن‌ریزی و قالب‌برداری","m³",sw.backfillM3,"متره عملیات خاکی","خاکبرداری ناخالص منهای حجم بتن مدفونِ واقع در همان محدوده، با ورود صریح کاربر");
+  add("sitework-ground-fill-gross","خاکی","خاکریزی ناخالص زمین گود تا تراز کف/صفحه‌ستون","m³",sw.fillGrossM3,"متره عملیات خاکی","مساحت کف × ارتفاع متوسط خاکریزی");
+  add("sitework-ground-fill-net","خاکی","خاکریزی خالص زمین گود پس از کسر بتن مدفون","m³",sw.fillNetM3,"متره عملیات خاکی","خاکریزی ناخالص منهای حجم بتن مدفونِ واقع در محدوده");
+  add("sitework-floor-concrete","بتن‌ریزی کف","بتن کف سوله با ضخامت ثبت‌شده","m³",sw.slabConcreteM3,"متره عملیات خاکی و کف","مساحت کف × ضخامت؛ مقدار فعلی پیش‌فرض ۱۵ سانتی‌متر", {aggregationRole:"summary"});
+  add("sitework-floor-cement","مصالح بتن کف","سیمان معادل بتن کف با عیار ثبت‌شده","kg",sw.slabCementKg,"متره عملیات خاکی و کف","حجم بتن کف × عیار سیمان؛ عیار فعلی پیش‌فرض ۳۵۰ kg/m³");
+  if(Array.isArray(sw.warnings))warnings.push(...sw.warnings);
+ }else warnings.push("متره عملیات خاکی و بتن کف هنوز محاسبه نشده است.");
  if(a){
   add("anchor-bolt-count","انکر","تعداد بولت مهاری","عدد",a.boltCount,"متره صفحه‌ستون و انکر","تعداد پایه × بولت در هر پایه");
   add("anchor-bolt-mass","انکر","وزن ساق بولت مهاری","kg",a.boltShankMassKg,"متره صفحه‌ستون و انکر","وزن ساق؛ بدون رزوه/سر/قلاب");
@@ -133,7 +142,7 @@ function selfTest(){
  const d=buildSnapshot({quantity:{totals:{roofCoverAreaApproxM2:100},facades:[{face:"front",material:"brick",netAreaM2:20,masonryVolumeM3:7,estimatedBrickCount:2000,estimatedMortarVolumeM3:1,plasterAreaM2:40}]},
  foundation:{quantities:{footingConcreteM3:2,pedestalConcreteM3:null,tieConcreteM3:1,totalConcreteM3:3,excavationM3:null,footingFormworkM2:8,pedestalFormworkM2:null,tieSideFormworkM2:3,totalFormworkM2:11,sideFormworkM2:11,footingRebarKg:100,pedestalRebarKg:null,tieRebarKg:null,totalRebarKg:null,anchorsCount:24,footingSchedule:[{nodeId:"B1",width:1.25,length:2,thickness:0.8,excavationM3:5}]}},
  anchor:{boltCount:24,boltShankMassKg:80,nutCount:48,nutMassKg:1.2,washerCount:24,washerMassKg:0.2,basePlateCount:8,basePlateMassKg:120,totalCalculatedMassKg:201.4},
- steelMass:{groups:[{group:"column",label:"ستون",massKg:500}],connectionPlateMassKg:50,boltShankMassKg:10,theoreticalWeldMetalMassKg:5,procurementMassExcludingBoltsAndWeldKg:600,items:[]},cost:{rows:[{key:"foundationConcrete",unitPrice:100,cost:300},{key:"foundationRebar",unitPrice:200,cost:20000},{key:"excavation",unitPrice:50,cost:250},{key:"formwork",unitPrice:75,cost:825},{key:"anchorBolts",unitPrice:500,cost:12000}]}});
+ steelMass:{groups:[{group:"column",label:"ستون",massKg:500}],connectionPlateMassKg:50,boltShankMassKg:10,theoreticalWeldMetalMassKg:5,procurementMassExcludingBoltsAndWeldKg:600,items:[]},cost:{rows:[{key:"foundationConcrete",unitPrice:100,cost:300},{key:"foundationRebar",unitPrice:200,cost:20000},{key:"excavation",unitPrice:50,cost:250},{key:"formwork",unitPrice:75,cost:825},{key:"anchorBolts",unitPrice:500,cost:12000}]},siteWork:{excavationM3:30,backfillM3:12,fillGrossM3:null,fillNetM3:null,slabConcreteM3:15,slabCementKg:5250,warnings:[]}});
  const by=new Map(d.rows.map(r=>[r.id,r]));
  const tests={
   missingQuantityRemainsNull:by.get("foundation-excavation").quantity===null&&by.get("foundation-excavation").status==="pending",
