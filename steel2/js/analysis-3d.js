@@ -12,6 +12,7 @@ const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const norm=a=>Math.sqrt(dot(a,a));
 const scale=(a,s)=>a.map(v=>v*s);
+const LOCAL_END_FORCE_CONVENTION={version:1,components:["Fx_i","Fy_i","Fz_i","Mx_i","My_i","Mz_i","Fx_j","Fy_j","Fz_j","Mx_j","My_j","Mz_j"],units:{force:"N",moment:"N.m"},basis:"member-local",axes:{x:"unit vector from physical end i toward physical end j",referenceAxis:"[0,0,1], replaced by [0,1,0] when abs(dot(ex,reference)/norm(reference)) > 0.95",y:"normalize(referenceAxis cross x)",z:"x cross y"},definition:"localEndForces = k_local * d_local - equivalentLocalLoad after declared end-release condensation; these are solver element end actions, not automatically code section-force signs",verifiedSignCases:{axialTension:{endI:"negative Fx_i",endJ:"positive Fx_j"},axialCompression:{endI:"positive Fx_i",endJ:"negative Fx_j"}},unverifiedSignCases:["Fy","Fz","Mx","My","Mz"]};
 const sub=(a,b)=>a.map((v,i)=>v-b[i]);
 function solve(A,b){
  const n=b.length;
@@ -332,7 +333,7 @@ function analyze(model,options){
  const results=elements.map(e=>{
   const dg=e.ids.map(i=>D[i]),dl=restoreReleasedRotations(mul(e.T,dg.map(v=>[v])).map(r=>r[0]),e.releaseData),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
-  return {id:e.member.id,parentMemberId:e.member.parentMemberId||null,taperSegmentIndex:e.member.taperSegmentIndex||null,taperSegmentCount:e.member.taperSegmentCount||null,start:e.member.start,end:e.member.end,sectionKey:e.member.sectionKey||e.props.sectionKey||"",type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props,endReleases:e.endReleases,endOffsets:{i:e.offsetI.slice(),j:e.offsetJ.slice()}};
+  return {id:e.member.id,localEndForceConventionVersion:LOCAL_END_FORCE_CONVENTION.version,parentMemberId:e.member.parentMemberId||null,taperSegmentIndex:e.member.taperSegmentIndex||null,taperSegmentCount:e.member.taperSegmentCount||null,start:e.member.start,end:e.member.end,sectionKey:e.member.sectionKey||e.props.sectionKey||"",type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props,endReleases:e.endReleases,endOffsets:{i:e.offsetI.slice(),j:e.offsetJ.slice()}};
  });
  let maxTranslation=0,maxDisplacement=null;
  nodes.forEach((n,i)=>{
@@ -344,7 +345,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>(fixed.has(i*6+d)?v:0)+springReactionByDof[i*6+d])})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,nodalSpringCount:nodalSprings.length,nodalSprings:nodalSprings.map(s=>({nodeId:s.nodeId,dof:s.dof,stiffness:s.stiffness,kind:s.kind,reaction:springReactionByDof[s.globalDof]})),connectorSpringCount:connectorSprings.length,connectorSprings:connectorSprings.map(s=>{const ui=D[s.globalDofI],uj=D[s.globalDofJ],relativeDisplacement=uj-ui;return {id:s.id,nodeI:s.nodeI,nodeJ:s.nodeJ,dof:s.dof,stiffness:s.stiffness,kind:s.kind,relativeDisplacement,springForceOnNodeI:s.stiffness*relativeDisplacement,springForceOnNodeJ:-s.stiffness*relativeDisplacement};}),displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,equivalentReleasedRotationLoads:releasedRotationLoads,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","فنرهای گره‌ای خطی مستقل به زمین و فنرهای رابط دوگرهی بین گره‌های هم‌مکان؛ سختی ثابت، بدون تماس، لغزش، لقی یا هیسترزیس","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",localEndForceConvention:LOCAL_END_FORCE_CONVENTION,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,nodalSpringCount:nodalSprings.length,nodalSprings:nodalSprings.map(s=>({nodeId:s.nodeId,dof:s.dof,stiffness:s.stiffness,kind:s.kind,reaction:springReactionByDof[s.globalDof]})),connectorSpringCount:connectorSprings.length,connectorSprings:connectorSprings.map(s=>{const ui=D[s.globalDofI],uj=D[s.globalDofJ],relativeDisplacement=uj-ui;return {id:s.id,nodeI:s.nodeI,nodeJ:s.nodeJ,dof:s.dof,stiffness:s.stiffness,kind:s.kind,relativeDisplacement,springForceOnNodeI:s.stiffness*relativeDisplacement,springForceOnNodeJ:-s.stiffness*relativeDisplacement};}),displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,equivalentReleasedRotationLoads:releasedRotationLoads,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","فنرهای گره‌ای خطی مستقل به زمین و فنرهای رابط دوگرهی بین گره‌های هم‌مکان؛ سختی ثابت، بدون تماس، لغزش، لقی یا هیسترزیس","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 
 function selfTest(){
@@ -354,6 +355,8 @@ function selfTest(){
  const base={supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],sectionResolver:()=>section};
  const close=(actual,expected,tol)=>Math.abs(actual-expected)<=Math.max(Math.abs(expected)*tol,1e-12);
  const tests=[];
+ const contract=analyze(makeModel(),base).localEndForceConvention;
+ tests.push({name:"local-end-force-contract-metadata",ok:contract?.version===1&&contract.components.length===12&&contract.basis==="member-local"&&contract.verifiedSignCases.axialTension.endI==="negative Fx_i"&&contract.unverifiedSignCases.length===5});
  const run=(name,load,read,expected)=>{
   try{
    const result=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:load}]});
