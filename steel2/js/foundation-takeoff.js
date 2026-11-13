@@ -433,7 +433,7 @@ function calculateFootingRebar(baseCount,B,L){
    const x0=610,y0=105,w=240,h=170;
    svg.push('<rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>');
    f.specs.forEach(sp=>{
-    const count=Math.max(1,Math.floor(((sp.direction==="X"?L:B)*1000-2*(cover??50))/sp.spacingMm)+1);
+    const count=Math.max(1,Math.floor(((sp.direction==="X"?L:B)*1000-2*(cover??0))/sp.spacingMm)+1);
     for(let i=0;i<count;i++){const p=count===1?0:i/(count-1);if(sp.direction==="X"){const y=y0+10+p*(h-20);svg.push('<line x1="'+(x0+8)+'" y1="'+y+'" x2="'+(x0+w-8)+'" y2="'+y+'" stroke="'+(sp.layer==="bottom"?"#dc2626":"#2563eb")+'" stroke-width="1.5"/>');}else{const x=x0+10+p*(w-20);svg.push('<line x1="'+x+'" y1="'+(y0+8)+'" x2="'+x+'" y2="'+(y0+h-8)+'" stroke="'+(sp.layer==="bottom"?"#dc2626":"#2563eb")+'" stroke-width="1.5"/>');}}
    });
    svg.push('<text x="730" y="295" text-anchor="middle" font-size="12" fill="#334155">'+fmtSvg(B)+' × '+fmtSvg(L)+' m | '+(mode==="default"?"شبکه تحتانی Ø16 @150 در دو جهت":"بر اساس داده‌های موجود طراحی")+'</text>');
@@ -455,7 +455,7 @@ function calculateFootingRebar(baseCount,B,L){
   host.innerHTML=svg.join("");
   const footingLabel=mode==="default"?"فونداسیون: فقط شبکه تحتانی Ø16 @150 در دو جهت":"فونداسیون: "+(f.specs.length?f.specs.map(s=>(s.layer==="bottom"?"تحتانی":"فوقانی")+" "+s.direction+" Ø"+s.diaMm+" @"+fmtSvg(s.spacingMm)).join("؛ "):"داده طراحی موجود نیست");
   const tieLabel=ties.length?ties.map(t=>t.count===null?(t.route.id+": داده طراحی موجود نیست"):(t.route.id+": "+t.count+" بالا و "+t.count+" پایین Ø"+t.dia)).join("؛ "):"شناژ: مسیر ثبت نشده";
-  summary.textContent=(mode==="default"?"حالت پیش‌فرض اجرایی انتخاب شده. ":"حالت مقادیر طراحی انتخاب شده. ")+footingLabel+" | "+tieLabel+" | "+f.basis+(missing.length?" هشدار: "+missing.join(" "):"");
+  summary.textContent=(mode==="default"?"حالت پیش‌فرض اجرایی انتخاب شده. ":"حالت مقادیر طراحی انتخاب شده. ")+footingLabel+" | "+tieLabel+" | "+f.basis+(cover===null?" پوشش بتن وارد نشده؛ تعداد خطوط شبکه در تصویر صرفاً شماتیک است.":"")+(missing.length?" هشدار: "+missing.join(" "):"");
  }
 
  function getData(){readInputs();return JSON.parse(JSON.stringify(state));}
