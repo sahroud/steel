@@ -5,9 +5,9 @@
 (function(root){
 "use strict";
 const $=id=>document.getElementById("craneTrain_"+id);
-const defaults={span_m:"",positions_m:"0, 1.5",loads_t:"",firstWheelOffset_m:"0"};
+const defaults={span_m:"",positions_m:"0, 1.5",loads_t:"",firstWheelOffset_m:"0",loadSource:"",loadDocument:""};
 let state={...defaults};
-const parseList=s=>String(s??"").split(",").map(x=>x.trim()).filter(Boolean).map(Number);
+const parseList=s=>String(s??"").split(",").map(x=>x.trim()).map(x=>x===""?NaN:Number(x));
 function readUI(){const d={};Object.keys(defaults).forEach(k=>d[k]=$(k)?.value??state[k]);return d;}
 function setData(d){state={...defaults,...(d||{})};Object.keys(defaults).forEach(k=>{if($(k))$(k).value=state[k];});render();}
 function analyze(input){
@@ -19,7 +19,7 @@ function analyze(input){
  if(!positions.length||positions.some(x=>!Number.isFinite(x)||x<0))issues.push("فاصله‌های چرخ باید فهرست عددی نامنفی باشند.");
  if(positions.length&&positions[0]!==0)issues.push("فاصله چرخ اول باید صفر باشد؛ سایر فاصله‌ها نسبت به آن سنجیده می‌شوند.");
  if(positions.some((x,i)=>i>0&&x<=positions[i-1]))issues.push("فاصله‌های تجمعی چرخ‌ها باید صعودی و بدون تکرار باشند.");
- if(loads.length!==positions.length||loads.some(x=>!Number.isFinite(x)||x<=0))issues.push("برای هر چرخ دقیقاً یک بار مثبت و مستقل بر حسب تن وارد کنید.");
+ if(loads.length!==positions.length||loads.some(x=>!Number.isFinite(x)||x<=0))issues.push("برای هر چرخ دقیقاً یک بار مثبت و مستقل بر حسب تن وارد کنید.");\n if(!String(d.loadSource||"").trim())issues.push("منبع مستند بارهای چرخ را وارد کنید.");\n if(!String(d.loadDocument||"").trim())issues.push("شماره صفحه کاتالوگ یا مرجع نقشه بار چرخ الزامی است.");
  if(issues.length)return {ok:false,issues};
  const wheels=positions.map((p,i)=>({id:i+1,x:offset+p,P:loads[i]*9.80665,load_t:loads[i]}));
  const active=wheels.filter(w=>w.x>=-1e-9&&w.x<=L+1e-9);
