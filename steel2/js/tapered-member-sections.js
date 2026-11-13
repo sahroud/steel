@@ -28,7 +28,10 @@ function calculate(v){
  const Ix=(bf*d**3-(bf-tw)*hw**3)/12;
  const Iy=(2*tf*bf**3+hw*tw**3)/12;
  const J=(2*bf*tf**3+hw*tw**3)/3;
- return {A_cm2:A/100,Ix_cm4:Ix/1e4,Iy_cm4:Iy/1e4,J_cm4:J/1e4};
+ const Sx=Ix/(d/2),Sy=Iy/(bf/2),Aw=hw*tw;
+ return {A_cm2:A/100,Ix_cm4:Ix/1e4,Iy_cm4:Iy/1e4,J_cm4:J/1e4,
+  SxTop_cm3:Sx/1000,SxBottom_cm3:Sx/1000,Sy_cm3:Sy/1000,Aw_cm2:Aw/100,
+  flangeOutstandRatio:(bf-tw)/(2*tf),webDepthThicknessRatio:hw/tw};
 }
 function interpolate(a,b,t){return a+(b-a)*t;}
 function at(group,t){
@@ -125,7 +128,7 @@ function render(){
  const host=$("taperedSectionsContent");if(!host)return;
  host.innerHTML="<div class='field'><label for='taper_segmentsPerMember'>تعداد قطعات تحلیل برای هر عضو متغیرمقطع</label><select id='taper_segmentsPerMember'>"+[4,6,8,12,16,20,24].map(n=>"<option value='"+n+"' "+(data.segmentsPerMember===n?"selected":"")+">"+n+" قطعه</option>").join("")+"</select></div>"+GROUPS.map(([g,label])=>{
   const q=data.groups[g];
-  return '<details class="sub-panel" open><summary>'+label+' — تیرورق متغیرعمق</summary><label><input type="checkbox" id="taper_'+g+'_enabled" '+(q.enabled?'checked':'')+'> اعمال مقطع متغیر در تحلیل سه‌بعدی</label><div class="notice">سه ایستگاه از ابتدا تا انتهای عضو؛ ابعاد بین ایستگاه‌ها خطی درون‌یابی می‌شوند.</div><div class="form-grid">'+STATIONS.map(([s,sl])=>DIMS.map(([d,dl])=>'<div class="field"><label for="taper_'+g+'_'+s+'_'+d+'">'+sl+' — '+dl+'</label><input type="number" min="0" step="0.1" id="taper_'+g+'_'+s+'_'+d+'" value="'+(q.stations[s][d]??'')+'"></div>').join('')).join('')+'</div></details>';
+  return '<details class="sub-panel" open><summary>'+label+' — تیرورق متغیرعمق</summary><label><input type="checkbox" id="taper_'+g+'_enabled" '+(q.enabled?'checked':'')+'> اعمال مقطع متغیر در تحلیل سه‌بعدی</label><div class="notice">سه ایستگاه هندسی با درون‌یابی خطی: ستون از پای ستون به بالا و رفتر از لبه بام به تاج؛ این جهت‌گذاری مستقل از ترتیب گره‌های ابتدا/انتهای عضو است. نسبت‌های خروج بال و لاغری جان صرفاً هندسی‌اند و به‌تنهایی تأیید لاغری موضعی آیین‌نامه‌ای نیستند.</div><div class="form-grid">'+STATIONS.map(([s,sl])=>DIMS.map(([d,dl])=>'<div class="field"><label for="taper_'+g+'_'+s+'_'+d+'">'+sl+' — '+dl+'</label><input type="number" min="0" step="0.1" id="taper_'+g+'_'+s+'_'+d+'" value="'+(q.stations[s][d]??'')+'"></div>').join('')).join('')+'</div></details>';
  }).join('')+'<div class="button-grid"><button class="btn secondary" type="button" id="btnTaperAudit">کنترل هندسه و ایستگاه‌های مقطع</button></div><div id="taperedSectionsResults"></div>';
  $("btnTaperAudit").addEventListener("click",runAudit);
 }
@@ -135,7 +138,7 @@ function runAudit(){
   if(!data.groups[g].enabled){rows.push("<p>"+label+": غیرفعال</p>");return;}
   try{
    const items=STATIONS.map(([s,sl])=>({label:sl,...calculate(data.groups[g].stations[s])}));
-   rows.push("<h4>"+label+"</h4><table class='data-table'><thead><tr><th>ایستگاه</th><th>A (cm²)</th><th>Ix (cm⁴)</th><th>Iy (cm⁴)</th><th>J تقریبی (cm⁴)</th></tr></thead><tbody>"+items.map(x=>"<tr><td>"+x.label+"</td><td>"+x.A_cm2.toFixed(2)+"</td><td>"+x.Ix_cm4.toFixed(2)+"</td><td>"+x.Iy_cm4.toFixed(2)+"</td><td>"+x.J_cm4.toFixed(2)+"</td></tr>").join("")+"</tbody></table>");
+   rows.push("<h4>"+label+"</h4><table class='data-table'><thead><tr><th>ایستگاه</th><th>A (cm²)</th><th>Ix (cm⁴)</th><th>Iy (cm⁴)</th><th>J تقریبی (cm⁴)</th><th>Sx (cm³)</th><th>Sy (cm³)</th><th>Aw (cm²)</th><th>خروج بال</th><th>لاغری جان</th></tr></thead><tbody>"+items.map(x=>"<tr><td>"+x.label+"</td><td>"+x.A_cm2.toFixed(2)+"</td><td>"+x.Ix_cm4.toFixed(2)+"</td><td>"+x.Iy_cm4.toFixed(2)+"</td><td>"+x.J_cm4.toFixed(2)+"</td><td>"+x.SxTop_cm3.toFixed(2)+"</td><td>"+x.Sy_cm3.toFixed(2)+"</td><td>"+x.Aw_cm2.toFixed(2)+"</td><td>"+x.flangeOutstandRatio.toFixed(2)+"</td><td>"+x.webDepthThicknessRatio.toFixed(2)+"</td></tr>").join("")+"</tbody></table>");
   }catch(e){rows.push("<p style='color:#b45309'>"+label+": "+e.message+"</p>");}
  });
  $("taperedSectionsResults").innerHTML=rows.join("")+"<div class='notice'>تحلیل فعلی برای هر قطعه هندسی موجود، خواص مقطع متناظر با نقطه میانی را ثابت فرض می‌کند. بنابراین تقریب قطعه‌ای است، نه ماتریس سختی دقیق عضو با تغییر پیوسته مقطع. برای دقت بیشتر باید تقسیم‌بندی عضو در محل تغییرات عمق ریزتر شود و فرمول سختی تیرورق متغیرمقطع اعتبارسنجی شود.</div>";
