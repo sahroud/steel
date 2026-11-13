@@ -38,7 +38,7 @@ function routeWheelActions(crane,inputActions){
 const defaults={id:"CRANE-1",craneType:"overhead",supportSystem:"runway_girder"};
 let uiState={...defaults};
 function readUI(){return {id:document.getElementById("cranePath_id")?.value||uiState.id,craneType:document.getElementById("cranePath_type")?.value||uiState.craneType,supportSystem:document.getElementById("cranePath_support")?.value||uiState.supportSystem};}
-function setData(data){uiState={...defaults,...(data||{})};const a=document.getElementById("cranePath_id"),b=document.getElementById("cranePath_type"),c=document.getElementById("cranePath_support");if(a)a.value=uiState.id;if(b)b.value=uiState.craneType;if(c)c.value=uiState.supportSystem;}
+function setData(data){uiState={...defaults,...(data||{})};if(typeof document==="undefined")return;const a=document.getElementById("cranePath_id"),b=document.getElementById("cranePath_type"),c=document.getElementById("cranePath_support");if(a)a.value=uiState.id;if(b)b.value=uiState.craneType;if(c)c.value=uiState.supportSystem;}
 function ensurePanel(){
  if(document.getElementById("craneLoadPathPanel"))return;
  const host=document.getElementById("craneReadinessPanel");if(!host)return;
