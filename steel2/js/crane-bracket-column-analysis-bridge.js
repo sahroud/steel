@@ -24,7 +24,7 @@ function prepare(input){
   route:"crane wheel → rail → runway girder → bracket → column node → global six-DOF nodal load → 3D frame solver",
   note:"این مرحله فقط حالت بار حل‌گر را آماده می‌کند. اجرای تحلیل نیازمند فراخوانی جداگانه runPrepared با allowSolve:true است."};
 }
-async function runPrepared(prepared,options){
+function runPrepared(prepared,options){
  if(options?.allowSolve!==true)throw Error("اجرای حل‌گر مسدود است؛ فقط با تأیید صریح allowSolve:true اجرا می‌شود.");
  if(!prepared?.success||!prepared.ready||!prepared.loadCase||!prepared.caseId)throw Error("حالت بار آماده و معتبر برای حل وجود ندارد.");
  const chain=root.SteelStructuralLoadChain;
