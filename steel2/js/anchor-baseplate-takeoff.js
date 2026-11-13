@@ -68,7 +68,7 @@
   const body=$("anchorBaseplateRows");body.replaceChildren();
   rows.forEach(x=>{const tr=document.createElement("tr");[x.label,fmt(x.count),x.basis,fmt(x.massKg)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);});
   last={baseCount:bases,boltCount,boltShankMassKg:boltMass,nutCount,nutMassKg:nutMass,washerCount,washerMassKg:washerMass,basePlateCount:plateCount,basePlateMassKg:plateMass,totalCalculatedMassKg:total,rows,warnings,limitations:["وزن ساق بولت از استوانه توپر محاسبه شده و رزوه، سر، قلاب، مهره و واشر را شامل نمی‌شود مگر جداگانه ثبت شوند.","صفحه‌ستون به‌صورت ورق مستطیلی بدون سوراخ، پخ، سخت‌کننده، جوش یا کسر حجم محاسبه شده است.","این گزارش متره است و طراحی یا کنترل ظرفیت بولت، صفحه‌ستون، جوش و مهار بتن نیست.","وزن مهره و واشر فقط از وزن واحد واردشده محاسبه می‌شود؛ وزن فرضی استفاده نشده است."]};
-  window.SteelCostEstimate?.refreshFromAnchorTakeoff?.(last);
+  window.SteelCostEstimate?.refreshFromAnchorTakeoff?.(last);window.SteelProjectBOQ?.refresh?.();
   $("btnAnchorBaseplateCSV").disabled=false;
   return last;
  }
