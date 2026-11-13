@@ -1304,6 +1304,7 @@
     build();draw();showSummary();
   }
   function validate(){try{build();return "";}catch(e){return e.message;}}
+  function analyzeCraneRail(input){if(!window.SteelRailBeamFEM)return {success:false,analysisEnabled:false,issues:["ماژول تحلیل تیر ریل بارگذاری نشده است."]};return window.SteelRailBeamFEM.analyzeIfReady(input||{});}
   function getProposedUnbracedLengths(){if(!model)build();const g=model.geometry;return{column:g.height,rafter:Math.hypot(g.span/2,g.rise),roofPurlin:g.spacing,wallGirt:g.spacing,status:"پیشنهاد هندسی؛ تا تأیید جزئیات مهار و اتصال، مقدار قطعی طراحی نیست"};}
   function init(){
     ensurePanel();
@@ -1316,6 +1317,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,getProposedUnbracedLengths,runwayGeometrySelfTest,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,analyzeCraneRail,getProposedUnbracedLengths,runwayGeometrySelfTest,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
