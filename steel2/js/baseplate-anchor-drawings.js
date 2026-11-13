@@ -15,12 +15,17 @@ function val(id){const x=$(id)?.value;if(x===undefined||String(x).trim()==='')re
 function build(){
  syncFromTakeoff();
  const d={};ids.forEach(id=>d[id]=val(id));
- const positive=['bpCount','bpCols','bpRows','bpPlateX','bpPlateZ','bpPlateT','bpBoltD','bpHoleD','bpPitchX','bpPitchZ','bpEdgeX','bpEdgeZ','bpColumnX','bpColumnZ','bpProjection','bpEmbedment'];
+ const positive=['bpCount','bpCols','bpRows','bpPlateX','bpPlateZ','bpPlateT','bpBoltD','bpHoleD','bpEdgeX','bpEdgeZ','bpColumnX','bpColumnZ','bpProjection','bpEmbedment'];
  for(const k of positive)if(!(d[k]>0))throw Error('ورودی '+k+' باید عددی مثبت و مستند به طراحی/نقشه باشد.');
+ if(d.bpCols>1&&!(d.bpPitchX>0))throw Error('فاصله بولت‌ها در راستای X باید مثبت باشد.');
+ if(d.bpRows>1&&!(d.bpPitchZ>0))throw Error('فاصله بولت‌ها در راستای Z باید مثبت باشد.');
+ if(d.bpCols===1&&!(d.bpPitchX>=0))throw Error('فاصله X نامعتبر است؛ برای یک ستون بولت صفر وارد کنید.');
+ if(d.bpRows===1&&!(d.bpPitchZ>=0))throw Error('فاصله Z نامعتبر است؛ برای یک ردیف بولت صفر وارد کنید.');
  if(d.bpGrout===null||d.bpGrout<0)throw Error('ضخامت گروت باید وارد شود؛ اگر گروت وجود ندارد صفر وارد کنید.');
  if(!Number.isInteger(d.bpCount)||!Number.isInteger(d.bpCols)||!Number.isInteger(d.bpRows))throw Error('تعداد بولت و آرایش ردیف/ستون باید عدد صحیح باشد.');
  if(d.bpCols*d.bpRows!==d.bpCount)throw Error('تعداد بولت در هر پایه با حاصل‌ضرب تعداد ستون‌ها و ردیف‌ها برابر نیست.');
  if(d.bpHoleD<=d.bpBoltD)throw Error('قطر سوراخ باید از قطر بولت بزرگ‌تر باشد.');
+ if(d.bpEdgeX<d.bpHoleD/2||d.bpEdgeZ<d.bpHoleD/2)throw Error('فاصله مرکز سوراخ تا لبه باید حداقل نصف قطر سوراخ باشد تا سوراخ از صفحه خارج نشود.');
  if(d.bpColumnX>=d.bpPlateX||d.bpColumnZ>=d.bpPlateZ)throw Error('ابعاد footprint ستون باید از ابعاد صفحه‌ستون کوچک‌تر باشد.');
  const fitX=2*d.bpEdgeX+(d.bpCols-1)*d.bpPitchX,fitZ=2*d.bpEdgeZ+(d.bpRows-1)*d.bpPitchZ;
  if(Math.abs(fitX-d.bpPlateX)>1||Math.abs(fitZ-d.bpPlateZ)>1)throw Error('ابعاد صفحه با فاصله محورها و فاصله مرکز بولت تا لبه تطابق ندارد (تلرانس ۱ میلی‌متر).');
