@@ -17,6 +17,12 @@ function buildSnapshot(data){
  if(q){
   const t=q.totals||{};
   add("roof-cover-area","پوشش","مساحت تقریبی پوشش سقف","m²",t.roofCoverAreaApproxM2,"متره هندسه سوله","از سطح شیبدار هندسی؛ بازشو و فلاشینگ کسر نشده");
+  add("masonry-brick-total","مصالح","تعداد کل آجر تخمینی","عدد",t.estimatedBrickCount,"متره هندسه سوله","جمع دیوارهای آجری؛ برآورد حجمی");
+  add("mortar-total","مصالح","حجم کل ملات نظری","m³",t.estimatedMortarVolumeM3,"متره هندسه سوله","حجم نظری بندها؛ نسبت اختلاط جداگانه لازم است");
+  add("plaster-area-total","نازک‌کاری","سطح کل اندود دو طرف","m²",t.plasterAreaBothFacesM2,"متره هندسه سوله","بر اساس ضخامت اندود واردشده");
+  add("masonry-volume-total","بنایی","حجم کل بنایی","m³",t.masonryVolumeM3,"متره هندسه سوله","جمع دیوارهای آجری");
+  add("panel-wall-area-total","پوسته","مساحت کل ساندویچ‌پنل دیوار","m²",(q.facades||[]).filter(x=>x.material==="sandwich-panel").reduce((sum,x)=>sum+(finite(x.netAreaM2)?Number(x.netAreaM2):0),0),"متره هندسه سوله","جمع سطوح با جنس ساندویچ‌پنل");
+  add("sheet-wall-area-total","پوسته","مساحت کل ورق فلزی دیوار","m²",(q.facades||[]).filter(x=>x.material==="metal-sheet").reduce((sum,x)=>sum+(finite(x.netAreaM2)?Number(x.netAreaM2):0),0),"متره هندسه سوله","جمع سطوح با جنس ورق فلزی");
   (q.facades||[]).forEach(face=>{
    const label=({front:"جبهه جلو",rear:"جبهه عقب",left:"دیواره طولی چپ",right:"دیواره طولی راست"})[face.face]||String(face.face);
    add("facade-"+face.face+"-area","پوسته","مساحت خالص "+label,"m²",face.netAreaM2,"متره هندسه سوله","بازشو معتبر در صورت ثبت کسر شده");
@@ -42,6 +48,9 @@ function buildSnapshot(data){
  }else if(data.model)warnings.push("متره وزن اسکلت هنوز از مدل و مقاطع معتبر استخراج نشده است.");
  if(f?.quantities){
   const x=f.quantities;
+  add("foundation-tie-count","شناژ","تعداد شناژها","عدد",x.tieCount,"متره فونداسیون","طبق نقشه واردشده");
+  add("foundation-tie-length","شناژ","طول کل شناژها","m",x.tieTotalLengthM,"متره فونداسیون","طول محور/اجرایی واردشده از نقشه");
+  (x.footingSchedule||[]).forEach(row=>add("footing-"+row.nodeId,"فونداسیون","حجم بتن پی پایه "+row.nodeId,"m³",Number(row.width)*Number(row.length)*Number(row.thickness),"جدول مستقل پی‌ها","عرض × طول × ضخامت ثبت‌شده"));
   add("foundation-footing-concrete","فونداسیون","بتن پی‌ها","m³",x.footingConcreteM3,"متره فونداسیون","ابعاد مستقل هر پایه");
   add("foundation-pedestal-concrete","فونداسیون","بتن پدستال‌ها","m³",x.pedestalConcreteM3,"متره فونداسیون","فقط با تکمیل سه بعد پدستال");
   add("foundation-tie-concrete","شناژ","بتن شناژها","m³",x.tieConcreteM3,"متره فونداسیون","طول و مقطع از ورودی نقشه؛ مسیر خودکار حدس زده نمی‌شود");
@@ -65,7 +74,9 @@ function buildSnapshot(data){
  const ids=new Set(),duplicates=[];
  rows.forEach(r=>{if(ids.has(r.id))duplicates.push(r.id);ids.add(r.id);});
  const priced=new Map((c?.rows||[]).map(r=>[String(r.key),r]));
- rows.forEach(r=>{const p=priced.get(r.id);if(p)r.pricing={unitPrice:p.unitPrice,cost:p.cost,currency:"تومان"};});
+ const priceAliases={"steel-procurement-mass":"steel","steel-bolt-mass":"bolt","steel-weld-mass":"weld","masonry-brick-total":"brick","mortar-total":"mortar","roof-cover-area":"roof","panel-wall-area-total":"panel","sheet-wall-area-total":"sheet","plaster-area-total":"plaster"};
+ rows.forEach(r=>{const p=priced.get(r.id)||priced.get(priceAliases[r.id]||"");if(p)r.pricing={unitPrice:p.unitPrice,cost:p.cost,currency:"تومان",priceSource:p.priceSource||"برآورد مالی"};});
+ (data.costInputs?.manualItems||[]).forEach(x=>{if(x&&String(x.quantity??"").trim()!=="")rows.push(item("manual-cost-"+String(x.key),"هزینه‌های تکمیلی",String(x.label||x.key),"طبق ورودی",x.quantity,"ورودی دستی برآورد",x.quantitySource||"مقدار دستی",{unitPrice:finite(x.unitPrice)?Number(x.unitPrice):null,priceSource:x.priceSource||"manual"}));});
  const calculated=rows.filter(r=>r.status==="calculated").length;
  const pending=rows.length-calculated;
  return{title:"SAHROUD STEEL — فهرست یکپارچه مقادیر پروژه",generatedAt:new Date().toISOString(),rows,summary:{rowCount:rows.length,calculated,pending,duplicateIds:duplicates},warnings:[...warnings,...(duplicates.length?["شناسه ردیف تکراری است؛ از جمع‌بندی جلوگیری شود."]:[])],pricingStatus:"قیمت‌گذاری مستقل است؛ ردیف فاقد قیمت در برآورد مالی وارد جمع نمی‌شود.",designStatus:"فقط تجمیع مقادیر موجود؛ بدون تأیید طراحی یا اجرایی"};
@@ -91,7 +102,7 @@ function refresh(){
  const model=root.SteelStructuralModel?.getData?.()||root.SteelStructuralModel?.model||null;
  const data={quantity:root.SteelQuantityTakeoff?.lastResult||null,foundation:root.SteelFoundationTakeoff?.getLast?.()||null,
   anchor:root.SteelAnchorBaseplateTakeoff?.getLast?.()||null,steelMass:model?root.SteelFabricationTakeoff?.steelMass?.(model)||null:null,
-  cost:root.SteelCostEstimate?.getLast?.()||null,model};
+  cost:root.SteelCostEstimate?.getLast?.()||null,costInputs:root.SteelCostEstimate?.getData?.()||null,model};
  const snapshot=buildSnapshot(data);root.SteelProjectBOQ.lastSnapshot=snapshot;render(snapshot);return clone(snapshot);
 }
 function download(){
