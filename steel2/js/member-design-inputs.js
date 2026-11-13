@@ -9,7 +9,7 @@ const groups=[
  {key:"roofBrace",label:"مهاربندهای سقف"},{key:"wallBrace",label:"مهاربندهای دیوار"},{key:"roofEdge",label:"اعضای لبه سقف"}
 ];
 const fields=[
- ["Fy","Fy (MPa)"],["Fu","Fu (MPa)"],["Kx","Kx"],["Ky","Ky"],
+ ["t_mm","ضخامت فولاد t (mm)"],["Fy","Fy (MPa)"],["Fu","Fu (MPa)"],["Kx","Kx"],["Ky","Ky"],
  ["Lcx","طول مؤثر فشاری حول x (m)"],["Lcy","طول مؤثر فشاری حول y (m)"],
  ["Lb","طول مهارنشده خمشی Lb (m)"],["Cb","Cb"]
 ];
@@ -37,22 +37,33 @@ function setData(value){
  });
  render();
 }
-function getForGroup(key){return JSON.parse(JSON.stringify(data.groups[key]||{}));}
+function getForGroup(key){
+ const raw=JSON.parse(JSON.stringify(data.groups[key]||{}));
+ const material=window.SteelSections?.read?.().material||{};
+ const thickness=Number(raw.t_mm)>0?Number(raw.t_mm):Number(material.thickness_mm);
+ const defaults=window.SteelSections?.getMaterialDefaults?.(material.grade,thickness)||{};
+ const hasFy=Number.isFinite(raw.Fy)&&raw.Fy>0,hasFu=Number.isFinite(raw.Fu)&&raw.Fu>0;
+ return {...raw,t_mm:Number.isFinite(thickness)&&thickness>0?thickness:null,
+   Fy:hasFy?raw.Fy:defaults.Fy_MPa,Fu:hasFu?raw.Fu:defaults.Fu_MPa,
+   materialSource:hasFy&&hasFu?"ورودی اختصاصی گروه":defaults.source||"نیازمند گواهی مصالح"};
+}
 function validate(){
  const issues=[];
  groups.forEach(g=>{
-  const x=data.groups[g.key]||{};
-  if(!x.applyToAll)return;
+  const raw=data.groups[g.key]||{};
+  if(!raw.applyToAll)return;
+  const x=getForGroup(g.key);
   ["Fy","Fu","Kx","Ky","Lcx","Lcy","Lb","Cb"].forEach(k=>{
    if(!(Number.isFinite(x[k])&&x[k]>0))issues.push(g.label+": مقدار "+k+" برای اعمال گروهی باید مثبت و معتبر باشد.");
   });
   if(x.Fu<x.Fy)issues.push(g.label+": Fu کمتر از Fy ثبت شده است؛ داده مصالح را بازبینی کنید.");
+  if(!(Number.isFinite(x.t_mm)&&x.t_mm>0))issues.push(g.label+": ضخامت مبنای مصالح معتبر نیست.");
  });
  return issues;
 }
 function render(){
  const host=$("memberDesignInputsContent");if(!host)return;
- host.innerHTML='<div class="notice">این قسمت پارامترهای لازم برای طراحی اعضای فولادی نوردشده را به تفکیک گروه ثبت می‌کند. مقادیر اولیه عمداً خالی‌اند؛ فولاد مصرفی، طول مهارنشده و شرایط مهاربندی باید از نقشه‌ها و مشخصات واقعی پروژه استخراج شوند. مقادیر گروهی فقط زمانی قابل استفاده‌اند که برای همه اعضای آن گروه یکسان باشند.</div>'+
+ host.innerHTML='<div class="notice">این قسمت پارامترهای طراحی اعضای فولادی نوردشده را به تفکیک گروه ثبت می‌کند. گرید از پنل مصالح به ارث می‌رسد؛ ضخامت هر گروه را جداگانه وارد کنید تا Fy/Fu پیش‌فرض متناسب با ضخامت محاسبه شود. ورود دستی Fy/Fu بر مقدار ارث‌رسیده اولویت دارد. مقادیر گروهی فقط زمانی قابل استفاده‌اند که برای همه اعضای آن گروه یکسان باشند.</div>'+
  '<div style="overflow-x:auto"><table class="data-table" style="min-width:1150px;width:100%"><thead><tr><th>گروه عضو</th>'+fields.map(x=>'<th>'+x[1]+'</th>').join("")+'<th>اعمال به همه اعضای گروه</th><th>شرح مهاربندی/منبع</th></tr></thead><tbody>'+
  groups.map(g=>{const x=data.groups[g.key]||{};return '<tr><td>'+g.label+'</td>'+
  fields.map(([k])=>'<td><input type="number" step="any" min="0" id="mdi_'+g.key+'_'+k+'" value="'+(x[k]??"")+'" style="width:90px"></td>').join("")+
