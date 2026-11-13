@@ -33,7 +33,8 @@ function buildRows(model,samples){
  samples.forEach(sample=>(sample.members||[]).forEach(m=>{
   if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,parentMemberId:m.parentMemberId||meta.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||meta.taperSegmentIndex||null,taperSegmentCount:m.taperSegmentCount||meta.taperSegmentCount||null,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||m.section?.sectionKey||"",profile:meta.profile||meta.sectionLabel||m.section?.profile||"",start:meta.start||m.start||null,end:meta.end||m.end||null,section:m.section||{},length:Number(m.length||meta.length)||null,ends:[]});}
   const row=byId.get(String(m.id));
-  row.ends.push({label:sample.label,values:Array.isArray(m.localEndForces)?m.localEndForces.slice(0,12):[]});
+  const raw=Array.isArray(m.localEndForces)?m.localEndForces.slice(0,12):[];
+  row.ends.push({label:sample.label,values:raw.length===12&&raw.every(Number.isFinite)?raw:[],invalidForceVector:!(raw.length===12&&raw.every(Number.isFinite))});
  }));
  return [...byId.values()].map(row=>{
   const valid=row.ends.filter(e=>e.values.length===12);
@@ -51,13 +52,26 @@ function buildRows(model,samples){
 function auditCoverage(model,samples,rows){
  const first=Array.isArray(samples?.[0]?.members)?samples[0].members:[];
  const expectedIds=new Set(first.map(m=>String(m.id)));
- const reportedIds=new Set((rows||[]).map(r=>String(r.id)));
+ const reportedIds=new Set((rows||[]).filter(r=>Number(r.caseCount)>0).map(r=>String(r.id)));
  const unreportedMemberIds=[...expectedIds].filter(id=>!reportedIds.has(id));
+ const extraMemberIds=[...(rows||[])].map(r=>String(r.id)).filter(id=>!expectedIds.has(id));
+ const duplicateMemberIdsByCase=[];
+ const invalidForceVectors=[];
  const analysisMemberSetMismatchCases=(samples||[]).filter(s=>{
-  const ids=new Set((s.members||[]).map(m=>String(m.id)));
-  return ids.size!==expectedIds.size||[...expectedIds].some(id=>!ids.has(id));
+  const list=Array.isArray(s.members)?s.members:[];
+  const ids=list.map(m=>String(m.id)),unique=new Set(ids);
+  const duplicate=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];
+  duplicate.forEach(id=>duplicateMemberIdsByCase.push({caseLabel:s.label||"حالت بدون نام",memberId:id}));
+  list.forEach(m=>{
+   const v=m?.localEndForces;
+   if(!Array.isArray(v)||v.length!==12||!v.every(Number.isFinite))
+    invalidForceVectors.push({caseLabel:s.label||"حالت بدون نام",memberId:String(m?.id??""),length:Array.isArray(v)?v.length:0});
+  });
+  return unique.size!==expectedIds.size||[...expectedIds].some(id=>!unique.has(id))||duplicate.length>0;
  }).map(s=>s.label||"حالت بدون نام");
- return {modelMemberCount:expectedIds.size,physicalMemberCount:(model?.members||[]).length,unreportedMemberIds,analysisMemberSetMismatchCases};
+ return {modelMemberCount:expectedIds.size,physicalMemberCount:(model?.members||[]).length,
+  unreportedMemberIds,extraMemberIds,analysisMemberSetMismatchCases,
+  duplicateMemberIdsByCase,invalidForceVectors};
 }
 async function run(){
  const box=$("memberForceEnvelopeResult"),btn=$("btnMemberForceEnvelope");
