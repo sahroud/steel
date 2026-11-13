@@ -256,6 +256,7 @@
         if (window.SteelCraneHorizontalLoads) data.craneHorizontalLoads = window.SteelCraneHorizontalLoads.getData();
         if (window.SteelCraneTwoRailTransfer) data.craneTwoRailTransfer = window.SteelCraneTwoRailTransfer.getData();
         if (window.SteelRunwayGirderFEM) data.runwayGirderFEM = window.SteelRunwayGirderFEM.getData();
+        if (window.SteelCrane3DIntegration) data.crane3DIntegration = window.SteelCrane3DIntegration.readUI();
 
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.getData === "function") {
             data.geotechnicalData = window.SteelGeotechnicalData.getData();
