@@ -5,10 +5,10 @@
  */
 (function(root){
 "use strict";
-const IDS=["enabled","ratedCapacity_t","trolleyMass_t","bridgeMass_t","runwaySpan_m","wheelsPerSide","wheelSpacing_m","verticalImpact","transverseCoeff","longitudinalCoeff","cranesCount","runwayElevation_m","dailyCycles","serviceYears","manufacturer","standard","notes"];
+const IDS=["enabled","ratedCapacity_t","trolleyMass_t","bridgeMass_t","runwaySpan_m","wheelsPerSide","wheelSpacing_m","verticalImpact","transverseCoeff","longitudinalCoeff","cranesCount","runwayElevation_m","maxWheelLoad_t","minWheelLoad_t","wheelLoadSource","wheelLoadDocument","dailyCycles","serviceYears","manufacturer","standard","notes"];
 const $=id=>document.getElementById("crane_"+id);
 const num=id=>{const el=$(id);if(!el||el.value==="")return null;const n=Number(el.value);return Number.isFinite(n)?n:null;};
-const defaults={enabled:false,ratedCapacity_t:"",trolleyMass_t:"",bridgeMass_t:"",runwaySpan_m:"",wheelsPerSide:"",wheelSpacing_m:"",verticalImpact:"",transverseCoeff:"",longitudinalCoeff:"",cranesCount:"",runwayElevation_m:"",dailyCycles:"",serviceYears:"",manufacturer:"",standard:"",notes:""};
+const defaults={enabled:false,ratedCapacity_t:"",trolleyMass_t:"",bridgeMass_t:"",runwaySpan_m:"",wheelsPerSide:"",wheelSpacing_m:"",verticalImpact:"",transverseCoeff:"",longitudinalCoeff:"",cranesCount:"",runwayElevation_m:"",maxWheelLoad_t:"",minWheelLoad_t:"",wheelLoadSource:"",wheelLoadDocument:"",dailyCycles:"",serviceYears:"",manufacturer:"",standard:"",notes:""};
 let state={...defaults};
 function readUI(){
  const d={enabled:!!$("enabled")?.checked};
@@ -24,20 +24,24 @@ function setData(data){
 function audit(data){
  const d={...defaults,...(data||{})},issues=[],missing=[];
  if(!d.enabled)return {status:"not_applicable",ready:false,issues:["جرثقیل در پروژه فعال نشده است."],missing:[]};
- const required=["ratedCapacity_t","trolleyMass_t","bridgeMass_t","runwaySpan_m","wheelsPerSide","wheelSpacing_m","verticalImpact","transverseCoeff","longitudinalCoeff","cranesCount","runwayElevation_m","dailyCycles","serviceYears"];
+ const required=["ratedCapacity_t","trolleyMass_t","bridgeMass_t","runwaySpan_m","wheelsPerSide","wheelSpacing_m","verticalImpact","transverseCoeff","longitudinalCoeff","cranesCount","runwayElevation_m","maxWheelLoad_t","minWheelLoad_t","dailyCycles","serviceYears"];
  required.forEach(k=>{if(d[k]===""||d[k]===null||!Number.isFinite(Number(d[k])))missing.push(k);});
  const positive=["ratedCapacity_t","runwaySpan_m","wheelsPerSide","wheelSpacing_m","cranesCount","serviceYears"];
  positive.forEach(k=>{if(d[k]!==""&&Number(d[k])<=0)issues.push(k+" باید بزرگ‌تر از صفر باشد.");});
- ["trolleyMass_t","bridgeMass_t","dailyCycles"].forEach(k=>{if(d[k]!==""&&Number(d[k])<0)issues.push(k+" نمی‌تواند منفی باشد.");});
+ ["trolleyMass_t","bridgeMass_t","minWheelLoad_t","dailyCycles"].forEach(k=>{if(d[k]!==""&&Number(d[k])<0)issues.push(k+" نمی‌تواند منفی باشد.");});
  ["verticalImpact","transverseCoeff","longitudinalCoeff"].forEach(k=>{if(d[k]!==""&&Number(d[k])<0)issues.push(k+" نمی‌تواند منفی باشد.");});
  if(d.wheelsPerSide!==""&&!Number.isInteger(Number(d.wheelsPerSide)))issues.push("تعداد چرخ در هر سمت باید عدد صحیح باشد.");
  if(d.cranesCount!==""&&!Number.isInteger(Number(d.cranesCount)))issues.push("تعداد جرثقیل‌ها باید عدد صحیح باشد.");
+ if(d.maxWheelLoad_t!==""&&Number(d.maxWheelLoad_t)<=0)issues.push("حداکثر بار چرخ باید بزرگ‌تر از صفر باشد.");
+ if(d.minWheelLoad_t!==""&&d.maxWheelLoad_t!==""&&Number(d.minWheelLoad_t)>Number(d.maxWheelLoad_t))issues.push("حداقل بار چرخ نمی‌تواند از حداکثر بار چرخ بیشتر باشد.");
+ if(!String(d.wheelLoadSource||"").trim())missing.push("wheelLoadSource");
+ if(!String(d.wheelLoadDocument||"").trim())missing.push("wheelLoadDocument");
  if(!String(d.manufacturer||"").trim())missing.push("manufacturer");
  if(!String(d.standard||"").trim())missing.push("standard");
  issues.push("ضرایب ضربه و نیروهای افقی باید از مشخصات سازنده و ضوابط معتبر پروژه تعیین شوند؛ مقادیر نمونه گزارش قدیمی سوله‌پرداز به‌صورت پیش‌فرض اعمال نشده‌اند.");
- issues.push("واکنش چرخ‌ها، توزیع بار بین پل‌ها، خطوط تأثیر، خستگی، تیر حمال و براکت جرثقیل هنوز محاسبه نشده‌اند.");
+ issues.push("بارهای حداکثر و حداقل چرخ باید از کاتالوگ یا نقشه سازنده ثبت شوند؛ تا قبل از دریافت این داده‌ها واکنش چرخ‌ها و طراحی تیر حمال انجام نمی‌شود. توزیع بار بین پل‌ها، خطوط تأثیر، خستگی و براکت نیز هنوز محاسبه نشده‌اند.");
  issues.push("بارهای جرثقیل باید به‌صورت حالت‌های بار مجزا وارد تحلیل سه‌بعدی شوند و ترکیبات آیین‌نامه‌ای با علائم و ضرایب مصوب ساخته شوند.");
- return {status:missing.length?"incomplete":"review_required",ready:false,missing,issues,entered:{ratedCapacity_t:d.ratedCapacity_t,trolleyMass_t:d.trolleyMass_t,bridgeMass_t:d.bridgeMass_t,runwaySpan_m:d.runwaySpan_m,wheelsPerSide:d.wheelsPerSide,wheelSpacing_m:d.wheelSpacing_m,cranesCount:d.cranesCount,dailyCycles:d.dailyCycles,serviceYears:d.serviceYears}};
+ return {status:missing.length?"incomplete":"review_required",ready:false,missing,issues,entered:{ratedCapacity_t:d.ratedCapacity_t,trolleyMass_t:d.trolleyMass_t,bridgeMass_t:d.bridgeMass_t,runwaySpan_m:d.runwaySpan_m,wheelsPerSide:d.wheelsPerSide,wheelSpacing_m:d.wheelSpacing_m,maxWheelLoad_t:d.maxWheelLoad_t,minWheelLoad_t:d.minWheelLoad_t,wheelLoadSource:d.wheelLoadSource,wheelLoadDocument:d.wheelLoadDocument,cranesCount:d.cranesCount,dailyCycles:d.dailyCycles,serviceYears:d.serviceYears}};
 }
 function render(){
  const box=$("results");if(!box)return;
