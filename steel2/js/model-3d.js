@@ -1339,8 +1339,8 @@
     if(!model)build();
     const combos=window.SteelLoads?.getData?.().combinations;
     if(!Array.isArray(combos)||!combos.length)throw new Error("ترکیبات بار در دسترس نیستند.");
-    const gravity=combos.map((c,i)=>({label:String(c.name||("ترکیب ثقلی "+(i+1))),factors:{dead:Number(c.dead)||0,live:Number(c.live)||0,snow:Number(c.snow)||0}}));
-    if(gravity.some(c=>Object.values(c.factors).some(v=>!Number.isFinite(v))))throw new Error("ضرایب ترکیب بار معتبر نیستند.");
+    const gravity=combos.map((c,i)=>({label:String(c.name||("ترکیب ثقلی "+(i+1))),factors:{dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow)}}));
+    if(gravity.some(c=>!c.label.trim()||Object.values(c.factors).some(v=>!Number.isFinite(v))))throw new Error("نام یا ضرایب یکی از ترکیبات بار نامعتبر/ناقص است؛ مقدار نامشخص نباید به‌صورت صفر فرض شود.");
     const windPresent=model.members.some(m=>["windLeft","windRight","wind","windEnd"].some(k=>Math.abs(Number(m.lineLoads?.[k])||0)>1e-12));
     const cases=gravity.map(c=>({label:c.label,factors:c.factors}));
     if(windPresent)gravity.forEach(c=>[1,-1].forEach(sign=>cases.push({label:c.label+" + باد "+(sign>0?"مثبت":"منفی")+" (ضریب ۱٫۰)",factors:c.factors,wind:1,windSign:sign})));
@@ -1351,8 +1351,16 @@
       const spec=cases[i];
       const result=await analyze3D({label:spec.label,factors:{...spec.factors,wind:spec.wind||0},windSign:spec.windSign||1});
       if(!result||!Array.isArray(result.reactions)||!result.foundationModelFingerprint)throw new Error("نتیجه واکنش معتبر برای "+spec.label+" دریافت نشد.");
-      const map=new Map(result.reactions.map(r=>[r.nodeId,r.values||[]]));
-      samples.push({label:spec.label,factors:{...spec.factors,wind:Number(spec.wind)||0},windSign:spec.windSign||1,equilibrium:result.equilibrium,reactions:nodes.map(n=>({nodeId:n.id,values:(map.get(n.id)||[0,0,0,0,0,0]).slice(0,6)}))});
+      if(!result.equilibrium||result.equilibrium.ok!==true)throw new Error("کنترل تعادل حل‌گر برای ترکیب «"+spec.label+"» موفق نیست؛ پوش فونداسیون متوقف شد.");
+      const map=new Map();
+      for(const reaction of result.reactions){
+        if(!reaction||reaction.nodeId==null||map.has(reaction.nodeId))throw new Error("شناسه واکنش تهی یا تکراری در ترکیب «"+spec.label+"»؛ پوش فونداسیون متوقف شد.");
+        if(!Array.isArray(reaction.values)||reaction.values.length<6||reaction.values.slice(0,6).some(v=>!Number.isFinite(Number(v))))throw new Error("بردار واکنش شش‌مؤلفه‌ای نامعتبر برای گره "+reaction.nodeId+" در ترکیب «"+spec.label+"».");
+        map.set(reaction.nodeId,reaction.values.slice(0,6).map(Number));
+      }
+      const missing=nodes.filter(n=>!map.has(n.id)).map(n=>n.id);
+      if(missing.length)throw new Error("حل‌گر واکنش این گره‌های پایه را برنگردانده است: "+missing.join(", ")+"؛ مقدار صفر جایگزین نشد.");
+      samples.push({label:spec.label,factors:{...spec.factors,wind:Number(spec.wind)||0},windSign:spec.windSign||1,equilibrium:result.equilibrium,reactions:nodes.map(n=>({nodeId:n.id,values:map.get(n.id).slice()}))});
     }
     const rows=nodes.map(n=>{
       const values=samples.map(s=>({label:s.label,values:s.reactions.find(r=>r.nodeId===n.id)?.values||[0,0,0,0,0,0]}));
