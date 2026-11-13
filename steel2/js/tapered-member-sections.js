@@ -59,12 +59,15 @@ function segmentModel(model,project,segmentsPerMember){
  const nodes=Array.isArray(model?.nodes)?model.nodes:[];
  const byId=new Map(nodes.map(n=>[String(n.id),n]));
  const output=[],addedNodes=[];
+ const usedMemberIds=new Set(original.map(m=>String(m.id)));
  let splitMembers=0,generatedSegments=0;
  original.forEach(member=>{
   const group=member?.sectionKey;
   if(!GROUPS.some(([g])=>g===group)||!data.groups[group]?.enabled){output.push(member);return;}
   const a=byId.get(String(member.start)),b=byId.get(String(member.end));
-  if(!a||!b){output.push(member);return;}
+  if(!a||!b)throw Error("عضو متغیرمقطع "+member.id+" به گره ابتدا/انتها متصل نیست؛ تحلیل با هندسه ناقص متوقف شد.");
+  if(![a.x,a.y,a.z,b.x,b.y,b.z].every(v=>Number.isFinite(Number(v))))throw Error("مختصات عضو متغیرمقطع "+member.id+" نامعتبر است.");
+  at(group,0);at(group,0.5);at(group,1);
   // Divide each physical member into equal-length analysis elements. A segment's
   // section is evaluated at its own midpoint by resolveForMember().
   const localNodes=[a];
@@ -77,8 +80,11 @@ function segmentModel(model,project,segmentsPerMember){
   localNodes.push(b);
   for(let i=0;i<count;i++){
    const first=i===0,last=i===count-1;
+   const pieceId=String(member.id)+"_TAPER_"+String(i+1).padStart(2,"0");
+   if(usedMemberIds.has(pieceId))throw Error("شناسه عضو تقسیم‌شده تکراری است: "+pieceId);
+   usedMemberIds.add(pieceId);
    const piece={
-    ...member,id:String(member.id)+"_TAPER_"+String(i+1).padStart(2,"0"),
+    ...member,id:pieceId,
     start:localNodes[i].id,end:localNodes[i+1].id,
     length:Math.hypot(localNodes[i+1].x-localNodes[i].x,localNodes[i+1].y-localNodes[i].y,localNodes[i+1].z-localNodes[i].z),
     parentMemberId:String(member.id),taperSegmentIndex:i+1,taperSegmentCount:count
@@ -145,10 +151,17 @@ function selfTest(){
  tests.push({name:"disabled-by-default",pass:normalize({}).groups.column.enabled===false});
  tests.push({name:"analysis-segment-count-default",pass:normalize({}).segmentsPerMember===8});
  const oldData=data;data=normalize({groups:{column:{enabled:true,stations:{start:{d:500,bf:200,tw:10,tf:16},mid:{d:400,bf:200,tw:10,tf:16},end:{d:300,bf:200,tw:10,tf:16}}}}});
- const segmented=segmentModel({nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:6,z:0}],members:[{id:"C1",start:"A",end:"B",sectionKey:"column",endReleases:{i:[4],j:[5]}}]}, {height:6,span:12},8);
+ const sourceModel={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:6,z:0}],members:[{id:"C1",start:"A",end:"B",sectionKey:"column",lineLoads:{dead:2},endReleases:{i:[4],j:[5]}}]};
+ const segmented=segmentModel(sourceModel,{height:6,span:12},8);
+ tests.push({name:"piecewise-member-segmentation",pass:segmented.audit.generatedSegmentCount===8&&segmented.audit.addedNodeCount===7&&segmented.model.members[0].endReleases.i[0]===4&&segmented.model.members[7].endReleases.j[0]===5&&segmented.model.members.every(m=>m.lineLoads.dead===2)});
+ let missingNodeRejected=false;try{segmentModel({nodes:[{id:"A",x:0,y:0,z:0}],members:[{id:"BAD",start:"A",end:"MISSING",sectionKey:"column"}]},{height:6,span:12},8);}catch(e){missingNodeRejected=e.message.includes("گره ابتدا/انتها");}
+ tests.push({name:"missing-taper-endpoint-rejected",pass:missingNodeRejected});
+ let duplicateMemberRejected=false;try{segmentModel({nodes:sourceModel.nodes,members:[...sourceModel.members,{id:"C1_TAPER_01",start:"A",end:"B",sectionKey:"other"}]},{height:6,span:12},8);}catch(e){duplicateMemberRejected=e.message.includes("شناسه عضو تقسیم‌شده تکراری");}
+ tests.push({name:"generated-member-id-collision-rejected",pass:duplicateMemberRejected});
+ const first=segmented.model.members[0],last=segmented.model.members[7],base={E:200e9,G:77e9,A:0.01,Iy:1e-5,Iz:1e-4,J:1e-6};
+ const pFirst=resolveForMember(first,segmented.model.nodes,{height:6,span:12},base),pLast=resolveForMember(last,segmented.model.nodes,{height:6,span:12},base);
+ tests.push({name:"section-properties-vary-along-member",pass:pFirst.applied&&pLast.applied&&pFirst.coordinate<pLast.coordinate&&pFirst.section.A!==pLast.section.A});
  data=oldData;
- tests.push({name:"piecewise-member-segmentation",pass:segmented.audit.generatedSegmentCount===8&&segmented.audit.addedNodeCount===7&&segmented.model.members[0].endReleases.i[0]===4&&segmented.model.members[7].endReleases.j[0]===5});
-
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests};
 }
 function init(){
