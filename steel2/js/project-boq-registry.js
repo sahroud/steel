@@ -114,7 +114,8 @@ function render(snapshot){
 }
 function csv(snapshot){
  const rows=[["بخش","شرح","واحد","مقدار","وضعیت","نقش ردیف","منبع","مبنای محاسبه","وزن افزوده (kg)"],...snapshot.rows.map(r=>[r.category,r.description,r.unit,r.quantity??"",r.status,r.aggregationRole,r.source,r.basis,r.massKg??""]),["ملاحظات",snapshot.pricingStatus],...snapshot.warnings.map(w=>["هشدار",w])];
- return"\uFEFF"+rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ return"\uFEFF"+rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r
+");
 }
 function refresh(){
  const model=root.SteelStructuralModel?.getData?.()||root.SteelStructuralModel?.model||null;
@@ -143,8 +144,11 @@ function selfTest(){
  foundation:{quantities:{footingConcreteM3:2,pedestalConcreteM3:null,tieConcreteM3:1,totalConcreteM3:3,excavationM3:null,footingFormworkM2:8,pedestalFormworkM2:null,tieSideFormworkM2:3,totalFormworkM2:11,sideFormworkM2:11,footingRebarKg:100,pedestalRebarKg:null,tieRebarKg:null,totalRebarKg:null,anchorsCount:24,footingSchedule:[{nodeId:"B1",width:1.25,length:2,thickness:0.8,excavationM3:5}]}},
  anchor:{boltCount:24,boltShankMassKg:80,nutCount:48,nutMassKg:1.2,washerCount:24,washerMassKg:0.2,basePlateCount:8,basePlateMassKg:120,totalCalculatedMassKg:201.4},
  steelMass:{groups:[{group:"column",label:"ستون",massKg:500}],connectionPlateMassKg:50,boltShankMassKg:10,theoreticalWeldMetalMassKg:5,procurementMassExcludingBoltsAndWeldKg:600,items:[]},cost:{rows:[{key:"foundationConcrete",unitPrice:100,cost:300},{key:"foundationRebar",unitPrice:200,cost:20000},{key:"excavation",unitPrice:50,cost:250},{key:"formwork",unitPrice:75,cost:825},{key:"anchorBolts",unitPrice:500,cost:12000}]},siteWork:{excavationM3:30,backfillM3:12,fillGrossM3:null,fillNetM3:null,slabConcreteM3:15,slabCementKg:5250,warnings:[]}});
- const by=new Map(d.rows.map(r=>[r.id,r]));\n const siteWorkBy=new Map(buildSnapshot({siteWork:{excavationM3:30,backfillM3:12,fillGrossM3:null,fillNetM3:null,slabConcreteM3:15,slabCementKg:5250,warnings:[]}}).rows.map(r=>[r.id,r]));
+ const by=new Map(d.rows.map(r=>[r.id,r]));
+ const siteWorkBy=new Map(buildSnapshot({siteWork:{excavationM3:30,backfillM3:12,fillGrossM3:null,fillNetM3:null,slabConcreteM3:15,slabCementKg:5250,warnings:[]}}).rows.map(r=>[r.id,r]));
  const tests={
+  siteWorkRowsCaptured:siteWorkBy.get("sitework-trench-excavation")?.quantity===30&&siteWorkBy.get("sitework-backfill")?.quantity===12&&siteWorkBy.get("sitework-floor-concrete")?.quantity===15&&siteWorkBy.get("sitework-floor-cement")?.quantity===5250,
+  missingSiteWorkQuantityRemainsPending:siteWorkBy.get("sitework-ground-fill-net")?.quantity===null&&siteWorkBy.get("sitework-ground-fill-net")?.status==="pending",
   missingQuantityRemainsNull:by.get("foundation-excavation").quantity===null&&by.get("foundation-excavation").status==="pending",
   noAggregateConcreteDoubleCount:by.get("foundation-total-concrete")?.aggregationRole==="summary"&&by.get("foundation-footing-concrete")?.aggregationRole==="summary",
   foundationComponentsSeparate:by.get("foundation-footing-concrete").quantity===2&&by.get("foundation-tie-concrete").quantity===1,
