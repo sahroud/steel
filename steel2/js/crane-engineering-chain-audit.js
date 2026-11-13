@@ -31,8 +31,10 @@ function audit(p){
  add("unique-frame-case-identifiers",frameIds.length===(frame.cases||[]).length&&unique(frameIds),"هر حالت تحلیل سه‌بعدی باید شناسه مستقل و یکتا داشته باشد.");
  add("unique-girder-case-identifiers",girderIds.length===(girder.cases||[]).length&&unique(girderIds),"هر حالت تحلیل تیر حمال باید شناسه مستقل و یکتا داشته باشد.");
  const transferSet=new Set(transferIds),frameSet=new Set(frameIds),girderSet=new Set(girderIds);
- const frameCovers=transferIds.length>0&&transferIds.every(x=>frameSet.has(x));
- const girderCovers=transferIds.length>0&&transferIds.every(x=>girderSet.has(x));
+ const frameSourceIds=(frame.cases||[]).map(x=>text(x.sourceTransferCaseId)).filter(Boolean);
+ const girderSourceIds=(girder.cases||[]).map(x=>text(x.sourceTransferCaseId)).filter(Boolean);
+ const frameCovers=transferIds.length>0&&transferIds.every(x=>frameSourceIds.includes(x));
+ const girderCovers=transferIds.length>0&&transferIds.every(x=>girderSourceIds.includes(x));
  add("all-transfer-cases-reach-3d-frame",frameCovers,"تمام شناسه‌های حالت انتقال دو ریل باید در نتایج قاب سه‌بعدی موجود باشند.");
  add("all-transfer-cases-reach-runway-girders",girderCovers,"تمام شناسه‌های حالت انتقال باید در نتایج تیر حمال نیز موجود باشند.");
  const frameNoOrphans=frameIds.every(x=>transferSet.has(x));
