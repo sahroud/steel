@@ -411,14 +411,24 @@ function areaBar(d){return Math.PI*d*d/4;}
   }
   return Math.hypot(w.x+sc*u.x-tc*v.x,w.y+sc*u.y-tc*v.y,w.z+sc*u.z-tc*v.z);
 }
+function closestPointsSegments3D(a0,a1,b0,b1){
+ const sub=(p,q)=>({x:p.x-q.x,y:p.y-q.y,z:p.z-q.z}),add=(p,v,s)=>({x:p.x+v.x*s,y:p.y+v.y*s,z:p.z+v.z*s}),dot=(p,q)=>p.x*q.x+p.y*q.y+p.z*q.z;
+ const u=sub(a1,a0),v=sub(b1,b0),w=sub(a0,b0),A=dot(u,u),B=dot(u,v),C=dot(v,v),D=dot(u,w),E=dot(v,w),den=A*C-B*B;let s=0,t=0;
+ if(A<1e-12&&C<1e-12){s=0;t=0;}else if(A<1e-12){s=0;t=Math.max(0,Math.min(1,E/C));}else if(C<1e-12){t=0;s=Math.max(0,Math.min(1,-D/A));}else{
+ let sn,sd=den,tn,td=den;if(den<1e-12){sn=0;sd=1;tn=E;td=C;}else{sn=B*E-C*D;tn=A*E-B*D;if(sn<0){sn=0;tn=E;td=C;}else if(sn>sd){sn=sd;tn=E+B;td=C;}}
+ if(tn<0){tn=0;if(-D<0)sn=0;else if(-D>A)sn=sd;else{sn=-D;sd=A;}}else if(tn>td){tn=td;if(-D+B<0)sn=0;else if(-D+B>A)sn=sd;else{sn=-D+B;sd=A;}}
+ s=Math.abs(sn)<1e-12?0:sn/sd;t=Math.abs(tn)<1e-12?0:tn/td;
+ }
+ const pointA=add(a0,u,s),pointB=add(b0,v,t),delta=sub(pointA,pointB);return{distance:Math.hypot(delta.x,delta.y,delta.z),pointA,pointB,s,t};
+}
 function checkFootingBarClearance(tieBars,footingBars,requiredClearanceMm=0){
   if(!Array.isArray(tieBars)||!Array.isArray(footingBars)||!tieBars.length||!footingBars.length||!Number.isFinite(requiredClearanceMm)||requiredClearanceMm<0)return{ok:false,reason:"برای کنترل تداخل، مسیر میلگردهای شناژ و شبکه پی و فاصله لازم باید مشخص باشند."};
   const valid=bar=>bar&&bar.a&&bar.b&&[bar.a.x,bar.a.y,bar.a.z,bar.b.x,bar.b.y,bar.b.z,bar.diameterMm].every(Number.isFinite)&&bar.diameterMm>0;
   if([...tieBars,...footingBars].some(bar=>!valid(bar)))return{ok:false,reason:"مختصات سه‌بعدی یا قطر یکی از میلگردها معتبر نیست."};
   let minClear=Infinity,critical=null,conflicts=0,pairs=0;
   for(const t of tieBars)for(const f of footingBars){
-   const center=segmentDistance3D(t.a,t.b,f.a,f.b)*1000,clear=center-(t.diameterMm+f.diameterMm)/2;pairs++;
-   if(clear<minClear){minClear=clear;critical={tieBar:t.id||null,footingBar:f.id||null,centerDistanceMm:center,clearDistanceMm:clear};}
+   const center=closestPointsSegments3D(t.a,t.b,f.a,f.b).distance*1000,clear=center-(t.diameterMm+f.diameterMm)/2;pairs++;
+   if(clear<minClear){minClear=clear;critical={tieBar:t.id||null,footingBar:f.id||null,centerDistanceMm:center,clearDistanceMm:clear,tiePoint:closestPointsSegments3D(t.a,t.b,f.a,f.b).pointA,footingPoint:closestPointsSegments3D(t.a,t.b,f.a,f.b).pointB};}
    if(clear+1e-8<requiredClearanceMm)conflicts++;
   }
   return{ok:conflicts===0,pairsChecked:pairs,minimumClearDistanceMm:minClear,requiredClearanceMm,conflictPairs:conflicts,criticalPair:critical,method:"مختصات ابتدا/انتها بر حسب متر و قطر میلگرد بر حسب میلی‌متر است؛ فاصله محور به محور به میلی‌متر تبدیل و سپس مجموع شعاع‌ها کسر می‌شود. کنترل هندسی است و جایگزین کنترل مهاری، بتن‌ریزی، لرزه‌ای یا نقشه اجرایی نیست."};
