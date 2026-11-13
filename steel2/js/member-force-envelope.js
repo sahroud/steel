@@ -29,9 +29,9 @@ function maxAbs(samples,index){
  return best;
 }
 function buildRows(model,samples){
- const byId=new Map();
+ const byId=new Map(),metaById=new Map((model.members||[]).map(m=>[String(m.id),m]));
  samples.forEach(sample=>(sample.members||[]).forEach(m=>{
-  if(!byId.has(String(m.id)))byId.set(String(m.id),{id:m.id,type:m.type||"",sectionKey:m.sectionKey||"",length:Number(m.length)||null,ends:[]});
+  if(!byId.has(String(m.id))){const meta=metaById.get(String(m.id))||{};byId.set(String(m.id),{id:m.id,type:m.type||meta.type||"",sectionKey:meta.sectionKey||m.sectionKey||"",length:Number(m.length||meta.length)||null,ends:[]});}
   const row=byId.get(String(m.id));
   row.ends.push({label:sample.label,values:Array.isArray(m.localEndForces)?m.localEndForces.slice(0,12):[]});
  }));
