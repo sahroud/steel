@@ -382,6 +382,14 @@ function selfTest(){
   tests.push({name:"reject-spring-on-fixed-degree",ok:false});
  }catch(e){tests.push({name:"reject-spring-on-fixed-degree",ok:String(e.message||e).includes("هم‌زمان")});}
  try{
+  const kBeam=G*J/L,kSpring=1.4e5,Torque=1000;
+  const result=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[0,0,0,Torque,0,0]}],nodalSprings:[{nodeId:"TIP",dof:3,stiffness:kSpring}]});
+  const rotation=result.displacements.find(n=>n.nodeId==="TIP").values[3],expected=Torque/(kBeam+kSpring);
+  const springReaction=result.nodalSprings[0].reaction;
+  const ok=close(rotation,expected,1e-7)&&close(springReaction,-kSpring*expected,1e-7)&&result.equilibrium.ok;
+  tests.push({name:"rotational-nodal-spring-cantilever",ok,actualRotationRad:rotation,expectedRotationRad:expected,springReactionNm:springReaction,equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"rotational-nodal-spring-cantilever",ok:false,error:String(e.message||e)});}
+ try{
   const B=rigidArmTransform([0,-0.25,0]);
   const d=[0,0,0,1,0,0],u=mul(B,d.map(v=>[v])).map(r=>r[0]);
   const F=[0,0,1000,0,0,0],jointF=mul(transpose(B),F.map(v=>[v])).map(r=>r[0]);
