@@ -21,6 +21,8 @@ function run(){
  test("tension audit does not claim resistance",()=>{const r=root.SteelTensionDesignReadiness.audit({groups:{}});return !("Pn" in r)&&!r.capacity?"No tensile capacity is produced by readiness audit":false;});
  test("compression audit reports missing effective lengths",()=>{const r=root.SteelCompressionDesignReadiness.audit({groups:{}});return r.issues.some(x=>x.includes("طول واقعی عضو"))&&!("Pn" in r)&&!("Fcr" in r)?"Missing compression inputs detected; no buckling resistance is fabricated":false;});
  test("compression audit rejects undocumented restraint",()=>{const r=root.SteelCompressionDesignReadiness.audit({groups:{column:{memberLength_m:6,Kx:1,Ky:1,Lcx:6,Lcy:6,localSlendernessReviewed:true}}});return r.issues.some(x=>x.includes("مهاربندی"))?"Undocumented bracing assumptions are flagged":false;});
+ test("flexure/shear audit flags missing force envelope",()=>{const r=root.SteelFlexureShearReadiness.audit({members:[],cases:[]});return r.rows.length===0&&!r.ready&&r.disclaimer.includes("ظرفیت خمشی")?"No design approval is inferred without member force data":false;});
+ test("flexure/shear audit does not fabricate resistance",()=>{const r=root.SteelFlexureShearReadiness.audit({members:[{sectionKey:"rafter",id:"R1",section:{A:0.01,Iy:1e-5,Iz:1e-4,J:1e-6},peak:{My:1000,Vz:500}}],cases:[{}]});return !("Mn" in r)&&!r.capacity?"Demand readiness audit contains no resistance result":false;});
  test("tapered 3D axial convergence against analytical integral",()=>{
   if(!root.SteelFrame3D?.analyze)return false;
   const api=root.SteelTaperedSections,old=api.getData(),E=200e9,N=100000,L=6;
