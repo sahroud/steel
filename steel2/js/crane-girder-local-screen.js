@@ -73,6 +73,7 @@ function selfTest(){
  const section={A_m2:.01,Sy_m3:.0001,Sz_m3:.0002,Avy_m2:.005,Avz_m2:.005,J_m4:1e-6,torsionRadius_m:.1,Fy_MPa:240,source:"SEC-1",geometrySource:"DWG-1",shearAreaMethod:"section properties",torsionMethod:"Saint-Venant constant"};
  const r=audit({success:true,members:[member]},{G1:section});
  t("calculates both member-end demands",()=>r.success&&r.results[0].ends.length===2);
+ t("computes transparent SI normal and shear stress equations",()=>{const e=r.results[0].ends[0],sigma=10000/.01+5000/.0001+6000/.0002,tau=20000/.005+30000/.005+4000*.1/1e-6;return Math.abs(e.nominalUpperBound_Pa.normal-sigma)<1e-6&&Math.abs(e.nominalUpperBound_Pa.shear-tau)<1e-6;});
  t("absolute-force bound is independent of sign reversal",()=>{const b={...member,localEndForces:member.localEndForces.map(v=>-v)};return audit({success:true,members:[b]},{G1:section}).results[0].governingYieldScreenRatio===r.results[0].governingYieldScreenRatio;});
  t("rejects missing section modulus",()=>!audit({success:true,members:[member]},{G1:{...section,Sy_m3:0}}).success);
  t("rejects missing source traceability",()=>!audit({success:true,members:[member]},{G1:{...section,source:""}}).success);
