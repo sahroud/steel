@@ -492,7 +492,7 @@
     const normal=runwayColumnLevels(0,[2,4,6],10,5,true);
     const duplicate=runwayColumnLevels(0,[2,5,6],10,5,true);
     let rejected=false;try{runwayColumnLevels(0,[2,4],10,10,true);}catch(_){rejected=true;}
-    const geometry=buildCraneRunwayGeometry({enabled:true,span:20,length:24,frames:[0,5,10],runwayElevation:5,offsetM:0.6,supportType:"simple",railLayoutInputs:{continuity:"continuous"},railLayoutAudit:auditRunwayRailLayout({supportPitch_m:0.6,firstSupportOffset_m:0,continuity:"continuous",jointPositions_m:"12, 24",Ix_mm4:1.2e7,Iy_mm4:4.5e6,J_mm4:3.1e5,E_MPa:210000,propertySource:"rail catalog page 8"},24,{fasteningSpacing_mm:600})});
+    const geometry=buildCraneRunwayGeometry({enabled:true,span:20,length:24,frames:[0,5,10],runwayElevation:5,offsetM:0.6,supportType:"simple",railLayoutInputs:{continuity:"continuous"},railLayoutAudit:auditRunwayRailLayout({supportPitch_m:0.6,firstSupportOffset_m:0,continuity:"continuous",jointPositions_m:"12",Ix_mm4:1.2e7,Iy_mm4:4.5e6,J_mm4:3.1e5,E_MPa:210000,propertySource:"rail catalog page 8"},24,{fasteningSpacing_mm:600})});
     const noOffset=buildCraneRunwayGeometry({enabled:true,span:20,frames:[0,5],runwayElevation:5,offsetM:NaN,supportType:"",sectionInputs:{girderType:"builtup-i",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12}});
     const sectionGood=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:800,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
     const sectionBad=auditRunwaySectionInputs({girderType:"builtup-i",steelGrade:"ST37",overallDepth_mm:30,flangeWidth_mm:300,flangeThickness_mm:20,webThickness_mm:12,railDesignation:"test rail",railMass_kg_m:50,railFastening:"clip",stiffenerSpacing_m:1.5,lateralRestraint:"dedicated",detailSource:"test drawing"});
@@ -783,6 +783,7 @@
       (runway.supportNodes||[]).forEach(node=>{
         const p=P(node);el("circle",{cx:p.x,cy:p.y,r:3.5,fill:"#7c3aed",stroke:"#ffffff","stroke-width":1});
       });
+      (runway.railSegments||[]).forEach(segment=>{const x=segment.side==="left"?-runway.axisOffsetM:g.span+runway.axisOffsetM,y=g.craneRunway.elevationM+Number(runway.loadPathInputs?.railHeight_mm||0)/1000;const p=P({x,y,z:segment.startM}),q=P({x,y,z:segment.endM});el("line",{x1:p.x,y1:p.y,x2:q.x,y2:q.y,stroke:"#f59e0b","stroke-width":2.2,"stroke-linecap":"round"});if(segment.jointAtStart){el("circle",{cx:p.x,cy:p.y,r:3.2,fill:"#dc2626",stroke:"#ffffff","stroke-width":0.8});}});
     }
     const title=el("text",{x:W/2,y:25,"text-anchor":"middle",fill:"#123b52","font-size":17,"font-family":"Tahoma,Arial"});title.textContent="مدل سه‌بعدی جانمایی اجزای سوله";
     const note=el("text",{x:W/2,y:455,"text-anchor":"middle",fill:"#64748b","font-size":11,"font-family":"Tahoma,Arial"});note.textContent="نمای شماتیک آکسونومتریک ـ مقیاس تصویری";
