@@ -570,7 +570,7 @@ function calculateFootingRebar(baseCount,B,L){
    const top=corners.map(p=>({x:p.x,y:p.y,z:p.z}));
    const bot=corners.map(p=>({x:p.x,y:p.y-beamH,z:p.z}));
    isoPoly(top,"#dbeafe");for(let j=0;j<4;j++)isoPoly([top[j],top[(j+1)%4],bot[(j+1)%4],bot[j]],"#cbd5e1");
-   const cov=(Number(tieSettings?.coverMm)||40)/1000,barYtop=start.y-cov,barYbot=start.y-beamH+cov;
+   const tieSettingsForIso=window.SteelTieBeamReinforcement?.getData?.()?.settings||{};const cov=(Number(tieSettingsForIso.coverMm)||40)/1000,barYtop=start.y-cov,barYbot=start.y-beamH+cov;
    for(let k=0;k<tie.count;k++){
     const off=(tie.count===1?0:(k/(tie.count-1)-0.5)*(beamW-2*cov));
     for(const yy of [barYtop,barYbot])isoLine({x:start.x+vx*off,y:yy,z:start.z+vz*off},{x:end.x+vx*off,y:yy,z:end.z+vz*off},"#dc2626",3);
