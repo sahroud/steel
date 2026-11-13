@@ -146,7 +146,7 @@ function showShearEnvelope(){
  const host=$("results");if(!host)return;
  const r=movingShearEnvelope(readUI()),box=document.createElement("div");box.className="notice";
  if(!r.ok){box.textContent="پوش برش/واکنش محاسبه نشد: "+r.issues.join(" | ");host.appendChild(box);return;}
- box.textContent="پوش قدرمطلق برش: "+r.maxAbsShear_kN.toFixed(3)+" kN؛ محل بحرانی: x="+r.governingShear.section_m.toFixed(3)+" m؛ موقعیت چرخ اول: "+r.governingShear.offset_m.toFixed(3)+" m؛ "+r.governingShear.side+". بیشینه واکنش چپ: "+r.maxReactionLeft_kN.toFixed(3)+" kN؛ بیشینه واکنش راست: "+r.maxReactionRight_kN.toFixed(3)+" kN. "+r.method+" محدودیت: "+r.limitations.join("؛ ");
+ box.textContent="پوش قدرمطلق برش: "+r.maxAbsShear_kN.toFixed(3)+" kN؛ محل بحرانی: x="+r.governingShear.section_m.toFixed(3)+" m؛ موقعیت چرخ اول: "+r.governingShear.offset_m.toFixed(3)+" m؛ "+r.governingShear.side+". بیشینه واکنش چپ: "+r.maxReactionLeft_kN.toFixed(3)+" kN (در همان حالت، واکنش راست "+r.leftMaxReactionCase.RB_kN.toFixed(3)+" kN)؛ بیشینه واکنش راست: "+r.maxReactionRight_kN.toFixed(3)+" kN (در همان حالت، واکنش چپ "+r.rightMaxReactionCase.RA_kN.toFixed(3)+" kN). این دو بیشینه ممکن است هم‌زمان رخ ندهند. "+r.method+" محدودیت: "+r.limitations.join("؛ ");
  host.appendChild(box);
 }
 function showEnvelope(){
