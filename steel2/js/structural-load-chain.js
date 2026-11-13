@@ -200,7 +200,7 @@ function selfTest(){
  ck("valid equilibrium vectors independently rechecked",()=>auditEquilibrium(eqGood).ok);
  const ledgerModel={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],members:[{id:"M",start:"A",end:"B"}]};
  const ledger=buildExternalLoadLedger(ledgerModel,[{id:"M",analysisLoad:{globalUniform:[0,-100,0]}}],[{nodeId:"B",values:[10,0,0,0,0,5]}]);
- ck("independent ledger integrates member line load and nodal load",()=>ledger.complete&&ledger.memberCount===1&&ledger.nodalLoadCount===1&&ledger.resultant.forceN[0]===10&&ledger.resultant.forceN[1]===-400&&ledger.resultant.momentNm[2]===20);
+ ck("independent ledger integrates member line load and nodal load",()=>ledger.complete&&ledger.memberCount===1&&ledger.nodalLoadCount===1&&ledger.resultant.forceN[0]===10&&ledger.resultant.forceN[1]===-400&&ledger.resultant.momentNm[2]===-795);
  const eqLedger={appliedForceN:[10,-400,0],appliedMomentNm:[0,0,20]};
  ck("external load ledger matches solver applied resultant",()=>compareExternalLedger(ledger,eqLedger).ok);
  ck("external load ledger mismatch is detected",()=>!compareExternalLedger(ledger,{...eqLedger,appliedForceN:[10,-390,0]}).ok);
