@@ -41,13 +41,13 @@ function planSvg(r){
 }
 function sectionSvg(r){
  const d=r.input;let s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 650" width="100%" style="max-width:1100px;background:white"><rect width="1100" height="650" fill="white"/><rect x="20" y="20" width="1060" height="610" fill="none" stroke="#203746" stroke-width="2"/>'+text(1040,58,'مقطع شماتیک صفحه‌ستون و بولت مهاری',24,'end');
- const plateY=245,plateX=280,plateW=540,plateH=Math.max(8,d.bpPlateT*.45),concreteY=plateY+d.bpGrout*.45+plateH+12;
- s+='<rect x="200" y="'+concreteY+'" width="700" height="220" fill="#d1d5db" stroke="#475569" stroke-width="2"/>';
+ const vScale=Math.min(0.35,210/d.bpEmbedment),plateY=245,plateX=280,plateW=540,plateH=Math.max(6,d.bpPlateT*vScale),groutH=d.bpGrout*vScale,projectionH=d.bpProjection*vScale,embedmentH=d.bpEmbedment*vScale,concreteY=plateY+plateH+groutH;
+ s+='<rect x="200" y="'+concreteY+'" width="700" height="'+Math.max(220,embedmentH+24)+'" fill="#d1d5db" stroke="#475569" stroke-width="2"/>';
  s+='<rect x="'+plateX+'" y="'+plateY+'" width="'+plateW+'" height="'+plateH+'" fill="#64748b" stroke="#1e293b" stroke-width="2"/>';
  s+='<rect x="470" y="'+(plateY-150)+'" width="160" height="150" fill="#94a3b8" stroke="#334155" stroke-width="2"/>';
- s+='<rect x="'+plateX+'" y="'+(plateY+plateH)+'" width="'+plateW+'" height="'+Math.max(3,d.bpGrout*.45)+'" fill="#fbbf24" stroke="#92400e" stroke-width="1"/>';
- const bx=[350,750];bx.forEach(x=>{s+='<line x1="'+x+'" y1="'+(plateY-70)+'" x2="'+x+'" y2="'+(concreteY+Math.min(190,d.bpEmbedment*.45))+'" stroke="#b91c1c" stroke-width="7"/>';s+='<circle cx="'+x+'" cy="'+(plateY-12)+'" r="12" fill="#fff" stroke="#b91c1c" stroke-width="3"/>';});
- s+=text(550,plateY-165,'مقطع ستون (ابعاد footprint ورودی)',13)+text(550,plateY+plateH+Math.max(3,d.bpGrout*.45)+18,'گروت '+fmt(d.bpGrout,0)+' mm',11)+text(550,concreteY+120,'بتن فونداسیون — شماتیک',16)+text(550,concreteY+165,'طول مهاری واردشده: '+fmt(d.bpEmbedment,0)+' mm | بیرون‌زدگی: '+fmt(d.bpProjection,0)+' mm',13)+text(550,590,'قلاب/صفحه انتهایی و جزئیات مهار بولت ترسیم نشده‌اند؛ این شکل برای ساخت بولت کافی نیست.',12,'middle','#b91c1c')+'</svg>';return s;
+ s+='<rect x="'+plateX+'" y="'+(plateY+plateH)+'" width="'+plateW+'" height="'+Math.max(2,groutH)+'" fill="#fbbf24" stroke="#92400e" stroke-width="1"/>';
+ const bx=[350,750];bx.forEach(x=>{s+='<line x1="'+x+'" y1="'+(plateY-projectionH)+'" x2="'+x+'" y2="'+(concreteY+embedmentH)+'" stroke="#b91c1c" stroke-width="7"/>';s+='<circle cx="'+x+'" cy="'+(plateY-12)+'" r="12" fill="#fff" stroke="#b91c1c" stroke-width="3"/>';});
+ s+=text(550,plateY-165,'مقطع ستون (ابعاد footprint ورودی)',13)+text(550,plateY+plateH+groutH+18,'گروت '+fmt(d.bpGrout,0)+' mm',11)+text(550,concreteY+120,'بتن فونداسیون — شماتیک',16)+text(550,concreteY+165,'طول مهاری واردشده: '+fmt(d.bpEmbedment,0)+' mm | بیرون‌زدگی: '+fmt(d.bpProjection,0)+' mm',13)+text(550,590,'قلاب/صفحه انتهایی و جزئیات مهار بولت ترسیم نشده‌اند؛ این شکل برای ساخت بولت کافی نیست.',12,'middle','#b91c1c')+'</svg>';return s;
 }
 function render(){
  const host=$('baseplateAnchorDrawingPreview');if(!host||!last)return;
