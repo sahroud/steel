@@ -111,6 +111,7 @@ function movingShearEnvelope(input){
   });
   take(maxV,V,a,L,"بلافاصله چپ تکیه‌گاه راست");
   take(minV,-V,a,L,"بلافاصله چپ تکیه‌گاه راست");
+  wheels.filter(w=>Math.abs(w.x-L)<=1e-9).forEach(w=>{take(maxV,V-w.P,a,L,"حد راستِ چرخِ واقع بر تکیه‌گاه راست");take(minV,-(V-w.P),a,L,"حد راستِ چرخِ واقع بر تکیه‌گاه راست");});
  });
  return {ok:true,span_m:L,maxReactionLeft_kN:maxRA.value,minReactionLeft_kN:-minRA.value,maxReactionRight_kN:maxRB.value,minReactionRight_kN:-minRB.value,maxPositiveShear_kN:maxV.value,minNegativeShear_kN:-minV.value,maxAbsShear_kN:Math.max(maxV.value,-minV.value),governingShear:{value_kN:Math.max(maxV.value,-minV.value),offset_m:maxV.value>=-minV.value?maxV.offset:minV.offset,section_m:maxV.value>=-minV.value?maxV.x:minV.x,side:maxV.value>=-minV.value?maxV.side:minV.side},reactionPositions:{leftMax_m:maxRA.offset,rightMax_m:maxRB.offset},method:"پوش سراسری برش و واکنش برای یک قطار بار قائم روی تیر ساده: انتقال قطار در تمام بازه‌های تغییر عضویت چرخ‌ها به‌صورت قطعه‌ای خطی است؛ نقاط ورود و خروج چرخ از دو تکیه‌گاه ارزیابی شده‌اند. برش در دو سوی هر چرخ و دو انتهای دهانه کنترل شده است.",limitations:["یک قطار جرثقیل و یک تیر ساده تک‌دهانه","بارهای قائم متمرکز؛ بدون ضربه، بار افقی، وزن تیر/ریل، پیچش یا خستگی","این خروجی طراحی تیر یا تکیه‌گاه نیست"]};
 }
