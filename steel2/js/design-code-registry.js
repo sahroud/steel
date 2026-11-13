@@ -15,12 +15,17 @@ const codes=[
  {id:"aisc360",name:"ANSI/AISC 360-22",edition:"2022 Edition (مرجع تطبیقی تکمیلی)",scope:"مشخصات طراحی سازه‌های فولادی؛ فقط برای تطبیق و کنترل مستقل",status:"supplementary",modules:["steel-members","connections","benchmark"],source:"https://www.aisc.org/aisc/publications/current-standards/aisc-360/"},
  {id:"aws-d11",name:"AWS D1.1/D1.1M",edition:"نسخه قرارداد/پروژه باید تعیین شود",scope:"کیفیت و الزامات جوشکاری سازه‌های فولادی",status:"pending",modules:["welds","fabrication"],source:"https://www.aws.org/"},
 ];
+const materialNotes=[
+ "ST37-2 و ST52-3 نام‌گذاری‌های تاریخی DIN 17100 هستند؛ تبدیل نام به S235/S355 به‌تنهایی اثبات‌کننده انطباق محصول با فهرست مصالح مجاز مبحث ۱۰ نیست.",
+ "برای هر محموله باید استاندارد محصول، گرید/زیرگرید، ضخامت، گواهی کارخانه، خواص مکانیکی و الزامات چقرمگی/ضربه‌ای حسب مورد بررسی شود."
+];
 const moduleMap=[
  ["بارگذاری و ترکیبات بار","m6"],["قاب، تیر و ستون فولادی","m10 + std2800"],["مهاربند و پایداری لرزه‌ای","m10 + std2800"],["لاپه Z/C سردنورد","m10 + aisi-s100"],["اتصالات پیچ و جوش","m10 + aws-d11"],["صفحه‌ستون و انکر","m10 + m9"],["فونداسیون و شناژ","m7 + m9"],["کنترل مستقل و مقایسه","aisc360 (تکمیلی)"]];
-function getData(){return {schemaVersion:1,primary:"Iran National Building Regulations",codes:codes.map(c=>({...c})),moduleMap:moduleMap.map(x=>({module:x[0],basis:x[1]})),policy:"No foreign standard silently overrides Iranian mandatory requirements. Each calculation must record code edition, clause, assumptions, units and validation state."};}
+function getData(){return {schemaVersion:1,primary:"Iran National Building Regulations",codes:codes.map(c=>({...c})),materialNotes:[...materialNotes],moduleMap:moduleMap.map(x=>({module:x[0],basis:x[1]})),policy:"No foreign standard silently overrides Iranian mandatory requirements. Each calculation must record code edition, clause, assumptions, units and validation state."};}
 function render(){
  const host=document.getElementById("designCodeRegistryContent");if(!host)return;
  host.innerHTML='<div class="notice"><b>سیاست مبنای طراحی:</b> مقررات ملی ایران مرجع اصلی است. استانداردهای بین‌المللی فقط مرجع تکمیلی/تطبیقی‌اند و جایگزین خودکار ضوابط ملی نمی‌شوند.</div>'+
+ '<div class="notice"><b>کنترل مصالح:</b> '+materialNotes.join(" ")+'</div>'+
  '<div style="overflow-x:auto"><table class="data-table" style="min-width:760px;width:100%"><thead><tr><th>مرجع</th><th>ویرایش مبنا</th><th>حوزه کاربرد</th><th>وضعیت</th></tr></thead><tbody>'+
  codes.map(c=>'<tr><td><a href="'+c.source+'" target="_blank" rel="noopener">'+c.name+'</a></td><td>'+c.edition+'</td><td>'+c.scope+'</td><td>'+(c.status==="primary"?"مرجع اصلی":c.status==="supplementary"?"تکمیلی":"نیازمند تعیین ویرایش")+'</td></tr>').join("")+
  '</tbody></table></div><h4>اتصال مرجع به بخش‌های نرم‌افزار</h4><ul>'+moduleMap.map(x=>'<li><b>'+x[0]+'</b>: '+x[1]+'</li>').join("")+'</ul>'+
