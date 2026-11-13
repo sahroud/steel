@@ -34,7 +34,7 @@ function analyze(input){
  const FeT=(PI*PI*E*Cw/(kzLz*kzLz)+G*J)/(Ix+Iy);
  const modes=[{mode:"flexural-x",Fe:FeX},{mode:"flexural-y",Fe:FeY},{mode:"torsional",Fe:FeT}].sort((a,b)=>a.Fe-b.Fe);
  const governing=modes[0],curve=fcrFromFe(Number(d.Fy_MPa),governing.Fe);
- if(Math.max(lambdaX,lambdaY)>200)issues.push("نسبت لاغری عضو از حد ۲۰۰ بیشتر است؛ کنترل ظرفیت متوقف شد.");
+ warnings.push("نسبت‌های لاغری حول دو محور گزارش شده‌اند؛ هیچ سقف عددی عمومی بدون ارجاع قطعی به بند قابل اعمال و شرایط پروژه به‌صورت خودکار تحمیل نشده است.");
  if(!finitePositive(FeT))issues.push("تنش بحرانی کمانش پیچشی معتبر نیست؛ J و Cw و طول مهارنشده پیچشی بازبینی شود.");
  if(issues.length)return {ok:false,issues,warnings,slenderness:{x:lambdaX,y:lambdaY},elasticCriticalStress_MPa:{x:FeX,y:FeY,torsional:FeT},scope:"global-buckling-only",disclaimer:"مقاومت طراحی ارائه نشد."};
  const Pn=curve.Fcr*A/1000,phiPn=0.9*Pn,allowable=Pn/1.67;
