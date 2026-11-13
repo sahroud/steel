@@ -393,6 +393,25 @@ function calculatePedestalRebar(baseCount){
   if(box)box.textContent="وزن نظری آرماتور پدستال برای "+baseCount+" پایه: "+fmt(totalWeightKg)+" kg؛ طول‌ها و تعدادها عیناً از ورودی نقشه/جدول خم و برش گرفته شده‌اند. قلاب و وصله فقط در صورتی لحاظ می‌شوند که در طول برش ورودی منظور شده باشند.";
   return {basis:"manual_bar_bending_schedule_quantities",rows,totalWeightKg,limitations:["تعداد و طول برش باید از نقشه اجرایی یا جدول خم و برش وارد شود؛ هیچ جزئیات اجرایی حدس زده نمی‌شود.","وزن واحد تقریبی d²/162 kg/m است.","طول مهاری، قلاب، خم، وصله و پرت جداگانه محاسبه نشده‌اند مگر اینکه در طول برش واردشده منظور شده باشند.","این متره، طراحی یا کنترل مقاومت پدستال و خاموت‌ها نیست."]};
  }
+ function buildTieRouteTakeoff(audit,routes){
+  if(!Array.isArray(routes)||!routes.length)return{complete:false,source:"manual_input",count:null,totalLengthM:null,totalConcreteM3:null,sideFormworkM2:null,schedule:[],warnings:[]};
+  const rows=Array.isArray(audit?.rows)?audit.rows:[],byId=new Map(rows.map(x=>[String(x.id),x])),schedule=[],warnings=[];
+  for(const route of routes){
+   const row=byId.get(String(route.id));
+   if(!row||!Number.isFinite(Number(row.lengthM))||!(Number(row.lengthM)>0)||!Number.isFinite(Number(row.volumeM3))||!(Number(row.volumeM3)>0)||!row.section){
+    warnings.push("هندسه مسیر "+String(route.id)+" کامل/معتبر نیست؛ طول و حجم آن وارد متره نشد.");continue;
+   }
+   const reasons=Array.isArray(row.reasons)?row.reasons:[];
+   const geometryErrors=reasons.filter(x=>x!=="نوع اتصال دو سر کامل تعیین نشده");
+   if(geometryErrors.length){warnings.push("مسیر "+String(route.id)+" به علت نقص هندسی وارد متره نشد: "+geometryErrors.join("، "));continue;}
+   const h=Number(route.heightM),w=Number(route.widthM);
+   if(!(h>0&&w>0)){warnings.push("ابعاد مقطع مسیر "+String(route.id)+" معتبر نیست.");continue;}
+   schedule.push({id:String(route.id),start:route.start,end:route.end,lengthM:Number(row.lengthM),widthM:w,heightM:h,concreteM3:Number(row.volumeM3),sideFormworkM2:2*h*Number(row.lengthM),connectionStatus:reasons.length?"نیازمند تکمیل نوع اتصال":"ثبت‌شده"});
+   if(reasons.length)warnings.push("مسیر "+String(route.id)+" از نظر هندسه متره شد، اما نوع اتصال ابتدا/انتها هنوز تعیین نشده است.");
+  }
+  const complete=schedule.length===routes.length;
+  return{complete,source:complete?"route_geometry":"invalid_routes",count:complete?routes.length:null,totalLengthM:complete?schedule.reduce((a,x)=>a+x.lengthM,0):null,totalConcreteM3:complete?schedule.reduce((a,x)=>a+x.concreteM3,0):null,sideFormworkM2:complete?schedule.reduce((a,x)=>a+x.sideFormworkM2,0):null,schedule:complete?schedule:[],warnings};
+ }
  function quantify(){
   readInputs();
   const count=lastReport?.rows?.length||0,w=num(state.footingWidthM),l=num(state.footingLengthM),t=num(state.footingThicknessM);
@@ -406,20 +425,23 @@ function calculatePedestalRebar(baseCount){
   const excavation=excavationDepth!==null&&clearance!==null&&clearance>=0?footingRows.reduce((s,x)=>s+(x.spec.width+2*clearance)*(x.spec.length+2*clearance)*excavationDepth,0):null;
   const formFoot=footingRows.reduce((s,x)=>s+2*(x.spec.width+x.spec.length)*x.spec.thickness,0),formPed=pedComplete?count*2*(pw+pl)*ph:0;
   const anchors=state.anchorsPerBase!==""&&Number.isInteger(Number(state.anchorsPerBase))&&Number(state.anchorsPerBase)>=0?count*Number(state.anchorsPerBase):null;
-  const tieCount=state.tieCount!==""&&Number.isInteger(Number(state.tieCount))&&Number(state.tieCount)>=0?Number(state.tieCount):null;
-  const tieLength=state.tieTotalLengthM!==""&&Number(state.tieTotalLengthM)>=0?Number(state.tieTotalLengthM):null;
-  const tw=num(state.tieWidthM),th=num(state.tieHeightM),tieSectionComplete=!!(tw&&th&&tieLength!==null);
-  const tieConcrete=tieSectionComplete?tieLength*tw*th:null;
+  const tw=num(state.tieWidthM),th=num(state.tieHeightM),tieLayoutData=window.SteelTieBeamLayout?.getData?.()||{},tieRoutes=Array.isArray(tieLayoutData.routes)?tieLayoutData.routes:[],tieRouteTakeoff=buildTieRouteTakeoff(tieRoutes.length?window.SteelTieBeamLayout?.audit?.():null,tieRoutes);
+  const manualTieCount=state.tieCount!==""&&Number.isInteger(Number(state.tieCount))&&Number(state.tieCount)>=0?Number(state.tieCount):null;
+  const manualTieLength=state.tieTotalLengthM!==""&&Number(state.tieTotalLengthM)>=0?Number(state.tieTotalLengthM):null;
+  const tieCount=tieRoutes.length?(tieRouteTakeoff.complete?tieRouteTakeoff.count:null):manualTieCount;
+  const tieLength=tieRoutes.length?(tieRouteTakeoff.complete?tieRouteTakeoff.totalLengthM:null):manualTieLength;
+  const tieSectionComplete=tieRoutes.length?tieRouteTakeoff.complete:!!(tw&&th&&tieLength!==null);
+  const tieConcrete=tieRoutes.length?(tieRouteTakeoff.complete?tieRouteTakeoff.totalConcreteM3:null):(tieSectionComplete?tieLength*tw*th:null);
    const datumRows=(lastReport?.rows||[]).filter(r=>Number.isFinite(Number(r.y))).map(r=>({nodeId:r.nodeId,...footingDatumGeometry(Number(r.y),th||0.5,t||0.8)}));
    const datumSummary=datumRows.length?{baseCount:datumRows.length,allTopLevelsCoincident:datumRows.every(r=>r.ok&&r.topLevelsCoincident),tieHeightM:th||0.5,footingDepthM:t||0.8,extraExcavationBelowTieM:datumRows[0].extraExcavationBelowTieM,rows:datumRows,analysisAxisCaveat:"در مدل تحلیل فعلی محور شناژ از گره پایه عبور می‌کند؛ انتقال محور به پایین به اندازه نصف ارتفاع شناژ همراه با بازوی صلب/اتصال خارج از مرکز هنوز پیاده نشده است. بنابراین این تراز مشترک فعلاً هندسه هدف متره و نقشه است و نباید به‌عنوان اصلاح‌شدن سختی/اتصال مدل تحلیل تلقی شود."}:null;
   const tieReady=tieConcrete!==null;
-  const tieFormwork=tieSectionComplete?tieLength*2*th:null;
+  const tieFormwork=tieRoutes.length?(tieRouteTakeoff.complete?tieRouteTakeoff.sideFormworkM2:null):(tieSectionComplete?tieLength*2*th:null);
   const tieRebar=tieSectionComplete&&state.tieRebarKgPerM!==""&&Number(state.tieRebarKgPerM)>=0?tieLength*Number(state.tieRebarKgPerM):null;
   const totalConcrete=footingConcrete+(pedComplete?pedConcrete:0)+(tieConcrete!==null?tieConcrete:0);
   const totalFormwork=formFoot+formPed+(tieFormwork!==null?tieFormwork:0);
   const rebar=calculateFootingRebar(lastReport.rows);
   const pedestalRebar=calculatePedestalRebar(count);
-   const q={baseCount:count,footingConcreteM3:footingConcrete,pedestalConcreteM3:pedComplete?pedConcrete:null,tieCount,tieTotalLengthM:tieLength,tieConcreteM3:tieConcrete,tieSideFormworkM2:tieFormwork,footingFormworkM2:formFoot,pedestalFormworkM2:pedComplete?formPed:null,totalFormworkM2:totalFormwork,tieRebarKg:tieRebar,footingRebarKg:rebar?.totalWeightKg??null,footingRebar:rebar,pedestalRebarKg:pedestalRebar?.totalWeightKg??null,pedestalRebar,totalRebarKg:[rebar?.totalWeightKg??null,pedestalRebar?.totalWeightKg??null,tieRebar].every(v=>v!==null&&Number.isFinite(Number(v)))?Number(rebar.totalWeightKg)+Number(pedestalRebar.totalWeightKg)+Number(tieRebar):null,totalConcreteM3:totalConcrete,excavationM3:excavation,sideFormworkM2:totalFormwork,anchorsCount:anchors,sharedTopDatum:datumSummary,footingSchedule:footingRows.map(x=>({nodeId:x.row.nodeId,...x.spec,excavationM3:excavationDepth!==null&&clearance!==null&&clearance>=0?(x.spec.width+2*clearance)*(x.spec.length+2*clearance)*excavationDepth:null})),dimensions:{w,l,t,pw:pw||null,pl:pl||null,ph:ph||null,excavationDepthM:excavationDepth,workingSpaceM:clearance,tieWidthM:tw||null,tieHeightM:th||null}};
+   const q={baseCount:count,footingConcreteM3:footingConcrete,pedestalConcreteM3:pedComplete?pedConcrete:null,tieCount,tieTotalLengthM:tieLength,tieConcreteM3:tieConcrete,tieSideFormworkM2:tieFormwork,footingFormworkM2:formFoot,pedestalFormworkM2:pedComplete?formPed:null,totalFormworkM2:totalFormwork,tieRebarKg:tieRebar,tieTakeoffSource:tieRoutes.length?tieRouteTakeoff.source:"manual_input",tieRouteSchedule:tieRouteTakeoff.schedule,tieRouteWarnings:tieRouteTakeoff.warnings,footingRebarKg:rebar?.totalWeightKg??null,footingRebar:rebar,pedestalRebarKg:pedestalRebar?.totalWeightKg??null,pedestalRebar,totalRebarKg:[rebar?.totalWeightKg??null,pedestalRebar?.totalWeightKg??null,tieRebar].every(v=>v!==null&&Number.isFinite(Number(v)))?Number(rebar.totalWeightKg)+Number(pedestalRebar.totalWeightKg)+Number(tieRebar):null,totalConcreteM3:totalConcrete,excavationM3:excavation,sideFormworkM2:totalFormwork,anchorsCount:anchors,sharedTopDatum:datumSummary,footingSchedule:footingRows.map(x=>({nodeId:x.row.nodeId,...x.spec,excavationM3:excavationDepth!==null&&clearance!==null&&clearance>=0?(x.spec.width+2*clearance)*(x.spec.length+2*clearance)*excavationDepth:null})),dimensions:{w,l,t,pw:pw||null,pl:pl||null,ph:ph||null,excavationDepthM:excavationDepth,workingSpaceM:clearance,tieWidthM:tw||null,tieHeightM:th||null}};
   lastReport.quantities=q;
   lastReport.foundationBearing=screenBearing(q);
   lastReport.foundationSliding=screenSliding();
@@ -726,5 +748,5 @@ function calculatePedestalRebar(baseCount){
  function getData(){readInputs();return JSON.parse(JSON.stringify({...state,footingSchedule}));}
  function setData(d){if(!d||typeof d!=="object")return;footingSchedule=d.footingSchedule&&typeof d.footingSchedule==="object"?JSON.parse(JSON.stringify(d.footingSchedule)):{};keys.forEach(k=>{if(d[k]!==undefined)state[k]=d[k];const el=$(map[k]);if(el)el.value=state[k]??"";});if(!state.footingClass)state.footingClass="main";if(state.footingWidthM==="")state.footingWidthM="1.80";if(state.footingLengthM==="")state.footingLengthM="1.80";if(state.footingThicknessM==="")state.footingThicknessM="0.80";if(state.bottomBarDiaXmm==="")state.bottomBarDiaXmm="16";if(state.bottomBarSpacingXmm==="")state.bottomBarSpacingXmm="150";if(state.bottomBarDiaZmm==="")state.bottomBarDiaZmm="16";if(state.bottomBarSpacingZmm==="")state.bottomBarSpacingZmm="150";keys.forEach(k=>{const el=$(map[k]);if(el)el.value=state[k]??"";});}
  document.addEventListener("DOMContentLoaded",()=>{panel();$("ftClass")?.addEventListener("change",e=>applyFootingClass(e.target.value));});
- window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,footingDatumGeometry,defaultFootingSpec,footingSpecFor,footingsAlongStraightRoute,calculateFootingRebar,applyFootingClass,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,normalizeBaseReactions,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildTieRouteTakeoff,buildFootingRebarGeometry,footingGridSpecs,footingDatumGeometry,defaultFootingSpec,footingSpecFor,footingsAlongStraightRoute,calculateFootingRebar,applyFootingClass,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,normalizeBaseReactions,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
 })();
