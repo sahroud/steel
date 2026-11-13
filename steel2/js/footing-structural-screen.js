@@ -44,6 +44,14 @@
   const summary=$("footingStructuralSummary"),body=$("footingStructuralRows");body.replaceChildren();last=null;
   const foundation=window.SteelFoundationTakeoff?.getLast?.(),inputs=window.SteelFoundationTakeoff?.getData?.();
   if(!foundation?.rows?.length){summary.textContent="ابتدا تحلیل سه‌بعدی و استخراج پوش واکنش فونداسیون را اجرا کنید.";return;}
+  const scheduled=foundation.rows.map(row=>({id:row.nodeId,spec:window.SteelFoundationTakeoff?.footingSpecFor?.(row)}));
+  const validSpecs=scheduled.filter(x=>x.spec&&[x.spec.width,x.spec.length,x.spec.thickness].every(v=>Number.isFinite(v)&&v>0));
+  const uniqueDims=new Set(validSpecs.map(x=>[x.spec.width,x.spec.length,x.spec.thickness].join("|")));
+  if(validSpecs.length!==foundation.rows.length||uniqueDims.size>1){
+   const detail=scheduled.map(x=>x.id+": "+(x.spec?[x.spec.width,x.spec.length,x.spec.thickness].join("×")+" m":"ابعاد نامعتبر/تعریف‌نشده")).join("؛ ");
+   summary.textContent="این نسخه از غربال سازه‌ای هنوز برای همه پایه‌ها یک ابعاد مشترک به‌کار می‌برد و برای پی‌های با ابعاد متفاوت قابل استفاده نیست. برای جلوگیری از نتیجه گمراه‌کننده، محاسبه متوقف شد. ابعاد هر پایه: "+detail+". مرحله بعد باید محاسبه خمش، برش و پانچ را مستقل برای هر پی انجام دهد.";
+   return;
+  }
   if(!state.reactionSignConfirmed){summary.textContent="ابتدا قرارداد علامت واکنش‌ها را با یک حالت بار معلوم کنترل کنید و سپس گزینه تأیید را فعال کنید. در غیر این صورت تشخیص فشار و کشش ممکن است وارونه شود.";return;}
   const fc=positive(state.fcMPa),fy=positive(state.fyMPa),B=positive(inputs?.footingWidthM),L=positive(inputs?.footingLengthM),t=positive(inputs?.footingThicknessM),cx=positive(inputs?.pedestalWidthM),cz=positive(inputs?.pedestalLengthM),cover=positive(inputs?.rebarCoverMm),gammaC=positive(inputs?.concreteUnitWeightKNm3);
   const dx=positive(inputs?.bottomBarDiaXmm),sx=positive(inputs?.bottomBarSpacingXmm),dz=positive(inputs?.bottomBarDiaZmm),sz=positive(inputs?.bottomBarSpacingZmm);
