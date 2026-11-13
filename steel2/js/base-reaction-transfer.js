@@ -75,6 +75,17 @@ function apply(){
   $("baseplatePartialContactPanel").scrollIntoView?.({behavior:"smooth",block:"center"});
  }catch(e){$("brtResult").textContent=e.message;}
 }
-root.SteelBaseReactionTransfer={extract,mapReaction,getLast:()=>last?JSON.parse(JSON.stringify(last)):null,selected};
+function selfTest(){
+ const m=mapReaction([1000,200000,-3000,400000,5000,-600000]);
+ const checks=[
+ ["تبدیل واکنش قائم به N کششی مثبت",m.N_tensionPositive_kN===-200],
+ ["تبدیل علامت لنگر Mx",m.Mx_kNm===-400],
+ ["تبدیل علامت لنگر Mz",m.Mz_kNm===600],
+ ["حفظ واکنش‌های افقی و My",m.supportReaction.Fx_kN===1&&m.supportReaction.Fz_kN===-3&&m.supportReaction.My_kNm===5],
+ ["رد بردار واکنش ناقص",(()=>{try{mapReaction([1,2]);return false;}catch(e){return true;}})()]
+ ];
+ return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
+}
+root.SteelBaseReactionTransfer={extract,mapReaction,selfTest,getLast:()=>last?JSON.parse(JSON.stringify(last)):null,selected};
 if(root.document){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
