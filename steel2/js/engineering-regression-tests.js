@@ -16,6 +16,7 @@ function run(){
  test("tapered-section module exposed",()=>typeof root.SteelTaperedSections?.resolveForMember==="function"?"Three-station member resolver available":false);
  test("tapered-section interpolation",()=>{const r=root.SteelTaperedSections.selfTest();return r.passed===3&&r.failed===0?"Geometry, midpoint interpolation and disabled-default tests pass":false;});
  test("tapered sections disabled by default",()=>root.SteelTaperedSections.getData().groups.column.enabled===false&&root.SteelTaperedSections.getData().groups.rafter.enabled===false?"Existing project sections remain unchanged unless explicitly enabled":false);
+ test("tapered analysis segmentation",()=>{const r=root.SteelTaperedSections.selfTest();return r.passed===4&&r.failed===0?"Eight-segment member subdivision, intermediate nodes and end-release preservation pass":false;});
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
  const host=document.getElementById("engineeringRegressionResults");if(host)host.innerHTML="<p>موفق: "+result.passed+" | ناموفق: "+result.failed+"</p><ul>"+checks.map(x=>"<li>"+(x.pass?"✓ ":"✗ ")+x.name+" — "+x.detail+"</li>").join("")+"</ul><div class='notice'>"+result.scope+"</div>";
  return result;
