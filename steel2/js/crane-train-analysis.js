@@ -35,6 +35,47 @@ function analyze(input){
  const leftShear=RA,rightShear=RA-active.reduce((v,w)=>v+w.P,0);
  return {ok:true,span_m:L,offset_m:offset,wheels,activeWheelCount:active.length,reactions_kN:{left:RA,right:RB},maxAbsMoment_kNm:Math.abs(peak.M_kNm),peakMoment:{x_m:peak.x_m,M_kNm:peak.M_kNm},maxPositiveMoment_kNm:positive.M_kNm,positiveMomentLocation_m:positive.x_m,shear_kN:{justRightOfLeft:leftShear,justLeftOfRight:rightShear},equilibriumError_kN:Math.abs(RA+RB-active.reduce((v,w)=>v+w.P,0)),method:"تحلیل استاتیکی تیر دو سر مفصل؛ بارهای متمرکز ثابت در موقعیت اعلام‌شده؛ نمودار لنگر بین چرخ‌ها خطی است و نقاط چرخ/تکیه‌گاه ارزیابی شده‌اند."};
 }
+function movingEnvelope(input){
+ const d={...defaults,...(input||{})},L=Number(d.span_m),positions=parseList(d.positions_m),loads=parseList(d.loads_t),issues=[];
+ if(!Number.isFinite(L)||L<=0)issues.push("دهانه معتبر تیر حمال وارد نشده است.");
+ if(!positions.length||positions.some(x=>!Number.isFinite(x)||x<0))issues.push("فاصله‌های تجمعی چرخ‌ها معتبر نیستند.");
+ if(positions.length&&positions[0]!==0)issues.push("فاصله چرخ اول باید صفر باشد.");
+ if(positions.some((x,i)=>i>0&&x<=positions[i-1]))issues.push("فاصله‌های چرخ باید صعودی و بدون تکرار باشند.");
+ if(loads.length!==positions.length||loads.some(x=>!Number.isFinite(x)||x<=0))issues.push("برای هر چرخ یک بار مثبت مستقل لازم است.");
+ if(!String(d.loadSource||"").trim()||!String(d.loadDocument||"").trim())issues.push("منبع و مرجع مستند بارهای چرخ الزامی است.");
+ if(issues.length)return {ok:false,issues};
+ const P=loads.map(x=>x*9.80665);let best={M_kNm:-Infinity,x_m:null,offset_m:null,event:""};
+ const evaluate=(x,a,event)=>{
+  if(x< -1e-8||x>L+1e-8)return;
+  const z=positions.map(p=>a+p),active=z.map((v,i)=>({x:v,P:P[i]})).filter(w=>w.x>=-1e-9&&w.x<=L+1e-9);
+  const RA=active.reduce((v,w)=>v+w.P*(L-w.x)/L,0);
+  const M=RA*x-active.reduce((v,w)=>v+w.P*Math.max(0,x-w.x),0);
+  if(M>best.M_kNm)best={M_kNm:M,x_m:x,offset_m:a,event};
+ };
+ // Translation breakpoints where any wheel enters/leaves a support.
+ positions.forEach((pj,j)=>{
+  [-pj,L-pj].forEach(a=>{
+   const z=positions.map(p=>a+p).filter(v=>v>=-1e-9&&v<=L+1e-9);
+   [0,L,...z].forEach(x=>evaluate(x,a,"wheel enters/exits support"));
+  });
+ });
+ // For a wheel located exactly at the section x, optimize the resulting quadratic
+ // on every interval where the set of wheels on the beam is unchanged.
+ positions.forEach((pj,j)=>{
+  const ds=positions.map(p=>p-pj),cuts=[0,L];
+  ds.forEach(d=>{const a=-d,b=L-d;if(a>0&&a<L)cuts.push(a);if(b>0&&b<L)cuts.push(b);});
+  cuts.sort((a,b)=>a-b);
+  const unique=cuts.filter((x,i)=>i===0||Math.abs(x-cuts[i-1])>1e-9);
+  for(let k=0;k<unique.length-1;k++){
+   const lo=unique[k],hi=unique[k+1],mid=(lo+hi)/2;
+   let A=0,B=0,C=0;
+   ds.forEach((d,i)=>{const z=mid+d;if(z<0||z>L)return;A-=P[i]/L;B+=P[i]*(L-d)/L;if(d<=0)C+=P[i]*d;});
+   const candidates=[lo,hi];if(A<0){const v=-B/(2*A);if(v>lo&&v<hi)candidates.push(v);}
+   candidates.forEach(x=>evaluate(x,x-pj,"wheel at critical section"));
+  }
+ });
+ return {ok:true,span_m:L,maxPositiveMoment_kNm:Math.max(0,best.M_kNm),criticalSection_m:best.x_m,criticalFirstWheelOffset_m:best.offset_m,governingEvent:best.event,method:"پوش دقیق لنگر مثبت برای قطار بار متمرکز روی تیر ساده دو سر مفصل؛ نقاط ورود/خروج چرخ و نقاط عبور چرخ از مقطع، با بهینه‌سازی تحلیلی سهم درجه‌دوم بین مرزهای فعال‌بودن چرخ‌ها بررسی شده‌اند.",limitations:["فقط بارهای قائم متمرکز و یک قطار جرثقیل","تیر ساده دو سر مفصل و یک دهانه","بدون اثر ضربه، نیروهای افقی، وزن تیر/ریل، پیچش، خستگی یا طراحی مقطع"]};
+}
 function render(){
  const host=$("results");if(!host)return;
  const r=analyze(readUI());host.textContent="";
@@ -57,6 +98,6 @@ function render(){
  const note=document.createElement("p");note.className="notice";note.textContent=r.method+" بار هر چرخ به تن‌نیرو تبدیل شده است. اثر ضربه، نیروهای افقی، وزن تیر، پیوستگی چنددهانه، پیچش، کمانش، خستگی و طراحی مقطع در این خروجی منظور نشده‌اند.";host.appendChild(note);
 }
 function init(){Object.keys(defaults).forEach(k=>$(k)?.addEventListener("input",render));$("calculate")?.addEventListener("click",render);render();}
-root.SteelCraneTrainAnalysis={getData:readUI,setData,analyze,render};
+root.SteelCraneTrainAnalysis={getData:readUI,setData,analyze,movingEnvelope,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(window);
