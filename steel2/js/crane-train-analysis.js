@@ -97,7 +97,14 @@ function render(){
  host.appendChild(table);
  const note=document.createElement("p");note.className="notice";note.textContent=r.method+" بار هر چرخ به تن‌نیرو تبدیل شده است. اثر ضربه، نیروهای افقی، وزن تیر، پیوستگی چنددهانه، پیچش، کمانش، خستگی و طراحی مقطع در این خروجی منظور نشده‌اند.";host.appendChild(note);
 }
-function init(){Object.keys(defaults).forEach(k=>$(k)?.addEventListener("input",render));$("calculate")?.addEventListener("click",render);render();}
+function showEnvelope(){
+ const host=$("results");if(!host)return;
+ const r=movingEnvelope(readUI()),box=document.createElement("div");box.className="notice";
+ if(!r.ok){box.textContent="پوش متحرک محاسبه نشد: "+r.issues.join(" | ");host.appendChild(box);return;}
+ box.textContent="پوش دقیق لنگر مثبت: "+r.maxPositiveMoment_kNm.toFixed(3)+" kN·m؛ مقطع بحرانی: "+r.criticalSection_m.toFixed(3)+" m؛ موقعیت چرخ اول: "+r.criticalFirstWheelOffset_m.toFixed(3)+" m. "+r.method+" محدودیت: "+r.limitations.join("؛ ");
+ host.appendChild(box);
+}
+function init(){Object.keys(defaults).forEach(k=>$(k)?.addEventListener("input",render));$("calculate")?.addEventListener("click",render);$("envelope")?.addEventListener("click",showEnvelope);render();}
 root.SteelCraneTrainAnalysis={getData:readUI,setData,analyze,movingEnvelope,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(window);
