@@ -962,7 +962,7 @@
     });
     return {ready:missing.length===0,groupCount:groups.size,memberCount:model.members.length,missing};
   }
-  function run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports){
+  function run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,extraOptions){
     return new Promise((resolve,reject)=>{
       let worker;
       try{
@@ -992,7 +992,8 @@
           model:analysisModel,
           sectionsByMemberId,
           supports,
-          releasePurlinRafterRotation:true
+          releasePurlinRafterRotation:true,
+          nodalLoads:Array.isArray(extraOptions?.nodalLoads)?extraOptions.nodalLoads:[]
         });
       }catch(error){
         finish(reject,new Error("ارسال مدل به پردازشگر پس‌زمینه ناموفق بود: "+error.message));
@@ -1221,7 +1222,11 @@
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
-    const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports);
+    const customNodalLoads=Array.isArray(selected.nodalLoads)?selected.nodalLoads:[];
+    const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
+    result.additionalNodalLoadCount=customNodalLoads.length;
+    result.craneLoadCaseId=selected.craneLoadCaseId||null;
+    result.craneLoadTransfer=selected.craneLoadTransfer||null;
     if(taperedSegmentationAudit)result.taperedSegmentation=taperedSegmentationAudit;
     const sourceMembersById=new Map(analysisModel.members.map(m=>[String(m.id),m]));
     result.members.forEach(member=>{
@@ -1307,6 +1312,7 @@
     result.foundationModelFingerprint=JSON.stringify({
       nodes:analysisModel.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),
       members:analysisModel.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),
+      nodalLoads:customNodalLoads.map(x=>[x.nodeId,x.values]),
       sections:window.SteelSections?.read?.()||null,
       support:$("baseConnection")?.value||"pinned"
     });
