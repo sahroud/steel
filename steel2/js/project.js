@@ -247,6 +247,7 @@
 
         if (window.SteelTieBeamLayout) data.tieBeamLayout = window.SteelTieBeamLayout.getData();
         if (window.SteelTieBeamReinforcement) data.tieBeamReinforcement = window.SteelTieBeamReinforcement.getData();
+        if (window.SteelSiteWorkTakeoff && typeof window.SteelSiteWorkTakeoff.getData === "function") data.siteWorkTakeoff = window.SteelSiteWorkTakeoff.getData();
 
         if (window.SteelCraneReadiness && typeof window.SteelCraneReadiness.getData === "function") {
             data.craneReadiness = window.SteelCraneReadiness.getData();
@@ -514,6 +515,7 @@
 
         if (window.SteelTieBeamLayout) window.SteelTieBeamLayout.setData(data.tieBeamLayout || {});
         if (window.SteelTieBeamReinforcement) window.SteelTieBeamReinforcement.setData(data.tieBeamReinforcement || {});
+        if (window.SteelSiteWorkTakeoff && typeof window.SteelSiteWorkTakeoff.setData === "function") window.SteelSiteWorkTakeoff.setData(data.siteWorkTakeoff || {});
 
         if (window.SteelCraneReadiness && typeof window.SteelCraneReadiness.setData === "function") {
             window.SteelCraneReadiness.setData(data.craneReadiness || {});
