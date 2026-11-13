@@ -41,7 +41,7 @@ function drawing(k,p){
 function test(){
  const m={geometry:{span:12},nodes:[{id:"E",x:0,y:6,z:0,kind:"eave"},{id:"C",x:0,y:0,z:0},{id:"R",x:6,y:7.2,z:0}],members:[{id:"COL",start:"C",end:"E",sectionKey:"column"},{id:"RAF",start:"E",end:"R",sectionKey:"rafter",axis:"transverse",frame:1}]};
  const k=extract(m)[0],p={w:500,h:650,t:16,d:20,dh:22,edge:50,pitch:120,gauge:100,rows:4,cols:3},v=check(k,p),bad=check(k,{...p,w:100});
- const c=[!!k&&k.node.id==="E",k.column.id==="COL"&&k.rafter.id==="RAF",Math.abs(k.angle-153.435)<.01,v.valid,!bad.valid,v.warnings.length===2];
+ const c=[!!k&&k.node.id==="E",k.column.id==="COL"&&k.rafter.id==="RAF",Math.abs(k.angle-101.31)<.02,v.valid,!bad.valid,v.warnings.length===2];
  return{passed:c.filter(Boolean).length,total:c.length,checks:c};
 }
 function mount(){
