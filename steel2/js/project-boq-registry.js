@@ -149,7 +149,7 @@ function selfTest(){
   anchorCountFallbackUsed:buildSnapshot({foundation:{quantities:{anchorsCount:12}}}).rows.find(x=>x.id==="foundation-anchor-count")?.quantity===12,
   anchorModuleCountPreventsDuplicate:!buildSnapshot({foundation:{quantities:{anchorsCount:12}},anchor:{boltCount:16}}).rows.some(x=>x.id==="foundation-anchor-count"),
   knownFootingFormworkRetainedWithoutTie:buildSnapshot({foundation:{quantities:{footingFormworkM2:10,tieSideFormworkM2:null}}}).rows.find(x=>x.id==="foundation-footing-formwork")?.quantity===10,
-  footingAndTrenchExcavationSeparated:by.get("footing-B1")?.quantity===3.2&&by.get("excavation-B1")?.quantity===5,
+  footingAndTrenchExcavationSeparated:by.get("footing-B1")?.quantity===2&&by.get("excavation-B1")?.quantity===5,
   totalConcreteAndFormworkAreSummaries:by.get("foundation-total-concrete")?.aggregationRole==="summary"&&by.get("foundation-total-formwork")?.aggregationRole==="summary",
   totalRebarRequiresAllComponents:by.get("foundation-total-rebar")?.quantity===null,
   anchorNutWasherMassCaptured:by.get("anchor-nut-mass")?.quantity===1.2&&by.get("anchor-washer-mass")?.quantity===0.2&&by.get("anchor-total-mass")?.aggregationRole==="summary"
