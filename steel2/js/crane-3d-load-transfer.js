@@ -61,6 +61,7 @@ function addPointOnGirder(model,memberRow,z,forceGlobal,offsetGlobal,nodal,sourc
  add(nodal,m.end,global.slice(6,12),{...source,memberId:m.id,position_m:z,shape:"consistent-point-load"});
  return true;
 }
+let lastAnalysis=null;
 function prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,config){
  const issues=[],d=config||{},c=transferResult?.cases?.[caseIndex];
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))issues.push("مدل سه‌بعدی معتبر نیست.");
@@ -124,7 +125,8 @@ async function analyzeCase(caseIndex,transferResult,horizontalInput,trainInput,c
  const p=prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,config);
  if(!p.success)return {success:false,analysisEnabled:false,transfer:p};
  const result=await root.SteelStructuralModel.analyze3D({label:"جرثقیل ـ حالت هم‌زمان "+(caseIndex+1),factors:{dead:0,live:0,snow:0,wind:0},nodalLoads:p.nodalLoads,craneLoadCaseId:caseIndex,craneLoadTransfer:{referencePosition_m:p.referencePosition_m,sourceDocuments:p.sourceDocuments}});
- return {success:true,analysisEnabled:false,caseIndex,transfer:p,result};
+ lastAnalysis={success:true,analysisEnabled:false,caseIndex,transfer:p,result};
+ return lastAnalysis;
 }
 function selfTest(){
  const checks=[],t=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
@@ -201,6 +203,6 @@ function ensurePanel(){
  });
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,selfTest};
+root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,selfTest,getLastAnalysis:()=>lastAnalysis};
 })(typeof window!=="undefined"?window:globalThis);
 
