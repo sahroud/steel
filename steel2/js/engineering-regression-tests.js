@@ -27,7 +27,7 @@ function run(){
  test("flexure/shear audit reads the actual force-envelope row shape",()=>{const r=root.SteelFlexureShearReadiness.audit({members:[{sectionKey:"rafter",id:"R1",section:{A:0.01,Iy:1e-5,Iz:1e-4,J:1e-6},peak:{My:120000, Mz:80000, Vy:30000, Vz:50000}}],cases:[{}]});const row=r.rows.find(x=>x.group==="rafter");return !!row&&row.count===1&&row.maximumMoment_Nm===120000&&row.maximumShear_N===50000&&!row.missing.some(x=>x.includes("خواص کامل"))?"Actual sectionKey/section/peak fields are recognized":false;});
  test("tapered 3D bending convergence against variable-I integral",()=>{
   if(!root.SteelFrame3D?.analyze)return false;
-  const api=root.SteelTaperedSections,old=api.getData(),E=200e9,G=77e9,P=100000,L=6,span=12;
+  const api=root.SteelTaperedSections,old=api.getData(),E=200e9,G=77e9,P=100000,dx=6,dy=3,L=Math.hypot(dx,dy),span=12;
   try{
    api.setData({groups:{rafter:{enabled:true,stations:{start:{d:500,bf:200,tw:10,tf:16},mid:{d:400,bf:200,tw:10,tf:16},end:{d:300,bf:200,tw:10,tf:16}}}}});
    const n=2000,h=L/n;let integral=0;
@@ -35,16 +35,16 @@ function run(){
     const I=api.at("rafter",i/n).Ix_cm4*1e-8;
     integral+=(i===0||i===n?1:i%2?4:2)*Math.pow(L-i*h,2)/I;
    }
-   const exact=P/E*h*integral/3,errors=[],equilibrium=[];
+   const exact=P/E*h*integral/3,errors=[],equilibrium=[],ey=[-dy/L,dx/L,0],load=ey.map(v=>-P*v);
    [4,8,16,24].forEach(count=>{
-    const raw={nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:L,y:0,z:0}],members:[{id:"R",start:"FIX",end:"TIP",sectionKey:"rafter",type:"rafter"}]};
+    const raw={nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:dx,y:dy,z:0}],members:[{id:"R",start:"FIX",end:"TIP",sectionKey:"rafter",type:"rafter"}]};
     const model=api.segmentModel(raw,{height:6,span},count).model,props={};
     model.members.forEach(m=>{props[m.id]=api.resolveForMember(m,model.nodes,{height:6,span},{E,G,A:.01,Iy:1e-5,Iz:1e-4,J:1e-6}).section;});
-    const result=root.SteelFrame3D.analyze(model,{sectionResolver:m=>props[m.id],supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],nodalLoads:[{nodeId:"TIP",values:[0,-P,0,0,0,0]}]});
-    const delta=Math.abs(result.displacements.find(x=>x.nodeId==="TIP").values[1]);
+    const result=root.SteelFrame3D.analyze(model,{sectionResolver:m=>props[m.id],supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],nodalLoads:[{nodeId:"TIP",values:[load[0],load[1],load[2],0,0,0]}]});
+    const tip=result.displacements.find(x=>x.nodeId==="TIP").values,delta=Math.abs(tip[0]*ey[0]+tip[1]*ey[1]);
     errors.push(Math.abs(delta-exact)/exact*100);equilibrium.push(result.equilibrium.ok);
    });
-   return errors[0]>errors[1]&&errors[1]>errors[2]&&errors[2]>errors[3]&&errors[1]<0.5&&errors[2]<0.15&&equilibrium.every(Boolean)?"4/8/16/24-segment cantilever bending converges to Simpson-integrated variable-I reference; errors "+errors.map(x=>x.toFixed(3)+"%").join("/")+", equilibrium OK":false;
+   return errors[0]>errors[1]&&errors[1]>errors[2]&&errors[2]>errors[3]&&errors[1]<0.5&&errors[2]<0.15&&equilibrium.every(Boolean)?"4/8/16/24-segment inclined rafter cantilever bending converges to Simpson-integrated variable-I reference; errors "+errors.map(x=>x.toFixed(3)+"%").join("/")+", equilibrium OK":false;
   }finally{api.setData(old);}
  });
  test("tapered 3D axial convergence against analytical integral",()=>{
