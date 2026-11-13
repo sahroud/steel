@@ -54,7 +54,7 @@ function selfTest(){
  t("asymmetric section rejected",()=>!analyze({...base,sectionType:"channel"}).ok);
  t("local slenderness not reviewed rejected",()=>!analyze({...base,localSlendernessReviewed:false}).ok);
  t("slender elements require effective-area implementation",()=>!analyze({...base,localSlendernessClass:"slender"}).ok);
- t("slenderness above 200 blocked",()=>!analyze({...base,Lx_mm:30000,Ly_mm:30000,Lz_mm:30000}).ok);
+ t("large slenderness is reported without unverified cutoff",()=>{const r=analyze({...base,Lx_mm:30000,Ly_mm:30000,Lz_mm:30000});return r.ok&&r.slenderness.max>200&&r.warnings.some(x=>x.includes("سقف عددی"));});
  t("inelastic column curve branch",()=>fcrFromFe(235,200).branch==="inelastic");
  t("elastic column curve branch",()=>fcrFromFe(235,80).branch==="elastic");
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests,scope:"deterministic formula/software tests only"};
