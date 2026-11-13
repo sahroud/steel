@@ -390,7 +390,7 @@ function calculatePedestalRebar(baseCount){
   const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM);
   const pedComplete=pw&&pl&&ph,footingConcrete=footingRows.reduce((s,x)=>s+x.spec.width*x.spec.length*x.spec.thickness,0),pedConcrete=pedComplete?count*pw*pl*ph:0;
   const excavationDepth=num(state.excavationDepthM),clearance=state.workingSpaceM===""?null:Number(state.workingSpaceM);
-  const excavation=excavationDepth!==null&&clearance!==null&&clearance>=0?count*(w+2*clearance)*(l+2*clearance)*excavationDepth:null;
+  const excavation=excavationDepth!==null&&clearance!==null&&clearance>=0?footingRows.reduce((s,x)=>s+(x.spec.width+2*clearance)*(x.spec.length+2*clearance)*excavationDepth,0):null;
   const formFoot=footingRows.reduce((s,x)=>s+2*(x.spec.width+x.spec.length)*x.spec.thickness,0),formPed=pedComplete?count*2*(pw+pl)*ph:0;
   const anchors=state.anchorsPerBase!==""&&Number.isInteger(Number(state.anchorsPerBase))&&Number(state.anchorsPerBase)>=0?count*Number(state.anchorsPerBase):null;
   const tieCount=state.tieCount!==""&&Number.isInteger(Number(state.tieCount))&&Number(state.tieCount)>=0?Number(state.tieCount):null;
@@ -675,5 +675,5 @@ function calculatePedestalRebar(baseCount){
  function getData(){readInputs();return JSON.parse(JSON.stringify({...state,footingSchedule}));}
  function setData(d){if(!d||typeof d!=="object")return;footingSchedule=d.footingSchedule&&typeof d.footingSchedule==="object"?JSON.parse(JSON.stringify(d.footingSchedule)):{};keys.forEach(k=>{if(d[k]!==undefined)state[k]=d[k];const el=$(map[k]);if(el)el.value=state[k]??"";});if(!state.footingClass)state.footingClass="main";if(state.footingWidthM==="")state.footingWidthM="1.80";if(state.footingLengthM==="")state.footingLengthM="1.80";if(state.footingThicknessM==="")state.footingThicknessM="0.80";if(state.bottomBarDiaXmm==="")state.bottomBarDiaXmm="16";if(state.bottomBarSpacingXmm==="")state.bottomBarSpacingXmm="150";if(state.bottomBarDiaZmm==="")state.bottomBarDiaZmm="16";if(state.bottomBarSpacingZmm==="")state.bottomBarSpacingZmm="150";keys.forEach(k=>{const el=$(map[k]);if(el)el.value=state[k]??"";});}
  document.addEventListener("DOMContentLoaded",()=>{panel();$("ftClass")?.addEventListener("change",e=>applyFootingClass(e.target.value));});
- window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,footingDatumGeometry,applyFootingClass,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildFootingRebarGeometry,footingGridSpecs,footingDatumGeometry,defaultFootingSpec,footingSpecFor,calculateFootingRebar,applyFootingClass,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
 })();
