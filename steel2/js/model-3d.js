@@ -355,7 +355,7 @@
         const parsed=parseRunwayRailFEMInputs(readRunwayRailFEMInputs(),layoutAudit.supportStations||[]);
         const input={length_m:g.length,E_MPa:layout.E_MPa,Ix_mm4:layout.Ix_mm4,propertySource:layout.propertySource,continuity:layout.continuity,jointPositions_m:layoutAudit.jointPositions_m||[],supportStations_m:layoutAudit.supportStations||[],verticalSpringStiffness_N_m:parsed.verticalSpringStiffness_N_m,supportStiffnessSource:parsed.supportStiffnessSource,pointLoads:parsed.pointLoads};
         const result=analyzeCraneRail(input);box.textContent=JSON.stringify(result,null,2);box.style.color=result.success&&result.equilibrium?.ok?"#166534":"#b45309";
-        if(result.success&&!result.equilibrium?.ok)box.textContent+="\\nهشدار: تعادل کلی در تلرانس کنترل‌شده برقرار نیست؛ نتیجه قابل استفاده نیست.";
+        if(result.success&&!result.equilibrium?.ok)box.textContent+="\nهشدار: تعادل کلی در تلرانس کنترل‌شده برقرار نیست؛ نتیجه قابل استفاده نیست.";
       } catch(e) {box.textContent="تحلیل اجرا نشد: "+e.message;box.style.color="#b45309";}
     });
     $("btnCheck3DSections").addEventListener("click", function () {
