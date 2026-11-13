@@ -132,6 +132,11 @@
             data.sections = window.SteelSections.read();
         }
 
+        if (window.SteelMemberDesignInputs &&
+            typeof window.SteelMemberDesignInputs.readUI === "function") {
+            data.memberDesignInputs = window.SteelMemberDesignInputs.readUI();
+        }
+
         if (window.SteelOpenings &&
             typeof window.SteelOpenings.getData === "function") {
             data.openings = window.SteelOpenings.getData();
@@ -472,6 +477,11 @@
 
         if (window.SteelGeotechnicalData && typeof window.SteelGeotechnicalData.setData === "function") {
             window.SteelGeotechnicalData.setData(data.geotechnicalData || {});
+        }
+
+        if (window.SteelMemberDesignInputs &&
+            typeof window.SteelMemberDesignInputs.setData === "function") {
+            window.SteelMemberDesignInputs.setData(data.memberDesignInputs || {});
         }
 
         if (window.SteelDesignCore && typeof window.SteelDesignCore.setData === "function") {
