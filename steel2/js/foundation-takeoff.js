@@ -143,10 +143,24 @@ function modelFingerprint(model){
    $("foundationTakeoffSummary").textContent="مدل، مقاطع یا بارها پس از آخرین تحلیل تغییر کرده‌اند (یا نتیجه با نسخه قدیمی حل‌گر تولید شده است). برای جلوگیری از متره اشتباه، ابتدا تحلیل سه‌بعدی را دوباره اجرا کنید.";
    return;
   }
-  const reactionMap=new Map(result.reactions.map(r=>[r.nodeId,r]));
-  const rows=model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>{
-   const r=reactionMap.get(n.id);
-   return {nodeId:n.id,x:Number(n.x)||0,y:Number(n.y),z:Number(n.z)||0,kind:n.kind,hasReaction:!!r,values:r?(r.values||[]).slice(0,6).map(v=>Number(v)||0):[0,0,0,0,0,0]};
+  const reactionMap=new Map();
+  for(const reaction of result.reactions){
+   if(!reaction||reaction.nodeId==null||reactionMap.has(String(reaction.nodeId))){
+    $("foundationTakeoffSummary").textContent="شناسه واکنش خالی یا تکراری است؛ استخراج فونداسیون متوقف شد.";return;
+   }
+   if(!Array.isArray(reaction.values)||reaction.values.length<6||reaction.values.slice(0,6).some(v=>!Number.isFinite(Number(v)))){
+    $("foundationTakeoffSummary").textContent="بردار واکنش شش‌مؤلفه‌ای نامعتبر برای گره "+reaction.nodeId+"؛ استخراج فونداسیون متوقف شد.";return;
+   }
+   reactionMap.set(String(reaction.nodeId),reaction.values.slice(0,6).map(Number));
+  }
+  const supportNodes=model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base");
+  const missing=supportNodes.filter(n=>!reactionMap.has(String(n.id))).map(n=>n.id);
+  if(!supportNodes.length||missing.length){
+   $("foundationTakeoffSummary").textContent=missing.length?"واکنش این گره‌های پایه در حل‌گر موجود نیست: "+missing.join("، ")+"؛ مقدار صفر جایگزین نشد.":"هیچ گره پایه‌ای در مدل وجود ندارد.";return;
+  }
+  const rows=supportNodes.map(n=>{
+   const values=reactionMap.get(String(n.id));
+   return {nodeId:n.id,x:Number(n.x),y:Number(n.y),z:Number(n.z),kind:n.kind,hasReaction:true,values:values.slice()};
   }).sort((a,b)=>a.z-b.z||a.x-b.x);
   if(!rows.length){$("foundationTakeoffSummary").textContent="هیچ گره پایه‌ای در مدل هندسی پیدا نشد؛ ساخت مدل و نوع تکیه‌گاه را بررسی کنید.";return;}
   const body=$("foundationReactionRows");body.replaceChildren();
