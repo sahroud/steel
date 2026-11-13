@@ -83,6 +83,22 @@ export function rectangularPanelTributaryShares({ width_m, height_m, supports })
       errors.push(`supports[${i}] interval must lie within its panel edge`);
     }
   });
+  const ids = supports.map(s => s && s.id).filter(Boolean);
+  if (new Set(ids).size !== ids.length) errors.push("support ids must be unique");
+  for (const edge of EDGES) {
+    const group = supports.filter(s => s && s.edge === edge).slice().sort((a, b) => a.start_m - b.start_m);
+    if (!group.length) continue;
+    const edgeLength = edge === "left" || edge === "right" ? height_m : width_m;
+    if (Math.abs(group[0].start_m) > EPS) errors.push(`supports on ${edge} must cover the edge from 0 m`);
+    for (let i = 1; i < group.length; i++) {
+      if (Math.abs(group[i].start_m - group[i - 1].end_m) > EPS) {
+        errors.push(`supports on ${edge} must be contiguous without gaps or overlaps`);
+      }
+    }
+    if (Math.abs(group[group.length - 1].end_m - edgeLength) > EPS) {
+      errors.push(`supports on ${edge} must cover the edge through ${edgeLength} m`);
+    }
+  }
   if (errors.length) return { status: "blocked", shares: [], total_area_m2: 0, error_m2: 0, errors };
 
   const activeEdges = [...new Set(supports.map(s => s.edge))];
