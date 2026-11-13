@@ -223,6 +223,22 @@ function analyze(model,options){
   K[globalDof][globalDof]+=stiffness;
   nodalSprings.push({nodeId:spring.nodeId,nodeIndex:ni,dof,globalDof,stiffness,kind:dof<3?"translational":"rotational"});
  });
+ const connectorSprings=[];
+ (options.connectorSprings||[]).forEach((spring,index)=>{
+  const ni=nodeMap.get(spring.nodeI),nj=nodeMap.get(spring.nodeJ);
+  if(ni===undefined||nj===undefined)throw Error("گره ابتدا یا انتهای فنر رابط شماره "+(index+1)+" یافت نشد.");
+  if(ni===nj)throw Error("فنر رابط باید دو شناسه گره مستقل داشته باشد.");
+  const dof=Number(spring.dof),stiffness=Number(spring.stiffness);
+  if(!Number.isInteger(dof)||dof<0||dof>5)throw Error("درجه آزادی فنر رابط باید عدد صحیح بین 0 تا 5 باشد.");
+  if(!(Number.isFinite(stiffness)&&stiffness>0))throw Error("سختی فنر رابط باید عددی مثبت و محدود باشد.");
+  const a=nodes[ni],b=nodes[nj],separation=Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+  if(separation>1e-6)throw Error("گره‌های فنر رابط باید هم‌مکان باشند؛ انتقال نیرو بین گره‌های جدا از هم بدون بازوی صلب/هندسه اتصال مجاز نیست.");
+  const iDof=ni*6+dof,jDof=nj*6+dof;
+  K[iDof][iDof]+=stiffness;K[jDof][jDof]+=stiffness;
+  K[iDof][jDof]-=stiffness;K[jDof][iDof]-=stiffness;
+  connectorSprings.push({id:spring.id||("CONNECTOR_SPRING_"+(index+1)),nodeI:spring.nodeI,nodeJ:spring.nodeJ,nodeIndexI:ni,nodeIndexJ:nj,dof,stiffness,kind:dof<3?"translational":"rotational",globalDofI:iDof,globalDofJ:jDof});
+ });
+
 
  const free=Array.from({length:nDof},(_,i)=>i).filter(i=>!fixed.has(i));
  if(!free.length)throw Error("تمام درجات آزادی مقید شده‌اند.");
@@ -322,7 +338,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>(fixed.has(i*6+d)?v:0)+springReactionByDof[i*6+d])})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,nodalSpringCount:nodalSprings.length,nodalSprings:nodalSprings.map(s=>({nodeId:s.nodeId,dof:s.dof,stiffness:s.stiffness,kind:s.kind,reaction:springReactionByDof[s.globalDof]})),displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","فنرهای گره‌ای خطی مستقل در درجات آزادی سراسری با سختی ثابت؛ بدون تماس، لغزش، لقی یا هیسترزیس","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,nodalSpringCount:nodalSprings.length,nodalSprings:nodalSprings.map(s=>({nodeId:s.nodeId,dof:s.dof,stiffness:s.stiffness,kind:s.kind,reaction:springReactionByDof[s.globalDof]})),connectorSpringCount:connectorSprings.length,connectorSprings:connectorSprings.map(s=>{const ui=D[s.globalDofI],uj=D[s.globalDofJ],relativeDisplacement=uj-ui;return {id:s.id,nodeI:s.nodeI,nodeJ:s.nodeJ,dof:s.dof,stiffness:s.stiffness,kind:s.kind,relativeDisplacement,springForceOnNodeI:s.stiffness*relativeDisplacement,springForceOnNodeJ:-s.stiffness*relativeDisplacement};}),displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","فنرهای گره‌ای خطی مستقل به زمین و فنرهای رابط دوگرهی بین گره‌های هم‌مکان؛ سختی ثابت، بدون تماس، لغزش، لقی یا هیسترزیس","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 
 function selfTest(){
@@ -389,6 +405,14 @@ function selfTest(){
   const ok=close(rotation,expected,1e-7)&&close(springReaction,-kSpring*expected,1e-7)&&result.equilibrium.ok;
   tests.push({name:"rotational-nodal-spring-cantilever",ok,actualRotationRad:rotation,expectedRotationRad:expected,springReactionNm:springReaction,equilibrium:result.equilibrium.ok});
  }catch(e){tests.push({name:"rotational-nodal-spring-cantilever",ok:false,error:String(e.message||e)});}
+ try{
+  const kBeam=3*E*Iz/Math.pow(L,3),kConnector=1.8e5,P=-1000;
+  const model={nodes:[{id:"A1",x:0,y:0,z:0},{id:"B1",x:L,y:0,z:0},{id:"A2",x:0,y:0,z:0},{id:"B2",x:L,y:0,z:0}],members:[{id:"M1",start:"A1",end:"B1",type:"validation"},{id:"M2",start:"A2",end:"B2",type:"validation"}]};
+  const result=analyze(model,{sectionResolver:()=>section,supports:[{nodeId:"A1",fixedDofs:[0,1,2,3,4,5]},{nodeId:"A2",fixedDofs:[0,1,2,3,4,5]}],nodalLoads:[{nodeId:"B1",values:[0,P,0,0,0,0]}],connectorSprings:[{id:"PAD",nodeI:"B1",nodeJ:"B2",dof:1,stiffness:kConnector}]});
+  const u1=result.displacements.find(n=>n.nodeId==="B1").values[1],u2=result.displacements.find(n=>n.nodeId==="B2").values[1],expectedRelative=P/(kBeam+2*kConnector),spring=result.connectorSprings[0];
+  const ok=close(u2-u1,expectedRelative,1e-7)&&close(spring.springForceOnNodeI,kConnector*expectedRelative,1e-7)&&close(spring.springForceOnNodeI+spring.springForceOnNodeJ,0,1e-12)&&result.equilibrium.ok;
+  tests.push({name:"coincident-node-connector-spring",ok,relativeDisplacementM:u2-u1,expectedRelativeDisplacementM:expectedRelative,forceOnNodeIN:spring.springForceOnNodeI,equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"coincident-node-connector-spring",ok:false,error:String(e.message||e)});}
  try{
   const B=rigidArmTransform([0,-0.25,0]);
   const d=[0,0,0,1,0,0],u=mul(B,d.map(v=>[v])).map(r=>r[0]);
