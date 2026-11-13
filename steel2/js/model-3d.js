@@ -80,6 +80,22 @@
       '<div class="field"><label for="craneRunwayWheelContactLength">طول تماس مؤثر چرخ (mm)</label><input id="craneRunwayWheelContactLength" type="number" min="1" step="0.1"></div>' +
       '<div class="field"><label for="craneRunwayLoadPathSource">مرجع مقطع ریل/تماس چرخ</label><input id="craneRunwayLoadPathSource" type="text" placeholder="کاتالوگ ریل و سازنده جرثقیل"></div></div>' +
       '<div id="craneRunwayLoadPathAudit" class="notice">ممیزی هندسه ریل و تماس چرخ هنوز انجام نشده است.</div>' +
+      '<h4>جزئیات اتصال ریل، بست‌ها و پد زیر ریل</h4><div class="notice">مشخصات واقعی اتصال باید از نقشه اجرایی و کاتالوگ سازنده وارد شود. این بخش فقط کامل‌بودن و سازگاری اولیه داده‌ها را ممیزی می‌کند؛ نیروی هر بست، فشار پد، ظرفیت پیچ/گیره یا جوش و توزیع بار محاسبه نمی‌شود.</div>' +
+      '<div class="form-grid"><div class="field"><label for="craneRunwayFasteningType">نوع اتصال ریل</label><select id="craneRunwayFasteningType"><option value="">انتخاب نشده</option><option value="clip">کلیپس/گیره مکانیکی</option><option value="bolted">اتصال پیچی مستقیم</option><option value="welded">اتصال جوشی</option><option value="other">سایر / جزئیات خاص</option></select></div>' +
+      '<div class="field"><label for="craneRunwayFasteningModel">مدل/سازنده بست یا گیره</label><input id="craneRunwayFasteningModel" type="text" placeholder="شماره قطعه و سازنده"></div>' +
+      '<div class="field"><label for="craneRunwayClampsPerStation">تعداد بست در هر ایستگاه</label><input id="craneRunwayClampsPerStation" type="number" min="1" step="1"></div>' +
+      '<div class="field"><label for="craneRunwayBoltsPerClamp">تعداد پیچ هر بست</label><input id="craneRunwayBoltsPerClamp" type="number" min="1" step="1"></div>' +
+      '<div class="field"><label for="craneRunwayBoltGrade">رده مقاومتی پیچ</label><input id="craneRunwayBoltGrade" type="text" placeholder="مثلاً 8.8 طبق نقشه"></div>' +
+      '<div class="field"><label for="craneRunwayBoltDiameter">قطر اسمی پیچ (mm)</label><input id="craneRunwayBoltDiameter" type="number" min="1" step="1"></div>' +
+      '<div class="field"><label for="craneRunwayRailSeatPlateWidth">عرض ورق زیرسری (mm)</label><input id="craneRunwayRailSeatPlateWidth" type="number" min="1" step="1"></div>' +
+      '<div class="field"><label for="craneRunwayRailSeatPlateLength">طول ورق زیرسری (mm)</label><input id="craneRunwayRailSeatPlateLength" type="number" min="1" step="1"></div>' +
+      '<div class="field"><label for="craneRunwayRailSeatPlateThickness">ضخامت ورق زیرسری (mm)</label><input id="craneRunwayRailSeatPlateThickness" type="number" min="1" step="0.5"></div>' +
+      '<div class="field"><label for="craneRunwayPadMaterial">جنس/مدل پد زیر ریل</label><input id="craneRunwayPadMaterial" type="text" placeholder="الاستومر و مشخصه سازنده"></div>' +
+      '<div class="field"><label for="craneRunwayPadHardness">سختی پد (Shore A)</label><input id="craneRunwayPadHardness" type="number" min="1" max="100" step="1"></div>' +
+      '<div class="field"><label for="craneRunwayPadModulus">مدول فشاری پد (MPa، در صورت وجود)</label><input id="craneRunwayPadModulus" type="number" min="0.01" step="0.01"></div>' +
+      '<div class="field"><label for="craneRunwayRailWeldSize">اندازه جوش اتصال ریل (mm، در صورت جوشی)</label><input id="craneRunwayRailWeldSize" type="number" min="1" step="0.5"></div>' +
+      '<div class="field"><label for="craneRunwayFasteningDetailSource">مرجع نقشه/کاتالوگ بست، پیچ، ورق و پد</label><input id="craneRunwayFasteningDetailSource" type="text" placeholder="شماره نقشه، صفحه کاتالوگ و ویرایش"></div></div>' +
+      '<div id="craneRunwayFasteningAudit" class="notice">ممیزی جزئیات بست و پد هنوز انجام نشده است.</div>' +
       '<div class="form-grid">' +
       '<div class="field"><label for="modelPurlinSpacing">فاصله پرلین‌های سقف (m)</label><input id="modelPurlinSpacing" type="number" min="0.3" step="0.05" value="0.95"></div>' +
       '<div class="field"><label for="modelPurlinClipDeduction">کسر مجموع دو انتهای کلیپس از طول برش هر پرلین (m)</label><input id="modelPurlinClipDeduction" type="number" min="0" step="0.005" value="0"></div>' +
@@ -349,6 +365,24 @@
   function readRunwayStiffenerInputs(){const out={};Object.entries(RUNWAY_STIFFENER_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(!el)return;const raw=String(el.value??"").trim();if(raw!=="")out[key]=["stiffenerWidth_mm","stiffenerThickness_mm","stiffenerWeldSize_mm","bearingLength_mm","wheelLoadOffset_mm"].includes(key)?Number(raw):raw;});return out;}
   const RUNWAY_LOAD_PATH_FIELD_IDS={railHeight_mm:"craneRunwayRailHeight",railBaseWidth_mm:"craneRunwayRailBaseWidth",railFootThickness_mm:"craneRunwayRailFootThickness",railPadThickness_mm:"craneRunwayRailPadThickness",fasteningSpacing_mm:"craneRunwayFasteningSpacing",wheelContactWidth_mm:"craneRunwayWheelContactWidth",wheelContactLength_mm:"craneRunwayWheelContactLength",loadPathSource:"craneRunwayLoadPathSource"};
   function readRunwayLoadPathInputs(){const out={};Object.entries(RUNWAY_LOAD_PATH_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(!el)return;const raw=String(el.value??"").trim();if(raw!=="")out[key]=["railHeight_mm","railBaseWidth_mm","railFootThickness_mm","railPadThickness_mm","fasteningSpacing_mm","wheelContactWidth_mm","wheelContactLength_mm"].includes(key)?Number(raw):raw;});return out;}
+  const RUNWAY_FASTENING_FIELD_IDS={fasteningType:"craneRunwayFasteningType",fasteningModel:"craneRunwayFasteningModel",clampsPerStation:"craneRunwayClampsPerStation",boltsPerClamp:"craneRunwayBoltsPerClamp",boltGrade:"craneRunwayBoltGrade",boltDiameter_mm:"craneRunwayBoltDiameter",seatPlateWidth_mm:"craneRunwayRailSeatPlateWidth",seatPlateLength_mm:"craneRunwayRailSeatPlateLength",seatPlateThickness_mm:"craneRunwayRailSeatPlateThickness",padMaterial:"craneRunwayPadMaterial",padHardness_ShoreA:"craneRunwayPadHardness",padCompressionModulus_MPa:"craneRunwayPadModulus",railWeldSize_mm:"craneRunwayRailWeldSize",detailSource:"craneRunwayFasteningDetailSource"};
+  function readRunwayFasteningInputs(){const out={};Object.entries(RUNWAY_FASTENING_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(!el)return;const raw=String(el.value??"").trim();if(raw!=="")out[key]=["clampsPerStation","boltsPerClamp","boltDiameter_mm","seatPlateWidth_mm","seatPlateLength_mm","seatPlateThickness_mm","padHardness_ShoreA","padCompressionModulus_MPa","railWeldSize_mm"].includes(key)?Number(raw):raw;});return out;}
+  function auditRunwayFasteningDetail(loadPath,detail){
+    loadPath=loadPath||{};detail=detail||{};
+    const required=["fasteningType","seatPlateWidth_mm","seatPlateLength_mm","seatPlateThickness_mm","padMaterial","padHardness_ShoreA","detailSource"];
+    const missing=required.filter(k=>detail[k]===undefined||detail[k]===null||detail[k]==="");
+    if(["clip","bolted"].includes(detail.fasteningType))["fasteningModel","clampsPerStation","boltsPerClamp","boltGrade","boltDiameter_mm"].forEach(k=>{if(detail[k]===undefined||detail[k]===null||detail[k]==="")missing.push(k);});
+    if(detail.fasteningType==="welded"&&(detail.railWeldSize_mm===undefined||detail.railWeldSize_mm===""))missing.push("railWeldSize_mm");
+    const numeric=["seatPlateWidth_mm","seatPlateLength_mm","seatPlateThickness_mm","padHardness_ShoreA","padCompressionModulus_MPa","clampsPerStation","boltsPerClamp","boltDiameter_mm","railWeldSize_mm"];
+    const invalid=numeric.filter(k=>detail[k]!==undefined&&(!Number.isFinite(detail[k])||detail[k]<=0));
+    if(detail.padHardness_ShoreA!==undefined&&Number.isFinite(detail.padHardness_ShoreA)&&detail.padHardness_ShoreA>100)invalid.push("padHardness_ShoreA_out_of_range");
+    const dimensional=[];
+    if(Number.isFinite(loadPath.railBaseWidth_mm)&&Number.isFinite(detail.seatPlateWidth_mm)&&detail.seatPlateWidth_mm<loadPath.railBaseWidth_mm)dimensional.push("عرض ورق زیرسری از عرض کف ریل کمتر است؛ آرایش نشیمن باید بازبینی شود.");
+    if(Number.isFinite(loadPath.railPadThickness_mm)&&loadPath.railPadThickness_mm<=0)dimensional.push("ضخامت پد زیر ریل باید مثبت باشد.");
+    if(detail.fasteningType==="other")dimensional.push("نوع اتصال «سایر» است؛ جزئیات اختصاصی باید توسط طراح بررسی و تعریف شود.");
+    const ready=missing.length===0&&invalid.length===0&&dimensional.length===0;
+    return {ready,missing,invalid,dimensional,analysisEnabled:false,note:"این ممیزی ظرفیت پیچ/گیره/جوش، لغزش و بلندشدگی ریل، فشار و سختی پد، خمش ورق زیرسری یا سهم نیروی هر بست را محاسبه نمی‌کند. فاصله بست‌ها به‌تنهایی مجوز تقسیم یکنواخت بار چرخ نیست."};
+  }
   function calculateNominalWheelContactScreen(detail,crane){
     detail=detail||{};crane=crane||{};
     const missing=[];
@@ -402,7 +436,7 @@
   function buildCraneRunwayGeometry(config){
     if(!config.enabled)return {geometryStatus:"disabled",axisOffsetM:null,supportType:"",beamSegments:[],brackets:[],supportNodes:[]};
     const {span,frames,runwayElevation,offsetM,supportType,sectionInputs={},sectionAudit={}}=config;
-    if(!(Number.isFinite(offsetM)&&offsetM>=0.05))return {geometryStatus:"awaiting_axis_offset",axisOffsetM:null,supportType,beamSegments:[],brackets:[],supportNodes:[],sectionInputs,sectionAudit,sectionProperties:calculateRunwayBuiltupIProperties(sectionInputs),stiffenerInputs:config.stiffenerInputs||{},webAudit:config.webAudit||{},loadPathInputs:config.loadPathInputs||{},loadPathAudit:config.loadPathAudit||{},contactScreen:config.contactScreen||{available:false,analysisEnabled:false},analysisEnabled:false,geometryNote:"فاصله محور تیر حمال از محور ستون باید از نقشه یا جزئیات سازنده وارد شود؛ مشخصات مقطع ثبت‌شده حفظ شده‌اند."};
+    if(!(Number.isFinite(offsetM)&&offsetM>=0.05))return {geometryStatus:"awaiting_axis_offset",axisOffsetM:null,supportType,beamSegments:[],brackets:[],supportNodes:[],sectionInputs,sectionAudit,sectionProperties:calculateRunwayBuiltupIProperties(sectionInputs),stiffenerInputs:config.stiffenerInputs||{},webAudit:config.webAudit||{},loadPathInputs:config.loadPathInputs||{},loadPathAudit:config.loadPathAudit||{},contactScreen:config.contactScreen||{available:false,analysisEnabled:false},fasteningInputs:config.fasteningInputs||{},fasteningAudit:config.fasteningAudit||{ready:false,analysisEnabled:false},analysisEnabled:false,geometryNote:"فاصله محور تیر حمال از محور ستون باید از نقشه یا جزئیات سازنده وارد شود؛ مشخصات مقطع ثبت‌شده حفظ شده‌اند."};
     const sides=[{key:"left",columnX:0,beamX:-offsetM},{key:"right",columnX:span,beamX:span+offsetM}];
     const supportNodes=[],brackets=[],beamSegments=[];
     sides.forEach(side=>{
@@ -415,7 +449,7 @@
       for(let i=0;i<line.length-1;i++)beamSegments.push({id:"CRANE_"+side.key.toUpperCase()+"_BEAM_BAY_"+(i+1),side:side.key,bayIndex:i+1,start:line[i],end:line[i+1],lengthM:Math.abs(line[i+1].z-line[i].z),continuity:"separate_span_segment_between_adjacent_frames",analysisEnabled:false,connectionType:supportType||"unselected"});
     });
     const sectionProperties=calculateRunwayBuiltupIProperties(sectionInputs);
-    return {geometryStatus:supportType?"geometry_only_review_required":"geometry_only_connection_unselected",axisOffsetM:offsetM,supportType,beamSegments,brackets,supportNodes,sectionInputs,sectionAudit,sectionProperties,stiffenerInputs:config.stiffenerInputs||{},webAudit:config.webAudit||{},loadPathInputs:config.loadPathInputs||{},loadPathAudit:config.loadPathAudit||{},analysisEnabled:false,geometryNote:"تیر حمال به قطعات مستقل بین قاب‌های مجاور تقسیم شده است؛ پیوستگی چنددهانه، سختی اتصال و انتقال نیرو هنوز مدل نشده‌اند."};
+    return {geometryStatus:supportType?"geometry_only_review_required":"geometry_only_connection_unselected",axisOffsetM:offsetM,supportType,beamSegments,brackets,supportNodes,sectionInputs,sectionAudit,sectionProperties,stiffenerInputs:config.stiffenerInputs||{},webAudit:config.webAudit||{},loadPathInputs:config.loadPathInputs||{},loadPathAudit:config.loadPathAudit||{},fasteningInputs:config.fasteningInputs||{},fasteningAudit:config.fasteningAudit||{ready:false,analysisEnabled:false},analysisEnabled:false,geometryNote:"تیر حمال به قطعات مستقل بین قاب‌های مجاور تقسیم شده است؛ پیوستگی چنددهانه، سختی اتصال و انتقال نیرو هنوز مدل نشده‌اند."};
   }
   function runwayGeometrySelfTest(){
     const normal=runwayColumnLevels(0,[2,4,6],10,5,true);
@@ -433,6 +467,8 @@
     const loadPathBad=auditRunwayLoadPath({flangeWidth_mm:100},{railHeight_mm:100,railBaseWidth_mm:140,railFootThickness_mm:120,railPadThickness_mm:-1,fasteningSpacing_mm:0,wheelContactWidth_mm:160,wheelContactLength_mm:40,loadPathSource:""});
     const contactGood=calculateNominalWheelContactScreen({wheelContactWidth_mm:80,wheelContactLength_mm:40},{enabled:true,maxWheelLoad_t:10,wheelLoadSource:"catalog",wheelLoadDocument:"page 4"});
     const contactMissing=calculateNominalWheelContactScreen({wheelContactWidth_mm:80,wheelContactLength_mm:40},{enabled:true,maxWheelLoad_t:10,wheelLoadSource:"",wheelLoadDocument:""});
+    const fasteningGood=auditRunwayFasteningDetail({railBaseWidth_mm:140,railPadThickness_mm:8},{fasteningType:"clip",fasteningModel:"clip-X",clampsPerStation:2,boltsPerClamp:2,boltGrade:"8.8",boltDiameter_mm:16,seatPlateWidth_mm:180,seatPlateLength_mm:200,seatPlateThickness_mm:16,padMaterial:"elastomer",padHardness_ShoreA:70,detailSource:"detail F-01"});
+    const fasteningBad=auditRunwayFasteningDetail({railBaseWidth_mm:200,railPadThickness_mm:0},{fasteningType:"clip",seatPlateWidth_mm:100,seatPlateLength_mm:-1,seatPlateThickness_mm:0,padMaterial:"",padHardness_ShoreA:120,detailSource:""});
     const checks=[
       normal.length===6&&normal.filter(x=>x.kind==="runway-support").length===1,
       duplicate.filter(x=>x.y===5).length===1&&duplicate.filter(x=>x.kind==="runway-support").length===1,
@@ -447,7 +483,9 @@
       loadPathGood.ready&&loadPathGood.analysisEnabled===false,
       !loadPathBad.ready&&loadPathBad.dimensional.length>=2&&loadPathBad.invalid.length>=2,
       contactGood.available&&Math.abs(contactGood.nominalAveragePressure_MPa-(10*9.80665*1000/(80*40)))<1e-9&&contactGood.analysisEnabled===false,
-      !contactMissing.available&&contactMissing.missing.length>=1
+      !contactMissing.available&&contactMissing.missing.length>=1,
+      fasteningGood.ready&&fasteningGood.analysisEnabled===false,
+      !fasteningBad.ready&&fasteningBad.missing.length>=1&&fasteningBad.invalid.length>=2&&fasteningBad.dimensional.length>=1
     ];
     return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
@@ -658,7 +696,9 @@
     const runwayLoadPathInputs=readRunwayLoadPathInputs();
     const runwayLoadPathAudit=auditRunwayLoadPath(runwaySectionInputs,runwayLoadPathInputs);
     const runwayContactScreen=calculateNominalWheelContactScreen(runwayLoadPathInputs,window.SteelCraneReadiness?.getData?.()||{});
-    const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType,sectionInputs:runwaySectionInputs,sectionAudit:runwaySectionAudit,stiffenerInputs:runwayStiffenerInputs,webAudit:runwayWebAudit,loadPathInputs:runwayLoadPathInputs,loadPathAudit:runwayLoadPathAudit,contactScreen:runwayContactScreen});
+    const runwayFasteningInputs=readRunwayFasteningInputs();
+    const runwayFasteningAudit=auditRunwayFasteningDetail(runwayLoadPathInputs,runwayFasteningInputs);
+    const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType,sectionInputs:runwaySectionInputs,sectionAudit:runwaySectionAudit,stiffenerInputs:runwayStiffenerInputs,webAudit:runwayWebAudit,loadPathInputs:runwayLoadPathInputs,loadPathAudit:runwayLoadPathAudit,contactScreen:runwayContactScreen,fasteningInputs:runwayFasteningInputs,fasteningAudit:runwayFasteningAudit});
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry},roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
     return model;
   }
