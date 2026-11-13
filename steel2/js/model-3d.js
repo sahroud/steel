@@ -966,7 +966,7 @@
     return new Promise((resolve,reject)=>{
       let worker;
       try{
-        worker=new Worker(new URL("js/analysis-3d-worker.js?v=20261113-force-signs2",window.location.href));
+        worker=new Worker(new URL("js/analysis-3d-worker.js?v=20261113-force-signs3",window.location.href));
       }catch(error){
         reject(new Error("امکان راه‌اندازی پردازشگر پس‌زمینه وجود ندارد: "+error.message));
         return;
