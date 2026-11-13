@@ -28,10 +28,10 @@ function getBaseData(){
  });
  const bars=[];
  for(const base of bases)for(const s of specs){
-  const cross=(s.direction==='X'?base.B:base.L)*1000-2*cover;
-  const parallel=(s.direction==='X'?base.L:base.B)*1000-2*cover;
+  const cross=(s.direction==='X'?base.L:base.B)*1000-2*cover;
+  const parallel=(s.direction==='X'?base.B:base.L)*1000-2*cover;
   if(cross<=0||parallel<=0||base.T*1000<=2*cover+s.dia)throw Error('پوشش یا قطر میلگرد با ابعاد پی '+base.nodeId+' سازگار نیست.');
-  const count=Math.floor(cross/s.spacing)+1,cutLengthM=parallel/1000,unitWeight=s.dia*s.dia/162;
+  const count=Math.ceil(cross/s.spacing)+1,cutLengthM=parallel/1000,unitWeight=s.dia*s.dia/162;
   for(let j=0;j<count;j++)bars.push({mark:s.mark,baseNodeId:base.nodeId,layer:s.layer,direction:s.direction,diaMm:s.dia,spacingMm:s.spacing,position:j+1,count,cutLengthM,unitWeightKgM:unitWeight,weightKg:cutLengthM*unitWeight});
  }
  return{fd,rep,cover,specs,bases,bars};
@@ -44,7 +44,7 @@ function svgSheet(base,d){
  s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="#e2e8f0" stroke="#334155" stroke-width="3"/>';
  const colors={bottom:'#dc2626',top:'#2563eb'};
  for(const sp of d.specs){
-  const cross=(sp.direction==='X'?base.B:base.L)*1000-2*d.cover,parallel=(sp.direction==='X'?base.L:base.B)*1000-2*d.cover,count=Math.floor(cross/sp.spacing)+1;
+  const cross=(sp.direction==='X'?base.L:base.B)*1000-2*d.cover,parallel=(sp.direction==='X'?base.B:base.L)*1000-2*d.cover,count=Math.ceil(cross/sp.spacing)+1;
   for(let j=0;j<count;j++){const p=count===1?.5:j/(count-1);if(sp.direction==='X'){const yy=y+d.cover/1000*scale+p*(h-2*d.cover/1000*scale);s+='<line x1="'+(x+d.cover/1000*scale)+'" y1="'+yy+'" x2="'+(x+w-d.cover/1000*scale)+'" y2="'+yy+'" stroke="'+colors[sp.layer]+'" stroke-width="2.4"/>';}else{const xx=x+d.cover/1000*scale+p*(w-2*d.cover/1000*scale);s+='<line x1="'+xx+'" y1="'+(y+d.cover/1000*scale)+'" x2="'+xx+'" y2="'+(y+h-d.cover/1000*scale)+'" stroke="'+colors[sp.layer]+'" stroke-width="2.4"/>';}}
  }
  s+='<text x="'+ox+'" y="'+(y+h+35)+'" text-anchor="middle" font-size="15" font-family="Tahoma" fill="#203746">پلان پی — شبکه‌های مستقیم؛ مقیاس شماتیک</text>';
