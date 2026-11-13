@@ -211,6 +211,19 @@ function analyze(model,options){
   const ni=nodeMap.get(s.nodeId);if(ni===undefined)throw Error("گره تکیه‌گاهی یافت نشد: "+s.nodeId);
   (s.fixedDofs||[]).forEach(d=>{if(!Number.isInteger(d)||d<0||d>5)throw Error("درجه آزادی تکیه‌گاه نامعتبر است.");fixed.add(ni*6+d);});
  });
+ const nodalSprings=[];
+ (options.nodalSprings||[]).forEach((spring,index)=>{
+  const ni=nodeMap.get(spring.nodeId);
+  if(ni===undefined)throw Error("گره فنر تکیه‌گاهی یافت نشد: "+spring.nodeId);
+  const dof=Number(spring.dof),stiffness=Number(spring.stiffness);
+  if(!Number.isInteger(dof)||dof<0||dof>5)throw Error("درجه آزادی فنر شماره "+(index+1)+" باید عدد صحیح بین 0 تا 5 باشد.");
+  if(!(Number.isFinite(stiffness)&&stiffness>0))throw Error("سختی فنر تکیه‌گاهی باید عددی مثبت و محدود باشد.");
+  const globalDof=ni*6+dof;
+  if(fixed.has(globalDof))throw Error("برای یک درجه آزادی، فنر و قید صلب هم‌زمان تعریف شده‌اند؛ گره "+spring.nodeId+"، درجه آزادی "+dof);
+  K[globalDof][globalDof]+=stiffness;
+  nodalSprings.push({nodeId:spring.nodeId,nodeIndex:ni,dof,globalDof,stiffness,kind:dof<3?"translational":"rotational"});
+ });
+
  const free=Array.from({length:nDof},(_,i)=>i).filter(i=>!fixed.has(i));
  if(!free.length)throw Error("تمام درجات آزادی مقید شده‌اند.");
  const Kff=free.map(i=>free.map(j=>K[i][j])),Ff=free.map(i=>F[i]);
@@ -251,6 +264,8 @@ function analyze(model,options){
  const D=Array(nDof).fill(0);
  free.forEach((id,i)=>D[id]=df[i]);
  const KD=K.map(r=>dot(r,D)),R=KD.map((v,i)=>v-F[i]);
+ const springReactionByDof=Array(nDof).fill(0);
+ nodalSprings.forEach(s=>{springReactionByDof[s.globalDof]-=s.stiffness*D[s.globalDof];});
  // Global equilibrium is evaluated from assembled equivalent nodal loads and
  // support reactions. Do not sum force and moment components into one scalar.
  const appliedForce=[0,0,0],appliedMoment=[0,0,0];
@@ -262,6 +277,11 @@ function analyze(model,options){
   targetMoment[1]+=rz*force[0]-rx*force[2];
   targetMoment[2]+=rx*force[1]-ry*force[0];
  };
+ nodes.forEach((node,i)=>{
+  const base=i*6,sf=springReactionByDof.slice(base,base+3),sm=springReactionByDof.slice(base+3,base+6);
+  addGlobal(sf,sm,node,supportForce,supportMoment);
+ });
+
  nodes.forEach((node,i)=>{
   const base=i*6,loadForce=F.slice(base,base+3),loadMoment=F.slice(base+3,base+6);
   addGlobal(loadForce,loadMoment,node,appliedForce,appliedMoment);
@@ -301,8 +321,8 @@ function analyze(model,options){
    maxDisplacement={nodeId:n.id,components,rotation:D.slice(i*6+3,i*6+6),magnitude};
   }
  });
- const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی یا فنر اتصال","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>(fixed.has(i*6+d)?v:0)+springReactionByDof[i*6+d])})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,nodalSpringCount:nodalSprings.length,nodalSprings:nodalSprings.map(s=>({nodeId:s.nodeId,dof:s.dof,stiffness:s.stiffness,kind:s.kind,reaction:springReactionByDof[s.globalDof]})),displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","فنرهای گره‌ای خطی مستقل در درجات آزادی سراسری با سختی ثابت؛ بدون تماس، لغزش، لقی یا هیسترزیس","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 
 function selfTest(){
@@ -345,6 +365,22 @@ function selfTest(){
   tests.push({name:"reject-double-torsion-release",ok:false});
  }catch(e){tests.push({name:"reject-double-torsion-release",ok:String(e.message||e).includes("پیچش")});}
 
+ try{
+  const kBeam=3*E*Iz/Math.pow(L,3),kSpring=2.5e5,P=-1000;
+  const result=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[0,P,0,0,0,0]}],nodalSprings:[{nodeId:"TIP",dof:1,stiffness:kSpring}]});
+  const delta=result.displacements.find(n=>n.nodeId==="TIP").values[1],expected=P/(kBeam+kSpring);
+  const springReaction=result.nodalSprings[0].reaction;
+  const ok=close(delta,expected,1e-7)&&close(springReaction,-kSpring*expected,1e-7)&&result.nodalSpringCount===1&&result.equilibrium.ok;
+  tests.push({name:"translational-nodal-spring-cantilever",ok,actualDisplacementM:delta,expectedDisplacementM:expected,springReactionN:springReaction,equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"translational-nodal-spring-cantilever",ok:false,error:String(e.message||e)});}
+ try{
+  analyze(makeModel(),{...base,nodalSprings:[{nodeId:"TIP",dof:1,stiffness:0}]});
+  tests.push({name:"reject-nonpositive-spring-stiffness",ok:false});
+ }catch(e){tests.push({name:"reject-nonpositive-spring-stiffness",ok:String(e.message||e).includes("مثبت")});}
+ try{
+  analyze(makeModel(),{...base,supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],nodalSprings:[{nodeId:"FIX",dof:1,stiffness:1e5}]});
+  tests.push({name:"reject-spring-on-fixed-degree",ok:false});
+ }catch(e){tests.push({name:"reject-spring-on-fixed-degree",ok:String(e.message||e).includes("هم‌زمان")});}
  try{
   const B=rigidArmTransform([0,-0.25,0]);
   const d=[0,0,0,1,0,0],u=mul(B,d.map(v=>[v])).map(r=>r[0]);
