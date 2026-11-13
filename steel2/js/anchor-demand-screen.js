@@ -88,7 +88,8 @@ function selfTest(){
  const checks=[["توزیع نیروی محوری برابر",r.bolts.every(b=>Math.abs(b.tensionKN-10)<1e-9)],["جمع برش X برابر ورودی",Math.abs(r.bolts.reduce((s,b)=>s+b.shearXKN,0)-20)<1e-9],["تقارن بدون لنگر",Math.abs(r.maxTensionKN-10)<1e-9]];
  const m=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:20,momentZ:0,shearX:0,shearZ:0,torsionY:0});
  checks.push(["لنگر حول X کشش ردیف‌ها را تفکیک می‌کند",m.bolts.some(b=>b.tensionKN>0)&&m.bolts.some(b=>b.tensionKN===0)]);
- const t=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:0,momentZ:0,shearX:0,shearZ:0,torsionY:12});\n checks.push(["پیچش حفظ می‌شود ولی بدون محاسبه صریح توزیع، طراحی‌نشده می‌ماند",t.torsionYKNm===12&&t.torsionDistributionStatus==="not_distributed_requires_separate_3D_anchor_group_check"]);
+ const t=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:0,momentZ:0,shearX:0,shearZ:0,torsionY:12});
+ checks.push(["پیچش حفظ می‌شود ولی بدون محاسبه صریح توزیع، طراحی‌نشده می‌ماند",t.torsionYKNm===12&&t.torsionDistributionStatus==="not_distributed_requires_separate_3D_anchor_group_check"]);
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
 root.SteelAnchorDemandScreen={distribute,run,getData,setData,getLast:()=>last?JSON.parse(JSON.stringify(last)):null,selfTest};
