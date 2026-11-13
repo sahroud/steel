@@ -560,7 +560,7 @@ function calculateFootingRebar(baseCount,B,L){
     if(grid.ok)grid.bars.forEach(bar=>isoLine(bar.a,bar.b,bar.layer==="bottom"?"#dc2626":"#2563eb",2));
    };
    drawFoot(pA);drawFoot(pB);
-   const start={x:pA.x+ux*B/2,y:pA.y,z:pA.z+uz*L/2},end={x:pB.x-ux*B/2,y:pB.y,z:pB.z-uz*L/2};
+   const halfProjection=(Math.abs(ux)*B+Math.abs(uz)*L)/2;const start={x:pA.x+ux*halfProjection,y:pA.y,z:pA.z+uz*halfProjection},end={x:pB.x-ux*halfProjection,y:pB.y,z:pB.z-uz*halfProjection};
    const corners=[
     {x:start.x+vx*beamW/2,y:start.y,z:start.z+vz*beamW/2},
     {x:end.x+vx*beamW/2,y:end.y,z:end.z+vz*beamW/2},
