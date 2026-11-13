@@ -100,6 +100,6 @@ function init(){
  anchor.insertAdjacentElement("afterend",p);render();
  $("btnCompressionCapacityRun")?.addEventListener("click",renderResults);
 }
-root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,render};
+root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,getSectionDefaults:sectionDefaults,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
