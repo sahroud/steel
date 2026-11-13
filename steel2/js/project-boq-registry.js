@@ -55,12 +55,12 @@ function buildSnapshot(data){
   add("foundation-pedestal-concrete","فونداسیون","بتن پدستال‌ها","m³",x.pedestalConcreteM3,"متره فونداسیون","فقط با تکمیل سه بعد پدستال");
   add("foundation-tie-concrete","شناژ","بتن شناژها","m³",x.tieConcreteM3,"متره فونداسیون","طول و مقطع از ورودی نقشه؛ مسیر خودکار حدس زده نمی‌شود");
   add("foundation-excavation","خاکی","حجم خاکبرداری","m³",x.excavationM3,"متره فونداسیون","عمق و فضای کار باید وارد شده باشد");
-  add("foundation-footing-pedestal-formwork","قالب‌بندی","قالب جانبی پی و پدستال","m²",finite(x.sideFormworkM2)&&finite(x.tieSideFormworkM2)?Number(x.sideFormworkM2)-Number(x.tieSideFormworkM2):null,"متره فونداسیون","قالب کف منظور نشده؛ از جمع قالب جانبی کل منهای شناژ");
+  add("foundation-footing-pedestal-formwork","قالب‌بندی","قالب جانبی پی و پدستال","m²",finite(x.sideFormworkM2)?Number(x.sideFormworkM2)-(finite(x.tieSideFormworkM2)?Number(x.tieSideFormworkM2):0):null,"متره فونداسیون","قالب کف منظور نشده؛ از جمع قالب جانبی کل منهای شناژ");
   add("foundation-tie-formwork","قالب‌بندی","قالب جانبی شناژ","m²",x.tieSideFormworkM2,"متره فونداسیون","قالب کف شناژ منظور نشده");
   add("foundation-footing-rebar","آرماتور","وزن شبکه آرماتور پی","kg",x.footingRebarKg,"متره فونداسیون","جزئیات قلاب/وصله فقط اگر در طول برش لحاظ شده باشد", {aggregationRole:"summary"});
   add("foundation-pedestal-rebar","آرماتور","وزن آرماتور پدستال","kg",x.pedestalRebarKg,"متره فونداسیون","بر اساس تعداد و طول برش واردشده");
   add("foundation-tie-rebar","آرماتور","وزن آرماتور شناژ","kg",x.tieRebarKg,"متره فونداسیون","بر اساس kg/m واردشده؛ نه جدول خم و برش کامل");
-  if(!a)add("foundation-anchor-count","انکر","تعداد بولت بر اساس ورودی پایه","عدد",x.anchorsCount,"متره فونداسیون","تعداد بولت در هر پایه واردشده");
+  if(!finite(a?.boltCount))add("foundation-anchor-count","انکر","تعداد بولت بر اساس ورودی پایه","عدد",x.anchorsCount,"متره فونداسیون","تعداد بولت در هر پایه واردشده");
   (x.footingRebar?.rows||[]).forEach((r,i)=>add("foundation-rebar-"+i,"آرماتور","شبکه "+r.layer+" راستای "+r.direction,"kg",r.totalWeightKg,"جدول آرماتور پی","قطر، فاصله و طول مستقیم ثبت‌شده"));
  }else warnings.push("متره فونداسیون هنوز پس از استخراج واکنش‌ها محاسبه نشده است.");
  if(a){
