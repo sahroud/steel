@@ -65,6 +65,31 @@ function analyze(input){
  const maxDeflection=D.filter((_,i)=>i%2===0).reduce((best,v,i)=>Math.abs(v)>Math.abs(best.value)?{value:v,x_m:mesh[i]}:best,{value:0,x_m:0});
  return {success:true,method:"linear Euler-Bernoulli beam FEM with cubic Hermite interpolation",units:{force:"N",length:"m",moment:"N.m",verticalSpring:"N/m",rotationalSpring:"N.m/rad"},length_m:length,EI_Nm2:EI,nodeCount:n,elementCount:elements.length,supportCount:springRows.length,pointLoadCount:loads.length,nodes:mesh.map((x,i)=>({x_m:x,verticalDisplacement_m:D[2*i],rotation_rad:D[2*i+1]})),supports:springReactions,loads:loadAudit,elements:elementResults,maxNodalDeflection:maxDeflection,equilibrium:{verticalLoad_N:totalLoad,verticalReaction_N:totalReaction,verticalResidual_N:totalLoad+totalReaction,globalMoment_Nm:appliedMoment+reactionMoment,ok:Math.abs(totalLoad+totalReaction)<=Math.max(1e-5,Math.abs(totalLoad)*1e-7)&&Math.abs(appliedMoment+reactionMoment)<=Math.max(1e-5,Math.abs(appliedMoment)*1e-7)},analysisEnabled:true,limitations:["Linear elastic Euler-Bernoulli beam; shear deformation and warping torsion omitted.","Small displacement, constant EI per run; no geometric or material nonlinearity.","Support springs are independent scalar vertical/rotational springs; no uplift-only contact, gap, friction, slip, hysteresis or coupled stiffness.","Point loads between nodes are transferred by cubic Hermite shape functions; wheel load dynamics/impact are not included.","Rail joints, fishplates, weld continuity, lateral restraint and torsional behavior require separately verified models.","Not a code-compliance design or approval; support stiffness and section properties must be documented."]};
 }
+function auditReadiness(input){
+ const p=input||{},issues=[],L=Number(p.length_m),E=Number(p.E_MPa),I=Number(p.Ix_mm4);
+ if(!(Number.isFinite(L)&&L>0))issues.push("طول ریل معتبر نیست.");
+ if(!(Number.isFinite(E)&&E>0))issues.push("مدول الاستیسیته مستند و مثبت لازم است.");
+ if(!(Number.isFinite(I)&&I>0))issues.push("ممان اینرسی حول محور خمش قائم با مرجع معتبر لازم است.");
+ if(!String(p.propertySource||"").trim())issues.push("مرجع خواص مقطع ریل ثبت نشده است.");
+ if(p.continuity!=="continuous")issues.push("این نسخه فقط ریل پیوسته با رفتار خمشی پیوسته را می‌پذیرد؛ حالت ساده‌تکیه‌گاهی/وصله نامشخص هنوز مدل نشده است.");
+ if(Array.isArray(p.jointPositions_m)&&p.jointPositions_m.some(x=>Number(x)>1e-8&&Number(x)<L-1e-8))issues.push("برای وصله‌های میانی، جزئیات انتقال برش و لنگر و پیوستگی دورانی باید پیش از تحلیل مشخص شود.");
+ const stations=Array.isArray(p.supportStations_m)?p.supportStations_m:[],ks=Array.isArray(p.verticalSpringStiffness_N_m)?p.verticalSpringStiffness_N_m:[];
+ if(stations.length<2)issues.push("حداقل دو ایستگاه تکیه‌گاهی لازم است.");
+ if(ks.length!==stations.length||ks.some(k=>!(Number.isFinite(Number(k))&&Number(k)>0)))issues.push("برای تک‌تک ایستگاه‌ها سختی قائم مثبت و مستند لازم است.");
+ if(!String(p.supportStiffnessSource||"").trim())issues.push("مرجع سختی قائم بست/پد ثبت نشده است.");
+ const loads=Array.isArray(p.pointLoads)?p.pointLoads:[];
+ if(!loads.length)issues.push("قطار چرخ مستند و بارهای قائم چرخ لازم است.");
+ loads.forEach((l,i)=>{if(!(Number.isFinite(Number(l.x_m))&&Number(l.x_m)>=0&&Number(l.x_m)<=L&&Number.isFinite(Number(l.P_N))))issues.push("مختصات/بار چرخ شماره "+(i+1)+" نامعتبر است.");if(!String(l.source||"").trim()||!String(l.document||"").trim())issues.push("منبع و شماره صفحه/مرجع بار چرخ شماره "+(i+1)+" لازم است.");});
+ return {ready:issues.length===0,analysisEnabled:false,issues,note:"ممیزی فقط کامل بودن ورودی را می‌سنجد؛ حتی پس از تکمیل، تحلیل نیازمند اعتبارسنجی مستقل و بررسی مهندسی است."};
+}
+function analyzeIfReady(input){
+ const audit=auditReadiness(input);
+ if(!audit.ready)return {success:false,analysisEnabled:false,audit};
+ const supports=input.supportStations_m.map((x,i)=>({x_m:Number(x),kVertical_N_m:Number(input.verticalSpringStiffness_N_m[i])}));
+ const pointLoads=input.pointLoads.map(l=>({x_m:Number(l.x_m),P_N:Number(l.P_N)}));
+ const result=analyze({...input,supports,pointLoads});
+ return {...result,inputAudit:audit,analysisEnabled:false,note:"نتیجه تحلیل عددی مقدماتی است؛ برای طراحی/تأیید اجرایی کافی نیست."};
+}
 function selfTest(){
  const tests=[],test=(name,fn)=>{try{const detail=fn();tests.push({name,ok:detail!==false,detail:detail===true?"passed":detail});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
  const base={length_m:10,E_MPa:200000,Ix_mm4:1e8,meshPositions_m:[0,5,10],supports:[{x_m:0,kVertical_N_m:1e12},{x_m:10,kVertical_N_m:1e12}],pointLoads:[{x_m:5,P_N:-1000}]};
@@ -72,8 +97,10 @@ function selfTest(){
  test("midpoint-deflection-approaches-closed-form",()=>{const r=analyze(base),expected=-1000*Math.pow(10,3)/(48*(200000*1e8/1e6));return Math.abs(r.nodes[1].verticalDisplacement_m-expected)<1e-8;});
  test("hermite-point-load-between-nodes",()=>{const r=analyze({...base,meshPositions_m:[0,10],pointLoads:[{x_m:3.7,P_N:-1000}]});const a=r.loads[0];return a.element===1&&a.localCoordinate>0&&a.localCoordinate<1&&Math.abs(a.equivalentNodalLoads[0]+a.equivalentNodalLoads[2]+1000)<1e-8;});
  test("reject-missing-support-stiffness",()=>{try{analyze({...base,supports:[{x_m:0,kVertical_N_m:0},{x_m:10,kVertical_N_m:1e12}]});return false;}catch(e){return String(e.message).includes("مثبت");}});
- test("reject-singular-unrestrained-beam",()=>{try{analyze({...base,supports:[]});return false;}catch(e){return true;}});
+ test("reject-singular-unrestrained-beam",()=>{try{analyze({...base,supports:[{x_m:0,kVertical_N_m:1e12},{x_m:0,kVertical_N_m:1e12}]});return false;}catch(e){return true;}});
+ test("readiness-rejects-undocumented-spring-stiffness",()=>{const a=auditReadiness({length_m:10,E_MPa:200000,Ix_mm4:1e8,propertySource:"rail catalog",continuity:"continuous",supportStations_m:[0,10],verticalSpringStiffness_N_m:[1e9,1e9],supportStiffnessSource:"",pointLoads:[{x_m:5,P_N:-1000,source:"crane drawing",document:"sheet 2"}]});return !a.ready&&a.issues.some(x=>x.includes("مرجع سختی"))&&a.analysisEnabled===false;});
+ test("readiness-gated-rail-analysis-remains-unapproved",()=>{const r=analyzeIfReady({length_m:10,E_MPa:200000,Ix_mm4:1e8,propertySource:"rail catalog p.2",continuity:"continuous",supportStations_m:[0,10],verticalSpringStiffness_N_m:[1e12,1e12],supportStiffnessSource:"verified connector test",pointLoads:[{x_m:5,P_N:-1000,source:"crane drawing",document:"sheet 2"}]});return r.success&&r.equilibrium.ok&&r.analysisEnabled===false;});
  return {schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"Deterministic mathematical/software checks only; not independent engineering validation or code compliance."};
 }
-root.SteelRailBeamFEM={analyze,selfTest};
+root.SteelRailBeamFEM={analyze,auditReadiness,analyzeIfReady,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
