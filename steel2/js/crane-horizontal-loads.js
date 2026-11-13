@@ -10,7 +10,7 @@ let state={...defaults};
 const $=id=>root.document?.getElementById("craneHorizontal_"+id);
 const parse=s=>String(s??"").split(",").map(x=>x.trim()).map(x=>x===""?NaN:Number(x));
 function readUI(){
- const d={enabled:!!$("enabled")?.checked};
+ const d={enabled:$("enabled")?!!$("enabled").checked:!!state.enabled};
  Object.keys(defaults).filter(k=>k!=="enabled").forEach(k=>{d[k]=$(k)?.value??state[k];});
  return d;
 }
@@ -97,5 +97,5 @@ function selfTest(){
  }
 }
 root.SteelCraneHorizontalLoads={getData:readUI,setData,audit,render,selfTest};
-if(root.document){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();}
+if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
