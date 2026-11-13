@@ -521,12 +521,17 @@ function calculateFootingRebar(baseCount,B,L){
    svg.push('<text x="252" y="340" text-anchor="middle" font-size="12" fill="#334155">'+esc(baseId(selectedBase))+' | '+fmtSvg(B)+' × '+fmtSvg(L)+' m</text>');
   }else svg.push('<text x="252" y="205" text-anchor="middle" font-size="14" fill="#64748b">'+(mode==="design"?"شبکه طراحی‌شده موجود نیست":"ابعاد یا گره پایه موجود نیست")+'</text>');
   if(B>0&&T>0&&footingSpecs.specs.length){
-   const x0=610,y0=115,w=270,h=165;
-   svg.push('<rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>');
+   const x0=545,y0=145,fw=130,fh=145,beamX=675,beamW=240,bh=fh*(Number(state.tieHeightM||0.5)/T);
+   svg.push('<rect x="'+x0+'" y="'+y0+'" width="'+fw+'" height="'+fh+'" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>');
+   svg.push('<rect x="'+beamX+'" y="'+y0+'" width="'+beamW+'" height="'+bh+'" fill="#cbd5e1" stroke="#334155" stroke-width="2"/>');
    const bottom=footingSpecs.specs.filter(s=>s.layer==="bottom"),top=footingSpecs.specs.filter(s=>s.layer==="top");
-   if(bottom.length)svg.push('<line x1="'+(x0+12)+'" y1="'+(y0+h-22)+'" x2="'+(x0+w-12)+'" y2="'+(y0+h-22)+'" stroke="#dc2626" stroke-width="4"/>');
-   if(top.length)svg.push('<line x1="'+(x0+12)+'" y1="'+(y0+22)+'" x2="'+(x0+w-12)+'" y2="'+(y0+22)+'" stroke="#2563eb" stroke-width="4"/>');
-   svg.push('<text x="745" y="310" text-anchor="middle" font-size="12" fill="#334155">ضخامت '+fmtSvg(T)+' m | '+(top.length?"شبکه بالا و پایین":"فقط شبکه تحتانی")+'</text>');
+   if(bottom.length)svg.push('<line x1="'+(x0+10)+'" y1="'+(y0+fh-18)+'" x2="'+(x0+fw-10)+'" y2="'+(y0+fh-18)+'" stroke="#dc2626" stroke-width="4"/>');
+   if(top.length)svg.push('<line x1="'+(x0+10)+'" y1="'+(y0+18)+'" x2="'+(x0+fw-10)+'" y2="'+(y0+18)+'" stroke="#2563eb" stroke-width="4"/>');
+   svg.push('<line x1="'+(x0-12)+'" y1="'+y0+'" x2="'+(beamX+beamW+8)+'" y2="'+y0+'" stroke="#047857" stroke-width="2" stroke-dasharray="6 4"/>');
+   svg.push('<text x="'+(x0+fw/2)+'" y="'+(y0+fh+18)+'" text-anchor="middle" font-size="11" fill="#334155">پی '+fmtSvg(T)+' m</text>');
+   svg.push('<text x="'+(beamX+beamW/2)+'" y="'+(y0+bh/2+4)+'" text-anchor="middle" font-size="12" fill="#334155">شناژ '+fmtSvg(Number(state.tieHeightM||0.5))+' m</text>');
+   svg.push('<text x="747" y="330" text-anchor="middle" font-size="11" fill="#047857">خط سبز: تراز بالای مشترک پی و شناژ</text>');
+   svg.push('<text x="747" y="348" text-anchor="middle" font-size="11" fill="#334155">اختلاف عمق زیر کف شناژ: '+fmtSvg(Math.max(0,T-Number(state.tieHeightM||0.5)))+' m</text>');
   }else svg.push('<text x="747" y="205" text-anchor="middle" font-size="14" fill="#64748b">اطلاعات مقطع فونداسیون کافی نیست</text>');
   if(tie&&tie.count!==null&&tie.width>0&&tie.height>0){
    const x0=105,y0=455,w=295,h=210,pad=28,st=Number(tie.stirrupDia)||10;
