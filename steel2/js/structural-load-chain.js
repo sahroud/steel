@@ -43,8 +43,21 @@ function extractSupportReactions(result,model){
    columnAction:{Fx:columnAction[0],Fy:columnAction[1],Fz:columnAction[2],Mx:columnAction[3],My:columnAction[4],Mz:columnAction[5]},
    units:{force:"N",moment:"N.m"},designStatus:"demand_only_not_designed"};
  });
- const sum=Array(6).fill(0);rows.forEach(r=>{const v=Object.values(r.solverReaction);v.forEach((x,i)=>sum[i]+=x);});
- return{rows,missingSupportNodeIds:missing,totalSolverReaction:{Fx:sum[0],Fy:sum[1],Fz:sum[2],Mx:sum[3],My:sum[4],Mz:sum[5]},units:{force:"N",moment:"N.m"}};
+ const force=[0,0,0],momentAtOrigin=[0,0,0],nodalMomentSum=[0,0,0];
+ rows.forEach(r=>{
+  const v=r.solverReaction,p=r.coordinatesM;
+  const f=[v.Fx,v.Fy,v.Fz],m=[v.Mx,v.My,v.Mz];
+  for(let i=0;i<3;i++){force[i]+=f[i];nodalMomentSum[i]+=m[i];}
+  // Move each nodal reaction moment to the common global origin: M0 = Mnode + r x F.
+  momentAtOrigin[0]+=m[0]+p.y*f[2]-p.z*f[1];
+  momentAtOrigin[1]+=m[1]+p.z*f[0]-p.x*f[2];
+  momentAtOrigin[2]+=m[2]+p.x*f[1]-p.y*f[0];
+ });
+ return{rows,missingSupportNodeIds:missing,
+  totalSolverReaction:{Fx:force[0],Fy:force[1],Fz:force[2],Mx:momentAtOrigin[0],My:momentAtOrigin[1],Mz:momentAtOrigin[2]},
+  componentwiseNodalMomentSum:{Mx:nodalMomentSum[0],My:nodalMomentSum[1],Mz:nodalMomentSum[2]},
+  resultantMomentReference:"global origin (0,0,0); includes r x F for every support node",
+  units:{force:"N",moment:"N.m"}};
 }
 function auditEquilibrium(eq){
  const issues=[];
@@ -101,7 +114,10 @@ function selfTest(){
  const x=extractSupportReactions(res,model);
  ck("all support reactions extracted",()=>x.rows.length===2&&x.rows[0].nodeId==="B1");
  ck("base action is opposite solver reaction",()=>x.rows[0].columnAction.Fy===-200&&x.rows[1].columnAction.Mz===3);
- ck("global support resultant summed componentwise",()=>x.totalSolverReaction.Fx===90&&x.totalSolverReaction.Mz===3);
+ ck("global support force resultant summed componentwise",()=>x.totalSolverReaction.Fx===90&&x.totalSolverReaction.Fy===180&&x.totalSolverReaction.Fz===270);
+ ck("support moments transferred to common global origin",()=>x.totalSolverReaction.Mx===3&&x.totalSolverReaction.My===123&&x.totalSolverReaction.Mz===-77);
+ ck("nodal moment sum retained separately",()=>x.componentwiseNodalMomentSum.Mx===3&&x.componentwiseNodalMomentSum.My===3&&x.componentwiseNodalMomentSum.Mz===3);
+ ck("global resultant reference is explicit",()=>x.resultantMomentReference.includes("global origin"));
  ck("missing support reaction blocked",()=>{try{extractSupportReactions({reactions:[res.reactions[0]]},model);return false;}catch(e){return true;}});
  ck("duplicate reaction blocked",()=>{try{extractSupportReactions({reactions:[res.reactions[0],res.reactions[0],res.reactions[1]]},model);return false;}catch(e){return true;}});
  ck("nonfinite reaction blocked",()=>{try{extractSupportReactions({reactions:[{nodeId:"B1",values:[0,0,0,0,0,NaN]},{nodeId:"B2",values:[0,0,0,0,0,0]}]},model);return false;}catch(e){return true;}});
