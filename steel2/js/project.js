@@ -252,6 +252,9 @@
         if (window.SteelCraneReadiness && typeof window.SteelCraneReadiness.getData === "function") {
             data.craneReadiness = window.SteelCraneReadiness.getData();
         }
+        if (window.SteelCraneLoadPath && typeof window.SteelCraneLoadPath.getData === "function") {
+            data.craneLoadPath = window.SteelCraneLoadPath.getData();
+        }
 
         if (window.SteelCraneTrainAnalysis) data.craneTrainAnalysis = window.SteelCraneTrainAnalysis.getData();
         if (window.SteelCraneHorizontalLoads) data.craneHorizontalLoads = window.SteelCraneHorizontalLoads.getData();
@@ -519,6 +522,9 @@
 
         if (window.SteelCraneReadiness && typeof window.SteelCraneReadiness.setData === "function") {
             window.SteelCraneReadiness.setData(data.craneReadiness || {});
+        }
+        if (window.SteelCraneLoadPath && typeof window.SteelCraneLoadPath.setData === "function") {
+            window.SteelCraneLoadPath.setData(data.craneLoadPath || {});
         }
 
         if (window.SteelCraneTrainAnalysis) window.SteelCraneTrainAnalysis.setData(data.craneTrainAnalysis || {});
