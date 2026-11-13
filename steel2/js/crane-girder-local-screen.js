@@ -68,7 +68,7 @@ function plateStabilityAudit(sectionsByMemberId){
 function templateFor(result){
  const members=(result?.members||[]).filter(m=>m.sectionKey==="craneRunwayGirder"||m.type==="craneRunwayGirder");
  if(!members.length)return {success:false,issues:["عضو تیر حمالی در نتیجه تحلیل برای ساخت الگو پیدا نشد."]};
- const blank={A_m2:"",Sy_m3:"",Sz_m3:"",Avy_m2:"",Avz_m2:"",J_m4:"",torsionRadius_m:"",Fy_MPa:"",source:"",geometrySource:"",shearAreaMethod:"",torsionMethod:""};
+ const blank={A_m2:"",Sy_m3:"",Sz_m3:"",Avy_m2:"",Avz_m2:"",J_m4:"",torsionRadius_m:"",Fy_MPa:"",source:"",geometrySource:"",shearAreaMethod:"",torsionMethod:"",d_m:"",bf_m:"",tw_m:"",tf_m:"",E_MPa:"",Lb_m:"",Cb:"",compressionFlangeRestraint:"",restraintSource:"",loadHeightFromShearCenter_m:"",Cw_m6:"",Iy_minor_m4:"",bearingLength_m:"",bearingDetailSource:"",webBearingCondition:""};
  const data={};members.forEach(m=>{data[String(m.id)]={...blank};});
  return {success:true,memberCount:members.length,data};
 }
@@ -93,6 +93,11 @@ function run(){
  if(!latest?.success){const r={success:false,analysisEnabled:false,issues:["ابتدا یک حالت بار جرثقیل را در قاب سه‌بعدی تحلیل کنید."]};if(host)host.textContent=JSON.stringify(r,null,2);return r;}
  const r=audit(latest.result,input);if(host)host.textContent=JSON.stringify(r,null,2);return r;
 }
+function runPlateStability(){
+ const host=root.document?.getElementById?.("craneGirderLocalScreenResult"),input=readUI();
+ if(input.parseError){if(host)host.textContent="JSON ورودی نامعتبر است: "+input.parseError;return {success:false,issues:[input.parseError]};}
+ const r=plateStabilityAudit(input);if(host)host.textContent=JSON.stringify(r,null,2);return r;
+}
 function ensurePanel(){
  if(!root.document||root.document.getElementById("craneGirderLocalScreenPanel"))return;
  const main=root.document.querySelector("main");if(!main)return;
@@ -100,10 +105,11 @@ function ensurePanel(){
  panel.innerHTML='<div class="panel-title"><h3>غربال تنش اسمی موضعی تیر حمال</h3><span class="status">پس از تحلیل سه‌بعدی</span></div>'+
  '<div class="notice">پس از اجرای تحلیل یک حالت جرثقیل در قاب سه‌بعدی، مشخصات واقعی هر عضو تیر حمال را با کلید شناسه عضو وارد کنید. واحدها SI هستند. این ابزار فقط غربال تنش اسمی الاستیک است و کنترل کمانش، تنش موضعی جان/بال، خستگی و اتصالات نیست.</div>'+
  '<div class="field"><label for="craneGirderLocalScreenJson">مشخصات مقطع اعضا (JSON بر اساس شناسه عضو)</label><textarea id="craneGirderLocalScreenJson" rows="10" placeholder="{ &quot;شناسه-عضو&quot;: { &quot;A_m2&quot;: 0.01, &quot;Sy_m3&quot;: 0.0001, &quot;Sz_m3&quot;: 0.0002, &quot;Avy_m2&quot;: 0.005, &quot;Avz_m2&quot;: 0.005, &quot;J_m4&quot;: 1e-6, &quot;torsionRadius_m&quot;: 0.1, &quot;Fy_MPa&quot;: 240, &quot;source&quot;: &quot;...&quot;, &quot;geometrySource&quot;: &quot;...&quot;, &quot;shearAreaMethod&quot;: &quot;...&quot;, &quot;torsionMethod&quot;: &quot;...&quot; } }"></textarea></div>'+
- '<div class="button-grid"><button type="button" class="btn secondary" id="craneGirderLocalScreenTemplate">ساخت الگوی شناسه اعضا از تحلیل اخیر</button><button type="button" class="btn primary" id="craneGirderLocalScreenRun">اجرای غربال تنش اعضای تیر حمال</button></div><pre id="craneGirderLocalScreenResult" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>';
+ '<div class="button-grid"><button type="button" class="btn secondary" id="craneGirderLocalScreenTemplate">ساخت الگوی شناسه اعضا از تحلیل اخیر</button><button type="button" class="btn primary" id="craneGirderLocalScreenRun">اجرای غربال تنش اسمی</button><button type="button" class="btn secondary" id="craneGirderPlateStabilityRun">ممیزی هندسه صفحات، مهار جانبی و نشیمن</button></div><pre id="craneGirderLocalScreenResult" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>';
  const anchor=root.document.getElementById("crane3DLoadTransferPanel");if(anchor)anchor.insertAdjacentElement("afterend",panel);else main.appendChild(panel);
  root.document.getElementById("craneGirderLocalScreenTemplate").addEventListener("click",makeTemplate);
  root.document.getElementById("craneGirderLocalScreenRun").addEventListener("click",run);
+ root.document.getElementById("craneGirderPlateStabilityRun").addEventListener("click",runPlateStability);
 }
 function selfTest(){
  const tests=[],t=(name,fn)=>{try{tests.push({name,ok:!!fn()});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
@@ -126,5 +132,5 @@ function selfTest(){
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests,analysisEnabled:false,note:"Software regression only; not a code resistance verification."};
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCraneGirderLocalScreen={audit,plateStabilityAudit,templateFor,makeTemplate,readUI,setData,run,selfTest};
+root.SteelCraneGirderLocalScreen={audit,plateStabilityAudit,templateFor,makeTemplate,readUI,setData,run,runPlateStability,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
