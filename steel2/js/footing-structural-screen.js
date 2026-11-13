@@ -133,7 +133,7 @@
      const oneWay=leff<=0?"مقطع بحرانی برش یک‌طرفه خارج از طره قرار می‌گیرد":vu<=vc?"تقاضای برش یک‌طرفه کمتر از ظرفیت فرضی است":"تقاضای برش یک‌طرفه از ظرفیت فرضی بیشتر است";
      addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:s.direction,MuKNmPerM:Mu,AsRequired:As,AsProvided:AsProv,spacingByStrengthMm:spacingByStrength,oneWayDemand:vu,oneWayCapacity:vc,punchDemand:null,punchCapacity:null,qmaxKPa:qmax,status:flex+"؛ "+oneWay});
     });
-    const dPunch=Math.min(dX,dZ),pg=clippedPunchGeometry(B,L,cx,cz,ox,oz,dPunch);
+    const dPunch=Math.min(dX,dZ),pg=clippedPunchGeometry(B,L,cx,cz,ox,oz,dPunch/1000);
     const Vu=Math.max(0,N+pedestalWeight-qmax*pg.area),Vc=0.75*0.33*Math.sqrt(fc)*pg.b0*1000*dPunch/1000;
     const punchStatus=pg.b0<=1e-8?"محیط بحرانی پانچ در داخل پی طول مؤثر ندارد":Vu<=Vc?"تقاضای پانچ کمتر از ظرفیت فرضی است":"تقاضای پانچ از ظرفیت فرضی بیشتر است";
     addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:"پانچ پیرامون پدستال"+(pg.clipped?"؛ محیط بریده‌شده در لبه پی":""),MuKNmPerM:0,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:Vu,punchCapacity:Vc,punchPerimeterMm:pg.b0*1000,punchAreaM2:pg.area,qmaxKPa:qmax,status:punchStatus});
