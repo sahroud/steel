@@ -105,11 +105,11 @@ function run(){
 function selfTest(){
  const t=[],test=(name,fn)=>{try{t.push({name,ok:fn()!==false});}catch(e){t.push({name,ok:false,error:e.message});}};
  const members=[
-  {id:"R1",axis:"transverse",frame:1,type:"رفتر چپ",lineLoads:{dead:2,live:1,snow:1,tributaryWidth:4}},
-  {id:"R2",axis:"transverse",frame:1,type:"رفتر راست",lineLoads:{dead:2,live:1,snow:1,tributaryWidth:4}},
-  {id:"P1",sectionKey:"roofPurlin",lineLoads:{dead:1,live:.5,snow:.5,windLeft:-.2,windRight:-.2,tributaryWidth:1.2}},
-  {id:"W1",sectionKey:"wallGirt",lineLoads:{wind:.3}},
-  {id:"E1",sectionKey:"endGirt",lineLoads:{windEnd:.4}}
+  {id:"R1",axis:"transverse",frame:1,type:"رفتر چپ",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,tributaryWidth:4}},
+  {id:"R2",axis:"transverse",frame:1,type:"رفتر راست",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,tributaryWidth:4}},
+  {id:"P1",sectionKey:"roofPurlin",start:"B",end:"T",lineLoads:{dead:1,live:.5,snow:.5,windLeft:-.2,windRight:-.2,tributaryWidth:1.2}},
+  {id:"W1",sectionKey:"wallGirt",start:"B",end:"T",lineLoads:{wind:.3,tributaryHeight:2}},
+  {id:"E1",sectionKey:"endGirt",start:"B",end:"T",lineLoads:{windEnd:.4,tributaryHeight:2}}
  ];
  const model={geometry:{frames:[0]},members};
  const loads={deadLeft:.5,deadRight:.5,liveLeft:.5,liveRight:.5,snowLeft:1,snowRight:1,windLeft:-.2,windRight:-.2,windWall:.3,windEndFront:.4,windEndBack:.4,combinations:[{id:"C1",name:"نمونه",dead:1.2,live:1.6,snow:0}]};
@@ -122,7 +122,7 @@ function selfTest(){
  test("roof purlin tributary width required",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].lineLoads.tributaryWidth=0;return !audit(p,loads).success;});
  test("incomplete combination factors detected",()=>{const p={...loads,combinations:[{id:"C",dead:1.2,live:null,snow:0}]};return !audit(model,p).success;});
  test("duplicate member identifiers detected",()=>{const p={...model,members:[...members,{...members[0]}]};return !audit(p,loads).success;});
- test("all load groups explicitly reported",()=>audit(model,loads).rows.length===6);
+ test("all load groups explicitly reported",()=>audit(model,loads).rows.length===8);
  test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.2);
  test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
  test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
