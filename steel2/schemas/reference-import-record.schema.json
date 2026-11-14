@@ -91,6 +91,11 @@
         "extractedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "sourceChecksum": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$",
+          "description": "SHA-256 of exact original source-file bytes; optional when unavailable."
         }
       }
     },
