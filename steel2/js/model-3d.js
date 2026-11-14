@@ -214,6 +214,7 @@
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
           (result.taperedSegmentation&&result.taperedSegmentation.splitMemberCount?" | اعضای متغیرمقطع تقسیم‌شده: "+result.taperedSegmentation.splitMemberCount+"؛ قطعات تحلیل افزوده: "+result.taperedSegmentation.generatedSegmentCount+"؛ گره‌های میانی: "+result.taperedSegmentation.addedNodeCount:"")+
+          (result.taperedMemberForceAudit?" | ممیزی نیروهای اعضای غیرمنشوری: "+result.taperedMemberForceAudit.physicalMemberCount+" عضو فیزیکی و "+result.taperedMemberForceAudit.analysisElementCount+" قطعه؛ وضعیت: "+result.taperedMemberForceAudit.status:"")+
           " | گره‌های دارای واکنش تکیه‌گاهی: "+result.reactions.length+
           (result.criticalDisplacement
             ? " | گره بحرانی: "+result.criticalDisplacement.nodeId+" ("+result.criticalDisplacement.kind+")"+
