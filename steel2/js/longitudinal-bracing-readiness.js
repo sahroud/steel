@@ -39,6 +39,7 @@ function audit(model,loads){
  const adjacency=new Map();
  const add=(from,edge)=>{const k=String(from);if(!adjacency.has(k))adjacency.set(k,[]);adjacency.get(k).push(edge);};
  members.forEach(m=>{
+  if(m.sectionKey==="endGirt")return; // Never use the loaded end-girt itself as its own longitudinal collector path.
   if(!nodeIds.has(String(m.start))||!nodeIds.has(String(m.end)))return;
   add(m.start,{to:String(m.end),id:String(m.id),sectionKey:m.sectionKey});
   add(m.end,{to:String(m.start),id:String(m.id),sectionKey:m.sectionKey});
@@ -86,6 +87,7 @@ function selfTest(){
  t("pressure-to-line-load mismatch rejected",()=>{const m=JSON.parse(JSON.stringify(base));m.members[0].lineLoads.windEnd=5;return !audit(m,{windEndFront:3,windEndBack:0}).success;});
  t("route without longitudinal girt or purlin rejected",()=>{const m=JSON.parse(JSON.stringify(base));m.members=m.members.filter(x=>x.sectionKey!=="wallGirt");return !audit(m,{windEndFront:3,windEndBack:0}).success;});
  t("disconnected brace network rejected",()=>{const m=JSON.parse(JSON.stringify(base));m.members=m.members.filter(x=>x.id!=="WB"&&x.id!=="WB2");return !audit(m,{windEndFront:3,windEndBack:0}).success;});
+ t("loaded end-girt cannot serve as its own collector bridge",()=>{const m={nodes:[{id:"a"},{id:"b"},{id:"c"},{id:"d"}],members:[{id:"E",sectionKey:"endGirt",endFace:"front",start:"a",end:"b",tributaryHeight:2,lineLoads:{windEnd:6}},{id:"WG",sectionKey:"wallGirt",start:"b",end:"c"},{id:"WB",sectionKey:"wallBrace",start:"c",end:"d"}]};const r=audit(m,{windEndFront:3,windEndBack:0});return !r.success&&r.routes.some(x=>x.nodeId==="a"&&!x.ok);});
  t("roof purlin path to roof brace accepted",()=>{const m=JSON.parse(JSON.stringify(base));m.members=m.members.filter(x=>x.sectionKey!=="wallGirt"&&x.sectionKey!=="wallBrace");m.members.push({id:"P1",sectionKey:"roofPurlin",start:"e1",end:"g1"},{id:"P2",sectionKey:"roofPurlin",start:"e2",end:"g2"},{id:"RB1",sectionKey:"roofBrace",start:"g1",end:"b1"},{id:"RB2",sectionKey:"roofBrace",start:"g2",end:"b2"});return audit(m,{windEndFront:3,windEndBack:0}).success;});
  t("does not claim diaphragm or design approval",()=>{const r=audit(base,{windEndFront:3,windEndBack:0});return r.topologyOnly&&r.diaphragmStiffnessVerified===false&&r.collectorCapacityVerified===false&&r.designApproved===false;});
  return{passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests};
