@@ -54,6 +54,7 @@ function render(r){const host=document.getElementById("braceWeldStrengthResult")
 function run(){const r=analyze(root.SteelMemberForceEnvelope?.getLast?.(),root.SteelStructuralModel?.getData?.(),root.SteelBraceConnectionReadiness?.getData?.());render(r);return r;}
 function init(){if(document.getElementById("braceWeldStrengthPanel"))return;const p=document.createElement("section");p.className="panel";p.id="braceWeldStrengthPanel";p.innerHTML="<div class='panel-title'><h3>غربال مقاومت اتصال جوشی مهاربند</h3><span class='status'>AISC 360-22 · LRFD مقدماتی</span></div><div class='notice'>فقط جوش گوشه در برش بررسی می‌شود. نیروی هر قطعه جوش و مساحت ناخالص/خالص فلز پایه باید جداگانه و برای هر ترکیب وارد شود؛ kds برابر ۱ در نظر گرفته شده است.</div><button type='button' class='btn primary' id='btnBraceWeldStrengthRun'>محاسبه مقاومت جوش‌ها</button><div id='braceWeldStrengthResult' class='notice'>ابتدا اطلاعات جوش و JSON نیروهای قطعات جوش را تکمیل کنید.</div>";const a=document.getElementById("braceBoltStrengthPanel");if(a?.parentNode)a.insertAdjacentElement("afterend",p);else document.querySelector("main")?.appendChild(p);document.getElementById("btnBraceWeldStrengthRun").addEventListener("click",run);}
 
+function selfTest(){
  const c={weldSizeMm:6,electrodeFexxMPa:490,baseMetalFyMPa:235,baseMetalFuMPa:360};
  const s={effectiveLengthMm:100,baseGrossShearAreaMm2:1000,baseNetShearAreaMm2:900,shearN:20000};
  const t=[],add=(n,f)=>{try{t.push({name:n,pass:f()===true});}catch(e){t.push({name:n,pass:false,error:e.message});}};
