@@ -5,7 +5,7 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id);
-  const SCHEMA_VERSION = 1;
+  const SCHEMA_VERSION = 2;
   const OPTIONS = {
     occupancy:["industrial","commercial","agricultural","workshop","storage","other"],
     enclosure:["enclosed","partially-enclosed","open","undetermined"],
@@ -24,10 +24,10 @@
     windDataVerified:false, snowDataVerified:false, geotechnicalReport:"unknown",
     allowableSoilPressureKPa:"", designNotes:"",
     wallEnvelope:{
-      front:{material:"brick",orientation:"vertical"},
-      rear:{material:"brick",orientation:"vertical"},
-      left:{material:"brick",orientation:"vertical"},
-      right:{material:"brick",orientation:"vertical"}
+      front:{material:"brick",orientation:"vertical",supportMode:"unknown",deadSurfaceLoadKNm2:""},
+      rear:{material:"brick",orientation:"vertical",supportMode:"unknown",deadSurfaceLoadKNm2:""},
+      left:{material:"brick",orientation:"vertical",supportMode:"unknown",deadSurfaceLoadKNm2:""},
+      right:{material:"brick",orientation:"vertical",supportMode:"unknown",deadSurfaceLoadKNm2:""}
     },
     masonry:{
       thicknessMm:350,unitWeightKNm3:"",brickLengthMm:"",brickHeightMm:"",brickDepthMm:"",mortarJointMm:"",plasterThicknessMm:"",
@@ -53,10 +53,10 @@
       '<h4>پوسته و دیوارهای چهار طرف سوله</h4>',
       '<div class="notice">پیش‌فرض پروژه شاهرود: دیوار آجری در هر چهار وجه. هر وجه را مستقل می‌توان به ورق فلزی یا ساندویچ‌پنل تغییر داد. برای پوشش‌های ورقی، امتداد قائم یا افقی قابل انتخاب است؛ انتخاب جهت به‌تنهایی ظرفیت پنل، فاصله تکیه‌گاه یا اتصال را تأیید نمی‌کند.</div>',
       '<div class="form-grid">',
-      '<div class="field"><label for="wallFrontMaterial">دیوار انتهایی جلو</label><select id="wallFrontMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallFrontOrientation">امتداد پوشش</label><select id="wallFrontOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
-      '<div class="field"><label for="wallRearMaterial">دیوار انتهایی عقب</label><select id="wallRearMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallRearOrientation">امتداد پوشش</label><select id="wallRearOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
-      '<div class="field"><label for="wallLeftMaterial">دیوار طولی چپ</label><select id="wallLeftMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallLeftOrientation">امتداد پوشش</label><select id="wallLeftOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
-      '<div class="field"><label for="wallRightMaterial">دیوار طولی راست</label><select id="wallRightMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallRightOrientation">امتداد پوشش</label><select id="wallRightOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select></div>',
+      '<div class="field"><label for="wallFrontMaterial">دیوار انتهایی جلو</label><select id="wallFrontMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallFrontOrientation">امتداد پوشش</label><select id="wallFrontOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select><label for="wallFrontSupportMode">مسیر تحمل وزن مرده</label><select id="wallFrontSupportMode"><option value="unknown">نامشخص</option><option value="foundation-bearing">اتکای مستقیم به فونداسیون</option><option value="steel-secondary">انتقال به زیرسازی فولادی</option><option value="independent">قاب مستقل</option></select><label for="wallFrontDeadSurfaceLoad">وزن سطحی دیوار (kN/m²؛ برای غیرآجری)</label><input id="wallFrontDeadSurfaceLoad" type="number" min="0" step="0.01" placeholder="از کاتالوگ/مشخصات مصالح"></div>',
+      '<div class="field"><label for="wallRearMaterial">دیوار انتهایی عقب</label><select id="wallRearMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallRearOrientation">امتداد پوشش</label><select id="wallRearOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select><label for="wallRearSupportMode">مسیر تحمل وزن مرده</label><select id="wallRearSupportMode"><option value="unknown">نامشخص</option><option value="foundation-bearing">اتکای مستقیم به فونداسیون</option><option value="steel-secondary">انتقال به زیرسازی فولادی</option><option value="independent">قاب مستقل</option></select><label for="wallRearDeadSurfaceLoad">وزن سطحی دیوار (kN/m²؛ برای غیرآجری)</label><input id="wallRearDeadSurfaceLoad" type="number" min="0" step="0.01" placeholder="از کاتالوگ/مشخصات مصالح"></div>',
+      '<div class="field"><label for="wallLeftMaterial">دیوار طولی چپ</label><select id="wallLeftMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallLeftOrientation">امتداد پوشش</label><select id="wallLeftOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select><label for="wallLeftSupportMode">مسیر تحمل وزن مرده</label><select id="wallLeftSupportMode"><option value="unknown">نامشخص</option><option value="foundation-bearing">اتکای مستقیم به فونداسیون</option><option value="steel-secondary">انتقال به زیرسازی فولادی</option><option value="independent">قاب مستقل</option></select><label for="wallLeftDeadSurfaceLoad">وزن سطحی دیوار (kN/m²؛ برای غیرآجری)</label><input id="wallLeftDeadSurfaceLoad" type="number" min="0" step="0.01" placeholder="از کاتالوگ/مشخصات مصالح"></div>',
+      '<div class="field"><label for="wallRightMaterial">دیوار طولی راست</label><select id="wallRightMaterial"><option value="brick">آجرچینی</option><option value="metal-sheet">ورق فلزی</option><option value="sandwich-panel">ساندویچ‌پنل</option><option value="other">سیستم دیگر</option></select><label for="wallRightOrientation">امتداد پوشش</label><select id="wallRightOrientation"><option value="vertical">قائم</option><option value="horizontal">افقی</option><option value="custom">اختصاصی / نامشخص</option></select><label for="wallRightSupportMode">مسیر تحمل وزن مرده</label><select id="wallRightSupportMode"><option value="unknown">نامشخص</option><option value="foundation-bearing">اتکای مستقیم به فونداسیون</option><option value="steel-secondary">انتقال به زیرسازی فولادی</option><option value="independent">قاب مستقل</option></select><label for="wallRightDeadSurfaceLoad">وزن سطحی دیوار (kN/m²؛ برای غیرآجری)</label><input id="wallRightDeadSurfaceLoad" type="number" min="0" step="0.01" placeholder="از کاتالوگ/مشخصات مصالح"></div>',
       '</div>',
       '<h4>مشخصات مصالح و مهار دیوار آجری</h4><div class="form-grid">',
       '<div class="field"><label for="masonryThicknessMm">ضخامت اسمی دیوار آجری (mm)</label><input id="masonryThicknessMm" type="number" min="0" step="5" placeholder="از نقشه یا وضع موجود" /></div>',
@@ -98,7 +98,9 @@
       const material=$("wall"+suffix+"Material"),orientation=$("wall"+suffix+"Orientation");
       data.wallEnvelope[face]={
         material:valid(material?.value,["brick","metal-sheet","sandwich-panel","other"],"brick"),
-        orientation:valid(orientation?.value,["vertical","horizontal","custom"],"vertical")
+        orientation:valid(orientation?.value,["vertical","horizontal","custom"],"vertical"),
+        supportMode:valid($("wall"+suffix+"SupportMode")?.value,["unknown","foundation-bearing","steel-secondary","independent"],"unknown"),
+        deadSurfaceLoadKNm2:$("wall"+suffix+"DeadSurfaceLoad")?.value??""
       };
     });
     data.masonry=data.masonry||clone(DEFAULTS.masonry);
@@ -148,6 +150,8 @@
       const v=wall[face]||DEFAULTS.wallEnvelope[face];
       if($("wall"+suffix+"Material"))$("wall"+suffix+"Material").value=valid(v.material,["brick","metal-sheet","sandwich-panel","other"],"brick");
       if($("wall"+suffix+"Orientation"))$("wall"+suffix+"Orientation").value=valid(v.orientation,["vertical","horizontal","custom"],"vertical");
+      if($("wall"+suffix+"SupportMode"))$("wall"+suffix+"SupportMode").value=valid(v.supportMode,["unknown","foundation-bearing","steel-secondary","independent"],"unknown");
+      if($("wall"+suffix+"DeadSurfaceLoad"))$("wall"+suffix+"DeadSurfaceLoad").value=v.deadSurfaceLoadKNm2??"";
     });
     const masonry=d.masonry||DEFAULTS.masonry;
     const masonryMap={masonryThicknessMm:"thicknessMm",masonryUnitWeight:"unitWeightKNm3",masonryBrickLength:"brickLengthMm",masonryBrickHeight:"brickHeightMm",masonryBrickDepth:"brickDepthMm",masonryMortarJoint:"mortarJointMm",masonryPlasterThickness:"plasterThicknessMm",masonryRestraintSystem:"restraintSystem",masonryHorizontalTieSpacing:"horizontalTieSpacingM",masonryVerticalTieSpacing:"verticalTieSpacingM"};
@@ -181,7 +185,9 @@
       const v=savedWalls[face]||DEFAULTS.wallEnvelope[face];
       data.wallEnvelope[face]={
         material:valid(v.material,["brick","metal-sheet","sandwich-panel","other"],"brick"),
-        orientation:valid(v.orientation,["vertical","horizontal","custom"],"vertical")
+        orientation:valid(v.orientation,["vertical","horizontal","custom"],"vertical"),
+        supportMode:valid(v.supportMode,["unknown","foundation-bearing","steel-secondary","independent"],"unknown"),
+        deadSurfaceLoadKNm2:v.deadSurfaceLoadKNm2??""
       };
     });
     const m=data.masonry&&typeof data.masonry==="object"?data.masonry:{};
