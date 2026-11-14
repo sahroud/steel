@@ -135,7 +135,7 @@ async function analyzeCase(caseIndex,transferResult,horizontalInput,trainInput,c
  const model=root.SteelStructuralModel?.model;
  const p=prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,config);
  if(!p.success)return {success:false,analysisEnabled:false,transfer:p};
- const result=await root.SteelStructuralModel.analyze3D({label:"جرثقیل ـ حالت هم‌زمان "+(caseIndex+1),factors:{dead:0,live:0,snow:0,wind:0},nodalLoads:p.nodalLoads,craneLoadCaseId:caseIndex,craneLoadTransfer:{referencePosition_m:p.referencePosition_m,sourceDocuments:p.sourceDocuments}});
+ const result=await root.SteelStructuralModel.analyze3D({label:"بار مرده + جرثقیل ـ حالت هم‌زمان "+(caseIndex+1),factors:{dead:1,live:0,snow:0,wind:0},nodalLoads:p.nodalLoads,craneLoadCaseId:caseIndex,craneLoadTransfer:{referencePosition_m:p.referencePosition_m,sourceDocuments:p.sourceDocuments}});
  lastAnalysis={success:true,analysisEnabled:false,caseIndex,transfer:p,result};
  return lastAnalysis;
 }
