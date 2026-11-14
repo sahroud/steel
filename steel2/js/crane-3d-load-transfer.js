@@ -162,6 +162,9 @@ async function analyzeAllFromUI(options){
  if(!routeAudit.valid)return {success:false,analysisEnabled:false,issues:routeAudit.issues,results:[]};
  const readiness=root.SteelCraneReadiness?.audit?.(crane);
  if(readiness?.missing?.length)return {success:false,analysisEnabled:false,issues:["اطلاعات اصلی جرثقیل ناقص است: "+readiness.missing.join("، ")],results:[]};
+ const advisoryPrefixes=["ضرایب ضربه و نیروهای افقی باید","بارهای حداکثر و حداقل چرخ باید","بارهای جرثقیل باید"];
+ const fatalReadinessIssues=(readiness?.issues||[]).filter(x=>!advisoryPrefixes.some(prefix=>String(x).startsWith(prefix)));
+ if(fatalReadinessIssues.length)return {success:false,analysisEnabled:false,issues:fatalReadinessIssues,results:[]};
  const impact=Number(crane.verticalImpact);
  if(!(Number.isFinite(impact)&&impact>0))return {success:false,analysisEnabled:false,issues:["ضریب اثر دینامیکی قائم باید مثبت و مستند باشد."],results:[]};
  const structural=root.SteelStructuralModel;
