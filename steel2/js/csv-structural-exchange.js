@@ -60,8 +60,8 @@ function auditProposal(proposal,options){
  const opt=options||{},issues=[],warnings=[];
  if(!proposal||!Array.isArray(proposal.nodes)||!Array.isArray(proposal.members))return {success:false,issues:["proposal must contain nodes and members arrays"],warnings,summary:null,solverEligible:false,designApproved:false};
  const tol=Number.isFinite(opt.coordinateToleranceM)&&opt.coordinateToleranceM>0?opt.coordinateToleranceM:1e-6;
- const ids=new Set(),degree=new Map(),adj=new Map(),coords=new Map();
- proposal.nodes.forEach(n=>{ids.add(n.id);degree.set(n.id,0);adj.set(n.id,[]);const key=[n.x,n.y,n.z].map(v=>Math.round(v/tol)).join("|");if(coords.has(key))warnings.push("nodes "+coords.get(key)+" and "+n.id+" have coincident/near-coincident coordinates within "+tol+" m");else coords.set(key,n.id);});
+ const ids=new Set(),degree=new Map(),adj=new Map(),coords=new Map();let duplicateCoordinatePairs=0;
+ proposal.nodes.forEach(n=>{ids.add(n.id);degree.set(n.id,0);adj.set(n.id,[]);const key=[n.x,n.y,n.z].map(v=>Math.round(v/tol)).join("|");if(coords.has(key)){duplicateCoordinatePairs++;warnings.push("nodes "+coords.get(key)+" and "+n.id+" have coincident/near-coincident coordinates within "+tol+" m");}else coords.set(key,n.id);});
  const seenMembers=new Set();let min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity],orphan=[];
  proposal.nodes.forEach(n=>[n.x,n.y,n.z].forEach((v,i)=>{if(Number.isFinite(v)){min[i]=Math.min(min[i],v);max[i]=Math.max(max[i],v);}}));
  proposal.members.forEach(m=>{if(seenMembers.has(m.id))issues.push("duplicate member id "+m.id);seenMembers.add(m.id);if(!ids.has(m.start)||!ids.has(m.end)){issues.push("member "+m.id+" references missing node");return;}degree.set(m.start,(degree.get(m.start)||0)+1);degree.set(m.end,(degree.get(m.end)||0)+1);adj.get(m.start).push(m.end);adj.get(m.end).push(m.start);});
@@ -71,7 +71,7 @@ function auditProposal(proposal,options){
  proposal.nodes.forEach(n=>{if(visited.has(n.id))return;const stack=[n.id],part=[];visited.add(n.id);while(stack.length){const id=stack.pop();part.push(id);(adj.get(id)||[]).forEach(next=>{if(!visited.has(next)){visited.add(next);stack.push(next);}});}components.push(part);});
  if(components.length>1)warnings.push("geometry contains "+components.length+" disconnected components; this is informational and may be intentional");
  const lengths=proposal.members.map(m=>{const a=proposal.nodes.find(n=>n.id===m.start),b=proposal.nodes.find(n=>n.id===m.end);return a&&b?Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z):null;}).filter(Number.isFinite);
- const summary={nodeCount:proposal.nodes.length,memberCount:proposal.members.length,componentCount:components.length,componentNodeCounts:components.map(c=>c.length),orphanNodeIds:orphan,duplicateOrNearCoordinatePairs:coords.size,coordinateBoundsM:{min,max},memberLengthM:lengths.length?{min:Math.min(...lengths),max:Math.max(...lengths)}:null,coordinateToleranceM:tol};
+ const summary={nodeCount:proposal.nodes.length,memberCount:proposal.members.length,componentCount:components.length,componentNodeCounts:components.map(c=>c.length),orphanNodeIds:orphan,duplicateOrNearCoordinatePairs:duplicateCoordinatePairs,coordinateBoundsM:{min,max},memberLengthM:lengths.length?{min:Math.min(...lengths),max:Math.max(...lengths)}:null,coordinateToleranceM:tol};
  if(!proposal.nodes.length)issues.push("proposal has no nodes");
  if(!proposal.members.length)warnings.push("proposal has no members");
  return {success:issues.length===0,issues,warnings,summary,components,solverEligible:false,designApproved:false,geometryActivation:false};
