@@ -1050,20 +1050,27 @@
     let selected=cases[loadCase];
     if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
       const f=loadCase.factors;
+      const factorKeys=["dead","live","snow","wind"];
+      const badFactors=factorKeys.filter(k=>!Number.isFinite(Number(f[k]))||Number(f[k])<0);
+      if(badFactors.length)throw new Error("ضرایب ترکیب بار باید برای D/L/S/W صریح، عددی و نامنفی باشند: "+badFactors.join("، "));
+      const windSign=loadCase.windSign===undefined?1:Number(loadCase.windSign);
+      if(![1,-1].includes(windSign))throw new Error("علامت باد باید صریحاً +1 یا -1 باشد.");
       selected={...loadCase,key:"combo",label:String(loadCase.label||"ترکیب بار سه‌بعدی"),
         direction:[0,-1,0],
-        factors:{dead:Number(f.dead)||0,live:Number(f.live)||0,snow:Number(f.snow)||0,wind:Number(f.wind)||0},
-        windFactor:Number(f.wind)||0,windSign:Number(loadCase.windSign)||1,
+        factors:{dead:Number(f.dead),live:Number(f.live),snow:Number(f.snow),wind:Number(f.wind)},
+        windFactor:Number(f.wind),windSign,
         directionalWindPressures:loadCase.directionalWindPressures||null,
         directionalWindCaseId:loadCase.directionalWindCaseId||null,
-        deadFactor:Number(f.dead)||0};
+        deadFactor:Number(f.dead)};
     }else if(/^combo[0-2]$/.test(loadCase)){
       const comboIndex=Number(loadCase.slice(5));
       const combo=window.SteelLoads?.getData?.().combinations?.[comboIndex];
       if(!combo)throw new Error("ضرایب ترکیب بار انتخابی در دسترس نیستند.");
+      const f={dead:Number(combo.dead),live:Number(combo.live),snow:Number(combo.snow)};
+      if(Object.values(f).some(v=>!Number.isFinite(v)||v<0))throw new Error("ضرایب ترکیب انتخابی ناقص یا نامعتبر است.");
       selected={key:loadCase,label:combo.name,direction:[0,-1,0],
-        factors:{dead:Number(combo.dead)||0,live:Number(combo.live)||0,snow:Number(combo.snow)||0},
-        deadFactor:Number(combo.dead)||0};
+        factors:{...f,wind:0},windFactor:0,windSign:1,
+        deadFactor:f.dead};
     }
     if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود." );
      if(!window.SteelWholeBuildingLoadPathAudit?.audit)throw new Error("ماژول ممیزی مسیر بار کل ساختمان بارگذاری نشده است؛ تحلیل متوقف شد." );
@@ -1177,11 +1184,13 @@
     const selfWeightByGroup=Object.create(null);
     const sectionsByMemberId=Object.create(null);
     analysisModel.members.forEach(m=>{
+      if(!m.lineLoads||!["dead","live","snow","wind","windLeft","windRight","windEnd"].every(k=>Number.isFinite(m.lineLoads[k])))
+        throw new Error("دفتر بار عضو "+m.id+" ناقص است؛ مقادیر صفر نیز باید صریح ثبت شوند.");
       const lineLoad=selected.factors
-        ? (Number(m.lineLoads?.dead||0)*selected.factors.dead+
-           Number(m.lineLoads?.live||0)*selected.factors.live+
-           Number(m.lineLoads?.snow||0)*selected.factors.snow)
-        : Number(m.lineLoads&&m.lineLoads[selected.key]||0);
+        ? (m.lineLoads.dead*selected.factors.dead+
+           m.lineLoads.live*selected.factors.live+
+           m.lineLoads.snow*selected.factors.snow)
+        : m.lineLoads[selected.key];
       if(!Number.isFinite(lineLoad))throw new Error("بار عضو "+m.id+" عدد معتبر نیست.");
       const a=nodeById.get(m.start);
       const b=nodeById.get(m.end);
