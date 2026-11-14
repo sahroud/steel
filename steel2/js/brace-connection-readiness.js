@@ -78,6 +78,7 @@ function audit(input,model){
   }
   if(c.connectionType==="welded"){
    for(const [field,label] of WELDED)if(!(Number.isFinite(c[field])&&c[field]>0))local.push(label+" برای اتصال جوشی لازم است.");
+   if(Number.isFinite(c.weldCount)&&!Number.isInteger(c.weldCount))local.push("تعداد خطوط/قطعات جوش باید عدد صحیح باشد.");
    if(!String(c.weldLayoutReference||"").trim())local.push("آرایش و طول‌بندی جوش باید با شماره نقشه/مدرک مشخص شود.");
   }
   const row={memberId:c.memberId,end:c.end,connectionType:c.connectionType,complete:local.length===0,issues:local};
@@ -115,6 +116,7 @@ function selfTest(){
  t("requires welded layout reference",()=>!audit({connections:both.map(x=>({...x,connectionType:"welded",weldCount:2,weldSizeMm:6,weldEffectiveLengthMm:120,electrodeFexxMPa:490,weldLayoutReference:""}))},model).ready);
  t("rejects missing eccentricity",()=>!audit({connections:both.map(x=>({...x,eccentricityMm:null}))},model).ready);
  t("never issues capacity or approval",()=>{const r=audit({connections:both},model);return r.analysisEnabled===false&&r.designApproved===false&&!r.capacity;});
+ t("connection records survive project data round-trip",()=>{const old=getData();setData({connections:both});const x=getData(),ok=x.connections.length===2&&x.connections[0].memberId==="B1"&&x.connections[1].end==="J";setData(old);return ok;});
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"brace-end connection geometry and document completeness only; no code resistance calculation"};
 }
 root.SteelBraceConnectionReadiness={getData,setData,readUI:getData,audit,render,selfTest};
