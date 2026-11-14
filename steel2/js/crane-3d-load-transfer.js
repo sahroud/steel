@@ -139,8 +139,68 @@ async function analyzeCase(caseIndex,transferResult,horizontalInput,trainInput,c
  lastAnalysis={success:true,analysisEnabled:false,caseIndex,transfer:p,result};
  return lastAnalysis;
 }
+let lastAutomaticEnvelope=null;
+function applyVerticalImpact(input,factor){
+ const f=Number(factor);
+ if(!(Number.isFinite(f)&&f>0))throw Error("ضریب اثر دینامیکی قائم جرثقیل باید مثبت و مستند باشد.");
+ const out={...input};
+ for(const side of ["left","right"]){
+  if(!Array.isArray(out[side+"Wheels"]))throw Error("قطار چرخ "+side+" تعریف نشده است.");
+  out[side+"Wheels"]=out[side+"Wheels"].map((w)=>({...w,P_N:Number(w.P_N)*f,
+   source:String(w.source||"")+"؛ ضریب دینامیکی قائم ×"+f,
+   dynamicFactorApplied:f,staticInputP_N:Number(w.P_N)}));
+ }
+ return out;
+}
+async function analyzeAllFromUI(options){
+ const opt=options||{},progress=typeof opt.onProgress==="function"?opt.onProgress:()=>{},maxCases=Number.isInteger(opt.maxCases)&&opt.maxCases>0?opt.maxCases:300;
+ lastAutomaticEnvelope=null;
+ const crane=root.SteelCraneReadiness?.getData?.()||{};
+ if(!crane.enabled)return {success:true,notApplicable:true,analysisEnabled:false,total:0,results:[]};
+ const route=root.SteelCraneLoadPath?.readUI?.()||{craneType:"overhead",supportSystem:"runway_girder"};
+ const routeAudit=auditCraneType(route);
+ if(!routeAudit.valid)return {success:false,analysisEnabled:false,issues:routeAudit.issues,results:[]};
+ const readiness=root.SteelCraneReadiness?.audit?.(crane);
+ if(readiness?.missing?.length)return {success:false,analysisEnabled:false,issues:["اطلاعات اصلی جرثقیل ناقص است: "+readiness.missing.join("، ")],results:[]};
+ const impact=Number(crane.verticalImpact);
+ if(!(Number.isFinite(impact)&&impact>0))return {success:false,analysisEnabled:false,issues:["ضریب اثر دینامیکی قائم باید مثبت و مستند باشد."],results:[]};
+ const structural=root.SteelStructuralModel;
+ if(!structural?.build||!structural?.analyze3D)return {success:false,analysisEnabled:false,issues:["مدل یا حل‌گر سه‌بعدی بارگذاری نشده است."],results:[]};
+ let model;
+ try{model=structural.build();}catch(e){return {success:false,analysisEnabled:false,issues:["تولید مدل سوله/جرثقیل ناموفق: "+String(e.message||e)],results:[]};}
+ if(!model?.geometry?.craneRunway?.enabled)return {success:false,analysisEnabled:false,issues:["جرثقیل فعال است اما هندسه تیر حمال در مدل سه‌بعدی فعال نشده است."],results:[]};
+ const craneMembers=model.members.filter(x=>x.craneIntegration===true);
+ if(!model.geometry.craneRunway.integrationAudit?.success||!craneMembers.some(x=>x.sectionKey==="craneRunwayGirder")||!craneMembers.some(x=>x.sectionKey==="craneRunwayBracket"))
+  return {success:false,analysisEnabled:false,issues:["تیر حمال و براکت با مقاطع SI و مراجع نقشه به مدل FEM متصل نشده‌اند؛ JSON یکپارچه‌سازی را تکمیل کنید."],results:[]};
+ const twoRail=root.SteelCraneTwoRailTransfer;
+ if(!twoRail?.readUI||!twoRail?.analyze)return {success:false,analysisEnabled:false,issues:["ماژول تحلیل هم‌زمان دو ریل در دسترس نیست."],results:[]};
+ let railInput;
+ try{railInput=applyVerticalImpact(twoRail.readUI(),impact);}catch(e){return {success:false,analysisEnabled:false,issues:[String(e.message||e)],results:[]};}
+ const transfer=twoRail.analyze(railInput);
+ if(!transfer?.success)return {success:false,analysisEnabled:false,issues:transfer?.audit?.issues||transfer?.issues||["تحلیل قطار چرخ روی دو ریل ناموفق است."],results:[]};
+ const horizontal=root.SteelCraneHorizontalLoads?.getData?.()||{enabled:false};
+ const train=root.SteelCraneTrainAnalysis?.getData?.()||{};
+ const integration=root.SteelCrane3DIntegration?.readUI?.()||{};
+ const prepared=prepareAll(model,transfer,horizontal,train,integration);
+ if(!prepared.success)return {success:false,analysisEnabled:false,total:prepared.total,readyCount:prepared.readyCount,issues:prepared.issues,results:[]};
+ if(prepared.total>maxCases)return {success:false,analysisEnabled:false,total:prepared.total,issues:["تعداد حالات جاروب جرثقیل "+prepared.total+" است و از سقف اجرای خودکار "+maxCases+" بیشتر است؛ گام مکانی را بزرگ‌تر کنید."],results:[]};
+ const results=[];
+ for(let i=0;i<prepared.cases.length;i++){
+  progress("تحلیل موقعیت جرثقیل "+(i+1)+" از "+prepared.total+" ...");
+  const one=await analyzeCase(i,transfer,horizontal,train,{...integration,...route});
+  if(!one?.success)return {success:false,analysisEnabled:false,total:prepared.total,completed:results.length,failedCase:i+1,issues:one?.transfer?.issues||one?.issues||["حل سه‌بعدی یکی از موقعیت‌های جرثقیل ناموفق بود."],results};
+  if(!one.result?.equilibrium?.ok)return {success:false,analysisEnabled:false,total:prepared.total,completed:results.length,failedCase:i+1,issues:["تعادل حل‌گر در موقعیت جرثقیل "+(i+1)+" برقرار نیست."],results};
+  results.push({caseIndex:i,referencePosition_m:one.transfer.referencePosition_m,maxTranslation_m:Number(one.result.maxTranslation),equilibrium:one.result.equilibrium,analysis:one});
+ }
+ const critical=results.reduce((best,x)=>!best||x.maxTranslation_m>best.maxTranslation_m?x:best,null);
+ lastAutomaticEnvelope={success:true,analysisEnabled:false,total:results.length,results,criticalCase:critical?.caseIndex??null,maxTranslation_m:critical?.maxTranslation_m??null,
+  loadBasis:"بار مرده و وزن خود اعضا + بار چرخ‌های قائم با ضریب دینامیکی قائم اعمال‌شده + نیروهای افقی مستند در صورت فعال‌بودن؛ هر موقعیت قطار جداگانه حل شده است.",
+  note:"پوش تغییرمکان از نتایج حالات جداگانه؛ بیشینه‌های غیرهم‌زمان نیرو/لنگر با هم جمع نشده‌اند. این مرحله هنوز ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی و طراحی نهایی تیر حمال/اتصالات را تأیید نمی‌کند."};
+ return lastAutomaticEnvelope;
+}
 function selfTest(){
  const checks=[],t=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
+ t("vertical dynamic factor scales both rail wheel trains without changing source sign",()=>{const x=applyVerticalImpact({leftWheels:[{P_N:-1000,source:"S",document:"p1"}],rightWheels:[{P_N:-1200,source:"S",document:"p1"}]},1.25);return x.leftWheels[0].P_N===-1250&&x.rightWheels[0].P_N===-1500&&x.leftWheels[0].staticInputP_N===-1000;});
  t("explicit overhead crane path is accepted for runway FEM",()=>{const old=root.SteelCraneLoadPath;root.SteelCraneLoadPath={classify:()=>({valid:true,craneType:"overhead",loadTarget:"crane_runway_and_frame",loadPath:["wheel","rail","runway_girder"]})};const r=auditCraneType({craneType:"overhead",supportSystem:"runway_girder"});root.SteelCraneLoadPath=old;return r.valid&&r.loadTarget==="crane_runway_and_frame";});
  t("ground gantry crane is blocked from overhead runway FEM",()=>{const old=root.SteelCraneLoadPath;root.SteelCraneLoadPath={classify:()=>({valid:true,craneType:"gantry"})};const r=auditCraneType({craneType:"gantry",supportSystem:"slab"});root.SteelCraneLoadPath=old;return !r.valid;});
  t("overhead crane on slab support is rejected",()=>{const old=root.SteelCraneLoadPath;root.SteelCraneLoadPath={classify:()=>({valid:false,issues:["invalid support"]})};const r=auditCraneType({craneType:"overhead",supportSystem:"slab"});root.SteelCraneLoadPath=old;return !r.valid;});
@@ -218,6 +278,6 @@ function ensurePanel(){
  });
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,auditCraneType,selfTest,getLastAnalysis:()=>lastAnalysis};
+root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,selfTest,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
 })(typeof window!=="undefined"?window:globalThis);
 
