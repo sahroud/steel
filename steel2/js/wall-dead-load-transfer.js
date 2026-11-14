@@ -80,11 +80,12 @@ function audit(model){
   rows.push({face,status:"assigned",material:cfg.material,supportMode:mode,source,unitWeightKNm2:q,areaM2:totalArea,weightKN,nodeCount:weights.length,tributaryAreas:weights.map(x=>({nodeId:x.nodeId,areaM2:x.areaM2}))});
  });
  const success=issues.length===0&&rows.length===FACES.filter(f=>walls[f]?.material).length;
- return {success,loadTransferEnabled:success,issues,rows,nodalLoads,totalWeightKN:rows.filter(r=>r.status==="assigned").reduce((s,r)=>s+r.weightKN,0),method:"foundation-bearing wall dead weight distributed to explicit base support nodes by tributary wall area",limits:["Only foundation-bearing walls are supported in this version.","Walls with openings are blocked until opening-localized tributary areas are modelled.","Steel-secondary and independent wall support systems are not transferred.","Gable wind is separate and remains blocked until its cladding-to-post/top-chord path is defined."],analysisEnabled:false,designApproved:false};
+ return {success,loadTransferEnabled:success,issues,rows,nodalLoads,totalWeightKN:rows.filter(r=>r.status==="assigned").reduce((s,r)=>s+r.weightKN,0),method:"foundation-bearing wall dead weight distributed to explicit base support nodes by tributary wall area",limits:["Only walls explicitly bearing on the modeled base support nodes are supported in this version.","This is a tributary reaction distribution, not a continuous strip-footing/soil-contact model or footing design.","Walls with openings are blocked until opening-localized tributary areas are modelled.","Steel-secondary and independent wall support systems are not transferred.","Gable wind is separate and remains blocked until its cladding-to-post/top-chord path is defined."],analysisEnabled:false,designApproved:false};
 }
 function prepareNodalLoads(model,deadFactor){
  const factor=num(deadFactor);if(factor===null||factor<0)throw Error("ضریب بار مرده دیوار نامعتبر است.");
  const a=audit(model);if(!a.success)throw Error("انتقال وزن مرده دیوار ناقص است: "+a.issues.join("؛ "));
+ if(factor===0)return [];
  const map=new Map();
  a.nodalLoads.forEach(n=>{const old=map.get(n.nodeId)||{nodeId:n.nodeId,values:[0,0,0,0,0,0],sources:[]};n.values.forEach((v,i)=>old.values[i]+=v*factor);old.sources.push({face:n.face,sourceWeightKN:n.sourceWeightKN*factor});map.set(n.nodeId,old);});
  return [...map.values()];
@@ -113,6 +114,7 @@ function selfTest(){
  t("non-brick wall requires entered surface weight",()=>{brief.wallEnvelope.left.material="sandwich-panel";const x=audit(model);brief.wallEnvelope.left.material="brick";return !x.success&&x.issues.some(v=>v.includes("وزن سطحی"));});
  t("wall openings block uniform tributary distribution",()=>{root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:59,openingAreaM2:1,weightKN:2124}))})};const x=audit(model);root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:(face==="front"||face==="rear")?60:100,openingAreaM2:0,weightKN:(face==="front"||face==="rear")?216:360}))})};return !x.success&&x.issues.some(v=>v.includes("بازشو"));});
  t("missing base support coverage is blocked",()=>{const x=audit({...model,nodes:nodes.filter(n=>n.id!=="L0")});return !x.success;});
+ t("zero dead factor produces no wall nodal actions",()=>prepareNodalLoads(model,0).length===0);
  t("analysis approval remains disabled",()=>a.analysisEnabled===false&&a.designApproved===false);
  root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
