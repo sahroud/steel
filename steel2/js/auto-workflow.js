@@ -187,8 +187,15 @@
         comboRun={success:false,error:e?.message||String(e)};
       }
       const comboOK=!!comboRun?.success&&Array.isArray(window.SteelAnalysis?.combinationResults)&&window.SteelAnalysis.combinationResults.length>0;
-      addLine(rows,"تحلیل قاب و همه ترکیبات بار موجود",comboOK,
+      addLine(rows,"تحلیل قاب و ترکیبات بار موجود",comboOK,
         comboOK?"تمام "+window.SteelAnalysis.combinationResults.length+" حالت ترکیب بار موجود تحلیل شدند.":(comboRun?.error||"تحلیل ترکیبات بار خروجی معتبر تولید نکرد؛ پیام تحلیل را بررسی کنید."));
+      const m6Coverage=window.SteelM6AnalysisCoverageAudit?.audit?.({analyzedCases:comboOK?window.SteelAnalysis.combinationResults:[],temperatureApplicable:null});
+      if(m6Coverage) {
+        const covered=m6Coverage.coveredFamilies.map(id=>id.replace("M6-ULS-","")).join("، ")||"هیچ‌کدام";
+        const missing=m6Coverage.missingRequiredFamilies.map(id=>id.replace("M6-ULS-","")).join("، ")||"—";
+        addLine(rows,"پوشش خانواده‌های ترکیبات بار مبحث ششم",m6Coverage.familyCoverageComplete,
+          "خانواده‌های تحلیل‌شده: "+covered+". خانواده‌های پایه متصل‌نشده: "+missing+". وضعیت دما: "+m6Coverage.temperatureApplicability+". "+(m6Coverage.familyCoverageComplete?"پوشش خانواده‌ها کامل است.":"پوشش فعلی ناقص است؛ این گزارش مانع اعلام تکمیل کاذب می‌شود."));
+      } else addLine(rows,"پوشش خانواده‌های ترکیبات بار مبحث ششم",false,"دروازه ممیزی پوشش ترکیبات بار بارگذاری نشده است.");
 
       if(comboOK) {
         const taperBridge=window.SteelTaperedCaseForceBridge?.build?.(window.SteelStructuralModel?.getData?.(),window.SteelAnalysis.combinationResults);
