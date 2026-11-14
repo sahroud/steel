@@ -187,7 +187,7 @@ async function analyzeAllFromUI(options){
  let model;
  try{model=structural.build();}catch(e){return {success:false,analysisEnabled:false,issues:["تولید مدل سوله/جرثقیل ناموفق: "+String(e.message||e)],results:[]};}
  if(!model?.geometry?.craneRunway?.enabled)return {success:false,analysisEnabled:false,issues:["جرثقیل فعال است اما هندسه تیر حمال در مدل سه‌بعدی فعال نشده است."],results:[]};
- const bayAllocation=root.SteelCraneBayConfiguration?.readAndAudit?.((model.geometry.frames||[]).length-1);
+ const bayAllocation=root.SteelCraneBayConfiguration?.readAndAudit?.(Number(model.geometry.bayCount));
  if(!bayAllocation)return {success:false,analysisEnabled:false,issues:["ماژول ممیزی جانمایی جرثقیل در دسترس نیست؛ تحلیل جرثقیل متوقف شد."],results:[]};
  if(!bayAllocation.valid||!bayAllocation.solverCompatible)return {success:false,analysisEnabled:false,issues:[...(bayAllocation.issues||[]),...(bayAllocation.warnings||[]),"حل‌گر فعلی فقط یک جرثقیل با مسیر سراسری تمام دهانه‌ها را پشتیبانی می‌کند؛ تحلیل جزئی/چندجرثقیل تا تکمیل مسیرهای مستقل بار اجرا نمی‌شود."],bayAllocation,results:[]};
  const craneMembers=model.members.filter(x=>x.craneIntegration===true);
