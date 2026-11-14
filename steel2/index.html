@@ -269,6 +269,13 @@
         </div>
         <div class="button-grid"><button id="crane_audit" class="btn secondary" type="button">ممیزی ورودی‌های جرثقیل</button></div>
         <div id="crane_results"></div>
+        <div class="field">
+            <label for="craneBayConfigurationJson">جانمایی جرثقیل‌ها در دهانه‌های سوله (JSON)</label>
+            <textarea id="craneBayConfigurationJson" rows="5" placeholder='[{"id":"CR-1","bays":[1,2,3]},{"id":"CR-2","bays":[6,7]}]'></textarea>
+            <small>شماره دهانه‌ها از ابتدای طول سوله و از ۱ شروع می‌شود. هر جرثقیل با شناسه مستقل و فهرست دهانه‌های خود تعریف می‌شود. تخصیص هم‌زمان یک دهانه به دو جرثقیل فعلاً رد می‌شود.</small>
+        </div>
+        <div class="button-grid"><button id="craneBayConfigurationAuditButton" class="btn secondary" type="button">ممیزی جانمایی جرثقیل‌ها</button></div>
+        <div id="craneBayConfigurationAudit" class="notice">پس از تولید مدل هندسی، تعداد دهانه‌ها و جانمایی جرثقیل‌ها ممیزی می‌شود.</div>
     </section>
 
 
@@ -371,6 +378,7 @@
 <script src="js/footing-sizing-assistant.js?v=20261112footing-sizing2"></script>
 <script src="js/rail-beam-fem.js?v=20261113-moving-envelope1"></script>
 <script src="js/crane-two-rail-transfer.js?v=20261114-static-wheel-inputs1"></script>
+<script src="js/crane-bay-configuration.js?v=20261114-bay-allocation1"></script>
 <script src="js/crane-runway-girder.js?v=20261113-girder-sync-audit2"></script>
 <script src="js/crane-load-path-audit.js?v=20261113-load-path-audit1"></script>
 <script src="js/analysis-3d.js?v=20261114-purlin-support-transfer-test1"></script>
