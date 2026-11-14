@@ -191,7 +191,7 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
 
   ck("gable tributary areas close to the exact trapezoidal wall area on both faces",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableTributaryAreaCoverage(m);return !!r?.success&&r.rows.length===2&&r.rows.every(x=>Math.abs(x.assignedAreaM2-x.expectedAreaM2)<1e-8);});
   ck("gable area audit rejects a missing tributary strip",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.();m.members=m.members.filter(x=>!(x.sectionKey==="endGirt"&&x.endFace==="front"&&x.row===2));return !auditGableTributaryAreaCoverage(m).success;});
-  ck("case builder creates all eight directional/internal cases only when gable wind is zero",()=>{
+  ck("case builder creates 24 cases with correct 0.7 and 1.4 wind factors across eight direction/internal patterns",()=>{
    const oldWind=root.SteelDirectionalWind,oldLoads=root.SteelLoads,oldModel=root.SteelStructuralModel;
    try{
     const surfaces={};SURFACES.forEach(k=>surfaces[k]={netWithPositiveInternal:k.startsWith("end-wall-")?0:1,netWithNegativeInternal:k.startsWith("end-wall-")?0:1});
