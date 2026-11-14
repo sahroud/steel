@@ -626,7 +626,10 @@
       railOffsetAligned.ready&&railOffsetAligned.supportStations[0]===0.3,
       !railTooSparse.ready&&railTooSparse.supportStations.length===1&&railTooSparse.dimensional.length>=1,
       exactMemberSegmentCount([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"}],"rafter","transverse",1,{id:"A"},{id:"B"})===1,
-      exactMemberSegmentCount([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"},{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"}],"rafter","transverse",1,{id:"A"},{id:"B"})===2
+      exactMemberSegmentCount([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"},{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"}],"rafter","transverse",1,{id:"A"},{id:"B"})===2,
+      auditPurlinRafterConnectivity([{id:"A",z:0},{id:"B",z:5},{id:"C",z:0},{id:"D",z:5}],[{id:"P",sectionKey:"roofPurlin",start:"A",end:"B"},{id:"R1",sectionKey:"rafter",start:"A",end:"C"},{id:"R2",sectionKey:"rafter",start:"B",end:"D"}],[0,5]).ok,
+      auditPurlinRafterConnectivity([{id:"A",z:0},{id:"B",z:5}],[{id:"P",sectionKey:"roofPurlin",start:"A",end:"B"}],[0,5]).issues.length===2,
+      auditPurlinRafterConnectivity([{id:"A",z:-1},{id:"B",z:0}],[{id:"P",sectionKey:"roofPurlin",start:"A",end:"B"},{id:"E",sectionKey:"roofEdge",start:"A",end:"B"},{id:"R",sectionKey:"rafter",start:"B",end:"B2"}],[0,5]).ok
     ];
     return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
