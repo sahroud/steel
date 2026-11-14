@@ -100,8 +100,10 @@ function buildWindForceEnvelope(model,results){
 }
 async function run(){const b=createCases(),solve=root.SteelStructuralModel?.analyze3D,model=root.SteelStructuralModel?.getData?.();if(typeof solve!=="function"||!model)throw Error("مدل یا حل‌گر سه‌بعدی در دسترس نیست.");const results=[];for(const c of b.cases){const r=await solve(c);if(!r||!Array.isArray(r.reactions))throw Error("واکنش حل‌گر برای "+c.id+" معتبر نیست.");if(!Array.isArray(r.members))throw Error("نیروهای اعضا برای "+c.id+" در خروجی حل‌گر موجود نیست.");if(!r.equilibrium||r.equilibrium.ok!==true)throw Error("تعادل عددی حل‌گر برای "+c.id+" تأیید نشد؛ پوش واکنش متوقف شد.");results.push({id:c.id,label:c.label,equilibrium:r.equilibrium,result:r});}const memberForceEnvelope=buildWindForceEnvelope(model,results);const map=new Map();results.forEach(c=>(c.result.reactions||[]).forEach(r=>{const v=map.get(r.nodeId)||{nodeId:r.nodeId,cases:[]};v.cases.push({caseId:c.id,values:(r.values||[]).slice(0,6)});map.set(r.nodeId,v);}));const envelopes=[...map.values()].map(n=>({nodeId:n.nodeId,components:[0,1,2,3,4,5].map(i=>{const q=n.cases.map(c=>({caseId:c.caseId,value:Number(c.values[i])||0}));return{min:q.reduce((a,b)=>b.value<a.value?b:a,q[0]),max:q.reduce((a,b)=>b.value>a.value?b:a,q[0])};}),cases:n.cases}));lastRun={success:true,caseCount:results.length,results,envelopes,memberForceEnvelope,allCasesEquilibriumOK:results.every(x=>x.equilibrium?.ok===true),analysisEnabled:false,designApproved:false,scope:"تحلیل مقدماتی؛ نه کنترل آیین‌نامه‌ای و نه تأیید طراحی."};return lastRun;}
 function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});}catch(e){t.push({name:n,pass:false,error:e.message});}};ck("4 directions",()=>DIRS.length===4&&new Set(DIRS).size===4);ck("6 surfaces",()=>SURFACES.length===6&&new Set(SURFACES).size===6);ck("8 wind/internal patterns",()=>DIRS.length*2===8);ck("finite pressure guard",()=>finite(0)&&!finite(null)&&!finite("1"));ck("pressure surfaces",()=>SURFACES.includes("roof-left")&&SURFACES.includes("end-wall-back"));ck("signed direction IDs",()=>DIRS.includes("x-negative")&&DIRS.includes("z-negative"));ck("wind action distinct",()=>({dead:1.2,live:0.5,snow:1.6,wind:1}).wind===1);ck("approval remains disabled",()=>true);ck("analysis remains preliminary",()=>true);ck("all directions unique",()=>new Set(DIRS).size===4);ck("all surfaces unique",()=>new Set(SURFACES).size===6);ck("does not invent pressures",()=>createCases.toString().includes("netWithPositiveInternal"));
-  ck("nonzero triangular gable wind is blocked",()=>{try{auditGablePressure({"end-wall-front":0.2,"end-wall-back":0});return false;}catch(e){return e.message.includes("ناحیه مثلثی");}});
-  ck("zero triangular gable wind passes explicit guard",()=>auditGablePressure({"end-wall-front":0,"end-wall-back":0}).ready);
+  ck("nonzero gable wind requires a real support and tributary-area model",()=>{try{auditGablePressure({"end-wall-front":0.2,"end-wall-back":0});return false;}catch(e){return e.message.includes("هندسه و اعضای واقعی");}});
+  ck("zero gable wind remains valid without activating gable transfer",()=>auditGablePressure({"end-wall-front":0,"end-wall-back":0}).ready);
+  ck("gable tributary areas close to the exact trapezoidal wall area on both faces",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableTributaryAreaCoverage(m);return !!r?.success&&r.rows.length===2&&r.rows.every(x=>Math.abs(x.assignedAreaM2-x.expectedAreaM2)<1e-8);});
+  ck("gable area audit rejects a missing tributary strip",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.();m.members=m.members.filter(x=>!(x.sectionKey==="endGirt"&&x.endFace==="front"&&x.row===2));return !auditGableTributaryAreaCoverage(m).success;});
   ck("case builder creates all eight directional/internal cases only when gable wind is zero",()=>{
    const oldWind=root.SteelDirectionalWind,oldLoads=root.SteelLoads,oldModel=root.SteelStructuralModel;
    try{
@@ -115,17 +117,23 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     return createCases().caseCount===8;
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
   });
-  ck("case builder rejects nonzero end-wall pressure before any solver call",()=>{
+  ck("case builder accepts nonzero gable pressure only after topology and area audits",()=>{
    const oldWind=root.SteelDirectionalWind,oldLoads=root.SteelLoads,oldModel=root.SteelStructuralModel;
    try{
     const surfaces={};SURFACES.forEach(k=>surfaces[k]={netWithPositiveInternal:k==="end-wall-front"?0.25:0,netWithNegativeInternal:0});
     const directions={};DIRS.forEach(d=>directions[d]={label:d,surfaces});
+    const gable=root.SteelEndWallGableSupportAudit.fixture(),nodes=[...gable.nodes],members=[...gable.members];
+    const addNode=(id,x,y,z)=>nodes.push({id,x,y,z});
+    addNode("WL0",0,0,0);addNode("WL1",0,0,30);addNode("WR0",20,0,0);addNode("WR1",20,0,30);
+    addNode("PL0",0,0,0);addNode("PL1",0,0,30);addNode("PR0",20,0,0);addNode("PR1",20,0,30);
+    members.push({id:"PL",sectionKey:"roofPurlin",side:"left",start:"PL0",end:"PL1",tributaryWidth:Math.hypot(10,2)});
+    members.push({id:"PR",sectionKey:"roofPurlin",side:"right",start:"PR0",end:"PR1",tributaryWidth:Math.hypot(10,2)});
+    members.push({id:"WL",sectionKey:"wallGirt",side:"left",start:"WL0",end:"WL1",tributaryHeight:6});
+    members.push({id:"WR",sectionKey:"wallGirt",side:"right",start:"WR0",end:"WR1",tributaryHeight:6});
     root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
     root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
-    root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5,length:10,height:6},nodes:[{id:"L0",x:0,y:0,z:0},{id:"L1",x:0,y:0,z:10},{id:"R0",x:20,y:0,z:0},{id:"R1",x:20,y:0,z:10}],members:[
-     {id:"PL",sectionKey:"roofPurlin",side:"left",start:"L0",end:"L1",tributaryWidth:Math.hypot(10,5)},{id:"PR",sectionKey:"roofPurlin",side:"right",start:"R0",end:"R1",tributaryWidth:Math.hypot(10,5)},{id:"WL",sectionKey:"wallGirt",side:"left",start:"L0",end:"L1",tributaryHeight:6},{id:"WR",sectionKey:"wallGirt",side:"right",start:"R0",end:"R1",tributaryHeight:6},{id:"EG",sectionKey:"endGirt",endFace:"front",start:"L0",end:"R0",tributaryHeight:1}
-    ]})};
-    try{createCases();return false;}catch(e){return e.message.includes("ناحیه مثلثی");}
+    root.SteelStructuralModel={getData:()=>({geometry:gable.geometry,nodes,members})};
+    return createCases().caseCount===8;
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
   });
  ck("tributary surface areas close exactly",()=>{const nodes=[{id:"a",x:0,y:0,z:0},{id:"b",x:0,y:0,z:5},{id:"c",x:10,y:0,z:0},{id:"d",x:10,y:0,z:5}];const members=[{id:"pl",sectionKey:"roofPurlin",side:"left",start:"a",end:"b",tributaryWidth:Math.hypot(5,5)},{id:"pr",sectionKey:"roofPurlin",side:"right",start:"c",end:"d",tributaryWidth:Math.hypot(5,5)},{id:"wl",sectionKey:"wallGirt",side:"left",start:"a",end:"b",tributaryHeight:5},{id:"wr",sectionKey:"wallGirt",side:"right",start:"c",end:"d",tributaryHeight:5}];const q=auditTributaryAreaCoverage({geometry:{span:10,rise:5,length:5,height:5},nodes,members});return q.success&&q.rows.length===4;});
