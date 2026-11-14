@@ -3,7 +3,7 @@
 const forceKeys=["Fx_i","Fy_i","Fz_i","Mx_i","My_i","Mz_i","Fx_j","Fy_j","Fz_j","Mx_j","My_j","Mz_j"];
 function audit(result){
  const issues=[],members=Array.isArray(result?.members)?result.members:[];
- const tapered=members.filter(m=>m&&(m.taperApplied===true||m.taperSegmentCount!=null||m.parentMemberId));
+ const tapered=members.filter(m=>m&&(m.taperApplied===true||m.taperSegmentCount!=null));
  if(!tapered.length)return {success:true,status:"no-tapered-members",physicalMemberCount:0,analysisElementCount:0,issues,rows:[],analysisEnabled:false,designApproved:false};
  const groups=new Map();
  for(const m of tapered){
