@@ -647,7 +647,7 @@
       for(let j=0;j<roofLine.length-1;j++){
         const a=roofLine[j],b=roofLine[j+1],mid=(a.x+b.x)/2;
         const isOverhang=mid<0||mid>span;
-        const isGableChord=(fi===0||fi===frames.length-1)&&endWallXs.some(x=>Math.abs(x-a.x)<1e-7)&&endWallXs.some(x=>Math.abs(x-b.x)<1e-7);
+        const isGableChord=(fi===0||fi===frames.length-1)&&a.x>=-1e-7&&b.x<=span+1e-7;
         addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",segment:j+1,connectedPurlinNodes:true,gableChordFace:isGableChord?(fi===0?"front":"rear"):null});
       }
       const runwayLeft=craneEnabled?addNode(nodes,0,runwayElevation,z,"runway-support"):null;
