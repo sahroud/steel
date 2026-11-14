@@ -34,6 +34,7 @@ function readUI(){
  });
  return getData();
 }
+function isDocumentedAxialConnection(d){return d?.eccentricity_mm===0;}
 function extractGroupTensionDemand(group){
  const env=root.SteelMemberForceEnvelope?.getLast?.(),model=root.SteelStructuralModel?.getData?.();
  const fail=reason=>({ready:false,reason,forceDemandKN:null,memberCount:0});
@@ -77,7 +78,7 @@ function audit(input){
    if(delta>3)warnings.push(label+": اختلاف Ae با An×U برابر "+delta.toFixed(1)+"٪ است؛ داده‌ها بازبینی شوند.");
   }
   if(d.eccentricity_mm===null||d.eccentricity_mm===undefined)local.push("خروج از مرکزیت اتصال باید مشخص شود؛ مقدار صفر فقط با مستندات هم‌محوری وارد شود.");
-  else if(d.eccentricity_mm!==0)local.push("خروج از مرکزیت اتصال غیرصفر است؛ غربال کشش محوری کافی نیست و اندرکنش کشش و خمش لازم است.");
+  else if(!isDocumentedAxialConnection(d))local.push("خروج از مرکزیت اتصال غیرصفر است؛ غربال کشش محوری کافی نیست و اندرکنش کشش و خمش لازم است.");
   if(d.connectionType==="unknown")local.push("نوع اتصال (پیچی یا جوشی) مشخص نشده است.");
   if(d.connectionType==="bolted"&&!d.holePatternReviewed)local.push("بازبینی قطر، تعداد، فاصله و آرایش سوراخ‌ها تأیید نشده است.");
   if(!d.connectionDetailsReviewed)local.push("جزئیات اتصال و مسیر انتقال نیرو بازبینی نشده است.");
@@ -88,7 +89,7 @@ function audit(input){
   const demandBridge=extractGroupTensionDemand(g),manualDemand=Number(d.forceDemandKN)>0?Number(d.forceDemandKN):null;
   if(!demandBridge.ready){if(manualDemand===null)warnings.push(label+": نیروی کششی تقاضا از پوش FEM استخراج نشد؛ "+demandBridge.reason);}
   else if(manualDemand!==null&&Math.abs(manualDemand-demandBridge.forceDemandKN)>Math.max(0.01,demandBridge.forceDemandKN*0.01))warnings.push(label+": مقدار دستی تقاضا با بیشینه کشش استخراج‌شده از FEM بیش از ۱٪ اختلاف دارد؛ منبع و ترکیب کنترل شوند.");
-  const capacityScreen=demandBridge.ready?root.SteelTensionCapacityScreen?.analyze?.({codeBasis:"M10-1401-provisional",officialTextVerified:false,axialOnlyVerified:demandBridge.axialOnly===true&&d.eccentricity_mm===0,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,Fy_MPa:Number(mat.Fy),Fu_MPa:Number(mat.Fu),demand_kN:demandBridge.forceDemandKN,governingMember:demandBridge.governing?.memberId,governingCase:demandBridge.governing?.caseLabel,governingEnd:demandBridge.governing?.end}):null;
+  const capacityScreen=demandBridge.ready?root.SteelTensionCapacityScreen?.analyze?.({codeBasis:"M10-1401-provisional",officialTextVerified:false,axialOnlyVerified:demandBridge.axialOnly===true&&isDocumentedAxialConnection(d),Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,Fy_MPa:Number(mat.Fy),Fu_MPa:Number(mat.Fu),demand_kN:demandBridge.forceDemandKN,governingMember:demandBridge.governing?.memberId,governingCase:demandBridge.governing?.caseLabel,governingEnd:demandBridge.governing?.end}):null;
   groups[g]={label,complete:local.length===0,issues:local,connectionType:d.connectionType,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,forceDemandKN:manualDemand??(demandBridge.ready?demandBridge.forceDemandKN:null),computedForceDemandKN:demandBridge.forceDemandKN,demandSource:demandBridge.ready?demandBridge.source:null,demandMemberCount:demandBridge.memberCount,demandCaseCount:demandBridge.caseCount,governingTension:demandBridge.governing,capacityScreen:capacityScreen||{ok:false,issues:["موتور غربال ظرفیت یا تقاضای FEM معتبر در دسترس نیست."],designApproved:false}};
   local.forEach(x=>issues.push(label+": "+x));
  });
@@ -136,6 +137,7 @@ function selfTest(){
  t("blocks incomplete per-member combination coverage",()=>{const old=baseEnv.members[0].simultaneousCases;baseEnv.members[0].simultaneousCases=old.slice(0,1);const r=extractGroupTensionDemand("roofBrace");baseEnv.members[0].simultaneousCases=old;return !r.ready;});
  t("blocks groups absent from current model",()=>!extractGroupTensionDemand("wallBrace").ready);
  t("blocks axial-only screening when member moments are present",()=>{baseEnv.members[0].simultaneousCases[0].endI.My=250;const r=extractGroupTensionDemand("roofBrace");baseEnv.members[0].simultaneousCases[0].endI.My=0;return !r.ready&&r.reason.includes("لنگر");});
+ t("requires explicit documented zero connection eccentricity",()=>isDocumentedAxialConnection({eccentricity_mm:0})&&!isDocumentedAxialConnection({eccentricity_mm:null})&&!isDocumentedAxialConnection({eccentricity_mm:5}));
  root.SteelMemberForceEnvelope=saved.env;root.SteelStructuralModel=saved.model;
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"automatic tensile demand extraction from complete FEM cases only; no tensile resistance or connection design"};
 }
