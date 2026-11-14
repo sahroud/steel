@@ -131,5 +131,41 @@ function supplementalSelfTest(){
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,failed:checks.filter(x=>!x[1]).map(x=>x[0]),tests:checks.map(x=>({name:x[0],pass:x[1]}))};
 }
 
-root.SteelCSVStructuralExchange=Object.freeze({csvRows,buildProposal,selfTest,auditProposal,auditSelfTest,parseSupplementalTables,supplementalSelfTest});
+
+function compareProposals(candidate,reference,options){
+ const opt=options||{},issues=[],warnings=[],tol=Number.isFinite(opt.coordinateToleranceM)&&opt.coordinateToleranceM>0?opt.coordinateToleranceM:0.001;
+ if(!candidate||!reference||!Array.isArray(candidate.nodes)||!Array.isArray(reference.nodes)||!Array.isArray(candidate.members)||!Array.isArray(reference.members))return {success:false,issues:["candidate and reference proposals with nodes/members are required"],warnings,report:null,solverEligible:false,designApproved:false};
+ const refNodes=new Map(reference.nodes.map(n=>[n.id,n])),refMembers=new Map(reference.members.map(m=>[m.id,m])),canNodes=new Map(candidate.nodes.map(n=>[n.id,n])),canMembers=new Map(candidate.members.map(m=>[m.id,m]));
+ const nodeMatches=[],memberMatches=[],unmatchedCandidateNodes=[],unmatchedReferenceNodes=[],unmatchedCandidateMembers=[],unmatchedReferenceMembers=[];
+ let maxNodeDeviation=0,orientationReversals=0,sectionMismatches=0;
+ candidate.nodes.forEach(n=>{const r=refNodes.get(n.id);if(!r){unmatchedCandidateNodes.push(n.id);return;}const delta=Math.hypot(n.x-r.x,n.y-r.y,n.z-r.z);maxNodeDeviation=Math.max(maxNodeDeviation,delta);nodeMatches.push({id:n.id,deviationM:delta,withinTolerance:delta<=tol});});
+ reference.nodes.forEach(n=>{if(!canNodes.has(n.id))unmatchedReferenceNodes.push(n.id);});
+ candidate.members.forEach(m=>{const r=refMembers.get(m.id);if(!r){unmatchedCandidateMembers.push(m.id);return;}const same=m.start===r.start&&m.end===r.end,reverse=m.start===r.end&&m.end===r.start;if(reverse)orientationReversals++;if(!same&&!reverse)issues.push("member "+m.id+" endpoint IDs differ from reference");if(m.sectionRef!==r.sectionRef)sectionMismatches++;memberMatches.push({id:m.id,orientation:same?"same":reverse?"reversed":"different",sectionMatch:m.sectionRef===r.sectionRef});});
+ reference.members.forEach(m=>{if(!canMembers.has(m.id))unmatchedReferenceMembers.push(m.id);});
+ const outside=nodeMatches.filter(x=>!x.withinTolerance);
+ if(outside.length)warnings.push(outside.length+" matched nodes exceed coordinate tolerance "+tol+" m");
+ if(unmatchedCandidateNodes.length||unmatchedReferenceNodes.length)warnings.push("candidate/reference node inventories differ");
+ if(unmatchedCandidateMembers.length||unmatchedReferenceMembers.length)warnings.push("candidate/reference member inventories differ");
+ if(orientationReversals)warnings.push(orientationReversals+" members have reversed I/J orientation relative to reference");
+ if(sectionMismatches)warnings.push(sectionMismatches+" matched members have different section references");
+ const report={candidateNodeCount:candidate.nodes.length,referenceNodeCount:reference.nodes.length,candidateMemberCount:candidate.members.length,referenceMemberCount:reference.members.length,matchedNodeCount:nodeMatches.length,matchedMemberCount:memberMatches.length,maxNodeDeviationM:maxNodeDeviation,coordinateToleranceM:tol,nodesOutsideTolerance:outside.map(x=>x.id),unmatchedCandidateNodes,unmatchedReferenceNodes,unmatchedCandidateMembers,unmatchedReferenceMembers,orientationReversedMemberIds:memberMatches.filter(x=>x.orientation==="reversed").map(x=>x.id),sectionMismatchMemberIds:memberMatches.filter(x=>!x.sectionMatch).map(x=>x.id)};
+ return {success:issues.length===0,issues,warnings,report,nodeMatches,memberMatches,status:"comparison_only",geometryActivation:false,solverEligible:false,designApproved:false};
+}
+function comparisonSelfTest(){
+ const a={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2,y:0,z:0}],members:[{id:"M",start:"A",end:"B",sectionRef:"S1"}]};
+ const b={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2.01,y:0,z:0},{id:"C",x:4,y:0,z:0}],members:[{id:"M",start:"B",end:"A",sectionRef:"S2"},{id:"N",start:"A",end:"C",sectionRef:"S3"}]};
+ const r=compareProposals(a,b,{coordinateToleranceM:0.001}),checks=[
+ ["matching nodes identified",r.report.matchedNodeCount===2],
+ ["coordinate deviation measured",Math.abs(r.report.maxNodeDeviation-0.01)<1e-9],
+ ["outside tolerance identified",r.report.nodesOutsideTolerance.includes("B")],
+ ["unmatched reference node identified",r.report.unmatchedReferenceNodes.includes("C")],
+ ["reversed member orientation identified",r.report.orientationReversedMemberIds.includes("M")],
+ ["section mismatch identified",r.report.sectionMismatchMemberIds.includes("M")],
+ ["unmatched member identified",r.report.unmatchedReferenceMembers.includes("N")],
+ ["comparison cannot activate solver",r.geometryActivation===false&&r.solverEligible===false&&r.designApproved===false]
+ ];
+ return {passed:checks.filter(x=>x[1]).length,total:checks.length,failed:checks.filter(x=>!x[1]).map(x=>x[0]),tests:checks.map(x=>({name:x[0],pass:x[1]}))};
+}
+
+root.SteelCSVStructuralExchange=Object.freeze({csvRows,buildProposal,selfTest,auditProposal,auditSelfTest,parseSupplementalTables,supplementalSelfTest,compareProposals,comparisonSelfTest});
 })(typeof window!=="undefined"?window:globalThis);
