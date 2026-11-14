@@ -69,9 +69,15 @@ function audit(model,loads){
  if(membersWithMissingNodes.length)issues.push("گره ابتدا/انتها برای اعضای زیر در مدل وجود ندارد: "+membersWithMissingNodes.slice(0,10).join("، "));
  const supports=(model?.nodes||[]).filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>String(n.id));
  const reaches=start=>{const seen=new Set([String(start)]),q=[String(start)];while(q.length){const n=q.shift();if(supports.includes(n))return true;(adjacency.get(n)||[]).forEach(x=>{if(!seen.has(x)){seen.add(x);q.push(x);}});}return false;};
- const disconnected=members.filter(m=>["roofPurlin","wallGirt","endGirt"].includes(m.sectionKey)&&(!nodeIds.has(String(m.start))||!nodeIds.has(String(m.end))||!reaches(m.start)||!reaches(m.end))).map(m=>String(m.id));
+ const disconnected=members.filter(m=>!nodeIds.has(String(m.start))||!nodeIds.has(String(m.end))||!reaches(m.start)||!reaches(m.end)).map(m=>String(m.id));
  if(!supports.length)issues.push("گره پایه برای ممیزی اتصال به تکیه‌گاه موجود نیست.");
  if(disconnected.length)issues.push("مسیر هندسی اعضای بارگیر تا تکیه‌گاه ناقص است: "+disconnected.slice(0,8).join("، "));
+ const membersWithoutExplicitLineLoad=members.filter(m=>!m.lineLoads||["dead","live","snow","wind","windLeft","windRight","windEnd"].some(k=>!finite(m.lineLoads[k])));
+ if(membersWithoutExplicitLineLoad.length)issues.push("تعریف صریح بار خطی/صفر برای اعضای مدل ناقص است: "+membersWithoutExplicitLineLoad.slice(0,10).map(m=>String(m.id)).join("، "));
+ const missingTributaryHeight=[...groups.wallGirts,...groups.endGirts].filter(m=>!(finite(m.lineLoads?.tributaryHeight)&&m.lineLoads.tributaryHeight>0));
+ if(missingTributaryHeight.length)issues.push("ارتفاع بارگیر گرت‌های طولی/انتهایی ناقص است: "+missingTributaryHeight.slice(0,10).map(m=>String(m.id)).join("، "));
+ const missingRoofSideAssignments=groups.purlins.filter(m=>m.side==="left"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="right"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="ridge"?!(finite(m.lineLoads?.tributaryWidthLeft)&&m.lineLoads.tributaryWidthLeft>0&&finite(m.lineLoads?.tributaryWidthRight)&&m.lineLoads.tributaryWidthRight>0):true);
+ if(missingRoofSideAssignments.length)issues.push("عرض بارگیر چپ/راست پرلین یا پرلین تاج نامعتبر است: "+missingRoofSideAssignments.slice(0,10).map(m=>String(m.id)).join("، "));
  const frameIds=[...new Set(groups.rafters.map(m=>Number(m.frame)).filter(Number.isFinite))];
  const frameCount=Array.isArray(model?.geometry?.frames)?model.geometry.frames.length:0;
  if(frameCount&&frameIds.length!==frameCount)issues.push("پوشش رفترها در قاب‌ها کامل نیست: "+frameIds.length+" از "+frameCount+" قاب دارای عضو رفتر شناسایی شد.");
@@ -112,8 +118,8 @@ function selfTest(){
   {id:"P1",sectionKey:"roofPurlin",start:"B",end:"T",lineLoads:{dead:1,live:.5,snow:.5,windLeft:-.2,windRight:-.2,tributaryWidth:1.2}},
   {id:"W1",sectionKey:"wallGirt",start:"B",end:"T",lineLoads:{wind:.3,tributaryHeight:2}},
   {id:"E1",sectionKey:"endGirt",start:"B",end:"T",lineLoads:{windEnd:.4,tributaryHeight:2}},
-  {id:"WB",sectionKey:"wallBrace",start:"B",end:"T"},
-  {id:"RB",sectionKey:"roofBrace",start:"B",end:"T"}
+  {id:"WB",sectionKey:"wallBrace",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0}},
+  {id:"RB",sectionKey:"roofBrace",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0}}
  ];
  const model={geometry:{frames:[0]},nodes:[{id:"B",kind:"base"},{id:"T"}],members};
  const loads={deadLeft:.5,deadRight:.5,liveLeft:.5,liveRight:.5,snowLeft:1,snowRight:1,windLeft:-.2,windRight:-.2,windWall:.3,windEndFront:.4,windEndBack:.4,combinations:[{id:"C1",name:"نمونه",dead:1.2,live:1.6,snow:0}]};
@@ -135,6 +141,9 @@ function selfTest(){
  test("disconnected loaded member rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].start="ORPHAN";return !audit(p,loads).success;});
  test("every model member must reference existing endpoint nodes",()=>{const p=JSON.parse(JSON.stringify(model));p.members[0].end="MISSING";return !audit(p,loads).success;});
  test("missing model rejected",()=>!audit(null,loads).success);
+  test("all model members require explicit line-load declarations",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[5].lineLoads;return !audit(p,loads).success;});
+  test("wall and end-wall tributary heights are required",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[3].lineLoads.tributaryHeight;return !audit(p,loads).success;});
+  test("all member paths must reach a declared base support",()=>{const p=JSON.parse(JSON.stringify(model));p.members[5].start="ORPHAN";return !audit(p,loads).success;});
  test("empty combination list allowed as load-path audit only",()=>{const p={...loads,combinations:[]};return audit(model,p).success;});
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
 }
