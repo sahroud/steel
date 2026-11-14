@@ -40,12 +40,13 @@ function ui(){
  const old=document.createElement("details");old.id="ssLegacyDetails";old.innerHTML="<summary>تنظیمات تخصصی، جزئیات مهندسی و ابزارهای پیشرفته</summary>";
  [...main.children].filter(n=>n!==p).forEach(n=>old.appendChild(n));main.appendChild(old);
 }
+function validateInputObject(d){const g=d?.geometry||{},issues=[];if(![g.spanM,g.lengthM,g.frameSpacingM,g.columnHeightM].every(x=>Number.isFinite(x)&&x>0))issues.push("ابعاد اصلی باید مثبت و عددی باشند.");if(!Number.isFinite(g.roofRiseM)||g.roofRiseM<0)issues.push("افزایش ارتفاع تاج باید نامنفی باشد.");if(Number.isFinite(g.frameSpacingM)&&Number.isFinite(g.lengthM)&&g.frameSpacingM>g.lengthM)issues.push("فاصله قاب‌ها نباید از طول سوله بیشتر باشد.");const c=d?.configuration||{};if(c.overheadCrane&&!(Number(c.requestedMaxPurlinSpacingM)>0))issues.push("فاصله پرلین برای پروژه جرثقیل‌دار باید معتبر باشد.");return issues;}
+function selfTest(){const checks=[],test=(name,fn)=>{try{checks.push({name,pass:!!fn()});}catch(e){checks.push({name,pass:false,error:e.message});}};const valid={geometry:{spanM:20,lengthM:40,frameSpacingM:5,columnHeightM:7,roofRiseM:2},configuration:{overheadCrane:false,requestedMaxPurlinSpacingM:1.2}};test("valid project geometry passes",()=>validateInputObject(valid).length===0);test("zero span is rejected",()=>validateInputObject({...valid,geometry:{...valid.geometry,spanM:0}}).length>0);test("negative roof rise is rejected",()=>validateInputObject({...valid,geometry:{...valid.geometry,roofRiseM:-1}}).length>0);test("frame spacing beyond building length is rejected",()=>validateInputObject({...valid,geometry:{...valid.geometry,frameSpacingM:50}}).length>0);test("crane configuration preserves explicit flag",()=>valid.configuration.overheadCrane===false);return {passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"input validation only; no engineering approval"};}
 function run(){
  const status=$("ssRunStatus");
  try{
   const d=apply(),g=d.geometry,c=d.configuration;
-  if(![g.spanM,g.lengthM,g.frameSpacingM,g.columnHeightM].every(x=>Number.isFinite(x)&&x>0)||!Number.isFinite(g.roofRiseM)||g.roofRiseM<0)throw Error("ابعاد سوله معتبر نیستند.");
-  if(g.frameSpacingM>g.lengthM)throw Error("فاصله قاب‌ها نباید از طول سوله بیشتر باشد.");
+  const inputIssues=validateInputObject(d);if(inputIssues.length)throw Error(inputIssues.join(" "));
   const err=window.SteelProject?.validate?.()||"";if(err)throw Error(err);
   model=window.SteelStructuralModel?.build?.();if(!model||!model.members?.length)throw Error("مدل هندسی تولید نشد.");
   window.SteelStructuralModel.draw?.();
@@ -85,6 +86,6 @@ function printReport(){const w=window.open("","_blank");if(!w)throw Error("پن�
 function printDrawings(){
  try{if(!drawings)drawings=window.SteelConstructionDrawings?.build?.();const b=$("btnPrintConstructionDrawings");if(b)b.click();else alert("ماژول چاپ نقشه در دسترس نیست.");}catch(e){alert(e.message||String(e));}
 }
-window.SteelProjectWorkspace={run,getLast:()=>lastRun,readInputs:read,exportSelected:exportFiles};
+window.SteelProjectWorkspace={run,getLast:()=>lastRun,readInputs:read,exportSelected:exportFiles,validateInputObject,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{addStyle();ui();});else{addStyle();ui();}
 })();
