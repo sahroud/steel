@@ -5,7 +5,10 @@
 (function(root){
 "use strict";
 function build(model,combinationResults){
- const issues=[],members=Array.isArray(model?.members)?model.members:[],cases=Array.isArray(combinationResults)?combinationResults:[];
+ const issues=[],modelMembers=Array.isArray(model?.members)?model.members:[],cases=Array.isArray(combinationResults)?combinationResults:[];
+ const firstCaseMembers=Array.isArray(cases[0]?.members)?cases[0].members:[];
+ const modelHasTaper=modelMembers.some(m=>m&&(m.taperApplied===true||m.taperSegmentCount!=null));
+ const members=modelHasTaper?modelMembers:firstCaseMembers;
  const tapered=members.filter(m=>m&&(m.taperApplied===true||m.taperSegmentCount!=null));
  if(!tapered.length)return {success:true,status:"no-tapered-members",physicalMemberCount:0,analysisSegmentCount:0,loadCases:[],issues,analysisEnabled:false,designApproved:false};
  if(!cases.length)issues.push("هیچ نتیجه ترکیب بار ذخیره‌شده‌ای دریافت نشد.");
