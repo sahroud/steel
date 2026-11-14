@@ -115,6 +115,7 @@ function selfTest(){
  t("wall openings block uniform tributary distribution",()=>{root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:59,openingAreaM2:1,weightKN:2124}))})};const x=audit(model);root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:(face==="front"||face==="rear")?60:100,openingAreaM2:0,weightKN:(face==="front"||face==="rear")?216:360}))})};return !x.success&&x.issues.some(v=>v.includes("بازشو"));});
  t("missing base support coverage is blocked",()=>{const x=audit({...model,nodes:nodes.filter(n=>n.id!=="L0")});return !x.success;});
  t("zero dead factor produces no wall nodal actions",()=>prepareNodalLoads(model,0).length===0);
+ t("precomputed audit is reused without recalculating wall weights",()=>{const old=root.SteelMasonryWallAudit;root.SteelMasonryWallAudit={audit(){throw new Error("should not recalculate");}};const x=prepareNodalLoads(model,1.2,a);root.SteelMasonryWallAudit=old;return x.length>0;});
  t("analysis approval remains disabled",()=>a.analysisEnabled===false&&a.designApproved===false);
  root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
