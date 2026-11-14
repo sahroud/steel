@@ -135,7 +135,7 @@
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
       '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option></select></div></div>' +
-      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnSolverSelfTest" class="btn secondary">آزمون صحت هسته تحلیل</button><button type="button" id="btnTieBeamIntegrationTest" class="btn secondary">آزمون یکپارچگی شناژ</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button><button type="button" id="btnDownloadTaperedForceDiagrams" class="btn secondary" disabled>دانلود نمودار نیروهای قطعات متغیرمقطع</button></div>' +
+      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnRunAll3DCombinations" class="btn primary">تحلیل سه‌بعدی همه ترکیبات بار</button><button type="button" id="btnDownload3DCombinationBatch" class="btn secondary" disabled>دانلود گزارش همه ترکیبات</button><button type="button" id="btnSolverSelfTest" class="btn secondary">آزمون صحت هسته تحلیل</button><button type="button" id="btnTieBeamIntegrationTest" class="btn secondary">آزمون یکپارچگی شناژ</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button><button type="button" id="btnDownloadTaperedForceDiagrams" class="btn secondary" disabled>دانلود نمودار نیروهای قطعات متغیرمقطع</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
@@ -292,6 +292,32 @@
         box.style.color = "#b45309";
         window.SteelStructuralModel.last3DResult = null;
       });
+    });
+    $("btnRunAll3DCombinations")?.addEventListener("click",function(){
+      const box=$("fullModel3DResult");
+      runWithProgress("آماده‌سازی تحلیل مستقل همه ترکیبات بار…",async stage=>{
+        try{
+          build();draw();showSummary();
+          const report=await analyzeAll3DCombinations({onProgress:stage});
+          const lines=report.results.map(x=>(x.success?"✓ ":"✕ ")+x.label+
+            " | تعادل: "+(x.equilibrium?.ok?"تأیید":"تأیید نشد")+
+            (x.taperedDiagramSuccess?" | نمودار متغیرمقطع آماده":x.failure?" | "+x.failure:" | نمودار متغیرمقطع در دسترس نیست"));
+          if(box){box.textContent="گزارش تحلیل مستقل ترکیبات بار: "+report.passed+" موفق از "+report.combinationCount+"؛ "+report.failed+" ناموفق.\\n"+lines.join("\\n");box.style.color=report.failed===0?"#15803d":"#b45309";}
+          const download=$("btnDownload3DCombinationBatch");if(download)download.disabled=report.passed===0;
+        }catch(error){
+          if(box){box.textContent="تحلیل همه ترکیبات انجام نشد: "+String(error?.message||error);box.style.color="#b45309";}
+          const download=$("btnDownload3DCombinationBatch");if(download)download.disabled=true;
+        }
+      });
+    });
+    $("btnDownload3DCombinationBatch")?.addEventListener("click",function(){
+      const report=window.SteelStructuralModel?.last3DCombinationBatch;
+      if(!report)return;
+      const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json;charset=utf-8"});
+      const url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url;a.download="sahroud-steel-3d-all-load-combinations.json";
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
     });
     $("btnDownloadTaperedForceDiagrams")?.addEventListener("click",function(){
       const report=window.SteelStructuralModel?.last3DResult?.taperedSectionForceDiagrams;
@@ -1579,6 +1605,59 @@
     result.warning="وزن خود فولاد با وزن مخصوص 78.5 kN/m³ و وزن خود شناژ بتنی با وزن مخصوص تعریف‌شده برای هر مسیر، در حالت مرده و ترکیبات دارای ضریب D محاسبه می‌شود؛ وزن شناژ فقط یک‌بار و با سطح مقطع ناخالص اضافه می‌شود. حالت باد فقط فشار خالص دستی واردشده را به‌صورت برداری به پرلین‌های سقف و قیدهای طولی دو دیوار جانبی منتقل می‌کند؛ فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، ناحیه مثلثی دیوار انتهایی بالای آخرین قید، بازشوهای غالب و پیچش کلی هنوز منظور نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
+  async function analyzeAll3DCombinations(options){
+    options=options||{};
+    if(!model)build();
+    const source=window.SteelLoads?.getData?.().combinations;
+    if(!Array.isArray(source)||!source.length)throw new Error("فهرست ترکیبات بار در دسترس نیست.");
+    const seen=new Set(),cases=source.map((combo,index)=>{
+      if(!combo||typeof combo!=="object")throw new Error("تعریف ترکیب بار شماره "+(index+1)+" معتبر نیست.");
+      const factors={};
+      ["dead","live","snow"].forEach(key=>{
+        const value=Number(combo[key]);
+        if(combo[key]===undefined||combo[key]===null||combo[key]===""||!Number.isFinite(value)||value<0)
+          throw new Error("ضریب "+key+" در ترکیب "+(combo.name||index+1)+" ناقص یا نامعتبر است.");
+        factors[key]=value;
+      });
+      const rawLabel=String(combo.name||("ترکیب "+(index+1)));
+      const label=seen.has(rawLabel)?rawLabel+" ["+(index+1)+"]":rawLabel;
+      seen.add(rawLabel);
+      return {index,id:String(combo.id||combo.key||("combo-"+(index+1))),label,factors:{...factors,wind:0},windSign:1};
+    });
+    const results=[];
+    for(let i=0;i<cases.length;i++){
+      const item=cases[i];
+      if(typeof options.onProgress==="function")options.onProgress("تحلیل مستقل "+(i+1)+" از "+cases.length+": "+item.label);
+      try{
+        // analyze3D creates a fresh deep-enough geometry copy and remakes every member load
+        // from this combination's factors; no factored load vector is reused between cases.
+        const result=await analyze3D({...item,label:item.label});
+        const equilibriumOK=result?.equilibrium?.ok===true;
+        const diagram=result?.taperedSectionForceDiagrams||null;
+        results.push({
+          id:item.id,index:item.index,label:item.label,factors:item.factors,
+          success:equilibriumOK,equilibrium:result?.equilibrium||null,
+          nodeCount:result?.nodeCount||0,memberCount:result?.memberCount||0,
+          taperedDiagramSuccess:diagram?.success===true,
+          taperedDiagram:diagram,
+          failure:equilibriumOK?null:"تعادل حل‌گر برای این ترکیب تأیید نشد."
+        });
+      }catch(error){
+        results.push({id:item.id,index:item.index,label:item.label,factors:item.factors,
+          success:false,equilibrium:null,taperedDiagramSuccess:false,taperedDiagram:null,
+          failure:String(error?.message||error)});
+      }
+    }
+    const report={
+      schemaVersion:1,generatedAt:new Date().toISOString(),
+      combinationCount:cases.length,passed:results.filter(x=>x.success).length,
+      failed:results.filter(x=>!x.success).length,results,
+      designApproved:false,
+      note:"هر ترکیب با فراخوانی مستقل حل‌گر و بازسازی بارها از ضرایب همان ترکیب تحلیل شده است. این گزارش فقط تحلیل و نمودار نیرو است و تأیید مقاومت، پایداری یا انطباق آیین‌نامه‌ای نیست."
+    };
+    window.SteelStructuralModel.last3DCombinationBatch=report;
+    return report;
+  }
   async function analyzeFoundationEnvelope(){
     if(!model)build();
     const combos=window.SteelLoads?.getData?.().combinations;
@@ -1639,6 +1718,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
