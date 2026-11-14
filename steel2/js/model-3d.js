@@ -973,7 +973,7 @@
     return new Promise((resolve,reject)=>{
       let worker;
       try{
-        worker=new Worker(new URL("js/analysis-3d-worker.js?v=20261113-force-signs3",window.location.href));
+        worker=new Worker(new URL("js/analysis-3d-worker.js?v=20261114-explicit-member-loads1",window.location.href));
       }catch(error){
         reject(new Error("امکان راه‌اندازی پردازشگر پس‌زمینه وجود ندارد: "+error.message));
         return;
@@ -1000,7 +1000,8 @@
           sectionsByMemberId,
           supports,
           releasePurlinRafterRotation:true,
-          nodalLoads:Array.isArray(extraOptions?.nodalLoads)?extraOptions.nodalLoads:[]
+          nodalLoads:Array.isArray(extraOptions?.nodalLoads)?extraOptions.nodalLoads:[],
+          requireExplicitMemberLoads:true
         });
       }catch(error){
         finish(reject,new Error("ارسال مدل به پردازشگر پس‌زمینه ناموفق بود: "+error.message));
