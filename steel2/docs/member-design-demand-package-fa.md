@@ -4,7 +4,7 @@
 `SteelMemberDesignDemandPackage` خروجی نمودارهای نیروهای داخلی هر حالت تحلیل را به بسته‌ای ردیابی‌پذیر برای هر عضو فیزیکی تبدیل می‌کند. این بسته فقط تقاضای ایستگاهی را نگهداری می‌کند و موتور مقاومت یا طراحی نیست.
 
 ## API
-`SteelMemberDesignDemandPackage.build(sectionDiagramCases, { expectedMemberIds })`
+`SteelMemberDesignDemandPackage.build(sectionDiagramCases, { expectedMemberIds })` یا برای اتصال مستقیم به تحلیل‌ها: `SteelMemberDesignDemandPackage.buildFromSolverCases(model, runnerOutputs, { expectedMemberIds, diagramOptions })`
 
 - `sectionDiagramCases`: خروجی‌های مستقل `SteelSolverSectionForceDiagramBridge.build`؛ هر حالت باید موفق و دارای شناسه یکتا باشد.
 - `expectedMemberIds`: شناسه تمام اعضای فیزیکی مدل؛ برای اعضای متغیرمقطع، شناسه والد فیزیکی وارد می‌شود.
@@ -19,4 +19,4 @@
 - برای طراحی نهایی، رجیستر ترکیبات بار معتبر و کنترل‌های مقاومت/پایداری مستقل لازم است.
 
 ## آزمون
-شش آزمون نرم‌افزاری برای پذیرش بسته کامل، رد منبع ناقص، رد عضو مفقود، رد شناسه حالت تکراری، جداسازی حالات و حفظ قطعات متغیرمقطع. این آزمون‌ها اعتبارسنجی مستقل مهندسی یا آزمون مرورگر نیستند.
+هفت آزمون نرم‌افزاری برای پذیرش بسته کامل، رد منبع ناقص، رد عضو مفقود، رد شناسه حالت تکراری، جداسازی حالات و حفظ قطعات متغیرمقطع. این آزمون‌ها اعتبارسنجی مستقل مهندسی یا آزمون مرورگر نیستند.
