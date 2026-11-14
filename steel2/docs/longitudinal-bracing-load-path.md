@@ -62,3 +62,8 @@ This bridge supplies demand only. Gross yielding, net/effective-section rupture,
 ## FEM compression-demand bridge
 
 The compression-member readiness audit now extracts the maximum compression demand for each configured member group from the current member-force envelope. It checks both ends of every member and every exact load-case label, retaining the governing member, case and end. Extraction is blocked unless all cases equilibrate, the verified axial sign convention is present, all force vectors are valid, and the member/case coverage is exact. This is demand extraction only; it does not calculate compression resistance, effective length, local slenderness, flexural-torsional buckling or N-M interaction.
+
+
+## Flexure and shear demand provenance
+
+The flexure/shear readiness report now verifies exact load-case label coverage for each member, rather than relying only on a matching case count. It scans simultaneous end actions and reports the maximum absolute bending component and shear component separately, retaining the governing member, combination, end and component. These two maxima may belong to different combinations and are not combined into a synthetic interaction case. The report remains demand/readiness only and does not calculate resistance.
