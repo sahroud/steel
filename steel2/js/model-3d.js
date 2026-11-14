@@ -423,6 +423,21 @@
     return (members||[]).filter(m=>m.sectionKey===sectionKey&&m.axis===axis&&m.frame===frame&&
       ((m.start===a.id&&m.end===b.id)||(m.start===b.id&&m.end===a.id))).length;
   }
+  function countRafterPaths(members,frame,startId,endId){
+    const graph=new Map();
+    (members||[]).filter(m=>m.sectionKey==="rafter"&&m.axis==="transverse"&&m.frame===frame).forEach(m=>{
+      if(!graph.has(m.start))graph.set(m.start,[]);if(!graph.has(m.end))graph.set(m.end,[]);
+      graph.get(m.start).push(m.end);graph.get(m.end).push(m.start);
+    });
+    let count=0;
+    const visit=(node,seen)=>{
+      if(count>=2)return;
+      if(node===endId){count++;return;}
+      (graph.get(node)||[]).forEach(next=>{if(!seen.has(next)){const n=new Set(seen);n.add(next);visit(next,n);}});
+    };
+    visit(startId,new Set([startId]));
+    return count;
+  }
   function auditPurlinRafterConnectivity(nodes,members,frameStations){
     const nodeById=new Map((nodes||[]).map(n=>[n.id,n]));
     const rafters=(members||[]).filter(m=>m.sectionKey==="rafter");
@@ -627,6 +642,8 @@
       !railTooSparse.ready&&railTooSparse.supportStations.length===1&&railTooSparse.dimensional.length>=1,
       exactMemberSegmentCount([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"}],"rafter","transverse",1,{id:"A"},{id:"B"})===1,
       exactMemberSegmentCount([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"},{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"}],"rafter","transverse",1,{id:"A"},{id:"B"})===2,
+      countRafterPaths([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"M"},{sectionKey:"rafter",axis:"transverse",frame:1,start:"M",end:"B"}],1,"A","B")===1,
+      countRafterPaths([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"M"}],1,"A","B")===0,
       auditPurlinRafterConnectivity([{id:"A",z:0},{id:"B",z:5},{id:"C",z:0},{id:"D",z:5}],[{id:"P",sectionKey:"roofPurlin",start:"A",end:"B"},{id:"R1",sectionKey:"rafter",start:"A",end:"C"},{id:"R2",sectionKey:"rafter",start:"B",end:"D"}],[0,5]).ok,
       auditPurlinRafterConnectivity([{id:"A",z:0},{id:"B",z:5}],[{id:"P",sectionKey:"roofPurlin",start:"A",end:"B"}],[0,5]).issues.length===2,
       auditPurlinRafterConnectivity([{id:"A",z:-1},{id:"B",z:0}],[{id:"P",sectionKey:"roofPurlin",start:"A",end:"B"},{id:"E",sectionKey:"roofEdge",start:"A",end:"B"},{id:"R",sectionKey:"rafter",start:"B",end:"B2"}],[0,5]).ok
@@ -778,8 +795,8 @@
       const endFrameNumber=endIndex===0?1:frames.length;
       for(let i=0;i<topChord.length-1;i++){
         const a=topChord[i],b=topChord[i+1];
-        const sharedCount=exactMemberSegmentCount(members,"rafter","transverse",endFrameNumber,a,b);
-        if(sharedCount!==1)throw new Error("قطعه "+(i+1)+" وتر گابل باید دقیقاً یک رفتر مشترک در قاب انتهایی داشته باشد؛ تعداد عضو متناظر: "+sharedCount+"؛ مدل FEM متوقف شد.");
+        const pathCount=countRafterPaths(members,endFrameNumber,a.id,b.id);
+        if(pathCount!==1)throw new Error("قطعه "+(i+1)+" وتر گابل باید دقیقاً یک مسیر پیوسته و یکتا از قطعات رفتر قاب انتهایی داشته باشد؛ تعداد مسیر: "+pathCount+"؛ مدل FEM متوقف شد.");
       }
       girtHeights.forEach((y,gi)=>{
         const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
@@ -1523,6 +1540,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
