@@ -86,6 +86,38 @@ function audit(model,loads){
  if(groups.roofBraces.length&&!groups.roofBraces.some(m=>[m.start,m.end].some(n=>roofBraceReceivers.has(String(n)))))issues.push("هیچ انتهای مهاربند سقف به گره مشترک رفتر متصل نیست.");
  if(unconnectedBraceEnds.length)issues.push("تعداد "+unconnectedBraceEnds.length+" انتهای مهاربند بدون اتصال گره‌ای به عضو دریافت‌کننده؛ "+unconnectedBraceEnds.slice(0,8).map(x=>x.braceId+"@"+x.nodeId+"→"+x.receiver).join("، "));
  rows.push({id:"brace-frame-node-transfer",label:"اتصال گره‌ای مهاربندهای دیوار و سقف به قاب",memberCount:braceEndpointChecks.length,coveredCount:braceEndpointChecks.length-unconnectedBraceEnds.length,missingCount:unconnectedBraceEnds.length,invalidCount:0,status:unconnectedBraceEnds.length?"incomplete":"connected",checks:braceEndpointChecks,transfer:"wall brace → shared column node; roof brace → shared rafter node"});
+ // Validate that each configured braced bay contains both diagonals on both sides,
+ // and that their endpoints lie on the actual adjacent frame stations.
+ const auditBraceBayGeometry=model=>{
+  const issues=[],checks=[],nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n]));
+  const baseStations=[...new Set((model?.nodes||[]).filter(n=>n.kind==="base").map(n=>Number(n.z)).filter(Number.isFinite).map(z=>z.toFixed(7)))].map(Number).sort((a,b)=>a-b);
+  const g=model?.geometry||{},span=Number(g.span),height=Number(g.height),rise=Number(g.rise);
+  if(baseStations.length<2||!(span>0&&height>0&&rise>=0))return{success:false,issues:["ایستگاه قاب‌ها یا ابعاد لازم برای ممیزی هندسه مهاربندها موجود نیست."],checks,expectedBayCount:0};
+  const bayCount=baseStations.length-1,configured=Math.max(0,Math.floor(Number(g.braceBays)||0)),expected=new Set();
+  for(let i=0;i<Math.min(configured,bayCount);i++){expected.add(i+1);expected.add(bayCount-i);}
+  const families=[{key:"wallBrace",label:"دیوار",sides:["left","right"],transverse:(a,b)=>Math.abs(a.x-b.x)<1e-6&&Math.abs(Math.abs(a.y-b.y)-height)<1e-6},
+   {key:"roofBrace",label:"سقف",sides:["left","right"],transverse:(a,b)=>Math.abs(Math.abs(a.x-b.x)-span/2)<1e-6&&Math.abs(a.y-(height+rise*(1-a.x/(span/2))))<1e-5&&Math.abs(b.y-(height+rise*(1-b.x/(span/2))))<1e-5}];
+  const members=model?.members||[];
+  families.forEach(f=>{
+   const list=members.filter(m=>m.sectionKey===f.key),groups=new Map();
+   list.forEach(m=>{const k=String(m.bay)+"|"+String(m.side);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(m);});
+   const baysToCheck=expected.size?[...expected]:[...new Set(list.map(m=>Number(m.bay)).filter(Number.isInteger))];
+   baysToCheck.forEach(bay=>f.sides.forEach(side=>{
+    const group=groups.get(bay+"|"+side)||[],z1=baseStations[bay-1],z2=baseStations[bay];
+    const endpoints=group.map(m=>{const a=nodes.get(String(m.start)),b=nodes.get(String(m.end));if(!a||!b)return{memberId:m.id,ok:false,reason:"missing-node"};const onStations=(Math.abs(a.z-z1)<1e-6&&Math.abs(b.z-z2)<1e-6)||(Math.abs(b.z-z1)<1e-6&&Math.abs(a.z-z2)<1e-6);const cross=f.transverse(a,b);const transverseDelta=f.key==="wallBrace"?(b.y-a.y):(b.x-a.x);return{memberId:m.id,ok:onStations&&cross&&Math.abs(transverseDelta)>1e-6,onStations,cross,transverseDelta};});
+    const slopes=endpoints.map(x=>Math.sign(x.transverseDelta||0)).filter(Boolean);
+    const opposite=slopes.length===2&&slopes[0]===-slopes[1];
+    const ok=group.length===2&&endpoints.length===2&&endpoints.every(x=>x.ok)&&opposite;
+    checks.push({sectionKey:f.key,bay,side,memberCount:group.length,endpointChecks:endpoints,oppositeDiagonals:opposite,ok});
+    if(!ok)issues.push("مهاربندی ضربدری "+f.label+"، دهانه "+bay+"، سمت "+side+" کامل یا منطبق با هندسه قاب نیست (تعداد="+group.length+").");
+   }));
+   list.filter(m=>!Number.isInteger(Number(m.bay))||!f.sides.includes(m.side)||Number(m.bay)<1||Number(m.bay)>bayCount).forEach(m=>issues.push("مشخصات دهانه/سمت مهاربند نامعتبر است: "+m.id));
+  });
+  return{success:issues.length===0,issues,checks,expectedBayCount:expected.size};
+ };
+ const braceBayAudit=auditBraceBayGeometry(model);
+ if(!braceBayAudit.success)issues.push(...braceBayAudit.issues);
+ rows.push({id:"brace-bay-geometry",label:"کامل‌بودن هندسه مهاربندی ضربدری دهانه‌ها",memberCount:braceBayAudit.checks.length,coveredCount:braceBayAudit.checks.filter(x=>x.ok).length,missingCount:braceBayAudit.checks.filter(x=>!x.ok).length,invalidCount:0,status:braceBayAudit.success?"connected":"incomplete",checks:braceBayAudit.checks});
  // Loaded member endpoints must remain in the connected structural graph leading to base supports.
  const adjacency=new Map(),nodeIds=new Set((model?.nodes||[]).map(n=>String(n.id)));
  const link=(x,y)=>{x=String(x);y=String(y);if(!adjacency.has(x))adjacency.set(x,new Set());if(!adjacency.has(y))adjacency.set(y,new Set());adjacency.get(x).add(y);adjacency.get(y).add(x);};
@@ -167,6 +199,9 @@ function selfTest(){
  const loads={deadLeft:.5,deadRight:.5,liveLeft:.5,liveRight:.5,snowLeft:1,snowRight:1,windLeft:-.2,windRight:-.2,windWall:.3,windEndFront:0,windEndBack:0,combinations:[{id:"C1",name:"نمونه",dead:1.2,live:1.6,snow:0}]};
  test("complete member load paths accepted",()=>audit(model,loads).success);
  test("missing roof wind transfer detected",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[2].lineLoads.windLeft;return !audit(p,loads).success;});
+ test("brace X geometry accepted for configured bays",()=>audit(model,loads).rows.find(x=>x.id==="brace-bay-geometry").status==="connected");
+ test("missing wall brace diagonal rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.geometry.braceBays=1;p.members=p.members.filter(m=>m.id!=="WB");return !audit(p,loads).success;});
+ test("reversed/invalid brace bay rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.geometry.braceBays=1;p.members.filter(m=>m.sectionKey==="wallBrace")[0].bay=99;return !audit(p,loads).success;});
  test("wall brace endpoints require shared column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer").missingCount>=2;});
  test("roof brace endpoints require shared rafter nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="rafter")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer").missingCount>=2;});
  test("wall girt ends require shared frame-column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="wall-girt-column-transfer").missingCount===2;});
