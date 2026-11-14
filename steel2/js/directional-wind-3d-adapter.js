@@ -82,8 +82,8 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     const directions={};DIRS.forEach(d=>directions[d]={label:d,surfaces});
     root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
     root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
-    root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5},members:[
-     {sectionKey:"roofPurlin",tributaryWidth:1},{sectionKey:"wallGirt",tributaryHeight:1},{sectionKey:"endGirt",tributaryHeight:1}
+    root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5,length:10,height:6},nodes:[{id:"L0",x:0,y:0,z:0},{id:"L1",x:0,y:0,z:10},{id:"R0",x:20,y:0,z:0},{id:"R1",x:20,y:0,z:10}],members:[
+     {id:"PL",sectionKey:"roofPurlin",side:"left",start:"L0",end:"L1",tributaryWidth:Math.hypot(10,5)},{id:"PR",sectionKey:"roofPurlin",side:"right",start:"R0",end:"R1",tributaryWidth:Math.hypot(10,5)},{id:"WL",sectionKey:"wallGirt",side:"left",start:"L0",end:"L1",tributaryHeight:6},{id:"WR",sectionKey:"wallGirt",side:"right",start:"R0",end:"R1",tributaryHeight:6},{id:"EG",sectionKey:"endGirt",endFace:"front",start:"L0",end:"R0",tributaryHeight:1}
     ]})};
     return createCases().caseCount===8;
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
@@ -95,8 +95,8 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     const directions={};DIRS.forEach(d=>directions[d]={label:d,surfaces});
     root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
     root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
-    root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5},members:[
-     {sectionKey:"roofPurlin",tributaryWidth:1},{sectionKey:"wallGirt",tributaryHeight:1},{sectionKey:"endGirt",tributaryHeight:1}
+    root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5,length:10,height:6},nodes:[{id:"L0",x:0,y:0,z:0},{id:"L1",x:0,y:0,z:10},{id:"R0",x:20,y:0,z:0},{id:"R1",x:20,y:0,z:10}],members:[
+     {id:"PL",sectionKey:"roofPurlin",side:"left",start:"L0",end:"L1",tributaryWidth:Math.hypot(10,5)},{id:"PR",sectionKey:"roofPurlin",side:"right",start:"R0",end:"R1",tributaryWidth:Math.hypot(10,5)},{id:"WL",sectionKey:"wallGirt",side:"left",start:"L0",end:"L1",tributaryHeight:6},{id:"WR",sectionKey:"wallGirt",side:"right",start:"R0",end:"R1",tributaryHeight:6},{id:"EG",sectionKey:"endGirt",endFace:"front",start:"L0",end:"R0",tributaryHeight:1}
     ]})};
     try{createCases();return false;}catch(e){return e.message.includes("ناحیه مثلثی");}
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
