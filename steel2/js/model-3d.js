@@ -1610,7 +1610,7 @@
     if(!model)build();
     const source=window.SteelLoads?.getData?.().combinations;
     if(!Array.isArray(source)||!source.length)throw new Error("فهرست ترکیبات بار در دسترس نیست.");
-    const seen=new Set(),cases=source.map((combo,index)=>{
+    const seen=new Set(),gravityCases=source.map((combo,index)=>{
       if(!combo||typeof combo!=="object")throw new Error("تعریف ترکیب بار شماره "+(index+1)+" معتبر نیست.");
       const factors={};
       ["dead","live","snow"].forEach(key=>{
@@ -1619,11 +1619,19 @@
           throw new Error("ضریب "+key+" در ترکیب "+(combo.name||index+1)+" ناقص یا نامعتبر است.");
         factors[key]=value;
       });
+      const wind=combo.wind===undefined?0:Number(combo.wind);
+      if(combo.wind===null||combo.wind===""||!Number.isFinite(wind)||wind<0)
+        throw new Error("ضریب باد در ترکیب "+(combo.name||index+1)+" ناقص یا نامعتبر است.");
       const rawLabel=String(combo.name||("ترکیب "+(index+1)));
       const label=seen.has(rawLabel)?rawLabel+" ["+(index+1)+"]":rawLabel;
-      seen.add(rawLabel);
-      return {index,id:String(combo.id||combo.key||("combo-"+(index+1))),label,factors:{...factors,wind:0},windSign:1};
+      seen.add(label);
+      return {index,id:String(combo.id||combo.key||("combo-"+(index+1))),label,factors:{...factors,wind},windSign:1};
     });
+    const hasWind=(model?.members||[]).some(m=>["windLeft","windRight","wind","windEnd"].some(k=>Math.abs(Number(m.lineLoads?.[k])||0)>1e-12));
+    const cases=gravityCases.flatMap(item=>hasWind?[
+      {...item,label:item.label+" + باد مثبت",factors:{...item.factors,wind:1},windSign:1},
+      {...item,label:item.label+" + باد منفی",factors:{...item.factors,wind:1},windSign:-1}
+    ]:[item]);
     const results=[];
     for(let i=0;i<cases.length;i++){
       const item=cases[i];
@@ -1632,19 +1640,20 @@
         // analyze3D creates a fresh deep-enough geometry copy and remakes every member load
         // from this combination's factors; no factored load vector is reused between cases.
         const result=await analyze3D({...item,label:item.label});
-        const equilibriumOK=result?.equilibrium?.ok===true;
+        const equilibriumOK=result?.success===true&&result?.equilibrium?.ok===true;
         const diagram=result?.taperedSectionForceDiagrams||null;
         results.push({
           id:item.id,index:item.index,label:item.label,factors:item.factors,
           success:equilibriumOK,equilibrium:result?.equilibrium||null,
-          nodeCount:result?.nodeCount||0,memberCount:result?.memberCount||0,
+          nodeCount:result?.nodeCount||0,memberCount:Array.isArray(result?.members)?result.members.length:0,
+          members:Array.isArray(result?.members)?result.members.map(m=>({id:m.id,localEndForces:Array.isArray(m.localEndForces)?m.localEndForces.slice():null,section:m.section||null,localAxes:m.localAxes||null})):[],
           taperedDiagramSuccess:diagram?.success===true,
           taperedDiagram:diagram,
           failure:equilibriumOK?null:"تعادل حل‌گر برای این ترکیب تأیید نشد."
         });
       }catch(error){
         results.push({id:item.id,index:item.index,label:item.label,factors:item.factors,
-          success:false,equilibrium:null,taperedDiagramSuccess:false,taperedDiagram:null,
+          success:false,equilibrium:null,memberCount:0,members:[],taperedDiagramSuccess:false,taperedDiagram:null,
           failure:String(error?.message||error)});
       }
     }
