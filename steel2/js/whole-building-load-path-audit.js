@@ -88,6 +88,7 @@ function audit(model,loads){
  rows.push({id:"brace-frame-node-transfer",label:"اتصال گره‌ای مهاربندهای دیوار و سقف به قاب",memberCount:braceEndpointChecks.length,coveredCount:braceEndpointChecks.length-unconnectedBraceEnds.length,missingCount:unconnectedBraceEnds.length,invalidCount:0,status:unconnectedBraceEnds.length?"incomplete":"connected",checks:braceEndpointChecks,transfer:"wall brace → shared column node; roof brace → shared rafter node"});
  // Trace each brace end to a declared base support without using brace members
  // as the only bridge. This reports topology only; it does not imply diaphragm stiffness.
+ const baseSupportIds=(model?.nodes||[]).filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>String(n.id));
  const structuralAdjacency=new Map();
  const structuralLink=(node,edge)=>{const key=String(node);if(!structuralAdjacency.has(key))structuralAdjacency.set(key,[]);structuralAdjacency.get(key).push(edge);};
  members.filter(m=>!["wallBrace","roofBrace"].includes(m.sectionKey)).forEach(m=>{
@@ -98,7 +99,7 @@ function audit(model,loads){
   const queue=[{node:String(start),memberIds:[],sectionKeys:[]}],seen=new Set([String(start)]);
   while(queue.length){
    const current=queue.shift();
-   if(supports.includes(current.node))return{ok:true,start:String(start),supportNodeId:current.node,memberIds:current.memberIds,sectionKeys:current.sectionKeys};
+   if(baseSupportIds.includes(current.node))return{ok:true,start:String(start),supportNodeId:current.node,memberIds:current.memberIds,sectionKeys:current.sectionKeys};
    for(const edge of structuralAdjacency.get(current.node)||[]){
     if(seen.has(edge.to))continue;
     seen.add(edge.to);
