@@ -6,7 +6,7 @@
 "use strict";
 const $=id=>document.getElementById(id);
 const ids=["rows","cols","pitchX","pitchZ","tension","momentX","momentZ","shearX","shearZ","torsionY","tensionCapacity","shearCapacity"];
-const defaults={rows:"2",cols:"2",pitchX:"160",pitchZ:"160",tension:"",momentX:"",momentZ:"",shearX:"",shearZ:"",torsionY:"",tensionCapacity:"",shearCapacity:"",signConfirmed:false};
+const defaults={rows:"2",cols:"2",pitchX:"160",pitchZ:"160",tension:"",momentX:"",momentZ:"",shearX:"",shearZ:"",torsionY:"",tensionCapacity:"",shearCapacity:"",signConfirmed:false,geometryConfirmed:false};
 let state={...defaults},last=null;
 const fmt=v=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:3});
 const num=v=>{if(v===null||v===undefined||String(v).trim()==="")return null;const n=Number(v);return Number.isFinite(n)?n:null;};
@@ -47,6 +47,7 @@ function panel(){
  '<div class="field"><label for="adTcap">ظرفیت طراحی کششی هر بولت (kN)</label><input id="adTcap" type="number" min="0" step="0.1" placeholder="از محاسبه معتبر اتصال"></div>'+
  '<div class="field"><label for="adVcap">ظرفیت طراحی برشی هر بولت (kN)</label><input id="adVcap" type="number" min="0" step="0.1" placeholder="از محاسبه معتبر اتصال"></div></div>'+
  '<label class="check-row" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><input id="adSign" type="checkbox"><span>علامت نیروها و جهت محورهای ورودی با خروجی تحلیل کنترل شده است.</span></label>'+
+ '<label class="check-row" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><input id="adGeometryConfirm" type="checkbox"><span>تعداد، فاصله محورها و مختصات گروه بولت با نقشه اجرایی/وضعیت واقعی همین پایه تطبیق داده شده است.</span></label>'+
  '<div class="button-grid"><button id="btnAnchorDemandRun" class="btn primary" type="button">محاسبه نیروی هر بولت</button><button id="btnAnchorDemandCSV" class="btn secondary" type="button" disabled>دریافت CSV</button></div>'+
  '<div id="anchorDemandSummary" class="notice">ابتدا آرایش بولت و شش مؤلفه هم‌زمان یک ترکیب بار را وارد کنید.</div>'+
  '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:760px"><thead><tr><th>بولت</th><th>X (m)</th><th>Z (m)</th><th>کشش محاسباتی (kN)</th><th>برش X (kN)</th><th>برش Z (kN)</th><th>برش برآیند (kN)</th><th>وضعیت ظرفیت واردشده</th></tr></thead><tbody id="anchorDemandRows"></tbody></table></div>'+
@@ -54,7 +55,7 @@ function panel(){
  rootPanel.parentNode.insertBefore(p,rootPanel.nextSibling);
  const map={rows:"adRows",cols:"adCols",pitchX:"adPitchX",pitchZ:"adPitchZ",tension:"adTension",momentX:"adMx",momentZ:"adMz",shearX:"adVx",shearZ:"adVz",torsionY:"adTy",tensionCapacity:"adTcap",shearCapacity:"adVcap"};
  ids.forEach(k=>{$(map[k]).value=state[k]??"";$(map[k]).addEventListener("change",()=>state[k]=$(map[k]).value);});
- $("adSign").checked=!!state.signConfirmed;$("adSign").addEventListener("change",()=>state.signConfirmed=$("adSign").checked);
+ $("adSign").checked=!!state.signConfirmed;$("adSign").addEventListener("change",()=>state.signConfirmed=$("adSign").checked);$("adGeometryConfirm").checked=!!state.geometryConfirmed;$("adGeometryConfirm").addEventListener("change",()=>state.geometryConfirmed=$("adGeometryConfirm").checked);
  $("btnAnchorDemandRun").addEventListener("click",run);$("btnAnchorDemandCSV").addEventListener("click",exportCSV);
 }
 function run(){
