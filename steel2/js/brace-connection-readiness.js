@@ -64,8 +64,7 @@ function audit(input,model){
   if(!expected.has(k))local.push("این اتصال به مهاربند فعال مدل جاری تعلق ندارد یا شناسه آن تغییر کرده است.");
   if(!["bolted","welded"].includes(c.connectionType))local.push("نوع اتصال پیچی یا جوشی مشخص نشده است.");
   if(!c.drawingReference.trim())local.push("شماره نقشه/جزئیات اجرایی اتصال ثبت نشده است.");
-  for(const [field,label] of COMMON){if(!Number.isFinite(c[field])||c[field]<=0)local.push(label+" باید از نقشه وارد شود.");}
-  if(c.eccentricityMm!==null&&c.eccentricityMm<0)local.push("قدر مطلق خروج از مرکزیت باید غیرمنفی باشد.");
+  for(const [field,label] of COMMON){if(field==="eccentricityMm"){if(!Number.isFinite(c[field])||c[field]<0)local.push(label+" باید از نقشه وارد شود و غیرمنفی باشد.");}else if(!Number.isFinite(c[field])||c[field]<=0)local.push(label+" باید از نقشه وارد شود.");}
   if(c.netShearAreaMm2>0&&c.grossShearAreaMm2>0&&c.netShearAreaMm2>c.grossShearAreaMm2)local.push("سطح خالص برشی از سطح ناخالص برشی بزرگ‌تر است.");
   if(!c.loadPathReviewed)local.push("مسیر انتقال نیرو از عضو به گاست‌پلیت و تکیه‌گاه بازبینی نشده است.");
   if(!c.whitmoreGeometryReviewed)local.push("هندسه و عرض Whitmore از نقشه/محاسبه مستند بازبینی نشده است.");
