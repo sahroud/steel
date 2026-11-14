@@ -34,7 +34,7 @@ function audit(envelope){
   }else if(path==="axial"){
    missing.push("موتور کامل مقاومت کششی/فشاری و کنترل اتصال مهاربند به تقاضای واقعی این گروه متصل نشده است.");
   }
-  if(path==="flexure") [["t_mm","ضخامت مبنای مصالح"],["Fy","Fy"],["Fu","Fu"],["Lb","طول مهارنشده خمشی Lb"],["Cb","ضریب Cb"]].forEach(([k,n])=>{if(!(Number(d[k])>0))missing.push(n+" معتبر نیست.");});
+  if(path==="flexure") [["t_mm","ضخامت مبنای مصالح"],["Fy","Fy"],["Fu","Fu"],["E_MPa","مدول الاستیسیته E"],["G_MPa","مدول برشی G"],["Kx","ضریب طول مؤثر Kx"],["Ky","ضریب طول مؤثر Ky"],["Kz","ضریب طول مؤثر پیچشی Kz"],["Lcx","طول مؤثر فشاری حول x"],["Lcy","طول مؤثر فشاری حول y"],["Lcz","طول مؤثر پیچشی"],["Lb","طول مهارنشده خمشی Lb"],["Cb","ضریب Cb"]].forEach(([k,n])=>{if(!(Number(d[k])>0))missing.push(n+" معتبر نیست.");});
   if(path==="flexure"&&!(Number(d.Fu)>=Number(d.Fy)&&Number(d.Fy)>0))missing.push("رابطه Fu و Fy معتبر نیست.");
   if(path==="flexure"&&!String(d.bracingNote||"").trim())missing.push("شرح مهار جانبی/پیچشی ثبت نشده است.");
   const expectedLabels=cases.map(c=>String(c.label||""));
