@@ -156,7 +156,7 @@ function comparisonSelfTest(){
  const b={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2.01,y:0,z:0},{id:"C",x:4,y:0,z:0}],members:[{id:"M",start:"B",end:"A",sectionRef:"S2"},{id:"N",start:"A",end:"C",sectionRef:"S3"}]};
  const r=compareProposals(a,b,{coordinateToleranceM:0.001}),checks=[
  ["matching nodes identified",r.report.matchedNodeCount===2],
- ["coordinate deviation measured",Math.abs(r.report.maxNodeDeviation-0.01)<1e-9],
+ ["coordinate deviation measured",Math.abs(r.report.maxNodeDeviationM-0.01)<1e-9],
  ["outside tolerance identified",r.report.nodesOutsideTolerance.includes("B")],
  ["unmatched reference node identified",r.report.unmatchedReferenceNodes.includes("C")],
  ["reversed member orientation identified",r.report.orientationReversedMemberIds.includes("M")],
