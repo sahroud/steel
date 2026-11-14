@@ -185,6 +185,15 @@
         stage("مرحله ۲ از ۳: مونتاژ ماتریس سختی و بارگذاری اعضا…");
         stage("مرحله ۳ از ۳: حل دستگاه معادلات سه‌بعدی؛ لطفاً صفحه را نبندید…");
         const result=await analyze3D(lc);
+        let craneEnvelope=null;
+        if(window.SteelCraneReadiness?.getData?.().enabled){
+          if(!window.SteelCrane3DLoadTransfer?.analyzeAllFromUI)
+            throw new Error("جرثقیل در پروژه فعال است اما هماهنگ‌کننده تحلیل خودکار جرثقیل بارگذاری نشده است.");
+          stage("جرثقیل فعال است: آماده‌سازی و تحلیل موقعیت‌های متحرک قطار چرخ…");
+          craneEnvelope=await window.SteelCrane3DLoadTransfer.analyzeAllFromUI({maxCases:300,onProgress:stage});
+          if(!craneEnvelope?.success)
+            throw new Error("تحلیل کامل جرثقیل انجام نشد؛ نتیجه تحلیل سوله به‌تنهایی کافی نیست: "+(craneEnvelope?.issues||["خطای نامشخص"]).join(" | "));
+        }
         box.textContent="تحلیل سه‌بعدی با موفقیت حل شد. حالت بار: "+result.loadCaseLabel+
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
@@ -225,8 +234,12 @@
         }else{
           box.textContent+="\nگزارش نیروهای اعضای بحرانی در دسترس نیست.";
         }
+        if(craneEnvelope){
+          box.textContent+="\n\nتحلیل خودکار جرثقیل سقفی: "+craneEnvelope.total+" موقعیت قطار چرخ جداگانه حل شد؛ موقعیت بحرانی نمونه‌برداری‌شده: "+craneEnvelope.results[craneEnvelope.criticalCase].referencePosition_m.toFixed(3)+" m؛ بیشینه تغییرمکان انتقالی در این مجموعه: "+(craneEnvelope.maxTranslation_m*1000).toFixed(3)+" mm. بار مرده و وزن خود اعضا، بار چرخ با ضریب دینامیکی قائم "+Number(window.SteelCraneReadiness.getData().verticalImpact)+" و نیروهای افقی مستند (در صورت فعال بودن) منظور شده‌اند. این پوش، جایگزین ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی یا طراحی نهایی تیر حمال و اتصالات نیست.";
+        }
         box.style.color="#15803d";
         window.SteelStructuralModel.last3DResult=result;
+        window.SteelStructuralModel.lastCraneEnvelope=craneEnvelope;
         renderCriticalRafterDiagram(result,"تحلیل مدل اصلی");
       } catch(e) {
         box.textContent="تحلیل سه‌بعدی انجام نشد: "+e.message+
