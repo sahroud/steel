@@ -78,6 +78,14 @@ function audit(model,loads){
  if(missingTributaryHeight.length)issues.push("ارتفاع بارگیر گرت‌های طولی/انتهایی ناقص است: "+missingTributaryHeight.slice(0,10).map(m=>String(m.id)).join("، "));
  const missingRoofSideAssignments=groups.purlins.filter(m=>m.side==="left"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="right"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="ridge"?!(finite(m.lineLoads?.tributaryWidthLeft)&&m.lineLoads.tributaryWidthLeft>0&&finite(m.lineLoads?.tributaryWidthRight)&&m.lineLoads.tributaryWidthRight>0):true);
  if(missingRoofSideAssignments.length)issues.push("عرض بارگیر چپ/راست پرلین یا پرلین تاج نامعتبر است: "+missingRoofSideAssignments.slice(0,10).map(m=>String(m.id)).join("، "));
+ const wallEnvelope=root.SteelDesignCore?.getData?.()?.wallEnvelope;
+ if(wallEnvelope&&typeof wallEnvelope==="object"){
+  const faces=["front","rear","left","right"].filter(face=>wallEnvelope[face]?.material);
+  const wallTransfer=root.SteelWallDeadLoadTransfer?.audit?.(model);
+  const wallReady=wallTransfer?.success===true&&wallTransfer?.loadTransferEnabled===true;
+  if(faces.length&&!wallReady)issues.push("وزن مرده پوسته دیوارها به مدل سازه/واکنش فونداسیون منتقل نشده است؛ نوع مصالح به‌تنهایی مسیر بار را مشخص نمی‌کند. برای هر وجه باید اتکای دیوار به فونداسیون یا انتقال به گرت/ستونک و وزن سطحی مستند شود.");
+  if(faces.length)rows.push({id:"wall-cladding-dead-load",label:"وزن مرده پوسته دیوارها",memberCount:faces.length,coveredCount:wallReady?faces.length:0,missingCount:wallReady?0:faces.length,invalidCount:0,status:wallReady?"assigned":"incomplete",faces,transfer:"wall cladding/masonry → documented support system → steel frame or foundation"});
+ }
  const gableChords=members.filter(m=>m.sectionKey==="rafter"&&m.axis==="endwall");
  const frontEndWind=num(loads?.windEndFront),backEndWind=num(loads?.windEndBack);
  const gableWindActive=(frontEndWind!==null&&Math.abs(frontEndWind)>1e-12)||(backEndWind!==null&&Math.abs(backEndWind)>1e-12);
@@ -151,6 +159,7 @@ function selfTest(){
   test("wall and end-wall tributary heights are required",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[3].lineLoads.tributaryHeight;return !audit(p,loads).success;});
   test("all member paths must reach a declared base support",()=>{const p=JSON.parse(JSON.stringify(model));p.members[5].start="ORPHAN";return !audit(p,loads).success;});
  test("empty combination list allowed as load-path audit only",()=>{const p={...loads,combinations:[]};return audit(model,p).success;});
+ test("selected wall materials require a documented dead-load support path",()=>{const old=root.SteelDesignCore,oldTransfer=root.SteelWallDeadLoadTransfer;root.SteelDesignCore={getData:()=>({wallEnvelope:{front:{material:"brick"},rear:{material:"sandwich-panel"},left:{material:"metal-sheet"},right:{material:"brick"}}})};root.SteelWallDeadLoadTransfer=null;const r=audit(model,loads);root.SteelDesignCore=old;root.SteelWallDeadLoadTransfer=oldTransfer;return !r.success&&r.issues.some(x=>x.includes("وزن مرده پوسته دیوارها"));});
  test("nonzero end-wall wind blocks unmodelled gable triangle",()=>{const p={...loads,windEndFront:.4};return !audit(model,p).success&&audit(model,p).issues.some(x=>x.includes("ناحیه مثلثی"));});
  test("zero end-wall wind marks gable triangle not applicable",()=>{const p={...loads,windEndFront:0,windEndBack:0};return audit(model,p).rows.find(x=>x.id==="endwall-gable-wind").status==="not-applicable";});
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
