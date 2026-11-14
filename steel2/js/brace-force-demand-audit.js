@@ -52,7 +52,9 @@ function selfTest(){
  t("extracts simultaneous axial demands per brace and case",()=>{const r=audit(envelope,model);return r.success&&r.rows.length===2&&r.rows[0].caseCount===2&&r.rows[0].simultaneousDemands[0].maxAbsAxial_N===120;});
  t("does not mix independent case maxima",()=>{const r=audit(envelope,model);return r.rows[0].simultaneousDemands.length===2&&r.rows[0].simultaneousDemands[0].caseLabel==="C1"&&r.rows[0].simultaneousDemands[1].caseLabel==="C2";});
  t("rejects missing brace force row",()=>!audit({...envelope,members:envelope.members.slice(1)},model).success);
- t("rejects incomplete case coverage",()=>!audit({...envelope,cases:[...envelope.cases,{label:"C3"}]},model).success);\n t("rejects duplicate labels masking a missing case",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[1].label="C1";return !audit(e,model).success;});\n t("rejects unexpected labels replacing expected cases",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[1].label="OTHER";return !audit(e,model).success;});
+ t("rejects incomplete case coverage",()=>!audit({...envelope,cases:[...envelope.cases,{label:"C3"}]},model).success);
+ t("rejects duplicate labels masking a missing case",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[1].label="C1";return !audit(e,model).success;});
+ t("rejects unexpected labels replacing expected cases",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[1].label="OTHER";return !audit(e,model).success;});
  t("rejects non-equilibrated envelope",()=>!audit({...envelope,allCasesEquilibriumOK:false},model).success);
  t("rejects unknown local force convention",()=>!audit({...envelope,localEndForceConvention:null},model).success);
  t("rejects malformed axial end force",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[0].endI.N="100";return !audit(e,model).success;});
