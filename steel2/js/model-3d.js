@@ -266,9 +266,9 @@
               });
             });
             summary.push("فایل JSON شامل مقادیر کامل N، Vy، Vz، T، My و Mz در تمام ایستگاه‌ها با دکمه دانلود قابل دریافت است؛ این گزارش کنترل مقاومت یا تأیید طراحی نیست.");
-            box.textContent+="\\n"+summary.join("\\n");
+            box.textContent+="\n"+summary.join("\n");
           }else{
-            box.textContent+="\\nنمودار نیروهای قطعات متغیرمقطع تولید نشد؛ اطلاعات بارگذاری/هندسه/تعادل کافی نیست: "+(td.issues||[]).slice(0,6).join("؛ ");
+            box.textContent+="\nنمودار نیروهای قطعات متغیرمقطع تولید نشد؛ اطلاعات بارگذاری/هندسه/تعادل کافی نیست: "+(td.issues||[]).slice(0,6).join("؛ ");
           }
         }
         if(craneEnvelope){
