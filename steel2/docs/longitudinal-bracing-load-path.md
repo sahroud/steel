@@ -67,3 +67,8 @@ The compression-member readiness audit now extracts the maximum compression dema
 ## Flexure and shear demand provenance
 
 The flexure/shear readiness report now verifies exact load-case label coverage for each member, rather than relying only on a matching case count. It scans simultaneous end actions and reports the maximum absolute bending component and shear component separately, retaining the governing member, combination, end and component. These two maxima may belong to different combinations and are not combined into a synthetic interaction case. The report remains demand/readiness only and does not calculate resistance.
+
+
+## Tensile-demand governing location
+
+The tensile FEM bridge now retains the governing member ID, exact load-case label and member end for the maximum tension demand, and checks that no extra/unmapped force-envelope members are present. The UI reports this provenance alongside the maximum tensile demand. This remains an axial demand only; no tensile resistance or connection capacity is asserted.
