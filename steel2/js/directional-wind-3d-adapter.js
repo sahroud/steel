@@ -16,21 +16,24 @@ function mapMemberLoad(member,record,geometry){
  if(member.sectionKey==="roofPurlin"){
   if(!(span>0)||!(rise>=0)||!["left","right","ridge"].includes(member.side))throw Error("هندسه یا سمت پرلین برای انتقال باد معتبر نیست.");
   const slope=rise/(span/2),norm=Math.hypot(slope,1);
-  const wl=member.side==="ridge"?Number(member.lineLoads?.tributaryWidthLeft):member.side==="left"?Number(member.lineLoads?.tributaryWidth):0;
-  const wr=member.side==="ridge"?Number(member.lineLoads?.tributaryWidthRight):member.side==="right"?Number(member.lineLoads?.tributaryWidth):0;
+  const width=member.tributaryWidth??member.lineLoads?.tributaryWidth;
+  const widthLeft=member.tributaryWidthLeft??member.lineLoads?.tributaryWidthLeft;
+  const widthRight=member.tributaryWidthRight??member.lineLoads?.tributaryWidthRight;
+  const wl=member.side==="ridge"?Number(widthLeft):member.side==="left"?Number(width):0;
+  const wr=member.side==="ridge"?Number(widthRight):member.side==="right"?Number(width):0;
   if(!Number.isFinite(wl)||!Number.isFinite(wr)||wl<0||wr<0||(member.side==="left"&&wl<=0)||(member.side==="right"&&wr<=0)||(member.side==="ridge"&&(!(wl>0)||!(wr>0))))throw Error("عرض بارگیر پرلین نامعتبر است.");
   const left=wl>0?pressure("roof-left")*wl:0,right=wr>0?pressure("roof-right")*wr:0;
   zero[0]=(left-right)*slope/norm;zero[1]=-(left+right)/norm;
   return{globalKNm:zero,surfaceKeys:[...(wl>0?["roof-left"]:[]),...(wr>0?["roof-right"]:[])]};
  }
  if(member.sectionKey==="wallGirt"){
-  const h=Number(member.lineLoads?.tributaryHeight);
+  const h=Number(member.tributaryHeight??member.lineLoads?.tributaryHeight);
   if(!(h>0)||!["left","right"].includes(member.side))throw Error("سمت یا ارتفاع بارگیر قید دیوار نامعتبر است.");
   zero[0]=(member.side==="left"?1:-1)*pressure(member.side==="left"?"long-wall-left":"long-wall-right")*h;
   return{globalKNm:zero,surfaceKeys:[member.side==="left"?"long-wall-left":"long-wall-right"]};
  }
  if(member.sectionKey==="endGirt"){
-  const h=Number(member.lineLoads?.tributaryHeight);
+  const h=Number(member.tributaryHeight??member.lineLoads?.tributaryHeight);
   const face=member.endFace==="rear"?"back":member.endFace;
   if(!(h>0)||!["front","back"].includes(face))throw Error("وجه یا ارتفاع بارگیر قید انتهایی نامعتبر است.");
   const key=face==="front"?"end-wall-front":"end-wall-back";
@@ -44,6 +47,9 @@ async function run(){const b=createCases(),solve=root.SteelStructuralModel?.anal
 function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});}catch(e){t.push({name:n,pass:false,error:e.message});}};ck("4 directions",()=>DIRS.length===4&&new Set(DIRS).size===4);ck("6 surfaces",()=>SURFACES.length===6&&new Set(SURFACES).size===6);ck("8 wind/internal patterns",()=>DIRS.length*2===8);ck("finite pressure guard",()=>finite(0)&&!finite(null)&&!finite("1"));ck("pressure surfaces",()=>SURFACES.includes("roof-left")&&SURFACES.includes("end-wall-back"));ck("signed direction IDs",()=>DIRS.includes("x-negative")&&DIRS.includes("z-negative"));ck("wind action distinct",()=>({dead:1.2,live:0.5,snow:1.6,wind:1}).wind===1);ck("approval remains disabled",()=>true);ck("analysis remains preliminary",()=>true);ck("all directions unique",()=>new Set(DIRS).size===4);ck("all surfaces unique",()=>new Set(SURFACES).size===6);ck("does not invent pressures",()=>createCases.toString().includes("netWithPositiveInternal"));
  const p={ "roof-left":2,"roof-right":3,"long-wall-left":4,"long-wall-right":5,"end-wall-front":6,"end-wall-back":7 };
  const g={span:20,rise:5};
+ ck("actual model top-level purlin tributary widths map",()=>{const r=mapMemberLoad({sectionKey:"roofPurlin",side:"left",tributaryWidth:2},{direction:"x-positive",surfaces:p},g);return r.surfaceKeys[0]==="roof-left"&&r.globalKNm[1]<0;});
+ ck("actual model top-level wall tributary height maps",()=>mapMemberLoad({sectionKey:"wallGirt",side:"left",tributaryHeight:2},{direction:"x-positive",surfaces:p},g).globalKNm[0]===8);
+ ck("actual model top-level end-girt tributary height maps",()=>mapMemberLoad({sectionKey:"endGirt",endFace:"rear",tributaryHeight:2},{direction:"z-negative",surfaces:p},g).globalKNm[2]===-14);
  ck("left roof inward vector",()=>{const r=mapMemberLoad({sectionKey:"roofPurlin",side:"left",lineLoads:{tributaryWidth:2}},{direction:"x-positive",surfaces:p},g);return Math.abs(r.globalKNm[0]-2*2*(.5/Math.hypot(.5,1)))<1e-10&&r.globalKNm[1]<0;});
  ck("right roof inward vector",()=>{const r=mapMemberLoad({sectionKey:"roofPurlin",side:"right",lineLoads:{tributaryWidth:2}},{direction:"x-negative",surfaces:p},g);return r.globalKNm[0]<0&&r.globalKNm[1]<0;});
  ck("ridge takes both roof slopes",()=>{const r=mapMemberLoad({sectionKey:"roofPurlin",side:"ridge",lineLoads:{tributaryWidthLeft:1,tributaryWidthRight:1}},{direction:"z-positive",surfaces:p},g);return r.surfaceKeys.length===2&&r.globalKNm[1]<0;});
