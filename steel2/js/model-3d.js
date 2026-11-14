@@ -764,7 +764,7 @@
       const face=endIndex===0?"front":"rear";
       // End-wall posts are split at every girt intersection so the secondary
       // members share actual nodes instead of crossing disconnected lines.
-      for(let i=1;i<count;i++){
+      for(let i=1;i<xs.length-1;i++){
         const x=xs[i],top=roofY(x);
         const levels=[0,...girtHeights.filter(y=>y<top-1e-7),top]
           .filter((y,j,a)=>j===0||Math.abs(y-a[j-1])>1e-7);
