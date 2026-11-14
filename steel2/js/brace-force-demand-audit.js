@@ -104,8 +104,8 @@ function selfTest(){
  t("rejects duplicate member IDs in force envelope",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members.push({...e.members[0]});return !audit(e,model).success;});
  t("rejects duplicate expected load-case labels",()=>{const e=JSON.parse(JSON.stringify(envelope));e.cases[1].label="C1";return !audit(e,model).success;});
  t("rejects blank expected load-case labels",()=>{const e=JSON.parse(JSON.stringify(envelope));e.cases[1].label="";return !audit(e,model).success;});
- t("reports governing tensile demand with exact case and end",()=>{const r=audit(envelope,model),x=r.rows[0].peakTension;return r.success&&x.forceN===120&&x.caseLabel==="C1"&&x.end==="J"&&r.summary.peakTension.memberId==="WB1";});
- t("reports governing compression demand separately without mixing cases",()=>{const r=audit(envelope,model),x=r.rows[0].peakCompression;return r.success&&x.forceN===120&&x.caseLabel==="C1"&&x.end==="J"&&r.summary.peakCompression.memberId==="WB1";});
+ t("reports governing tensile demand with exact case and end",()=>{const r=audit(envelope,model),x=r.rows[0].peakTension;return r.success&&x.forceN===90&&x.caseLabel==="C2"&&x.end==="J"&&r.summary.peakTension.memberId==="RB1"&&r.summary.peakTension.forceN===190;});
+ t("reports governing compression demand separately without mixing cases",()=>{const r=audit(envelope,model),x=r.rows[0].peakCompression;return r.success&&x.forceN===120&&x.caseLabel==="C1"&&x.end==="J"&&r.summary.peakCompression.memberId==="RB1"&&r.summary.peakCompression.forceN===220;});
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software regression only; no member capacity verification"};
 }
 root.SteelBraceForceDemandAudit={audit,selfTest};
