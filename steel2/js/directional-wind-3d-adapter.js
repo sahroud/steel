@@ -98,12 +98,19 @@ function auditGableLoadResultants(pressures,model){
    area+=A;Fz+=force;Mx+=y*force;My-=x*force;
   });
   const expectedF=(face==="front"?1:-1)*p*expectedArea;
+  const rectangleArea=span*height,triangleArea=span*rise/2;
+  const expectedCentroidY=(rectangleArea*(height/2)+triangleArea*(height+rise/3))/expectedArea;
+  const expectedCentroidX=span/2;
   const tol=Math.max(1e-7,Math.abs(expectedF)*1e-7);
   const areaOk=invalid===0&&Math.abs(area-expectedArea)<=Math.max(1e-5,expectedArea*1e-3);
   const forceOk=invalid===0&&Math.abs(Fz-expectedF)<=tol;
+  const centroidX=Math.abs(Fz)>1e-12?-My/Fz:null,centroidY=Math.abs(Fz)>1e-12?Mx/Fz:null;
+  const centroidTol=1e-3;
+  const centroidOk=invalid===0&&Math.abs(p)<=1e-12|| (invalid===0&&centroidX!==null&&centroidY!==null&&Math.abs(centroidX-expectedCentroidX)<=centroidTol&&Math.abs(centroidY-expectedCentroidY)<=centroidTol);
   if(!areaOk)issues.push("مساحت مؤثر گرت‌ها برای برآیند "+face+" با سطح واقعی برابر نیست.");
   if(!forceOk)issues.push("برآیند نیروی خطی گرت‌های "+face+" با فشار × مساحت سطح برابر نیست.");
-  faces.push({face,surface:key,pressureKPa:p,assignedAreaM2:area,expectedAreaM2:expectedArea,forceZ_kN:Fz,expectedForceZ_kN:expectedF,momentX_kNm:Mx,momentY_kNm:My,equivalentLoadCentroidX_m:Math.abs(Fz)>1e-12?-My/Fz:null,equivalentLoadCentroidY_m:Math.abs(Fz)>1e-12?Mx/Fz:null,memberCount:items.length,areaEquilibrium:areaOk,forceEquilibrium:forceOk});
+  if(!centroidOk)issues.push("مرکز اثر بار معادل گرت‌های "+face+" با مرکز هندسی فشار یکنواخت روی دیوار انتهایی منطبق نیست؛ خروج از مرکزیت پوسته/گرت باید با بارهای گره‌ای و ممان‌های معادل مدل شود.");
+  faces.push({face,surface:key,pressureKPa:p,assignedAreaM2:area,expectedAreaM2:expectedArea,forceZ_kN:Fz,expectedForceZ_kN:expectedF,momentX_kNm:Mx,momentY_kNm:My,equivalentLoadCentroidX_m:centroidX,equivalentLoadCentroidY_m:centroidY,expectedCentroidX_m:expectedCentroidX,expectedCentroidY_m:expectedCentroidY,memberCount:items.length,areaEquilibrium:areaOk,forceEquilibrium:forceOk,centroidEquilibrium:centroidOk});
  });
  return{success:issues.length===0,issues,faces,method:"integrate each end-girt equivalent line load p × tributaryHeight over its horizontal member length; recover global force and first moments from the actual member centerlines",analysisEnabled:false,designApproved:false};
 }
@@ -135,8 +142,8 @@ async function run(){const b=createCases(),solve=root.SteelStructuralModel?.anal
 function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});}catch(e){t.push({name:n,pass:false,error:e.message});}};ck("4 directions",()=>DIRS.length===4&&new Set(DIRS).size===4);ck("6 surfaces",()=>SURFACES.length===6&&new Set(SURFACES).size===6);ck("8 wind/internal patterns",()=>DIRS.length*2===8);ck("finite pressure guard",()=>finite(0)&&!finite(null)&&!finite("1"));ck("pressure surfaces",()=>SURFACES.includes("roof-left")&&SURFACES.includes("end-wall-back"));ck("signed direction IDs",()=>DIRS.includes("x-negative")&&DIRS.includes("z-negative"));ck("wind action distinct",()=>({dead:1.2,live:0.5,snow:1.6,wind:1}).wind===1);ck("approval remains disabled",()=>true);ck("analysis remains preliminary",()=>true);ck("all directions unique",()=>new Set(DIRS).size===4);ck("all surfaces unique",()=>new Set(SURFACES).size===6);ck("does not invent pressures",()=>createCases.toString().includes("netWithPositiveInternal"));
   ck("nonzero gable wind requires a real support and tributary-area model",()=>{try{auditGablePressure({"end-wall-front":0.2,"end-wall-back":0});return false;}catch(e){return e.message.includes("هندسه و اعضای واقعی");}});
   ck("zero gable wind remains valid without activating gable transfer",()=>auditGablePressure({"end-wall-front":0,"end-wall-back":0}).ready);
-  ck("gable equivalent end-girt force resultant matches pressure times full wall area",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableLoadResultants({"end-wall-front":0.25,"end-wall-back":-0.1},m);return r.success&&r.faces.length===2&&Math.abs(r.faces[0].forceZ_kN-35)<1e-8&&Math.abs(r.faces[1].forceZ_kN-14)<1e-8;});
-  ck("gable equivalent first moments are recovered from actual girt elevations and stations",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableLoadResultants({"end-wall-front":0.25,"end-wall-back":0},m);return r.success&&r.faces[0].momentX_kNm>0&&Number.isFinite(r.faces[0].momentY_kNm)&&r.faces[0].equivalentLoadCentroidX_m>=0&&r.faces[0].equivalentLoadCentroidY_m>0;});
+  ck("gable equivalent end-girt force resultant matches pressure times full wall area even when centroid transfer is incomplete",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableLoadResultants({"end-wall-front":0.25,"end-wall-back":-0.1},m);return !r.success&&r.faces.length===2&&Math.abs(r.faces[0].forceZ_kN-35)<1e-8&&Math.abs(r.faces[1].forceZ_kN-14)<1e-8&&r.faces.every(x=>x.areaEquilibrium&&x.forceEquilibrium);});
+  ck("gable first moments expose the unmodeled cladding-to-girt eccentricity and block transfer",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableLoadResultants({"end-wall-front":0.25,"end-wall-back":0},m);return !r.success&&r.faces[0].momentX_kNm>0&&Number.isFinite(r.faces[0].momentY_kNm)&&!r.faces[0].centroidEquilibrium&&r.issues.some(x=>x.includes("خروج از مرکزیت"));});
   ck("duplicate gable girt segment is rejected to prevent double-counting",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),g=m.members.find(x=>x.sectionKey==="endGirt"&&x.endFace==="front");m.members.push({...g,id:"DUPLICATE-RESULTANT"});return !auditGableLoadResultants({"end-wall-front":0.25,"end-wall-back":0},m).success;});
 
   ck("gable tributary areas close to the exact trapezoidal wall area on both faces",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableTributaryAreaCoverage(m);return !!r?.success&&r.rows.length===2&&r.rows.every(x=>Math.abs(x.assignedAreaM2-x.expectedAreaM2)<1e-8);});
