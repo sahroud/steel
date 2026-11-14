@@ -74,15 +74,30 @@ function buildCompressionDemandRows(forceResult){
  const members=Array.isArray(forceResult?.members)?forceResult.members:[];
  return members.map(m=>{
   const ends=Array.isArray(m.ends)?m.ends.filter(e=>Array.isArray(e.values)&&e.values.length===12):[];
-  let demand=0,caseLabel="";
+  let demand=0,caseLabel="",governing=null;
   ends.forEach(e=>{
-   const ni=Number(e.values[0]),nj=Number(e.values[6]);
-   if(!Number.isFinite(ni)||!Number.isFinite(nj))return;
-   const candidate=Math.max(0,ni,-nj);
-   if(candidate>demand){demand=candidate;caseLabel=e.label||"";}
+   const v=e.values.map(Number);
+   if(!v.every(Number.isFinite))return;
+   const ni=v[0],nj=v[6],candidate=Math.max(0,ni,-nj);
+   if(candidate>demand){
+    demand=candidate;caseLabel=e.label||"";
+    const end=ni>=-nj?"I":"J",o=end==="I"?0:6;
+    governing={label:caseLabel,end,compression_N:candidate,
+     Vy_N:v[o+1],Vz_N:v[o+2],T_Nmm:v[o+3],My_Nmm:v[o+4],Mz_Nmm:v[o+5],
+     otherEnd:{Vy_N:v[end==="I"?7:1],Vz_N:v[end==="I"?8:2],T_Nmm:v[end==="I"?9:3],My_Nmm:v[end==="I"?10:4],Mz_Nmm:v[end==="I"?11:5]}};
+   }
   });
-  return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,caseCount:ends.length};
+  const nonAxial=governing?[governing.Vy_N,governing.Vz_N,governing.T_Nmm,governing.My_Nmm,governing.Mz_Nmm,...Object.values(governing.otherEnd)].some(x=>Math.abs(Number(x))>1e-6):false;
+  return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,governing,axialOnlyCase:!!governing&&!nonAxial,interactionRequired:!!governing&&nonAxial,caseCount:ends.length};
  }).filter(r=>r.caseCount>0).sort((a,b)=>a.sectionKey.localeCompare(b.sectionKey)||a.id.localeCompare(b.id));
+}
+function evaluateAxialOnlyMember(row,base,override,taperedEnabled){
+ if(!row?.axialOnlyCase||row.interactionRequired)return {ok:false,reason:"بارگذاری حاکم دارای خمش، برش یا پیچش هم‌زمان است؛ کنترل اندرکنش کامل هنوز موجود نیست."};
+ if(!(row.compressionDemand_kN>0))return {ok:false,reason:"تقاضای فشاری مثبت در حالت حاکم ثبت نشده است."};
+ const cap=memberCapacityFromInput(row,base,override,taperedEnabled);
+ if(!cap.ok)return {ok:false,reason:(cap.issues||[]).join("؛ ")};
+ const ratio=row.compressionDemand_kN/cap.LRFD.designStrength_kN;
+ return {ok:true,scope:"axial-only-global-buckling-screen",demand_kN:row.compressionDemand_kN,designStrength_kN:cap.LRFD.designStrength_kN,ratio,withinAxialStrength:ratio<=1,capacity:cap,disclaimer:"فقط غربال مقاومت محوری در حالت بدون خمش/برش/پیچش؛ تأیید طراحی عضو نیست."};
 }
 function selfTest(){
  const rows=buildCompressionDemandRows({members:[
@@ -99,6 +114,8 @@ function selfTest(){
  const tests=[
   {name:"tension is not classified as compression",pass:!!tension&&tension.compressionDemand_kN===0},
   {name:"compression demand uses largest end compression",pass:!!compression&&compression.compressionDemand_kN===1.5&&compression.governingCase==="C2"},
+  {name:"same-case bending and shear block axial-only screen",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"B",sectionKey:"column",ends:[{label:"B1",values:[1000,0,0,0,0,250000,-1000,0,0,0,0,0]}]}]})[0];return x.interactionRequired&&!x.axialOnlyCase;})()},
+  {name:"pure axial case is separately identified",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"A",sectionKey:"column",ends:[{label:"A1",values:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}]})[0];return x.axialOnlyCase&&!x.interactionRequired;})()},
   {name:"invalid force vectors are ignored",pass:!rows.some(r=>r.id==="BAD")},
   {name:"member capacity calculated with explicit unbraced lengths",pass:good.ok&&good.LRFD.designStrength_kN>0},
   {name:"missing member unbraced lengths are blocked",pass:!missing.ok},
