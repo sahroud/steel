@@ -93,9 +93,10 @@
       const ids=members.map(m=>String(m?.id??""));
       if(ids.some(x=>!x))caseIssues.push("شناسه عضو خروجی خالی است.");
       if(new Set(ids).size!==ids.length)caseIssues.push("شناسه عضو خروجی تکراری است.");
-      const outputSet=new Set(ids);
-      const missing=expectedIds.filter(id=>!outputSet.has(id));
-      const extra=ids.filter(id=>!expectedSet.has(id));
+      const physicalIds=members.map(m=>String(m?.parentMemberId||m?.id||""));
+      const physicalSet=new Set(physicalIds);
+      const missing=expectedIds.filter(id=>!physicalSet.has(id));
+      const extra=members.filter(m=>!expectedSet.has(String(m?.parentMemberId||m?.id||""))).map(m=>String(m.id));
       if(missing.length)caseIssues.push("اعضای فاقد نتیجه: "+missing.slice(0,10).join("، "));
       if(extra.length)caseIssues.push("شناسه‌های خارج از مدل مرجع: "+extra.slice(0,10).join("، "));
       const invalid=members.filter(m=>!Array.isArray(m?.localEndForces)||m.localEndForces.length!==12||m.localEndForces.some(v=>!Number.isFinite(Number(v))));
@@ -118,6 +119,8 @@
     check("invalid 12-component force vector rejected",()=>!audit3DCombinationCoverage(model,[{...good[0],members:[solved("M1"),{id:"M2",localEndForces:[1,2]}]}]).success);
     check("failed solver equilibrium rejected",()=>!audit3DCombinationCoverage(model,[{...good[0],equilibrium:{ok:false}}]).success);
     check("duplicate case labels rejected",()=>!audit3DCombinationCoverage(model,[good[0],{...good[0]}]).success);
+    check("tapered analysis segments cover their physical parent member",()=>audit3DCombinationCoverage({members:[{id:"PARENT"}]},[{label:"TAPER",equilibrium:{ok:true},members:[{...solved("PARENT-S1"),parentMemberId:"PARENT"},{...solved("PARENT-S2"),parentMemberId:"PARENT"}]}]).success);
+    check("orphan tapered segment parent is rejected",()=>!audit3DCombinationCoverage({members:[{id:"PARENT"}]},[{label:"TAPER",equilibrium:{ok:true},members:[{...solved("SEG-1"),parentMemberId:"UNKNOWN"}]}]).success);
     check("empty reference model rejected",()=>!audit3DCombinationCoverage({members:[]},good).success);
     return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software result-coverage audit only"};
   }
@@ -199,11 +202,12 @@
           addLine(rows,"آمادگی طراحی مقاومتی اعضای متغیرمقطع",!!readiness?.success,
             readiness?.success?"ورودی‌های دروازه طراحی کامل‌اند؛ این وضعیت هنوز به معنی تأیید مقاومت نیست.":(readiness?.memberRows||[]).map(x=>x.parentMemberId+": "+x.missingInputs.join("، ")).join("؛ ")||"ورودی‌های لازم برای ممیزی آماده‌سازی در دسترس نیست.");
         }
-        const hasMemberDemand=window.SteelAnalysis.combinationResults.some(item=>
-          item.memberEnvelopes&&Object.keys(item.memberEnvelopes).length>0);
-        addLine(rows,"استخراج تقاضای طراحی اعضا از تحلیل ترکیبات",
+        const hasMemberDemand=window.SteelAnalysis.combinationResults.every(item=>
+          Array.isArray(item.members)&&item.members.length>0&&item.members.every(m=>
+            Array.isArray(m.localEndForces)&&m.localEndForces.length===12&&m.localEndForces.every(v=>Number.isFinite(Number(v)))));
+        addLine(rows,"استخراج بردارهای هم‌زمان تقاضای اعضا در هر ترکیب",
           hasMemberDemand,
-          hasMemberDemand?"تقاضا و پوش نیروهای اعضا در جدول تفکیکی تحلیل ترکیبات بار تولید شده است؛ دکمه مستقل دیگری برای این مرحله در صفحه وجود ندارد.":"در نتایج ترکیبات، جدول تقاضای تفکیکی اعضا تولید نشده است.");
+          hasMemberDemand?"بردار ۱۲ مؤلفه‌ای نیرو برای تک‌تک اعضا و هر ترکیب حفظ شده است؛ پوش‌های مستقل N/V/M صرفاً خلاصه‌اند و جایگزین نیروهای هم‌زمان برای طراحی نیستند.":"در یک یا چند ترکیب، بردار نیروهای هم‌زمان تمام اعضا موجود یا کامل نیست.");
 
         const coverage=audit3DCombinationCoverage(window.SteelStructuralModel?.getData?.(),window.SteelAnalysis.combinationResults);
         addLine(rows,"ممیزی پوشش تحلیل سه‌بعدی تمام اعضا",coverage.success,
