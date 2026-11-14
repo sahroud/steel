@@ -27,7 +27,9 @@ const LABELS={
  deflection:"کنترل تغییرمکان/خیز در ترکیب بهره‌برداری","exact-profile":"نوع و مشخصات دقیق پروفیل",
  "cold-formed-local-distortional":"کمانش موضعی و اعوجاجی مقطع سردنورد",
  restraint:"مهار جانبی و پیچشی واقعی","biaxial-actions":"بارگذاری دو‌محوره و پیچش",
- connections:"اتصالات و پیچ‌های لاپه/قید"
+ connections:"اتصالات و پیچ‌های لاپه/قید",
+ "brace-force-demand":"استخراج نیروهای محوری هم‌زمان هر ترکیب",tension:"ظرفیت کششی و گسیختگی مقطع مهاربند",
+ "unbraced-length":"طول مهارنشده و ضریب طول مؤثر مستند","collector-diaphragm":"دیافراگم و جمع‌کننده و انتقال بار طولی مستند"
 };
 function audit(){
  const env=root.SteelMemberForceEnvelope?.getLast?.()||null;
