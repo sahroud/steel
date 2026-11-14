@@ -29,9 +29,10 @@ function calculate(v){
  const Iy=(2*tf*bf**3+hw*tw**3)/12;
  const J=(2*bf*tf**3+hw*tw**3)/3;
  const Sx=Ix/(d/2),Sy=Iy/(bf/2),Aw=hw*tw;
- return {A_cm2:A/100,Ix_cm4:Ix/1e4,Iy_cm4:Iy/1e4,J_cm4:J/1e4,
-  SxTop_cm3:Sx/1000,SxBottom_cm3:Sx/1000,Sy_cm3:Sy/1000,Aw_cm2:Aw/100,
-  flangeOutstandRatio:(bf-tw)/(2*tf),webDepthThicknessRatio:hw/tw};
+ const h0=d-tf,Cw=Iy*h0*h0/4,Zpx=bf*tf*(d-tf)+tw*hw*hw/4,Zpy=tf*bf*bf/2+hw*tw*tw/4;
+ return {A_cm2:A/100,Ix_cm4:Ix/1e4,Iy_cm4:Iy/1e4,J_cm4:J/1e4,Cw_cm6:Cw/1e6,
+  SxTop_cm3:Sx/1000,SxBottom_cm3:Sx/1000,Sy_cm3:Sy/1000,Zpx_cm3:Zpx/1000,Zpy_cm3:Zpy/1000,Aw_cm2:Aw/100,
+  flangeOutstand_mm:(bf-tw)/2,flangeOutstandRatio:(bf-tw)/(2*tf),webDepthThicknessRatio:hw/tw};
 }
 function interpolate(a,b,t){return a+(b-a)*t;}
 function at(group,t){
@@ -148,6 +149,7 @@ function selfTest(){
  const tests=[];
  const c=calculate({d:300,bf:150,tw:8,tf:12});
  tests.push({name:"positive-properties",pass:c.A_cm2>0&&c.Ix_cm4>c.Iy_cm4&&c.J_cm4>0});
+ tests.push({name:"warping-plastic-and-shear-properties",pass:c.Cw_cm6>0&&c.Zpx_cm3>c.SxTop_cm3&&c.Aw_cm2>0&&c.flangeOutstand_mm>0});
  const q=normalize({groups:{rafter:{enabled:true,stations:{start:{d:500,bf:200,tw:8,tf:12},mid:{d:400,bf:200,tw:8,tf:12},end:{d:300,bf:200,tw:8,tf:12}}}}});
  const old=data;data=q;const mid=at("rafter",0.5);data=old;
  tests.push({name:"mid-station-interpolation",pass:Math.abs(mid.dimensions.d-400)<1e-9});
