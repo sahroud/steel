@@ -135,8 +135,16 @@ async function analyzeCase(caseIndex,transferResult,horizontalInput,trainInput,c
  const model=root.SteelStructuralModel?.model;
  const p=prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,config);
  if(!p.success)return {success:false,analysisEnabled:false,transfer:p};
+ const chain=root.SteelStructuralLoadChain;
+ if(!chain||typeof chain.auditEquilibrium!=="function"||typeof chain.buildExternalLoadLedger!=="function"||typeof chain.compareExternalLedger!=="function")
+  return {success:false,analysisEnabled:false,transfer:p,issues:["ممیزی مستقل دفتر بار خارجی و تعادل حل‌گر بارگذاری نشده است؛ تحلیل جرثقیل تا دسترسی به این کنترل‌ها متوقف شد."]};
  const result=await root.SteelStructuralModel.analyze3D({label:"بار مرده + جرثقیل ـ حالت هم‌زمان "+(caseIndex+1),factors:{dead:1,live:0,snow:0,wind:0},nodalLoads:p.nodalLoads,craneLoadCaseId:caseIndex,craneLoadTransfer:{referencePosition_m:p.referencePosition_m,sourceDocuments:p.sourceDocuments}});
- lastAnalysis={success:true,analysisEnabled:false,caseIndex,transfer:p,result};
+ const equilibriumAudit=chain.auditEquilibrium(result?.equilibrium);
+ if(!equilibriumAudit?.ok)return {success:false,analysisEnabled:false,transfer:p,result,equilibriumAudit,issues:["ممیزی مستقل تعادل حالت جرثقیل ناموفق است: "+(equilibriumAudit?.issues||[]).join("؛ ")]};
+ const externalLoadLedger=chain.buildExternalLoadLedger(model,result?.members,p.nodalLoads,result?.equivalentReleasedRotationLoads||[]);
+ const externalLoadLedgerComparison=chain.compareExternalLedger(externalLoadLedger,result?.equilibrium);
+ if(!externalLoadLedgerComparison?.ok)return {success:false,analysisEnabled:false,transfer:p,result,equilibriumAudit,externalLoadLedger,externalLoadLedgerComparison,issues:["دفتر مستقل بار خارجی با برآیند بار اعمال‌شده حل‌گر تطبیق ندارد: "+(externalLoadLedgerComparison?.issues||[]).join("؛ ")]};
+ lastAnalysis={success:true,analysisEnabled:false,caseIndex,transfer:p,result,equilibriumAudit,externalLoadLedger,externalLoadLedgerComparison,loadPathAudit:{ok:true,method:"independent external-load resultant and solver equilibrium recheck",designApproved:false}};
  return lastAnalysis;
 }
 let lastAutomaticEnvelope=null;
