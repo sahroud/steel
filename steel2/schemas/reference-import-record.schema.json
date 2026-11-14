@@ -173,8 +173,7 @@
           "type": [
             "number",
             "null"
-          ],
-          "minimum": 0
+          ]
         },
         "orientation": {
           "enum": [
