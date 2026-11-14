@@ -9,6 +9,8 @@ const expectedAxialConvention={endI:"negative Fx_i",endJ:"positive Fx_j"};
 function audit(envelope,model){
  const issues=[],rows=[],members=Array.isArray(model?.members)?model.members:[];
  const braces=members.filter(m=>m.sectionKey==="wallBrace"||m.sectionKey==="roofBrace");
+ const modelIds=members.map(m=>String(m.id)),duplicateModelIds=[...new Set(modelIds.filter((id,i)=>modelIds.indexOf(id)!==i))];
+ if(duplicateModelIds.length)issues.push("شناسه عضو در مدل تکراری است؛ تطبیق نیرو با عضو یکتا ممکن نیست: "+duplicateModelIds.join("، "));
  if(!envelope||!Array.isArray(envelope.members))issues.push("پوش نیروهای FEM در دسترس نیست؛ ابتدا تحلیل تمام ترکیبات را اجرا کنید.");
  if(!braces.length)issues.push("هیچ مهاربند طولی دیوار یا سقف در مدل پیدا نشد.");
  if(envelope?.allCasesEquilibriumOK!==true)issues.push("تعادل تمام حالت‌های تحلیل در پوش نیرو تأیید نشده است.");
@@ -18,7 +20,10 @@ function audit(envelope,model){
  const signConventionVerified=envelope?.localEndForceConvention?.version===1&&signCases?.endI===expectedAxialConvention.endI&&signCases?.endJ===expectedAxialConvention.endJ;
  if(braces.length&&!signConventionVerified)issues.push("قرارداد علامت نیروی محوری دو انتهای عضو با قرارداد اعتبارسنجی‌شده حل‌گر تطبیق ندارد؛ طبقه‌بندی کشش/فشار مجاز نیست.");
  if((envelope?.unreportedMemberIds||[]).length)issues.push("برخی اعضای مدل در نتایج تحلیل گزارش نشده‌اند.");
- const envById=new Map((envelope?.members||[]).map(m=>[String(m.id),m]));
+ const envelopeMembers=Array.isArray(envelope?.members)?envelope.members:[];
+ const envelopeIds=envelopeMembers.map(m=>String(m.id)),duplicateEnvelopeIds=[...new Set(envelopeIds.filter((id,i)=>envelopeIds.indexOf(id)!==i))];
+ if(duplicateEnvelopeIds.length)issues.push("شناسه عضو در پوش نیرو تکراری است؛ نتایج هم‌نام قابل تفکیک نیستند: "+duplicateEnvelopeIds.join("، "));
+ const envById=new Map(envelopeMembers.map(m=>[String(m.id),m]));
  braces.forEach(brace=>{
   const row=envById.get(String(brace.id)),cases=Array.isArray(row?.simultaneousCases)?row.simultaneousCases:[];
   const seen=new Set(),demands=[];
@@ -32,8 +37,12 @@ function audit(envelope,model){
   });
   rows.push({memberId:String(brace.id),sectionKey:brace.sectionKey,memberLength_m:finite(Number(brace.length))?Number(brace.length):null,caseCount:demands.length,simultaneousDemands:demands,forceConvention:envelope?.localEndForceConvention||null,status:demands.length===cases.length&&cases.length>0?"demand-extracted":"incomplete"});
  });
- const expectedLabels=Array.isArray(envelope?.cases)?envelope.cases.map(c=>String(c.label||"")).filter(Boolean):[];
+ const rawExpectedLabels=Array.isArray(envelope?.cases)?envelope.cases.map(c=>String(c?.label||"")):[];
+ const expectedLabels=rawExpectedLabels.filter(Boolean);
  const expectedCases=expectedLabels.length;
+ if(rawExpectedLabels.some(x=>!x.trim()))issues.push("فهرست حالت‌های تحلیل دارای نام خالی است؛ تطبیق کامل ترکیبات ممکن نیست.");
+ const duplicateExpectedLabels=[...new Set(expectedLabels.filter((x,i)=>expectedLabels.indexOf(x)!==i))];
+ if(duplicateExpectedLabels.length)issues.push("نام حالت بار در پوش تحلیل تکراری است: "+duplicateExpectedLabels.join("، "));
  rows.forEach(r=>{
   const actualLabels=r.simultaneousDemands.map(x=>x.caseLabel);
   const missingLabels=expectedLabels.filter(x=>!actualLabels.includes(x));
@@ -67,6 +76,10 @@ function selfTest(){
  t("normalizes compressive actions at opposite member ends consistently",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[0].endI.N=100;e.members[0].simultaneousCases[0].endJ.N=-120;const r=audit(e,model),d=r.rows[0].simultaneousDemands[0];return r.success&&d.endI_compression_N===100&&d.endJ_compression_N===120&&d.endI_tension_N===0&&d.endJ_tension_N===0;});
  t("rejects unrecognized axial sign convention",()=>!audit({...envelope,localEndForceConvention:{version:2,verifiedSignCases:{axialTension:{endI:"wrong",endJ:"wrong"}}}},model).success);
  t("never reports capacity or design approval",()=>{const r=audit(envelope,model);return r.demandOnly&&r.analysisEnabled===false&&r.designApproved===false&&!r.rows.some(x=>"capacity_kN" in x);});
+ t("rejects duplicate brace IDs in structural model",()=>!audit(envelope,{members:[...model.members,{...model.members[0]}]}).success);
+ t("rejects duplicate member IDs in force envelope",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members.push({...e.members[0]});return !audit(e,model).success;});
+ t("rejects duplicate expected load-case labels",()=>{const e=JSON.parse(JSON.stringify(envelope));e.cases[1].label="C1";return !audit(e,model).success;});
+ t("rejects blank expected load-case labels",()=>{const e=JSON.parse(JSON.stringify(envelope));e.cases[1].label="";return !audit(e,model).success;});
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software regression only; no member capacity verification"};
 }
 root.SteelBraceForceDemandAudit={audit,selfTest};
