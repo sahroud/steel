@@ -54,13 +54,40 @@ function mapMemberLoad(member,record,geometry){
  }
  return{globalKNm:zero,surfaceKeys:[]};
 }
-function auditGablePressure(pressures){
+function auditGableTributaryAreaCoverage(model){
+ const issues=[],rows=[],nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n])),members=model?.members||[],g=model?.geometry||{};
+ const span=Number(g.span),height=Number(g.height),rise=Number(g.rise);
+ if(!(span>0&&height>0&&rise>=0))return{success:false,issues:["ابعاد هندسی گابل برای ممیزی مساحت نامعتبر است."],rows};
+ const expected=span*(height+rise/2);
+ ["front","rear"].forEach(face=>{
+  const items=members.filter(m=>m.sectionKey==="endGirt"&&m.endFace===face);
+  let area=0;
+  if(!items.length){issues.push("گرت بارگیر برای وجه "+face+" موجود نیست.");return;}
+  items.forEach(m=>{
+   const a=nodes.get(String(m.start)),b=nodes.get(String(m.end)),h=Number(m.tributaryHeight);
+   if(!a||!b||!Number.isFinite(h)||!(h>0)||Math.abs(a.y-b.y)>1e-7||Math.abs(a.z-b.z)>1e-7){issues.push("هندسه/ارتفاع بارگیر گرت "+m.id+" در وجه "+face+" نامعتبر است.");return;}
+   const length=Math.abs(Number(b.x)-Number(a.x));
+   if(!(length>0)){issues.push("طول افقی گرت "+m.id+" نامعتبر است.");return;}
+   area+=length*h;
+  });
+  const ratio=area/expected,ok=Math.abs(area-expected)<=Math.max(1e-5,expected*1e-3);
+  rows.push({face,assignedAreaM2:area,expectedAreaM2:expected,coverageRatio:ratio,memberCount:items.length,ok});
+  if(!ok)issues.push("مساحت بارگیر گابل "+face+" ("+area.toFixed(4)+" m²) با سطح واقعی مثلثی/ذوزنقه‌ای ("+expected.toFixed(4)+" m²) منطبق نیست.");
+ });
+ return{success:issues.length===0,issues,rows,method:"sum(horizontal girt segment length × exact average local tributary height), compared with integral of the actual roof profile",analysisEnabled:false,designApproved:false};
+}
+function auditGablePressure(pressures,model){
  const keys=["end-wall-front","end-wall-back"],active=keys.filter(k=>!finite(pressures?.[k])||Math.abs(pressures[k])>1e-12);
  if(active.some(k=>!finite(pressures?.[k])))throw Error("فشار باد دیوار انتهایی برای ممیزی ناحیه مثلثی ناقص است.");
- if(active.length)throw Error("باد ناحیه مثلثی دیوار انتهایی ("+active.join("، ")+") به رفتر قاب انتهایی/ستونک‌ها در حل‌گر سه‌بعدی منتقل نمی‌شود؛ تا پیاده‌سازی و ممیزی بارگیر و اتصال این مسیر، تحلیل این حالت باد مجاز نیست.");
- return {ready:true,activeSurfaces:[],scope:"gable triangular end-wall wind explicitly zero"};
+ if(!active.length)return {ready:true,activeSurfaces:[],scope:"gable pressure explicitly zero"};
+ if(!model?.geometry||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("برای باد غیرصفر گابل، هندسه و اعضای واقعی مدل لازم است.");
+ const topology=root.SteelEndWallGableSupportAudit?.audit?.(model);
+ if(!topology?.success)throw Error("ممیزی توپولوژی ستونک/گرت/وتر گابل ناموفق است: "+(topology?.issues||[]).join("؛ "));
+ const coverage=auditGableTributaryAreaCoverage(model);
+ if(!coverage.success)throw Error("ممیزی مساحت بارگیر گابل ناموفق است: "+coverage.issues.join("؛ "));
+ return {ready:true,activeSurfaces:active,topology,coverage,scope:"end-wall pressure transferred to horizontal end-girts using locally clipped tributary heights; topology and total surface-area closure audited",analysisEnabled:false,designApproved:false};
 }
-function createCases(){const a=audit();if(!a.ready)throw Error("انتقال باد جهت‌دار متوقف شد: "+a.issues.join("؛ "));const w=root.SteelDirectionalWind.getData(),combos=root.SteelLoads?.getData?.()?.combinations;if(!Array.isArray(combos)||!combos.length)throw Error("ترکیبات ثقلی موجود نیستند.");const cases=[];DIRS.forEach(d=>["positive","negative"].forEach(s=>{const key=s==="positive"?"netWithPositiveInternal":"netWithNegativeInternal",pressures={};SURFACES.forEach(k=>pressures[k]=w.directions[d].surfaces[k][key]);auditGablePressure(pressures);combos.forEach((c,i)=>{const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:1};if(["dead","live","snow"].some(k=>c[k]===undefined||c[k]===null||c[k]===""||!finite(factors[k])||factors[k]<0))throw Error("ضریب ترکیب بار نامعتبر است: "+String(c.name||i+1));cases.push({id:"WIND-"+d.toUpperCase()+"-INT-"+s.toUpperCase()+"-C"+(i+1),label:String(c.name||("ترکیب "+(i+1)))+" | "+w.directions[d].label+" | فشار داخلی "+s,factors,windSign:1,directionalWindCaseId:d+"-"+s,directionalWindPressures:{direction:d,internalPressureSign:s,surfaces:pressures,unit:"kN/m2"},analysisEnabled:false,designApproved:false});});}));return{cases,caseCount:cases.length,analysisEnabled:false,designApproved:false,limitations:["Cpهای دستی و مقدماتی و نیازمند تطبیق رسمی‌اند.","ترکیبات بار فعلی هنوز تأیید نهایی آیین‌نامه‌ای نشده‌اند.","نواحی لبه/گوشه، بازشوهای غالب، پیچش کلی و فشار بر اجزای فرعی کامل نیست.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش و طراحی عضو/اتصال در این ماژول انجام نمی‌شود."]};}
+function createCases(){const a=audit();if(!a.ready)throw Error("انتقال باد جهت‌دار متوقف شد: "+a.issues.join("؛ "));const w=root.SteelDirectionalWind.getData(),combos=root.SteelLoads?.getData?.()?.combinations;if(!Array.isArray(combos)||!combos.length)throw Error("ترکیبات ثقلی موجود نیستند.");const cases=[],model=root.SteelStructuralModel?.getData?.();DIRS.forEach(d=>["positive","negative"].forEach(s=>{const key=s==="positive"?"netWithPositiveInternal":"netWithNegativeInternal",pressures={};SURFACES.forEach(k=>pressures[k]=w.directions[d].surfaces[k][key]);auditGablePressure(pressures,model);combos.forEach((c,i)=>{const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:1};if(["dead","live","snow"].some(k=>c[k]===undefined||c[k]===null||c[k]===""||!finite(factors[k])||factors[k]<0))throw Error("ضریب ترکیب بار نامعتبر است: "+String(c.name||i+1));cases.push({id:"WIND-"+d.toUpperCase()+"-INT-"+s.toUpperCase()+"-C"+(i+1),label:String(c.name||("ترکیب "+(i+1)))+" | "+w.directions[d].label+" | فشار داخلی "+s,factors,windSign:1,directionalWindCaseId:d+"-"+s,directionalWindPressures:{direction:d,internalPressureSign:s,surfaces:pressures,unit:"kN/m2"},analysisEnabled:false,designApproved:false});});}));return{cases,caseCount:cases.length,analysisEnabled:false,designApproved:false,limitations:["Cpهای دستی و مقدماتی و نیازمند تطبیق رسمی‌اند.","ترکیبات بار فعلی هنوز تأیید نهایی آیین‌نامه‌ای نشده‌اند.","نواحی لبه/گوشه، بازشوهای غالب، پیچش کلی و فشار بر اجزای فرعی کامل نیست.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش و طراحی عضو/اتصال در این ماژول انجام نمی‌شود."]};}
 let lastRun=null;
 function buildWindForceEnvelope(model,results){
  const api=root.SteelMemberForceEnvelope;
@@ -131,5 +158,5 @@ function mountRunControl(){
  button.addEventListener("click",async()=>{button.disabled=true;out.textContent="در حال تحلیل جهت‌ها و فشارهای داخلی...";try{const r=await run();out.textContent="حل "+r.caseCount+" حالت باد با تعادل برقرار انجام شد. اعضای دارای پوش نیرو: "+r.memberForceEnvelope.rows.length+"؛ پوش نیرو برای همه اعضا و حالات ثبت شد. ضرایب دستی و مقدماتی‌اند؛ این نتیجه تأیید طراحی نیست.";}catch(e){out.textContent="تحلیل باد متوقف شد: "+String(e.message||e);}finally{button.disabled=false;}});
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mountRunControl);else mountRunControl();}
-root.SteelDirectionalWind3D={audit,auditGablePressure,auditTributaryAreaCoverage,createCases,run,selfTest,mapMemberLoad,combineGlobalLoads,buildWindForceEnvelope,getLastRun:()=>lastRun};
+root.SteelDirectionalWind3D={audit,auditGablePressure,auditGableTributaryAreaCoverage,auditTributaryAreaCoverage,createCases,run,selfTest,mapMemberLoad,combineGlobalLoads,buildWindForceEnvelope,getLastRun:()=>lastRun};
 })(typeof window!=="undefined"?window:globalThis);
