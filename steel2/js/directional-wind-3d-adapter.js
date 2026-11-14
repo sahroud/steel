@@ -138,9 +138,9 @@ function createCases(){
  const missing=requiredLoads.filter(k=>loads[k]===undefined||loads[k]===null||loads[k]===""||!Number.isFinite(Number(loads[k])));
  if(missing.length)throw Error("ورودی‌های صریح D/Lr/S برای تحلیل باد ناقص‌اند: "+missing.join("، "));
  const patterns=[
-  {id:"ULS-03-LR",label:"1.2D + 1.6Lr + 0.7W",factors:{dead:1.2,live:1.6,snow:0,wind:0.7}},
-  {id:"ULS-03-S",label:"1.2D + 1.6S + 0.7W",factors:{dead:1.2,live:0,snow:1.6,wind:0.7}},
-  {id:"ULS-06",label:"0.9D + 1.4W",factors:{dead:0.9,live:0,snow:0,wind:1.4}}
+  {id:"ULS-03-LR",m6FamilyId:"M6-ULS-03",m6VariantId:"Lr",label:"1.2D + 1.6Lr + 0.7W",factors:{dead:1.2,live:1.6,snow:0,wind:0.7}},
+  {id:"ULS-03-S",m6FamilyId:"M6-ULS-03",m6VariantId:"S",label:"1.2D + 1.6S + 0.7W",factors:{dead:1.2,live:0,snow:1.6,wind:0.7}},
+  {id:"ULS-06",m6FamilyId:"M6-ULS-06",m6VariantId:"W",label:"0.9D + 1.4W",factors:{dead:0.9,live:0,snow:0,wind:1.4}}
  ];
  const cases=[];
  DIRS.forEach(d=>["positive","negative"].forEach(s=>{
@@ -151,7 +151,7 @@ function createCases(){
    cases.push({
     id:"WIND-"+d.toUpperCase()+"-INT-"+s.toUpperCase()+"-"+pattern.id,
     label:pattern.label+" | "+w.directions[d].label+" | فشار داخلی "+s,
-    factors:{...pattern.factors},windSign:1,
+    factors:{...pattern.factors},m6FamilyId:pattern.m6FamilyId,m6VariantId:pattern.m6VariantId,windSign:1,
     directionalWindCaseId:d+"-"+s+"-"+pattern.id,
     directionalWindPressures:{direction:d,internalPressureSign:s,surfaces:pressures,unit:"kN/m2"},
     source:{code:"مبحث ششم ۱۳۹۸",clause:pattern.id==="ULS-06"?"۶-۲-۳-۲، ترکیب ۶":"۶-۲-۳-۲، ترکیب ۳",
