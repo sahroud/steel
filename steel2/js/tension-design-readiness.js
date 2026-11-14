@@ -46,7 +46,7 @@ function extractGroupTensionDemand(group){
  const rows=new Map((env.members||[]).map(m=>[String(m.id),m]));
  const labels=env.cases.map(c=>String(c.label||""));
  if(!labels.length||new Set(labels).size!==labels.length||labels.some(x=>!x.trim()))return fail("نام ترکیبات بار خالی یا تکراری است.");
- let peak=0,governing=null;
+ let peak=0,governing=null,nonAxialActionDetected=false;
  for(const member of members){
   const row=rows.get(String(member.id));
   if(!row||!Array.isArray(row.simultaneousCases)||row.simultaneousCases.length!==labels.length)return fail("پوش نیرو برای عضو "+member.id+" کامل نیست.");
@@ -55,10 +55,12 @@ function extractGroupTensionDemand(group){
   for(const label of labels){
    const demand=root.SteelMemberForceEnvelope?.getSimultaneousCaseDemand?.(row,label);
    if(!demand||!Number.isFinite(demand.endI?.tension)||!Number.isFinite(demand.endJ?.tension))return fail("تقاضای کششی هم‌زمان عضو "+member.id+" معتبر نیست.");
+   for(const end of [demand.endI,demand.endJ])if(["Vy","Vz","T","My","Mz"].some(k=>Number.isFinite(end[k])&&Math.abs(end[k])>1e-3))nonAxialActionDetected=true;
    for(const [end,value] of [["I",demand.endI.tension],["J",demand.endJ.tension]])if(value>peak){peak=value;governing={memberId:String(member.id),caseLabel:label,end,tensionN:value};}
   }
  }
- return {ready:true,forceDemandKN:peak/1000,memberCount:members.length,caseCount:labels.length,governing,source:"FEM envelope; tension-positive end normalization"};
+ if(nonAxialActionDetected)return fail("در حداقل یک ترکیب، برش/پیچش/لنگر عضو غیرصفر است؛ غربال کشش محوری خالص مجاز نیست و مسیر اندرکنش N-M لازم است.");
+ return {ready:true,axialOnly:true,forceDemandKN:peak/1000,memberCount:members.length,caseCount:labels.length,governing,source:"FEM envelope; tension-positive end normalization"};
 }
 function audit(input){
  const src=input?normalize(input):readUI(),issues=[],warnings=[],groups={};
@@ -84,7 +86,8 @@ function audit(input){
   const demandBridge=extractGroupTensionDemand(g),manualDemand=Number(d.forceDemandKN)>0?Number(d.forceDemandKN):null;
   if(!demandBridge.ready){if(manualDemand===null)warnings.push(label+": نیروی کششی تقاضا از پوش FEM استخراج نشد؛ "+demandBridge.reason);}
   else if(manualDemand!==null&&Math.abs(manualDemand-demandBridge.forceDemandKN)>Math.max(0.01,demandBridge.forceDemandKN*0.01))warnings.push(label+": مقدار دستی تقاضا با بیشینه کشش استخراج‌شده از FEM بیش از ۱٪ اختلاف دارد؛ منبع و ترکیب کنترل شوند.");
-  groups[g]={label,complete:local.length===0,issues:local,connectionType:d.connectionType,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,forceDemandKN:manualDemand??(demandBridge.ready?demandBridge.forceDemandKN:null),computedForceDemandKN:demandBridge.forceDemandKN,demandSource:demandBridge.ready?demandBridge.source:null,demandMemberCount:demandBridge.memberCount,demandCaseCount:demandBridge.caseCount,governingTension:demandBridge.governing};
+  const capacityScreen=demandBridge.ready?root.SteelTensionCapacityScreen?.analyze?.({codeBasis:"M10-1401-provisional",officialTextVerified:false,axialOnlyVerified:demandBridge.axialOnly===true,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,Fy_MPa:Number(mat.Fy),Fu_MPa:Number(mat.Fu),demand_kN:demandBridge.forceDemandKN,governingMember:demandBridge.governing?.memberId,governingCase:demandBridge.governing?.caseLabel,governingEnd:demandBridge.governing?.end}):null;
+  groups[g]={label,complete:local.length===0,issues:local,connectionType:d.connectionType,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,forceDemandKN:manualDemand??(demandBridge.ready?demandBridge.forceDemandKN:null),computedForceDemandKN:demandBridge.forceDemandKN,demandSource:demandBridge.ready?demandBridge.source:null,demandMemberCount:demandBridge.memberCount,demandCaseCount:demandBridge.caseCount,governingTension:demandBridge.governing,capacityScreen:capacityScreen||{ok:false,issues:["موتور غربال ظرفیت یا تقاضای FEM معتبر در دسترس نیست."],designApproved:false}};
   local.forEach(x=>issues.push(label+": "+x));
  });
  return {schemaVersion:1,readyForDataReview:issues.length===0,issues,warnings,groups,
@@ -106,7 +109,8 @@ function render(){
 function renderResult(r){
  const host=$("tensionDesignResults");if(!host)return;
  const demandRows=Object.values(r.groups||{}).map(g=>"<li>"+esc(g.label)+": "+(Number.isFinite(g.computedForceDemandKN)?g.computedForceDemandKN.toFixed(3)+" kN":"استخراج نشده")+(g.governingTension?" — "+esc(g.governingTension.memberId)+" / "+esc(g.governingTension.caseLabel)+" / انتهای "+esc(g.governingTension.end):"")+" — "+(g.demandSource?esc(g.demandSource):"نیازمند بررسی پوش نیرو")+"</li>").join("");
- host.innerHTML="<h4>"+(r.readyForDataReview?"داده‌های اولیه تکمیل شده‌اند؛ هنوز ظرفیت محاسبه نشده":"ورودی‌های ناقص برای طراحی کششی")+"</h4><h4>بیشینه تقاضای کششی استخراج‌شده از FEM</h4><ul>"+demandRows+"</ul>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در این ممیزی شناسایی نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+"<div class='notice'>"+esc(r.note)+"<br>"+esc(r.disclaimer)+"</div>";
+ const screenRows=Object.values(r.groups||{}).map(g=>{const x=g.capacityScreen;if(!x?.ok)return "<li>"+esc(g.label)+": غربال انجام نشد — "+esc((x?.issues||[]).join("؛ ")||"اطلاعات ناکافی")+"</li>";return "<li>"+esc(g.label)+": LRFD="+x.LRFD.designStrength_kN.toFixed(2)+" kN، نسبت تقاضا/مقاومت="+x.LRFD.utilization.toFixed(3)+"؛ ASD="+x.ASD.allowableStrength_kN.toFixed(2)+" kN، نسبت تقاضا/مجاز="+x.ASD.utilization.toFixed(3)+"؛ حالت حاکم LRFD: "+esc(x.LRFD.governing)+"؛ عضو/ترکیب: "+esc(x.governingMember||"—")+"/"+esc(x.governingCase||"—")+"</li>";}).join("");
+ host.innerHTML="<h4>"+(r.readyForDataReview?"داده‌های اولیه تکمیل شده‌اند؛ کنترل‌های اتصال همچنان باید مستقل تکمیل شوند":"ورودی‌های ناقص برای طراحی کششی")+"</h4><h4>بیشینه تقاضای کششی استخراج‌شده از FEM</h4><ul>"+demandRows+"</ul><h4>غربال مقدماتی مقاومت کششی — غیرنهایی</h4><ul>"+screenRows+"</ul>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در این ممیزی شناسایی نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+"<div class='notice'>"+esc(r.note)+"<br>"+esc(r.disclaimer)+"</div>";
 }
 function init(){
  if($("tensionDesignReadinessPanel"))return;
@@ -129,6 +133,7 @@ function selfTest(){
  t("blocks extraction when force sign convention is unknown",()=>{const old=baseEnv.localEndForceConvention;baseEnv.localEndForceConvention={version:2};const r=extractGroupTensionDemand("roofBrace");baseEnv.localEndForceConvention=old;return !r.ready;});
  t("blocks incomplete per-member combination coverage",()=>{const old=baseEnv.members[0].simultaneousCases;baseEnv.members[0].simultaneousCases=old.slice(0,1);const r=extractGroupTensionDemand("roofBrace");baseEnv.members[0].simultaneousCases=old;return !r.ready;});
  t("blocks groups absent from current model",()=>!extractGroupTensionDemand("wallBrace").ready);
+ t("blocks axial-only screening when member moments are present",()=>{baseEnv.members[0].simultaneousCases[0].endI.My=250;const r=extractGroupTensionDemand("roofBrace");baseEnv.members[0].simultaneousCases[0].endI.My=0;return !r.ready&&r.reason.includes("لنگر");});
  root.SteelMemberForceEnvelope=saved.env;root.SteelStructuralModel=saved.model;
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"automatic tensile demand extraction from complete FEM cases only; no tensile resistance or connection design"};
 }
