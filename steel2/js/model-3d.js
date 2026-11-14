@@ -1418,7 +1418,23 @@
     result.members.forEach(member=>{
       const source=sourceMembersById.get(String(member.id));
       if(source?.analysisLoad)member.analysisLoad=JSON.parse(JSON.stringify(source.analysisLoad));
+      if(source?.taperApplied===true){
+        member.parentMemberId=String(source.parentMemberId||"");
+        member.taperSegmentIndex=Number(source.taperSegmentIndex);
+        member.taperSegmentCount=Number(source.taperSegmentCount);
+        member.taperApplied=true;
+        member.taperCoordinate=Number(source.taperCoordinate);
+        member.taperDimensions=source.taperProperties?.dimensions?JSON.parse(JSON.stringify(source.taperProperties.dimensions)):null;
+        member.taperProperties=source.taperProperties?JSON.parse(JSON.stringify(source.taperProperties)):null;
+      }
     });
+    if(taperedSegmentationAudit?.splitMemberCount>0){
+      if(!window.SteelTaperedMemberForceAudit?.audit)
+        throw new Error("ممیزی ردیابی نیرو برای قطعات متغیرمقطع بارگذاری نشده است؛ نتیجه برای طراحی قابل استفاده نیست.");
+      result.taperedMemberForceAudit=window.SteelTaperedMemberForceAudit.audit(result);
+      if(!result.taperedMemberForceAudit.success)
+        throw new Error("ردیابی نیروهای قطعات متغیرمقطع ناقص است: "+result.taperedMemberForceAudit.issues.slice(0,10).join("؛ "));
+    }
 
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
