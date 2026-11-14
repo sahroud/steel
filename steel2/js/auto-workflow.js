@@ -64,27 +64,13 @@
   function prepareMaterial(rows) {
     const grade=$("steelGrade"), e=$("steelE"), fy=$("steelFy");
     if(!grade||!e||!fy) {
-      addLine(rows,"تخصیص خودکار خواص اولیه فولاد",false,"فیلدهای مصالح در صفحه پیدا نشدند.");
+      addLine(rows,"اعتبارسنجی خواص فولاد",false,"فیلدهای گرید، مدول الاستیسیته و تنش تسلیم در دسترس نیستند.");
       return false;
     }
-    const assigned=[];
-    if(!grade.value.trim()) {
-      grade.value="ST37 (فرض اولیه؛ نیازمند تأیید)";
-      assigned.push("گرید اولیه ST37");
-    }
-    if(e.value.trim()===""||!(Number(e.value)>0)) {
-      e.value="200";
-      assigned.push("E=200 GPa");
-    }
-    if(fy.value.trim()===""||!(Number(fy.value)>0)) {
-      fy.value="235";
-      assigned.push("Fy=235 MPa");
-    }
     const valid=!!grade.value.trim()&&Number(e.value)>0&&Number(fy.value)>0;
-    const detail=(assigned.length?"مقادیر خالی تکمیل شد: "+assigned.join("، ")+". ":"مقادیر موجود حفظ شدند. ")+
-      "مقادیر فعلی: E="+e.value+" GPa و Fy="+fy.value+" MPa؛ گرید: "+grade.value+
-      ". این تخصیص فقط فرض اولیه است؛ Fy باید با استاندارد محصول، ضخامت ورق و گواهی کارخانه تأیید شود.";
-    addLine(rows,"تخصیص خودکار خواص اولیه فولاد",valid,detail+(valid?" تخصیص ورودی انجام شد؛ تأیید مهندسی خواص مصالح همچنان الزامی است.":" مقادیر مصالح معتبر نیستند."));
+    addLine(rows,"اعتبارسنجی خواص فولاد",valid,
+      valid?"خواص واردشده حفظ شدند؛ گواهی مصالح و انطباق Fy با ضخامت باید کنترل شود.":
+      "گرید، E و Fy باید صریحاً از مشخصات مصالح یا گواهی کارخانه وارد شوند. هیچ گرید یا مقاومت پیش‌فرضی به‌صورت خودکار تخصیص داده نشد.");
     return valid;
   }
   function stabilityGaps() {
