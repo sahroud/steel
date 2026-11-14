@@ -44,6 +44,7 @@ function analyze(envelope,model,connectionData){
    if(!Array.isArray(arr)||arr.length!==c.weldCount){issues.push(b.memberId+"/"+end+"/"+d.caseLabel+": تقاضای صریح هر قطعه جوش ثبت نشده است.");return;}
    const transferred=arr.reduce((s,x)=>s+(finite(x.transferN)?x.transferN:NaN),0);
    if(!finite(transferred)||Math.abs(transferred-tension)>Math.max(1,0.01*tension)){issues.push(b.memberId+"/"+end+"/"+d.caseLabel+": جمع انتقال نیرو در جوش‌ها با تقاضای FEM در محدوده ۱٪ تطبیق ندارد.");return;}
+   if(arr.some(x=>!finite(x.shearN)||Math.abs(x.shearN-x.transferN)>Math.max(1,0.01*x.transferN))){issues.push(b.memberId+"/"+end+"/"+d.caseLabel+": در غربال برش‌محور، نیروی برشی هر قطعه باید با مؤلفه انتقالی همان قطعه در محدوده ۱٪ برابر باشد.");return;}
    arr.forEach((x,i)=>rows.push({memberId:b.memberId,end,caseLabel:d.caseLabel,weldIndex:i+1,transferN:x.transferN,...calculateSegment(c,x)}));
   });
  }));
