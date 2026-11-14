@@ -1051,7 +1051,7 @@
     if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
       const f=loadCase.factors;
       const factorKeys=["dead","live","snow","wind"];
-      const badFactors=factorKeys.filter(k=>!Number.isFinite(Number(f[k]))||Number(f[k])<0);
+      const badFactors=factorKeys.filter(k=>f[k]===undefined||f[k]===null||f[k]===""||!Number.isFinite(Number(f[k]))||Number(f[k])<0);
       if(badFactors.length)throw new Error("ضرایب ترکیب بار باید برای D/L/S/W صریح، عددی و نامنفی باشند: "+badFactors.join("، "));
       const windSign=loadCase.windSign===undefined?1:Number(loadCase.windSign);
       if(![1,-1].includes(windSign))throw new Error("علامت باد باید صریحاً +1 یا -1 باشد.");
@@ -1066,7 +1066,9 @@
       const comboIndex=Number(loadCase.slice(5));
       const combo=window.SteelLoads?.getData?.().combinations?.[comboIndex];
       if(!combo)throw new Error("ضرایب ترکیب بار انتخابی در دسترس نیستند.");
-      const f={dead:Number(combo.dead),live:Number(combo.live),snow:Number(combo.snow)};
+      const raw={dead:combo.dead,live:combo.live,snow:combo.snow};
+      if(Object.values(raw).some(v=>v===undefined||v===null||v===""))throw new Error("ضرایب ترکیب انتخابی ناقص است.");
+      const f={dead:Number(raw.dead),live:Number(raw.live),snow:Number(raw.snow)};
       if(Object.values(f).some(v=>!Number.isFinite(v)||v<0))throw new Error("ضرایب ترکیب انتخابی ناقص یا نامعتبر است.");
       selected={key:loadCase,label:combo.name,direction:[0,-1,0],
         factors:{...f,wind:0},windFactor:0,windSign:1,
