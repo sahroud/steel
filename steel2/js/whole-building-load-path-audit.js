@@ -86,6 +86,37 @@ function audit(model,loads){
  if(groups.roofBraces.length&&!groups.roofBraces.some(m=>[m.start,m.end].some(n=>roofBraceReceivers.has(String(n)))))issues.push("هیچ انتهای مهاربند سقف به گره مشترک رفتر متصل نیست.");
  if(unconnectedBraceEnds.length)issues.push("تعداد "+unconnectedBraceEnds.length+" انتهای مهاربند بدون اتصال گره‌ای به عضو دریافت‌کننده؛ "+unconnectedBraceEnds.slice(0,8).map(x=>x.braceId+"@"+x.nodeId+"→"+x.receiver).join("، "));
  rows.push({id:"brace-frame-node-transfer",label:"اتصال گره‌ای مهاربندهای دیوار و سقف به قاب",memberCount:braceEndpointChecks.length,coveredCount:braceEndpointChecks.length-unconnectedBraceEnds.length,missingCount:unconnectedBraceEnds.length,invalidCount:0,status:unconnectedBraceEnds.length?"incomplete":"connected",checks:braceEndpointChecks,transfer:"wall brace → shared column node; roof brace → shared rafter node"});
+ // Trace each brace end to a declared base support without using brace members
+ // as the only bridge. This reports topology only; it does not imply diaphragm stiffness.
+ const structuralAdjacency=new Map();
+ const structuralLink=(node,edge)=>{const key=String(node);if(!structuralAdjacency.has(key))structuralAdjacency.set(key,[]);structuralAdjacency.get(key).push(edge);};
+ members.filter(m=>!["wallBrace","roofBrace"].includes(m.sectionKey)).forEach(m=>{
+  structuralLink(m.start,{to:String(m.end),memberId:String(m.id),sectionKey:m.sectionKey});
+  structuralLink(m.end,{to:String(m.start),memberId:String(m.id),sectionKey:m.sectionKey});
+ });
+ const traceToSupport=start=>{
+  const queue=[{node:String(start),memberIds:[],sectionKeys:[]}],seen=new Set([String(start)]);
+  while(queue.length){
+   const current=queue.shift();
+   if(supports.includes(current.node))return{ok:true,start:String(start),supportNodeId:current.node,memberIds:current.memberIds,sectionKeys:current.sectionKeys};
+   for(const edge of structuralAdjacency.get(current.node)||[]){
+    if(seen.has(edge.to))continue;
+    seen.add(edge.to);
+    queue.push({node:edge.to,memberIds:[...current.memberIds,edge.memberId],sectionKeys:[...current.sectionKeys,edge.sectionKey]});
+   }
+  }
+  return{ok:false,start:String(start),supportNodeId:null,memberIds:[],sectionKeys:[]};
+ };
+ const braceSupportPathChecks=[];
+ [...groups.wallBraces,...groups.roofBraces].forEach(brace=>[brace.start,brace.end].forEach(nodeId=>{
+  const trace=traceToSupport(nodeId);
+  braceSupportPathChecks.push({braceId:String(brace.id),sectionKey:brace.sectionKey,nodeId:String(nodeId),...trace});
+ }));
+ const missingBraceSupportPaths=braceSupportPathChecks.filter(x=>!x.ok);
+ if(missingBraceSupportPaths.length)issues.push("برای "+missingBraceSupportPaths.length+" انتهای مهاربند، مسیر مستقل از خود مهاربند تا گره پایه از طریق اعضای قاب/جمع‌کننده پیدا نشد: "+missingBraceSupportPaths.slice(0,8).map(x=>x.braceId+"@"+x.nodeId).join("، "));
+ const bracePathRow=rows.find(r=>r.id==="brace-frame-node-transfer");
+ if(bracePathRow){bracePathRow.supportPathChecks=braceSupportPathChecks;bracePathRow.supportPathMissingCount=missingBraceSupportPaths.length;bracePathRow.supportPathStatus=missingBraceSupportPaths.length?"incomplete":"connected";bracePathRow.transfer="roof brace → shared rafter node → connected frame/collector members → base support; wall brace → shared column node → base support";}
+
  // Validate that each configured braced bay contains both diagonals on both sides,
  // and that their endpoints lie on the actual adjacent frame stations.
  const auditBraceBayGeometry=model=>{
@@ -222,6 +253,9 @@ function selfTest(){
  test("reversed/invalid brace bay rejected",()=>{const p=braceGeometryFixture();p.members.find(m=>m.id==="WBL1").bay=99;return !audit(p,loads).success;});
  test("wall brace endpoints require shared column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer").missingCount>=2;});
  test("roof brace endpoints require shared rafter nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="rafter")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer").missingCount>=2;});
+ test("roof and wall brace endpoints expose support path traces",()=>{const r=audit(model,loads).rows.find(x=>x.id==="brace-frame-node-transfer");return r.supportPathChecks.length===4&&r.supportPathMissingCount===0&&r.supportPathChecks.every(x=>Array.isArray(x.sectionKeys));});
+ test("brace support path cannot rely only on brace members",()=>{const p=JSON.parse(JSON.stringify(model));p.members=p.members.filter(m=>m.sectionKey!=="rafter"&&m.sectionKey!=="column");const r=audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer");return !audit(p,loads).success&&r.supportPathMissingCount>0;});
+
  test("wall girt ends require shared frame-column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="wall-girt-column-transfer").missingCount===2;});
  test("missing wall girt detected",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="wallGirt")};return !audit(p,loads).success;});
  test("missing end-wall girt detected",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="endGirt")};return !audit(p,loads).success;});
