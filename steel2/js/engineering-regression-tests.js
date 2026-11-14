@@ -228,6 +228,7 @@ test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISecti
  });
  test("tapered fabrication economics blank-price handling",()=>{const r=root.SteelTaperedFabricationEconomics?.selfTest?.();return r&&r.passed===6&&r.failed===0?"Three geometry alternatives and blank price/count remain unknown, not zero: 6/6":false;});
  test("tapered fabrication UI dependency readiness",()=>{const r=root.SteelTaperedFabricationUI?.selfTest?.();return r&&r.passed===2&&r.failed===0?"Economics panel API and station input mapper are available: 2/2":false;});
+ test("station demand adapter preserves concurrent six-action station rows",()=>{const r=root.SteelStationDemandAdapter?.selfTest?.();return r?.passed===10&&r.failed===0?"Per-case six-action station records, units, axes, tapered segment coordinates and fail-closed guards: 10/10":false;});
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
  const host=document.getElementById("engineeringRegressionResults");if(host)host.innerHTML="<p>موفق: "+result.passed+" | ناموفق: "+result.failed+"</p><ul>"+checks.map(x=>"<li>"+(x.pass?"✓ ":"✗ ")+x.name+" — "+x.detail+"</li>").join("")+"</ul><div class='notice'>"+result.scope+"</div>";
  return result;
