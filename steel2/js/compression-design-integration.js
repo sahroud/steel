@@ -9,7 +9,7 @@ const FIELDS=[
  ["Ag_mm2","مساحت کل Ag (mm²)"],["Ix_mm4","ممان اینرسی Ix (mm⁴)"],["Iy_mm4","ممان اینرسی Iy (mm⁴)"],
  ["J_mm4","ثابت پیچشی J (mm⁴)"],["h0_mm","فاصله مرکز تا مرکز بال‌ها h0 (mm)"],
  ["Lx_mm","طول مهارنشده محور x (mm)"],["Ly_mm","طول مهارنشده محور y (mm)"],["Lz_mm","طول مهارنشده پیچشی (mm)"],
- ["Kx","ضریب Kx"],["Ky","ضریب Ky"],["Kz","ضریب Kz"],["Fy_MPa","تنش تسلیم Fy (MPa)"]
+ ["Kx","ضریب Kx"],["Ky","ضریب Ky"],["Kz","ضریب Kz"],["Fy_MPa","تنش تسلیم Fy (MPa)"],["E_MPa","مدول الاستیسیته E (MPa)"],["G_MPa","مدول برشی G (MPa)"]
 ];
 const $=id=>document.getElementById(id);
 let data={schemaVersion:1,groups:{column:{},rafter:{}},memberOverrides:{}};
@@ -54,10 +54,11 @@ function materialFy(g){
  return Number(s.material?.Fy_MPa)>0?Number(s.material.Fy_MPa):null;
 }
 function getInput(g){
- const d=readUI().groups[g],s=root.SteelSections?.read?.()||{},E=Number(s.material?.E_GPa)*1000,G=Number(s.analysis3d?.G_GPa)*1000;
+ const d=readUI().groups[g],member=root.SteelMemberDesignInputs?.getForGroup?.(g)||{};
  return {...d,sectionType:d.sectionTypeReviewed?"doubly-symmetric-I":"unreviewed",
   Fy_MPa:Number(d.Fy_MPa)>0?d.Fy_MPa:materialFy(g),
-  E_MPa:E>0?E:200000,G_MPa:G>0?G:200000/(2*(1+0.3)),nu:0.3};
+  E_MPa:Number(d.E_MPa)>0?Number(d.E_MPa):(Number(member.E_MPa)>0?Number(member.E_MPa):null),
+  G_MPa:Number(d.G_MPa)>0?Number(d.G_MPa):(Number(member.G_MPa)>0?Number(member.G_MPa):null)};
 }
 function analyzeGroup(g){
  const engine=root.SteelCompressionCapacity;
@@ -121,7 +122,7 @@ function render(){
    '<label><input type="checkbox" id="cc_'+g+'_localSlendernessReviewed" '+(d.localSlendernessReviewed?'checked':'')+'> کنترل لاغری موضعی بال و جان طبق جدول معتبر انجام شده و مقطع غیرلاغر است</label></div>'+
    '<div class="field"><label for="cc_'+g+'_note">منبع هندسه، مهاربندی و کنترل لاغری</label><input type="text" id="cc_'+g+'_note" value="'+esc(d.note)+'" placeholder="شماره نقشه، جدول/بند، گزارش یا گواهی مصالح"></div></details>';
  }).join("")+
- '<div class="notice">مساحت، ممان‌های اینرسی و J در صورت خالی بودن، از رجیستر مقطع همین گروه به‌صورت اولیه خوانده می‌شوند (A: cm²→mm² و ممان‌ها: cm⁴→mm⁴)؛ آن‌ها را با مشخصات واقعی مقطع تطبیق دهید. مقدار h0 و طول‌های مهارنشده باید از هندسه و نقشه واقعی برداشت شوند. E و G از پنل مصالح خوانده می‌شوند (در نبود مقدار، E=200000 MPa و G متناظر با ν=0.3 فقط مقدار الاستیک پایه است). Fy از رجیستر گروه عضو یا پنل مصالح خوانده می‌شود، مگر آنکه جداگانه در این فرم وارد شود. Kها را بدون تحلیل/پیوست معتبر حدس نزنید.</div>'+
+ '<div class="notice">مساحت، ممان‌های اینرسی و J در صورت خالی بودن، از رجیستر مقطع همین گروه به‌صورت اولیه خوانده می‌شوند (A: cm²→mm² و ممان‌ها: cm⁴→mm⁴)؛ آن‌ها را با مشخصات واقعی مقطع تطبیق دهید. مقدار h0 و طول‌های مهارنشده باید از هندسه و نقشه واقعی برداشت شوند. E و G فقط از ورودی صریح همین فرم یا رجیستر اختصاصی اعضا خوانده می‌شوند؛ مقدار پیش‌فرض یا تخمین برای آن‌ها وجود ندارد و در صورت فقدان، موتور مقاومت ظرفیت ارائه نمی‌کند. Fy از رجیستر گروه عضو یا پنل مصالح خوانده می‌شود، مگر آنکه جداگانه در این فرم وارد شود. Kها را بدون تحلیل/پیوست معتبر حدس نزنید.</div>'+
  '<div class="button-grid"><button type="button" class="btn primary" id="btnCompressionCapacityRun">محاسبه مقاومت کمانش کلی ستون و رفتر</button></div><div id="compressionCapacityResults"></div>';
 }
 function memberCapacityFromInput(row,base,override,taperedEnabled){
