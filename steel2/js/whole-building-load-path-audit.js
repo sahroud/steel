@@ -115,7 +115,7 @@ function selfTest(){
  const members=[
   {id:"R1",axis:"transverse",frame:1,type:"رفتر چپ",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,tributaryWidth:4}},
   {id:"R2",axis:"transverse",frame:1,type:"رفتر راست",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,tributaryWidth:4}},
-  {id:"P1",sectionKey:"roofPurlin",start:"B",end:"T",lineLoads:{dead:1,live:.5,snow:.5,windLeft:-.2,windRight:-.2,tributaryWidth:1.2}},
+  {id:"P1",sectionKey:"roofPurlin",side:"left",start:"B",end:"T",lineLoads:{dead:1,live:.5,snow:.5,windLeft:-.2,windRight:-.2,tributaryWidth:1.2}},
   {id:"W1",sectionKey:"wallGirt",start:"B",end:"T",lineLoads:{wind:.3,tributaryHeight:2}},
   {id:"E1",sectionKey:"endGirt",start:"B",end:"T",lineLoads:{windEnd:.4,tributaryHeight:2}},
   {id:"WB",sectionKey:"wallBrace",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0}},
