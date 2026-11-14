@@ -122,3 +122,14 @@ The source SPS is now line-traceable. The next high-value task is workbook cell-
 - `solverForReferenceEnabled=false`
 - `designApproved=false`
 - `mainBranchModified=false`
+
+
+## Reference import provenance contract — added 2026-11-14
+
+- Added `steel2/schemas/reference-import-record.schema.json`.
+- Added `steel2/docs/reference-import-provenance-contract.md`.
+- The record separates immutable source locator, raw value, proposed semantic interpretation, normalized unit/value, entity reference, coordinate/orientation, and approval gate.
+- XLSX locator requires worksheet and cell address; SPS locator requires line, section, and key.
+- Mapping lifecycle is `unmapped → candidate → cross_checked → reviewed`; these labels do not independently activate the solver.
+- Schema version 1.0.0 hard-codes `solverEligible=false` and `designApproved=false`. A future activation protocol must be reviewed separately.
+- This is a data contract and documentation deliverable, not yet wired into the UI or import runtime.
