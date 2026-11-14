@@ -450,6 +450,13 @@ function selfTest(){
   const ok=close(u[2],-0.25,1e-12)&&close(jointF[3],-250,1e-12);
   tests.push({name:"rigid-arm-rotation-translation-and-force-moment-transfer",ok,physicalEndDisplacementZ:u[2],jointMomentXNm:jointF[3],expectedDisplacementZM:-0.25,expectedMomentXNm:-250});
  }catch(e){tests.push({name:"rigid-arm-rotation-translation-and-force-moment-transfer",ok:false,error:String(e.message||e)});}
+ try{
+  const model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"NO_LOAD",start:"A",end:"B",type:"validation"}]};
+  let rejected=false;
+  try{analyze(model,{...base,requireExplicitMemberLoads:true});}catch(e){rejected=String(e.message||e).includes("بار عضو NO_LOAD");}
+  const explicit=analyze({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{uniformLocal:[0,0,0]}}]},{...base,requireExplicitMemberLoads:true});
+  tests.push({name:"strict-mode-rejects-undeclared-member-load-and-accepts-explicit-zero",ok:rejected&&explicit.members.length===1&&explicit.equilibrium.ok,missingLoadRejected:rejected,explicitZeroAccepted:explicit.members.length===1,equilibrium:explicit.equilibrium.ok});
+ }catch(e){tests.push({name:"strict-mode-rejects-undeclared-member-load-and-accepts-explicit-zero",ok:false,error:String(e.message||e)});}
  return{schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"آزمون‌های تحلیلی عضو منفرد برای کنترل واحدها و قرارداد علامت؛ جایگزین اعتبارسنجی مستقل، آزمون همگرایی یا کنترل آیین‌نامه‌ای نیست."};
 }
 root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,rigidArmTransform,memberArmTransform,equivalentUniformLoad,solve};
