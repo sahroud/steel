@@ -63,6 +63,32 @@ async function run(){const b=createCases(),solve=root.SteelStructuralModel?.anal
 function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});}catch(e){t.push({name:n,pass:false,error:e.message});}};ck("4 directions",()=>DIRS.length===4&&new Set(DIRS).size===4);ck("6 surfaces",()=>SURFACES.length===6&&new Set(SURFACES).size===6);ck("8 wind/internal patterns",()=>DIRS.length*2===8);ck("finite pressure guard",()=>finite(0)&&!finite(null)&&!finite("1"));ck("pressure surfaces",()=>SURFACES.includes("roof-left")&&SURFACES.includes("end-wall-back"));ck("signed direction IDs",()=>DIRS.includes("x-negative")&&DIRS.includes("z-negative"));ck("wind action distinct",()=>({dead:1.2,live:0.5,snow:1.6,wind:1}).wind===1);ck("approval remains disabled",()=>true);ck("analysis remains preliminary",()=>true);ck("all directions unique",()=>new Set(DIRS).size===4);ck("all surfaces unique",()=>new Set(SURFACES).size===6);ck("does not invent pressures",()=>createCases.toString().includes("netWithPositiveInternal"));
   ck("nonzero triangular gable wind is blocked",()=>{try{auditGablePressure({"end-wall-front":0.2,"end-wall-back":0});return false;}catch(e){return e.message.includes("ناحیه مثلثی");}});
   ck("zero triangular gable wind passes explicit guard",()=>auditGablePressure({"end-wall-front":0,"end-wall-back":0}).ready);
+  ck("case builder creates all eight directional/internal cases only when gable wind is zero",()=>{
+   const oldWind=root.SteelDirectionalWind,oldLoads=root.SteelLoads,oldModel=root.SteelStructuralModel;
+   try{
+    const surfaces={};SURFACES.forEach(k=>surfaces[k]={netWithPositiveInternal:k.startsWith("end-wall-")?0:1,netWithNegativeInternal:k.startsWith("end-wall-")?0:1});
+    const directions={};DIRS.forEach(d=>directions[d]={label:d,surfaces});
+    root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
+    root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
+    root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5},members:[
+     {sectionKey:"roofPurlin",tributaryWidth:1},{sectionKey:"wallGirt",tributaryHeight:1},{sectionKey:"endGirt",tributaryHeight:1}
+    ]})};
+    return createCases().caseCount===8;
+   }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
+  });
+  ck("case builder rejects nonzero end-wall pressure before any solver call",()=>{
+   const oldWind=root.SteelDirectionalWind,oldLoads=root.SteelLoads,oldModel=root.SteelStructuralModel;
+   try{
+    const surfaces={};SURFACES.forEach(k=>surfaces[k]={netWithPositiveInternal:k==="end-wall-front"?0.25:0,netWithNegativeInternal:0});
+    const directions={};DIRS.forEach(d=>directions[d]={label:d,surfaces});
+    root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
+    root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
+    root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5},members:[
+     {sectionKey:"roofPurlin",tributaryWidth:1},{sectionKey:"wallGirt",tributaryHeight:1},{sectionKey:"endGirt",tributaryHeight:1}
+    ]})};
+    try{createCases();return false;}catch(e){return e.message.includes("ناحیه مثلثی");}
+   }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
+  });
  const p={ "roof-left":2,"roof-right":3,"long-wall-left":4,"long-wall-right":5,"end-wall-front":6,"end-wall-back":7 };
  const g={span:20,rise:5};
  ck("actual model top-level purlin tributary widths map",()=>{const r=mapMemberLoad({sectionKey:"roofPurlin",side:"left",tributaryWidth:2},{direction:"x-positive",surfaces:p},g);return r.surfaceKeys[0]==="roof-left"&&r.globalKNm[1]<0;});
