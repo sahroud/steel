@@ -1,0 +1,8371 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "sahroud-steel-legacy-sps-source-line-extraction",
+  "projectId": "SHAHROUD-24X60-CRANE30T-1396",
+  "source": {
+    "path": "/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58).SPS",
+    "title": "FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58).SPS",
+    "serverModified": "2026-11-13T06:48:24Z",
+    "encoding": "text-extracted UTF-8; original file preserved in Dropbox",
+    "parserVersion": "1.0.1"
+  },
+  "parseSummary": {
+    "lineCount": 661,
+    "parsedEntryCount": 658,
+    "sectionCount": 1
+  },
+  "sections": [
+    {
+      "name": "UserInfo",
+      "line": 1
+    }
+  ],
+  "entries": [
+    {
+      "line": 2,
+      "section": "UserInfo",
+      "key": "Save5",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 3,
+      "section": "UserInfo",
+      "key": "Save15",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 4,
+      "section": "UserInfo",
+      "key": "Save7",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 5,
+      "section": "UserInfo",
+      "key": "Save24sec",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 6,
+      "section": "UserInfo",
+      "key": "Save24WP",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 7,
+      "section": "UserInfo",
+      "key": "Save24Con",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 8,
+      "section": "UserInfo",
+      "key": "Save24Pey",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 9,
+      "section": "UserInfo",
+      "key": "jadval10",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 10,
+      "section": "UserInfo",
+      "key": "jadval11",
+      "rawValue": "2400",
+      "indexed": true
+    },
+    {
+      "line": 11,
+      "section": "UserInfo",
+      "key": "jadval12",
+      "rawValue": "6000",
+      "indexed": true
+    },
+    {
+      "line": 12,
+      "section": "UserInfo",
+      "key": "jadval13",
+      "rawValue": "1200",
+      "indexed": true
+    },
+    {
+      "line": 13,
+      "section": "UserInfo",
+      "key": "jadval14",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 14,
+      "section": "UserInfo",
+      "key": "jadval15",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 15,
+      "section": "UserInfo",
+      "key": "jadval16",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 16,
+      "section": "UserInfo",
+      "key": "jadval17",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 17,
+      "section": "UserInfo",
+      "key": "jadval18",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 18,
+      "section": "UserInfo",
+      "key": "jadval19",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 19,
+      "section": "UserInfo",
+      "key": "jadval110",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 20,
+      "section": "UserInfo",
+      "key": "jadval111",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 21,
+      "section": "UserInfo",
+      "key": "jadval112",
+      "rawValue": "0.003",
+      "indexed": true
+    },
+    {
+      "line": 22,
+      "section": "UserInfo",
+      "key": "craneindex10",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 23,
+      "section": "UserInfo",
+      "key": "KORBELindex10",
+      "rawValue": "950",
+      "indexed": true
+    },
+    {
+      "line": 24,
+      "section": "UserInfo",
+      "key": "tonajindex10",
+      "rawValue": "30000",
+      "indexed": true
+    },
+    {
+      "line": 25,
+      "section": "UserInfo",
+      "key": "seatindex10",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 26,
+      "section": "UserInfo",
+      "key": "spanindex10",
+      "rawValue": "2400",
+      "indexed": true
+    },
+    {
+      "line": 27,
+      "section": "UserInfo",
+      "key": "TedadPanelCol10",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 28,
+      "section": "UserInfo",
+      "key": "LevelPanel10",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 29,
+      "section": "UserInfo",
+      "key": "ColPanelDis101",
+      "rawValue": "2400",
+      "indexed": true
+    },
+    {
+      "line": 30,
+      "section": "UserInfo",
+      "key": "LevelZirPanel1001",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 31,
+      "section": "UserInfo",
+      "key": "LiveZirPanel1001",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 32,
+      "section": "UserInfo",
+      "key": "LevelZirPanel1002",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 33,
+      "section": "UserInfo",
+      "key": "LiveZirPanel1002",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 34,
+      "section": "UserInfo",
+      "key": "LevelZirPanel1003",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 35,
+      "section": "UserInfo",
+      "key": "LiveZirPanel1003",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 36,
+      "section": "UserInfo",
+      "key": "Save8",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 37,
+      "section": "UserInfo",
+      "key": "numberspans",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 38,
+      "section": "UserInfo",
+      "key": "version",
+      "rawValue": "610",
+      "indexed": false
+    },
+    {
+      "line": 39,
+      "section": "UserInfo",
+      "key": "SITEtip",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 40,
+      "section": "UserInfo",
+      "key": "ped",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 41,
+      "section": "UserInfo",
+      "key": "cover",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 42,
+      "section": "UserInfo",
+      "key": "tappe",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 43,
+      "section": "UserInfo",
+      "key": "txtbazshoA",
+      "rawValue": "680000",
+      "indexed": false
+    },
+    {
+      "line": 44,
+      "section": "UserInfo",
+      "key": "txthamsayeHL",
+      "rawValue": "1200",
+      "indexed": false
+    },
+    {
+      "line": 45,
+      "section": "UserInfo",
+      "key": "txthamsayeHR",
+      "rawValue": "1200",
+      "indexed": false
+    },
+    {
+      "line": 46,
+      "section": "UserInfo",
+      "key": "txthamsayeL",
+      "rawValue": "50",
+      "indexed": false
+    },
+    {
+      "line": 47,
+      "section": "UserInfo",
+      "key": "txthamsayeR",
+      "rawValue": "50",
+      "indexed": false
+    },
+    {
+      "line": 48,
+      "section": "UserInfo",
+      "key": "txthamsayeSL",
+      "rawValue": "20",
+      "indexed": false
+    },
+    {
+      "line": 49,
+      "section": "UserInfo",
+      "key": "txthamsayeSR",
+      "rawValue": "20",
+      "indexed": false
+    },
+    {
+      "line": 50,
+      "section": "UserInfo",
+      "key": "txthamsayeWL",
+      "rawValue": "5800",
+      "indexed": false
+    },
+    {
+      "line": 51,
+      "section": "UserInfo",
+      "key": "txthamsayeWR",
+      "rawValue": "5800",
+      "indexed": false
+    },
+    {
+      "line": 52,
+      "section": "UserInfo",
+      "key": "txtemtedadL",
+      "rawValue": "20000",
+      "indexed": false
+    },
+    {
+      "line": 53,
+      "section": "UserInfo",
+      "key": "txtemtedadR",
+      "rawValue": "20000",
+      "indexed": false
+    },
+    {
+      "line": 54,
+      "section": "UserInfo",
+      "key": "CODE",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 55,
+      "section": "UserInfo",
+      "key": "bargozari",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 56,
+      "section": "UserInfo",
+      "key": "snow",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 57,
+      "section": "UserInfo",
+      "key": "barfgiri",
+      "rawValue": "2",
+      "indexed": false
+    },
+    {
+      "line": 58,
+      "section": "UserInfo",
+      "key": "cmbdama",
+      "rawValue": "3",
+      "indexed": false
+    },
+    {
+      "line": 59,
+      "section": "UserInfo",
+      "key": "bazsho",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 60,
+      "section": "UserInfo",
+      "key": "AHAMMIAT",
+      "rawValue": "2",
+      "indexed": false
+    },
+    {
+      "line": 61,
+      "section": "UserInfo",
+      "key": "DARZ",
+      "rawValue": "8000",
+      "indexed": false
+    },
+    {
+      "line": 62,
+      "section": "UserInfo",
+      "key": "kharpacol",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 63,
+      "section": "UserInfo",
+      "key": "kharpabim",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 64,
+      "section": "UserInfo",
+      "key": "cmbcolH",
+      "rawValue": "2",
+      "indexed": false
+    },
+    {
+      "line": 65,
+      "section": "UserInfo",
+      "key": "c2",
+      "rawValue": "0.098",
+      "indexed": true
+    },
+    {
+      "line": 66,
+      "section": "UserInfo",
+      "key": "dist2",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 67,
+      "section": "UserInfo",
+      "key": "txtcranenum",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 68,
+      "section": "UserInfo",
+      "key": "spantekrar2",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 69,
+      "section": "UserInfo",
+      "key": "snow2",
+      "rawValue": "0.01",
+      "indexed": true
+    },
+    {
+      "line": 70,
+      "section": "UserInfo",
+      "key": "stdead",
+      "rawValue": "0.06",
+      "indexed": false
+    },
+    {
+      "line": 71,
+      "section": "UserInfo",
+      "key": "soil2",
+      "rawValue": "3.2",
+      "indexed": true
+    },
+    {
+      "line": 72,
+      "section": "UserInfo",
+      "key": "wind2",
+      "rawValue": "0.00303",
+      "indexed": true
+    },
+    {
+      "line": 73,
+      "section": "UserInfo",
+      "key": "soilH",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 74,
+      "section": "UserInfo",
+      "key": "barHA",
+      "rawValue": "0.06",
+      "indexed": false
+    },
+    {
+      "line": 75,
+      "section": "UserInfo",
+      "key": "I",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 76,
+      "section": "UserInfo",
+      "key": "cmbzariba",
+      "rawValue": "2",
+      "indexed": false
+    },
+    {
+      "line": 77,
+      "section": "UserInfo",
+      "key": "wall",
+      "rawValue": "100",
+      "indexed": false
+    },
+    {
+      "line": 78,
+      "section": "UserInfo",
+      "key": "wallm",
+      "rawValue": "100",
+      "indexed": false
+    },
+    {
+      "line": 79,
+      "section": "UserInfo",
+      "key": "wallt",
+      "rawValue": "35",
+      "indexed": false
+    },
+    {
+      "line": 80,
+      "section": "UserInfo",
+      "key": "AJORI",
+      "rawValue": "0.00185",
+      "indexed": false
+    },
+    {
+      "line": 81,
+      "section": "UserInfo",
+      "key": "Sandwichi",
+      "rawValue": "0.003",
+      "indexed": false
+    },
+    {
+      "line": 82,
+      "section": "UserInfo",
+      "key": "LAPETORRE",
+      "rawValue": "80",
+      "indexed": false
+    },
+    {
+      "line": 83,
+      "section": "UserInfo",
+      "key": "ABCHEK",
+      "rawValue": "80",
+      "indexed": false
+    },
+    {
+      "line": 84,
+      "section": "UserInfo",
+      "key": "BASEKOD",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 85,
+      "section": "UserInfo",
+      "key": "site",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 86,
+      "section": "UserInfo",
+      "key": "sakht",
+      "rawValue": "2",
+      "indexed": false
+    },
+    {
+      "line": 87,
+      "section": "UserInfo",
+      "key": "axe",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 88,
+      "section": "UserInfo",
+      "key": "monitorx",
+      "rawValue": "300",
+      "indexed": false
+    },
+    {
+      "line": 89,
+      "section": "UserInfo",
+      "key": "monitorh",
+      "rawValue": "130",
+      "indexed": false
+    },
+    {
+      "line": 90,
+      "section": "UserInfo",
+      "key": "monitor",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 91,
+      "section": "UserInfo",
+      "key": "SHAHR",
+      "rawValue": "-1",
+      "indexed": false
+    },
+    {
+      "line": 92,
+      "section": "UserInfo",
+      "key": "belad",
+      "rawValue": "-1",
+      "indexed": false
+    },
+    {
+      "line": 93,
+      "section": "UserInfo",
+      "key": "SHAHRLAT",
+      "rawValue": "28",
+      "indexed": false
+    },
+    {
+      "line": 94,
+      "section": "UserInfo",
+      "key": "beladLAT",
+      "rawValue": "26",
+      "indexed": false
+    },
+    {
+      "line": 95,
+      "section": "UserInfo",
+      "key": "cmbcranes",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 96,
+      "section": "UserInfo",
+      "key": "TOOL",
+      "rawValue": "600",
+      "indexed": false
+    },
+    {
+      "line": 97,
+      "section": "UserInfo",
+      "key": "ARZ",
+      "rawValue": "150",
+      "indexed": false
+    },
+    {
+      "line": 98,
+      "section": "UserInfo",
+      "key": "ARZ2",
+      "rawValue": "150",
+      "indexed": true
+    },
+    {
+      "line": 99,
+      "section": "UserInfo",
+      "key": "ARZ3",
+      "rawValue": "150",
+      "indexed": true
+    },
+    {
+      "line": 100,
+      "section": "UserInfo",
+      "key": "pert",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 101,
+      "section": "UserInfo",
+      "key": "ZABAN",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 102,
+      "section": "UserInfo",
+      "key": "quake",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 103,
+      "section": "UserInfo",
+      "key": "firstwall",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 104,
+      "section": "UserInfo",
+      "key": "bazgasht",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 105,
+      "section": "UserInfo",
+      "key": "foolad",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 106,
+      "section": "UserInfo",
+      "key": "Connection",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 107,
+      "section": "UserInfo",
+      "key": "estekak",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 108,
+      "section": "UserInfo",
+      "key": "shenajpey",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 109,
+      "section": "UserInfo",
+      "key": "seismic",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 110,
+      "section": "UserInfo",
+      "key": "VAJGOONI",
+      "rawValue": "1.75",
+      "indexed": false
+    },
+    {
+      "line": 111,
+      "section": "UserInfo",
+      "key": "fc",
+      "rawValue": "210",
+      "indexed": false
+    },
+    {
+      "line": 112,
+      "section": "UserInfo",
+      "key": "colpert",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 113,
+      "section": "UserInfo",
+      "key": "ChkTemp",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 114,
+      "section": "UserInfo",
+      "key": "Cmbanker",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 115,
+      "section": "UserInfo",
+      "key": "bozorgtarinspan",
+      "rawValue": "600",
+      "indexed": false
+    },
+    {
+      "line": 116,
+      "section": "UserInfo",
+      "key": "demag1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 117,
+      "section": "UserInfo",
+      "key": "POLKIND1",
+      "rawValue": "-1",
+      "indexed": true
+    },
+    {
+      "line": 118,
+      "section": "UserInfo",
+      "key": "wtb1",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 119,
+      "section": "UserInfo",
+      "key": "whb1",
+      "rawValue": "135",
+      "indexed": true
+    },
+    {
+      "line": 120,
+      "section": "UserInfo",
+      "key": "ftb1",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 121,
+      "section": "UserInfo",
+      "key": "fhb1",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 122,
+      "section": "UserInfo",
+      "key": "LABE1",
+      "rawValue": "7.5",
+      "indexed": true
+    },
+    {
+      "line": 123,
+      "section": "UserInfo",
+      "key": "txtPishKhiz1",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 124,
+      "section": "UserInfo",
+      "key": "HAMMALKIND1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 125,
+      "section": "UserInfo",
+      "key": "web1",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 126,
+      "section": "UserInfo",
+      "key": "hhammale1",
+      "rawValue": "75",
+      "indexed": true
+    },
+    {
+      "line": 127,
+      "section": "UserInfo",
+      "key": "hhammaleON1",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 128,
+      "section": "UserInfo",
+      "key": "flange1",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 129,
+      "section": "UserInfo",
+      "key": "width1",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 130,
+      "section": "UserInfo",
+      "key": "CRANETIP1",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 131,
+      "section": "UserInfo",
+      "key": "CRANECONS1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 132,
+      "section": "UserInfo",
+      "key": "CRANESEAT1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 133,
+      "section": "UserInfo",
+      "key": "RUNWAY1",
+      "rawValue": "375",
+      "indexed": true
+    },
+    {
+      "line": 134,
+      "section": "UserInfo",
+      "key": "HOISTWHEEL1",
+      "rawValue": "150",
+      "indexed": true
+    },
+    {
+      "line": 135,
+      "section": "UserInfo",
+      "key": "HOISTWEIGHT1",
+      "rawValue": "4500",
+      "indexed": true
+    },
+    {
+      "line": 136,
+      "section": "UserInfo",
+      "key": "OMR1",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 137,
+      "section": "UserInfo",
+      "key": "TEKRAR1",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 138,
+      "section": "UserInfo",
+      "key": "GHAEM1",
+      "rawValue": "1.25",
+      "indexed": true
+    },
+    {
+      "line": 139,
+      "section": "UserInfo",
+      "key": "OFOGHI1",
+      "rawValue": "0.2",
+      "indexed": true
+    },
+    {
+      "line": 140,
+      "section": "UserInfo",
+      "key": "COL1",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 141,
+      "section": "UserInfo",
+      "key": "SAP1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 142,
+      "section": "UserInfo",
+      "key": "FRAMES",
+      "rawValue": "11",
+      "indexed": false
+    },
+    {
+      "line": 143,
+      "section": "UserInfo",
+      "key": "chkwind1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 144,
+      "section": "UserInfo",
+      "key": "chkwind2",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 145,
+      "section": "UserInfo",
+      "key": "chkwind3",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 146,
+      "section": "UserInfo",
+      "key": "chkwind4",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 147,
+      "section": "UserInfo",
+      "key": "DAHANE100",
+      "rawValue": "2400",
+      "indexed": true
+    },
+    {
+      "line": 148,
+      "section": "UserInfo",
+      "key": "COLDIS1001",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 149,
+      "section": "UserInfo",
+      "key": "FASELE0",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 150,
+      "section": "UserInfo",
+      "key": "FASELE1",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 151,
+      "section": "UserInfo",
+      "key": "FASELE2",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 152,
+      "section": "UserInfo",
+      "key": "FASELE3",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 153,
+      "section": "UserInfo",
+      "key": "FASELE4",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 154,
+      "section": "UserInfo",
+      "key": "FASELE5",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 155,
+      "section": "UserInfo",
+      "key": "FASELE6",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 156,
+      "section": "UserInfo",
+      "key": "FASELE7",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 157,
+      "section": "UserInfo",
+      "key": "FASELE8",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 158,
+      "section": "UserInfo",
+      "key": "FASELE9",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 159,
+      "section": "UserInfo",
+      "key": "FASELE10",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 160,
+      "section": "UserInfo",
+      "key": "BOXSSIZE",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 161,
+      "section": "UserInfo",
+      "key": "strutw",
+      "rawValue": "12",
+      "indexed": false
+    },
+    {
+      "line": 162,
+      "section": "UserInfo",
+      "key": "strutt",
+      "rawValue": "0.3",
+      "indexed": false
+    },
+    {
+      "line": 163,
+      "section": "UserInfo",
+      "key": "strutw2",
+      "rawValue": "9",
+      "indexed": true
+    },
+    {
+      "line": 164,
+      "section": "UserInfo",
+      "key": "strutt2",
+      "rawValue": "0.3",
+      "indexed": true
+    },
+    {
+      "line": 165,
+      "section": "UserInfo",
+      "key": "sineband",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 166,
+      "section": "UserInfo",
+      "key": "hazf",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 167,
+      "section": "UserInfo",
+      "key": "struttaj",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 168,
+      "section": "UserInfo",
+      "key": "ghootistiff",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 169,
+      "section": "UserInfo",
+      "key": "txtboxcondist",
+      "rawValue": "10",
+      "indexed": false
+    },
+    {
+      "line": 170,
+      "section": "UserInfo",
+      "key": "cmbtaj",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 171,
+      "section": "UserInfo",
+      "key": "edges",
+      "rawValue": "5",
+      "indexed": false
+    },
+    {
+      "line": 172,
+      "section": "UserInfo",
+      "key": "endarz",
+      "rawValue": "16.66",
+      "indexed": false
+    },
+    {
+      "line": 173,
+      "section": "UserInfo",
+      "key": "NOFOOZI",
+      "rawValue": "50",
+      "indexed": false
+    },
+    {
+      "line": 174,
+      "section": "UserInfo",
+      "key": "txtneshiman",
+      "rawValue": "2",
+      "indexed": false
+    },
+    {
+      "line": 175,
+      "section": "UserInfo",
+      "key": "txtcolmidcon",
+      "rawValue": "2.2",
+      "indexed": false
+    },
+    {
+      "line": 176,
+      "section": "UserInfo",
+      "key": "txtcolmidconr",
+      "rawValue": "2.2",
+      "indexed": false
+    },
+    {
+      "line": 177,
+      "section": "UserInfo",
+      "key": "MAYEL",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 178,
+      "section": "UserInfo",
+      "key": "roofmat",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 179,
+      "section": "UserInfo",
+      "key": "storydeck",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 180,
+      "section": "UserInfo",
+      "key": "COMPOSIT",
+      "rawValue": "-1",
+      "indexed": false
+    },
+    {
+      "line": 181,
+      "section": "UserInfo",
+      "key": "joist",
+      "rawValue": "30",
+      "indexed": false
+    },
+    {
+      "line": 182,
+      "section": "UserInfo",
+      "key": "joistdist",
+      "rawValue": "100",
+      "indexed": false
+    },
+    {
+      "line": 183,
+      "section": "UserInfo",
+      "key": "dallh",
+      "rawValue": "10",
+      "indexed": false
+    },
+    {
+      "line": 184,
+      "section": "UserInfo",
+      "key": "txtwt",
+      "rawValue": "0.6",
+      "indexed": false
+    },
+    {
+      "line": 185,
+      "section": "UserInfo",
+      "key": "txtwH",
+      "rawValue": "20",
+      "indexed": false
+    },
+    {
+      "line": 186,
+      "section": "UserInfo",
+      "key": "txtflanget",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 187,
+      "section": "UserInfo",
+      "key": "txtflange",
+      "rawValue": "0.6",
+      "indexed": false
+    },
+    {
+      "line": 188,
+      "section": "UserInfo",
+      "key": "ghoorbaghe",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 189,
+      "section": "UserInfo",
+      "key": "DORTADOR",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 190,
+      "section": "UserInfo",
+      "key": "ROOFBRACESIZE",
+      "rawValue": "4",
+      "indexed": false
+    },
+    {
+      "line": 191,
+      "section": "UserInfo",
+      "key": "CONTYPE",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 192,
+      "section": "UserInfo",
+      "key": "BADBOLTSIZE",
+      "rawValue": "2.5",
+      "indexed": false
+    },
+    {
+      "line": 193,
+      "section": "UserInfo",
+      "key": "BADBOLTNUM",
+      "rawValue": "2",
+      "indexed": false
+    },
+    {
+      "line": 194,
+      "section": "UserInfo",
+      "key": "gusset",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 195,
+      "section": "UserInfo",
+      "key": "NAL",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 196,
+      "section": "UserInfo",
+      "key": "NALIP",
+      "rawValue": "-1",
+      "indexed": false
+    },
+    {
+      "line": 197,
+      "section": "UserInfo",
+      "key": "NALF",
+      "rawValue": "0.6",
+      "indexed": false
+    },
+    {
+      "line": 198,
+      "section": "UserInfo",
+      "key": "NALW",
+      "rawValue": "10",
+      "indexed": false
+    },
+    {
+      "line": 199,
+      "section": "UserInfo",
+      "key": "NALH",
+      "rawValue": "20",
+      "indexed": false
+    },
+    {
+      "line": 200,
+      "section": "UserInfo",
+      "key": "NALT",
+      "rawValue": "0.6",
+      "indexed": false
+    },
+    {
+      "line": 201,
+      "section": "UserInfo",
+      "key": "NALDARGAH",
+      "rawValue": "500",
+      "indexed": false
+    },
+    {
+      "line": 202,
+      "section": "UserInfo",
+      "key": "cmblape",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 203,
+      "section": "UserInfo",
+      "key": "PURLIN",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 204,
+      "section": "UserInfo",
+      "key": "SAG",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 205,
+      "section": "UserInfo",
+      "key": "MILMAHAR",
+      "rawValue": "2",
+      "indexed": false
+    },
+    {
+      "line": 206,
+      "section": "UserInfo",
+      "key": "WALLZ",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 207,
+      "section": "UserInfo",
+      "key": "zdist",
+      "rawValue": "17",
+      "indexed": false
+    },
+    {
+      "line": 208,
+      "section": "UserInfo",
+      "key": "ZH",
+      "rawValue": "18",
+      "indexed": false
+    },
+    {
+      "line": 209,
+      "section": "UserInfo",
+      "key": "ZW",
+      "rawValue": "6",
+      "indexed": false
+    },
+    {
+      "line": 210,
+      "section": "UserInfo",
+      "key": "ZH2",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 211,
+      "section": "UserInfo",
+      "key": "stopH",
+      "rawValue": "17",
+      "indexed": false
+    },
+    {
+      "line": 212,
+      "section": "UserInfo",
+      "key": "stopW",
+      "rawValue": "15",
+      "indexed": false
+    },
+    {
+      "line": 213,
+      "section": "UserInfo",
+      "key": "stopstiff",
+      "rawValue": "17",
+      "indexed": false
+    },
+    {
+      "line": 214,
+      "section": "UserInfo",
+      "key": "abro",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 215,
+      "section": "UserInfo",
+      "key": "zkenar",
+      "rawValue": "100",
+      "indexed": false
+    },
+    {
+      "line": 216,
+      "section": "UserInfo",
+      "key": "LSIZE",
+      "rawValue": "8",
+      "indexed": false
+    },
+    {
+      "line": 217,
+      "section": "UserInfo",
+      "key": "kharplw",
+      "rawValue": "10",
+      "indexed": false
+    },
+    {
+      "line": 218,
+      "section": "UserInfo",
+      "key": "kharplL",
+      "rawValue": "20",
+      "indexed": false
+    },
+    {
+      "line": 219,
+      "section": "UserInfo",
+      "key": "kharplt",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 220,
+      "section": "UserInfo",
+      "key": "kharbikhar",
+      "rawValue": "50",
+      "indexed": false
+    },
+    {
+      "line": 221,
+      "section": "UserInfo",
+      "key": "kharbikharbot",
+      "rawValue": "30",
+      "indexed": false
+    },
+    {
+      "line": 222,
+      "section": "UserInfo",
+      "key": "KHARJOINT",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 223,
+      "section": "UserInfo",
+      "key": "cmbsystemx",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 224,
+      "section": "UserInfo",
+      "key": "Rux",
+      "rawValue": "3.5",
+      "indexed": false
+    },
+    {
+      "line": 225,
+      "section": "UserInfo",
+      "key": "cmbsystemy",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 226,
+      "section": "UserInfo",
+      "key": "Ruy",
+      "rawValue": "3.5",
+      "indexed": false
+    },
+    {
+      "line": 227,
+      "section": "UserInfo",
+      "key": "cmbsoiltype",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 228,
+      "section": "UserInfo",
+      "key": "txtimportant",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 229,
+      "section": "UserInfo",
+      "key": "chkjodagary",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 230,
+      "section": "UserInfo",
+      "key": "chkjodagarx",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 231,
+      "section": "UserInfo",
+      "key": "optro2",
+      "rawValue": "False",
+      "indexed": true
+    },
+    {
+      "line": 232,
+      "section": "UserInfo",
+      "key": "optro",
+      "rawValue": "False",
+      "indexed": false
+    },
+    {
+      "line": 233,
+      "section": "UserInfo",
+      "key": "chkR",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 234,
+      "section": "UserInfo",
+      "key": "JANeach100",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 235,
+      "section": "UserInfo",
+      "key": "sineeach100",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 236,
+      "section": "UserInfo",
+      "key": "SECTIONeach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 237,
+      "section": "UserInfo",
+      "key": "hfeach100",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 238,
+      "section": "UserInfo",
+      "key": "hfeachtruss100",
+      "rawValue": "100",
+      "indexed": true
+    },
+    {
+      "line": 239,
+      "section": "UserInfo",
+      "key": "he2each100",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 240,
+      "section": "UserInfo",
+      "key": "heeach100",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 241,
+      "section": "UserInfo",
+      "key": "heeachtruss100",
+      "rawValue": "200",
+      "indexed": true
+    },
+    {
+      "line": 242,
+      "section": "UserInfo",
+      "key": "hmeach100",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 243,
+      "section": "UserInfo",
+      "key": "hm2each100",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 244,
+      "section": "UserInfo",
+      "key": "tfeach100",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 245,
+      "section": "UserInfo",
+      "key": "tf2each100",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 246,
+      "section": "UserInfo",
+      "key": "wfeach100",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 247,
+      "section": "UserInfo",
+      "key": "wf2each100",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 248,
+      "section": "UserInfo",
+      "key": "tweach100",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 249,
+      "section": "UserInfo",
+      "key": "tw2each100",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 250,
+      "section": "UserInfo",
+      "key": "tooleach100",
+      "rawValue": "0.663844130220322",
+      "indexed": true
+    },
+    {
+      "line": 251,
+      "section": "UserInfo",
+      "key": "tool2each100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 252,
+      "section": "UserInfo",
+      "key": "MOTLAGHeach100",
+      "rawValue": "850",
+      "indexed": true
+    },
+    {
+      "line": 253,
+      "section": "UserInfo",
+      "key": "MOTLAGH2each100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 254,
+      "section": "UserInfo",
+      "key": "ghootieach100",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 255,
+      "section": "UserInfo",
+      "key": "braceeach100",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 256,
+      "section": "UserInfo",
+      "key": "braceSECeach100",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 257,
+      "section": "UserInfo",
+      "key": "braceSIZEeach100",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 258,
+      "section": "UserInfo",
+      "key": "fixeach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 259,
+      "section": "UserInfo",
+      "key": "fix2each100",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 260,
+      "section": "UserInfo",
+      "key": "ELnameEACH100",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 261,
+      "section": "UserInfo",
+      "key": "ELname2EACH100",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 262,
+      "section": "UserInfo",
+      "key": "TXTBRACE0100",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 263,
+      "section": "UserInfo",
+      "key": "TXTBRACE1100",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 264,
+      "section": "UserInfo",
+      "key": "TXTBRACE5100",
+      "rawValue": "10",
+      "indexed": true
+    },
+    {
+      "line": 265,
+      "section": "UserInfo",
+      "key": "CmbBraceShape0100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 266,
+      "section": "UserInfo",
+      "key": "CmbBraceShape1100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 267,
+      "section": "UserInfo",
+      "key": "CmbBraceShape2100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 268,
+      "section": "UserInfo",
+      "key": "CmbBraceShape3100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 269,
+      "section": "UserInfo",
+      "key": "CmbBraceShape4100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 270,
+      "section": "UserInfo",
+      "key": "CmbBraceShape5100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 271,
+      "section": "UserInfo",
+      "key": "TXTBOXH0100",
+      "rawValue": "615",
+      "indexed": true
+    },
+    {
+      "line": 272,
+      "section": "UserInfo",
+      "key": "TXTBOXH1100",
+      "rawValue": "1230",
+      "indexed": true
+    },
+    {
+      "line": 273,
+      "section": "UserInfo",
+      "key": "CmbColDir100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 274,
+      "section": "UserInfo",
+      "key": "JANeach1",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 275,
+      "section": "UserInfo",
+      "key": "sineeach1",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 276,
+      "section": "UserInfo",
+      "key": "SECTIONeach1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 277,
+      "section": "UserInfo",
+      "key": "hfeach1",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 278,
+      "section": "UserInfo",
+      "key": "hfeachtruss1",
+      "rawValue": "100",
+      "indexed": true
+    },
+    {
+      "line": 279,
+      "section": "UserInfo",
+      "key": "he2each1",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 280,
+      "section": "UserInfo",
+      "key": "heeach1",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 281,
+      "section": "UserInfo",
+      "key": "heeachtruss1",
+      "rawValue": "200",
+      "indexed": true
+    },
+    {
+      "line": 282,
+      "section": "UserInfo",
+      "key": "hmeach1",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 283,
+      "section": "UserInfo",
+      "key": "hm2each1",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 284,
+      "section": "UserInfo",
+      "key": "tfeach1",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 285,
+      "section": "UserInfo",
+      "key": "tf2each1",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 286,
+      "section": "UserInfo",
+      "key": "wfeach1",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 287,
+      "section": "UserInfo",
+      "key": "wf2each1",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 288,
+      "section": "UserInfo",
+      "key": "tweach1",
+      "rawValue": "0.6",
+      "indexed": true
+    },
+    {
+      "line": 289,
+      "section": "UserInfo",
+      "key": "tw2each1",
+      "rawValue": "0.6",
+      "indexed": true
+    },
+    {
+      "line": 290,
+      "section": "UserInfo",
+      "key": "tooleach1",
+      "rawValue": "0.98058067569092",
+      "indexed": true
+    },
+    {
+      "line": 291,
+      "section": "UserInfo",
+      "key": "tool2each1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 292,
+      "section": "UserInfo",
+      "key": "MOTLAGHeach1",
+      "rawValue": "80",
+      "indexed": true
+    },
+    {
+      "line": 293,
+      "section": "UserInfo",
+      "key": "MOTLAGH2each1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 294,
+      "section": "UserInfo",
+      "key": "ghootieach1",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 295,
+      "section": "UserInfo",
+      "key": "braceeach1",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 296,
+      "section": "UserInfo",
+      "key": "braceSECeach1",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 297,
+      "section": "UserInfo",
+      "key": "braceSIZEeach1",
+      "rawValue": "8",
+      "indexed": true
+    },
+    {
+      "line": 298,
+      "section": "UserInfo",
+      "key": "fixeach1",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 299,
+      "section": "UserInfo",
+      "key": "fix2each1",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 300,
+      "section": "UserInfo",
+      "key": "ELnameEACH1",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 301,
+      "section": "UserInfo",
+      "key": "ELname2EACH1",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 302,
+      "section": "UserInfo",
+      "key": "TXTBRACE01",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 303,
+      "section": "UserInfo",
+      "key": "TXTBRACE11",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 304,
+      "section": "UserInfo",
+      "key": "TXTBRACE21",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 305,
+      "section": "UserInfo",
+      "key": "TXTBRACE31",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 306,
+      "section": "UserInfo",
+      "key": "TXTBRACE41",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 307,
+      "section": "UserInfo",
+      "key": "TXTBRACE51",
+      "rawValue": "10",
+      "indexed": true
+    },
+    {
+      "line": 308,
+      "section": "UserInfo",
+      "key": "CmbBraceShape01",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 309,
+      "section": "UserInfo",
+      "key": "CmbBraceShape11",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 310,
+      "section": "UserInfo",
+      "key": "CmbBraceShape21",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 311,
+      "section": "UserInfo",
+      "key": "CmbBraceShape31",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 312,
+      "section": "UserInfo",
+      "key": "CmbBraceShape41",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 313,
+      "section": "UserInfo",
+      "key": "CmbBraceShape51",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 314,
+      "section": "UserInfo",
+      "key": "TXTBOXH01",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 315,
+      "section": "UserInfo",
+      "key": "TXTBOXH11",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 316,
+      "section": "UserInfo",
+      "key": "TXTBOXH21",
+      "rawValue": "-25",
+      "indexed": true
+    },
+    {
+      "line": 317,
+      "section": "UserInfo",
+      "key": "CmbColDir1",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 318,
+      "section": "UserInfo",
+      "key": "JANeach6",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 319,
+      "section": "UserInfo",
+      "key": "sineeach6",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 320,
+      "section": "UserInfo",
+      "key": "SECTIONeach6",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 321,
+      "section": "UserInfo",
+      "key": "hfeach6",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 322,
+      "section": "UserInfo",
+      "key": "hfeachtruss6",
+      "rawValue": "100",
+      "indexed": true
+    },
+    {
+      "line": 323,
+      "section": "UserInfo",
+      "key": "he2each6",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 324,
+      "section": "UserInfo",
+      "key": "heeach6",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 325,
+      "section": "UserInfo",
+      "key": "heeachtruss6",
+      "rawValue": "200",
+      "indexed": true
+    },
+    {
+      "line": 326,
+      "section": "UserInfo",
+      "key": "hmeach6",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 327,
+      "section": "UserInfo",
+      "key": "hm2each6",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 328,
+      "section": "UserInfo",
+      "key": "tfeach6",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 329,
+      "section": "UserInfo",
+      "key": "tf2each6",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 330,
+      "section": "UserInfo",
+      "key": "wfeach6",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 331,
+      "section": "UserInfo",
+      "key": "wf2each6",
+      "rawValue": "15",
+      "indexed": true
+    },
+    {
+      "line": 332,
+      "section": "UserInfo",
+      "key": "tweach6",
+      "rawValue": "0.6",
+      "indexed": true
+    },
+    {
+      "line": 333,
+      "section": "UserInfo",
+      "key": "tw2each6",
+      "rawValue": "0.6",
+      "indexed": true
+    },
+    {
+      "line": 334,
+      "section": "UserInfo",
+      "key": "tooleach6",
+      "rawValue": "0.3",
+      "indexed": true
+    },
+    {
+      "line": 335,
+      "section": "UserInfo",
+      "key": "tool2each6",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 336,
+      "section": "UserInfo",
+      "key": "MOTLAGHeach6",
+      "rawValue": "80",
+      "indexed": true
+    },
+    {
+      "line": 337,
+      "section": "UserInfo",
+      "key": "MOTLAGH2each6",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 338,
+      "section": "UserInfo",
+      "key": "ghootieach6",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 339,
+      "section": "UserInfo",
+      "key": "braceeach6",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 340,
+      "section": "UserInfo",
+      "key": "braceSECeach6",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 341,
+      "section": "UserInfo",
+      "key": "braceSIZEeach6",
+      "rawValue": "8",
+      "indexed": true
+    },
+    {
+      "line": 342,
+      "section": "UserInfo",
+      "key": "fixeach6",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 343,
+      "section": "UserInfo",
+      "key": "fix2each6",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 344,
+      "section": "UserInfo",
+      "key": "ELnameEACH6",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 345,
+      "section": "UserInfo",
+      "key": "ELname2EACH6",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 346,
+      "section": "UserInfo",
+      "key": "TXTBRACE06",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 347,
+      "section": "UserInfo",
+      "key": "TXTBRACE16",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 348,
+      "section": "UserInfo",
+      "key": "TXTBRACE26",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 349,
+      "section": "UserInfo",
+      "key": "TXTBRACE36",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 350,
+      "section": "UserInfo",
+      "key": "TXTBRACE46",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 351,
+      "section": "UserInfo",
+      "key": "TXTBRACE56",
+      "rawValue": "10",
+      "indexed": true
+    },
+    {
+      "line": 352,
+      "section": "UserInfo",
+      "key": "CmbBraceShape06",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 353,
+      "section": "UserInfo",
+      "key": "CmbBraceShape16",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 354,
+      "section": "UserInfo",
+      "key": "CmbBraceShape26",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 355,
+      "section": "UserInfo",
+      "key": "CmbBraceShape36",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 356,
+      "section": "UserInfo",
+      "key": "CmbBraceShape46",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 357,
+      "section": "UserInfo",
+      "key": "CmbBraceShape56",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 358,
+      "section": "UserInfo",
+      "key": "TXTBOXH06",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 359,
+      "section": "UserInfo",
+      "key": "TXTBOXH16",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 360,
+      "section": "UserInfo",
+      "key": "TXTBOXH26",
+      "rawValue": "-25",
+      "indexed": true
+    },
+    {
+      "line": 361,
+      "section": "UserInfo",
+      "key": "CmbColDir6",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 362,
+      "section": "UserInfo",
+      "key": "JANeach101",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 363,
+      "section": "UserInfo",
+      "key": "sineeach101",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 364,
+      "section": "UserInfo",
+      "key": "SECTIONeach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 365,
+      "section": "UserInfo",
+      "key": "hfeach101",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 366,
+      "section": "UserInfo",
+      "key": "hfeachtruss101",
+      "rawValue": "100",
+      "indexed": true
+    },
+    {
+      "line": 367,
+      "section": "UserInfo",
+      "key": "he2each101",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 368,
+      "section": "UserInfo",
+      "key": "heeach101",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 369,
+      "section": "UserInfo",
+      "key": "heeachtruss101",
+      "rawValue": "200",
+      "indexed": true
+    },
+    {
+      "line": 370,
+      "section": "UserInfo",
+      "key": "hmeach101",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 371,
+      "section": "UserInfo",
+      "key": "hm2each101",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 372,
+      "section": "UserInfo",
+      "key": "tfeach101",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 373,
+      "section": "UserInfo",
+      "key": "tf2each101",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 374,
+      "section": "UserInfo",
+      "key": "wfeach101",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 375,
+      "section": "UserInfo",
+      "key": "wf2each101",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 376,
+      "section": "UserInfo",
+      "key": "tweach101",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 377,
+      "section": "UserInfo",
+      "key": "tw2each101",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 378,
+      "section": "UserInfo",
+      "key": "tooleach101",
+      "rawValue": "0.663844130220322",
+      "indexed": true
+    },
+    {
+      "line": 379,
+      "section": "UserInfo",
+      "key": "tool2each101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 380,
+      "section": "UserInfo",
+      "key": "MOTLAGHeach101",
+      "rawValue": "850",
+      "indexed": true
+    },
+    {
+      "line": 381,
+      "section": "UserInfo",
+      "key": "MOTLAGH2each101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 382,
+      "section": "UserInfo",
+      "key": "ghootieach101",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 383,
+      "section": "UserInfo",
+      "key": "braceeach101",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 384,
+      "section": "UserInfo",
+      "key": "braceSECeach101",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 385,
+      "section": "UserInfo",
+      "key": "braceSIZEeach101",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 386,
+      "section": "UserInfo",
+      "key": "fixeach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 387,
+      "section": "UserInfo",
+      "key": "fix2each101",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 388,
+      "section": "UserInfo",
+      "key": "ELnameEACH101",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 389,
+      "section": "UserInfo",
+      "key": "ELname2EACH101",
+      "rawValue": "4",
+      "indexed": true
+    },
+    {
+      "line": 390,
+      "section": "UserInfo",
+      "key": "TXTBRACE0101",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 391,
+      "section": "UserInfo",
+      "key": "TXTBRACE1101",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 392,
+      "section": "UserInfo",
+      "key": "TXTBRACE5101",
+      "rawValue": "10",
+      "indexed": true
+    },
+    {
+      "line": 393,
+      "section": "UserInfo",
+      "key": "CmbBraceShape0101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 394,
+      "section": "UserInfo",
+      "key": "CmbBraceShape1101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 395,
+      "section": "UserInfo",
+      "key": "CmbBraceShape2101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 396,
+      "section": "UserInfo",
+      "key": "CmbBraceShape3101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 397,
+      "section": "UserInfo",
+      "key": "CmbBraceShape4101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 398,
+      "section": "UserInfo",
+      "key": "CmbBraceShape5101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 399,
+      "section": "UserInfo",
+      "key": "TXTBOXH0101",
+      "rawValue": "615",
+      "indexed": true
+    },
+    {
+      "line": 400,
+      "section": "UserInfo",
+      "key": "TXTBOXH1101",
+      "rawValue": "1230",
+      "indexed": true
+    },
+    {
+      "line": 401,
+      "section": "UserInfo",
+      "key": "CmbColDir101",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 402,
+      "section": "UserInfo",
+      "key": "JANeach102",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 403,
+      "section": "UserInfo",
+      "key": "sineeach102",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 404,
+      "section": "UserInfo",
+      "key": "SECTIONeach102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 405,
+      "section": "UserInfo",
+      "key": "hfeach102",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 406,
+      "section": "UserInfo",
+      "key": "hfeachtruss102",
+      "rawValue": "100",
+      "indexed": true
+    },
+    {
+      "line": 407,
+      "section": "UserInfo",
+      "key": "he2each102",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 408,
+      "section": "UserInfo",
+      "key": "heeach102",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 409,
+      "section": "UserInfo",
+      "key": "heeachtruss102",
+      "rawValue": "200",
+      "indexed": true
+    },
+    {
+      "line": 410,
+      "section": "UserInfo",
+      "key": "hmeach102",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 411,
+      "section": "UserInfo",
+      "key": "hm2each102",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 412,
+      "section": "UserInfo",
+      "key": "tfeach102",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 413,
+      "section": "UserInfo",
+      "key": "tf2each102",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 414,
+      "section": "UserInfo",
+      "key": "wfeach102",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 415,
+      "section": "UserInfo",
+      "key": "wf2each102",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 416,
+      "section": "UserInfo",
+      "key": "tweach102",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 417,
+      "section": "UserInfo",
+      "key": "tw2each102",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 418,
+      "section": "UserInfo",
+      "key": "tooleach102",
+      "rawValue": "0.24514516892273",
+      "indexed": true
+    },
+    {
+      "line": 419,
+      "section": "UserInfo",
+      "key": "tool2each102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 420,
+      "section": "UserInfo",
+      "key": "MOTLAGHeach102",
+      "rawValue": "300",
+      "indexed": true
+    },
+    {
+      "line": 421,
+      "section": "UserInfo",
+      "key": "MOTLAGH2each102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 422,
+      "section": "UserInfo",
+      "key": "ghootieach102",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 423,
+      "section": "UserInfo",
+      "key": "braceeach102",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 424,
+      "section": "UserInfo",
+      "key": "braceSECeach102",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 425,
+      "section": "UserInfo",
+      "key": "braceSIZEeach102",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 426,
+      "section": "UserInfo",
+      "key": "fixeach102",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 427,
+      "section": "UserInfo",
+      "key": "fix2each102",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 428,
+      "section": "UserInfo",
+      "key": "ELnameEACH102",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 429,
+      "section": "UserInfo",
+      "key": "ELname2EACH102",
+      "rawValue": "5",
+      "indexed": true
+    },
+    {
+      "line": 430,
+      "section": "UserInfo",
+      "key": "TXTBRACE0102",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 431,
+      "section": "UserInfo",
+      "key": "TXTBRACE1102",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 432,
+      "section": "UserInfo",
+      "key": "TXTBRACE2102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 433,
+      "section": "UserInfo",
+      "key": "TXTBRACE3102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 434,
+      "section": "UserInfo",
+      "key": "TXTBRACE4102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 435,
+      "section": "UserInfo",
+      "key": "TXTBRACE5102",
+      "rawValue": "10",
+      "indexed": true
+    },
+    {
+      "line": 436,
+      "section": "UserInfo",
+      "key": "CmbBraceShape0102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 437,
+      "section": "UserInfo",
+      "key": "CmbBraceShape1102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 438,
+      "section": "UserInfo",
+      "key": "CmbBraceShape2102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 439,
+      "section": "UserInfo",
+      "key": "CmbBraceShape3102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 440,
+      "section": "UserInfo",
+      "key": "CmbBraceShape4102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 441,
+      "section": "UserInfo",
+      "key": "CmbBraceShape5102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 442,
+      "section": "UserInfo",
+      "key": "TXTBOXH0102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 443,
+      "section": "UserInfo",
+      "key": "TXTBOXH1102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 444,
+      "section": "UserInfo",
+      "key": "TXTBOXH2102",
+      "rawValue": "-25",
+      "indexed": true
+    },
+    {
+      "line": 445,
+      "section": "UserInfo",
+      "key": "CmbColDir102",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 446,
+      "section": "UserInfo",
+      "key": "JANeach103",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 447,
+      "section": "UserInfo",
+      "key": "sineeach103",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 448,
+      "section": "UserInfo",
+      "key": "SECTIONeach103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 449,
+      "section": "UserInfo",
+      "key": "hfeach103",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 450,
+      "section": "UserInfo",
+      "key": "hfeachtruss103",
+      "rawValue": "100",
+      "indexed": true
+    },
+    {
+      "line": 451,
+      "section": "UserInfo",
+      "key": "he2each103",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 452,
+      "section": "UserInfo",
+      "key": "heeach103",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 453,
+      "section": "UserInfo",
+      "key": "heeachtruss103",
+      "rawValue": "200",
+      "indexed": true
+    },
+    {
+      "line": 454,
+      "section": "UserInfo",
+      "key": "hmeach103",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 455,
+      "section": "UserInfo",
+      "key": "hm2each103",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 456,
+      "section": "UserInfo",
+      "key": "tfeach103",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 457,
+      "section": "UserInfo",
+      "key": "tf2each103",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 458,
+      "section": "UserInfo",
+      "key": "wfeach103",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 459,
+      "section": "UserInfo",
+      "key": "wf2each103",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 460,
+      "section": "UserInfo",
+      "key": "tweach103",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 461,
+      "section": "UserInfo",
+      "key": "tw2each103",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 462,
+      "section": "UserInfo",
+      "key": "tooleach103",
+      "rawValue": "0.24514516892273",
+      "indexed": true
+    },
+    {
+      "line": 463,
+      "section": "UserInfo",
+      "key": "tool2each103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 464,
+      "section": "UserInfo",
+      "key": "MOTLAGHeach103",
+      "rawValue": "300",
+      "indexed": true
+    },
+    {
+      "line": 465,
+      "section": "UserInfo",
+      "key": "MOTLAGH2each103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 466,
+      "section": "UserInfo",
+      "key": "ghootieach103",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 467,
+      "section": "UserInfo",
+      "key": "braceeach103",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 468,
+      "section": "UserInfo",
+      "key": "braceSECeach103",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 469,
+      "section": "UserInfo",
+      "key": "braceSIZEeach103",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 470,
+      "section": "UserInfo",
+      "key": "fixeach103",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 471,
+      "section": "UserInfo",
+      "key": "fix2each103",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 472,
+      "section": "UserInfo",
+      "key": "ELnameEACH103",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 473,
+      "section": "UserInfo",
+      "key": "ELname2EACH103",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 474,
+      "section": "UserInfo",
+      "key": "TXTBRACE0103",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 475,
+      "section": "UserInfo",
+      "key": "TXTBRACE1103",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 476,
+      "section": "UserInfo",
+      "key": "TXTBRACE2103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 477,
+      "section": "UserInfo",
+      "key": "TXTBRACE3103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 478,
+      "section": "UserInfo",
+      "key": "TXTBRACE4103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 479,
+      "section": "UserInfo",
+      "key": "TXTBRACE5103",
+      "rawValue": "10",
+      "indexed": true
+    },
+    {
+      "line": 480,
+      "section": "UserInfo",
+      "key": "CmbBraceShape0103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 481,
+      "section": "UserInfo",
+      "key": "CmbBraceShape1103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 482,
+      "section": "UserInfo",
+      "key": "CmbBraceShape2103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 483,
+      "section": "UserInfo",
+      "key": "CmbBraceShape3103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 484,
+      "section": "UserInfo",
+      "key": "CmbBraceShape4103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 485,
+      "section": "UserInfo",
+      "key": "CmbBraceShape5103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 486,
+      "section": "UserInfo",
+      "key": "TXTBOXH0103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 487,
+      "section": "UserInfo",
+      "key": "TXTBOXH1103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 488,
+      "section": "UserInfo",
+      "key": "TXTBOXH2103",
+      "rawValue": "-25",
+      "indexed": true
+    },
+    {
+      "line": 489,
+      "section": "UserInfo",
+      "key": "CmbColDir103",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 490,
+      "section": "UserInfo",
+      "key": "wpspan11",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 491,
+      "section": "UserInfo",
+      "key": "JANWP111",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 492,
+      "section": "UserInfo",
+      "key": "sectionWP111",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 493,
+      "section": "UserInfo",
+      "key": "hfWP111",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 494,
+      "section": "UserInfo",
+      "key": "tfWP111",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 495,
+      "section": "UserInfo",
+      "key": "wfWP111",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 496,
+      "section": "UserInfo",
+      "key": "twWP111",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 497,
+      "section": "UserInfo",
+      "key": "mokhWP111",
+      "rawValue": "700",
+      "indexed": true
+    },
+    {
+      "line": 498,
+      "section": "UserInfo",
+      "key": "cheshmeWP111",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 499,
+      "section": "UserInfo",
+      "key": "heightWP111",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 500,
+      "section": "UserInfo",
+      "key": "JANWP121",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 501,
+      "section": "UserInfo",
+      "key": "sectionWP121",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 502,
+      "section": "UserInfo",
+      "key": "hfWP121",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 503,
+      "section": "UserInfo",
+      "key": "tfWP121",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 504,
+      "section": "UserInfo",
+      "key": "wfWP121",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 505,
+      "section": "UserInfo",
+      "key": "twWP121",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 506,
+      "section": "UserInfo",
+      "key": "mokhWP121",
+      "rawValue": "1700",
+      "indexed": true
+    },
+    {
+      "line": 507,
+      "section": "UserInfo",
+      "key": "cheshmeWP121",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 508,
+      "section": "UserInfo",
+      "key": "heightWP121",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 509,
+      "section": "UserInfo",
+      "key": "wpspan12",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 510,
+      "section": "UserInfo",
+      "key": "JANWP112",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 511,
+      "section": "UserInfo",
+      "key": "sectionWP112",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 512,
+      "section": "UserInfo",
+      "key": "hfWP112",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 513,
+      "section": "UserInfo",
+      "key": "tfWP112",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 514,
+      "section": "UserInfo",
+      "key": "wfWP112",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 515,
+      "section": "UserInfo",
+      "key": "twWP112",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 516,
+      "section": "UserInfo",
+      "key": "mokhWP112",
+      "rawValue": "700",
+      "indexed": true
+    },
+    {
+      "line": 517,
+      "section": "UserInfo",
+      "key": "cheshmeWP112",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 518,
+      "section": "UserInfo",
+      "key": "heightWP112",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 519,
+      "section": "UserInfo",
+      "key": "JANWP122",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 520,
+      "section": "UserInfo",
+      "key": "sectionWP122",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 521,
+      "section": "UserInfo",
+      "key": "hfWP122",
+      "rawValue": "30",
+      "indexed": true
+    },
+    {
+      "line": 522,
+      "section": "UserInfo",
+      "key": "tfWP122",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 523,
+      "section": "UserInfo",
+      "key": "wfWP122",
+      "rawValue": "20",
+      "indexed": true
+    },
+    {
+      "line": 524,
+      "section": "UserInfo",
+      "key": "twWP122",
+      "rawValue": "0.8",
+      "indexed": true
+    },
+    {
+      "line": 525,
+      "section": "UserInfo",
+      "key": "mokhWP122",
+      "rawValue": "1700",
+      "indexed": true
+    },
+    {
+      "line": 526,
+      "section": "UserInfo",
+      "key": "cheshmeWP122",
+      "rawValue": "600",
+      "indexed": true
+    },
+    {
+      "line": 527,
+      "section": "UserInfo",
+      "key": "heightWP122",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 528,
+      "section": "UserInfo",
+      "key": "TXTBOXH2101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 529,
+      "section": "UserInfo",
+      "key": "TXTBOXH3101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 530,
+      "section": "UserInfo",
+      "key": "TXTBOXH4101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 531,
+      "section": "UserInfo",
+      "key": "TXTBOXH2100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 532,
+      "section": "UserInfo",
+      "key": "TXTBOXH3100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 533,
+      "section": "UserInfo",
+      "key": "TXTBOXH4100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 534,
+      "section": "UserInfo",
+      "key": "TXTBRACE2100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 535,
+      "section": "UserInfo",
+      "key": "TXTBRACE3100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 536,
+      "section": "UserInfo",
+      "key": "TXTBRACE4100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 537,
+      "section": "UserInfo",
+      "key": "TXTBRACE2101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 538,
+      "section": "UserInfo",
+      "key": "TXTBRACE3101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 539,
+      "section": "UserInfo",
+      "key": "TXTBRACE4101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 540,
+      "section": "UserInfo",
+      "key": "TXTBOXH3102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 541,
+      "section": "UserInfo",
+      "key": "TXTBOXH4102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 542,
+      "section": "UserInfo",
+      "key": "TXTBOXH3103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 543,
+      "section": "UserInfo",
+      "key": "TXTBOXH4103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 544,
+      "section": "UserInfo",
+      "key": "ContypeEach102",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 545,
+      "section": "UserInfo",
+      "key": "ContypeREach102",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 546,
+      "section": "UserInfo",
+      "key": "Ghotreach102",
+      "rawValue": "2.7",
+      "indexed": true
+    },
+    {
+      "line": 547,
+      "section": "UserInfo",
+      "key": "GhotrReach102",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 548,
+      "section": "UserInfo",
+      "key": "Rowbolteach102",
+      "rawValue": "4",
+      "indexed": true
+    },
+    {
+      "line": 549,
+      "section": "UserInfo",
+      "key": "RowboltReach102",
+      "rawValue": "4",
+      "indexed": true
+    },
+    {
+      "line": 550,
+      "section": "UserInfo",
+      "key": "Tipbolteach102",
+      "rawValue": "8.8",
+      "indexed": true
+    },
+    {
+      "line": 551,
+      "section": "UserInfo",
+      "key": "TipboltReach102",
+      "rawValue": "8.8",
+      "indexed": true
+    },
+    {
+      "line": 552,
+      "section": "UserInfo",
+      "key": "Tedadeach102",
+      "rawValue": "10",
+      "indexed": true
+    },
+    {
+      "line": 553,
+      "section": "UserInfo",
+      "key": "TedadReach102",
+      "rawValue": "5",
+      "indexed": true
+    },
+    {
+      "line": 554,
+      "section": "UserInfo",
+      "key": "Wconeach102",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 555,
+      "section": "UserInfo",
+      "key": "WRconeach102",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 556,
+      "section": "UserInfo",
+      "key": "ConTeach102",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 557,
+      "section": "UserInfo",
+      "key": "ConTReach102",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 558,
+      "section": "UserInfo",
+      "key": "ContypeEach103",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 559,
+      "section": "UserInfo",
+      "key": "ContypeREach103",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 560,
+      "section": "UserInfo",
+      "key": "Ghotreach103",
+      "rawValue": "3",
+      "indexed": true
+    },
+    {
+      "line": 561,
+      "section": "UserInfo",
+      "key": "GhotrReach103",
+      "rawValue": "2.7",
+      "indexed": true
+    },
+    {
+      "line": 562,
+      "section": "UserInfo",
+      "key": "Rowbolteach103",
+      "rawValue": "4",
+      "indexed": true
+    },
+    {
+      "line": 563,
+      "section": "UserInfo",
+      "key": "RowboltReach103",
+      "rawValue": "4",
+      "indexed": true
+    },
+    {
+      "line": 564,
+      "section": "UserInfo",
+      "key": "Tipbolteach103",
+      "rawValue": "8.8",
+      "indexed": true
+    },
+    {
+      "line": 565,
+      "section": "UserInfo",
+      "key": "TipboltReach103",
+      "rawValue": "8.8",
+      "indexed": true
+    },
+    {
+      "line": 566,
+      "section": "UserInfo",
+      "key": "Tedadeach103",
+      "rawValue": "5",
+      "indexed": true
+    },
+    {
+      "line": 567,
+      "section": "UserInfo",
+      "key": "TedadReach103",
+      "rawValue": "10",
+      "indexed": true
+    },
+    {
+      "line": 568,
+      "section": "UserInfo",
+      "key": "Wconeach103",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 569,
+      "section": "UserInfo",
+      "key": "WRconeach103",
+      "rawValue": "40",
+      "indexed": true
+    },
+    {
+      "line": 570,
+      "section": "UserInfo",
+      "key": "ConTeach103",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 571,
+      "section": "UserInfo",
+      "key": "ConTReach103",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 572,
+      "section": "UserInfo",
+      "key": "peywp",
+      "rawValue": "100",
+      "indexed": false
+    },
+    {
+      "line": 573,
+      "section": "UserInfo",
+      "key": "peynamewp",
+      "rawValue": "F7",
+      "indexed": false
+    },
+    {
+      "line": 574,
+      "section": "UserInfo",
+      "key": "KAMARBAND",
+      "rawValue": "4",
+      "indexed": false
+    },
+    {
+      "line": 575,
+      "section": "UserInfo",
+      "key": "SHENAJ",
+      "rawValue": "50",
+      "indexed": false
+    },
+    {
+      "line": 576,
+      "section": "UserInfo",
+      "key": "SHENAJH",
+      "rawValue": "50",
+      "indexed": false
+    },
+    {
+      "line": 577,
+      "section": "UserInfo",
+      "key": "SHENAJtip",
+      "rawValue": "A",
+      "indexed": false
+    },
+    {
+      "line": 578,
+      "section": "UserInfo",
+      "key": "TedadtipPey",
+      "rawValue": "1",
+      "indexed": false
+    },
+    {
+      "line": 579,
+      "section": "UserInfo",
+      "key": "pakh",
+      "rawValue": "50",
+      "indexed": false
+    },
+    {
+      "line": 580,
+      "section": "UserInfo",
+      "key": "NUMBARSHEN",
+      "rawValue": "3",
+      "indexed": false
+    },
+    {
+      "line": 581,
+      "section": "UserInfo",
+      "key": "FISHENAJ",
+      "rawValue": "-1",
+      "indexed": false
+    },
+    {
+      "line": 582,
+      "section": "UserInfo",
+      "key": "BARDIST",
+      "rawValue": "20",
+      "indexed": false
+    },
+    {
+      "line": 583,
+      "section": "UserInfo",
+      "key": "KHAMOOT",
+      "rawValue": "-1",
+      "indexed": false
+    },
+    {
+      "line": 584,
+      "section": "UserInfo",
+      "key": "FI",
+      "rawValue": "-1",
+      "indexed": false
+    },
+    {
+      "line": 585,
+      "section": "UserInfo",
+      "key": "Btakpey10",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 586,
+      "section": "UserInfo",
+      "key": "Dtakpey10",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 587,
+      "section": "UserInfo",
+      "key": "BtakpeyBAD10",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 588,
+      "section": "UserInfo",
+      "key": "DtakpeyBAD10",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 589,
+      "section": "UserInfo",
+      "key": "Btakpey11",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 590,
+      "section": "UserInfo",
+      "key": "Dtakpey11",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 591,
+      "section": "UserInfo",
+      "key": "BtakpeyBAD11",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 592,
+      "section": "UserInfo",
+      "key": "DtakpeyBAD11",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 593,
+      "section": "UserInfo",
+      "key": "PeyHEach100",
+      "rawValue": "60",
+      "indexed": true
+    },
+    {
+      "line": 594,
+      "section": "UserInfo",
+      "key": "PedEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 595,
+      "section": "UserInfo",
+      "key": "TopEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 596,
+      "section": "UserInfo",
+      "key": "PeyNameEach100",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 597,
+      "section": "UserInfo",
+      "key": "PeyNameStEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 598,
+      "section": "UserInfo",
+      "key": "CmbDeax100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 599,
+      "section": "UserInfo",
+      "key": "PeyNameBadEach100",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 600,
+      "section": "UserInfo",
+      "key": "deaxEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 601,
+      "section": "UserInfo",
+      "key": "deaxBadEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 602,
+      "section": "UserInfo",
+      "key": "deaxStEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 603,
+      "section": "UserInfo",
+      "key": "PeytipEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 604,
+      "section": "UserInfo",
+      "key": "ShamDEach100",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 605,
+      "section": "UserInfo",
+      "key": "shamHEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 606,
+      "section": "UserInfo",
+      "key": "sheardEach100",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 607,
+      "section": "UserInfo",
+      "key": "ShearHEach100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 608,
+      "section": "UserInfo",
+      "key": "Bodkollipey100",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 609,
+      "section": "UserInfo",
+      "key": "dodkollipey100",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 610,
+      "section": "UserInfo",
+      "key": "Bodkollipeybad100",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 611,
+      "section": "UserInfo",
+      "key": "dodkollipeybad100",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 612,
+      "section": "UserInfo",
+      "key": "Bodkollipeyst100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 613,
+      "section": "UserInfo",
+      "key": "dodkollipeyst100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 614,
+      "section": "UserInfo",
+      "key": "PeyHEach101",
+      "rawValue": "60",
+      "indexed": true
+    },
+    {
+      "line": 615,
+      "section": "UserInfo",
+      "key": "PedEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 616,
+      "section": "UserInfo",
+      "key": "TopEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 617,
+      "section": "UserInfo",
+      "key": "PeyNameEach101",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 618,
+      "section": "UserInfo",
+      "key": "PeyNameStEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 619,
+      "section": "UserInfo",
+      "key": "CmbDeax101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 620,
+      "section": "UserInfo",
+      "key": "PeyNameBadEach101",
+      "rawValue": "1",
+      "indexed": true
+    },
+    {
+      "line": 621,
+      "section": "UserInfo",
+      "key": "deaxEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 622,
+      "section": "UserInfo",
+      "key": "deaxBadEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 623,
+      "section": "UserInfo",
+      "key": "deaxStEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 624,
+      "section": "UserInfo",
+      "key": "PeytipEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 625,
+      "section": "UserInfo",
+      "key": "ShamDEach101",
+      "rawValue": "90",
+      "indexed": true
+    },
+    {
+      "line": 626,
+      "section": "UserInfo",
+      "key": "shamHEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 627,
+      "section": "UserInfo",
+      "key": "sheardEach101",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 628,
+      "section": "UserInfo",
+      "key": "ShearHEach101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 629,
+      "section": "UserInfo",
+      "key": "Bodkollipey101",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 630,
+      "section": "UserInfo",
+      "key": "dodkollipey101",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 631,
+      "section": "UserInfo",
+      "key": "Bodkollipeybad101",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 632,
+      "section": "UserInfo",
+      "key": "dodkollipeybad101",
+      "rawValue": "180",
+      "indexed": true
+    },
+    {
+      "line": 633,
+      "section": "UserInfo",
+      "key": "Bodkollipeyst101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 634,
+      "section": "UserInfo",
+      "key": "dodkollipeyst101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 635,
+      "section": "UserInfo",
+      "key": "Lconeach100",
+      "rawValue": "60",
+      "indexed": true
+    },
+    {
+      "line": 636,
+      "section": "UserInfo",
+      "key": "Wconeach100",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 637,
+      "section": "UserInfo",
+      "key": "BPNameEach100",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 638,
+      "section": "UserInfo",
+      "key": "BPNameBadEach100",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 639,
+      "section": "UserInfo",
+      "key": "TedadKOLLeach100",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 640,
+      "section": "UserInfo",
+      "key": "TedadKOLLBADeach100",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 641,
+      "section": "UserInfo",
+      "key": "Ghotreach100",
+      "rawValue": "2.5",
+      "indexed": true
+    },
+    {
+      "line": 642,
+      "section": "UserInfo",
+      "key": "GhotrBadeach100",
+      "rawValue": "2.5",
+      "indexed": true
+    },
+    {
+      "line": 643,
+      "section": "UserInfo",
+      "key": "BpTeach100",
+      "rawValue": "1.5",
+      "indexed": true
+    },
+    {
+      "line": 644,
+      "section": "UserInfo",
+      "key": "tipkolliBase100",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 645,
+      "section": "UserInfo",
+      "key": "BpIPEL100",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 646,
+      "section": "UserInfo",
+      "key": "Lconeach101",
+      "rawValue": "60",
+      "indexed": true
+    },
+    {
+      "line": 647,
+      "section": "UserInfo",
+      "key": "Wconeach101",
+      "rawValue": "50",
+      "indexed": true
+    },
+    {
+      "line": 648,
+      "section": "UserInfo",
+      "key": "BPNameEach101",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 649,
+      "section": "UserInfo",
+      "key": "BPNameBadEach101",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 650,
+      "section": "UserInfo",
+      "key": "TedadKOLLeach101",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 651,
+      "section": "UserInfo",
+      "key": "TedadKOLLBADeach101",
+      "rawValue": "6",
+      "indexed": true
+    },
+    {
+      "line": 652,
+      "section": "UserInfo",
+      "key": "Ghotreach101",
+      "rawValue": "2.5",
+      "indexed": true
+    },
+    {
+      "line": 653,
+      "section": "UserInfo",
+      "key": "GhotrBadeach101",
+      "rawValue": "2.5",
+      "indexed": true
+    },
+    {
+      "line": 654,
+      "section": "UserInfo",
+      "key": "BpTeach101",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 655,
+      "section": "UserInfo",
+      "key": "tipkolliBase101",
+      "rawValue": "2",
+      "indexed": true
+    },
+    {
+      "line": 656,
+      "section": "UserInfo",
+      "key": "BpIPEL101",
+      "rawValue": "0",
+      "indexed": true
+    },
+    {
+      "line": 657,
+      "section": "UserInfo",
+      "key": "txthight",
+      "rawValue": "1200",
+      "indexed": false
+    },
+    {
+      "line": 658,
+      "section": "UserInfo",
+      "key": "dis",
+      "rawValue": "0",
+      "indexed": false
+    },
+    {
+      "line": 659,
+      "section": "UserInfo",
+      "key": "estakak",
+      "rawValue": "0",
+      "indexed": false
+    }
+  ],
+  "indexedKeyGroups": [
+    {
+      "groupKey": "UserInfo::ARZ",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "150",
+          "line": 98,
+          "sourceKey": "ARZ2"
+        },
+        {
+          "suffix": "3",
+          "rawValue": "150",
+          "line": 99,
+          "sourceKey": "ARZ3"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::BPNameBadEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "2",
+          "line": 638,
+          "sourceKey": "BPNameBadEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2",
+          "line": 649,
+          "sourceKey": "BPNameBadEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::BPNameEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "2",
+          "line": 637,
+          "sourceKey": "BPNameEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2",
+          "line": 648,
+          "sourceKey": "BPNameEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Bodkollipey",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "180",
+          "line": 608,
+          "sourceKey": "Bodkollipey100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "180",
+          "line": 629,
+          "sourceKey": "Bodkollipey101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Bodkollipeybad",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "180",
+          "line": 610,
+          "sourceKey": "Bodkollipeybad100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "180",
+          "line": 631,
+          "sourceKey": "Bodkollipeybad101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Bodkollipeyst",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 612,
+          "sourceKey": "Bodkollipeyst100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 633,
+          "sourceKey": "Bodkollipeyst101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::BpIPEL",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 645,
+          "sourceKey": "BpIPEL100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 656,
+          "sourceKey": "BpIPEL101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::BpTeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1.5",
+          "line": 643,
+          "sourceKey": "BpTeach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2",
+          "line": 654,
+          "sourceKey": "BpTeach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Btakpey",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "180",
+          "line": 585,
+          "sourceKey": "Btakpey10"
+        },
+        {
+          "suffix": "11",
+          "rawValue": "180",
+          "line": 589,
+          "sourceKey": "Btakpey11"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::BtakpeyBAD",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "180",
+          "line": 587,
+          "sourceKey": "BtakpeyBAD10"
+        },
+        {
+          "suffix": "11",
+          "rawValue": "180",
+          "line": 591,
+          "sourceKey": "BtakpeyBAD11"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::COL",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "1",
+          "line": 140,
+          "sourceKey": "COL1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::COLDIS",
+      "records": [
+        {
+          "suffix": "1001",
+          "rawValue": "0",
+          "line": 148,
+          "sourceKey": "COLDIS1001"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::CRANECONS",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 131,
+          "sourceKey": "CRANECONS1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::CRANESEAT",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 132,
+          "sourceKey": "CRANESEAT1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::CRANETIP",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "1",
+          "line": 130,
+          "sourceKey": "CRANETIP1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::CmbBraceShape",
+      "records": [
+        {
+          "suffix": "0100",
+          "rawValue": "0",
+          "line": 265,
+          "sourceKey": "CmbBraceShape0100"
+        },
+        {
+          "suffix": "1100",
+          "rawValue": "0",
+          "line": 266,
+          "sourceKey": "CmbBraceShape1100"
+        },
+        {
+          "suffix": "2100",
+          "rawValue": "0",
+          "line": 267,
+          "sourceKey": "CmbBraceShape2100"
+        },
+        {
+          "suffix": "3100",
+          "rawValue": "0",
+          "line": 268,
+          "sourceKey": "CmbBraceShape3100"
+        },
+        {
+          "suffix": "4100",
+          "rawValue": "0",
+          "line": 269,
+          "sourceKey": "CmbBraceShape4100"
+        },
+        {
+          "suffix": "5100",
+          "rawValue": "0",
+          "line": 270,
+          "sourceKey": "CmbBraceShape5100"
+        },
+        {
+          "suffix": "01",
+          "rawValue": "0",
+          "line": 308,
+          "sourceKey": "CmbBraceShape01"
+        },
+        {
+          "suffix": "11",
+          "rawValue": "0",
+          "line": 309,
+          "sourceKey": "CmbBraceShape11"
+        },
+        {
+          "suffix": "21",
+          "rawValue": "0",
+          "line": 310,
+          "sourceKey": "CmbBraceShape21"
+        },
+        {
+          "suffix": "31",
+          "rawValue": "0",
+          "line": 311,
+          "sourceKey": "CmbBraceShape31"
+        },
+        {
+          "suffix": "41",
+          "rawValue": "0",
+          "line": 312,
+          "sourceKey": "CmbBraceShape41"
+        },
+        {
+          "suffix": "51",
+          "rawValue": "0",
+          "line": 313,
+          "sourceKey": "CmbBraceShape51"
+        },
+        {
+          "suffix": "06",
+          "rawValue": "0",
+          "line": 352,
+          "sourceKey": "CmbBraceShape06"
+        },
+        {
+          "suffix": "16",
+          "rawValue": "0",
+          "line": 353,
+          "sourceKey": "CmbBraceShape16"
+        },
+        {
+          "suffix": "26",
+          "rawValue": "0",
+          "line": 354,
+          "sourceKey": "CmbBraceShape26"
+        },
+        {
+          "suffix": "36",
+          "rawValue": "0",
+          "line": 355,
+          "sourceKey": "CmbBraceShape36"
+        },
+        {
+          "suffix": "46",
+          "rawValue": "0",
+          "line": 356,
+          "sourceKey": "CmbBraceShape46"
+        },
+        {
+          "suffix": "56",
+          "rawValue": "0",
+          "line": 357,
+          "sourceKey": "CmbBraceShape56"
+        },
+        {
+          "suffix": "0101",
+          "rawValue": "0",
+          "line": 393,
+          "sourceKey": "CmbBraceShape0101"
+        },
+        {
+          "suffix": "1101",
+          "rawValue": "0",
+          "line": 394,
+          "sourceKey": "CmbBraceShape1101"
+        },
+        {
+          "suffix": "2101",
+          "rawValue": "0",
+          "line": 395,
+          "sourceKey": "CmbBraceShape2101"
+        },
+        {
+          "suffix": "3101",
+          "rawValue": "0",
+          "line": 396,
+          "sourceKey": "CmbBraceShape3101"
+        },
+        {
+          "suffix": "4101",
+          "rawValue": "0",
+          "line": 397,
+          "sourceKey": "CmbBraceShape4101"
+        },
+        {
+          "suffix": "5101",
+          "rawValue": "0",
+          "line": 398,
+          "sourceKey": "CmbBraceShape5101"
+        },
+        {
+          "suffix": "0102",
+          "rawValue": "0",
+          "line": 436,
+          "sourceKey": "CmbBraceShape0102"
+        },
+        {
+          "suffix": "1102",
+          "rawValue": "0",
+          "line": 437,
+          "sourceKey": "CmbBraceShape1102"
+        },
+        {
+          "suffix": "2102",
+          "rawValue": "0",
+          "line": 438,
+          "sourceKey": "CmbBraceShape2102"
+        },
+        {
+          "suffix": "3102",
+          "rawValue": "0",
+          "line": 439,
+          "sourceKey": "CmbBraceShape3102"
+        },
+        {
+          "suffix": "4102",
+          "rawValue": "0",
+          "line": 440,
+          "sourceKey": "CmbBraceShape4102"
+        },
+        {
+          "suffix": "5102",
+          "rawValue": "0",
+          "line": 441,
+          "sourceKey": "CmbBraceShape5102"
+        },
+        {
+          "suffix": "0103",
+          "rawValue": "0",
+          "line": 480,
+          "sourceKey": "CmbBraceShape0103"
+        },
+        {
+          "suffix": "1103",
+          "rawValue": "0",
+          "line": 481,
+          "sourceKey": "CmbBraceShape1103"
+        },
+        {
+          "suffix": "2103",
+          "rawValue": "0",
+          "line": 482,
+          "sourceKey": "CmbBraceShape2103"
+        },
+        {
+          "suffix": "3103",
+          "rawValue": "0",
+          "line": 483,
+          "sourceKey": "CmbBraceShape3103"
+        },
+        {
+          "suffix": "4103",
+          "rawValue": "0",
+          "line": 484,
+          "sourceKey": "CmbBraceShape4103"
+        },
+        {
+          "suffix": "5103",
+          "rawValue": "0",
+          "line": 485,
+          "sourceKey": "CmbBraceShape5103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::CmbColDir",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 273,
+          "sourceKey": "CmbColDir100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 317,
+          "sourceKey": "CmbColDir1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0",
+          "line": 361,
+          "sourceKey": "CmbColDir6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2",
+          "line": 401,
+          "sourceKey": "CmbColDir101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "2",
+          "line": 445,
+          "sourceKey": "CmbColDir102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "2",
+          "line": 489,
+          "sourceKey": "CmbColDir103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::CmbDeax",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 598,
+          "sourceKey": "CmbDeax100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 619,
+          "sourceKey": "CmbDeax101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ColPanelDis",
+      "records": [
+        {
+          "suffix": "101",
+          "rawValue": "2400",
+          "line": 29,
+          "sourceKey": "ColPanelDis101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ConTReach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "2",
+          "line": 557,
+          "sourceKey": "ConTReach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "2",
+          "line": 571,
+          "sourceKey": "ConTReach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ConTeach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "2",
+          "line": 556,
+          "sourceKey": "ConTeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "2",
+          "line": 570,
+          "sourceKey": "ConTeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ContypeEach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "0",
+          "line": 544,
+          "sourceKey": "ContypeEach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "1",
+          "line": 558,
+          "sourceKey": "ContypeEach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ContypeREach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "1",
+          "line": 545,
+          "sourceKey": "ContypeREach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "0",
+          "line": 559,
+          "sourceKey": "ContypeREach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::DAHANE",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "2400",
+          "line": 147,
+          "sourceKey": "DAHANE100"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Dtakpey",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "180",
+          "line": 586,
+          "sourceKey": "Dtakpey10"
+        },
+        {
+          "suffix": "11",
+          "rawValue": "180",
+          "line": 590,
+          "sourceKey": "Dtakpey11"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::DtakpeyBAD",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "180",
+          "line": 588,
+          "sourceKey": "DtakpeyBAD10"
+        },
+        {
+          "suffix": "11",
+          "rawValue": "180",
+          "line": 592,
+          "sourceKey": "DtakpeyBAD11"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ELname2EACH",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1",
+          "line": 261,
+          "sourceKey": "ELname2EACH100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "2",
+          "line": 301,
+          "sourceKey": "ELname2EACH1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "3",
+          "line": 345,
+          "sourceKey": "ELname2EACH6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "4",
+          "line": 389,
+          "sourceKey": "ELname2EACH101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "5",
+          "line": 429,
+          "sourceKey": "ELname2EACH102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "6",
+          "line": 473,
+          "sourceKey": "ELname2EACH103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ELnameEACH",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1",
+          "line": 260,
+          "sourceKey": "ELnameEACH100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "1",
+          "line": 300,
+          "sourceKey": "ELnameEACH1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "1",
+          "line": 344,
+          "sourceKey": "ELnameEACH6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1",
+          "line": 388,
+          "sourceKey": "ELnameEACH101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "1",
+          "line": 428,
+          "sourceKey": "ELnameEACH102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "1",
+          "line": 472,
+          "sourceKey": "ELnameEACH103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::FASELE",
+      "records": [
+        {
+          "suffix": "0",
+          "rawValue": "600",
+          "line": 149,
+          "sourceKey": "FASELE0"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "600",
+          "line": 150,
+          "sourceKey": "FASELE1"
+        },
+        {
+          "suffix": "2",
+          "rawValue": "600",
+          "line": 151,
+          "sourceKey": "FASELE2"
+        },
+        {
+          "suffix": "3",
+          "rawValue": "600",
+          "line": 152,
+          "sourceKey": "FASELE3"
+        },
+        {
+          "suffix": "4",
+          "rawValue": "600",
+          "line": 153,
+          "sourceKey": "FASELE4"
+        },
+        {
+          "suffix": "5",
+          "rawValue": "600",
+          "line": 154,
+          "sourceKey": "FASELE5"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "600",
+          "line": 155,
+          "sourceKey": "FASELE6"
+        },
+        {
+          "suffix": "7",
+          "rawValue": "600",
+          "line": 156,
+          "sourceKey": "FASELE7"
+        },
+        {
+          "suffix": "8",
+          "rawValue": "600",
+          "line": 157,
+          "sourceKey": "FASELE8"
+        },
+        {
+          "suffix": "9",
+          "rawValue": "600",
+          "line": 158,
+          "sourceKey": "FASELE9"
+        },
+        {
+          "suffix": "10",
+          "rawValue": "600",
+          "line": 159,
+          "sourceKey": "FASELE10"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::GHAEM",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "1.25",
+          "line": 138,
+          "sourceKey": "GHAEM1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::GhotrBadeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "2.5",
+          "line": 642,
+          "sourceKey": "GhotrBadeach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2.5",
+          "line": 653,
+          "sourceKey": "GhotrBadeach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::GhotrReach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "3",
+          "line": 547,
+          "sourceKey": "GhotrReach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "2.7",
+          "line": 561,
+          "sourceKey": "GhotrReach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Ghotreach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "2.7",
+          "line": 546,
+          "sourceKey": "Ghotreach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "3",
+          "line": 560,
+          "sourceKey": "Ghotreach103"
+        },
+        {
+          "suffix": "100",
+          "rawValue": "2.5",
+          "line": 641,
+          "sourceKey": "Ghotreach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2.5",
+          "line": 652,
+          "sourceKey": "Ghotreach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::HAMMALKIND",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 124,
+          "sourceKey": "HAMMALKIND1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::HOISTWEIGHT",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "4500",
+          "line": 135,
+          "sourceKey": "HOISTWEIGHT1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::HOISTWHEEL",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "150",
+          "line": 134,
+          "sourceKey": "HOISTWHEEL1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::JANWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "20",
+          "line": 491,
+          "sourceKey": "JANWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "20",
+          "line": 500,
+          "sourceKey": "JANWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "20",
+          "line": 510,
+          "sourceKey": "JANWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "20",
+          "line": 519,
+          "sourceKey": "JANWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::JANeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "30",
+          "line": 234,
+          "sourceKey": "JANeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "30",
+          "line": 274,
+          "sourceKey": "JANeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "30",
+          "line": 318,
+          "sourceKey": "JANeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "30",
+          "line": 362,
+          "sourceKey": "JANeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "30",
+          "line": 402,
+          "sourceKey": "JANeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "30",
+          "line": 446,
+          "sourceKey": "JANeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::KORBELindex",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "950",
+          "line": 23,
+          "sourceKey": "KORBELindex10"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::LABE",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "7.5",
+          "line": 122,
+          "sourceKey": "LABE1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Lconeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "60",
+          "line": 635,
+          "sourceKey": "Lconeach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "60",
+          "line": 646,
+          "sourceKey": "Lconeach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::LevelPanel",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "0",
+          "line": 28,
+          "sourceKey": "LevelPanel10"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::LevelZirPanel",
+      "records": [
+        {
+          "suffix": "1001",
+          "rawValue": "0",
+          "line": 30,
+          "sourceKey": "LevelZirPanel1001"
+        },
+        {
+          "suffix": "1002",
+          "rawValue": "0",
+          "line": 32,
+          "sourceKey": "LevelZirPanel1002"
+        },
+        {
+          "suffix": "1003",
+          "rawValue": "0",
+          "line": 34,
+          "sourceKey": "LevelZirPanel1003"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::LiveZirPanel",
+      "records": [
+        {
+          "suffix": "1001",
+          "rawValue": "0",
+          "line": 31,
+          "sourceKey": "LiveZirPanel1001"
+        },
+        {
+          "suffix": "1002",
+          "rawValue": "0",
+          "line": 33,
+          "sourceKey": "LiveZirPanel1002"
+        },
+        {
+          "suffix": "1003",
+          "rawValue": "0",
+          "line": 35,
+          "sourceKey": "LiveZirPanel1003"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::MOTLAGH2each",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 253,
+          "sourceKey": "MOTLAGH2each100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 293,
+          "sourceKey": "MOTLAGH2each1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0",
+          "line": 337,
+          "sourceKey": "MOTLAGH2each6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 381,
+          "sourceKey": "MOTLAGH2each101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "0",
+          "line": 421,
+          "sourceKey": "MOTLAGH2each102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "0",
+          "line": 465,
+          "sourceKey": "MOTLAGH2each103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::MOTLAGHeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "850",
+          "line": 252,
+          "sourceKey": "MOTLAGHeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "80",
+          "line": 292,
+          "sourceKey": "MOTLAGHeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "80",
+          "line": 336,
+          "sourceKey": "MOTLAGHeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "850",
+          "line": 380,
+          "sourceKey": "MOTLAGHeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "300",
+          "line": 420,
+          "sourceKey": "MOTLAGHeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "300",
+          "line": 464,
+          "sourceKey": "MOTLAGHeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::OFOGHI",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "0.2",
+          "line": 139,
+          "sourceKey": "OFOGHI1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::OMR",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "30",
+          "line": 136,
+          "sourceKey": "OMR1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::POLKIND",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "-1",
+          "line": 117,
+          "sourceKey": "POLKIND1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::PedEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 594,
+          "sourceKey": "PedEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 615,
+          "sourceKey": "PedEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::PeyHEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "60",
+          "line": 593,
+          "sourceKey": "PeyHEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "60",
+          "line": 614,
+          "sourceKey": "PeyHEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::PeyNameBadEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1",
+          "line": 599,
+          "sourceKey": "PeyNameBadEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1",
+          "line": 620,
+          "sourceKey": "PeyNameBadEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::PeyNameEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1",
+          "line": 596,
+          "sourceKey": "PeyNameEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1",
+          "line": 617,
+          "sourceKey": "PeyNameEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::PeyNameStEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 597,
+          "sourceKey": "PeyNameStEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 618,
+          "sourceKey": "PeyNameStEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::PeytipEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 603,
+          "sourceKey": "PeytipEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 624,
+          "sourceKey": "PeytipEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::RUNWAY",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "375",
+          "line": 133,
+          "sourceKey": "RUNWAY1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::RowboltReach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "4",
+          "line": 549,
+          "sourceKey": "RowboltReach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "4",
+          "line": 563,
+          "sourceKey": "RowboltReach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Rowbolteach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "4",
+          "line": 548,
+          "sourceKey": "Rowbolteach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "4",
+          "line": 562,
+          "sourceKey": "Rowbolteach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::SAP",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 141,
+          "sourceKey": "SAP1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::SECTIONeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 236,
+          "sourceKey": "SECTIONeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 276,
+          "sourceKey": "SECTIONeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0",
+          "line": 320,
+          "sourceKey": "SECTIONeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 364,
+          "sourceKey": "SECTIONeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "0",
+          "line": 404,
+          "sourceKey": "SECTIONeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "0",
+          "line": 448,
+          "sourceKey": "SECTIONeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Save",
+      "records": [
+        {
+          "suffix": "5",
+          "rawValue": "1",
+          "line": 2,
+          "sourceKey": "Save5"
+        },
+        {
+          "suffix": "15",
+          "rawValue": "1",
+          "line": 3,
+          "sourceKey": "Save15"
+        },
+        {
+          "suffix": "7",
+          "rawValue": "1",
+          "line": 4,
+          "sourceKey": "Save7"
+        },
+        {
+          "suffix": "8",
+          "rawValue": "1",
+          "line": 36,
+          "sourceKey": "Save8"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ShamDEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "90",
+          "line": 604,
+          "sourceKey": "ShamDEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "90",
+          "line": 625,
+          "sourceKey": "ShamDEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ShearHEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 607,
+          "sourceKey": "ShearHEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 628,
+          "sourceKey": "ShearHEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TEKRAR",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "50",
+          "line": 137,
+          "sourceKey": "TEKRAR1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TXTBOXH",
+      "records": [
+        {
+          "suffix": "0100",
+          "rawValue": "615",
+          "line": 271,
+          "sourceKey": "TXTBOXH0100"
+        },
+        {
+          "suffix": "1100",
+          "rawValue": "1230",
+          "line": 272,
+          "sourceKey": "TXTBOXH1100"
+        },
+        {
+          "suffix": "01",
+          "rawValue": "0",
+          "line": 314,
+          "sourceKey": "TXTBOXH01"
+        },
+        {
+          "suffix": "11",
+          "rawValue": "0",
+          "line": 315,
+          "sourceKey": "TXTBOXH11"
+        },
+        {
+          "suffix": "21",
+          "rawValue": "-25",
+          "line": 316,
+          "sourceKey": "TXTBOXH21"
+        },
+        {
+          "suffix": "06",
+          "rawValue": "0",
+          "line": 358,
+          "sourceKey": "TXTBOXH06"
+        },
+        {
+          "suffix": "16",
+          "rawValue": "0",
+          "line": 359,
+          "sourceKey": "TXTBOXH16"
+        },
+        {
+          "suffix": "26",
+          "rawValue": "-25",
+          "line": 360,
+          "sourceKey": "TXTBOXH26"
+        },
+        {
+          "suffix": "0101",
+          "rawValue": "615",
+          "line": 399,
+          "sourceKey": "TXTBOXH0101"
+        },
+        {
+          "suffix": "1101",
+          "rawValue": "1230",
+          "line": 400,
+          "sourceKey": "TXTBOXH1101"
+        },
+        {
+          "suffix": "0102",
+          "rawValue": "0",
+          "line": 442,
+          "sourceKey": "TXTBOXH0102"
+        },
+        {
+          "suffix": "1102",
+          "rawValue": "0",
+          "line": 443,
+          "sourceKey": "TXTBOXH1102"
+        },
+        {
+          "suffix": "2102",
+          "rawValue": "-25",
+          "line": 444,
+          "sourceKey": "TXTBOXH2102"
+        },
+        {
+          "suffix": "0103",
+          "rawValue": "0",
+          "line": 486,
+          "sourceKey": "TXTBOXH0103"
+        },
+        {
+          "suffix": "1103",
+          "rawValue": "0",
+          "line": 487,
+          "sourceKey": "TXTBOXH1103"
+        },
+        {
+          "suffix": "2103",
+          "rawValue": "-25",
+          "line": 488,
+          "sourceKey": "TXTBOXH2103"
+        },
+        {
+          "suffix": "2101",
+          "rawValue": "0",
+          "line": 528,
+          "sourceKey": "TXTBOXH2101"
+        },
+        {
+          "suffix": "3101",
+          "rawValue": "0",
+          "line": 529,
+          "sourceKey": "TXTBOXH3101"
+        },
+        {
+          "suffix": "4101",
+          "rawValue": "0",
+          "line": 530,
+          "sourceKey": "TXTBOXH4101"
+        },
+        {
+          "suffix": "2100",
+          "rawValue": "0",
+          "line": 531,
+          "sourceKey": "TXTBOXH2100"
+        },
+        {
+          "suffix": "3100",
+          "rawValue": "0",
+          "line": 532,
+          "sourceKey": "TXTBOXH3100"
+        },
+        {
+          "suffix": "4100",
+          "rawValue": "0",
+          "line": 533,
+          "sourceKey": "TXTBOXH4100"
+        },
+        {
+          "suffix": "3102",
+          "rawValue": "0",
+          "line": 540,
+          "sourceKey": "TXTBOXH3102"
+        },
+        {
+          "suffix": "4102",
+          "rawValue": "0",
+          "line": 541,
+          "sourceKey": "TXTBOXH4102"
+        },
+        {
+          "suffix": "3103",
+          "rawValue": "0",
+          "line": 542,
+          "sourceKey": "TXTBOXH3103"
+        },
+        {
+          "suffix": "4103",
+          "rawValue": "0",
+          "line": 543,
+          "sourceKey": "TXTBOXH4103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TXTBRACE",
+      "records": [
+        {
+          "suffix": "0100",
+          "rawValue": "3",
+          "line": 262,
+          "sourceKey": "TXTBRACE0100"
+        },
+        {
+          "suffix": "1100",
+          "rawValue": "6",
+          "line": 263,
+          "sourceKey": "TXTBRACE1100"
+        },
+        {
+          "suffix": "5100",
+          "rawValue": "10",
+          "line": 264,
+          "sourceKey": "TXTBRACE5100"
+        },
+        {
+          "suffix": "01",
+          "rawValue": "1",
+          "line": 302,
+          "sourceKey": "TXTBRACE01"
+        },
+        {
+          "suffix": "11",
+          "rawValue": "0",
+          "line": 303,
+          "sourceKey": "TXTBRACE11"
+        },
+        {
+          "suffix": "21",
+          "rawValue": "0",
+          "line": 304,
+          "sourceKey": "TXTBRACE21"
+        },
+        {
+          "suffix": "31",
+          "rawValue": "0",
+          "line": 305,
+          "sourceKey": "TXTBRACE31"
+        },
+        {
+          "suffix": "41",
+          "rawValue": "0",
+          "line": 306,
+          "sourceKey": "TXTBRACE41"
+        },
+        {
+          "suffix": "51",
+          "rawValue": "10",
+          "line": 307,
+          "sourceKey": "TXTBRACE51"
+        },
+        {
+          "suffix": "06",
+          "rawValue": "1",
+          "line": 346,
+          "sourceKey": "TXTBRACE06"
+        },
+        {
+          "suffix": "16",
+          "rawValue": "0",
+          "line": 347,
+          "sourceKey": "TXTBRACE16"
+        },
+        {
+          "suffix": "26",
+          "rawValue": "0",
+          "line": 348,
+          "sourceKey": "TXTBRACE26"
+        },
+        {
+          "suffix": "36",
+          "rawValue": "0",
+          "line": 349,
+          "sourceKey": "TXTBRACE36"
+        },
+        {
+          "suffix": "46",
+          "rawValue": "0",
+          "line": 350,
+          "sourceKey": "TXTBRACE46"
+        },
+        {
+          "suffix": "56",
+          "rawValue": "10",
+          "line": 351,
+          "sourceKey": "TXTBRACE56"
+        },
+        {
+          "suffix": "0101",
+          "rawValue": "3",
+          "line": 390,
+          "sourceKey": "TXTBRACE0101"
+        },
+        {
+          "suffix": "1101",
+          "rawValue": "6",
+          "line": 391,
+          "sourceKey": "TXTBRACE1101"
+        },
+        {
+          "suffix": "5101",
+          "rawValue": "10",
+          "line": 392,
+          "sourceKey": "TXTBRACE5101"
+        },
+        {
+          "suffix": "0102",
+          "rawValue": "3",
+          "line": 430,
+          "sourceKey": "TXTBRACE0102"
+        },
+        {
+          "suffix": "1102",
+          "rawValue": "6",
+          "line": 431,
+          "sourceKey": "TXTBRACE1102"
+        },
+        {
+          "suffix": "2102",
+          "rawValue": "0",
+          "line": 432,
+          "sourceKey": "TXTBRACE2102"
+        },
+        {
+          "suffix": "3102",
+          "rawValue": "0",
+          "line": 433,
+          "sourceKey": "TXTBRACE3102"
+        },
+        {
+          "suffix": "4102",
+          "rawValue": "0",
+          "line": 434,
+          "sourceKey": "TXTBRACE4102"
+        },
+        {
+          "suffix": "5102",
+          "rawValue": "10",
+          "line": 435,
+          "sourceKey": "TXTBRACE5102"
+        },
+        {
+          "suffix": "0103",
+          "rawValue": "3",
+          "line": 474,
+          "sourceKey": "TXTBRACE0103"
+        },
+        {
+          "suffix": "1103",
+          "rawValue": "6",
+          "line": 475,
+          "sourceKey": "TXTBRACE1103"
+        },
+        {
+          "suffix": "2103",
+          "rawValue": "0",
+          "line": 476,
+          "sourceKey": "TXTBRACE2103"
+        },
+        {
+          "suffix": "3103",
+          "rawValue": "0",
+          "line": 477,
+          "sourceKey": "TXTBRACE3103"
+        },
+        {
+          "suffix": "4103",
+          "rawValue": "0",
+          "line": 478,
+          "sourceKey": "TXTBRACE4103"
+        },
+        {
+          "suffix": "5103",
+          "rawValue": "10",
+          "line": 479,
+          "sourceKey": "TXTBRACE5103"
+        },
+        {
+          "suffix": "2100",
+          "rawValue": "0",
+          "line": 534,
+          "sourceKey": "TXTBRACE2100"
+        },
+        {
+          "suffix": "3100",
+          "rawValue": "0",
+          "line": 535,
+          "sourceKey": "TXTBRACE3100"
+        },
+        {
+          "suffix": "4100",
+          "rawValue": "0",
+          "line": 536,
+          "sourceKey": "TXTBRACE4100"
+        },
+        {
+          "suffix": "2101",
+          "rawValue": "0",
+          "line": 537,
+          "sourceKey": "TXTBRACE2101"
+        },
+        {
+          "suffix": "3101",
+          "rawValue": "0",
+          "line": 538,
+          "sourceKey": "TXTBRACE3101"
+        },
+        {
+          "suffix": "4101",
+          "rawValue": "0",
+          "line": 539,
+          "sourceKey": "TXTBRACE4101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TedadKOLLBADeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "6",
+          "line": 640,
+          "sourceKey": "TedadKOLLBADeach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "6",
+          "line": 651,
+          "sourceKey": "TedadKOLLBADeach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TedadKOLLeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "6",
+          "line": 639,
+          "sourceKey": "TedadKOLLeach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "6",
+          "line": 650,
+          "sourceKey": "TedadKOLLeach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TedadPanelCol",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "0",
+          "line": 27,
+          "sourceKey": "TedadPanelCol10"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TedadReach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "5",
+          "line": 553,
+          "sourceKey": "TedadReach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "10",
+          "line": 567,
+          "sourceKey": "TedadReach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Tedadeach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "10",
+          "line": 552,
+          "sourceKey": "Tedadeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "5",
+          "line": 566,
+          "sourceKey": "Tedadeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TipboltReach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "8.8",
+          "line": 551,
+          "sourceKey": "TipboltReach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "8.8",
+          "line": 565,
+          "sourceKey": "TipboltReach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Tipbolteach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "8.8",
+          "line": 550,
+          "sourceKey": "Tipbolteach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "8.8",
+          "line": 564,
+          "sourceKey": "Tipbolteach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::TopEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 595,
+          "sourceKey": "TopEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 616,
+          "sourceKey": "TopEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::WRconeach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "40",
+          "line": 555,
+          "sourceKey": "WRconeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "40",
+          "line": 569,
+          "sourceKey": "WRconeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::Wconeach",
+      "records": [
+        {
+          "suffix": "102",
+          "rawValue": "40",
+          "line": 554,
+          "sourceKey": "Wconeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "40",
+          "line": 568,
+          "sourceKey": "Wconeach103"
+        },
+        {
+          "suffix": "100",
+          "rawValue": "50",
+          "line": 636,
+          "sourceKey": "Wconeach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "50",
+          "line": 647,
+          "sourceKey": "Wconeach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ZH",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "2",
+          "line": 210,
+          "sourceKey": "ZH2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::braceSECeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "2",
+          "line": 256,
+          "sourceKey": "braceSECeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "3",
+          "line": 296,
+          "sourceKey": "braceSECeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "3",
+          "line": 340,
+          "sourceKey": "braceSECeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2",
+          "line": 384,
+          "sourceKey": "braceSECeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "2",
+          "line": 424,
+          "sourceKey": "braceSECeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "2",
+          "line": 468,
+          "sourceKey": "braceSECeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::braceSIZEeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "3",
+          "line": 257,
+          "sourceKey": "braceSIZEeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "8",
+          "line": 297,
+          "sourceKey": "braceSIZEeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "8",
+          "line": 341,
+          "sourceKey": "braceSIZEeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "3",
+          "line": 385,
+          "sourceKey": "braceSIZEeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "3",
+          "line": 425,
+          "sourceKey": "braceSIZEeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "3",
+          "line": 469,
+          "sourceKey": "braceSIZEeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::braceeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "3",
+          "line": 255,
+          "sourceKey": "braceeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "2",
+          "line": 295,
+          "sourceKey": "braceeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "2",
+          "line": 339,
+          "sourceKey": "braceeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "3",
+          "line": 383,
+          "sourceKey": "braceeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "3",
+          "line": 423,
+          "sourceKey": "braceeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "3",
+          "line": 467,
+          "sourceKey": "braceeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::c",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "0.098",
+          "line": 65,
+          "sourceKey": "c2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::cheshmeWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "600",
+          "line": 498,
+          "sourceKey": "cheshmeWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "600",
+          "line": 507,
+          "sourceKey": "cheshmeWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "600",
+          "line": 517,
+          "sourceKey": "cheshmeWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "600",
+          "line": 526,
+          "sourceKey": "cheshmeWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::chkwind",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 143,
+          "sourceKey": "chkwind1"
+        },
+        {
+          "suffix": "2",
+          "rawValue": "0",
+          "line": 144,
+          "sourceKey": "chkwind2"
+        },
+        {
+          "suffix": "3",
+          "rawValue": "1",
+          "line": 145,
+          "sourceKey": "chkwind3"
+        },
+        {
+          "suffix": "4",
+          "rawValue": "1",
+          "line": 146,
+          "sourceKey": "chkwind4"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::craneindex",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "1",
+          "line": 22,
+          "sourceKey": "craneindex10"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::deaxBadEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 601,
+          "sourceKey": "deaxBadEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 622,
+          "sourceKey": "deaxBadEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::deaxEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 600,
+          "sourceKey": "deaxEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 621,
+          "sourceKey": "deaxEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::deaxStEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 602,
+          "sourceKey": "deaxStEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 623,
+          "sourceKey": "deaxStEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::demag",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 116,
+          "sourceKey": "demag1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::dist",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "600",
+          "line": 66,
+          "sourceKey": "dist2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::dodkollipey",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "180",
+          "line": 609,
+          "sourceKey": "dodkollipey100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "180",
+          "line": 630,
+          "sourceKey": "dodkollipey101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::dodkollipeybad",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "180",
+          "line": 611,
+          "sourceKey": "dodkollipeybad100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "180",
+          "line": 632,
+          "sourceKey": "dodkollipeybad101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::dodkollipeyst",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 613,
+          "sourceKey": "dodkollipeyst100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 634,
+          "sourceKey": "dodkollipeyst101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::fhb",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "50",
+          "line": 121,
+          "sourceKey": "fhb1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::fix2each",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1",
+          "line": 259,
+          "sourceKey": "fix2each100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "1",
+          "line": 299,
+          "sourceKey": "fix2each1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "1",
+          "line": 343,
+          "sourceKey": "fix2each6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1",
+          "line": 387,
+          "sourceKey": "fix2each101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "1",
+          "line": 427,
+          "sourceKey": "fix2each102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "1",
+          "line": 471,
+          "sourceKey": "fix2each103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::fixeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 258,
+          "sourceKey": "fixeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "1",
+          "line": 298,
+          "sourceKey": "fixeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "1",
+          "line": 342,
+          "sourceKey": "fixeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 386,
+          "sourceKey": "fixeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "1",
+          "line": 426,
+          "sourceKey": "fixeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "1",
+          "line": 470,
+          "sourceKey": "fixeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::flange",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "2",
+          "line": 128,
+          "sourceKey": "flange1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ftb",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "2",
+          "line": 120,
+          "sourceKey": "ftb1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::ghootieach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1",
+          "line": 254,
+          "sourceKey": "ghootieach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "2",
+          "line": 294,
+          "sourceKey": "ghootieach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "2",
+          "line": 338,
+          "sourceKey": "ghootieach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1",
+          "line": 382,
+          "sourceKey": "ghootieach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "2",
+          "line": 422,
+          "sourceKey": "ghootieach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "2",
+          "line": 466,
+          "sourceKey": "ghootieach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::he2each",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "90",
+          "line": 239,
+          "sourceKey": "he2each100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "15",
+          "line": 279,
+          "sourceKey": "he2each1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "15",
+          "line": 323,
+          "sourceKey": "he2each6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "90",
+          "line": 367,
+          "sourceKey": "he2each101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "40",
+          "line": 407,
+          "sourceKey": "he2each102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "40",
+          "line": 451,
+          "sourceKey": "he2each103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::heeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "90",
+          "line": 240,
+          "sourceKey": "heeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "15",
+          "line": 280,
+          "sourceKey": "heeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "15",
+          "line": 324,
+          "sourceKey": "heeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "90",
+          "line": 368,
+          "sourceKey": "heeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "40",
+          "line": 408,
+          "sourceKey": "heeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "40",
+          "line": 452,
+          "sourceKey": "heeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::heeachtruss",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "200",
+          "line": 241,
+          "sourceKey": "heeachtruss100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "200",
+          "line": 281,
+          "sourceKey": "heeachtruss1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "200",
+          "line": 325,
+          "sourceKey": "heeachtruss6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "200",
+          "line": 369,
+          "sourceKey": "heeachtruss101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "200",
+          "line": 409,
+          "sourceKey": "heeachtruss102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "200",
+          "line": 453,
+          "sourceKey": "heeachtruss103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::heightWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "0",
+          "line": 499,
+          "sourceKey": "heightWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "0",
+          "line": 508,
+          "sourceKey": "heightWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "0",
+          "line": 518,
+          "sourceKey": "heightWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "0",
+          "line": 527,
+          "sourceKey": "heightWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::hfWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "30",
+          "line": 493,
+          "sourceKey": "hfWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "30",
+          "line": 502,
+          "sourceKey": "hfWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "30",
+          "line": 512,
+          "sourceKey": "hfWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "30",
+          "line": 521,
+          "sourceKey": "hfWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::hfeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "50",
+          "line": 237,
+          "sourceKey": "hfeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "15",
+          "line": 277,
+          "sourceKey": "hfeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "15",
+          "line": 321,
+          "sourceKey": "hfeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "50",
+          "line": 365,
+          "sourceKey": "hfeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "90",
+          "line": 405,
+          "sourceKey": "hfeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "90",
+          "line": 449,
+          "sourceKey": "hfeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::hfeachtruss",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "100",
+          "line": 238,
+          "sourceKey": "hfeachtruss100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "100",
+          "line": 278,
+          "sourceKey": "hfeachtruss1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "100",
+          "line": 322,
+          "sourceKey": "hfeachtruss6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "100",
+          "line": 366,
+          "sourceKey": "hfeachtruss101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "100",
+          "line": 406,
+          "sourceKey": "hfeachtruss102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "100",
+          "line": 450,
+          "sourceKey": "hfeachtruss103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::hhammale",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "75",
+          "line": 126,
+          "sourceKey": "hhammale1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::hhammaleON",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "50",
+          "line": 127,
+          "sourceKey": "hhammaleON1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::hm2each",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "90",
+          "line": 243,
+          "sourceKey": "hm2each100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "15",
+          "line": 283,
+          "sourceKey": "hm2each1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "15",
+          "line": 327,
+          "sourceKey": "hm2each6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "90",
+          "line": 371,
+          "sourceKey": "hm2each101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "40",
+          "line": 411,
+          "sourceKey": "hm2each102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "40",
+          "line": 455,
+          "sourceKey": "hm2each103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::hmeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "90",
+          "line": 242,
+          "sourceKey": "hmeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "15",
+          "line": 282,
+          "sourceKey": "hmeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "15",
+          "line": 326,
+          "sourceKey": "hmeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "90",
+          "line": 370,
+          "sourceKey": "hmeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "40",
+          "line": 410,
+          "sourceKey": "hmeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "40",
+          "line": 454,
+          "sourceKey": "hmeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::jadval",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "1",
+          "line": 9,
+          "sourceKey": "jadval10"
+        },
+        {
+          "suffix": "11",
+          "rawValue": "2400",
+          "line": 10,
+          "sourceKey": "jadval11"
+        },
+        {
+          "suffix": "12",
+          "rawValue": "6000",
+          "line": 11,
+          "sourceKey": "jadval12"
+        },
+        {
+          "suffix": "13",
+          "rawValue": "1200",
+          "line": 12,
+          "sourceKey": "jadval13"
+        },
+        {
+          "suffix": "14",
+          "rawValue": "0",
+          "line": 13,
+          "sourceKey": "jadval14"
+        },
+        {
+          "suffix": "15",
+          "rawValue": "0",
+          "line": 14,
+          "sourceKey": "jadval15"
+        },
+        {
+          "suffix": "16",
+          "rawValue": "20",
+          "line": 15,
+          "sourceKey": "jadval16"
+        },
+        {
+          "suffix": "17",
+          "rawValue": "1",
+          "line": 16,
+          "sourceKey": "jadval17"
+        },
+        {
+          "suffix": "18",
+          "rawValue": "0",
+          "line": 17,
+          "sourceKey": "jadval18"
+        },
+        {
+          "suffix": "19",
+          "rawValue": "0",
+          "line": 18,
+          "sourceKey": "jadval19"
+        },
+        {
+          "suffix": "110",
+          "rawValue": "0",
+          "line": 19,
+          "sourceKey": "jadval110"
+        },
+        {
+          "suffix": "111",
+          "rawValue": "600",
+          "line": 20,
+          "sourceKey": "jadval111"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "0.003",
+          "line": 21,
+          "sourceKey": "jadval112"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::mokhWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "700",
+          "line": 497,
+          "sourceKey": "mokhWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "1700",
+          "line": 506,
+          "sourceKey": "mokhWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "700",
+          "line": 516,
+          "sourceKey": "mokhWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "1700",
+          "line": 525,
+          "sourceKey": "mokhWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::optro",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "False",
+          "line": 231,
+          "sourceKey": "optro2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::seatindex",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "0",
+          "line": 25,
+          "sourceKey": "seatindex10"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::sectionWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "0",
+          "line": 492,
+          "sourceKey": "sectionWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "0",
+          "line": 501,
+          "sourceKey": "sectionWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "0",
+          "line": 511,
+          "sourceKey": "sectionWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "0",
+          "line": 520,
+          "sourceKey": "sectionWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::shamHEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 605,
+          "sourceKey": "shamHEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 626,
+          "sourceKey": "shamHEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::sheardEach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "50",
+          "line": 606,
+          "sourceKey": "sheardEach100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "50",
+          "line": 627,
+          "sourceKey": "sheardEach101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::sineeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "2",
+          "line": 235,
+          "sourceKey": "sineeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "2",
+          "line": 275,
+          "sourceKey": "sineeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "2",
+          "line": 319,
+          "sourceKey": "sineeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2",
+          "line": 363,
+          "sourceKey": "sineeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "2",
+          "line": 403,
+          "sourceKey": "sineeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "2",
+          "line": 447,
+          "sourceKey": "sineeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::snow",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "0.01",
+          "line": 69,
+          "sourceKey": "snow2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::soil",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "3.2",
+          "line": 71,
+          "sourceKey": "soil2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::spanindex",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "2400",
+          "line": 26,
+          "sourceKey": "spanindex10"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::spantekrar",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "1",
+          "line": 68,
+          "sourceKey": "spantekrar2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::strutt",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "0.3",
+          "line": 164,
+          "sourceKey": "strutt2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::strutw",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "9",
+          "line": 163,
+          "sourceKey": "strutw2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tf2each",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1.5",
+          "line": 245,
+          "sourceKey": "tf2each100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0.8",
+          "line": 285,
+          "sourceKey": "tf2each1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0.8",
+          "line": 329,
+          "sourceKey": "tf2each6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1.5",
+          "line": 373,
+          "sourceKey": "tf2each101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "1.5",
+          "line": 413,
+          "sourceKey": "tf2each102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "1.5",
+          "line": 457,
+          "sourceKey": "tf2each103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tfWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "1.5",
+          "line": 494,
+          "sourceKey": "tfWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "1.5",
+          "line": 503,
+          "sourceKey": "tfWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "1.5",
+          "line": 513,
+          "sourceKey": "tfWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "1.5",
+          "line": 522,
+          "sourceKey": "tfWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tfeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1.5",
+          "line": 244,
+          "sourceKey": "tfeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0.8",
+          "line": 284,
+          "sourceKey": "tfeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0.8",
+          "line": 328,
+          "sourceKey": "tfeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1.5",
+          "line": 372,
+          "sourceKey": "tfeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "1.5",
+          "line": 412,
+          "sourceKey": "tfeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "1.5",
+          "line": 456,
+          "sourceKey": "tfeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tipkolliBase",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "2",
+          "line": 644,
+          "sourceKey": "tipkolliBase100"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "2",
+          "line": 655,
+          "sourceKey": "tipkolliBase101"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tonajindex",
+      "records": [
+        {
+          "suffix": "10",
+          "rawValue": "30000",
+          "line": 24,
+          "sourceKey": "tonajindex10"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tool2each",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0",
+          "line": 251,
+          "sourceKey": "tool2each100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0",
+          "line": 291,
+          "sourceKey": "tool2each1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0",
+          "line": 335,
+          "sourceKey": "tool2each6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0",
+          "line": 379,
+          "sourceKey": "tool2each101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "0",
+          "line": 419,
+          "sourceKey": "tool2each102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "0",
+          "line": 463,
+          "sourceKey": "tool2each103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tooleach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "0.663844130220322",
+          "line": 250,
+          "sourceKey": "tooleach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0.98058067569092",
+          "line": 290,
+          "sourceKey": "tooleach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0.3",
+          "line": 334,
+          "sourceKey": "tooleach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "0.663844130220322",
+          "line": 378,
+          "sourceKey": "tooleach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "0.24514516892273",
+          "line": 418,
+          "sourceKey": "tooleach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "0.24514516892273",
+          "line": 462,
+          "sourceKey": "tooleach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tw2each",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1",
+          "line": 249,
+          "sourceKey": "tw2each100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0.6",
+          "line": 289,
+          "sourceKey": "tw2each1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0.6",
+          "line": 333,
+          "sourceKey": "tw2each6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1",
+          "line": 377,
+          "sourceKey": "tw2each101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "1",
+          "line": 417,
+          "sourceKey": "tw2each102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "1",
+          "line": 461,
+          "sourceKey": "tw2each103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::twWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "0.8",
+          "line": 496,
+          "sourceKey": "twWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "0.8",
+          "line": 505,
+          "sourceKey": "twWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "0.8",
+          "line": 515,
+          "sourceKey": "twWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "0.8",
+          "line": 524,
+          "sourceKey": "twWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::tweach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "1",
+          "line": 248,
+          "sourceKey": "tweach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "0.6",
+          "line": 288,
+          "sourceKey": "tweach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "0.6",
+          "line": 332,
+          "sourceKey": "tweach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "1",
+          "line": 376,
+          "sourceKey": "tweach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "1",
+          "line": 416,
+          "sourceKey": "tweach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "1",
+          "line": 460,
+          "sourceKey": "tweach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::txtPishKhiz",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "2",
+          "line": 123,
+          "sourceKey": "txtPishKhiz1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::web",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "0.8",
+          "line": 125,
+          "sourceKey": "web1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::wf2each",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "40",
+          "line": 247,
+          "sourceKey": "wf2each100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "15",
+          "line": 287,
+          "sourceKey": "wf2each1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "15",
+          "line": 331,
+          "sourceKey": "wf2each6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "40",
+          "line": 375,
+          "sourceKey": "wf2each101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "40",
+          "line": 415,
+          "sourceKey": "wf2each102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "40",
+          "line": 459,
+          "sourceKey": "wf2each103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::wfWP",
+      "records": [
+        {
+          "suffix": "111",
+          "rawValue": "20",
+          "line": 495,
+          "sourceKey": "wfWP111"
+        },
+        {
+          "suffix": "121",
+          "rawValue": "20",
+          "line": 504,
+          "sourceKey": "wfWP121"
+        },
+        {
+          "suffix": "112",
+          "rawValue": "20",
+          "line": 514,
+          "sourceKey": "wfWP112"
+        },
+        {
+          "suffix": "122",
+          "rawValue": "20",
+          "line": 523,
+          "sourceKey": "wfWP122"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::wfeach",
+      "records": [
+        {
+          "suffix": "100",
+          "rawValue": "40",
+          "line": 246,
+          "sourceKey": "wfeach100"
+        },
+        {
+          "suffix": "1",
+          "rawValue": "15",
+          "line": 286,
+          "sourceKey": "wfeach1"
+        },
+        {
+          "suffix": "6",
+          "rawValue": "15",
+          "line": 330,
+          "sourceKey": "wfeach6"
+        },
+        {
+          "suffix": "101",
+          "rawValue": "40",
+          "line": 374,
+          "sourceKey": "wfeach101"
+        },
+        {
+          "suffix": "102",
+          "rawValue": "40",
+          "line": 414,
+          "sourceKey": "wfeach102"
+        },
+        {
+          "suffix": "103",
+          "rawValue": "40",
+          "line": 458,
+          "sourceKey": "wfeach103"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::whb",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "135",
+          "line": 119,
+          "sourceKey": "whb1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::width",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "30",
+          "line": 129,
+          "sourceKey": "width1"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::wind",
+      "records": [
+        {
+          "suffix": "2",
+          "rawValue": "0.00303",
+          "line": 72,
+          "sourceKey": "wind2"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::wpspan",
+      "records": [
+        {
+          "suffix": "11",
+          "rawValue": "2",
+          "line": 490,
+          "sourceKey": "wpspan11"
+        },
+        {
+          "suffix": "12",
+          "rawValue": "2",
+          "line": 509,
+          "sourceKey": "wpspan12"
+        }
+      ]
+    },
+    {
+      "groupKey": "UserInfo::wtb",
+      "records": [
+        {
+          "suffix": "1",
+          "rawValue": "1.5",
+          "line": 118,
+          "sourceKey": "wtb1"
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "engineeringInterpretation": {
+    "units": "unresolved",
+    "suffixMeaning": "unresolved; do not assume physical station or member ID",
+    "memberGeometryGenerated": false,
+    "coordinatesGenerated": false,
+    "solverEnabled": false,
+    "designApproved": false
+  },
+  "validation": {
+    "parserSelfTest": {
+      "passed": 7,
+      "total": 7,
+      "tests": [
+        {
+          "name": "equals-separator",
+          "pass": true
+        },
+        {
+          "name": "colon-separator",
+          "pass": true
+        },
+        {
+          "name": "indexed-suffix-preserved",
+          "pass": true
+        },
+        {
+          "name": "duplicate-key-warning",
+          "pass": true
+        },
+        {
+          "name": "unparsed-line-warning",
+          "pass": true
+        },
+        {
+          "name": "fail-closed-flags",
+          "pass": true
+        },
+        {
+          "name": "line-provenance",
+          "pass": true
+        }
+      ]
+    },
+    "actualSourceWarnings": 0,
+    "sourceFileWasModified": false
+  }
+}
