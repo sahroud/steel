@@ -96,14 +96,13 @@ function selfTest(){
  const nodes=[
   {id:"L0",x:0,y:0,z:0,kind:"base"},{id:"L1",x:0,y:0,z:10,kind:"base"},{id:"L2",x:0,y:0,z:20,kind:"base"},
   {id:"R0",x:10,y:0,z:0,kind:"base"},{id:"R1",x:10,y:0,z:10,kind:"base"},{id:"R2",x:10,y:0,z:20,kind:"base"},
-  {id:"F0",x:0,y:0,z:0,kind:"base"},{id:"F1",x:5,y:0,z:0,kind:"endwall-base"},{id:"F2",x:10,y:0,z:0,kind:"base"},
-  {id:"B0",x:0,y:0,z:20,kind:"base"},{id:"B1",x:5,y:0,z:20,kind:"endwall-base"},{id:"B2",x:10,y:0,z:20,kind:"base"}
+  {id:"F1",x:5,y:0,z:0,kind:"endwall-base"},{id:"B1",x:5,y:0,z:20,kind:"endwall-base"}
  ];
  const model={geometry:g,nodes,members:[]};
  const wallEnvelope={front:{material:"brick",supportMode:"foundation-bearing"},rear:{material:"brick",supportMode:"foundation-bearing"},left:{material:"brick",supportMode:"foundation-bearing"},right:{material:"brick",supportMode:"foundation-bearing"}};
  const brief={wallEnvelope,masonry:{thicknessMm:200,unitWeightKNm3:18,plasterThicknessMm:0}};
  root.SteelDesignCore={getData:()=>brief};
- root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:60,openingAreaM2:0,weightKN:2160}))})};
+ root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:(face==="front"||face==="rear")?60:100,openingAreaM2:0,weightKN:(face==="front"||face==="rear")?216:360}))})};
  const a=audit(model);
  t("foundation-bearing brick walls produce four face transfers",()=>a.success&&a.rows.length===4&&a.nodalLoads.length===12);
  t("tributary nodal forces equal total wall dead weight",()=>Math.abs(a.nodalLoads.reduce((s,x)=>s-x.values[1]/1000,0)-a.totalWeightKN)<1e-8);
@@ -112,8 +111,8 @@ function selfTest(){
  t("unknown support mode is blocked",()=>{brief.wallEnvelope.left.supportMode="unknown";const x=audit(model);brief.wallEnvelope.left.supportMode="foundation-bearing";return !x.success&&x.issues.some(v=>v.includes("اتکای مستقیم"));});
  t("steel-secondary support remains explicitly unsupported",()=>{brief.wallEnvelope.left.supportMode="steel-secondary";const x=audit(model);brief.wallEnvelope.left.supportMode="foundation-bearing";return !x.success;});
  t("non-brick wall requires entered surface weight",()=>{brief.wallEnvelope.left.material="sandwich-panel";const x=audit(model);brief.wallEnvelope.left.material="brick";return !x.success&&x.issues.some(v=>v.includes("وزن سطحی"));});
- t("wall openings block uniform tributary distribution",()=>{root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:59,openingAreaM2:1,weightKN:2124}))})};const x=audit(model);root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:60,openingAreaM2:0,weightKN:2160}))})};return !x.success&&x.issues.some(v=>v.includes("بازشو"));});
- t("missing base support coverage is blocked",()=>{const x=audit({...model,nodes:nodes.filter(n=>n.id!=="L1")});return !x.success;});
+ t("wall openings block uniform tributary distribution",()=>{root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:59,openingAreaM2:1,weightKN:2124}))})};const x=audit(model);root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:(face==="front"||face==="rear")?60:100,openingAreaM2:0,weightKN:(face==="front"||face==="rear")?216:360}))})};return !x.success&&x.issues.some(v=>v.includes("بازشو"));});
+ t("missing base support coverage is blocked",()=>{const x=audit({...model,nodes:nodes.filter(n=>n.id!=="L0")});return !x.success;});
  t("analysis approval remains disabled",()=>a.analysisEnabled===false&&a.designApproved===false);
  root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
