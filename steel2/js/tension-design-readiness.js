@@ -38,15 +38,15 @@ function extractGroupTensionDemand(group){
  const env=root.SteelMemberForceEnvelope?.getLast?.(),model=root.SteelStructuralModel?.getData?.();
  const fail=reason=>({ready:false,reason,forceDemandKN:null,memberCount:0});
  if(!env||!model||!Array.isArray(env.cases)||!env.cases.length)return fail("پوش نیرو یا مدل جاری موجود نیست.");
- if(env.allCasesEquilibriumOK!==true||(env.invalidForceVectors||[]).length||(env.analysisMemberSetMismatchCases||[]).length||(env.unreportedMemberIds||[]).length||(env.duplicateMemberIdsByCase||[]).length)return fail("پوش نیرو از نظر تعادل یا پوشش اعضا/بردارها کامل نیست.");
+ if(env.allCasesEquilibriumOK!==true||(env.invalidForceVectors||[]).length||(env.analysisMemberSetMismatchCases||[]).length||(env.unreportedMemberIds||[]).length||(env.duplicateMemberIdsByCase||[]).length||(env.extraMemberIds||[]).length)return fail("پوش نیرو از نظر تعادل یا پوشش اعضا/بردارها کامل نیست.");
  const sign=env.localEndForceConvention?.verifiedSignCases?.axialTension;
  if(env.localEndForceConvention?.version!==1||sign?.endI!=="negative Fx_i"||sign?.endJ!=="positive Fx_j")return fail("قرارداد علامت محوری حل‌گر معتبر نیست.");
  const members=model.members.filter(m=>m.sectionKey===group);
  if(!members.length)return fail("عضوی از این گروه در مدل جاری وجود ندارد.");
  const rows=new Map((env.members||[]).map(m=>[String(m.id),m]));
  const labels=env.cases.map(c=>String(c.label||""));
- if(!labels.length||new Set(labels).size!==labels.length)return fail("نام ترکیبات بار خالی یا تکراری است.");
- let peak=0;
+ if(!labels.length||new Set(labels).size!==labels.length||labels.some(x=>!x.trim()))return fail("نام ترکیبات بار خالی یا تکراری است.");
+ let peak=0,governing=null;
  for(const member of members){
   const row=rows.get(String(member.id));
   if(!row||!Array.isArray(row.simultaneousCases)||row.simultaneousCases.length!==labels.length)return fail("پوش نیرو برای عضو "+member.id+" کامل نیست.");
@@ -55,10 +55,10 @@ function extractGroupTensionDemand(group){
   for(const label of labels){
    const demand=root.SteelMemberForceEnvelope?.getSimultaneousCaseDemand?.(row,label);
    if(!demand||!Number.isFinite(demand.endI?.tension)||!Number.isFinite(demand.endJ?.tension))return fail("تقاضای کششی هم‌زمان عضو "+member.id+" معتبر نیست.");
-   peak=Math.max(peak,demand.endI.tension,demand.endJ.tension);
+   for(const [end,value] of [["I",demand.endI.tension],["J",demand.endJ.tension]])if(value>peak){peak=value;governing={memberId:String(member.id),caseLabel:label,end,tensionN:value};}
   }
  }
- return {ready:true,forceDemandKN:peak/1000,memberCount:members.length,caseCount:labels.length,source:"FEM envelope; tension-positive end normalization"};
+ return {ready:true,forceDemandKN:peak/1000,memberCount:members.length,caseCount:labels.length,governing,source:"FEM envelope; tension-positive end normalization"};
 }
 function audit(input){
  const src=input?normalize(input):readUI(),issues=[],warnings=[],groups={};
@@ -84,7 +84,7 @@ function audit(input){
   const demandBridge=extractGroupTensionDemand(g),manualDemand=Number(d.forceDemandKN)>0?Number(d.forceDemandKN):null;
   if(!demandBridge.ready){if(manualDemand===null)warnings.push(label+": نیروی کششی تقاضا از پوش FEM استخراج نشد؛ "+demandBridge.reason);}
   else if(manualDemand!==null&&Math.abs(manualDemand-demandBridge.forceDemandKN)>Math.max(0.01,demandBridge.forceDemandKN*0.01))warnings.push(label+": مقدار دستی تقاضا با بیشینه کشش استخراج‌شده از FEM بیش از ۱٪ اختلاف دارد؛ منبع و ترکیب کنترل شوند.");
-  groups[g]={label,complete:local.length===0,issues:local,connectionType:d.connectionType,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,forceDemandKN:manualDemand??(demandBridge.ready?demandBridge.forceDemandKN:null),computedForceDemandKN:demandBridge.forceDemandKN,demandSource:demandBridge.ready?demandBridge.source:null,demandMemberCount:demandBridge.memberCount,demandCaseCount:demandBridge.caseCount};
+  groups[g]={label,complete:local.length===0,issues:local,connectionType:d.connectionType,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,forceDemandKN:manualDemand??(demandBridge.ready?demandBridge.forceDemandKN:null),computedForceDemandKN:demandBridge.forceDemandKN,demandSource:demandBridge.ready?demandBridge.source:null,demandMemberCount:demandBridge.memberCount,demandCaseCount:demandBridge.caseCount,governingTension:demandBridge.governing};
   local.forEach(x=>issues.push(label+": "+x));
  });
  return {schemaVersion:1,readyForDataReview:issues.length===0,issues,warnings,groups,
@@ -105,7 +105,7 @@ function render(){
 }
 function renderResult(r){
  const host=$("tensionDesignResults");if(!host)return;
- const demandRows=Object.values(r.groups||{}).map(g=>"<li>"+esc(g.label)+": "+(Number.isFinite(g.computedForceDemandKN)?g.computedForceDemandKN.toFixed(3)+" kN":"استخراج نشده")+" — "+(g.demandSource?esc(g.demandSource):"نیازمند بررسی پوش نیرو")+"</li>").join("");
+ const demandRows=Object.values(r.groups||{}).map(g=>"<li>"+esc(g.label)+": "+(Number.isFinite(g.computedForceDemandKN)?g.computedForceDemandKN.toFixed(3)+" kN":"استخراج نشده")+(g.governingTension?" — "+esc(g.governingTension.memberId)+" / "+esc(g.governingTension.caseLabel)+" / انتهای "+esc(g.governingTension.end):"")+" — "+(g.demandSource?esc(g.demandSource):"نیازمند بررسی پوش نیرو")+"</li>").join("");
  host.innerHTML="<h4>"+(r.readyForDataReview?"داده‌های اولیه تکمیل شده‌اند؛ هنوز ظرفیت محاسبه نشده":"ورودی‌های ناقص برای طراحی کششی")+"</h4><h4>بیشینه تقاضای کششی استخراج‌شده از FEM</h4><ul>"+demandRows+"</ul>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در این ممیزی شناسایی نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+"<div class='notice'>"+esc(r.note)+"<br>"+esc(r.disclaimer)+"</div>";
 }
 function init(){
@@ -124,7 +124,7 @@ function selfTest(){
  root.SteelMemberForceEnvelope={getLast:()=>baseEnv,getSimultaneousCaseDemand:(row,label)=>{const c=row.simultaneousCases.find(x=>x.label===label);return {endI:{tension:Math.max(0,-c.endI.N)},endJ:{tension:Math.max(0,c.endJ.N)}};}};
  root.SteelStructuralModel={getData:()=>({members:[{id:"B1",sectionKey:"roofBrace"}]})};
  const tests=[],t=(name,fn)=>{try{tests.push({name,pass:fn()===true});}catch(e){tests.push({name,pass:false,error:e.message});}};
- t("extracts maximum tension from both ends and all cases",()=>{const r=extractGroupTensionDemand("roofBrace");return r.ready&&r.forceDemandKN===120&&r.memberCount===1&&r.caseCount===2;});
+ t("extracts maximum tension and governing member, case and end",()=>{const r=extractGroupTensionDemand("roofBrace");return r.ready&&r.forceDemandKN===120&&r.memberCount===1&&r.caseCount===2&&r.governing.memberId==="B1"&&r.governing.caseLabel==="T1"&&r.governing.end==="J";});
  t("blocks extraction when equilibrium is not verified",()=>{const old=baseEnv.allCasesEquilibriumOK;baseEnv.allCasesEquilibriumOK=false;const r=extractGroupTensionDemand("roofBrace");baseEnv.allCasesEquilibriumOK=old;return !r.ready;});
  t("blocks extraction when force sign convention is unknown",()=>{const old=baseEnv.localEndForceConvention;baseEnv.localEndForceConvention={version:2};const r=extractGroupTensionDemand("roofBrace");baseEnv.localEndForceConvention=old;return !r.ready;});
  t("blocks incomplete per-member combination coverage",()=>{const old=baseEnv.members[0].simultaneousCases;baseEnv.members[0].simultaneousCases=old.slice(0,1);const r=extractGroupTensionDemand("roofBrace");baseEnv.members[0].simultaneousCases=old;return !r.ready;});
