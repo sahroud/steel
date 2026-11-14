@@ -35,30 +35,10 @@
     const el=$(id); return !el || el.value.trim()==="" || Number(el.value)===0;
   }
   function autoPrepareSections(rows) {
-    if(window.SteelSections?.validate?.()) {
-      addLine(rows,"مشخصات مصالح و مقاطع موجود",true,"اطلاعات فعلی حفظ شد و بازنویسی نشد.");
-      return true;
-    }
-    const emptyProfile = ["column","rafter"].every(p=>
-      blankOrZero(p+"Profile") &&
-      ["A","Ix","Iy","SxTop","SxBottom","Sy"].every(k=>blankOrZero(p+k))
-    );
-    if(!emptyProfile) {
-      addLine(rows,"تکمیل مشخصات مقاطع",false,"اطلاعات مقطع ناقص یا ناسازگار است؛ برای جلوگیری از جایگزینی ناخواسته، مقادیر موجود را خودکار بازنویسی نکردم.");
-      return false;
-    }
-    const girder=window.SteelGirder;
-    if(!girder) {
-      addLine(rows,"تولید مشخصات اولیه ستون و رفتر",false,"ماژول تیرورق در دسترس نیست.");
-      return false;
-    }
-    ["column","rafter"].forEach(member=>{
-      girder.calculate(member);
-      if(girder.members?.[member]?.result) girder.transfer(member);
-    });
-    const valid=window.SteelSections.validate();
-    addLine(rows,"محاسبه و انتقال خودکار خواص هندسی ستون و رفتر",valid,
-      valid?"خواص A، Ix، Iy و مدول‌های مقطع از ابعاد تیرورق فعلی محاسبه و منتقل شد. ابعاد پیش‌فرض/انتخابی باید با طرح واقعی تطبیق داده شوند.":"محاسبه تیرورق انجام نشد یا ابعاد آن معتبر نیست.");
+    const valid=window.SteelSections?.validate?.()===true;
+    addLine(rows,"اعتبارسنجی مقاطع اعضای اصلی",valid,
+      valid?"مقاطع و خواص هندسی واردشده حفظ شدند.":
+      "مقاطع ستون و رفتر باید از طراحی معتبر یا ابعاد/مشخصات صریح تعیین شوند. تولید مقطع از مقادیر پیش‌فرض رابط کاربری در اجرای خودکار متوقف شد.");
     return valid;
   }
   function prepareMaterial(rows) {
