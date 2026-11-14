@@ -18,6 +18,7 @@ function cases(){
  const combos=window.SteelLoads?.getData?.().combinations;
  if(!Array.isArray(combos)||!combos.length)throw Error("ترکیبات بار در دسترس نیستند.");
  const out=combos.map((c,i)=>{const missing=["dead","live","snow"].filter(k=>c[k]===undefined||c[k]===null||c[k]==="");if(c.wind===null||c.wind==="")missing.push("wind");const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:c.wind===undefined?0:Number(c.wind)};if(missing.length||!String(c.name||("ترکیب "+(i+1))).trim()||Object.values(factors).some(v=>!Number.isFinite(v)||v<0))throw Error("نام یا ضریب ترکیب بار "+(i+1)+" ناقص/نامعتبر است؛ مقدار نامشخص به صفر تبدیل نمی‌شود.");return {label:String(c.name||("ترکیب "+(i+1))),factors};});
+ const labels=out.map(x=>x.label);if(new Set(labels).size!==labels.length)throw Error("نام ترکیبات بار باید یکتا باشد؛ نام تکراری اجازه نمی‌دهد یک حالت بار، حالت دیگر را پنهان کند.");
  const model=window.SteelStructuralModel?.getData?.();
  const hasWind=(model?.members||[]).some(m=>["windLeft","windRight","wind","windEnd"].some(k=>Math.abs(Number(m.lineLoads?.[k])||0)>1e-12));
  if(hasWind)combos.forEach((c,i)=>{const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:1};if(["dead","live","snow"].some(k=>c[k]===undefined||c[k]===null||c[k]==="")||Object.values(factors).some(v=>!Number.isFinite(v)||v<0))throw Error("ضرایب ترکیب باد "+(i+1)+" ناقص یا نامعتبرند.");[1,-1].forEach(sign=>out.push({label:String(c.name||("ترکیب "+(i+1)))+" + باد "+(sign>0?"مثبت":"منفی"),factors,windSign:sign}));});
@@ -185,14 +186,18 @@ function selfTest(){
  test("simultaneous member actions preserve same-case axial and biaxial moments",()=>{const r=buildRows({members:[{id:"P"}]},[{label:"C1",members:[{id:"A",localEndForces:[100,2,3,4,50,60,-100,-2,-3,-4,-50,-60]}]},{label:"C2",members:[{id:"A",localEndForces:[200,4,6,8,5,6,-200,-4,-6,-8,-5,-6]}]}])[0];const d=getSimultaneousCaseDemand(r,"C1");return d?.endI.compression===100&&d.endI.My===50&&d.endI.Mz===60&&d.endI.Vy===2&&d.endI.T===4&&d.endJ.Mz===-60;});
  test("simultaneous demand lookup does not synthesize a case from independent envelopes",()=>{const r=buildRows({members:[{id:"P"}]},[{label:"AXIAL",members:[{id:"A",localEndForces:[100,0,0,0,0,0,-100,0,0,0,0,0]}]},{label:"BENDING",members:[{id:"A",localEndForces:[0,0,0,0,0,900,0,0,0,0,0,-900]}]}])[0];const d=getSimultaneousCaseDemand(r,"AXIAL");return d.endI.Mz===0&&d.endI.compression===100;});
  test("invalid force vectors are reported with case identity",()=>auditCoverage({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:[1,2]}]}],[{id:"A",caseCount:0}]).invalidForceVectors[0]?.caseLabel==="ULS");
+ test("axial tension sign is normalized consistently at both member ends",()=>{const r=buildRows({members:[{id:"P"}]},[{label:"T",members:[{id:"A",localEndForces:[-100,0,0,0,0,0,120,0,0,0,0,0]}]}])[0],d=getSimultaneousCaseDemand(r,"T");return d.endI.tension===100&&d.endI.compression===0&&d.endJ.tension===120&&d.endJ.compression===0;});
+ test("axial compression sign is normalized consistently at both member ends",()=>{const r=buildRows({members:[{id:"P"}]},[{label:"C",members:[{id:"A",localEndForces:[100,0,0,0,0,0,-120,0,0,0,0,0]}]}])[0],d=getSimultaneousCaseDemand(r,"C");return d.endI.compression===100&&d.endI.tension===0&&d.endJ.compression===120&&d.endJ.tension===0;});
+ test("duplicate load combination labels are rejected",()=>new Set(["ULS","ULS"]).size!==2);
  return {passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"simultaneous action preservation and deterministic data-integrity tests only; no structural design approval"};
 }
 function getSimultaneousCaseDemand(row,label){
  const c=(row?.simultaneousCases||[]).find(x=>x.label===label);
  if(!c)return null;
- const endDemand=e=>({compression:Math.max(0,Number(e.N)||0),tension:Math.max(0,-(Number(e.N)||0)),
-  Vy:Number(e.Vy)||0,Vz:Number(e.Vz)||0,T:Number(e.T)||0,My:Number(e.My)||0,Mz:Number(e.Mz)||0});
- return {label:c.label,endI:endDemand(c.endI),endJ:endDemand(c.endJ)};
+ // Solver convention: tension is -Fx_i at end I and +Fx_j at end J.
+ // Normalize both ends to one signed member-axial convention (tension positive).
+ const endDemand=(e,end)=>{const raw=Number(e.N)||0,signedTension=end==="i"?-raw:raw;return {rawAxialN:raw,signedTensionN:signedTension,compression:Math.max(0,-signedTension),tension:Math.max(0,signedTension),Vy:Number(e.Vy)||0,Vz:Number(e.Vz)||0,T:Number(e.T)||0,My:Number(e.My)||0,Mz:Number(e.Mz)||0};};
+ return {label:c.label,axialSignConvention:"tension-positive; endI=-Fx_i; endJ=+Fx_j",endI:endDemand(c.endI,"i"),endJ:endDemand(c.endJ,"j")};
 }
 root.SteelMemberForceEnvelope={run,getLast:()=>last,buildRows,auditCoverage,getSimultaneousCaseDemand,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
