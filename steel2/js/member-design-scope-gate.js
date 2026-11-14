@@ -8,7 +8,8 @@ const GROUPS=[
  {key:"column",label:"ستون",family:"hot-rolled-I",required:["section","compression","simultaneous-demand","biaxial-flexure","second-order","local-slenderness","connection"]},
  {key:"rafter",label:"تیر/رفتر",family:"hot-rolled-I-or-tapered",required:["section","section-forces","flexure","ltb","shear","interaction","deflection"]},
  {key:"roofPurlin",label:"لاپه سقف",family:"cold-formed-or-hot-rolled",required:["exact-profile","cold-formed-local-distortional","restraint","biaxial-actions","shear","deflection","connections"]},
- {key:"wallGirt",label:"قید دیوار",family:"cold-formed-or-hot-rolled",required:["exact-profile","cold-formed-local-distortional","restraint","biaxial-actions","shear","deflection","connections"]}
+ {key:"wallGirt",label:"قید دیوار",family:"cold-formed-or-hot-rolled",required:["exact-profile","cold-formed-local-distortional","restraint","biaxial-actions","shear","deflection","connections"]},
+ {key:"braces",label:"مهاربندهای طولی سقف و دیوار",family:"brace-specific",required:["brace-force-demand","tension","compression","unbraced-length","connections","collector-diaphragm"]}
 ];
 const SUPPORT={
  column:["compression-global-buckling-limited"],
@@ -31,8 +32,9 @@ const LABELS={
 function audit(){
  const env=root.SteelMemberForceEnvelope?.getLast?.()||null;
  const rows=GROUPS.map(g=>{
-  const members=Array.isArray(env?.members)?env.members.filter(m=>m.sectionKey===g.key):[];
+  const members=Array.isArray(env?.members)?env.members.filter(m=>g.key==="braces"?["wallBrace","roofBrace"].includes(m.sectionKey):m.sectionKey===g.key):[];
   const missing=[...g.required];
+  if(g.key==="braces"&&root.SteelBraceForceDemandAudit?.audit&&env){const br=root.SteelBraceForceDemandAudit.audit(env,root.SteelStructuralModel?.getData?.());if(br.success)missing.splice(missing.indexOf("brace-force-demand"),1);}
   if(!members.length)missing.unshift("وجود اعضا و نیروهای معتبر در مدل");
   if(g.key==="column"&&root.SteelCompressionCapacity?.analyze)missing.splice(missing.indexOf("compression"),1);
   if(g.key==="column"&&members.length){
@@ -55,12 +57,13 @@ function selfTest(){
  root.SteelMemberForceEnvelope={getLast:()=>({members:[{sectionKey:"column",simultaneousCases:[{}]},{sectionKey:"rafter"},{sectionKey:"roofPurlin"},{sectionKey:"wallGirt"}]})};
  const r=audit();root.SteelMemberForceEnvelope=saved;
  const tests=[
-  {name:"four primary member families reported",ok:r.rows.length===4},
+  {name:"four primary member families and longitudinal braces reported",ok:r.rows.length===5},
   {name:"column global compression engine remains limited",ok:r.rows[0].availableLimitedEngines.includes("compression-global-buckling-limited")&&r.rows[0].designApproved===false},
   {name:"column remains blocked by missing full design checks",ok:r.rows[0].status==="blocked"&&r.rows[0].missing.some(x=>x.includes("خمش حول دو محور"))},
   {name:"rafter requires internal force diagram and LTB",ok:r.rows[1].missing.some(x=>x.includes("نمودار معتبر"))&&r.rows[1].missing.some(x=>x.includes("کمانش جانبی"))},
   {name:"purlin requires cold-formed local and distortional checks",ok:r.rows[2].missing.some(x=>x.includes("کمانش موضعی"))},
   {name:"girt follows a section-specific route",ok:r.rows[3].missing.length>0},
+  {name:"brace group remains blocked pending capacity and collector checks",ok:r.rows[4].status==="blocked"&&r.rows[4].missing.some(x=>x.includes("کمانش کلی"))&&r.rows[4].missing.some(x=>x.includes("جمع‌کننده"))},
   {name:"no group receives design approval",ok:r.rows.every(x=>x.designApproved===false)&&r.designApproved===false}
  ];
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,tests};
