@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "reference-project-source-extraction-ledger",
+  "projectId": "SHAHROUD-24X60-CRANE30T-1396",
+  "status": "legacy_values_transcribed_pending_sheet_cell_provenance_and_independent_recalculation",
+  "sourceFiles": [
+    {
+      "path": "/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58).xlsx",
+      "fileId": "id:K87BL9jA6x0AAAAAAACK1A",
+      "role": "legacy calculation workbook"
+    },
+    {
+      "path": "/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58).SPS",
+      "fileId": "id:K87BL9jA6x0AAAAAAACKxQ",
+      "role": "native input settings"
+    }
+  ],
+  "extractedSettings": {
+    "softwareVersion": "6.1.0",
+    "span_mm": 24000,
+    "length_mm": 60000,
+    "frameCount": 11,
+    "frameSpacing_mm": 6000,
+    "roofSlope_percent": 20,
+    "eaveHeight_mm": 12800,
+    "ridgeHeight_mm": 15150,
+    "craneRailElevation_mm": 9500,
+    "craneRatedCapacity_kg": 30000,
+    "craneCountSetting": 1,
+    "craneType": 1,
+    "craneTrolleyMass_kg": 4500,
+    "hoistWheelSpacing_mm": 1500,
+    "runwayWheelSpacing_mm": 3750,
+    "verticalImpactFactor": 1.25,
+    "horizontalImpactFactor_transverse": 0.2,
+    "horizontalImpactFactor_longitudinal": 0.2,
+    "bridgeCountInCalculation": 2,
+    "runwayBeamLength_mm": 6000,
+    "foundationSoilParameter_legacy": 3.2,
+    "concreteCylinderStrength_kgf_cm2": 210,
+    "footingDimensions_mm": {
+      "width": 1000,
+      "length": 1000,
+      "depth": 600
+    },
+    "purlinSpacing_mm": 800,
+    "legacyWindPressure_kN_m2": 0.303,
+    "legacyGroundSnow_kgf_m2": 100,
+    "legacySteelFy_kgf_cm2": 2400,
+    "legacySeismicResponseFactor": 3.5,
+    "legacySeismicCoefficient": 0.098
+  },
+  "craneLegacyCalculations": {
+    "bridgeType1": {
+      "nominalCapacity_kg": 30000,
+      "trolleyMass_kg": 4500,
+      "bridgeCount": 2,
+      "trolleyWheelSpacing_mm": 1500,
+      "bridgeSpan_mm": 24000,
+      "verticalImpactFactor": 1.25,
+      "transverseHorizontalImpactFactor": 0.2,
+      "longitudinalHorizontalImpactFactor": 0.2,
+      "reportedTrolleyWheelReaction_withImpact_t": 10.78,
+      "reportedTrolleyWheelReaction_withoutImpact_t": 8.63,
+      "reportedTransverseForce_kgf": 1725,
+      "reportedBridgeMaximumMoment_kgf_cm": 15561001,
+      "bridgePlateSection": {
+        "flange": "PL 50 x 2 cm",
+        "web": "PL 135 x 1.5 cm"
+      },
+      "reportedArea_cm2": 605,
+      "reportedMajorAxisInertia_cm4": 1553610,
+      "reportedMinorAxisInertia_cm4": 165774,
+      "fatigueCycles": 547500,
+      "fatigueBasis": "50 load movements/day x 30 years x 365 days"
+    },
+    "runwayGirderType1": {
+      "runwayWheelSpacing_mm": 3750,
+      "approximateBridgeMass_t_values": [
+        22.8,
+        25.28
+      ],
+      "runwayGirderLength_mm": 6000,
+      "reportedMaximumWheelReaction_withImpact_kgf": 26588,
+      "reportedMaximumWheelReaction_withoutImpact_kgf": 22410,
+      "reportedMinimumReaction_withoutImpact_kgf": 6238,
+      "reportedTransverseForce_per_wheel_kgf": 1725,
+      "reportedLongitudinalForce_per_wheel_kgf": 2865,
+      "reportedMaximumMajorAxisMoment_kgf_cm": 3988166,
+      "reportedMaximumMinorAxisMoment_kgf_cm": 258750,
+      "status": "legacy_calculation_only_requires_reconstruction_of_load_path_and_supplier_reactions"
+    }
+  },
+  "foundationLegacyCalculations": {
+    "footingDimensions_mm": {
+      "width": 1000,
+      "length": 1000,
+      "depth": 600
+    },
+    "reportedConcreteStrength_kgf_cm2": 210,
+    "reportedConcreteUnitWeight_kgf_m3": 2400,
+    "reportedMiddleColumnUplift_kgf": 4084,
+    "reportedMaximumUplift_wind_or_seismic_kgf": 7243,
+    "reportedFootingStabilitySafetyFactors": [
+      4.8,
+      2.3
+    ],
+    "status": "do_not_reuse_as_approved_foundation_design; verify reactions, groundwater, soil profile, footing self-weight, passive resistance and reinforcement"
+  },
+  "memberSectionHints": {
+    "craneBridgePlateSection": {
+      "flange": "PL 50 x 2 cm",
+      "web": "PL 135 x 1.5 cm"
+    },
+    "runwayGirderWorkbookFields": {
+      "webDepth_cm": 85,
+      "webThickness_cm": 0.6,
+      "flangeWidth_cm": 15,
+      "flangeThickness_cm": 1
+    },
+    "rafterAndColumnStationParameters": "SPS contains station-indexed web/flange/haunch parameters (e.g. JANeach*, hfeach*, heeach*, hmeach*, tfeach*, tweach*, wfeach*, braceeach*); decode key semantics and station geometry before importing as section schedule",
+    "purlinSpacing_mm": 800,
+    "purlinSection": "not safely resolved from extracted text; keep null pending workbook cell mapping"
+  },
+  "legacyLoadCombinations": [
+    "COMB1 = 1D",
+    "COMB2 = 1D + 1S + 1L",
+    "COMB3 = 0.75D + 0.75W",
+    "COMB4 = 0.75D + 0.75W + 0.375S + 0.75L",
+    "COMB5 = 0.75D + 0.375W + 0.75S + 0.75L",
+    "COMB6 = 0.75D + 0.375W2 + 0.75S",
+    "COMB7 = 1D + 1S + 1CRANE1 + 1L",
+    "COMB8 = 1D + 1S + 1CRANE2 + 1L",
+    "COMB9 = 1D + 1S + 1CRANE3 + 1L",
+    "COMB10 = 1D + 1S + 1CRANE4 + 1L",
+    "COMB11 = 1D + 1CRANE4",
+    "COMB12 = 1D + 1CRANE3",
+    "COMB13 = 1D + 1CRANE2",
+    "COMB14 = 1D + 1CRANE1",
+    "COMB15 = 0.75D + 0.75W + 0.75CRANE8",
+    "COMB16 = 0.75D + 0.75E"
+  ],
+  "reconciliationFlags": [
+    "Bridge mass appears as 22.8 t in narrative calculation and 25.28 t in workbook settings/calculation; resolve against manufacturer data.",
+    "Workbook shows multiple wheel reaction sets and crane variants (CRANE1..CRANE10); do not collapse them into one generic 30 t load.",
+    "Trolley reaction values differ across cases and need exact load-case, bridge and wheel-position mapping.",
+    "SPS contains detailed station-indexed geometry parameters, but key-to-physical-member semantics and coordinate positions are not yet decoded.",
+    "The legacy combinations are not current Iranian M6 LRFD combinations and must not be mapped by name or factor without formal recalculation.",
+    "The 1000x1000x600 mm footing dimensions and uplift safety factors are historical inputs/results, not a verified foundation design."
+  ],
+  "importPolicy": {
+    "sourceValuesAre": "legacy_transcription",
+    "provenanceRequired": true,
+    "unitsExplicit": true,
+    "unknowns": "null",
+    "doNotActivateSolverUntil": "member station geometry, node connectivity, support stiffness, exact crane wheel arrangement and load cases are reconstructed and audited",
+    "designApproved": false
+  }
+}
