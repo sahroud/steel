@@ -12,7 +12,7 @@ function distributeCase(demand,anchors){
  const ids=new Set();
  items.forEach((a,i)=>{const id=String(a?.id??"").trim();if(!id||ids.has(id))issues.push("شناسه انکر خالی یا تکراری است: "+(id||i+1));ids.add(id);if(!finite(a?.x_m)||!finite(a?.z_m))issues.push("مختصات X/Z انکر "+(id||i+1)+" باید عددی و محدود باشد.");});
  if(issues.length)return{ok:false,issues,anchors:[],analysisEnabled:false,designApproved:false};
- const [N,Vx,Vz,Mx,Ty,Mz]=vec;
+ const [Vx,N,Vz,Mx,Ty,Mz]=vec;
  const cx=items.reduce((s,a)=>s+a.x_m,0)/items.length,cz=items.reduce((s,a)=>s+a.z_m,0)/items.length;
  const rel=items.map(a=>({id:String(a.id),x:a.x_m-cx,z:a.z_m-cz}));
  const sx2=rel.reduce((s,a)=>s+a.x*a.x,0),sz2=rel.reduce((s,a)=>s+a.z*a.z,0),sxz=rel.reduce((s,a)=>s+a.x*a.z,0);
@@ -64,7 +64,7 @@ function selfTest(){
  ck("rejects missing anchor geometry",()=>!distributeCase(demand,[{id:"A",x_m:0,z_m:0}]).ok);
  ck("rejects duplicate anchor identity",()=>!distributeCase(demand,[square[0],{...square[1],id:"A"}]).ok);
  ck("rejects non-finite anchor coordinates",()=>!distributeCase(demand,[square[0],{...square[1],x_m:NaN}]).ok);
- ck("rejects unsupported coupled principal axes",()=>!distributeCase({...demand,columnActionN_Nm:[0,0,0,100,0,100]},[{id:"A",x_m:0,z_m:0},{id:"B",x_m:1,z_m:1},{id:"C",x_m:2,z_m:0},{id:"D",x_m:1,z_m:-1}]).ok);
+ ck("rejects unsupported coupled principal axes",()=>!distributeCase({...demand,columnActionN_Nm:[0,0,0,100,0,100]},[{id:"A",x_m:0,z_m:0},{id:"B",x_m:2,z_m:1},{id:"C",x_m:3,z_m:3},{id:"D",x_m:1,z_m:2}]).ok);
  ck("rejects a bending moment without its geometric lever arm",()=>!distributeCase({...demand,columnActionN_Nm:[0,0,0,100,0,0]},[{id:"A",x_m:-1,z_m:0},{id:"B",x_m:1,z_m:0}]).ok);
  ck("rejects missing torsion dependency when torsion is present",()=>{const old=root.SteelAnchorGroupTorsionDemand;root.SteelAnchorGroupTorsionDemand=null;try{return !distributeCase(demand,square).ok;}finally{root.SteelAnchorGroupTorsionDemand=old;}});
  const bridge={ok:true,demands:[demand,{...demand,caseId:"SLS-1",columnActionN_Nm:[0,2000,0,0,0,0]}]};
