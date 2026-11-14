@@ -152,6 +152,21 @@ function applyVerticalImpact(input,factor){
  }
  return out;
 }
+function buildMovingForceEnvelope(model,results){
+ const api=root.SteelMemberForceEnvelope;
+ if(!api?.buildRows||!api?.auditCoverage)throw Error("ماژول پوش نیروهای اعضا در دسترس نیست.");
+ if(!Array.isArray(results)||!results.length)throw Error("حالات جرثقیل برای استخراج پوش نیرو موجود نیستند.");
+ const samples=results.map(x=>{
+  const solved=x.analysis?.result;
+  if(!Array.isArray(solved?.members))throw Error("نیروهای اعضا در موقعیت جرثقیل "+(x.caseIndex+1)+" در خروجی حل‌گر موجود نیست.");
+  if(!solved.equilibrium?.ok)throw Error("تعادل موقعیت جرثقیل "+(x.caseIndex+1)+" برقرار نیست.");
+  return {label:"CRANE-"+(x.caseIndex+1)+" @ "+Number(x.referencePosition_m).toFixed(4)+" m",members:solved.members,equilibrium:solved.equilibrium,referencePosition_m:x.referencePosition_m,caseIndex:x.caseIndex};
+ });
+ const rows=api.buildRows(model,samples),coverage=api.auditCoverage(model,samples,rows);
+ if(coverage.invalidForceVectors.length||coverage.analysisMemberSetMismatchCases.length||coverage.duplicateMemberIdsByCase.length||coverage.unreportedMemberIds.length)throw Error("پوش نیروهای جرثقیل ناقص است: بردار نامعتبر "+coverage.invalidForceVectors.length+"، اختلاف اعضا "+coverage.analysisMemberSetMismatchCases.length+"، عضو گزارش‌نشده "+coverage.unreportedMemberIds.length);
+ if(rows.some(r=>r.caseCount!==samples.length))throw Error("برای بعضی اعضا نیروی هر موقعیت جرثقیل ثبت نشده است.");
+ return {rows,coverage,cases:samples.map(x=>({label:x.label,caseIndex:x.caseIndex,referencePosition_m:x.referencePosition_m,equilibrium:x.equilibrium})),units:"N,N.m",simultaneousEndForcesPreserved:true,scope:"پوش مؤلفه‌ای نیروهای انتهایی؛ کنترل ظرفیت و اندرکنش آیین‌نامه‌ای نیست."};
+}
 async function analyzeAllFromUI(options){
  const opt=options||{},progress=typeof opt.onProgress==="function"?opt.onProgress:()=>{},maxCases=Number.isInteger(opt.maxCases)&&opt.maxCases>0?opt.maxCases:300;
  lastAutomaticEnvelope=null;
@@ -196,7 +211,9 @@ async function analyzeAllFromUI(options){
   results.push({caseIndex:i,referencePosition_m:one.transfer.referencePosition_m,maxTranslation_m:Number(one.result.maxTranslation),equilibrium:one.result.equilibrium,analysis:one});
  }
  const critical=results.reduce((best,x)=>!best||x.maxTranslation_m>best.maxTranslation_m?x:best,null);
- lastAutomaticEnvelope={success:true,analysisEnabled:false,total:results.length,results,criticalCase:critical?.caseIndex??null,maxTranslation_m:critical?.maxTranslation_m??null,
+ let memberForceEnvelope;
+ try{memberForceEnvelope=buildMovingForceEnvelope(model,results);}catch(e){return {success:false,analysisEnabled:false,total:results.length,completed:results.length,issues:["استخراج پوش نیروهای اعضای جرثقیل ناموفق است: "+String(e.message||e)],results};}
+ lastAutomaticEnvelope={success:true,analysisEnabled:false,total:results.length,results,memberForceEnvelope,criticalCase:critical?.caseIndex??null,maxTranslation_m:critical?.maxTranslation_m??null,
   loadBasis:"بار مرده و وزن خود اعضا + بار چرخ‌های قائم با ضریب دینامیکی قائم اعمال‌شده + نیروهای افقی مستند در صورت فعال‌بودن؛ هر موقعیت قطار جداگانه حل شده است.",
   note:"پوش تغییرمکان از نتایج حالات جداگانه؛ بیشینه‌های غیرهم‌زمان نیرو/لنگر با هم جمع نشده‌اند. این مرحله هنوز ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی و طراحی نهایی تیر حمال/اتصالات را تأیید نمی‌کند."};
  return lastAutomaticEnvelope;
@@ -281,6 +298,6 @@ function ensurePanel(){
  });
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,selfTest,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
+root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,selfTest,buildMovingForceEnvelope,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
 })(typeof window!=="undefined"?window:globalThis);
 
