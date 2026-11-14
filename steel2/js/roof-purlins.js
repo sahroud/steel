@@ -1012,11 +1012,21 @@
         });
     }
 
+    function selfTest() {
+        const checks = [];
+        const check = (name, pass) => checks.push({ name, pass: !!pass });
+        check("missing numeric input remains missing", num("__missing_purlin_input__", null) === null);
+        check("blank numeric input remains missing", (() => { const old = document.getElementById; document.getElementById = id => id === "__blank_purlin_input__" ? { value: "" } : old.call(document, id); try { return num("__blank_purlin_input__", null) === null; } finally { document.getElementById = old; } })());
+        check("project overhangs are not hard-coded", !/const\s+(?:sideOverhang|endOverhang)\s*=\s*0\.8/.test(getGeometry.toString()));
+        return { passed: checks.filter(x => x.pass).length, failed: checks.filter(x => !x.pass).length, checks };
+    }
+
     window.SteelRoofPurlins = {
         optimize,
         applyManual,
         getData,
         setData,
+        selfTest,
         lastResult: null
     };
 
