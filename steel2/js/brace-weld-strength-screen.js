@@ -14,6 +14,8 @@ function effectiveLength(length,size){
 }
 function calculateSegment(c,s){
  const issues=[];
+ if(c.eccentricityMm!==0)issues.push("خروج از مرکزیت غیرصفر است؛ تحلیل گروه جوش خارج از مرکز در این نسخه وجود ندارد.");
+ if(c.loadPathReviewed!==true||c.connectionDrawingReviewed!==true||!String(c.weldLayoutReference||"").trim())issues.push("بازبینی مسیر نیرو، نقشه اتصال و مرجع آرایش جوش الزامی است.");
  ["weldSizeMm","electrodeFexxMPa","baseMetalFyMPa","baseMetalFuMPa"].forEach(k=>{if(!finite(c[k])||c[k]<=0)issues.push(k+" ناموجود یا نامعتبر است.");});
  ["effectiveLengthMm","baseGrossShearAreaMm2","baseNetShearAreaMm2","shearN"].forEach(k=>{if(!finite(s?.[k])||s[k]<0)issues.push(k+" ناموجود یا نامعتبر است.");});
  if(!finite(s?.shearN)||s.shearN<0||s.effectiveLengthMm<=0||s.baseGrossShearAreaMm2<=0||s.baseNetShearAreaMm2<=0)issues.push("نیرو، طول مؤثر یا مساحت فلز پایه باید مثبت/غیرمنفی باشد.");
@@ -56,7 +58,7 @@ function run(){const r=analyze(root.SteelMemberForceEnvelope?.getLast?.(),root.S
 function init(){if(document.getElementById("braceWeldStrengthPanel"))return;const p=document.createElement("section");p.className="panel";p.id="braceWeldStrengthPanel";p.innerHTML="<div class='panel-title'><h3>غربال مقاومت اتصال جوشی مهاربند</h3><span class='status'>AISC 360-22 · LRFD مقدماتی</span></div><div class='notice'>فقط جوش گوشه در برش بررسی می‌شود. نیروی هر قطعه جوش و مساحت ناخالص/خالص فلز پایه باید جداگانه و برای هر ترکیب وارد شود؛ kds برابر ۱ در نظر گرفته شده است.</div><button type='button' class='btn primary' id='btnBraceWeldStrengthRun'>محاسبه مقاومت جوش‌ها</button><div id='braceWeldStrengthResult' class='notice'>ابتدا اطلاعات جوش و JSON نیروهای قطعات جوش را تکمیل کنید.</div>";const a=document.getElementById("braceBoltStrengthPanel");if(a?.parentNode)a.insertAdjacentElement("afterend",p);else document.querySelector("main")?.appendChild(p);document.getElementById("btnBraceWeldStrengthRun").addEventListener("click",run);}
 
 function selfTest(){
- const c={weldSizeMm:6,electrodeFexxMPa:490,baseMetalFyMPa:235,baseMetalFuMPa:360};
+ const c={weldSizeMm:6,electrodeFexxMPa:490,baseMetalFyMPa:235,baseMetalFuMPa:360,eccentricityMm:0,loadPathReviewed:true,connectionDrawingReviewed:true,weldLayoutReference:"W-01"};
  const s={effectiveLengthMm:100,baseGrossShearAreaMm2:1000,baseNetShearAreaMm2:900,shearN:20000};
  const t=[],add=(n,f)=>{try{t.push({name:n,pass:f()===true});}catch(e){t.push({name:n,pass:false,error:e.message});}};
  add("fillet weld throat is 0.707 times leg size",()=>{const r=calculateSegment(c,s);return r.ok&&Math.abs(r.weld.effectiveThroatMm-4.242)<1e-9;});
