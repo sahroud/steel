@@ -31,6 +31,19 @@ function build(diagramCases,options){
  const result={success:complete,status:complete?"station-demand-evidence-complete":"insufficient_data",members:memberPackages,caseIds:(adapted.cases||[]).map(c=>c.caseId),expectedMemberIds:expected,sourceTraceabilityRequired:REQUIRED_SOURCE,concurrencyPreserved:true,caseSeparationPreserved:true,combinationStatus:"not-provided",envelopeStatus:"not-generated",designInputStatus:"demand-evidence-only",issues,designGate:{capacityCalculated:false,codeInteractionCalculated:false,designApproved:false,readyForCodeDesign:false,blockers:["ترکیبات بار آیین‌نامه‌ای معتبر و مستند هنوز به بسته تقاضا متصل نشده‌اند.","قرارداد علامت و تبدیل نیروها به قرارداد طراحی باید برای خانواده هر عضو اعتبارسنجی شود.","مقاومت مقطع، کمانش، اندرکنش، پایداری، تغییرمکان و اتصالات هنوز در این بسته محاسبه نمی‌شوند."]},limitations:["هر ایستگاه شش مؤلفه همزمان خود را از یک ردیف و یک حالت تحلیل حفظ می‌کند.","هیچ پوش مؤلفه‌ای یا ترکیب بین حالت‌ها ساخته نمی‌شود.","قطعات متغیرمقطع و محورهای محلی آن‌ها مستقل باقی می‌مانند.","این بسته فقط شاهد تقاضای تحلیل است؛ ورودی نهایی طراحی آیین‌نامه‌ای محسوب نمی‌شود."]};
  last=result;return result;
 }
+function buildFromSolverCases(model,runnerCases,options){
+ options=options||{};const issues=[],inputs=Array.isArray(runnerCases)?runnerCases:[];
+ if(!root.SteelSolverSectionForceDiagramBridge?.build)return {success:false,status:"missing_dependency",issues:["پل حل‌گر به نمودار نیروهای داخلی بارگذاری نشده است."],designApproved:false};
+ if(!inputs.length)return {success:false,status:"insufficient_data",issues:["هیچ خروجی تحلیل حالت بار ارائه نشده است."],designApproved:false};
+ const diagrams=inputs.map((runnerOutput,index)=>{
+  try{return root.SteelSolverSectionForceDiagramBridge.build(model,runnerOutput,options.diagramOptions||{});}
+  catch(e){issues.push("ساخت نمودار حالت "+index+" با خطا مواجه شد: "+String(e.message||e));return {success:false,loadCaseId:runnerOutput?.simultaneousActionCase?.caseId||null,source:runnerOutput?.simultaneousActionCase?.source||null,issues:[String(e.message||e)],designApproved:false};}
+ });
+ const result=build(diagrams,{expectedMemberIds:options.expectedMemberIds});
+ result.solverPipeline={inputCaseCount:inputs.length,diagramCaseCount:diagrams.length,diagramSuccessCount:diagrams.filter(x=>x.success===true).length,issues,isolatedPerCase:true};
+ if(issues.length){result.success=false;result.status="insufficient_data";result.issues.push(...issues);}
+ last=result;return result;
+}
 function getLast(){return last?JSON.parse(JSON.stringify(last)):null;}
 function selfTest(){
  const row=(x,extra={})=>({x_m:x,N_N:1,Vy_N:2,Vz_N:3,T_Nm:4,My_Nm:5,Mz_Nm:6,...extra});
@@ -42,8 +55,8 @@ function selfTest(){
  const duplicate=build([c,c],{expectedMemberIds:["M1"]});
  const mixed=build([c,{...c,loadCaseId:"LC2",prismaticDiagrams:[{...c.prismaticDiagrams[0],stations:[row(0,{My_Nm:99}),row(2,{My_Nm:99})]}]}],{expectedMemberIds:["M1"]});
  const tapered=build([{success:true,loadCaseId:"T1",source:src,units:"N,N.m,m",prismaticDiagrams:[],taperedReport:{success:true,loadCases:[{label:"T1",members:[{parentMemberId:"R",totalLength_m:3,segmentCount:1,complete:true,segments:[{segmentId:"R1",segmentIndex:1,startStation_m:0,endStation_m:3,length_m:3,stations:[{...row(0),memberStation_m:0},{...row(3),memberStation_m:3}]}]}]}]}}],{expectedMemberIds:["R"]});
- const t=[good.success&&good.designGate.designApproved===false,noSource.success===false,noMember.success===false,duplicate.success===false,mixed.success&&mixed.members[0].cases.length===2&&mixed.members[0].cases[0].stations[0].actions.My===5&&mixed.members[0].cases[1].stations[0].actions.My===99,tapered.success&&tapered.members[0].cases[0].segments.length===1];
+ const prior=root.SteelSolverSectionForceDiagramBridge;root.SteelSolverSectionForceDiagramBridge={build:(_m,r)=>({...c,loadCaseId:r.simultaneousActionCase.caseId})};const pipeline=buildFromSolverCases({},[{simultaneousActionCase:{caseId:"LC1"}},{simultaneousActionCase:{caseId:"LC2"}}],{expectedMemberIds:["M1"]});root.SteelSolverSectionForceDiagramBridge=prior;const t=[good.success&&good.designGate.designApproved===false,noSource.success===false,noMember.success===false,duplicate.success===false,mixed.success&&mixed.members[0].cases.length===2&&mixed.members[0].cases[0].stations[0].actions.My===5&&mixed.members[0].cases[1].stations[0].actions.My===99,tapered.success&&tapered.members[0].cases[0].segments.length===1,pipeline.success&&pipeline.solverPipeline.isolatedPerCase&&pipeline.caseIds.length===1];
  return {passed:t.filter(Boolean).length,failed:t.filter(x=>!x).length,total:t.length,tests:t};
 }
-root.SteelMemberDesignDemandPackage={build,getLast,selfTest};
+root.SteelMemberDesignDemandPackage={build,buildFromSolverCases,getLast,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
