@@ -72,7 +72,7 @@ function addCase(){
 }
 function addCombo(){
  const c={id:txt($("lcw_combo_id").value),factors:parseJSON("lcw_factors","ضرایب"),source:{code:txt($("lcw_code").value),edition:txt($("lcw_edition").value),clause:txt($("lcw_clause").value),document:txt($("lcw_combo_doc").value)}};
- if(!c.id||!Object.keys(c.factors).length||!c.source.code||!c.source.edition||!c.source.clause||!c.source.document)throw new Error("شناسه، ضرایب و تمام مشخصات منبع ترکیب لازم است.");
+ if(!c.id||!c.factors||typeof c.factors!=="object"||Array.isArray(c.factors)||!Object.keys(c.factors).length||!c.source.code||!c.source.edition||!c.source.clause||!c.source.document)throw new Error("شناسه، ضرایب به شکل شیء JSON و تمام مشخصات منبع ترکیب لازم است.");
  if(state.combinations.some(x=>x.id===c.id))throw new Error("شناسه ترکیب تکراری است.");
  if(Object.values(c.factors).some(v=>typeof v!=="number"||!Number.isFinite(v)))throw new Error("ضرایب باید اعداد متناهی باشند.");
  state.combinations.push(c);render();persist();$("lcw_combo_id").value="";
