@@ -608,6 +608,7 @@
                 "</td><td>"+(result.equilibrium?.ok?"متعادل":"نیازمند بررسی")+"</td></tr>");
         }
         model.combinationResults=summaries;
+        if(window.SteelAnalysis)window.SteelAnalysis.combinationResults=summaries;
         const message=$("analysisMessage");
         if(message) message.innerHTML=
             "<h4>تحلیل ترکیبات بار سه‌بعدی ـ مقدماتی</h4>"+
