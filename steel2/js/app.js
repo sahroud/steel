@@ -593,7 +593,7 @@
                 N:{value:peakN/1000,member:criticalMember,end:"بیشینه دو انتها"},
                 V:{value:peakV/1000,member:criticalMember,end:"برآیند برش دو انتها"},
                 M:{value:peakM/1000,member:criticalMember,end:"برآیند لنگر دو انتها"}},
-                members:(result.members||[]).map(member=>({id:String(member.id),localEndForces:Array.isArray(member.localEndForces)?member.localEndForces.slice(0,12):[]})),
+                members:(result.members||[]).map(member=>({id:String(member.id),parentMemberId:member.parentMemberId||null,taperApplied:member.taperApplied===true,taperSegmentIndex:member.taperSegmentIndex??null,taperSegmentCount:member.taperSegmentCount??null,taperCoordinate:member.taperCoordinate??null,taperDimensions:member.taperDimensions||null,analysisLoad:member.analysisLoad||null,localEndForces:Array.isArray(member.localEndForces)?member.localEndForces.slice(0,12):[]})),
                 maxDisplacement:result.maxTranslation||0,
                 criticalNode:result.maxDisplacement?.nodeId||"—",
                 displacementComponents:(result.maxDisplacement?.components||[0,0,0]).map(v=>Number(v)||0),
