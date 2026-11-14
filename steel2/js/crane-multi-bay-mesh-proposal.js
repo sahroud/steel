@@ -69,6 +69,28 @@ function audit(model,configuration){
  if(systems.some(s=>s.craneIds.length>1))warnings.push("چند جرثقیل روی یک سامانه ریل مشترک قرار دارند؛ کنترل برخورد و بارگذاری هم‌زمان هنوز انجام نمی‌شود.");
  return {success:issues.length===0,geometryReady:issues.length===0,ready:false,proposalOnly:true,analysisEnabled:false,designApproved:false,runwaySystems:systems,counts:{cranes:cranes.length,runwaySystems:systems.length,beamNodes:systems.reduce((n,s)=>n+s.beamNodes.length,0),beamSegments:actualSegments,brackets:systems.reduce((n,s)=>n+s.brackets.length,0),assignedBayOccurrences:allBays.length},issues,warnings,blockers:result.blockers,scope:"Proposal-only beam/bracket geometry for cranes assigned to selected bays on a single explicitly identified shared runway system; no FEM integration or load application."};
 }
+function render(){
+ const host=root.document?.getElementById("craneMultiBayMeshProposalResults");
+ if(!host)return null;
+ const model=root.SteelStructuralModel?.getData?.();
+ if(!model){host.textContent="ابتدا مدل سه‌بعدی سوله را تولید کنید؛ هندسه واقعی قاب‌ها و ستون‌ها لازم است.";return null;}
+ const cfg=root.SteelCraneBayConfiguration?.readAndAudit?.(Number(model.geometry?.bayCount));
+ const r=audit(model,cfg);
+ host.textContent=[
+  "وضعیت پیشنهاد هندسی: "+(r.geometryReady?"هندسه پیشنهادی قابل تولید است":"متوقف / نیازمند تکمیل داده"),
+  "جرثقیل: "+r.counts.cranes+" | سامانه ریل: "+r.counts.runwaySystems+" | گره تیر حمال: "+r.counts.beamNodes+" | قطعه تیر: "+r.counts.beamSegments+" | براکت: "+r.counts.brackets,
+  ...r.runwaySystems.map(s=>"سامانه "+s.runwaySystemId+" | جرثقیل‌ها: "+s.craneIds.join("، ")+" | دهانه‌ها: "+s.bays.join("، ")),
+  ...r.issues.map(x=>"مانع: "+x),
+  ...r.warnings.map(x=>"هشدار: "+x),
+  ...r.blockers.map(x=>"محدودیت: "+x),
+  "این خروجی فقط پیشنهاد هندسی است؛ به FEM افزوده نشده و تحلیل/تأیید طراحی را فعال نمی‌کند."
+ ].join("\\n");
+ return r;
+}
+function init(){
+ const button=root.document?.getElementById("craneMultiBayMeshProposalButton");
+ if(button&&!button.dataset.bound){button.dataset.bound="1";button.addEventListener("click",render);}
+}
 function selfTest(){
  const checks=[],t=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
  const model={geometry:{span:12,bayCount:3,frames:[0,5,10,15],craneRunway:{enabled:true,elevationM:5,axisOffsetM:.5,supportType:"unselected"}},nodes:[],members:[]};
@@ -89,5 +111,6 @@ function selfTest(){
  t("non-monotonic frame stations are rejected",()=>{const m=JSON.parse(JSON.stringify(model));m.geometry.frames=[0,5,4,15];return !audit(m,cfg).success;});
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
-root.SteelCraneMultiBayMeshProposal={audit,selfTest};
+root.SteelCraneMultiBayMeshProposal={audit,render,selfTest};
+if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",init);else init();}
 })(typeof window!=="undefined"?window:globalThis);
