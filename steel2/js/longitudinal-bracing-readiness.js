@@ -51,7 +51,7 @@ function audit(model,loads){
   while(queue.length){
    const cur=queue.shift();
    const target=braceTargets.find(t=>t.nodeId===cur.node);
-   if(target&&cur.memberIds.length)return{ok:true,sourceNode:String(sourceNode),targetNode:cur.node,braceId:target.braceId,braceType:target.braceType,memberIds:cur.memberIds,sectionKeys:cur.sectionKeys};
+   if(target)return{ok:true,sourceNode:String(sourceNode),targetNode:cur.node,braceId:target.braceId,braceType:target.braceType,memberIds:cur.memberIds,sectionKeys:cur.sectionKeys};
    for(const e of adjacency.get(cur.node)||[]){
     if(seen.has(e.to))continue;seen.add(e.to);
     queue.push({node:e.to,memberIds:[...cur.memberIds,e.id],sectionKeys:[...cur.sectionKeys,e.sectionKey]});
