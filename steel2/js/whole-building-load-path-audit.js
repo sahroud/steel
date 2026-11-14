@@ -12,15 +12,15 @@ function audit(model,loads){
  if(!loads||typeof loads!=="object")issues.push("ورودی بارهای سطحی در دسترس نیست.");
  const members=Array.isArray(model?.members)?model.members:[];
  const groups={
-  rafters:members.filter(m=>m.axis==="transverse"&&/رفتر چپ|رفتر راست/.test(String(m.type||""))),
+  rafters:members.filter(m=>m.axis==="transverse"&&/رفتر چپ|رفتر راست/.test(String(m.type||""))),\n  wallBraces:members.filter(m=>m.sectionKey==="wallBrace"), roofBraces:members.filter(m=>m.sectionKey==="roofBrace"),
   purlins:members.filter(m=>m.sectionKey==="roofPurlin"),
   wallGirts:members.filter(m=>m.sectionKey==="wallGirt"),
   endGirts:members.filter(m=>m.sectionKey==="endGirt")
  };
  const expected=[
-  ["dead","بار مرده بام",["rafters","purlins"],["deadLeft","deadRight"]],
-  ["live","بار زنده بام",["rafters","purlins"],["liveLeft","liveRight"]],
-  ["snow","بار برف بام",["rafters","purlins"],["snowLeft","snowRight"]],
+  ["dead","بار مرده بام",["purlins"],["deadLeft","deadRight"]],
+  ["live","بار زنده بام",["purlins"],["liveLeft","liveRight"]],
+  ["snow","بار برف بام",["purlins"],["snowLeft","snowRight"]],
   ["windRoof","باد بام",["purlins"],["windLeft","windRight"]],
   ["windWall","باد دیوارهای طولی",["wallGirts"],["windWall"]],
   ["windEnd","باد دیوارهای انتهایی",["endGirts"],["windEndFront","windEndBack"]]
@@ -47,6 +47,28 @@ function audit(model,loads){
   if(bad.length)issues.push(label+": بار یا عرض بارگیر نامعتبر در "+bad.slice(0,8).join("، "));
   rows.push({id,label,memberCount:targetMembers.length,coveredCount:covered.length,missingCount:missing.length,invalidCount:bad.length,status:missing.length||bad.length?"incomplete":"assigned",sampleMissing:missing.slice(0,8)});
  });
+ // Roof area loads are carried by purlins; rafters receive purlin support reactions and self-weight.
+ const rafterDuplicate=[],rafterMissing=[];
+ groups.rafters.forEach(m=>["dead","live","snow"].forEach(k=>{
+  const v=m.lineLoads?.[k];
+  if(v===undefined)rafterMissing.push(String(m.id)+":"+k);
+  else if(!finite(v))rafterMissing.push(String(m.id)+":"+k);
+  else if(Math.abs(v)>1e-10)rafterDuplicate.push(String(m.id)+":"+k);
+ }));
+ if(!groups.rafters.length)issues.push("هیچ رفتر عرضی در مدل پیدا نشد.");
+ if(rafterMissing.length)issues.push("تعریف صریح بار صفر مستقیم برای رفترها ناقص است: "+rafterMissing.slice(0,8).join("، "));
+ if(rafterDuplicate.length)issues.push("بار سطحی بام هم‌زمان به پرلین و رفتر تخصیص یافته است؛ احتمال دوباره‌شماری: "+rafterDuplicate.slice(0,8).join("، "));
+ rows.push({id:"rafter-reaction-path",label:"رفترها ـ واکنش پرلین و وزن خود عضو",memberCount:groups.rafters.length,coveredCount:groups.rafters.length-rafterMissing.length-rafterDuplicate.length,missingCount:rafterMissing.length,invalidCount:rafterDuplicate.length,status:rafterMissing.length||rafterDuplicate.length?"incomplete":"assigned",transfer:"purlin support reactions at shared FEM nodes"});
+ [["مهاربند دیوار",groups.wallBraces],["مهاربند سقف",groups.roofBraces]].forEach(([label,list])=>{rows.push({id:label,label,memberCount:list.length,coveredCount:list.length,missingCount:0,invalidCount:0,status:list.length?"structural-path":"missing"});if(!list.length)issues.push(label+": عضو مستقلی در مدل پیدا نشد.");});
+ // Loaded member endpoints must remain in the connected structural graph leading to base supports.
+ const adjacency=new Map(),nodeIds=new Set((model?.nodes||[]).map(n=>String(n.id)));
+ const link=(x,y)=>{x=String(x);y=String(y);if(!adjacency.has(x))adjacency.set(x,new Set());if(!adjacency.has(y))adjacency.set(y,new Set());adjacency.get(x).add(y);adjacency.get(y).add(x);};
+ members.forEach(m=>{if(m.start!==undefined&&m.end!==undefined)link(m.start,m.end);});
+ const supports=(model?.nodes||[]).filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>String(n.id));
+ const reaches=start=>{const seen=new Set([String(start)]),q=[String(start)];while(q.length){const n=q.shift();if(supports.includes(n))return true;(adjacency.get(n)||[]).forEach(x=>{if(!seen.has(x)){seen.add(x);q.push(x);}});}return false;};
+ const disconnected=members.filter(m=>["roofPurlin","wallGirt","endGirt"].includes(m.sectionKey)&&(!nodeIds.has(String(m.start))||!nodeIds.has(String(m.end))||!reaches(m.start)||!reaches(m.end))).map(m=>String(m.id));
+ if(!supports.length)issues.push("گره پایه برای ممیزی اتصال به تکیه‌گاه موجود نیست.");
+ if(disconnected.length)issues.push("مسیر هندسی اعضای بارگیر تا تکیه‌گاه ناقص است: "+disconnected.slice(0,8).join("، "));
  const frameIds=[...new Set(groups.rafters.map(m=>Number(m.frame)).filter(Number.isFinite))];
  const frameCount=Array.isArray(model?.geometry?.frames)?model.geometry.frames.length:0;
  if(frameCount&&frameIds.length!==frameCount)issues.push("پوشش رفترها در قاب‌ها کامل نیست: "+frameIds.length+" از "+frameCount+" قاب دارای عضو رفتر شناسایی شد.");
@@ -60,8 +82,8 @@ function audit(model,loads){
  });
  comboRows.forEach(c=>{if(!c.valid)issues.push("ضرایب ترکیب "+c.name+" ناقص یا نامعتبر است: "+c.missing.join("، "));});
  const allAssigned=rows.length>0&&rows.every(r=>r.status==="assigned");
- return {success:issues.length===0&&allAssigned,issues,rows,combinations:comboRows,
-  inventory:{memberCount:members.length,rafterCount:groups.rafters.length,purlinCount:groups.purlins.length,wallGirtCount:groups.wallGirts.length,endGirtCount:groups.endGirts.length,frameCount,rafterFrameCount:frameIds.length},
+ return {success:issues.length===0&&allAssigned,issues,rows,combinations:comboRows,connectivity:{supportNodeCount:supports.length,disconnectedMemberIds:disconnected},
+  inventory:{memberCount:members.length,rafterCount:groups.rafters.length,purlinCount:groups.purlins.length,wallGirtCount:groups.wallGirts.length,endGirtCount:groups.endGirts.length,wallBraceCount:groups.wallBraces.length,roofBraceCount:groups.roofBraces.length,frameCount,rafterFrameCount:frameIds.length},
   scope:"ممیزی تخصیص ورودی‌های بار موجود به اعضا؛ نه تأیید مقدار بار، ضرایب آیین‌نامه‌ای، انتقال بار نهایی یا ایمنی سازه.",
   analysisEnabled:false,designApproved:false};
 }
@@ -101,7 +123,7 @@ function selfTest(){
  test("duplicate member identifiers detected",()=>{const p={...model,members:[...members,{...members[0]}]};return !audit(p,loads).success;});
  test("all load groups explicitly reported",()=>audit(model,loads).rows.length===6);
  test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.2);
- test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
+ test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});\n test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1);\n test("nonzero direct roof gravity on rafter is rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[0].lineLoads.dead=1;return !audit(p,loads).success;});\n test("rafter explicit zero load is accepted",()=>audit(model,loads).rows.find(r=>r.id==="rafter-reaction-path").status==="assigned");\n test("disconnected loaded member rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].start="ORPHAN";return !audit(p,loads).success;});
  test("missing model rejected",()=>!audit(null,loads).success);
  test("empty combination list allowed as load-path audit only",()=>{const p={...loads,combinations:[]};return audit(model,p).success;});
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
