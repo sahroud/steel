@@ -6,6 +6,7 @@
 function run(){
  const checks=[];
  const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
+ test("reference model import UI is registered after the CSV parser",()=>{return !!root.SteelReferenceImportUI&&typeof root.SteelReferenceImportUI.candidate!=="undefined"?"Controlled import UI facade is available; import remains proposal-only":false;});
  test("CSV structural exchange proposal self-test",()=>{const r=root.SteelCSVStructuralExchange?.selfTest?.();return r?.passed===10&&r.total===10?"CSV quoting, units, signed coordinates, IDs, references, zero-length geometry and proposal-only gates: 10/10":false;});
  test("CSV candidate/reference geometry comparison self-test",()=>{const r=root.SteelCSVStructuralExchange?.comparisonSelfTest?.();return r?.passed===8&&r.total===8?"Node coordinate deviations, inventory differences, reversed member direction, section mismatch and comparison-only gate: 8/8":false;});
  test("CSV supplemental restraints releases and tapered stations self-test",()=>{const r=root.SteelCSVStructuralExchange?.supplementalSelfTest?.();return r?.passed===8&&r.total===8?"Explicit node restraints, member-end releases, tapered section stations, units and proposal-only gates: 8/8":false;});
