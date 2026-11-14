@@ -64,7 +64,7 @@ function audit(forceResult){
 }
 function selfTest(){
  const good={cases:[{label:"ULS-A"},{label:"ULS-B"}],members:[{id:"C1",sectionKey:"column",ends:[
-  {label:"ULS-A",values:[100,0,0,0,20,0,90,0,0,0,10,0]},
+  {label:"ULS-A",values:[100,0,0,0,0,0,90,0,0,0,0,0]},
   {label:"ULS-B",values:[80,5,0,2,0,30,70,4,0,1,0,25]}]}]};
  const r=audit(good);
  const broken=audit({cases:[{label:"ULS-A"}],members:[{id:"X",ends:[{label:"ULS-A",values:[1,2]}]}]});
