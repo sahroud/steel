@@ -56,7 +56,7 @@ function buildRows(model,samples){
   return {...row,envelopes,peak,simultaneousCases,caseCount:valid.length};
  }).sort((a,b)=>String(a.sectionKey).localeCompare(String(b.sectionKey))||String(a.id).localeCompare(String(b.id)));
 }
-function auditCoverage(model,samples,rows){
+function auditCoverage(model,samples,rows,expectedCaseLabels){
  const first=Array.isArray(samples?.[0]?.members)?samples[0].members:[];
  const expectedIds=new Set(first.map(m=>String(m.id)));
  const reportedIds=new Set((rows||[]).filter(r=>Number(r.caseCount)>0).map(r=>String(r.id)));
@@ -64,6 +64,13 @@ function auditCoverage(model,samples,rows){
  const extraMemberIds=[...(rows||[])].map(r=>String(r.id)).filter(id=>!expectedIds.has(id));
  const duplicateMemberIdsByCase=[];
  const invalidForceVectors=[];
+ const caseLabels=(samples||[]).map(s=>String(s?.label??"").trim());
+ const blankCaseLabels=caseLabels.map((label,i)=>({label,index:i})).filter(x=>!x.label).map(x=>x.index);
+ const duplicateCaseLabels=[...new Set(caseLabels.filter((label,i)=>label&&caseLabels.indexOf(label)!==i))];
+ const expectedLabels=Array.isArray(expectedCaseLabels)?expectedCaseLabels.map(x=>String(x??"").trim()):null;
+ const missingCaseLabels=expectedLabels?expectedLabels.filter(label=>label&&!caseLabels.includes(label)):[];
+ const unexpectedCaseLabels=expectedLabels?caseLabels.filter(label=>label&&!expectedLabels.includes(label)):[];
+ const duplicateExpectedCaseLabels=expectedLabels?[...new Set(expectedLabels.filter((label,i)=>!label||expectedLabels.indexOf(label)!==i))]:[];
  const analysisMemberSetMismatchCases=(samples||[]).filter(s=>{
   const list=Array.isArray(s.members)?s.members:[];
   const ids=list.map(m=>String(m.id)),unique=new Set(ids);
@@ -78,7 +85,8 @@ function auditCoverage(model,samples,rows){
  }).map(s=>s.label||"حالت بدون نام");
  return {modelMemberCount:expectedIds.size,physicalMemberCount:(model?.members||[]).length,
   unreportedMemberIds,extraMemberIds,analysisMemberSetMismatchCases,
-  duplicateMemberIdsByCase,invalidForceVectors};
+  duplicateMemberIdsByCase,invalidForceVectors,blankCaseLabels,duplicateCaseLabels,missingCaseLabels,unexpectedCaseLabels,duplicateExpectedCaseLabels,
+  caseLabelCoverageOK:!blankCaseLabels.length&&!duplicateCaseLabels.length&&!missingCaseLabels.length&&!unexpectedCaseLabels.length&&!duplicateExpectedCaseLabels.length};
 }
 async function run(){
  const box=$("memberForceEnvelopeResult"),btn=$("btnMemberForceEnvelope");
@@ -91,13 +99,14 @@ async function run(){
    const s=specs[i];
    const result=await window.SteelStructuralModel.analyze3D({label:s.label,factors:s.factors,windSign:s.windSign||1});
    if(!result?.success||!Array.isArray(result.members))throw Error("تحلیل ناموفق در حالت "+s.label);
+   if(samples.some(x=>x.label===s.label))throw Error("برچسب ترکیب بار تکراری در فهرست تحلیل: "+s.label);
    samples.push({label:s.label,members:result.members,equilibrium:result.equilibrium,localEndForceConvention:result.localEndForceConvention||null});
    box.textContent="تحلیل "+(i+1)+" از "+specs.length+" — "+s.label;
   }
   const rows=buildRows(model,samples);
   const bad=samples.filter(s=>!s.equilibrium?.ok);
-  const coverage=auditCoverage(model,samples,rows);
-  last={generatedAt:new Date().toISOString(),codeBasis:window.SteelDesignCodes?.getData?.()||null,units:"N,N.m",localEndForceConvention:samples[0]?.localEndForceConvention||null,cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),members:rows,memberCount:rows.length,modelMemberCount:coverage.modelMemberCount,physicalMemberCount:coverage.physicalMemberCount,unreportedMemberIds:coverage.unreportedMemberIds,extraMemberIds:coverage.extraMemberIds,analysisMemberSetMismatchCases:coverage.analysisMemberSetMismatchCases,duplicateMemberIdsByCase:coverage.duplicateMemberIdsByCase,invalidForceVectors:coverage.invalidForceVectors,allCasesEquilibriumOK:bad.length===0,limitations:["این خروجی تقاضای نیروهای انتهایی محلی اعضا در تحلیل خطی مرتبه اول است؛ ظرفیت یا نسبت بهره‌برداری آیین‌نامه‌ای محاسبه نمی‌شود.","ترکیبات ثقلی از فهرست فعلی پروژه گرفته شده‌اند؛ در صورت وجود فشار باد، دو حالت افزوده‌شده با ضریب واحد مثبت و منفی صرفاً سناریوی تحلیل مقدماتی‌اند و ترکیب‌بار آیین‌نامه‌ای کامل محسوب نمی‌شوند.","کمانش، P-Delta، کمانش پیچشی-جانبی، اندرکنش نیروها، طبقه‌بندی مقطع و کنترل خیز/ارتعاش در این گزارش انجام نشده‌اند.","قرارداد محورها و ترتیب مؤلفه‌ها در گزارش ذخیره می‌شود؛ علامت‌های خمشی و برشی هنوز به‌صورت مستقل با مثال‌های مرجع اعتبارسنجی نشده‌اند و نباید برای اندرکنش آیین‌نامه‌ای مصرف شوند."]};
+  const coverage=auditCoverage(model,samples,rows,specs.map(s=>s.label));
+  last={generatedAt:new Date().toISOString(),codeBasis:window.SteelDesignCodes?.getData?.()||null,units:"N,N.m",localEndForceConvention:samples[0]?.localEndForceConvention||null,cases:samples.map(s=>({label:s.label,equilibrium:s.equilibrium})),members:rows,memberCount:rows.length,modelMemberCount:coverage.modelMemberCount,physicalMemberCount:coverage.physicalMemberCount,unreportedMemberIds:coverage.unreportedMemberIds,extraMemberIds:coverage.extraMemberIds,analysisMemberSetMismatchCases:coverage.analysisMemberSetMismatchCases,duplicateMemberIdsByCase:coverage.duplicateMemberIdsByCase,invalidForceVectors:coverage.invalidForceVectors,allCasesEquilibriumOK:bad.length===0,caseLabelCoverageOK:coverage.caseLabelCoverageOK,caseLabelAudit:{blank:coverage.blankCaseLabels,duplicates:coverage.duplicateCaseLabels,missing:coverage.missingCaseLabels,unexpected:coverage.unexpectedCaseLabels,duplicateExpected:coverage.duplicateExpectedCaseLabels},limitations:["این خروجی تقاضای نیروهای انتهایی محلی اعضا در تحلیل خطی مرتبه اول است؛ ظرفیت یا نسبت بهره‌برداری آیین‌نامه‌ای محاسبه نمی‌شود.","ترکیبات ثقلی از فهرست فعلی پروژه گرفته شده‌اند؛ در صورت وجود فشار باد، دو حالت افزوده‌شده با ضریب واحد مثبت و منفی صرفاً سناریوی تحلیل مقدماتی‌اند و ترکیب‌بار آیین‌نامه‌ای کامل محسوب نمی‌شوند.","کمانش، P-Delta، کمانش پیچشی-جانبی، اندرکنش نیروها، طبقه‌بندی مقطع و کنترل خیز/ارتعاش در این گزارش انجام نشده‌اند.","قرارداد محورها و ترتیب مؤلفه‌ها در گزارش ذخیره می‌شود؛ علامت‌های خمشی و برشی هنوز به‌صورت مستقل با مثال‌های مرجع اعتبارسنجی نشده‌اند و نباید برای اندرکنش آیین‌نامه‌ای مصرف شوند."]};
   render();
  }catch(e){box.textContent="خطا: "+e.message;}
  finally{btn.disabled=false;}
@@ -188,7 +197,9 @@ function selfTest(){
  test("invalid force vectors are reported with case identity",()=>auditCoverage({members:[{id:"P"}]},[{label:"ULS",members:[{id:"A",localEndForces:[1,2]}]}],[{id:"A",caseCount:0}]).invalidForceVectors[0]?.caseLabel==="ULS");
  test("axial tension sign is normalized consistently at both member ends",()=>{const r=buildRows({members:[{id:"P"}]},[{label:"T",members:[{id:"A",localEndForces:[-100,0,0,0,0,0,120,0,0,0,0,0]}]}])[0],d=getSimultaneousCaseDemand(r,"T");return d.endI.tension===100&&d.endI.compression===0&&d.endJ.tension===120&&d.endJ.compression===0;});
  test("axial compression sign is normalized consistently at both member ends",()=>{const r=buildRows({members:[{id:"P"}]},[{label:"C",members:[{id:"A",localEndForces:[100,0,0,0,0,0,-120,0,0,0,0,0]}]}])[0],d=getSimultaneousCaseDemand(r,"C");return d.endI.compression===100&&d.endI.tension===0&&d.endJ.compression===120&&d.endJ.tension===0;});
- test("duplicate load combination labels are rejected",()=>new Set(["ULS","ULS"]).size!==2);
+ test("duplicate and blank analyzed case labels are rejected",()=>{const x=auditCoverage({members:[]},[{label:"ULS",members:[]},{label:"ULS",members:[]},{label:"",members:[]}],[],["ULS","SLS"]);return !x.caseLabelCoverageOK&&x.duplicateCaseLabels.includes("ULS")&&x.blankCaseLabels.length===1&&x.missingCaseLabels.includes("SLS");});
+ test("unexpected analyzed case labels are rejected",()=>!auditCoverage({members:[]},[{label:"ULS",members:[]},{label:"EXTRA",members:[]}],[],["ULS"]).caseLabelCoverageOK);
+ test("duplicate expected case labels are rejected",()=>auditCoverage({members:[]},[{label:"ULS",members:[]}],[],["ULS","ULS"]).duplicateExpectedCaseLabels.includes("ULS"));
  return {passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"simultaneous action preservation and deterministic data-integrity tests only; no structural design approval"};
 }
 function getSimultaneousCaseDemand(row,label){
