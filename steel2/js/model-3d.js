@@ -1279,25 +1279,9 @@
       m.analysisLoad={uniformLocal:local,globalUniform:global};
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
-    // Final pre-solver audit: every physical analysis element must have an explicit,
-    // finite local/global load vector. This checks transfer completeness, not capacity.
-    const preparedMemberLoadRows=analysisModel.members.map(m=>{
-      const a=m.analysisLoad,validVector=v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite);
-      const issues=[];
-      if(!a||!validVector(a.uniformLocal))issues.push("local-load-vector");
-      if(!a||!validVector(a.globalUniform))issues.push("global-load-vector");
-      if(!a||!Number.isFinite(a.selfWeightKNm))issues.push("self-weight-line-load");
-      if(!m.lineLoads||!["dead","live","snow","wind","windLeft","windRight","windEnd"].every(k=>Number.isFinite(m.lineLoads[k])))issues.push("explicit-line-load-ledger");
-      return {memberId:String(m.id),sectionKey:String(m.sectionKey||""),type:String(m.type||""),loadRole:m.lineLoads?.loadRole||null,
-        localVectorValid:!!a&&validVector(a.uniformLocal),globalVectorValid:!!a&&validVector(a.globalUniform),
-        selfWeightKNm:a?.selfWeightKNm??null,issues};
-    });
-    const incompletePreparedLoads=preparedMemberLoadRows.filter(x=>x.issues.length);
-    if(incompletePreparedLoads.length)throw new Error("دفتر بار نهایی پیش از حل‌گر برای "+incompletePreparedLoads.length+" عضو ناقص است: "+incompletePreparedLoads.slice(0,10).map(x=>x.memberId+"("+x.issues.join(",")+")").join("؛ "));
-    const preparedMemberLoadAudit={success:true,memberCount:preparedMemberLoadRows.length,
-      groups:Object.fromEntries([...new Set(preparedMemberLoadRows.map(x=>x.sectionKey||"unclassified"))].map(k=>[k,preparedMemberLoadRows.filter(x=>(x.sectionKey||"unclassified")===k).length])),
-      explicitZeroLineLoadCount:preparedMemberLoadRows.filter(x=>x.selfWeightKNm===0&&x.localVectorValid&&x.globalVectorValid).length,
-      rows:preparedMemberLoadRows,scope:"pre-solver load-vector and member-ledger completeness only; no member capacity or code approval"};
+    if(!window.SteelMemberLoadPreflight?.audit)throw new Error("ماژول ممیزی نهایی بار تک‌تک اعضا بارگذاری نشده است.");
+    const preparedMemberLoadAudit=window.SteelMemberLoadPreflight.audit(analysisModel.members);
+    if(!preparedMemberLoadAudit.success)throw new Error("ممیزی نهایی بار اعضا پیش از حل‌گر ناموفق است: "+preparedMemberLoadAudit.issues.slice(0,10).join("؛ "));
     const fixed= $("baseConnection")?.value==="fixed";
     const supports=analysisModel.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>({
       nodeId:n.id,
