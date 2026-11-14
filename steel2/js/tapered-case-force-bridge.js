@@ -52,7 +52,8 @@ function selfTest(){
  const good=build({members:m},[{label:"ULS-A",equilibrium:{ok:true},members:m.map((x,i)=>({id:x.id,localEndForces:i?f2:f1}))},{label:"ULS-B",equilibrium:{ok:true},members:m.map((x,i)=>({id:x.id,localEndForces:i?f1:f2}))}]);
  const missing=build({members:m},[{label:"ULS-A",equilibrium:{ok:true},members:[{id:m[0].id,localEndForces:f1}]}]);
  const bad=build({members:m},[{label:"ULS-A",equilibrium:{ok:false},members:m.map(x=>({id:x.id,localEndForces:[1,2]}))}]);
- const checks=[good.success&&good.loadCases[1].members[1].localEndForces[4]===5,good.loadCases[0].members[0].localEndForces[4]===5&&!good.designApproved,!missing.success,!bad.success,build({members:[]},[]).status==="no-tapered-members"];
+ const fallback=build({members:[{id:"R1",sectionKey:"rafter"}]},[{label:"ULS",equilibrium:{ok:true},members:m.map((x,i)=>({...x,localEndForces:i?f2:f1}))}]);
+ const checks=[good.success&&good.loadCases[1].members[1].localEndForces[4]===5,good.loadCases[0].members[0].localEndForces[4]===5&&!good.designApproved,!missing.success,!bad.success,build({members:[]},[]).status==="no-tapered-members",fallback.success&&fallback.analysisSegmentCount===2];
  return {passed:checks.filter(Boolean).length,failed:checks.filter(x=>!x).length,checks};
 }
 root.SteelTaperedCaseForceBridge={build,selfTest};
