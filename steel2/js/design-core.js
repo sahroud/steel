@@ -135,7 +135,7 @@
       const materials={brick:"آجرچینی","metal-sheet":"ورق فلزی","sandwich-panel":"ساندویچ‌پنل",other:"سیستم دیگر"};
       const orientations={vertical:"قائم",horizontal:"افقی",custom:"اختصاصی/نامشخص"};
       const walls=Object.entries(d.wallEnvelope||DEFAULTS.wallEnvelope).map(([face,v])=>names[face]+": "+materials[v.material]+"؛ امتداد "+orientations[v.orientation]).join(" | ");
-      wallOut.textContent=walls+" . وزن دیوار، مهار خارج از صفحه، تکیه‌گاه‌ها و اتصالات هنوز در مدل بارگذاری تأیید نشده‌اند؛ هیچ بار جدیدی به حل‌گر منتقل نمی‌شود.";
+      wallOut.textContent=walls+" . وزن مرده دیوار فقط با تعیین مسیر اتکای مستقیم به گره‌های پایه مدل‌شده و وزن مصالح معتبر وارد تحلیل می‌شود. انتقال به زیرسازی فولادی/قاب مستقل، دیوار دارای بازشو و وزن اندود بدون داده تکمیلی فعلاً متوقف می‌شود؛ کنترل خارج از صفحه و اتصالات دیوار نیز مستقل است.";
     }
   }
   function renderValues(){
