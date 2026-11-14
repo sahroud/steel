@@ -1444,6 +1444,18 @@
         throw new Error("ردیابی نیروهای قطعات متغیرمقطع ناقص است: "+result.taperedMemberForceAudit.issues.slice(0,10).join("؛ "));
     }
 
+    if(taperedSegmentationAudit?.splitMemberCount>0){
+      if(window.SteelTaperedSectionForceDiagram?.build){
+        result.taperedSectionForceDiagrams=window.SteelTaperedSectionForceDiagram.build(
+          analysisModel,
+          [{label:String(result.loadCaseLabel||selected.label||selected.key||""),equilibrium:result.equilibrium,members:result.members}],
+          {diagramOptions:{stationCount:21}}
+        );
+      }else{
+        result.taperedSectionForceDiagrams={success:false,status:"missing-module",issues:["ماژول نمودار نیرو برای قطعات متغیرمقطع بارگذاری نشده است."],analysisEnabled:false,designApproved:false};
+      }
+    }
+
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
       if(criticalNode){
