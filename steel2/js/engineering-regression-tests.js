@@ -6,6 +6,8 @@
 function run(){
  const checks=[];
  const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
+ test("reference model viewer is registered independently of active project",()=>{return !!root.SteelReferenceModelViewer?"Isolated reference viewer API registered":false;});
+ test("engineering roadmap exposes parallel workstreams and gates",()=>{const p=root.SteelEngineeringRoadmap?.phases;return Array.isArray(p)&&p.length===11&&p.every(x=>x.id&&x.gate)?"11 engineering workstreams and acceptance gates registered":false;});
  test("reference model import UI is registered after the CSV parser",()=>{return !!root.SteelReferenceImportUI&&typeof root.SteelReferenceImportUI.candidate!=="undefined"?"Controlled import UI facade is available; import remains proposal-only":false;});
  test("CSV structural exchange proposal self-test",()=>{const r=root.SteelCSVStructuralExchange?.selfTest?.();return r?.passed===10&&r.total===10?"CSV quoting, units, signed coordinates, IDs, references, zero-length geometry and proposal-only gates: 10/10":false;});
  test("CSV candidate/reference geometry comparison self-test",()=>{const r=root.SteelCSVStructuralExchange?.comparisonSelfTest?.();return r?.passed===8&&r.total===8?"Node coordinate deviations, inventory differences, reversed member direction, section mismatch and comparison-only gate: 8/8":false;});
