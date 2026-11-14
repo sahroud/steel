@@ -1363,7 +1363,9 @@
     let gableWindEccentricTransfer={success:true,loads:[],rows:[],issues:[],analysisEnabled:false,designApproved:false};
     if(selected.directionalWindPressures){
       if(!window.SteelGableEccentricLoadTransfer?.prepareNodalLoads)throw new Error("ماژول انتقال خروج از مرکزیت باد گابل بارگذاری نشده است.");
-      gableWindEccentricTransfer=window.SteelGableEccentricLoadTransfer.prepareNodalLoads(model,selected.directionalWindPressures.surfaces,windFactor,windSign);
+      const gableWindFactor=selected.key==="wind"?1:Number(selected.windFactor??0);
+      const gableWindSign=selected.windSign===undefined?1:Number(selected.windSign);
+      gableWindEccentricTransfer=window.SteelGableEccentricLoadTransfer.prepareNodalLoads(model,selected.directionalWindPressures.surfaces,gableWindFactor,gableWindSign);
       if(!gableWindEccentricTransfer.success)throw new Error("انتقال بار متغیر و خروج از مرکزیت گابل ناموفق است: "+gableWindEccentricTransfer.issues.slice(0,8).join("؛ "));
     }
     const allNodalLoads=[...(Array.isArray(selected.nodalLoads)?selected.nodalLoads:[]),...wallDeadNodalLoads,...gableWindEccentricTransfer.loads];
