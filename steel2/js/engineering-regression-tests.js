@@ -5,6 +5,7 @@
 "use strict";
 function run(){
  const checks=[];
+ test("tapered member design readiness fail-closed gate",()=>{const x=root.SteelTaperedMemberDesignReadiness?.selfTest?.();return x?.passed===5&&x.failed===0?"Segment coverage, simultaneous 12-component force vectors, missing inputs, duplicate segments and no design approval: 5/5":false;});
  const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
  test("crane type-specific wheel load path classifier",()=>{const r=root.SteelCraneLoadPath?.selfTest?.();return r&&r.passed===19&&r.failed===0?"Crane type routing, invalid support blocking, and project selector state round-trip: 14/14":false;});
  test("crane bay allocation explicitly audits partial and multiple crane layouts",()=>{const x=root.SteelCraneBayConfiguration?.selfTest?.();return x?.passed===12&&x.failed===0?"Crane-to-bay allocation, shared-runway warnings, per-crane data completeness and current FEM compatibility gate: 12/12":false;});
