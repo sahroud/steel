@@ -90,5 +90,46 @@ function auditSelfTest(){
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,failed:checks.filter(x=>!x[1]).map(x=>x[0]),tests:checks.map(x=>({name:x[0],pass:x[1]}))};
 }
 
-root.SteelCSVStructuralExchange=Object.freeze({csvRows,buildProposal,selfTest,auditProposal,auditSelfTest});
+
+function parseSupplementalTables(proposal,input){
+ const issues=[],warnings=[],result={supports:[],releases:[],sectionStations:[]};
+ if(!proposal||!Array.isArray(proposal.nodes)||!Array.isArray(proposal.members))return {success:false,issues:["valid geometry proposal is required"],warnings,data:null,solverEligible:false,designApproved:false};
+ const nodeIds=new Set(proposal.nodes.map(n=>n.id)),memberIds=new Set(proposal.members.map(m=>m.id));
+ const dofs=["ux","uy","uz","rx","ry","rz"];
+ function readTable(text,label,requiredHeaders){if(typeof text!=="string"||!text.trim())return [];let rows;try{rows=csvRows(text);}catch(e){issues.push(label+": "+e.message);return [];}if(!rows.length){issues.push(label+" table is empty");return [];}requiredHeaders.forEach(h=>{if(!(h in rows[0]))issues.push(label+" missing column "+h);});return rows;}
+ if(input&&input.supportsCsv){
+  const rows=readTable(input.supportsCsv,"supports",["node_id",...dofs]),seen=new Set();
+  rows.forEach((r,i)=>{const id=String(r.node_id||"").trim();if(!nodeIds.has(id))issues.push("supports row "+(i+2)+" references unknown node "+id);if(seen.has(id))issues.push("duplicate support definition for node "+id);seen.add(id);const restraints={};dofs.forEach(k=>{const v=String(r[k]||"").trim().toUpperCase();if(!["FIXED","FREE"].includes(v))issues.push("supports row "+(i+2)+" "+k+" must be FIXED or FREE; springs are not supported");else restraints[k]=v;});result.supports.push({nodeId:id,restraints,sourceRow:i+2});});
+ }
+ if(input&&input.releasesCsv){
+  const rows=readTable(input.releasesCsv,"releases",["member_id","end",...dofs]),seen=new Set();
+  rows.forEach((r,i)=>{const id=String(r.member_id||"").trim(),end=String(r.end||"").trim().toUpperCase(),key=id+"|"+end;if(!memberIds.has(id))issues.push("release row "+(i+2)+" references unknown member "+id);if(!["I","J"].includes(end))issues.push("release row "+(i+2)+" end must be I or J");if(seen.has(key))issues.push("duplicate release definition "+key);seen.add(key);const releases={};dofs.forEach(k=>{const v=String(r[k]||"").trim().toUpperCase();if(!["RELEASED","CONNECTED"].includes(v))issues.push("release row "+(i+2)+" "+k+" must be RELEASED or CONNECTED");else releases[k]=v;});result.releases.push({memberId:id,end,releases,sourceRow:i+2});});
+ }
+ if(input&&input.sectionStationsCsv){
+  if(!input.sectionDimensionUnit||!["mm","m"].includes(input.sectionDimensionUnit))issues.push("sectionDimensionUnit must explicitly be mm or m");
+  const rows=readTable(input.sectionStationsCsv,"section stations",["member_id","station_ratio","d","bf","tw","tf"]),seen=new Set(),factor=input.sectionDimensionUnit==="mm"?0.001:1;
+  rows.forEach((r,i)=>{const id=String(r.member_id||"").trim(),ratio=Number(r.station_ratio),key=id+"|"+ratio;if(!memberIds.has(id))issues.push("section station row "+(i+2)+" references unknown member "+id);if(!Number.isFinite(ratio)||ratio<0||ratio>1)issues.push("section station row "+(i+2)+" station_ratio must be within [0,1]");if(seen.has(key))issues.push("duplicate section station "+key);seen.add(key);const dims={};["d","bf","tw","tf"].forEach(k=>{const v=Number(r[k]);if(!Number.isFinite(v)||v<=0)issues.push("section station row "+(i+2)+" "+k+" must be positive");else dims[k]=v*factor;});result.sectionStations.push({memberId:id,stationRatio:ratio,dimensionsM:dims,originalUnit:input.sectionDimensionUnit,sourceRow:i+2});});
+  const grouped=new Map();result.sectionStations.forEach(x=>{if(!grouped.has(x.memberId))grouped.set(x.memberId,[]);grouped.get(x.memberId).push(x.stationRatio);});
+  grouped.forEach((stations,id)=>{stations.sort((a,b)=>a-b);if(stations[0]!==0||stations[stations.length-1]!==1)warnings.push("member "+id+" section stations do not include both 0 and 1 endpoints");});
+ }
+ if(!input||(!input.supportsCsv&&!input.releasesCsv&&!input.sectionStationsCsv))warnings.push("no supplemental tables supplied");
+ return {success:issues.length===0,issues,warnings,data:issues.length?null:result,status:"pending_review",geometryActivation:false,solverEligible:false,designApproved:false};
+}
+function supplementalSelfTest(){
+ const p={nodes:[{id:"N1"},{id:"N2"}],members:[{id:"M1"}]};
+ const base={supportsCsv:"node_id,ux,uy,uz,rx,ry,rz\nN1,FIXED,FIXED,FIXED,FREE,FREE,FREE",releasesCsv:"member_id,end,ux,uy,uz,rx,ry,rz\nM1,I,CONNECTED,CONNECTED,CONNECTED,RELEASED,RELEASED,RELEASED",sectionStationsCsv:"member_id,station_ratio,d,bf,tw,tf\nM1,0,500,200,10,16\nM1,1,300,150,8,12",sectionDimensionUnit:"mm"};
+ const r=parseSupplementalTables(p,base),checks=[
+ ["valid restraints and releases parsed",r.success&&r.data.supports.length===1&&r.data.releases.length===1],
+ ["section dimensions normalized to metres",r.data?.sectionStations[0].dimensionsM.d===0.5],
+ ["unknown node rejected",!parseSupplementalTables(p,{...base,supportsCsv:base.supportsCsv.replace("N1,","NX,")}).success],
+ ["unknown member rejected",!parseSupplementalTables(p,{...base,releasesCsv:base.releasesCsv.replace("M1,","MX,")}).success],
+ ["invalid restraint token rejected",!parseSupplementalTables(p,{...base,supportsCsv:base.supportsCsv.replace("FIXED","SPRING")}).success],
+ ["invalid station ratio rejected",!parseSupplementalTables(p,{...base,sectionStationsCsv:base.sectionStationsCsv.replace("M1,0,","M1,1.2,")}).success],
+ ["missing section unit rejected",!parseSupplementalTables(p,{...base,sectionDimensionUnit:""}).success],
+ ["supplemental proposal cannot activate solver",r.solverEligible===false&&r.designApproved===false&&r.geometryActivation===false]
+ ];
+ return {passed:checks.filter(x=>x[1]).length,total:checks.length,failed:checks.filter(x=>!x[1]).map(x=>x[0]),tests:checks.map(x=>({name:x[0],pass:x[1]}))};
+}
+
+root.SteelCSVStructuralExchange=Object.freeze({csvRows,buildProposal,selfTest,auditProposal,auditSelfTest,parseSupplementalTables,supplementalSelfTest});
 })(typeof window!=="undefined"?window:globalThis);
