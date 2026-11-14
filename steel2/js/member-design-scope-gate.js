@@ -9,7 +9,12 @@ const GROUPS=[
  {key:"rafter",label:"تیر/رفتر",family:"hot-rolled-I-or-tapered",required:["section","section-forces","flexure","ltb","shear","interaction","deflection"]},
  {key:"roofPurlin",label:"لاپه سقف",family:"cold-formed-or-hot-rolled",required:["exact-profile","cold-formed-local-distortional","restraint","biaxial-actions","shear","deflection","connections"]},
  {key:"wallGirt",label:"قید دیوار",family:"cold-formed-or-hot-rolled",required:["exact-profile","cold-formed-local-distortional","restraint","biaxial-actions","shear","deflection","connections"]},
- {key:"braces",label:"مهاربندهای طولی سقف و دیوار",family:"brace-specific",required:["brace-force-demand","tension","compression","unbraced-length","connections","collector-diaphragm"]}
+ {key:"braces",label:"مهاربندهای طولی سقف و دیوار",family:"brace-specific",required:["brace-force-demand","tension","compression","unbraced-length","connections","collector-diaphragm"]},
+ {key:"endPost",label:"ستونک‌های انتهایی",family:"hot-rolled-or-built-up",required:["section","compression","biaxial-flexure","shear","interaction","stability","connections"]},
+ {key:"endGirt",label:"تیرهای انتهایی و گرت انتهایی",family:"cold-formed-or-hot-rolled",required:["exact-profile","biaxial-actions","local-distortional-buckling","shear","deflection","connections"]},
+ {key:"roofEdge",label:"اعضای لبه و کناره سقف",family:"section-specific",required:["exact-section","biaxial-actions","stability","shear","deflection","connections"]},
+ {key:"craneRunwayGirder",label:"تیر حمال جرثقیل",family:"crane-runway",required:["wheel-load-envelope","biaxial-flexure","shear","web-crippling","fatigue","serviceability","lateral-stability","connections"]},
+ {key:"tieBeam",label:"شناژ و اعضای بتنی رابط",family:"reinforced-concrete",required:["concrete-material","reinforcement-layout","axial-flexure","shear","anchorage","foundation-interface"]}
 ];
 const SUPPORT={
  column:["compression-global-buckling-limited"],
@@ -29,7 +34,11 @@ const LABELS={
  restraint:"مهار جانبی و پیچشی واقعی","biaxial-actions":"بارگذاری دو‌محوره و پیچش",
  connections:"اتصالات و پیچ‌های لاپه/قید",
  "brace-force-demand":"استخراج نیروهای محوری هم‌زمان هر ترکیب",tension:"ظرفیت کششی و گسیختگی مقطع مهاربند",
- "unbraced-length":"طول مهارنشده و ضریب طول مؤثر مستند","collector-diaphragm":"دیافراگم و جمع‌کننده و انتقال بار طولی مستند"
+ "unbraced-length":"طول مهارنشده و ضریب طول مؤثر مستند","collector-diaphragm":"دیافراگم و جمع‌کننده و انتقال بار طولی مستند",
+ "local-distortional-buckling":"کمانش موضعی و اعوجاجی مقطع","exact-section":"هندسه و خواص مقطع واقعی","wheel-load-envelope":"قطار بار چرخ و پوش نیروهای جرثقیل",
+ "web-crippling":"لهیدگی جان و اثر بار متمرکز چرخ","fatigue":"خستگی و طیف چرخه بار","serviceability":"تغییرمکان و ارتعاش بهره‌برداری",
+ "lateral-stability":"پایداری جانبی و پیچشی تیر حمال","concrete-material":"مقاومت و مشخصات بتن و فولاد","reinforcement-layout":"آرایش و مهار آرماتورها",
+ "axial-flexure":"اندرکنش نیروی محوری و خمش بتن‌آرمه","anchorage":"طول مهاری و وصله آرماتور","foundation-interface":"انتقال نیرو به فونداسیون"
 };
 function audit(){
  const env=root.SteelMemberForceEnvelope?.getLast?.()||null;
@@ -59,14 +68,16 @@ function selfTest(){
  root.SteelMemberForceEnvelope={getLast:()=>({members:[{sectionKey:"column",simultaneousCases:[{}]},{sectionKey:"rafter"},{sectionKey:"roofPurlin"},{sectionKey:"wallGirt"}]})};
  const r=audit();root.SteelMemberForceEnvelope=saved;
  const tests=[
-  {name:"four primary member families and longitudinal braces reported",ok:r.rows.length===5},
+  {name:"four primary member families and longitudinal braces reported",ok:r.rows.length===10},
   {name:"column global compression engine remains limited",ok:r.rows[0].availableLimitedEngines.includes("compression-global-buckling-limited")&&r.rows[0].designApproved===false},
   {name:"column remains blocked by missing full design checks",ok:r.rows[0].status==="blocked"&&r.rows[0].missing.some(x=>x.includes("خمش حول دو محور"))},
   {name:"rafter requires internal force diagram and LTB",ok:r.rows[1].missing.some(x=>x.includes("نمودار معتبر"))&&r.rows[1].missing.some(x=>x.includes("کمانش جانبی"))},
   {name:"purlin requires cold-formed local and distortional checks",ok:r.rows[2].missing.some(x=>x.includes("کمانش موضعی"))},
   {name:"girt follows a section-specific route",ok:r.rows[3].missing.length>0},
   {name:"brace group remains blocked pending capacity and collector checks",ok:r.rows[4].status==="blocked"&&r.rows[4].missing.some(x=>x.includes("کمانش کلی"))&&r.rows[4].missing.some(x=>x.includes("جمع‌کننده"))},
-  {name:"no group receives design approval",ok:r.rows.every(x=>x.designApproved===false)&&r.designApproved===false}
+  {name:"crane girder requires wheel loads, fatigue and web crippling",ok:r.rows.find(x=>x.group==="craneRunwayGirder")?.missing.some(x=>x.includes("خستگی"))&&r.rows.find(x=>x.group==="craneRunwayGirder")?.status==="blocked"},
+ {name:"reinforced concrete tie remains outside steel capacity engine",ok:r.rows.find(x=>x.group==="tieBeam")?.missing.some(x=>x.includes("بتن"))},
+ {name:"no group receives design approval",ok:r.rows.every(x=>x.designApproved===false)&&r.designApproved===false}
  ];
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,tests};
 }
@@ -80,7 +91,7 @@ function init(){
  if(document.getElementById("memberDesignScopeGatePanel"))return;
  const main=document.querySelector("main");if(!main)return;
  const p=document.createElement("section");p.className="panel";p.id="memberDesignScopeGatePanel";
- p.innerHTML="<div class='panel-title'><h3>دروازه کنترل دامنه طراحی تیر، ستون و لاپه</h3><span class='status'>کنترل عدم تأیید کاذب</span></div><div class='notice'>این بخش مشخص می‌کند کدام کنترل‌های واقعی هنوز برای هر گروه عضو لازم‌اند؛ از نمایش قبولی بر اساس موتورهای مقدماتی جلوگیری می‌کند.</div><div class='button-grid'><button class='btn secondary' id='btnMemberDesignScopeGate' type='button'>بازبینی دامنه طراحی اعضا</button></div><div id='memberDesignScopeGateResults'></div>";
+ p.innerHTML="<div class='panel-title'><h3>دروازه کنترل دامنه طراحی تمام اعضای سوله</h3><span class='status'>کنترل عدم تأیید کاذب</span></div><div class='notice'>این بخش مشخص می‌کند کدام کنترل‌های واقعی هنوز برای هر گروه عضو لازم‌اند؛ از نمایش قبولی بر اساس موتورهای مقدماتی جلوگیری می‌کند.</div><div class='button-grid'><button class='btn secondary' id='btnMemberDesignScopeGate' type='button'>بازبینی دامنه طراحی اعضا</button></div><div id='memberDesignScopeGateResults'></div>";
  const footer=main.querySelector("footer");if(footer)footer.insertAdjacentElement("beforebegin",p);else main.appendChild(p);
  document.getElementById("btnMemberDesignScopeGate").addEventListener("click",render);
 }
