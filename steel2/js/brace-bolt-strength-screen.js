@@ -21,6 +21,7 @@ function calculateBolt(c,d){
  const phi=0.75, t=c.connectedThicknessMm, d0=c.holeDiameterMm, db=c.boltDiameterMm, Fu=c.connectedFuMPa, lc=d.clearDistanceMm;
  const shearStress=d.shearPerPlaneN/Ab;
  const FntPrime=Math.min(Fnt,1.3*Fnt-(Fnt/(phi*Fnv))*shearStress);
+ if(!(FntPrime>0))return {ok:false,issues:["تنش کششی اصلاح‌شده پیچ طبق J3-3 غیرمثبت است؛ تقاضای برشی/داده پیچ باید بازبینی شود."]};
  const shearAvailable=phi*Fnv*Ab;
  const tensionAvailable=phi*FntPrime*Ab;
  const coeff=c.deformationAtServiceLoad==="yes"?2.4:3.0;
