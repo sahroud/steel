@@ -1284,9 +1284,9 @@
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
-    const wallDeadLoadAudit=window.SteelWallDeadLoadTransfer?.audit?.(model);
-    if(!wallDeadLoadAudit?.success||wallDeadLoadAudit.loadTransferEnabled!==true)throw new Error("انتقال وزن مرده دیوار به تکیه‌گاه‌های فونداسیون کامل نیست: "+(wallDeadLoadAudit?.issues||["ماژول انتقال وزن دیوار در دسترس نیست."]).join("؛ "));
-    const wallDeadNodalLoads=window.SteelWallDeadLoadTransfer.prepareNodalLoads(model,selected.deadFactor,loadPathAudit.wallDeadLoadTransfer);
+    const wallDeadLoadAudit=loadPathAudit.wallDeadLoadTransfer;
+    if(!wallDeadLoadAudit?.success||wallDeadLoadAudit.loadTransferEnabled!==true)throw new Error("انتقال وزن مرده دیوار به تکیه‌گاه‌های فونداسیون کامل نیست: "+(wallDeadLoadAudit?.issues||["ممیزی مسیر بار، انتقال معتبر وزن دیوار را تأیید نکرد."]).join("؛ "));
+    const wallDeadNodalLoads=window.SteelWallDeadLoadTransfer.prepareNodalLoads(model,selected.deadFactor,wallDeadLoadAudit);
     const allNodalLoads=[...(Array.isArray(selected.nodalLoads)?selected.nodalLoads:[]),...wallDeadNodalLoads];
     const nodalMap=new Map();
     allNodalLoads.forEach(load=>{
