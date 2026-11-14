@@ -77,7 +77,7 @@ function audit(model){
 function fixture(){
  const span=20,height=6,rise=2,length=30,endPostSpacing=5,frames=[0,length],nodes=[],members=[];
  const roofY=x=>height+rise*(x<=span/2?x/(span/2):(span-x)/(span/2));
- let id=0;const add=(x,y,z,kind="joint")=>{const n={id:"N"+(++id),x,y,z,kind};nodes.push(n);return n;};
+ let id=0;const add=(x,y,z,kind="joint")=>{const old=nodes.find(n=>near(n.x,x)&&near(n.y,y)&&near(n.z,z));if(old)return old;const n={id:"N"+(++id),x,y,z,kind};nodes.push(n);return n;};
  const addM=(a,b,sectionKey,extra={})=>members.push({id:"M"+(members.length+1),start:a.id,end:b.id,sectionKey,...extra});
  const xs=[0,5,10,15,20];
  [0,length].forEach((z,fi)=>{
