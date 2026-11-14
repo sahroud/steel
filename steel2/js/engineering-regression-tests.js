@@ -7,6 +7,7 @@ function run(){
  const checks=[];
  const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
  test("CSV structural exchange proposal self-test",()=>{const r=root.SteelCSVStructuralExchange?.selfTest?.();return r?.passed===10&&r.total===10?"CSV quoting, units, signed coordinates, IDs, references, zero-length geometry and proposal-only gates: 10/10":false;});
+ test("CSV supplemental restraints releases and tapered stations self-test",()=>{const r=root.SteelCSVStructuralExchange?.supplementalSelfTest?.();return r?.passed===8&&r.total===8?"Explicit node restraints, member-end releases, tapered section stations, units and proposal-only gates: 8/8":false;});
  test("reference import evidence validator self-test",()=>{const r=root.SteelReferenceImportEvidenceValidator?.selfTest?.();return r?.passed===8&&r.total===8?"Source-specific locators, checksums, signed coordinates and fail-closed gates: 8/8":false;});
  test("legacy SPS parser preserves source and fails closed",()=>{const p=root.SteelLegacySPSParser?.selfTest?.();return p?.passed===7&&p.total===7?"Raw separators, indexed suffixes, duplicates, malformed lines, line provenance and fail-closed flags: 7/7":false;});
  test("tapered fabrication economics quantity comparison",()=>{const x=root.SteelTaperedFabricationEconomics?.selfTest?.();return x?.passed===5&&x.failed===0?"Prismatic baseline, continuous taper, stepped option, unknown pricing and invalid geometry: 5/5":false;});
