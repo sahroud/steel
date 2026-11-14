@@ -5,7 +5,7 @@
 "use strict";
 const TOL=1e-7;
 const near=(a,b)=>Number.isFinite(Number(a))&&Number.isFinite(Number(b))&&Math.abs(Number(a)-Number(b))<=TOL;
-const safeId=s=>String(s).replace(/[^A-Za-z0-9_-]/g,"_");
+const safeId=s=>Array.from(String(s)).map(ch=>ch.codePointAt(0).toString(16)).join("_");
 function audit(model,configuration){
  const issues=[],warnings=[],g=model?.geometry||{},runway=g.craneRunway||{},frames=Array.isArray(g.frames)?g.frames:[],nodes=Array.isArray(model?.nodes)?model.nodes:[],members=Array.isArray(model?.members)?model.members:[];
  const cfg=configuration||root.SteelCraneBayConfiguration?.readAndAudit?.(Number(g.bayCount));
