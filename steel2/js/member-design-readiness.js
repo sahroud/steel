@@ -17,7 +17,7 @@ function audit(){
  }
  if(inputs){
   const d=inputs.groups||{};
-  groups.forEach(([k,label])=>{const x=d[k]||{};if(x.applyToAll){["Fy","Fu","Kx","Ky","Lcx","Lcy","Lb","Cb"].forEach(f=>{if(!(Number(x[f])>0))issues.push(label+": "+f+" برای تعمیم گروهی ناقص است.");});if(x.Fu<x.Fy)issues.push(label+": Fu از Fy کمتر است.");}if(!(Number(x.t_mm)>0))notes.push(label+": ضخامت اختصاصی ثبت نشده؛ ضخامت عمومی مصالح به ارث می‌رسد و باید یکسان بودن ضخامت اعضای این گروه تأیید شود.");});
+  groups.forEach(([k,label])=>{const x=d[k]||{};if(x.applyToAll){["Fy","Fu","E_MPa","G_MPa","Kx","Ky","Kz","Lcx","Lcy","Lcz","Lb","Cb"].forEach(f=>{if(!(Number(x[f])>0))issues.push(label+": "+f+" برای تعمیم گروهی ناقص است.");});if(x.Fu<x.Fy)issues.push(label+": Fu از Fy کمتر است.");}if(!(Number(x.t_mm)>0))notes.push(label+": ضخامت اختصاصی ثبت نشده؛ ضخامت عمومی مصالح به ارث می‌رسد و باید یکسان بودن ضخامت اعضای این گروه تأیید شود.");});
  }else notes.push("رجیستر پارامترهای طراحی اعضا هنوز بارگذاری نشده است.");
  if(geom){
   ["column","rafter"].forEach(k=>{
