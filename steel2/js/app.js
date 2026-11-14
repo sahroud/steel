@@ -553,7 +553,7 @@
         });
         if(patterns.some(n=>n!==8))throw new Error("هر یک از سه الگوی بار باید در ۸ حالت جهت/فشار داخلی تکرار شود.");
         return [{
-            id:"ULS-01-1.4D",label:"ترکیب ۱ ـ 1.4D (بدون باد)",
+            id:"ULS-01-1.4D",m6FamilyId:"M6-ULS-01",m6VariantId:"D",label:"ترکیب ۱ ـ 1.4D (بدون باد)",
             factors:{dead:1.4,live:0,snow:0,wind:0},windSign:1,
             directionalWindPressures:null,directionalWindCaseId:null,
             source:{code:"مبحث ششم ۱۳۹۸",clause:"۶-۲-۳-۲، ترکیب ۱"}
@@ -631,7 +631,7 @@
                 if(n>peakN||v>peakV||mm>peakM)criticalMember=member.id;
                 peakN=Math.max(peakN,n);peakV=Math.max(peakV,v);peakM=Math.max(peakM,mm);
             });
-            const itemResult={id:item.id||item.directionalWindCaseId||"ULS-01-1.4D",name:item.label,label:item.label,factors:{...item.factors},windSign:item.windSign,directionalWindCaseId:item.directionalWindCaseId||null,source:item.source||null,envelope:{
+            const itemResult={id:item.id||item.directionalWindCaseId||"ULS-01-1.4D",m6FamilyId:item.m6FamilyId||null,m6VariantId:item.m6VariantId||null,name:item.label,label:item.label,factors:{...item.factors},windSign:item.windSign,directionalWindCaseId:item.directionalWindCaseId||null,source:item.source||null,envelope:{
                 N:{value:peakN/1000,member:criticalMember,end:"بیشینه دو انتها"},
                 V:{value:peakV/1000,member:criticalMember,end:"برآیند برش دو انتها"},
                 M:{value:peakM/1000,member:criticalMember,end:"برآیند لنگر دو انتها"}},
