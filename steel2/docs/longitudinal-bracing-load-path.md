@@ -50,3 +50,10 @@ Regression coverage adds paired tension/compression tests at both ends and an un
 The model panel now has a dedicated action, **ممیزی هندسه تازه‌ساخته و مسیر بار**. The action calls `SteelStructuralModel.build()` at click time, then passes that exact returned model object to `SteelFreshModelStructuralAudit.audit()`. The report includes node/member identity checks, missing endpoints, zero-length members, end-wall gable topology, the whole-building load-path audit, and the longitudinal-bracing readiness result. It records the model generation timestamp and member counts. This avoids treating a stored `default-project.json` structural snapshot as if it were the current FEM model.
 
 The audit is a user-triggered browser check; it has not been run against the current browser inputs in this development session. A successful topology result remains distinct from a stiffness/collector analysis or code design approval.
+
+
+## FEM tensile-demand bridge
+
+The tensile-input readiness audit now attempts to obtain the maximum tensile axial demand for each configured member group (`roofBrace`, `wallBrace`, and `endPost`) from the current member-force envelope. It normalizes end I as `-Fx_i` and end J as `+Fx_j`, then searches all exact load-case labels and all members in the group. Extraction is blocked unless the envelope is equilibrated, the solver sign convention is recognized, and every group member has complete per-case force vectors. A manually entered demand is retained but compared with the FEM-derived maximum and a warning is emitted when the difference exceeds 1% (with a 0.01 kN floor).
+
+This bridge supplies demand only. Gross yielding, net/effective-section rupture, block shear, shear lag, gusset, bolt and weld resistance remain unimplemented pending the applicable official clause set and connection geometry.
