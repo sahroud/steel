@@ -6,6 +6,20 @@
 "use strict";
 const finite=v=>typeof v==="number"&&Number.isFinite(v);
 const num=v=>v===null||v===undefined||v===""?null:Number(v);
+function auditGableTransfer(model,loads){
+ const issues=[],members=Array.isArray(model?.members)?model.members:[],girts=members.filter(m=>m.sectionKey==="endGirt");
+ const front=num(loads?.windEndFront),back=num(loads?.windEndBack),active=(front!==null&&Math.abs(front)>1e-12)||(back!==null&&Math.abs(back)>1e-12);
+ if(!active)return{active:false,ready:true,issues:[],girtCount:girts.length,topology:null,area:null};
+ if(!girts.length)issues.push("هیچ گرت انتهایی برای انتقال باد گابل وجود ندارد.");
+ ["front","rear"].forEach(face=>{if(!girts.some(m=>m.endFace===face))issues.push("گرت انتهایی وجه "+face+" موجود نیست.");});
+ const bad=girts.filter(m=>!finite(m.lineLoads?.windEnd)||!finite(m.lineLoads?.tributaryHeight)||!(m.lineLoads.tributaryHeight>0));
+ if(bad.length)issues.push("بار خطی صریح/ارتفاع بارگیر گرت‌های انتهایی ناقص است: "+bad.slice(0,8).map(m=>m.id).join("، "));
+ const topology=root.SteelEndWallGableSupportAudit?.audit?.(model)||null;
+ if(!topology?.success)issues.push("توپولوژی گابل (اتصال گرت به ستونک/قاب و وتر رفتر) تأیید نشد: "+(topology?.issues||["ممیزی توپولوژی در دسترس نیست."]).join("؛ "));
+ const area=root.SteelDirectionalWind3D?.auditGableTributaryAreaCoverage?.(model)||null;
+ if(!area?.success)issues.push("بسته‌شدن مساحت بارگیر گابل تأیید نشد: "+(area?.issues||["ممیزی مساحت بارگیر در دسترس نیست."]).join("؛ "));
+ return{active:true,ready:issues.length===0,issues,girtCount:girts.length,topology,area,analysisEnabled:false,designApproved:false};
+}
 function audit(model,loads){
  const issues=[],rows=[];
  if(!model||!Array.isArray(model.members)||!model.geometry)issues.push("مدل هندسی ساخته‌شده و فهرست اعضا در دسترس نیست.");
@@ -176,12 +190,9 @@ function audit(model,loads){
   if(faces.length&&!wallReady)issues.push("وزن مرده پوسته دیوارها به مدل سازه/واکنش فونداسیون منتقل نشده است؛ نوع مصالح به‌تنهایی مسیر بار را مشخص نمی‌کند. برای هر وجه باید اتکای دیوار به فونداسیون یا انتقال به گرت/ستونک و وزن سطحی مستند شود.");
   if(faces.length)rows.push({id:"wall-cladding-dead-load",label:"وزن مرده پوسته دیوارها",memberCount:faces.length,coveredCount:wallReady?faces.length:0,missingCount:wallReady?0:faces.length,invalidCount:0,status:wallReady?"assigned":"incomplete",faces,transfer:"wall cladding/masonry → documented support system → steel frame or foundation"});
  }
- const gableChords=members.filter(m=>m.sectionKey==="rafter"&&m.axis==="endwall");
- const frontEndWind=num(loads?.windEndFront),backEndWind=num(loads?.windEndBack);
- const gableWindActive=(frontEndWind!==null&&Math.abs(frontEndWind)>1e-12)||(backEndWind!==null&&Math.abs(backEndWind)>1e-12);
- const gableTransferReady=gableChords.length>0&&gableChords.every(m=>m.lineLoads?.gableWindTransfer===true&&finite(m.lineLoads?.gableWind));
- if(gableWindActive&&!gableTransferReady)issues.push("باد دیوار انتهایی در ناحیه مثلثی بالای آخرین گرت هنوز مسیر بار مستند به رفتر قاب انتهایی/ستونک‌ها ندارد؛ تحلیل با باد انتهایی متوقف شود تا روش انتقال پوسته و عرض/ارتفاع بارگیر مستند شود.");
- rows.push({id:"endwall-gable-wind",label:"باد ناحیه مثلثی دیوار انتهایی",memberCount:gableChords.length,coveredCount:gableTransferReady?gableChords.length:0,missingCount:gableWindActive&&!gableTransferReady?Math.max(1,gableChords.length):0,invalidCount:0,status:!gableWindActive?"not-applicable":gableTransferReady?"assigned":"incomplete",transfer:"gable cladding → documented end-wall post/top-chord tributary load → end frame"});
+ const gableTransfer=auditGableTransfer(model,loads);
+ if(gableTransfer.active&&!gableTransfer.ready)issues.push("باد دیوار انتهایی در مسیر گرت‌ها/ستونک‌ها/قاب انتهایی ناقص است: "+gableTransfer.issues.join("؛ "));
+ rows.push({id:"endwall-gable-wind",label:"باد دیوار انتهایی و ناحیه گابل",memberCount:gableTransfer.girtCount,coveredCount:gableTransfer.active&&gableTransfer.ready?gableTransfer.girtCount:0,missingCount:gableTransfer.active&&!gableTransfer.ready?Math.max(1,gableTransfer.girtCount):0,invalidCount:0,status:!gableTransfer.active?"not-applicable":gableTransfer.ready?"assigned":"incomplete",topology:gableTransfer.topology,areaCoverage:gableTransfer.area,transfer:"end-wall cladding → end-girts with local tributary heights → shared post/frame nodes → base support"});
  const frameIds=[...new Set(groups.rafters.map(m=>Number(m.frame)).filter(Number.isFinite))];
  const frameCount=Array.isArray(model?.geometry?.frames)?model.geometry.frames.length:0;
  if(frameCount&&frameIds.length!==frameCount)issues.push("پوشش رفترها در قاب‌ها کامل نیست: "+frameIds.length+" از "+frameCount+" قاب دارای عضو رفتر شناسایی شد.");
@@ -285,7 +296,8 @@ function selfTest(){
   test("all member paths must reach a declared base support",()=>{const p=JSON.parse(JSON.stringify(model));p.members[5].start="ORPHAN";return !audit(p,loads).success;});
  test("empty combination list allowed as load-path audit only",()=>{const p={...loads,combinations:[]};return audit(model,p).success;});
  test("selected wall materials require a documented dead-load support path",()=>{const old=root.SteelDesignCore,oldTransfer=root.SteelWallDeadLoadTransfer;root.SteelDesignCore={getData:()=>({wallEnvelope:{front:{material:"brick"},rear:{material:"sandwich-panel"},left:{material:"metal-sheet"},right:{material:"brick"}}})};root.SteelWallDeadLoadTransfer=null;const r=audit(model,loads);root.SteelDesignCore=old;root.SteelWallDeadLoadTransfer=oldTransfer;return !r.success&&r.issues.some(x=>x.includes("وزن مرده پوسته دیوارها"));});
- test("nonzero end-wall wind blocks unmodelled gable triangle",()=>{const p={...loads,windEndFront:.4};return !audit(model,p).success&&audit(model,p).issues.some(x=>x.includes("ناحیه مثلثی"));});
+ test("nonzero end-wall wind blocks an incomplete gable load path",()=>{const p={...loads,windEndFront:.4};return !audit(model,p).success&&audit(model,p).issues.some(x=>x.includes("مسیر گرت‌ها"));});
+ test("complete end-girt topology and tributary area permit gable transfer readiness",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.();m.members.filter(x=>x.sectionKey==="endGirt").forEach(x=>x.lineLoads={dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryHeight:x.tributaryHeight});const r=auditGableTransfer(m,{windEndFront:.4,windEndBack:0});return r.active&&r.ready&&r.area?.success===true&&r.topology?.success===true;});
  test("zero end-wall wind marks gable triangle not applicable",()=>{const p={...loads,windEndFront:0,windEndBack:0};return audit(model,p).rows.find(x=>x.id==="endwall-gable-wind").status==="not-applicable";});
  root.SteelDesignCore=oldCore;
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
@@ -298,6 +310,6 @@ function mount(){
  const reg=doc.getElementById("engineeringRegressionPanel");if(reg)reg.insertAdjacentElement("beforebegin",panel);else main.appendChild(panel);
  doc.getElementById("btnWholeBuildingLoadPath").addEventListener("click",run);
 }
-root.SteelWholeBuildingLoadPathAudit={audit,run,selfTest};
+root.SteelWholeBuildingLoadPathAudit={audit,run,selfTest,auditGableTransfer};
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
