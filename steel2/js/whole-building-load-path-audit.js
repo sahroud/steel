@@ -65,7 +65,7 @@ function audit(model,loads){
  const adjacency=new Map(),nodeIds=new Set((model?.nodes||[]).map(n=>String(n.id)));
  const link=(x,y)=>{x=String(x);y=String(y);if(!adjacency.has(x))adjacency.set(x,new Set());if(!adjacency.has(y))adjacency.set(y,new Set());adjacency.get(x).add(y);adjacency.get(y).add(x);};
  members.forEach(m=>{if(m.start!==undefined&&m.end!==undefined)link(m.start,m.end);});
- const supports=(model?.nodes||[]).filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>String(n.id));
+ const membersWithMissingNodes=members.filter(m=>!nodeIds.has(String(m.start))||!nodeIds.has(String(m.end))).map(m=>String(m.id));\n if(membersWithMissingNodes.length)issues.push("گره ابتدا/انتها برای اعضای زیر در مدل وجود ندارد: "+membersWithMissingNodes.slice(0,10).join("، "));\n const supports=(model?.nodes||[]).filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>String(n.id));
  const reaches=start=>{const seen=new Set([String(start)]),q=[String(start)];while(q.length){const n=q.shift();if(supports.includes(n))return true;(adjacency.get(n)||[]).forEach(x=>{if(!seen.has(x)){seen.add(x);q.push(x);}});}return false;};
  const disconnected=members.filter(m=>["roofPurlin","wallGirt","endGirt"].includes(m.sectionKey)&&(!nodeIds.has(String(m.start))||!nodeIds.has(String(m.end))||!reaches(m.start)||!reaches(m.end))).map(m=>String(m.id));
  if(!supports.length)issues.push("گره پایه برای ممیزی اتصال به تکیه‌گاه موجود نیست.");
@@ -130,7 +130,7 @@ function selfTest(){
  test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
  test("nonzero direct roof gravity on rafter is rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[0].lineLoads.dead=1;return !audit(p,loads).success;} );
  test("rafter explicit zero load is accepted",()=>audit(model,loads).rows.find(r=>r.id==="rafter-reaction-path").status==="assigned" );
- test("disconnected loaded member rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].start="ORPHAN";return !audit(p,loads).success;});
+ test("disconnected loaded member rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].start="ORPHAN";return !audit(p,loads).success;});\n test("every model member must reference existing endpoint nodes",()=>{const p=JSON.parse(JSON.stringify(model));p.members[0].end="MISSING";return !audit(p,loads).success;});
  test("missing model rejected",()=>!audit(null,loads).success);
  test("empty combination list allowed as load-path audit only",()=>{const p={...loads,combinations:[]};return audit(model,p).success;});
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
