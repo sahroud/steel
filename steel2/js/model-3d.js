@@ -1430,6 +1430,9 @@
       }
     });
     if(taperedSegmentationAudit?.splitMemberCount>0){
+      if(!window.SteelTaperedSectionPropertyAudit?.audit)throw new Error("ممیزی مستقل خواص هندسی مقاطع متغیرمقطع بارگذاری نشده است.");
+      result.taperedSectionPropertyAudit=window.SteelTaperedSectionPropertyAudit.audit(result);
+      if(!result.taperedSectionPropertyAudit.success)throw new Error("خواص مقطع ثبت‌شده با ابعاد واقعی قطعات سازگار نیست: "+result.taperedSectionPropertyAudit.issues.slice(0,10).join("؛ "));
       if(!window.SteelTaperedMemberForceAudit?.audit)
         throw new Error("ممیزی ردیابی نیرو برای قطعات متغیرمقطع بارگذاری نشده است؛ نتیجه برای طراحی قابل استفاده نیست.");
       result.taperedMemberForceAudit=window.SteelTaperedMemberForceAudit.audit(result);
