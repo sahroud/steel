@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "reference-project-input-capture",
+  "status": "transcribed_pending_model_reconstruction_and_independent_verification",
+  "project": {
+    "id": "SHAHROOD-24X60-CRANE30T-1396",
+    "name": "FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58)-1",
+    "city": "shahroud",
+    "province": "Semnan",
+    "country": "Iran",
+    "owner": "شرکت نورد و قوطی سازان شاهرود",
+    "originalDesigner": "احمد نوری",
+    "checker": "S.G.B co ltd",
+    "originalDesignDate": "1396/08/11",
+    "sourceSoftware": "SOOLE PARDAZ SEPAHAN 6.1.0"
+  },
+  "sourceFiles": [
+    {
+      "path": "/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58)-1(ALL).doc",
+      "role": "design_report_and_legacy_load_combinations",
+      "fileId": "id:K87BL9jA6x0AAAAAAACKxA"
+    },
+    {
+      "path": "/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58).xlsx",
+      "role": "calculation_workbook_and_member_crane_foundation_inputs",
+      "fileId": "id:K87BL9jA6x0AAAAAAACK1A"
+    },
+    {
+      "path": "/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58)-3D.M3",
+      "role": "native_3d_model_binary_pending_format_adapter",
+      "fileId": "id:K87BL9jA6x0AAAAAAACK2w"
+    },
+    {
+      "path": "/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58).SPS",
+      "role": "native_software_project_settings_text",
+      "fileId": "id:K87BL9jA6x0AAAAAAACKxQ"
+    }
+  ],
+  "geometry": {
+    "bays": 1,
+    "span_m": 24,
+    "length_m": 60,
+    "frameSpacing_m": 6,
+    "frameCount": 11,
+    "eaveHeight_report_m": 12.8,
+    "ridgeHeight_report_m": 15.2,
+    "roofRise_m": 2.4,
+    "roofSlope_percent": 20,
+    "roofSlope_degrees_report": 11.3,
+    "interiorColumns": 0,
+    "roofType": "ordinary",
+    "craneRailElevation_m": 9.5
+  },
+  "legacyLoads": {
+    "deadRoof_kgf_m2": 30,
+    "groundSnow_kgf_m2": 100,
+    "basicWindPressure_kgf_m2": 30.3,
+    "seismicZoneFactor": 0.3,
+    "seismicResponseFactor_report": 3.5,
+    "allowableSoilPressure_kgf_cm2": 3.2,
+    "wallMasonryHeight_m": 1,
+    "wallMasonryUnitWeight_kgf_m3": 1850,
+    "lightweightUpperWall_kgf_m2": 30,
+    "steelGrade": "St-37",
+    "reportedFy_kgf_cm2": 2400,
+    "windExposureNarrative": "medium terrain; report cites Iranian loading regulation 1392",
+    "snowNarrative": "balanced, unbalanced, drift and sliding snow cases are present in legacy report",
+    "windNarrative": "transverse and longitudinal wind, external and internal pressure/suction cases are present"
+  },
+  "crane": {
+    "present": true,
+    "ratedCapacity_t": 30,
+    "craneRailElevation_m": 9.5,
+    "bridgeCount_reported": 2,
+    "trolleyMass_t_workbook": 4.5,
+    "runwayWheelSpacing_m_values": [
+      1.5,
+      1.25
+    ],
+    "reportedImpactFactor": 1.25,
+    "workbookContainsWheelReactions": true,
+    "workbookContainsFatigueInputs": true,
+    "status": "wheel_layout_bridge_mass_end_truck_mass_and_vendor_certified_max_min_wheel_loads_require_reconciliation"
+  },
+  "legacyMemberHints": {
+    "rafterFlangeWidth_cm": 40,
+    "rafterFlangeThickness_cm": 1.5,
+    "rafterWebDepth_cm": 90,
+    "rafterWebThickness_cm": null,
+    "memberSections": "variable-depth/plate-girder data exist in workbook and native files; complete station-by-station section schedule not yet reconstructed",
+    "braces": "legacy report identifies 30 mm round-bar roof/frame bracing in at least one design check",
+    "purlins": "workbook contains purlin spacing and section inputs; exact complete schedule pending extraction"
+  },
+  "legacyCodes": {
+    "loading": "Iranian loading regulation 1392 (as stated in report)",
+    "steelDesign": "AISC-ASD (as stated in report)",
+    "seismic": "Standard 2800, 4th edition (as stated in report)",
+    "currentSahroudTarget": "Re-check against applicable current Iranian National Building Regulations and project permit/code edition; legacy checks are comparison data only"
+  },
+  "legacyCombinationSymbols": [
+    "DEAD",
+    "LL",
+    "SL",
+    "SLNM",
+    "SLNMR",
+    "SLDRIFT",
+    "SLSlide",
+    "SLRain",
+    "WX",
+    "WX2",
+    "WY",
+    "Wi1",
+    "Wi2",
+    "CRANE1-CRANE10",
+    "EX",
+    "EY",
+    "EZ",
+    "Temp",
+    "TempG"
+  ],
+  "sourceConflictsAndGates": [
+    {
+      "field": "eaveHeight_m",
+      "values": [
+        12.75,
+        12.8
+      ],
+      "source": "filename vs report",
+      "resolution": "retain both; verify from native geometry"
+    },
+    {
+      "field": "ridgeHeight_m",
+      "values": [
+        15.2,
+        15.15
+      ],
+      "source": "report vs workbook",
+      "resolution": "verify from native geometry and section/elevation drawings"
+    },
+    {
+      "field": "windPressure",
+      "values": [
+        "30.3 kgf/m2",
+        "0.303 kN/m2"
+      ],
+      "source": "report and calculations",
+      "resolution": "reconcile conversion and original code basis before applying"
+    },
+    {
+      "field": "snow",
+      "values": [
+        "Pg=100 kgf/m2",
+        "Pg=1.0 kN/m2",
+        "balanced roof snow=0.63 kN/m2"
+      ],
+      "source": "report",
+      "resolution": "preserve ground vs roof snow distinction; recalculate current code"
+    },
+    {
+      "field": "supportConditions",
+      "values": [
+        "fixed base plate indications",
+        "legacy support idealization not fully confirmed"
+      ],
+      "source": "workbook/report",
+      "resolution": "inspect actual base plate, anchor and foundation stiffness; do not assume fixity"
+    },
+    {
+      "field": "craneLoads",
+      "values": [
+        "30 t nominal capacity",
+        "multiple wheel reaction values and two bridge references"
+      ],
+      "source": "workbook",
+      "resolution": "reconstruct each bridge/end-truck/wheel case and verify against crane supplier data"
+    },
+    {
+      "field": "designCode",
+      "values": [
+        "Iran loading regulation 1392",
+        "AISC-ASD",
+        "2800 fourth edition"
+      ],
+      "source": "legacy report",
+      "resolution": "do not reuse legacy combinations as current M6 LRFD combinations"
+    }
+  ],
+  "importPolicy": {
+    "useAs": "reference_case_for_model_reconstruction_solver_regression_and_result_comparison",
+    "doNotUseAs": "globally_overwriting_new_project_defaults_or_automatic_design_approval",
+    "preserveOriginalValues": true,
+    "unknownValues": "null_and_block_dependent_analysis",
+    "solverActivation": "only_after_geometry_members_supports_load_vectors_and_crane_wheel_positions_are reconstructed_and_audited",
+    "designApproved": false
+  }
+}
