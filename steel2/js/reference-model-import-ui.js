@@ -58,7 +58,7 @@ async function importCandidate(){
  const audited=a.auditProposal(built.proposal),supplemental=a.parseSupplementalTables(built.proposal,{supportsCsv:sf?.text,releasesCsv:rf?.text,sectionStationsCsv:tf?.text,sectionDimensionUnit:$("refSectionUnit").value});
  candidate={proposal:built.proposal,audit:audited,supplemental,files:{nodes:nf.name,members:mf.name,supports:sf?.name||null,releases:rf?.name||null,stations:tf?.name||null},status:"pending_review",geometryActivation:false,solverEligible:false,designApproved:false};
  if(!audited.success||!supplemental.success)message("ورود انجام شد اما خطاهای اعتبارسنجی وجود دارد؛ گزارش را بررسی کنید.","error");else message("مدل به‌صورت پیشنهاد وارد شد؛ هیچ تغییری در مدل فعال یا حلگر اعمال نشده است.","success");
- renderPreview(candidate.proposal);renderSummary(audited,supplemental);$("btnExportReference").disabled=false;$("btnCompareReference").disabled=false;
+ renderPreview(candidate.proposal);renderSummary(audited,supplemental);window.dispatchEvent(new CustomEvent("sahroud-reference-model-ready",{detail:{proposal:candidate.proposal}}));$("btnExportReference").disabled=false;$("btnCompareReference").disabled=false;
  }catch(e){message(e.message,"error");}
 }
 async function compare(){
