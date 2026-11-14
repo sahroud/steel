@@ -1283,10 +1283,21 @@
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
-    const customNodalLoads=Array.isArray(selected.nodalLoads)?selected.nodalLoads:[];
+    const wallDeadLoadAudit=window.SteelWallDeadLoadTransfer?.audit?.(model);
+    if(!wallDeadLoadAudit?.success||wallDeadLoadAudit.loadTransferEnabled!==true)throw new Error("انتقال وزن مرده دیوار به تکیه‌گاه‌های فونداسیون کامل نیست: "+(wallDeadLoadAudit?.issues||["ماژول انتقال وزن دیوار در دسترس نیست."]).join("؛ "));
+    const wallDeadNodalLoads=window.SteelWallDeadLoadTransfer.prepareNodalLoads(model,selected.deadFactor);
+    const allNodalLoads=[...(Array.isArray(selected.nodalLoads)?selected.nodalLoads:[]),...wallDeadNodalLoads];
+    const nodalMap=new Map();
+    allNodalLoads.forEach(load=>{
+      if(!load||load.nodeId==null||!Array.isArray(load.values)||load.values.length!==6||load.values.some(v=>!Number.isFinite(v)))throw new Error("بار گره‌ای افزوده دارای شناسه یا بردار شش‌مؤلفه‌ای نامعتبر است.");
+      const id=String(load.nodeId),entry=nodalMap.get(id)||{nodeId:id,values:[0,0,0,0,0,0]};
+      load.values.forEach((v,i)=>entry.values[i]+=v);nodalMap.set(id,entry);
+    });
+    const customNodalLoads=[...nodalMap.values()];
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
     result.additionalNodalLoadCount=customNodalLoads.length;
-     result.loadPathAudit=loadPathAudit;
+    result.wallDeadLoadTransfer={totalWeightKN:wallDeadLoadAudit.totalWeightKN,deadFactor:selected.deadFactor,appliedWeightKN:wallDeadLoadAudit.totalWeightKN*selected.deadFactor,faces:wallDeadLoadAudit.rows,nodalLoads:wallDeadNodalLoads};
+    result.loadPathAudit=loadPathAudit;
      result.memberLoadLedger=analysisModel.members.map(m=>({
        memberId:String(m.id),type:String(m.type||""),sectionKey:String(m.sectionKey||""),
        start:String(m.start),end:String(m.end),
