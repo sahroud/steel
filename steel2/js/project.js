@@ -141,6 +141,10 @@
             data.tensionDesignReadiness = window.SteelTensionDesignReadiness.readUI();
         }
 
+        if (window.SteelBraceConnectionReadiness && typeof window.SteelBraceConnectionReadiness.readUI === "function") {
+            data.braceConnectionReadiness = window.SteelBraceConnectionReadiness.readUI();
+        }
+
         if (window.SteelCompressionDesignReadiness && typeof window.SteelCompressionDesignReadiness.readUI === "function") {
             data.compressionDesignReadiness = window.SteelCompressionDesignReadiness.readUI();
         }
@@ -550,6 +554,10 @@
 
         if (window.SteelTensionDesignReadiness && typeof window.SteelTensionDesignReadiness.setData === "function") {
             window.SteelTensionDesignReadiness.setData(data.tensionDesignReadiness || {});
+        }
+
+        if (window.SteelBraceConnectionReadiness && typeof window.SteelBraceConnectionReadiness.setData === "function") {
+            window.SteelBraceConnectionReadiness.setData(data.braceConnectionReadiness || {});
         }
 
         if (window.SteelCompressionDesignReadiness && typeof window.SteelCompressionDesignReadiness.setData === "function") {
