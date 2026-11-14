@@ -79,6 +79,10 @@ function selfTest(){
  add("rejects unspecified service deformation criterion",()=>!calculateBolt({...c,deformationAtServiceLoad:""},d).ok);
  add("does not issue design approval",()=>calculateBolt(c,d).designApproved===false);
  add("rejects negative demand",()=>!calculateBolt(c,{...d,tensionN:-1}).ok);
+ add("rejects slip-critical connection type",()=>!calculateBolt({...c,boltConnectionType:"slip-critical"},d).ok);
+ add("requires prying assessment",()=>!calculateBolt({...c,boltPryingIncluded:false},d).ok);
+ add("rejects eccentric bolt group",()=>!calculateBolt({...c,eccentricityMm:5},d).ok);
+ add("requires thread-plane declaration",()=>!calculateBolt({...c,threadsInShearPlane:null},d).ok);
  return {passed:t.filter(x=>x.pass).length,failed:t.filter(x=>!x.pass).length,total:t.length,tests:t};
 }
 root.SteelBraceBoltStrengthScreen={calculateBolt,analyze,run,selfTest};
