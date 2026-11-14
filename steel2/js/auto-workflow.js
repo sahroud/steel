@@ -146,6 +146,13 @@
         if(taperBridge)window.SteelTaperedCaseForceBridge.lastResult=taperBridge;
         addLine(rows,"انتقال نیروهای هم‌زمان هر ترکیب به قطعات منشوری/متغیرمقطع",!!taperBridge?.success,
           taperBridge?.status==="no-tapered-members"?"در مدل فعلی عضو متغیرمقطع فعال وجود ندارد.":taperBridge?.success?(taperBridge.analysisSegmentCount+" قطعه در "+taperBridge.caseCount+" ترکیب، با حفظ بردارهای ۱۲ مؤلفه‌ای و تعادل هر حالت ثبت شد."):(taperBridge?.issues||["پل انتقال نیرو بارگذاری نشده یا داده کافی نیست."]).join("؛ "));
+        if(taperBridge?.analysisSegmentCount>0){
+          const firstCase=window.SteelAnalysis.combinationResults[0];
+          const readiness=window.SteelTaperedMemberDesignReadiness?.audit?.({members:firstCase?.members||[],loadCases:window.SteelAnalysis.combinationResults,memberInputs:{}});
+          if(readiness)window.SteelTaperedMemberDesignReadiness.lastResult=readiness;
+          addLine(rows,"آمادگی طراحی مقاومتی اعضای متغیرمقطع",!!readiness?.success,
+            readiness?.success?"ورودی‌های دروازه طراحی کامل‌اند؛ این وضعیت هنوز به معنی تأیید مقاومت نیست.":(readiness?.memberRows||[]).map(x=>x.parentMemberId+": "+x.missingInputs.join("، ")).join("؛ ")||"ورودی‌های لازم برای ممیزی آماده‌سازی در دسترس نیست.");
+        }
         const hasMemberDemand=window.SteelAnalysis.combinationResults.some(item=>
           item.memberEnvelopes&&Object.keys(item.memberEnvelopes).length>0);
         addLine(rows,"استخراج تقاضای طراحی اعضا از تحلیل ترکیبات",
