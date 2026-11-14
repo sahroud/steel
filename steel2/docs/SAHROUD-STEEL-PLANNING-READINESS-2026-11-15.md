@@ -133,3 +133,30 @@ The source SPS is now line-traceable. The next high-value task is workbook cell-
 - Mapping lifecycle is `unmapped → candidate → cross_checked → reviewed`; these labels do not independently activate the solver.
 - Schema version 1.0.0 hard-codes `solverEligible=false` and `designApproved=false`. A future activation protocol must be reviewed separately.
 - This is a data contract and documentation deliverable, not yet wired into the UI or import runtime.
+
+
+## 2026-11-14 night update — SPS parser connected to regression suite
+
+- Registered `js/legacy-sps-parser.js` in `steel2/index.html` immediately before the engineering regression suite.
+- Added a regression-suite check requiring all seven parser self-tests to pass.
+- Verified JavaScript syntax for both the parser and regression suite using syntax compilation.
+- Executed the parser self-test in an isolated JavaScript context: 7/7 passed.
+- Verified script load order: parser is loaded before the regression suite.
+- This does not constitute a full browser/UI run, full application regression run, SPS semantic mapping, solver activation, or engineering validation.
+
+### Current next gates (ordered)
+1. Obtain workbook sheet/cell/formula evidence and map crane/section/load/foundation values.
+2. Obtain native model interchange export with node coordinates, member connectivity, section stations, releases and supports.
+3. Reconcile crane bridge/trolley/end-truck identities and certified wheel reactions; do not merge conflicting historical cases.
+4. Freeze canonical SI units, source provenance, code editions and Shahrud climate/geotechnical inputs.
+5. Reconstruct the reference model only from mapped/verified geometry; then run geometry, load equilibrium and load-path gates.
+
+### Current state remains fail-closed
+- `spsParserLoaded=true`
+- `spsParserRegressionCheckRegistered=true`
+- `spsParserSelfTests=7/7`
+- `fullBrowserRegressionRun=false`
+- `referenceModelReady=false`
+- `solverForReferenceEnabled=false`
+- `designApproved=false`
+- `mainBranchModified=false`
