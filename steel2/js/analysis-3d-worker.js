@@ -15,7 +15,8 @@ self.onmessage=function(event){
       },
       supports:data.supports||[],
       releasePurlinRafterRotation:data.releasePurlinRafterRotation===true,
-      nodalLoads:Array.isArray(data.nodalLoads)?data.nodalLoads:[]
+      nodalLoads:Array.isArray(data.nodalLoads)?data.nodalLoads:[],
+      requireExplicitMemberLoads:data.requireExplicitMemberLoads===true
     });
     self.postMessage({ok:true,result});
   }catch(error){
