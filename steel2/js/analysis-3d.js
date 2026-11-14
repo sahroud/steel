@@ -405,6 +405,23 @@ function selfTest(){
   const shearOK=close(Math.abs(end[1]),expectedShear,1e-7)&&close(Math.abs(end[7]),expectedShear,1e-7);
   tests.push({name:"pinned-end-uniform-load-zero-end-moments",ok:maxMoment<1e-6&&shearOK&&result.equilibrium.ok,maxReleasedEndMomentNm:maxMoment,expectedEndShearN:expectedShear,equilibrium:result.equilibrium.ok});
  }catch(e){tests.push({name:"pinned-end-uniform-load-zero-end-moments",ok:false,error:String(e.message||e)});}
+ // Roof purlin support rotations are released from rafters while translations
+ // remain shared; the purlin's vertical load must reach the two rafter supports.
+ try{
+  const q=-1200,model={
+   nodes:[{id:"PA",x:0,y:0,z:0},{id:"PB",x:0,y:0,z:L},{id:"BASE_A",x:0,y:-L,z:0},{id:"BASE_B",x:0,y:-L,z:L}],
+   members:[
+    {id:"PURLIN_TEST",start:"PA",end:"PB",sectionKey:"roofPurlin",pieceId:"PURLIN_BAY_1",analysisLoad:{uniformLocal:[0,0,q]}},
+    {id:"RAFTER_A",start:"PA",end:"BASE_A",sectionKey:"rafter"},
+    {id:"RAFTER_B",start:"PB",end:"BASE_B",sectionKey:"rafter"}
+   ]
+  };
+  const result=analyze(model,{...base,releasePurlinRafterRotation:true,supports:[{nodeId:"BASE_A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"BASE_B",fixedDofs:[0,1,2,3,4,5]}]});
+  const p=result.members.find(m=>m.id==="PURLIN_TEST"),verticalReactions=result.reactions.reduce((s,r)=>s+(r.values[1]||0),0);
+  const releasedMoments=Math.max(Math.abs(p.localEndForces[4]),Math.abs(p.localEndForces[5]),Math.abs(p.localEndForces[10]),Math.abs(p.localEndForces[11]));
+  const ok=result.equilibrium.ok&&result.purlinRafterReleasedBendingRotationEnds===2&&close(verticalReactions,-q*L,1e-7)&&releasedMoments<1e-6;
+  tests.push({name:"purlin-load-transfers-to-rafter-supports-with-bending-rotations-released",ok,verticalReactionsN:verticalReactions,expectedVerticalReactionsN:-q*L,releasedBendingEndMomentNm:releasedMoments,releaseEndCount:result.purlinRafterReleasedBendingRotationEnds,equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"purlin-load-transfers-to-rafter-supports-with-bending-rotations-released",ok:false,error:String(e.message||e)});}
  try{
   const model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"BAD",start:"A",end:"B",type:"validation",endReleases:{i:[3],j:[3]}}]};
   analyze(model,{...base});
