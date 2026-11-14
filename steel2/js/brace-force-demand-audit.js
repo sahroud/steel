@@ -53,8 +53,32 @@ function audit(envelope,model){
    issues.push("پوش ترکیبات مهاربند "+r.memberId+" با فهرست حالت‌های تحلیل تطبیق کامل ندارد؛ مفقود: "+missingLabels.join("، ")+"؛ اضافی: "+unexpectedLabels.join("، ")+".");
   }
  });
- if(!envelope?.localEndForceConvention&&rows.length)issues.push("قرارداد علامت/محور نیروهای محلی مستند نیست؛ تشخیص کشش و فشار مجاز نیست.");
- return {success:issues.length===0,issues,rows,braceCount:braces.length,expectedCaseCount:expectedCases,demandOnly:true,analysisEnabled:false,designApproved:false,
+ // Summarize each brace end separately while preserving the governing load-case identity.
+ rows.forEach(r=>{
+  const peaks={tension:{forceN:0,caseLabel:null,end:null},compression:{forceN:0,caseLabel:null,end:null}};
+  r.simultaneousDemands.forEach(d=>{
+   for(const [end,tension,compression] of [["I",d.endI_tension_N,d.endI_compression_N],["J",d.endJ_tension_N,d.endJ_compression_N]]){
+    if(finite(tension)&&tension>peaks.tension.forceN)peaks.tension={forceN:tension,caseLabel:d.caseLabel,end};
+    if(finite(compression)&&compression>peaks.compression.forceN)peaks.compression={forceN:compression,caseLabel:d.caseLabel,end};
+   }
+  });
+  r.peakTension=signConventionVerified?peaks.tension:null;
+  r.peakCompression=signConventionVerified?peaks.compression:null;
+  r.demandCoverageComplete=r.status==="demand-extracted"&&expectedCases>0&&r.caseCount===expectedCases;
+ });
+ const completeRows=rows.filter(r=>r.demandCoverageComplete);
+ const summary={completeBraceCount:completeRows.length,braceCount:braces.length,peakTension:null,peakCompression:null};
+ if(completeRows.length===braces.length&&braces.length&&signConventionVerified&&issues.length===0){
+  for(const r of completeRows){
+   for(const kind of ["tension","compression"]){
+    const p=r[kind==="tension"?"peakTension":"peakCompression"];
+    if(p&&(!summary[kind==="tension"?"peakTension":"peakCompression"]||p.forceN>summary[kind==="tension"?"peakTension":"peakCompression"].forceN))
+     summary[kind==="tension"?"peakTension":"peakCompression"]={memberId:r.memberId,...p};
+   }
+  }
+ }
+ if(!envelope?.localEndForceConvention&&rows.length)issues.push("قرارداد علامت/محور نیروهای محلی مستند نیست؛ تشخیص کشش/فشار مجاز نیست.");
+ return {success:issues.length===0,issues,rows,summary,braceCount:braces.length,expectedCaseCount:expectedCases,demandOnly:true,analysisEnabled:false,designApproved:false,
  limitations:["این ماژول فقط نیروی محوری انتهایی هم‌زمان هر ترکیب را استخراج می‌کند؛ تبدیل آن به نیروی کششی/فشاری طراحی تا اعتبارسنجی قرارداد علامت انجام نشده است.","ظرفیت کششی، کمانش مهاربند، طول مهارنشده، K، مقطع مؤثر، خروج از مرکزیت، گاست‌پلیت، پیچ/جوش و مسیر collector/دیافراگم کنترل نمی‌شوند.","وجود مسیر توپولوژیک تا پایه به‌تنهایی انتقال واقعی نیروی باد طولی یا سختی دیافراگم را اثبات نمی‌کند."]};
 }
 function selfTest(){
@@ -80,6 +104,8 @@ function selfTest(){
  t("rejects duplicate member IDs in force envelope",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members.push({...e.members[0]});return !audit(e,model).success;});
  t("rejects duplicate expected load-case labels",()=>{const e=JSON.parse(JSON.stringify(envelope));e.cases[1].label="C1";return !audit(e,model).success;});
  t("rejects blank expected load-case labels",()=>{const e=JSON.parse(JSON.stringify(envelope));e.cases[1].label="";return !audit(e,model).success;});
+ t("reports governing tensile demand with exact case and end",()=>{const r=audit(envelope,model),x=r.rows[0].peakTension;return r.success&&x.forceN===120&&x.caseLabel==="C1"&&x.end==="J"&&r.summary.peakTension.memberId==="WB1";});
+ t("reports governing compression demand separately without mixing cases",()=>{const r=audit(envelope,model),x=r.rows[0].peakCompression;return r.success&&x.forceN===120&&x.caseLabel==="C1"&&x.end==="J"&&r.summary.peakCompression.memberId==="WB1";});
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software regression only; no member capacity verification"};
 }
 root.SteelBraceForceDemandAudit={audit,selfTest};
