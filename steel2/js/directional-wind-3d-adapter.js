@@ -77,9 +77,9 @@ function auditGableTributaryAreaCoverage(model){
  return{success:issues.length===0,issues,rows,method:"sum(horizontal girt segment length × exact average local tributary height), compared with integral of the actual roof profile",analysisEnabled:false,designApproved:false};
 }
 function auditGableLoadResultants(pressures,model){
- const issues=[],faces=[],nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n])),members=model?.members||[],g=model?.geometry||{};
- const span=Number(g.span),height=Number(g.height),rise=Number(g.rise);
- if(!(span>0&&height>0&&rise>=0))return{success:false,issues:["ابعاد برای ممیزی برآیند بار گابل معتبر نیست."],faces};
+ const issues=[],faces=[],members=model?.members||[],g=model?.geometry||{},nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n]));
+ const span=Number(g.span),height=Number(g.height),rise=Number(g.rise),stripApi=root.SteelGableEccentricLoadTransfer;
+ if(!(span>0&&height>0&&rise>=0)||!stripApi?.stripGeometry)return{success:false,issues:["ابعاد هندسی یا ماژول انتگرال دقیق نوار بارگیر گابل معتبر نیست."],faces};
  const expectedArea=span*(height+rise/2);
  ["front","rear"].forEach(face=>{
   const key=face==="front"?"end-wall-front":"end-wall-back",p=pressures?.[key],items=members.filter(m=>m.sectionKey==="endGirt"&&m.endFace===face);
@@ -87,32 +87,32 @@ function auditGableLoadResultants(pressures,model){
   if(!items.length){issues.push("هیچ گرتی برای محاسبه برآیند "+key+" وجود ندارد.");return;}
   const seen=new Set();let area=0,Fz=0,Mx=0,My=0,invalid=0;
   items.forEach(m=>{
-   const a=nodes.get(String(m.start)),b=nodes.get(String(m.end)),h=Number(m.tributaryHeight??m.lineLoads?.tributaryHeight);
-   if(!a||!b||![a.x,a.y,a.z,b.x,b.y,b.z,h].every(Number.isFinite)||!(h>0)||Math.abs(a.y-b.y)>1e-7||Math.abs(a.z-b.z)>1e-7){issues.push("هندسه یا ارتفاع بارگیر گرت "+m.id+" برای برآیند "+face+" نامعتبر است.");invalid++;return;}
-   const dx=Math.abs(b.x-a.x),x=(a.x+b.x)/2,y=(a.y+b.y)/2,z=(a.z+b.z)/2;
-   if(!(dx>1e-8)){issues.push("طول گرت "+m.id+" برای برآیند "+face+" صفر یا نامعتبر است.");invalid++;return;}
-   const ends=[a.x,b.x].sort((u,v)=>u-v),signature=[ends[0],ends[1],y,z].map(v=>Number(v).toFixed(7)).join("|");
+   const a=nodes.get(String(m.start)),b=nodes.get(String(m.end)),strip=stripApi.stripGeometry(m,a,b,g);
+   if(!strip.success){issues.push("هندسه/نوار بارگیر گرت "+m.id+" برای برآیند "+face+" نامعتبر است: "+strip.issues.join("؛ "));invalid++;return;}
+   const signature=[strip.x0,strip.x1,strip.y,strip.z].map(v=>Number(v).toFixed(7)).join("|");
    if(seen.has(signature)){issues.push("قطعه گرت تکراری و دارای بار دوباره‌شماری‌شونده در وجه "+face+": "+m.id);invalid++;return;}
    seen.add(signature);
-   const A=dx*h,sign=face==="front"?1:-1,force=sign*p*A;
-   area+=A;Fz+=force;Mx+=y*force;My-=x*force;
+   const sign=face==="front"?1:-1;
+   area+=strip.area;
+   Fz+=sign*p*strip.area;
+   Mx+=sign*p*strip.intYdA;
+   My-=sign*p*strip.intXdA;
   });
   const expectedF=(face==="front"?1:-1)*p*expectedArea;
   const rectangleArea=span*height,triangleArea=span*rise/2;
   const expectedCentroidY=(rectangleArea*(height/2)+triangleArea*(height+rise/3))/expectedArea;
-  const expectedCentroidX=span/2;
-  const tol=Math.max(1e-7,Math.abs(expectedF)*1e-7);
+  const expectedCentroidX=span/2,tol=Math.max(1e-7,Math.abs(expectedF)*1e-7);
   const areaOk=invalid===0&&Math.abs(area-expectedArea)<=Math.max(1e-5,expectedArea*1e-3);
   const forceOk=invalid===0&&Math.abs(Fz-expectedF)<=tol;
   const centroidX=Math.abs(Fz)>1e-12?-My/Fz:null,centroidY=Math.abs(Fz)>1e-12?Mx/Fz:null;
   const centroidTol=1e-3;
-  const centroidOk=invalid===0&&Math.abs(p)<=1e-12|| (invalid===0&&centroidX!==null&&centroidY!==null&&Math.abs(centroidX-expectedCentroidX)<=centroidTol&&Math.abs(centroidY-expectedCentroidY)<=centroidTol);
+  const centroidOk=invalid===0&&Math.abs(p)<=1e-12||(invalid===0&&centroidX!==null&&centroidY!==null&&Math.abs(centroidX-expectedCentroidX)<=centroidTol&&Math.abs(centroidY-expectedCentroidY)<=centroidTol);
   if(!areaOk)issues.push("مساحت مؤثر گرت‌ها برای برآیند "+face+" با سطح واقعی برابر نیست.");
   if(!forceOk)issues.push("برآیند نیروی خطی گرت‌های "+face+" با فشار × مساحت سطح برابر نیست.");
-  if(!centroidOk)issues.push("مرکز اثر بار معادل گرت‌های "+face+" با مرکز هندسی فشار یکنواخت روی دیوار انتهایی منطبق نیست؛ خروج از مرکزیت پوسته/گرت باید با بارهای گره‌ای و ممان‌های معادل مدل شود.");
-  faces.push({face,surface:key,pressureKPa:p,assignedAreaM2:area,expectedAreaM2:expectedArea,forceZ_kN:Fz,expectedForceZ_kN:expectedF,momentX_kNm:Mx,momentY_kNm:My,equivalentLoadCentroidX_m:centroidX,equivalentLoadCentroidY_m:centroidY,expectedCentroidX_m:expectedCentroidX,expectedCentroidY_m:expectedCentroidY,memberCount:items.length,areaEquilibrium:areaOk,forceEquilibrium:forceOk,centroidEquilibrium:centroidOk});
+  if(!centroidOk)issues.push("مرکز اثر فشار سطحی گابل پس از انتگرال‌گیری نوارهای بارگیر منطبق نیست.");
+  faces.push({face,surface:key,pressureKPa:p,assignedAreaM2:area,expectedAreaM2:expectedArea,forceZ_kN:Fz,expectedForceZ_kN:expectedF,momentX_kNm:Mx,momentY_kNm:My,equivalentLoadCentroidX_m:centroidX,equivalentLoadCentroidY_m:centroidY,expectedCentroidX_m:expectedCentroidX,expectedCentroidY_m:expectedCentroidY,memberCount:items.length,areaEquilibrium:areaOk,forceEquilibrium:forceOk,centroidEquilibrium:centroidOk,method:"exact integration of each tributary strip, including linear sloped-roof clipping"});
  });
- return{success:issues.length===0,issues,faces,method:"integrate each end-girt equivalent line load p × tributaryHeight over its horizontal member length; recover global force and first moments from the actual member centerlines",analysisEnabled:false,designApproved:false};
+ return{success:issues.length===0,issues,faces,method:"exact integration of horizontal end-girt tributary strips and their area first moments; eccentric distributed torsion and residual line-load variation are transferred as consistent nodal actions",analysisEnabled:false,designApproved:false};
 }
 function auditGablePressure(pressures,model){
  const keys=["end-wall-front","end-wall-back"],active=keys.filter(k=>!finite(pressures?.[k])||Math.abs(pressures[k])>1e-12);
