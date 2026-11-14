@@ -39,7 +39,7 @@ function selfTest(){
   return r.equilibrium.ok&&close(f[3],-1000)&&close(f[9],1000);
  });
  add("released-j-end-bending-moment",()=>{
-  const r=solve([{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],[{id:"M",start:"A",end:"B",endReleases:{j:[5]}}],"A","B",[0,-1000,0,0,0,0]);
+  const r=solver.analyze({nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"M",start:"A",end:"B",endReleases:{j:[5]}}]},{sectionResolver:()=>section,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[5]}],nodalLoads:[{nodeId:"B",values:[0,-1000,0,0,0,0]}]});
   const f=r.members[0].localEndForces;
   return r.equilibrium.ok&&Math.abs(f[11])<1e-6&&close(f[1],1000)&&close(f[7],-1000);
  });
