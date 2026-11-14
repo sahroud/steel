@@ -4,7 +4,7 @@
 (function(root){
 "use strict";
 const D=["d","bf","tw","tf"];
-const num=v=>Number.isFinite(Number(v))?Number(v):null;
+const num=v=>(v===null||v===undefined||String(v).trim()==="")?null:(Number.isFinite(Number(v))?Number(v):null);
 function area(s){
  const d=num(s?.d),bf=num(s?.bf),tw=num(s?.tw),tf=num(s?.tf);
  if([d,bf,tw,tf].some(v=>v===null||v<=0)||d<=2*tf||bf<=tw)throw Error("ابعاد I نامعتبر است؛ d>2tf و bf>tw باید برقرار باشد.");
@@ -54,7 +54,8 @@ function build(input){
 function selfTest(){
  const input={length_m:10,density_kg_m3:7850,stations:[{x_m:0,d:600,bf:250,tw:8,tf:14},{x_m:5,d:450,bf:220,tw:8,tf:12},{x_m:10,d:600,bf:250,tw:8,tf:14}],prices:{}};
  const r=build(input),bad=(()=>{try{build({...input,stations:[input.stations[0],{...input.stations[1],d:0},input.stations[2]]});return false;}catch(e){return true;}})();
- const checks=[r.options.length===3,r.options[0].steelMass_kg>0,r.options.every(o=>o.steelCost_toman===null&&o.totalCost_toman===null),r.options[1].steelMass_kg>r.options[2].steelMass_kg,bad&&!r.designApproved&&!r.analysisEnabled];
+ const blankPrice=build({...input,prices:{steel_toman_per_kg:"",weld_toman_per_meter:""},weldLineCount:""});
+ const checks=[r.options.length===3,r.options[0].steelMass_kg>0,r.options.every(o=>o.steelCost_toman===null&&o.totalCost_toman===null),r.options[1].steelMass_kg>r.options[2].steelMass_kg,bad&&!r.designApproved&&!r.analysisEnabled,blankPrice.priceInputs.steel_toman_per_kg===null&&blankPrice.priceInputs.weldLineCount===null];
  return {passed:checks.filter(Boolean).length,failed:checks.filter(v=>!v).length,checks};
 }
 root.SteelTaperedFabricationEconomics={build,selfTest};
