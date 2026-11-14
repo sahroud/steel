@@ -1274,6 +1274,19 @@
     const customNodalLoads=Array.isArray(selected.nodalLoads)?selected.nodalLoads:[];
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
     result.additionalNodalLoadCount=customNodalLoads.length;
+     result.loadPathAudit=loadPathAudit;
+     result.memberLoadLedger=analysisModel.members.map(m=>({
+       memberId:String(m.id),type:String(m.type||""),sectionKey:String(m.sectionKey||""),
+       start:String(m.start),end:String(m.end),
+       lineLoads:m.lineLoads?JSON.parse(JSON.stringify(m.lineLoads)):null,
+       appliedAnalysisLoad:m.analysisLoad?JSON.parse(JSON.stringify(m.analysisLoad)):null,
+       loadRole:m.lineLoads?.loadRole||(
+         m.sectionKey==="roofPurlin"?"roof-surface-tributary-load":
+         m.sectionKey==="wallGirt"?"longitudinal-wall-pressure":
+         m.sectionKey==="endGirt"?"end-wall-pressure":
+         /رفتر/.test(String(m.type||""))?"purlin-reactions-and-self-weight":
+         ["wallBrace","roofBrace"].includes(m.sectionKey)?"nodal-bracing-force-path":"member-self-weight-or-connected-reactions")
+     }));
     result.craneLoadCaseId=selected.craneLoadCaseId||null;
     result.craneLoadTransfer=selected.craneLoadTransfer||null;
     if(taperedSegmentationAudit)result.taperedSegmentation=taperedSegmentationAudit;
