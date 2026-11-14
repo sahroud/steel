@@ -12,7 +12,7 @@ function audit(model,loads){
  if(!loads||typeof loads!=="object")issues.push("ورودی بارهای سطحی در دسترس نیست.");
  const members=Array.isArray(model?.members)?model.members:[];
  const groups={
-  rafters:members.filter(m=>m.axis==="transverse"&&/رفتر چپ|رفتر راست/.test(String(m.type||""))),
+  rafters:members.filter(m=>m.sectionKey==="rafter"&&m.axis==="transverse"),
   wallBraces:members.filter(m=>m.sectionKey==="wallBrace"), roofBraces:members.filter(m=>m.sectionKey==="roofBrace"),
   purlins:members.filter(m=>m.sectionKey==="roofPurlin"),
   wallGirts:members.filter(m=>m.sectionKey==="wallGirt"),
@@ -129,8 +129,8 @@ function selfTest(){
  root.SteelDesignCore={getData:()=>({})};
  const t=[],test=(name,fn)=>{try{t.push({name,ok:fn()!==false});}catch(e){t.push({name,ok:false,error:e.message});}};
  const members=[
-  {id:"R1",axis:"transverse",frame:1,type:"رفتر چپ",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
-  {id:"R2",axis:"transverse",frame:1,type:"رفتر راست",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
+  {id:"R1",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
+  {id:"R2",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
   {id:"P1",sectionKey:"roofPurlin",side:"left",start:"B",end:"T",lineLoads:{dead:1,live:.5,snow:.5,wind:0,windLeft:-.2,windRight:-.2,windEnd:0,tributaryWidth:1.2}},
   {id:"W1",sectionKey:"wallGirt",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:.3,windLeft:0,windRight:0,windEnd:0,tributaryHeight:2}},
   {id:"E1",sectionKey:"endGirt",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryHeight:2}},
@@ -152,6 +152,7 @@ function selfTest(){
  test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.2);
  test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
  test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
+ test("actual 3D model rafter naming is included by section key and axis",()=>audit(model,loads).inventory.rafterCount===2&&audit(model,loads).rows.find(r=>r.id==="rafter-reaction-path").memberCount===2 );
  test("nonzero direct roof gravity on rafter is rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[0].lineLoads.dead=1;return !audit(p,loads).success;} );
  test("rafter explicit zero load is accepted",()=>audit(model,loads).rows.find(r=>r.id==="rafter-reaction-path").status==="assigned" );
  test("disconnected loaded member rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].start="ORPHAN";return !audit(p,loads).success;});
