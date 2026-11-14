@@ -55,10 +55,11 @@ function render(){
  const a=$("lcw_cases"),b=$("lcw_combinations");if(!a||!b)return;
  a.innerHTML=state.loadCases.length?state.loadCases.map((x,i)=>`<div class="notice"><b>${esc(x.id)}</b> — ${esc(x.category)} / ${esc(x.type)} / ${esc(x.unit)}<br>مقصد: ${esc(x.target)} | منبع: ${esc(x.source.document)} — ${esc(x.source.locator)} <button type="button" data-lcw-remove="${i}">حذف</button></div>`).join(""):"هنوز حالتی ثبت نشده است.";
  b.innerHTML=state.combinations.length?state.combinations.map((x,i)=>`<div class="notice"><b>${esc(x.id)}</b> — ضرایب: ${esc(JSON.stringify(x.factors))}<br>${esc(x.source.code)}، ویرایش ${esc(x.source.edition)}، ${esc(x.source.clause)} <button type="button" data-lcw-combo-remove="${i}">حذف</button></div>`).join(""):"هنوز ترکیبی ثبت نشده است.";
- a.querySelectorAll("[data-lcw-remove]").forEach(el=>el.addEventListener("click",()=>{state.loadCases.splice(Number(el.dataset.lcwRemove),1);render();persist();}));
+ a.querySelectorAll("[data-lcw-remove]").forEach(el=>el.addEventListener("click",()=>{state.loadCases.splice(Number(el.dataset.lcwRemove),1);render();persistAndSave();}));
  b.querySelectorAll("[data-lcw-combo-remove]").forEach(el=>el.addEventListener("click",()=>{state.combinations.splice(Number(el.dataset.lcwComboRemove),1);render();persist();}));
 }
 function persist(){state.status="evidence_collection_only";state.designApproved=false;state.solverEnabled=false;return clone(state);}
+function persistAndSave(){const snapshot=persist();root.SteelProject?.saveSnapshot?.();return snapshot;}
 function setData(data){const d=data||{};state={loadCases:Array.isArray(d.loadCases)?clone(d.loadCases):[],combinations:Array.isArray(d.combinations)?clone(d.combinations):[],status:"evidence_collection_only",designApproved:false,solverEnabled:false};render();return true;}
 function read(){return persist();}
 function parseJSON(id,label){try{return JSON.parse($(id).value||"{}");}catch(e){throw new Error(label+" باید JSON معتبر باشد.");}}
@@ -88,11 +89,13 @@ function init(){
  render();
 }
 function selfTest(){
+ const prior=clone(state);try{
  const src={document:"Calc.pdf",revision:"R1",locator:"Sheet L-2",authority:"Designer"};
  const lc={id:"D1",type:"nodal",category:"dead",unit:"kN",coordinateSystem:"global",signConvention:"+Z upward",target:"node:N1",source:src,values:{Fz:-10}};
  const combo={id:"C1",factors:{D1:1.2},source:{code:"مبحث ششم",edition:"۱۳۹۸",clause:"6-2",document:"Project design basis"}};
  const tests=[["round-trip state retains evidence",()=>{setData({loadCases:[lc],combinations:[combo]});return read().loadCases[0].source.locator==="Sheet L-2"&&read().combinations[0].factors.D1===1.2;}],["evidence and combination audits pass",()=>audit({loadCases:[lc],combinations:[combo]}).success],["missing combination source rejected",()=>{const x=clone(combo);delete x.source.clause;return !audit({loadCases:[lc],combinations:[x]}).success;}],["unknown combination case rejected",()=>{const x=clone(combo);x.factors.MISSING=1;return !audit({loadCases:[lc],combinations:[x]}).success;}],["no implicit design approval",()=>{const r=read();return r.designApproved===false&&r.solverEnabled===false;}]];
  const results=tests.map(([name,fn])=>({name,ok:!!fn()}));return {passed:results.filter(x=>x.ok).length,failed:results.filter(x=>!x.ok).length,total:results.length,tests:results};
+ }finally{state=prior;render();}
 }
 root.SteelLoadCaseWorkbench={read,setData,audit,selfTest,init};
 document.addEventListener("DOMContentLoaded",init);
