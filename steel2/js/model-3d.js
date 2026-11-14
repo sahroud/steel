@@ -1360,7 +1360,13 @@
     const wallDeadLoadAudit=loadPathAudit.wallDeadLoadTransfer;
     if(!wallDeadLoadAudit?.success||wallDeadLoadAudit.loadTransferEnabled!==true)throw new Error("انتقال وزن مرده دیوار به تکیه‌گاه‌های فونداسیون کامل نیست: "+(wallDeadLoadAudit?.issues||["ممیزی مسیر بار، انتقال معتبر وزن دیوار را تأیید نکرد."]).join("؛ "));
     const wallDeadNodalLoads=window.SteelWallDeadLoadTransfer.prepareNodalLoads(model,selected.deadFactor,wallDeadLoadAudit);
-    const allNodalLoads=[...(Array.isArray(selected.nodalLoads)?selected.nodalLoads:[]),...wallDeadNodalLoads];
+    let gableWindEccentricTransfer={success:true,loads:[],rows:[],issues:[],analysisEnabled:false,designApproved:false};
+    if(selected.directionalWindPressures){
+      if(!window.SteelGableEccentricLoadTransfer?.prepareNodalLoads)throw new Error("ماژول انتقال خروج از مرکزیت باد گابل بارگذاری نشده است.");
+      gableWindEccentricTransfer=window.SteelGableEccentricLoadTransfer.prepareNodalLoads(model,selected.directionalWindPressures.surfaces,windFactor,windSign);
+      if(!gableWindEccentricTransfer.success)throw new Error("انتقال بار متغیر و خروج از مرکزیت گابل ناموفق است: "+gableWindEccentricTransfer.issues.slice(0,8).join("؛ "));
+    }
+    const allNodalLoads=[...(Array.isArray(selected.nodalLoads)?selected.nodalLoads:[]),...wallDeadNodalLoads,...gableWindEccentricTransfer.loads];
     const nodalMap=new Map();
     allNodalLoads.forEach(load=>{
       if(!load||load.nodeId==null||!Array.isArray(load.values)||load.values.length!==6||load.values.some(v=>!Number.isFinite(v)))throw new Error("بار گره‌ای افزوده دارای شناسه یا بردار شش‌مؤلفه‌ای نامعتبر است.");
@@ -1371,6 +1377,7 @@
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
     result.additionalNodalLoadCount=customNodalLoads.length;
     result.wallDeadLoadTransfer={totalWeightKN:wallDeadLoadAudit.totalWeightKN,deadFactor:selected.deadFactor,appliedWeightKN:wallDeadLoadAudit.totalWeightKN*selected.deadFactor,faces:wallDeadLoadAudit.rows,nodalLoads:wallDeadNodalLoads};
+    result.gableWindEccentricTransfer={success:gableWindEccentricTransfer.success,windFactor:gableWindEccentricTransfer.windFactor??0,windSign:gableWindEccentricTransfer.windSign??1,memberCount:gableWindEccentricTransfer.rows.length,nodalLoadCount:gableWindEccentricTransfer.loads.length,rows:gableWindEccentricTransfer.rows,method:gableWindEccentricTransfer.method,analysisEnabled:!!selected.directionalWindPressures,designApproved:false};
     result.loadPathAudit=loadPathAudit;
      result.preparedMemberLoadAudit=preparedMemberLoadAudit;
      result.memberLoadLedger=analysisModel.members.map(m=>({
