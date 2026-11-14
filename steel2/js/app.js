@@ -531,6 +531,57 @@
         }
     }
 
+    function build3DCombinationCases(windBuild) {
+        if(!windBuild||!Array.isArray(windBuild.cases)||windBuild.cases.length!==24)
+            throw new Error("مجموعه ۲۴ حالت باد جهت‌دار کامل نیست.");
+        const expected=[
+            {dead:1.2,live:1.6,snow:0,wind:0.7},
+            {dead:1.2,live:0,snow:1.6,wind:0.7},
+            {dead:0.9,live:0,snow:0,wind:1.4}
+        ];
+        const ids=new Set(),patterns=expected.map(()=>0);
+        windBuild.cases.forEach(item=>{
+            if(!item||!item.id||ids.has(String(item.id)))throw new Error("شناسه حالت باد خالی یا تکراری است.");
+            ids.add(String(item.id));
+            if(!item.directionalWindPressures||!item.directionalWindPressures.surfaces||
+               !["x-positive","x-negative","z-positive","z-negative"].includes(item.directionalWindPressures.direction)||
+               !["positive","negative"].includes(item.directionalWindPressures.internalPressureSign))
+                throw new Error("حالت باد فاقد جهت، فشار داخلی یا فشارهای سطحی مستقل است: "+item.id);
+            const match=expected.findIndex(f=>Object.keys(f).every(k=>Number(item.factors?.[k])===f[k]));
+            if(match<0)throw new Error("ضرایب بار حالت باد با الگوهای مجاز ۳ و ۶ منطبق نیست: "+item.id);
+            patterns[match]++;
+        });
+        if(patterns.some(n=>n!==8))throw new Error("هر یک از سه الگوی بار باید در ۸ حالت جهت/فشار داخلی تکرار شود.");
+        return [{
+            id:"ULS-01-1.4D",label:"ترکیب ۱ ـ 1.4D (بدون باد)",
+            factors:{dead:1.4,live:0,snow:0,wind:0},windSign:1,
+            directionalWindPressures:null,directionalWindCaseId:null,
+            source:{code:"مبحث ششم ۱۳۹۸",clause:"۶-۲-۳-۲، ترکیب ۱"}
+        },...windBuild.cases];
+    }
+    function selfTestCombinationBuilder() {
+        const pressures={};["roof-left","roof-right","long-wall-left","long-wall-right","end-wall-front","end-wall-back"].forEach(k=>pressures[k]=0);
+        const cases=[];
+        ["x-positive","x-negative","z-positive","z-negative"].forEach(direction=>
+            ["positive","negative"].forEach(internalPressureSign=>{
+                [
+                    {dead:1.2,live:1.6,snow:0,wind:0.7},
+                    {dead:1.2,live:0,snow:1.6,wind:0.7},
+                    {dead:0.9,live:0,snow:0,wind:1.4}
+                ].forEach((f,i)=>cases.push({id:direction+"-"+internalPressureSign+"-"+i,factors:f,
+                    directionalWindPressures:{direction,internalPressureSign,surfaces:pressures}}));
+            }));
+        const built=build3DCombinationCases({cases});
+        const tests=[
+            ["one 1.4D case without wind",built.length===25&&built[0].factors.dead===1.4&&built[0].factors.wind===0&&!built[0].directionalWindPressures],
+            ["24 directional cases retained",built.slice(1).length===24],
+            ["wind factors are applied as 0.7 and 1.4",built.slice(1).every(x=>x.factors.wind===0.7||x.factors.wind===1.4)],
+            ["all direction and internal-pressure alternatives retained",new Set(built.slice(1).map(x=>x.directionalWindPressures.direction+"|"+x.directionalWindPressures.internalPressureSign)).size===8],
+            ["incomplete case set is blocked",(()=>{try{build3DCombinationCases({cases:cases.slice(1)});return false;}catch(e){return true;}})()]
+        ];
+        return {passed:tests.filter(x=>x[1]).length,failed:tests.filter(x=>!x[1]).length,total:tests.length,tests:tests.map(x=>({name:x[0],ok:x[1]})),scope:"combination assembly and factor routing only"};
+    }
+
     // تحلیل مستقل ترکیبات بار
     async function calculateCombinations() {
         const model = window.SteelStructuralModel;
@@ -562,12 +613,7 @@
             if(msg)msg.textContent="تحلیل ترکیبات متوقف شد: انتظار ۲۴ حالت باد جهت‌دار (۴ جهت × ۲ فشار داخلی × ۳ ترکیب) می‌رفت؛ مجموعه تولیدشده ناقص است.";
             return {success:false,status:"incomplete_directional_wind_cases"};
         }
-        const cases=[{
-            id:"ULS-01-1.4D",label:"ترکیب ۱ ـ 1.4D (بدون باد)",
-            factors:{dead:1.4,live:0,snow:0,wind:0},windSign:1,
-            directionalWindPressures:null,directionalWindCaseId:null,
-            source:{code:"مبحث ششم ۱۳۹۸",clause:"۶-۲-۳-۲، ترکیب ۱"}
-        },...windBuild.cases];
+        const cases=build3DCombinationCases(windBuild);
         const rows=[];
         const summaries=[];
         for(const item of cases){
@@ -674,6 +720,8 @@
     // API هم‌زمان برای اجرای زنجیره‌ای، بدون تأخیر دکمه
     if (window.SteelAnalysis) {
         window.SteelAnalysis.calculateCombinations = calculateCombinations;
+        window.SteelAnalysis.build3DCombinationCases=build3DCombinationCases;
+        window.SteelAnalysis.selfTestCombinationBuilder=selfTestCombinationBuilder;
     }
 
     function save() {
