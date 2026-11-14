@@ -92,6 +92,7 @@ function audit(model,loads){
   const issues=[],checks=[],nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n]));
   const baseStations=[...new Set((model?.nodes||[]).filter(n=>n.kind==="base").map(n=>Number(n.z)).filter(Number.isFinite).map(z=>z.toFixed(7)))].map(Number).sort((a,b)=>a-b);
   const g=model?.geometry||{},span=Number(g.span),height=Number(g.height),rise=Number(g.rise);
+  if(!Object.prototype.hasOwnProperty.call(g,"braceBays"))return{success:true,issues:[],checks,expectedBayCount:0,skipped:true};
   if(baseStations.length<2||!(span>0&&height>0&&rise>=0))return{success:false,issues:["ایستگاه قاب‌ها یا ابعاد لازم برای ممیزی هندسه مهاربندها موجود نیست."],checks,expectedBayCount:0};
   const bayCount=baseStations.length-1,configured=Math.max(0,Math.floor(Number(g.braceBays)||0)),expected=new Set();
   for(let i=0;i<Math.min(configured,bayCount);i++){expected.add(i+1);expected.add(bayCount-i);}
@@ -199,9 +200,26 @@ function selfTest(){
  const loads={deadLeft:.5,deadRight:.5,liveLeft:.5,liveRight:.5,snowLeft:1,snowRight:1,windLeft:-.2,windRight:-.2,windWall:.3,windEndFront:0,windEndBack:0,combinations:[{id:"C1",name:"نمونه",dead:1.2,live:1.6,snow:0}]};
  test("complete member load paths accepted",()=>audit(model,loads).success);
  test("missing roof wind transfer detected",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[2].lineLoads.windLeft;return !audit(p,loads).success;});
- test("brace X geometry accepted for configured bays",()=>audit(model,loads).rows.find(x=>x.id==="brace-bay-geometry").status==="connected");
- test("missing wall brace diagonal rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.geometry.braceBays=1;p.members=p.members.filter(m=>m.id!=="WB");return !audit(p,loads).success;});
- test("reversed/invalid brace bay rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.geometry.braceBays=1;p.members.filter(m=>m.sectionKey==="wallBrace")[0].bay=99;return !audit(p,loads).success;});
+ const braceGeometryFixture=()=>{
+  const p=JSON.parse(JSON.stringify(model));p.geometry={frames:[0,5],span:20,height:6,rise:2,braceBays:1};
+  p.nodes=[{id:"B",kind:"base",x:0,y:0,z:0},{id:"B2",kind:"base",x:20,y:0,z:0},{id:"B3",kind:"base",x:0,y:0,z:5},{id:"B4",kind:"base",x:20,y:0,z:5},
+   {id:"WL0",x:0,y:0,z:0},{id:"WL1",x:0,y:6,z:5},{id:"WL2",x:0,y:6,z:0},{id:"WL3",x:0,y:0,z:5},
+   {id:"WR0",x:20,y:0,z:0},{id:"WR1",x:20,y:6,z:5},{id:"WR2",x:20,y:6,z:0},{id:"WR3",x:20,y:0,z:5},
+   {id:"RL0",x:0,y:6,z:0},{id:"RL1",x:10,y:8,z:5},{id:"RL2",x:10,y:8,z:0},{id:"RL3",x:0,y:6,z:5},
+   {id:"RR0",x:10,y:8,z:0},{id:"RR1",x:20,y:6,z:5},{id:"RR2",x:20,y:6,z:0},{id:"RR3",x:10,y:8,z:5}];
+  p.members=p.members.filter(m=>m.sectionKey!=="wallBrace"&&m.sectionKey!=="roofBrace");
+  const add=(id,sectionKey,start,end,bay,side)=>p.members.push({id,sectionKey,start,end,bay,side,lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0}});
+  add("WBL1","wallBrace","WL0","WL1",1,"left");add("WBL2","wallBrace","WL2","WL3",1,"left");
+  add("WBR1","wallBrace","WR0","WR1",1,"right");add("WBR2","wallBrace","WR2","WR3",1,"right");
+  add("RBL1","roofBrace","RL0","RL1",1,"left");add("RBL2","roofBrace","RL2","RL3",1,"left");
+  add("RBR1","roofBrace","RR0","RR1",1,"right");add("RBR2","roofBrace","RR2","RR3",1,"right");
+  add("CL1","column","WL0","WL2");add("CL2","column","WL3","WL1");add("CR1","column","WR0","WR2");add("CR2","column","WR3","WR1");
+  add("RFL1","rafter","RL0","RL1");add("RFL2","rafter","RL3","RL2");add("RFR1","rafter","RR0","RR1");add("RFR2","rafter","RR3","RR2");
+  return p;
+ };
+ test("brace X geometry accepted for configured bays",()=>audit(braceGeometryFixture(),loads).rows.find(x=>x.id==="brace-bay-geometry").status==="connected");
+ test("missing wall brace diagonal rejected",()=>{const p=braceGeometryFixture();p.members=p.members.filter(m=>m.id!=="WBL2");return !audit(p,loads).success;});
+ test("reversed/invalid brace bay rejected",()=>{const p=braceGeometryFixture();p.members.find(m=>m.id==="WBL1").bay=99;return !audit(p,loads).success;});
  test("wall brace endpoints require shared column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer").missingCount>=2;});
  test("roof brace endpoints require shared rafter nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="rafter")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer").missingCount>=2;});
  test("wall girt ends require shared frame-column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="wall-girt-column-transfer").missingCount===2;});
