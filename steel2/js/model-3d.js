@@ -959,9 +959,18 @@
     const missing=[];
     groups.forEach(g=>{
       try{
-        if(!window.SteelSections||typeof window.SteelSections.resolveAnalysis3DSection!=="function")
-          throw new Error("اتصال تخصیص‌دهنده مقطع هنوز بارگذاری نشده است.");
-        window.SteelSections.resolveAnalysis3DSection(g.member);
+        if(g.member.craneIntegration===true){
+          const s=g.member.analysisSection;
+          const keys=["E_Pa","G_Pa","A_m2","Iy_m4","Iz_m4","J_m4"];
+          if(!s||keys.some(k=>!(Number.isFinite(Number(s[k]))&&Number(s[k])>0)))
+            throw new Error("خواص مستند SI تیر حمال/براکت جرثقیل ناقص است.");
+          if(!String(g.member.reference||"").trim())
+            throw new Error("مرجع نقشه عضو جرثقیل ثبت نشده است.");
+        }else{
+          if(!window.SteelSections||typeof window.SteelSections.resolveAnalysis3DSection!=="function")
+            throw new Error("اتصال تخصیص‌دهنده مقطع هنوز بارگذاری نشده است.");
+          window.SteelSections.resolveAnalysis3DSection(g.member);
+        }
       }catch(e){
         const labels={column:"ستون",rafter:"رفتر",roofPurlin:"پرلین سقف",wallGirt:"قید افقی دیوار",endPost:"ستونک دیوار انتهایی",endGirt:"تیر افقی دیوار انتهایی",wallBrace:"مهاربند دیوار",roofBrace:"مهاربند سقف",roofEdge:"تیر لبه سقف"};
         missing.push({key:g.key,label:labels[g.key]||g.key,count:g.count,reason:e.message});
@@ -1166,7 +1175,15 @@
           "؛ شناسه‌های پایانی گره‌ها: "+sample+
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
-      let section=m.sectionKey==="tieBeam"?m.analysisSection:window.SteelSections.resolveAnalysis3DSection(m);
+      let section;
+      if(m.sectionKey==="tieBeam")section=m.analysisSection;
+      else if(m.craneIntegration===true){
+        const cs=m.analysisSection||{};
+        const keys=["E_Pa","G_Pa","A_m2","Iy_m4","Iz_m4","J_m4"];
+        if(keys.some(k=>!(Number.isFinite(Number(cs[k]))&&Number(cs[k])>0)))
+          throw new Error("خواص SI عضو جرثقیل "+m.id+" ناقص است.");
+        section={E:Number(cs.E_Pa),G:Number(cs.G_Pa),A:Number(cs.A_m2),Iy:Number(cs.Iy_m4),Iz:Number(cs.Iz_m4),J:Number(cs.J_m4),sectionKey:m.sectionKey,sectionLabel:m.sectionKey+" ـ مقطع مستند جرثقیل"};
+      }else section=window.SteelSections.resolveAnalysis3DSection(m);
       if(m.sectionKey!=="tieBeam"&&window.SteelTaperedSections&&typeof window.SteelTaperedSections.resolveForMember==="function"){
         const taper=window.SteelTaperedSections.resolveForMember(m,analysisModel.nodes,{span:Number($("span")?.value),height:Number($("height")?.value)},section);
         section=taper.section;
