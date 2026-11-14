@@ -19,7 +19,7 @@ function build(diagrams,options){
   const pr=Array.isArray(c?.prismaticDiagrams)?c.prismaticDiagrams:[];
   pr.forEach(m=>{
    const id=String(m?.memberId||"").trim();if(!id||ids.has(id)){issues.push("شناسه عضو منشوری خالی یا تکراری در حالت "+caseId+": "+id);return;}ids.add(id);
-   const rows=mapRows(m.stations,{caseId,memberId:id,segmentId:null,segmentIndex:null,axes:m.localAxes,length:m.length_m},issues);
+   const rows=mapRows(m.stations,{caseId,memberId:id,segmentId:null,segmentIndex:null,axes:m.localAxes,length:m.length_m,startStation:0,endStation:m.length_m},issues);
    members.push({memberId:id,parentMemberId:String(m.parentMemberId||id),kind:"prismatic",length_m:m.length_m,localAxes:m.localAxes||null,stations:rows,complete:rows.length===(m.stations||[]).length&&rows.length>0});
   });
   const tr=c?.taperedReport;
@@ -31,7 +31,7 @@ function build(diagrams,options){
      const id=String(m.parentMemberId||"").trim();if(!id||ids.has(id)){issues.push("شناسه عضو متغیرمقطع خالی یا تکراری در حالت "+caseId+": "+id);return;}ids.add(id);
      const segments=[];
      (m.segments||[]).forEach(seg=>{
-      const rows=mapRows(seg.stations,{caseId,memberId:id,segmentId:String(seg.segmentId||""),segmentIndex:seg.segmentIndex,axes:seg.localAxes,length:seg.length_m},issues);
+      const rows=mapRows(seg.stations,{caseId,memberId:id,segmentId:String(seg.segmentId||""),segmentIndex:seg.segmentIndex,axes:seg.localAxes,length:seg.length_m,startStation:seg.startStation_m,endStation:seg.endStation_m},issues);
       segments.push({segmentId:String(seg.segmentId||""),segmentIndex:seg.segmentIndex,startStation_m:seg.startStation_m,endStation_m:seg.endStation_m,length_m:seg.length_m,localAxes:seg.localAxes||null,stations:rows,complete:rows.length===(seg.stations||[]).length&&rows.length>0});
      });
      members.push({memberId:id,parentMemberId:id,kind:"tapered",length_m:m.totalLength_m,segmentCount:m.segmentCount,segments,complete:m.complete===true&&segments.length===m.segmentCount&&segments.every(s=>s.complete)});
@@ -53,14 +53,20 @@ function mapRows(rows,meta,issues){
  if(!Array.isArray(rows)||!rows.length){issues.push("ایستگاه‌های عضو "+meta.memberId+" در حالت "+meta.caseId+" خالی است.");return [];}
  const seen=new Set(),out=[];
  rows.forEach((r,i)=>{
-  const x=Number(r?.memberStation_m??r?.x_m);
-  if(!Number.isFinite(x)||x<0){issues.push("مختصات ایستگاه "+i+" عضو "+meta.memberId+" نامعتبر است.");return;}
   const local=Number(r?.x_m);
+  const x=Number(r?.memberStation_m??(Number(meta.startStation||0)+local));
+  if(!Number.isFinite(local)||!Number.isFinite(x)||local< -1e-8||!(Number(meta.length)>0)||local>Number(meta.length)+1e-8){issues.push("مختصات محلی/فیزیکی ایستگاه "+i+" عضو "+meta.memberId+" نامعتبر یا خارج از طول عضو است.");return;}
+  if(Number.isFinite(Number(meta.startStation))&&x<Number(meta.startStation)-1e-8){issues.push("ایستگاه از ابتدای قطعه عضو "+meta.memberId+" خارج شده است.");return;}
+  if(Number.isFinite(Number(meta.endStation))&&x>Number(meta.endStation)+1e-8){issues.push("ایستگاه از انتهای قطعه عضو "+meta.memberId+" عبور کرده است.");return;}
   const key=(meta.segmentId||"whole")+":"+String(local);
   if(seen.has(key)){issues.push("ایستگاه تکراری در عضو "+meta.memberId+" / "+key);return;}seen.add(key);
   if(KEYS.some(k=>typeof r?.[k]!=="number"||!Number.isFinite(r[k]))){issues.push("شش مؤلفه همزمان در ایستگاه "+key+" عضو "+meta.memberId+" کامل نیست.");return;}
   out.push({stationId:meta.caseId+"|"+meta.memberId+"|"+key,caseId:meta.caseId,memberId:meta.memberId,segmentId:meta.segmentId,segmentIndex:meta.segmentIndex,xLocal_m:Number.isFinite(local)?local:null,xMember_m:x,localAxes:meta.axes||null,actions:{N:r.N_N,Vy:r.Vy_N,Vz:r.Vz_N,T:r.T_Nm,My:r.My_Nm,Mz:r.Mz_Nm},sourceRow:{...r},units:{force:"N",moment:"N.m",length:"m"}});
  });
+ if(out.length===rows.length&&out.length){
+  for(let i=1;i<out.length;i++)if(!(out[i].xLocal_m>out[i-1].xLocal_m)){issues.push("ترتیب ایستگاه‌ها در عضو "+meta.memberId+" صعودی و یکتا نیست.");break;}
+  if(Math.abs(out[0].xLocal_m)>1e-8||Math.abs(out[out.length-1].xLocal_m-Number(meta.length))>1e-8)issues.push("پوشش ایستگاه‌ها در عضو/قطعه "+meta.memberId+" از ابتدا تا انتها کامل نیست.");
+ }
  return out;
 }
 function selfTest(){
@@ -72,8 +78,10 @@ function selfTest(){
  const duplicate=build([{...base,prismaticDiagrams:[{...base.prismaticDiagrams[0],stations:[row(0),row(0)]}]}]);
  const incomplete=build([{...base,prismaticDiagrams:[{...base.prismaticDiagrams[0],stations:[{...row(0),Mz_Nm:NaN}]}]}]);
  const noUnits=build([{...base,units:null}]);
+ const reversed=build([{...base,prismaticDiagrams:[{...base.prismaticDiagrams[0],stations:[row(2),row(0)]}]}]);
+ const missingEnd=build([{...base,prismaticDiagrams:[{...base.prismaticDiagrams[0],stations:[row(0),row(1)]}]}]);
  const tapered=build([{success:true,loadCaseId:"T1",units:"N,N.m,m",prismaticDiagrams:[],taperedReport:{success:true,loadCases:[{label:"T1",members:[{parentMemberId:"R1",totalLength_m:5,segmentCount:2,complete:true,segments:[{segmentId:"S1",segmentIndex:1,startStation_m:0,endStation_m:2,length_m:2,stations:[{...row(0),memberStation_m:0},{...row(2),memberStation_m:2}]},{segmentId:"S2",segmentIndex:2,startStation_m:2,endStation_m:5,length_m:3,stations:[{...row(0),memberStation_m:2},{...row(3),memberStation_m:5}]}]}]}]}}]);
- const tests=[good.success&&good.cases[0].members[0].stations[0].actions.My===5,good.cases[0].members[0].stations[0].localAxes.x[0]===1,good.cases[0].members[0].stations[0].actions.My===5&&other.cases[0].members[0].stations[0].actions.My===99,good.cases.length===1&&good.cases[0].caseId==="LC1",!missing.success,!duplicate.success,!incomplete.success,!noUnits.success,tapered.success&&tapered.cases[0].members[0].segments[1].stations[0].xMember_m===2&&!tapered.cases[0].members[0].segments[1].stations[0].segmentId===false,!good.designApproved&&good.independentEnvelopeMixing===false];
+ const tests=[good.success&&good.cases[0].members[0].stations[0].actions.My===5,good.cases[0].members[0].stations[0].localAxes.x[0]===1,good.cases[0].members[0].stations[0].actions.My===5&&other.cases[0].members[0].stations[0].actions.My===99,good.cases.length===1&&good.cases[0].caseId==="LC1",!missing.success,!duplicate.success,!incomplete.success,!noUnits.success,tapered.success&&tapered.cases[0].members[0].segments[1].stations[0].xMember_m===2&&!tapered.cases[0].members[0].segments[1].stations[0].segmentId===false,!good.designApproved&&good.independentEnvelopeMixing===false,!reversed.success,!missingEnd.success];
  return {passed:tests.filter(Boolean).length,failed:tests.filter(x=>!x).length,total:tests.length,tests};
 }
 root.SteelStationDemandAdapter={build,selfTest};
