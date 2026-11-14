@@ -76,6 +76,8 @@ function audit(input){
    const calc=d.An_cm2*d.U,delta=Math.abs(d.Ae_cm2-calc)/Math.max(calc,1e-9)*100;
    if(delta>3)warnings.push(label+": اختلاف Ae با An×U برابر "+delta.toFixed(1)+"٪ است؛ داده‌ها بازبینی شوند.");
   }
+  if(d.eccentricity_mm===null||d.eccentricity_mm===undefined)local.push("خروج از مرکزیت اتصال باید مشخص شود؛ مقدار صفر فقط با مستندات هم‌محوری وارد شود.");
+  else if(d.eccentricity_mm!==0)local.push("خروج از مرکزیت اتصال غیرصفر است؛ غربال کشش محوری کافی نیست و اندرکنش کشش و خمش لازم است.");
   if(d.connectionType==="unknown")local.push("نوع اتصال (پیچی یا جوشی) مشخص نشده است.");
   if(d.connectionType==="bolted"&&!d.holePatternReviewed)local.push("بازبینی قطر، تعداد، فاصله و آرایش سوراخ‌ها تأیید نشده است.");
   if(!d.connectionDetailsReviewed)local.push("جزئیات اتصال و مسیر انتقال نیرو بازبینی نشده است.");
@@ -86,7 +88,7 @@ function audit(input){
   const demandBridge=extractGroupTensionDemand(g),manualDemand=Number(d.forceDemandKN)>0?Number(d.forceDemandKN):null;
   if(!demandBridge.ready){if(manualDemand===null)warnings.push(label+": نیروی کششی تقاضا از پوش FEM استخراج نشد؛ "+demandBridge.reason);}
   else if(manualDemand!==null&&Math.abs(manualDemand-demandBridge.forceDemandKN)>Math.max(0.01,demandBridge.forceDemandKN*0.01))warnings.push(label+": مقدار دستی تقاضا با بیشینه کشش استخراج‌شده از FEM بیش از ۱٪ اختلاف دارد؛ منبع و ترکیب کنترل شوند.");
-  const capacityScreen=demandBridge.ready?root.SteelTensionCapacityScreen?.analyze?.({codeBasis:"M10-1401-provisional",officialTextVerified:false,axialOnlyVerified:demandBridge.axialOnly===true,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,Fy_MPa:Number(mat.Fy),Fu_MPa:Number(mat.Fu),demand_kN:demandBridge.forceDemandKN,governingMember:demandBridge.governing?.memberId,governingCase:demandBridge.governing?.caseLabel,governingEnd:demandBridge.governing?.end}):null;
+  const capacityScreen=demandBridge.ready?root.SteelTensionCapacityScreen?.analyze?.({codeBasis:"M10-1401-provisional",officialTextVerified:false,axialOnlyVerified:demandBridge.axialOnly===true&&d.eccentricity_mm===0,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,Fy_MPa:Number(mat.Fy),Fu_MPa:Number(mat.Fu),demand_kN:demandBridge.forceDemandKN,governingMember:demandBridge.governing?.memberId,governingCase:demandBridge.governing?.caseLabel,governingEnd:demandBridge.governing?.end}):null;
   groups[g]={label,complete:local.length===0,issues:local,connectionType:d.connectionType,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,forceDemandKN:manualDemand??(demandBridge.ready?demandBridge.forceDemandKN:null),computedForceDemandKN:demandBridge.forceDemandKN,demandSource:demandBridge.ready?demandBridge.source:null,demandMemberCount:demandBridge.memberCount,demandCaseCount:demandBridge.caseCount,governingTension:demandBridge.governing,capacityScreen:capacityScreen||{ok:false,issues:["موتور غربال ظرفیت یا تقاضای FEM معتبر در دسترس نیست."],designApproved:false}};
   local.forEach(x=>issues.push(label+": "+x));
  });
