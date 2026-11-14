@@ -97,7 +97,7 @@ function audit(model,loads){
   const bayCount=baseStations.length-1,configured=Math.max(0,Math.floor(Number(g.braceBays)||0)),expected=new Set();
   for(let i=0;i<Math.min(configured,bayCount);i++){expected.add(i+1);expected.add(bayCount-i);}
   const families=[{key:"wallBrace",label:"دیوار",sides:["left","right"],transverse:(a,b)=>Math.abs(a.x-b.x)<1e-6&&Math.abs(Math.abs(a.y-b.y)-height)<1e-6},
-   {key:"roofBrace",label:"سقف",sides:["left","right"],transverse:(a,b)=>Math.abs(Math.abs(a.x-b.x)-span/2)<1e-6&&Math.abs(a.y-(height+rise*(1-a.x/(span/2))))<1e-5&&Math.abs(b.y-(height+rise*(1-b.x/(span/2))))<1e-5}];
+   {key:"roofBrace",label:"سقف",sides:["left","right"],transverse:(a,b)=>Math.abs(Math.abs(a.x-b.x)-span/2)<1e-6&&Math.abs(a.y-(height+rise*(a.x<=span/2?a.x/(span/2):(span-a.x)/(span/2))))<1e-5&&Math.abs(b.y-(height+rise*(b.x<=span/2?b.x/(span/2):(span-b.x)/(span/2))))<1e-5}];
   const members=model?.members||[];
   families.forEach(f=>{
    const list=members.filter(m=>m.sectionKey===f.key),groups=new Map();
@@ -230,7 +230,7 @@ function selfTest(){
  test("roof purlin tributary width required",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].lineLoads.tributaryWidth=0;return !audit(p,loads).success;});
  test("incomplete combination factors detected",()=>{const p={...loads,combinations:[{id:"C",dead:1.2,live:null,snow:0}]};return !audit(model,p).success;});
  test("duplicate member identifiers detected",()=>{const p={...model,members:[...members,{...members[0]}]};return !audit(p,loads).success;});
- test("all load groups explicitly reported",()=>audit(model,loads).rows.length===12);
+ test("all load groups explicitly reported",()=>audit(model,loads).rows.length===13);
  test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.2);
  test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
  test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
