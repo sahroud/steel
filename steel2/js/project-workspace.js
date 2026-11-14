@@ -10,6 +10,8 @@ function addStyle(){
  document.head.appendChild(s);
 }
 function set(id,value){const e=$(id);if(!e||value===undefined||value===null)return;e.value=String(value);e.dispatchEvent(new Event("input",{bubbles:true}));e.dispatchEvent(new Event("change",{bubbles:true}));}
+function readModule(name,method){const api=window[name];if(!api||typeof api[method]!=="function")return {available:false,status:"unsupported",data:null};try{return {available:true,status:"captured",data:api[method]()};}catch(e){return {available:true,status:"error",data:null,error:e?.message||String(e)};}}
+function compactLoadSummary(loads){if(!loads||typeof loads!=="object")return "داده بارگذاری در دسترس نیست.";const keys=Object.keys(loads);const numeric=keys.filter(k=>typeof loads[k]==="number"&&Number.isFinite(loads[k])).map(k=>k+"="+loads[k]);const nested=keys.filter(k=>loads[k]&&typeof loads[k]==="object").map(k=>k+" ("+(Array.isArray(loads[k])?loads[k].length+" مورد":Object.keys(loads[k]).length+" فیلد")+")");return "فیلدها: "+keys.join(", ")+"؛ مقادیر عددی: "+(numeric.join(", ")||"ندارد")+"؛ مجموعه‌ها: "+(nested.join(", ")||"ندارد");}
 function read(){
  return {schema:"sahroud-steel-project-inputs",version:1,createdAt:new Date().toISOString(),
  project:{name:v("ssName"),owner:v("ssOwner"),designer:v("ssDesigner"),city:v("ssCity")},
@@ -48,6 +50,8 @@ function validateInputObject(d){const g=d?.geometry||{},issues=[];if(![g.spanM,g
 function selfTest(){const checks=[],test=(name,fn)=>{try{checks.push({name,pass:!!fn()});}catch(e){checks.push({name,pass:false,error:e.message});}};const valid={geometry:{spanM:20,lengthM:40,frameSpacingM:5,columnHeightM:7,roofRiseM:2},configuration:{overheadCrane:false,requestedMaxPurlinSpacingM:1.2}};test("valid project geometry passes",()=>validateInputObject(valid).length===0);test("zero span is rejected",()=>validateInputObject({...valid,geometry:{...valid.geometry,spanM:0}}).length>0);test("negative roof rise is rejected",()=>validateInputObject({...valid,geometry:{...valid.geometry,roofRiseM:-1}}).length>0);test("frame spacing beyond building length is rejected",()=>validateInputObject({...valid,geometry:{...valid.geometry,frameSpacingM:50}}).length>0);test("crane configuration preserves explicit flag",()=>valid.configuration.overheadCrane===false);return {passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"input validation only; no engineering approval"};}
 function run(){
  const status=$("ssRunStatus");
+ lastRun=null;model=null;audit=null;drawings=null;
+ if(window.SteelQuantityTakeoff)window.SteelQuantityTakeoff.lastResult=null;
  try{
   const d=apply(),g=d.geometry,c=d.configuration;
   const inputIssues=validateInputObject(d);if(inputIssues.length)throw Error(inputIssues.join(" "));
@@ -56,13 +60,27 @@ function run(){
   const err=window.SteelProject?.validate?.()||"";if(err)throw Error(err);
   model=window.SteelStructuralModel?.build?.();if(!model||!model.members?.length)throw Error("مدل هندسی تولید نشد.");
   window.SteelStructuralModel.draw?.();
-  audit=window.SteelFreshModelStructuralAudit?.audit?.(model,window.SteelLoads?.getData?.()||{})||null;
+  const loadsRead=readModule("SteelLoads","getData"),projectRead=readModule("SteelProject","getData");
+  audit=window.SteelFreshModelStructuralAudit?.audit?.(model,loadsRead.data||{})||null;
   window.SteelAutoWorkflow?.run?.();
-  try{const q=window.SteelQuantityTakeoff?.calculate?.(model)||null;if(window.SteelQuantityTakeoff&&q)window.SteelQuantityTakeoff.lastResult=q;}catch(e){}
-  try{drawings=window.SteelConstructionDrawings?.build?.()||null;}catch(e){drawings={success:false,issue:e?.message||String(e)};}
+  let quantity={available:false,status:"unsupported",data:null};
+  try{
+   if(window.SteelQuantityTakeoff&&typeof window.SteelQuantityTakeoff.calculate==="function"){
+    let q=window.SteelQuantityTakeoff.calculate(model);
+    if(window.SteelFabricationTakeoff?.enrich)q=window.SteelFabricationTakeoff.enrich(q,model);
+    window.SteelQuantityTakeoff.lastResult=q;
+    window.SteelCostEstimate?.refreshFromBOQ?.(q);
+    quantity={available:true,status:"calculated",data:q};
+   }
+  }catch(e){window.SteelQuantityTakeoff&&(window.SteelQuantityTakeoff.lastResult=null);quantity={available:true,status:"error",data:null,error:e?.message||String(e)};}
+  try{
+   if(window.SteelConstructionDrawings?.build){const built=window.SteelConstructionDrawings.build();drawings={success:!!(built&&built.sheets&&Object.keys(built.sheets).length),data:built,issue:null};}
+   else drawings={success:false,issue:"ماژول تولید نقشه در دسترس نیست."};
+  }catch(e){drawings={success:false,issue:e?.message||String(e)};}
   let boq=null;try{boq=window.SteelProjectBOQ?.refresh?.()||null;}catch(e){boq={success:false,issue:e?.message||String(e)};}
   const workflow=$("steelAutoWorkflowResults")?.innerText||"";
-  lastRun={generatedAt:new Date().toISOString(),inputs:d,loads:window.SteelLoads?.getData?.()||null,climate:window.SteelClimateDB?.getData?.()||null,geotechnical:window.SteelGeotechnicalData?.getData?.()||null,openings:window.SteelOpenings?.getData?.()||null,crane:window.SteelCraneReadiness?.getData?.()||null,foundation:window.SteelFoundationTakeoff?.getData?.()||null,model:{nodeCount:model.nodes?.length||0,memberCount:model.members?.length||0,nodes:model.nodes,members:model.members},freshModelAudit:audit,workflowReport:workflow,combinationResults:window.SteelAnalysis?.combinationResults||[],drawings:drawings,boq:boq,limitations:["این اجرا به معنی تکمیل طراحی آیین‌نامه‌ای نیست.","تحلیل سه‌بعدی کامل همه اعضای طولی/مهاربندها هنوز باید مستقل اعتبارسنجی شود.","ظرفیت همه اعضا، اتصالات، انکرها، بتن و خاک تا تکمیل داده و ماژول معتبر تأیید نمی‌شود.","داده اقلیمی شهر باید از منبع رسمی و موقعیت دقیق پروژه کنترل شود.","نقشه‌های موجود پارامتریک/شماتیک‌اند و لزوماً نقشه اجرایی نیستند."]};
+  const climateRead=readModule("SteelClimateDB","getData"),geoRead=readModule("SteelGeotechnicalData","getData"),openingsRead=readModule("SteelOpenings","getData"),craneRead=readModule("SteelCraneReadiness","getData"),foundationRead=readModule("SteelFoundationTakeoff","getData");
+  lastRun={generatedAt:new Date().toISOString(),inputs:d,projectSnapshot:projectRead,loads:loadsRead,climate:climateRead,geotechnical:geoRead,openings:openingsRead,crane:craneRead,foundation:foundationRead,quantityTakeoff:quantity,model:{nodeCount:model.nodes?.length||0,memberCount:model.members?.length||0,nodes:model.nodes,members:model.members},freshModelAudit:audit,workflowReport:workflow,combinationResults:window.SteelAnalysis?.combinationResults||[],drawings:drawings,boq:boq,limitations:["این اجرا به معنی تکمیل طراحی آیین‌نامه‌ای نیست.","تحلیل سه‌بعدی کامل همه اعضای طولی/مهاربندها هنوز باید مستقل اعتبارسنجی شود.","ظرفیت همه اعضا، اتصالات، انکرها، بتن و خاک تا تکمیل داده و ماژول معتبر تأیید نمی‌شود.","داده اقلیمی شهر باید از منبع رسمی و موقعیت دقیق پروژه کنترل شود.","نقشه‌های موجود پارامتریک/شماتیک‌اند و لزوماً نقشه اجرایی نیستند."]};
   status.textContent="مدل ساخته شد: "+lastRun.model.nodeCount+" گره و "+lastRun.model.memberCount+" عضو.\nممیزی مدل تازه: "+(audit?.success?"موفق در کنترل‌های موجود":"ناقص/نیازمند بررسی")+"\nگزارش مراحل خودکار در بخش تخصصی قابل مشاهده است.\nهیچ تأیید نهایی مهندسی از این اجرا استنباط نمی‌شود.";
   $("ssExportStatus").textContent="مدل آماده است؛ خروجی‌های مورد نظر را انتخاب کنید.";
  }catch(e){status.textContent="توقف امن: "+(e?.message||String(e))+"\nنتیجه تأییدنشده صادر نشد.";}
@@ -70,8 +88,8 @@ function run(){
 function download(name,data,type){const b=new Blob([data],{type}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);}
 function rtf(s){let o="";s=String(s??"");for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);if(c===92||c===123||c===125)o+="\\"+s[i];else if(c<128)o+=s[i];else o+="\\u"+(c>32767?c-65536:c)+"?";}return o;}
 function report(){
- const a=lastRun?.freshModelAudit||{},g=lastRun?.inputs?.geometry||{},p=lastRun?.inputs?.project||{},m=lastRun?.inputs?.materials||{},loads=lastRun?.loads||{},lines=["SAHROUD STEEL — گزارش محاسبات و کنترل آمادگی","تاریخ: "+(lastRun?.generatedAt||new Date().toISOString()),"پروژه: "+(p.name||"—")+" | کارفرما: "+(p.owner||"—")+" | طراح: "+(p.designer||"—")+" | شهر: "+(p.city||"—"),"دهانه: "+g.spanM+" m | طول: "+g.lengthM+" m | ارتفاع ستون: "+g.columnHeightM+" m | افزایش تاج: "+g.roofRiseM+" m | فاصله قاب: "+g.frameSpacingM+" m","تکیه‌گاه پایه: "+g.baseConnection,"مصالح: "+(m.material?.grade||"نامشخص")+" | ضخامت: "+(m.material?.thickness_mm??"—")+" mm | E: "+(m.material?.E_GPa??"—")+" GPa | Fy: "+(m.material?.Fy_MPa??"—")+" MPa | Fu: "+(m.material?.Fu_MPa??"—")+" MPa","مقطع ستون: "+(m.column?.profile||"نامشخص")+" | مقطع رفتر: "+(m.rafter?.profile||"نامشخص"),"بارهای ثبت‌شده: "+JSON.stringify(loads),"مدل: "+(lastRun?.model?.nodeCount||0)+" گره، "+(lastRun?.model?.memberCount||0)+" عضو","تعداد نتایج ترکیبات بار: "+(lastRun?.combinationResults?.length||0),"وضعیت ممیزی: "+(a.success?"موفق در کنترل‌های اجراشده":"ناقص/نیازمند بررسی"),"ممیزی مسیر کل ساختمان: "+(a.wholeBuilding?.success?"موفق":"ناقص/غیرفعال")+" | باد طولی: "+(a.longitudinalBracing?.applicable?(a.longitudinalBracing.success?"مسیر توپولوژیک برقرار":"مسیر ناقص"):"غیرفعال/غیرقابل اعمال")];
- (a.issues||[]).forEach((x,i)=>lines.push("مانع "+(i+1)+": "+x));(lastRun?.boq?.warnings||[]).forEach((x,i)=>lines.push("هشدار متره "+(i+1)+": "+x));if(lastRun?.drawings?.issue)lines.push("نقشه‌ها: "+lastRun.drawings.issue);lines.push("گزارش مراحل خودکار:",lastRun?.workflowReport||"در دسترس نیست.","محدودیت‌ها:");(lastRun?.limitations||[]).forEach((x,i)=>lines.push((i+1)+". "+x));
+ const a=lastRun?.freshModelAudit||{},g=lastRun?.inputs?.geometry||{},p=lastRun?.inputs?.project||{},m=lastRun?.inputs?.materials||{},loads=lastRun?.loads||{},lines=["SAHROUD STEEL — گزارش محاسبات و کنترل آمادگی","تاریخ: "+(lastRun?.generatedAt||new Date().toISOString()),"پروژه: "+(p.name||"—")+" | کارفرما: "+(p.owner||"—")+" | طراح: "+(p.designer||"—")+" | شهر: "+(p.city||"—"),"دهانه: "+g.spanM+" m | طول: "+g.lengthM+" m | ارتفاع ستون: "+g.columnHeightM+" m | افزایش تاج: "+g.roofRiseM+" m | فاصله قاب: "+g.frameSpacingM+" m","تکیه‌گاه پایه: "+g.baseConnection,"مصالح: "+(m.material?.grade||"نامشخص")+" | ضخامت: "+(m.material?.thickness_mm??"—")+" mm | E: "+(m.material?.E_GPa??"—")+" GPa | Fy: "+(m.material?.Fy_MPa??"—")+" MPa | Fu: "+(m.material?.Fu_MPa??"—")+" MPa","مقطع ستون: "+(m.column?.profile||"نامشخص")+" | مقطع رفتر: "+(m.rafter?.profile||"نامشخص"),"خلاصه بارگذاری: "+compactLoadSummary(loads),"مدل: "+(lastRun?.model?.nodeCount||0)+" گره، "+(lastRun?.model?.memberCount||0)+" عضو","تعداد نتایج ترکیبات بار: "+(lastRun?.combinationResults?.length||0),"وضعیت ممیزی: "+(a.success?"موفق در کنترل‌های اجراشده":"ناقص/نیازمند بررسی"),"ممیزی مسیر کل ساختمان: "+(a.wholeBuilding?.success?"موفق":"ناقص/غیرفعال")+" | باد طولی: "+(a.longitudinalBracing?.applicable?(a.longitudinalBracing.success?"مسیر توپولوژیک برقرار":"مسیر ناقص"):"غیرفعال/غیرقابل اعمال")];
+ (a.issues||[]).forEach((x,i)=>lines.push("مانع "+(i+1)+": "+x));(lastRun?.boq?.warnings||[]).forEach((x,i)=>lines.push("هشدار متره "+(i+1)+": "+x));if(lastRun?.drawings?.issue)lines.push("نقشه‌ها: "+lastRun.drawings.issue);if(lastRun?.quantityTakeoff?.status!=="calculated")lines.push("متره: "+(lastRun?.quantityTakeoff?.error||"محاسبه انجام نشده یا ماژول در دسترس نیست."));lines.push("گزارش مراحل خودکار:",lastRun?.workflowReport||"در دسترس نیست.","محدودیت‌ها:");(lastRun?.limitations||[]).forEach((x,i)=>lines.push((i+1)+". "+x));
  lines.push("این سند گزارش نرم‌افزاری مقدماتی است؛ دفترچه محاسبات نهایی و قابل مهر نیست تا همه کنترل‌های آیین‌نامه‌ای، داده‌های پروژه و بازبینی مهندس مسئول تکمیل شوند.");
  return lines.join("\n");
 }
@@ -87,13 +105,17 @@ function exportFiles(){
  if($("ssOutJSON").checked){download("SAHROUD-STEEL-Project-Package.json",JSON.stringify(lastRun,null,2),"application/json;charset=utf-8");done.push("بسته JSON");}
  if($("ssOutBOQ").checked){const snap=lastRun.boq,rows=csvRows();if(snap?.rows?.length&&window.SteelProjectBOQ?.csv){download("SAHROUD-STEEL-BOQ.csv",window.SteelProjectBOQ.csv(snap),"text/csv;charset=utf-8");done.push("متره CSV");}else if(rows.length){const q=x=>'"'+String(x??"").replace(/"/g,'""')+'"';download("SAHROUD-STEEL-BOQ.csv","\uFEFF"+[["بخش","شرح","مقدار","واحد","وضعیت"],...rows].map(r=>r.map(q).join(",")).join("\r\n"),"text/csv;charset=utf-8");done.push("متره CSV");}else done.push("متره هنوز خروجی قابل استخراج ندارد");}
  if($("ssOutCode").checked){download("SAHROUD-STEEL-Code-Readiness.rtf",makeRTF(report()),"application/rtf;charset=utf-8");done.push("گزارش ضوابط RTF");}
- if($("ssOutDrawings").checked){printDrawings();done.push("پنجره چاپ نقشه‌های موجود؛ مقصد Save as PDF را انتخاب کنید");}
+ if($("ssOutDrawings").checked){if(drawings?.success){printDrawings();done.push("پنجره چاپ نقشه‌های موجود؛ مقصد Save as PDF را انتخاب کنید");}else done.push("نقشه‌ها صادر نشد: "+(drawings?.issue||"ساخت نقشه موفق نبوده است."));}
  if($("ssOutPDF").checked){printReport();done.push("پنجره چاپ گزارش؛ گزینه Save as PDF را انتخاب کنید");}
  $("ssExportStatus").textContent=done.join("؛ ");
 }
 function printReport(){const w=window.open("","_blank");if(!w)throw Error("پنجره چاپ مسدود شده است.");const s=report().replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));w.document.write('<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><title>SAHROUD STEEL</title><style>body{font:14px Tahoma;line-height:2;margin:22mm;white-space:pre-wrap}</style><h2>SAHROUD STEEL</h2>'+s+'</html>');w.document.close();w.focus();setTimeout(()=>w.print(),300);}
 function printDrawings(){
- try{if(!drawings)drawings=window.SteelConstructionDrawings?.build?.();const b=$("btnPrintConstructionDrawings");if(b)b.click();else alert("ماژول چاپ نقشه در دسترس نیست.");}catch(e){alert(e.message||String(e));}
+ try{
+  if(!lastRun||!drawings?.success)throw Error("نقشه معتبر از اجرای جاری در دسترس نیست؛ ابتدا اجرای مدل و تولید موفق نقشه‌ها را انجام دهید.");
+  const b=$("btnPrintConstructionDrawings");if(!b)throw Error("دکمه چاپ نقشه در دسترس نیست.");
+  b.click();
+ }catch(e){alert(e.message||String(e));}
 }
 window.SteelProjectWorkspace={run,getLast:()=>lastRun,readInputs:read,exportSelected:exportFiles,validateInputObject,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{addStyle();ui();});else{addStyle();ui();}
