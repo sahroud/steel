@@ -129,8 +129,8 @@ function selfTest(){
  root.SteelDesignCore={getData:()=>({})};
  const t=[],test=(name,fn)=>{try{t.push({name,ok:fn()!==false});}catch(e){t.push({name,ok:false,error:e.message});}};
  const members=[
-  {id:"R1",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
-  {id:"R2",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
+  {id:"R1",sectionKey:"rafter",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
+  {id:"R2",sectionKey:"rafter",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
   {id:"P1",sectionKey:"roofPurlin",side:"left",start:"B",end:"T",lineLoads:{dead:1,live:.5,snow:.5,wind:0,windLeft:-.2,windRight:-.2,windEnd:0,tributaryWidth:1.2}},
   {id:"W1",sectionKey:"wallGirt",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:.3,windLeft:0,windRight:0,windEnd:0,tributaryHeight:2}},
   {id:"E1",sectionKey:"endGirt",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryHeight:2}},
