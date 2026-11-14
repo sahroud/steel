@@ -127,6 +127,8 @@
             data.loads = window.SteelLoads.getData();
         }
 
+        if (window.SteelLoadCaseWorkbench) data.loadCaseWorkbench = window.SteelLoadCaseWorkbench.read();
+
         if (window.SteelSections &&
             typeof window.SteelSections.read === "function") {
             data.sections = window.SteelSections.read();
@@ -461,6 +463,10 @@
         if (data.loads && window.SteelLoads &&
             typeof window.SteelLoads.setData === "function") {
             window.SteelLoads.setData(data.loads);
+        }
+
+        if (window.SteelLoadCaseWorkbench && typeof window.SteelLoadCaseWorkbench.setData === "function") {
+            window.SteelLoadCaseWorkbench.setData(data.loadCaseWorkbench || {});
         }
 
         if (window.SteelLoads &&
