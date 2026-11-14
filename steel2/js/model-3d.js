@@ -207,6 +207,7 @@
             : " | اطلاعات گره بحرانی در دسترس نیست")+
           (result.selfWeight&&result.selfWeight.included?" | وزن خود اعضا (فولاد و بتن شناژ) افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو"+(result.selfWeight.bySectionGroup?" | تفکیک وزن گروه‌ها: "+Object.entries(result.selfWeight.bySectionGroup).map(([k,v])=>k+"="+v.totalKN.toFixed(2)+"kN، "+v.count+" عضو، "+v.lengthM.toFixed(1)+"m").join("؛ "):""):"")+
           (result.wallDeadLoadTransfer?" | وزن مرده پوسته دیوارها: "+Number(result.wallDeadLoadTransfer.totalWeightKN).toFixed(2)+" kN؛ ضریب D="+Number(result.wallDeadLoadTransfer.deadFactor).toFixed(3)+"؛ وزن اعمال‌شده در این حالت="+Number(result.wallDeadLoadTransfer.appliedWeightKN).toFixed(2)+" kN":"")+
+          (result.gableWindEccentricTransfer?" | انتقال باد گابل با خروج از مرکزیت: "+result.gableWindEccentricTransfer.memberCount+" قطعه گرت و "+result.gableWindEccentricTransfer.nodalLoadCount+" گره بارگذاری‌شده؛ فقط در حالت‌های باد جهت‌دار":"")+
           (result.preparedMemberLoadAudit?" | ممیزی نهایی بار اعضا: "+result.preparedMemberLoadAudit.memberCount+" از "+result.memberCount+" عضو؛ بردار محلی/جهانی و دفتر بار صریح معتبر":" | ممیزی نهایی بار اعضا گزارش نشده")+
           (result.tieBeamIntegration?" | شناژهای واردشده به تحلیل: "+result.tieBeamIntegration.included.length+
             (result.tieBeamIntegration.included.length?" (وزن بتن فقط در حالت مرده/ترکیبات دارای D افزوده می‌شود)":"")+
