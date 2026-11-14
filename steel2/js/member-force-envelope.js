@@ -17,10 +17,10 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 function cases(){
  const combos=window.SteelLoads?.getData?.().combinations;
  if(!Array.isArray(combos)||!combos.length)throw Error("ترکیبات بار در دسترس نیستند.");
- const out=combos.map((c,i)=>{const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:c.wind===undefined?0:Number(c.wind)};if(!String(c.name||("ترکیب "+(i+1))).trim()||Object.values(factors).some(v=>!Number.isFinite(v)||v<0))throw Error("نام یا ضریب ترکیب بار "+(i+1)+" ناقص/نامعتبر است؛ مقدار نامشخص به صفر تبدیل نمی‌شود.");return {label:String(c.name||("ترکیب "+(i+1))),factors};});
+ const out=combos.map((c,i)=>{const missing=["dead","live","snow"].filter(k=>c[k]===undefined||c[k]===null||c[k]==="");if(c.wind===null||c.wind==="")missing.push("wind");const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:c.wind===undefined?0:Number(c.wind)};if(missing.length||!String(c.name||("ترکیب "+(i+1))).trim()||Object.values(factors).some(v=>!Number.isFinite(v)||v<0))throw Error("نام یا ضریب ترکیب بار "+(i+1)+" ناقص/نامعتبر است؛ مقدار نامشخص به صفر تبدیل نمی‌شود.");return {label:String(c.name||("ترکیب "+(i+1))),factors};});
  const model=window.SteelStructuralModel?.getData?.();
  const hasWind=(model?.members||[]).some(m=>["windLeft","windRight","wind","windEnd"].some(k=>Math.abs(Number(m.lineLoads?.[k])||0)>1e-12));
- if(hasWind)combos.forEach((c,i)=>{const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:1};if(Object.values(factors).some(v=>!Number.isFinite(v)||v<0))throw Error("ضرایب ترکیب باد "+(i+1)+" ناقص یا نامعتبرند.");[1,-1].forEach(sign=>out.push({label:String(c.name||("ترکیب "+(i+1)))+" + باد "+(sign>0?"مثبت":"منفی"),factors,windSign:sign}));});
+ if(hasWind)combos.forEach((c,i)=>{const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:1};if(["dead","live","snow"].some(k=>c[k]===undefined||c[k]===null||c[k]==="")||Object.values(factors).some(v=>!Number.isFinite(v)||v<0))throw Error("ضرایب ترکیب باد "+(i+1)+" ناقص یا نامعتبرند.");[1,-1].forEach(sign=>out.push({label:String(c.name||("ترکیب "+(i+1)))+" + باد "+(sign>0?"مثبت":"منفی"),factors,windSign:sign}));});
  return out;
 }
 function maxAbs(samples,index){
