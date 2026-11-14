@@ -5,8 +5,10 @@
 "use strict";
 function run(){
  const checks=[];
- test("tapered member design readiness fail-closed gate",()=>{const x=root.SteelTaperedMemberDesignReadiness?.selfTest?.();return x?.passed===5&&x.failed===0?"Segment coverage, simultaneous 12-component force vectors, missing inputs, duplicate segments and no design approval: 5/5":false;});
  const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
+ test("tapered fabrication economics quantity comparison",()=>{const x=root.SteelTaperedFabricationEconomics?.selfTest?.();return x?.passed===5&&x.failed===0?"Prismatic baseline, continuous taper, stepped option, unknown pricing and invalid geometry: 5/5":false;});
+ test("tapered member design readiness fail-closed gate",()=>{const x=root.SteelTaperedMemberDesignReadiness?.selfTest?.();return x?.passed===5&&x.failed===0?"Segment coverage, simultaneous 12-component force vectors, missing inputs, duplicate segments and no design approval: 5/5":false;});
+
  test("crane type-specific wheel load path classifier",()=>{const r=root.SteelCraneLoadPath?.selfTest?.();return r&&r.passed===19&&r.failed===0?"Crane type routing, invalid support blocking, and project selector state round-trip: 14/14":false;});
  test("crane bay allocation explicitly audits partial and multiple crane layouts",()=>{const x=root.SteelCraneBayConfiguration?.selfTest?.();return x?.passed===12&&x.failed===0?"Crane-to-bay allocation, shared-runway warnings, per-crane data completeness and current FEM compatibility gate: 12/12":false;});
  test("multi-crane selected-bay runway geometry proposal remains proposal-only",()=>{const x=root.SteelCraneMultiBayMeshProposal?.selfTest?.();return x?.passed===12&&x.failed===0?"Shared-runway multi-crane allocation, selected-bay-only rail segments, exact column support mapping, independent-system gate and no FEM activation: 12/12":false;});
