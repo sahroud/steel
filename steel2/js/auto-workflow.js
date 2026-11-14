@@ -75,6 +75,52 @@
       return false;
     }
   }
+  function audit3DCombinationCoverage(model, combinations) {
+    const issues=[], expected=Array.isArray(model?.members)?model.members:[];
+    if(!expected.length)issues.push("مدل سه‌بعدی یا مجموعه اعضای مرجع خالی است.");
+    const expectedIds=expected.map(m=>String(m?.id??""));
+    if(expectedIds.some(x=>!x))issues.push("شناسه عضو در مدل مرجع خالی است.");
+    if(new Set(expectedIds).size!==expectedIds.length)issues.push("شناسه عضو در مدل سه‌بعدی تکراری است.");
+    const cases=Array.isArray(combinations)?combinations:[];
+    if(!cases.length)issues.push("هیچ ترکیب بار تحلیل‌شده‌ای برای ممیزی پوشش وجود ندارد.");
+    const labels=cases.map(x=>String(x?.label||x?.name||"").trim());
+    if(labels.some(x=>!x))issues.push("برچسب یکی از ترکیبات بار خالی است.");
+    if(new Set(labels).size!==labels.length)issues.push("برچسب ترکیبات بار تکراری است.");
+    const expectedSet=new Set(expectedIds),rows=[];
+    cases.forEach((item,index)=>{
+      const caseIssues=[],members=Array.isArray(item?.members)?item.members:[];
+      if(item?.equilibrium?.ok!==true)caseIssues.push("تعادل عددی این ترکیب تأیید نشده است.");
+      const ids=members.map(m=>String(m?.id??""));
+      if(ids.some(x=>!x))caseIssues.push("شناسه عضو خروجی خالی است.");
+      if(new Set(ids).size!==ids.length)caseIssues.push("شناسه عضو خروجی تکراری است.");
+      const outputSet=new Set(ids);
+      const missing=expectedIds.filter(id=>!outputSet.has(id));
+      const extra=ids.filter(id=>!expectedSet.has(id));
+      if(missing.length)caseIssues.push("اعضای فاقد نتیجه: "+missing.slice(0,10).join("، "));
+      if(extra.length)caseIssues.push("شناسه‌های خارج از مدل مرجع: "+extra.slice(0,10).join("، "));
+      const invalid=members.filter(m=>!Array.isArray(m?.localEndForces)||m.localEndForces.length!==12||m.localEndForces.some(v=>!Number.isFinite(Number(v))));
+      if(invalid.length)caseIssues.push("بردار نیروی انتهایی ۱۲ مؤلفه‌ای ناقص/نامعتبر برای: "+invalid.slice(0,10).map(m=>String(m.id)).join("، "));
+      rows.push({label:labels[index]||("case-"+(index+1)),memberCount:members.length,missingMemberIds:missing,extraMemberIds:extra,invalidForceMemberIds:invalid.map(m=>String(m.id)),equilibriumOK:item?.equilibrium?.ok===true,success:caseIssues.length===0,issues:caseIssues});
+      issues.push(...caseIssues.map(x=>(labels[index]||("ترکیب "+(index+1)))+": "+x));
+    });
+    return {success:issues.length===0&&rows.length===cases.length&&rows.every(x=>x.success),expectedMemberCount:expected.length,caseCount:cases.length,rows,issues,scope:"3D model-member result coverage, simultaneous 12-component end-force vector presence, unique IDs and per-case solver equilibrium; not member capacity or code approval."};
+  }
+  function selfTest() {
+    const model={members:[{id:"M1"},{id:"M2"}]};
+    const solved=(id)=>({id,localEndForces:Array(12).fill(1)});
+    const good=[{label:"ULS-A",equilibrium:{ok:true},members:[solved("M1"),solved("M2")]}];
+    const tests=[];
+    const check=(name,fn)=>{try{tests.push({name,pass:!!fn()});}catch(e){tests.push({name,pass:false,error:e.message});}};
+    check("complete 3D member coverage accepted",()=>audit3DCombinationCoverage(model,good).success);
+    check("missing model member rejected",()=>!audit3DCombinationCoverage(model,[{...good[0],members:[solved("M1")]}]).success);
+    check("extra result member rejected",()=>!audit3DCombinationCoverage(model,[{...good[0],members:[solved("M1"),solved("M2"),solved("M3")]}]).success);
+    check("duplicate result member rejected",()=>!audit3DCombinationCoverage(model,[{...good[0],members:[solved("M1"),solved("M1"),solved("M2")]}]).success);
+    check("invalid 12-component force vector rejected",()=>!audit3DCombinationCoverage(model,[{...good[0],members:[solved("M1"),{id:"M2",localEndForces:[1,2]}]}]).success);
+    check("failed solver equilibrium rejected",()=>!audit3DCombinationCoverage(model,[{...good[0],equilibrium:{ok:false}}]).success);
+    check("duplicate case labels rejected",()=>!audit3DCombinationCoverage(model,[good[0],{...good[0]}]).success);
+    check("empty reference model rejected",()=>!audit3DCombinationCoverage({members:[]},good).success);
+    return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software result-coverage audit only"};
+  }
   async function run() {
     if(busy)return;
     busy=true;
@@ -159,8 +205,11 @@
           hasMemberDemand,
           hasMemberDemand?"تقاضا و پوش نیروهای اعضا در جدول تفکیکی تحلیل ترکیبات بار تولید شده است؛ دکمه مستقل دیگری برای این مرحله در صفحه وجود ندارد.":"در نتایج ترکیبات، جدول تقاضای تفکیکی اعضا تولید نشده است.");
 
-        addLine(rows,"تحلیل سه‌بعدی قاب‌های طولی و اعضای فرعی",false,
-          "حل‌گر فعلی فقط قاب عرضی دوبعدی نمونه را حل می‌کند. نیروهای طولی پرلین‌ها، قیدهای دیوار، ستونک‌های انتهایی و مهاربندها هنوز در ماتریس سختی سه‌بعدی تحلیل نشده‌اند؛ بنابراین طراحی نهایی این اعضا از این مدل هندسی قابل استخراج نیست.");
+        const coverage=audit3DCombinationCoverage(window.SteelStructuralModel?.getData?.(),window.SteelAnalysis.combinationResults);
+        addLine(rows,"ممیزی پوشش تحلیل سه‌بعدی تمام اعضا",coverage.success,
+          coverage.success
+            ? coverage.expectedMemberCount+" عضو مدل در هر "+coverage.caseCount+" ترکیب، با شناسه یکتا، بردار کامل ۱۲ مؤلفه‌ای نیرو و تعادل عددی ثبت شده‌اند. این ممیزی پوشش نتایج است؛ نه تأیید مقاومت یا طراحی آیین‌نامه‌ای."
+            : coverage.issues.slice(0,12).join("؛ "));
 
         const bucklingMessage=$("bucklingMessage");
         if($("combinationBucklingResults"))$("combinationBucklingResults").innerHTML="";
@@ -244,6 +293,6 @@
     if(first)main.insertBefore(panel,first);else main.appendChild(panel);
     $("btnSteelAutoWorkflow").addEventListener("click",run);
   }
-  window.SteelAutoWorkflow={run};
+  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,selfTest};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
