@@ -74,6 +74,18 @@ function audit(model,loads){
  if(!groups.wallGirts.length)issues.push("برای ممیزی اتصال گرت طولی به ستون، هیچ گرتی وجود ندارد.");
  if(unsupportedGirtEnds.length)issues.push("انتهای "+unsupportedGirtEnds.length+" گرت طولی به قطعه واقعی ستون قاب با شناسه گره مشترک متصل نیست: "+unsupportedGirtEnds.slice(0,8).map(x=>x.memberId+"@"+x.nodeId).join("، "));
  rows.push({id:"wall-girt-column-transfer",label:"اتصال گرت طولی به ستون‌های قاب",memberCount:wallGirtEndpointChecks.length,coveredCount:wallGirtEndpointChecks.length-unsupportedGirtEnds.length,missingCount:unsupportedGirtEnds.length,invalidCount:0,status:unsupportedGirtEnds.length?"incomplete":"connected",checks:wallGirtEndpointChecks,transfer:"wall cladding → wall girt → shared FEM node → frame column"});
+ // Brace endpoints must share structural nodes with their receiving columns/rafters.
+ const incidenceBySection=key=>{const map=new Map();members.filter(m=>m.sectionKey===key).forEach(m=>[m.start,m.end].forEach(n=>{const k=String(n);if(!map.has(k))map.set(k,[]);map.get(k).push(m.id);}));return map;};
+ const wallBraceReceivers=incidenceBySection("column"),roofBraceReceivers=incidenceBySection("rafter");
+ const braceEndpointChecks=[];
+ const checkBrace=(brace,receivers,receiverLabel)=>[brace.start,brace.end].forEach(nodeId=>{const linked=receivers.get(String(nodeId))||[];braceEndpointChecks.push({braceId:brace.id,nodeId:String(nodeId),receiver:receiverLabel,receiverMemberIds:linked,ok:linked.length>0});});
+ groups.wallBraces.forEach(m=>checkBrace(m,wallBraceReceivers,"column"));
+ groups.roofBraces.forEach(m=>checkBrace(m,roofBraceReceivers,"rafter"));
+ const unconnectedBraceEnds=braceEndpointChecks.filter(x=>!x.ok);
+ if(groups.wallBraces.length&&!groups.wallBraces.some(m=>[m.start,m.end].some(n=>wallBraceReceivers.has(String(n)))))issues.push("هیچ انتهای مهاربند دیوار به گره مشترک ستون متصل نیست.");
+ if(groups.roofBraces.length&&!groups.roofBraces.some(m=>[m.start,m.end].some(n=>roofBraceReceivers.has(String(n)))))issues.push("هیچ انتهای مهاربند سقف به گره مشترک رفتر متصل نیست.");
+ if(unconnectedBraceEnds.length)issues.push("تعداد "+unconnectedBraceEnds.length+" انتهای مهاربند بدون اتصال گره‌ای به عضو دریافت‌کننده؛ "+unconnectedBraceEnds.slice(0,8).map(x=>x.braceId+"@"+x.nodeId+"→"+x.receiver).join("، "));
+ rows.push({id:"brace-frame-node-transfer",label:"اتصال گره‌ای مهاربندهای دیوار و سقف به قاب",memberCount:braceEndpointChecks.length,coveredCount:braceEndpointChecks.length-unconnectedBraceEnds.length,missingCount:unconnectedBraceEnds.length,invalidCount:0,status:unconnectedBraceEnds.length?"incomplete":"connected",checks:braceEndpointChecks,transfer:"wall brace → shared column node; roof brace → shared rafter node"});
  // Loaded member endpoints must remain in the connected structural graph leading to base supports.
  const adjacency=new Map(),nodeIds=new Set((model?.nodes||[]).map(n=>String(n.id)));
  const link=(x,y)=>{x=String(x);y=String(y);if(!adjacency.has(x))adjacency.set(x,new Set());if(!adjacency.has(y))adjacency.set(y,new Set());adjacency.get(x).add(y);adjacency.get(y).add(x);};
@@ -155,6 +167,8 @@ function selfTest(){
  const loads={deadLeft:.5,deadRight:.5,liveLeft:.5,liveRight:.5,snowLeft:1,snowRight:1,windLeft:-.2,windRight:-.2,windWall:.3,windEndFront:0,windEndBack:0,combinations:[{id:"C1",name:"نمونه",dead:1.2,live:1.6,snow:0}]};
  test("complete member load paths accepted",()=>audit(model,loads).success);
  test("missing roof wind transfer detected",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[2].lineLoads.windLeft;return !audit(p,loads).success;});
+ test("wall brace endpoints require shared column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer").missingCount>=2;});
+ test("roof brace endpoints require shared rafter nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="rafter")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="brace-frame-node-transfer").missingCount>=2;});
  test("wall girt ends require shared frame-column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="wall-girt-column-transfer").missingCount===2;});
  test("missing wall girt detected",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="wallGirt")};return !audit(p,loads).success;});
  test("missing end-wall girt detected",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="endGirt")};return !audit(p,loads).success;});
