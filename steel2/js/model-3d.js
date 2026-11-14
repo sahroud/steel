@@ -423,6 +423,31 @@
     return (members||[]).filter(m=>m.sectionKey===sectionKey&&m.axis===axis&&m.frame===frame&&
       ((m.start===a.id&&m.end===b.id)||(m.start===b.id&&m.end===a.id))).length;
   }
+  function auditPurlinRafterConnectivity(nodes,members,frameStations){
+    const nodeById=new Map((nodes||[]).map(n=>[n.id,n]));
+    const rafters=(members||[]).filter(m=>m.sectionKey==="rafter");
+    const edgeMembers=(members||[]).filter(m=>m.sectionKey==="roofEdge");
+    const purlins=(members||[]).filter(m=>m.sectionKey==="roofPurlin");
+    const issues=[],checked=[];
+    const tol=1e-6;
+    purlins.forEach(p=>{
+      [p.start,p.end].forEach(nodeId=>{
+        const n=nodeById.get(nodeId);
+        if(!n){issues.push({memberId:p.id,nodeId,reason:"missing-purlin-end-node"});return;}
+        const frameIndex=(frameStations||[]).findIndex(z=>Math.abs(z-n.z)<=tol);
+        if(frameIndex>=0){
+          const supportCount=rafters.filter(r=>r.start===nodeId||r.end===nodeId).length;
+          if(supportCount<1)issues.push({memberId:p.id,nodeId,frameIndex,reason:"purlin-support-not-shared-with-rafter"});
+          checked.push({memberId:p.id,nodeId,kind:"frame",frameIndex,rafterIncidence:supportCount});
+        }else{
+          const edgeCount=edgeMembers.filter(r=>r.start===nodeId||r.end===nodeId).length;
+          if(edgeCount<1)issues.push({memberId:p.id,nodeId,reason:"purlin-overhang-tail-not-connected-to-roof-edge"});
+          checked.push({memberId:p.id,nodeId,kind:"overhang",roofEdgeIncidence:edgeCount});
+        }
+      });
+    });
+    return {ok:issues.length===0,checkedEndCount:checked.length,purlinCount:purlins.length,issues,checked};
+  }
   function runwayColumnLevels(baseY,girtHeights,eaveY,runwayY,enabled){
     const values=[baseY,...girtHeights,eaveY];
     if(enabled){
@@ -831,7 +856,9 @@
     const runwayRailLayoutInputs=readRunwayRailLayoutInputs();
     const runwayRailLayoutAudit=auditRunwayRailLayout(runwayRailLayoutInputs,length,runwayLoadPathInputs);
     const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,length,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType,sectionInputs:runwaySectionInputs,sectionAudit:runwaySectionAudit,stiffenerInputs:runwayStiffenerInputs,webAudit:runwayWebAudit,loadPathInputs:runwayLoadPathInputs,loadPathAudit:runwayLoadPathAudit,contactScreen:runwayContactScreen,fasteningInputs:runwayFasteningInputs,fasteningAudit:runwayFasteningAudit,railLayoutInputs:runwayRailLayoutInputs,railLayoutAudit:runwayRailLayoutAudit});
-    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,roofPurlinActualSpacing:purlinLayout.actualSpacingM,roofPurlinIntervalsPerSlope:purlinLayout.intervals,roofPurlinStationCountPerSlope:purlinLayout.stationCount,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry,railFemInputs:{...readRunwayRailFEMInputs(),movingTrainJson:String($("craneRunwayRailMovingTrain")?.value||""),movingStepM:String($("craneRunwayRailMovingStep")?.value||"0.25")}},roofOverhang,endOverhang},nodes,members,generatedAt:new Date().toISOString()};
+    const purlinSupportAudit=auditPurlinRafterConnectivity(nodes,members,frames);
+    if(!purlinSupportAudit.ok)throw new Error("ممیزی اتصال پرلین به رفتر/تیر لبه ناموفق است: "+JSON.stringify(purlinSupportAudit.issues.slice(0,8)));
+    model={version:1,geometry:{span,length,spacing,height,rise,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,roofPurlinActualSpacing:purlinLayout.actualSpacingM,roofPurlinIntervalsPerSlope:purlinLayout.intervals,roofPurlinStationCountPerSlope:purlinLayout.stationCount,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry,railFemInputs:{...readRunwayRailFEMInputs(),movingTrainJson:String($("craneRunwayRailMovingTrain")?.value||""),movingStepM:String($("craneRunwayRailMovingStep")?.value||"0.25")}},roofOverhang,endOverhang},nodes,members,generatedAt:new Date().toISOString(),purlinSupportAudit};
     if(window.SteelCrane3DMeshProposal&&model.geometry.craneRunway.enabled){
       model.geometry.craneRunway.meshProposal=window.SteelCrane3DMeshProposal.audit(model);
     }
@@ -1493,6 +1520,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
