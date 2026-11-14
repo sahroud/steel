@@ -12,7 +12,8 @@ function audit(model,loads){
  if(!loads||typeof loads!=="object")issues.push("ورودی بارهای سطحی در دسترس نیست.");
  const members=Array.isArray(model?.members)?model.members:[];
  const groups={
-  rafters:members.filter(m=>m.axis==="transverse"&&/رفتر چپ|رفتر راست/.test(String(m.type||""))),\n  wallBraces:members.filter(m=>m.sectionKey==="wallBrace"), roofBraces:members.filter(m=>m.sectionKey==="roofBrace"),
+  rafters:members.filter(m=>m.axis==="transverse"&&/رفتر چپ|رفتر راست/.test(String(m.type||""))),
+  wallBraces:members.filter(m=>m.sectionKey==="wallBrace"), roofBraces:members.filter(m=>m.sectionKey==="roofBrace"),
   purlins:members.filter(m=>m.sectionKey==="roofPurlin"),
   wallGirts:members.filter(m=>m.sectionKey==="wallGirt"),
   endGirts:members.filter(m=>m.sectionKey==="endGirt")
@@ -123,7 +124,11 @@ function selfTest(){
  test("duplicate member identifiers detected",()=>{const p={...model,members:[...members,{...members[0]}]};return !audit(p,loads).success;});
  test("all load groups explicitly reported",()=>audit(model,loads).rows.length===6);
  test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.2);
- test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});\n test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1);\n test("nonzero direct roof gravity on rafter is rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[0].lineLoads.dead=1;return !audit(p,loads).success;});\n test("rafter explicit zero load is accepted",()=>audit(model,loads).rows.find(r=>r.id==="rafter-reaction-path").status==="assigned");\n test("disconnected loaded member rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].start="ORPHAN";return !audit(p,loads).success;});
+ test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
+ test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
+ test("nonzero direct roof gravity on rafter is rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[0].lineLoads.dead=1;return !audit(p,loads).success;} );
+ test("rafter explicit zero load is accepted",()=>audit(model,loads).rows.find(r=>r.id==="rafter-reaction-path").status==="assigned" );
+ test("disconnected loaded member rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].start="ORPHAN";return !audit(p,loads).success;});
  test("missing model rejected",()=>!audit(null,loads).success);
  test("empty combination list allowed as load-path audit only",()=>{const p={...loads,combinations:[]};return audit(model,p).success;});
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
