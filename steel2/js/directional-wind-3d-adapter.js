@@ -158,7 +158,7 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5,length:10,height:6},nodes:[{id:"L0",x:0,y:0,z:0},{id:"L1",x:0,y:0,z:10},{id:"R0",x:20,y:0,z:0},{id:"R1",x:20,y:0,z:10}],members:[
      {id:"PL",sectionKey:"roofPurlin",side:"left",start:"L0",end:"L1",tributaryWidth:Math.hypot(10,5)},{id:"PR",sectionKey:"roofPurlin",side:"right",start:"R0",end:"R1",tributaryWidth:Math.hypot(10,5)},{id:"WL",sectionKey:"wallGirt",side:"left",start:"L0",end:"L1",tributaryHeight:6},{id:"WR",sectionKey:"wallGirt",side:"right",start:"R0",end:"R1",tributaryHeight:6},{id:"EG",sectionKey:"endGirt",endFace:"front",start:"L0",end:"R0",tributaryHeight:1}
     ]})};
-    try{createCases();return false;}catch(e){return e.message.includes("خروج از مرکزیت");}
+    return createCases().caseCount===8;
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
   });
   ck("case builder blocks nonzero gable pressure until cladding-to-girt eccentricity is modeled",()=>{
@@ -177,7 +177,7 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
     root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
     root.SteelStructuralModel={getData:()=>({geometry:gable.geometry,nodes,members})};
-    return createCases().caseCount===8;
+    try{createCases();return false;}catch(e){return e.message.includes("خروج از مرکزیت");}
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
   });
  ck("tributary surface areas close exactly",()=>{const nodes=[{id:"a",x:0,y:0,z:0},{id:"b",x:0,y:0,z:5},{id:"c",x:10,y:0,z:0},{id:"d",x:10,y:0,z:5}];const members=[{id:"pl",sectionKey:"roofPurlin",side:"left",start:"a",end:"b",tributaryWidth:Math.hypot(5,5)},{id:"pr",sectionKey:"roofPurlin",side:"right",start:"c",end:"d",tributaryWidth:Math.hypot(5,5)},{id:"wl",sectionKey:"wallGirt",side:"left",start:"a",end:"b",tributaryHeight:5},{id:"wr",sectionKey:"wallGirt",side:"right",start:"c",end:"d",tributaryHeight:5}];const q=auditTributaryAreaCoverage({geometry:{span:10,rise:5,length:5,height:5},nodes,members});return q.success&&q.rows.length===4;});
