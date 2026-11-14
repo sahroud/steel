@@ -64,10 +64,11 @@ function audit(model,loads){
   [m.start,m.end].forEach(nodeId=>routes.push({endGirtId:String(m.id),endFace:m.endFace,nodeId:String(nodeId),...trace(nodeId)}));
  });
  const missingRoutes=routes.filter(x=>!x.ok);
+ const missingFaceCount=activeFaces.filter(([face])=>!endGirts.some(m=>m.endFace===face)).length;
  if(missingRoutes.length)issues.push("برای "+missingRoutes.length+" انتهای گرت بارگیر، مسیر گره‌ای از طریق اعضای واقعی قاب انتهایی تا یک گره مهاربند پیدا نشد؛ مسیر collector/دیافراگم فرض نمی‌شود.");
  const validLoads=loadChecks.length>0&&loadChecks.every(x=>x.ok);
  const routeOK=routes.length>0&&missingRoutes.length===0;
- rows.push({id:"endwall-wind-to-longitudinal-bracing",label:"مسیر باد دیوار انتهایی تا مهاربندهای طولی",memberCount:loadChecks.length,coveredCount:loadChecks.filter(x=>x.ok).length,missingCount:missingRoutes.length+loadChecks.filter(x=>!x.ok).length,status:validLoads&&routeOK?"connected":"incomplete",loadChecks,routes,transfer:"end-wall pressure → end-girt → end-post/column/rafter FEM members → longitudinal brace end node"});
+ rows.push({id:"endwall-wind-to-longitudinal-bracing",label:"مسیر باد دیوار انتهایی تا مهاربندهای طولی",memberCount:loadChecks.length+routes.length+missingFaceCount,coveredCount:loadChecks.filter(x=>x.ok).length+routes.filter(x=>x.ok).length,missingCount:missingFaceCount+missingRoutes.length+loadChecks.filter(x=>!x.ok).length,status:validLoads&&routeOK?"connected":"incomplete",loadChecks,routes,transfer:"end-wall pressure → end-girt → end-post/column/rafter FEM members → longitudinal brace end node"});
  return{success:issues.length===0&&validLoads&&routeOK,applicable:true,activeFaces:activeFaces.map(x=>x[0]),issues,rows,loadChecks,routes,missingRouteCount:missingRoutes.length,
   topologyOnly:true,diaphragmStiffnessVerified:false,collectorCapacityVerified:false,analysisEnabled:false,designApproved:false,
   limitations:["این ممیزی فقط اشتراک گره و پیوستگی هندسی مسیر را بررسی می‌کند؛ سختی دیافراگم، عملکرد collector، لغزش اتصالات و تقسیم واقعی نیرو را اثبات نمی‌کند.","پرلین/گرت فقط وقتی می‌تواند در تحلیل نقش انتقالی داشته باشد که خواص مقطع، اتصالات و قیود واقعی آن در مدل FEM درست تعریف شده باشد.","بارهای باد موضعی، ناحیه مثلثی گابل و طراحی ظرفیت مهاربند/اتصال در این ماژول کنترل نمی‌شود."]};
