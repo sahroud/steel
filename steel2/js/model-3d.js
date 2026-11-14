@@ -419,6 +419,10 @@
   function addMember(members,a,b,type,sectionKey,extra) {
     members.push({id:type.toUpperCase().replace(/[^A-Z0-9]+/g,"_")+"_"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
   }
+  function exactMemberSegmentCount(members,sectionKey,axis,frame,a,b){
+    return (members||[]).filter(m=>m.sectionKey===sectionKey&&m.axis===axis&&m.frame===frame&&
+      ((m.start===a.id&&m.end===b.id)||(m.start===b.id&&m.end===a.id))).length;
+  }
   function runwayColumnLevels(baseY,girtHeights,eaveY,runwayY,enabled){
     const values=[baseY,...girtHeights,eaveY];
     if(enabled){
@@ -595,7 +599,9 @@
       railLayoutGood.ready&&railLayoutGood.supportStations.length===41&&railLayoutGood.analysisEnabled===false,
       !railLayoutBad.ready&&railLayoutBad.invalid.length>=3&&railLayoutBad.dimensional.length>=2,
       railOffsetAligned.ready&&railOffsetAligned.supportStations[0]===0.3,
-      !railTooSparse.ready&&railTooSparse.supportStations.length===1&&railTooSparse.dimensional.length>=1
+      !railTooSparse.ready&&railTooSparse.supportStations.length===1&&railTooSparse.dimensional.length>=1,
+      exactMemberSegmentCount([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"}],"rafter","transverse",1,{id:"A"},{id:"B"})===1,
+      exactMemberSegmentCount([{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"},{sectionKey:"rafter",axis:"transverse",frame:1,start:"A",end:"B"}],"rafter","transverse",1,{id:"A"},{id:"B"})===2
     ];
     return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
@@ -744,9 +750,8 @@
       const endFrameNumber=endIndex===0?1:frames.length;
       for(let i=0;i<topChord.length-1;i++){
         const a=topChord[i],b=topChord[i+1];
-        const shared=members.some(m=>m.sectionKey==="rafter"&&m.axis==="transverse"&&m.frame===endFrameNumber&&
-          ((m.start===a.id&&m.end===b.id)||(m.start===b.id&&m.end===a.id)));
-        if(!shared)throw new Error("رفتر قاب انتهایی با وتر بالایی دیوار انتهایی در قطعه "+(i+1)+" هم‌گره/هم‌عضو نیست؛ مدل FEM برای جلوگیری از مسیر بار ناقص متوقف شد.");
+        const sharedCount=exactMemberSegmentCount(members,"rafter","transverse",endFrameNumber,a,b);
+        if(sharedCount!==1)throw new Error("قطعه "+(i+1)+" وتر گابل باید دقیقاً یک رفتر مشترک در قاب انتهایی داشته باشد؛ تعداد عضو متناظر: "+sharedCount+"؛ مدل FEM متوقف شد.");
       }
       girtHeights.forEach((y,gi)=>{
         const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
