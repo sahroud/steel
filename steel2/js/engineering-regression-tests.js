@@ -195,6 +195,17 @@ test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISecti
  test("synchronized tapered-member per-combination force bridge",()=>{const r=root.SteelTaperedCaseForceBridge?.selfTest?.();return r&&r.passed===6&&r.failed===0?"Per-case 12-DOF force retention, missing segment rejection, equilibrium guard and solved-metadata fallback: 6/6":false;});
  test("segmented tapered-member per-case section-force diagrams",()=>{const r=root.SteelTaperedSectionForceDiagram?.selfTest?.();return r&&r.passed===9&&r.failed===0?"Per-case segment diagrams, physical segment lengths, load-ledger completeness, geometric continuity, equilibrium and unsupported-load guards: 9/9":false;});
  test("tapered force bridge exposes segment diagram builder",()=>typeof root.SteelTaperedCaseForceBridge?.buildSectionForceDiagrams==="function"?"Raw per-combination FEM results can be routed to the segmented diagram engine":false);
+ test("live 3D solver to tapered segment force diagram integration",()=>{
+  const solver=root.SteelFrame3D?.analyze,diagram=root.SteelTaperedSectionForceDiagram?.build;
+  if(typeof solver!=="function"||typeof diagram!=="function")return false;
+  const nodes=[{id:"n0",x:0,y:0,z:0},{id:"n1",x:2,y:0,z:0},{id:"n2",x:5,y:0,z:0}];
+  const make=(id,index,start,end,length)=>({id,start,end,length,type:"rafter",sectionKey:"rafter",parentMemberId:"R1",taperApplied:true,taperSegmentIndex:index,taperSegmentCount:2,taperCoordinate:index/2,analysisLoad:{uniformLocal:[0,-1000,0],globalUniform:[0,-1000,0],selfWeightKNm:0,loadDataComplete:true}});
+  const members=[make("R1_TAPER_01",1,"n0","n1",2),make("R1_TAPER_02",2,"n1","n2",3)];
+  const model={nodes,members},section={E:200e9,G:77e9,A:.01,Iy:8e-5,Iz:2e-5,J:1e-5};
+  const solved=solver(model,{sectionResolver:()=>section,supports:[{nodeId:"n0",fixedDofs:[0,1,2,3,4,5]}],requireExplicitMemberLoads:true});
+  const report=diagram(model,[{label:"REGRESSION-ULS",equilibrium:solved.equilibrium,members:solved.members.map(m=>({...m,analysisLoad:members.find(x=>x.id===m.id).analysisLoad}))}]);
+  return solved.success&&solved.equilibrium.ok&&report.success&&report.loadCases[0].members[0].segments.length===2&&report.loadCases[0].members[0].segments.every(s=>s.stations.length===21)?"Actual 3D FEM solution, equilibrium, 12-DOF segment end actions and 21 stations per physical segment: passed":false;
+ });
  test("tapered fabrication economics blank-price handling",()=>{const r=root.SteelTaperedFabricationEconomics?.selfTest?.();return r&&r.passed===6&&r.failed===0?"Three geometry alternatives and blank price/count remain unknown, not zero: 6/6":false;});
  test("tapered fabrication UI dependency readiness",()=>{const r=root.SteelTaperedFabricationUI?.selfTest?.();return r&&r.passed===2&&r.failed===0?"Economics panel API and station input mapper are available: 2/2":false;});
  const result={passed:checks.filter(x=>x.pass).length,failed:checks.filter(x=>!x.pass).length,checks,scope:"Software/formula regression only; not independent benchmark, code verification, or design approval."};
