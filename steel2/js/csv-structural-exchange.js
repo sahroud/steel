@@ -55,5 +55,40 @@ function selfTest(){
  ];
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,failed:checks.filter(x=>!x[1]).map(x=>x[0]),tests:checks.map(x=>({name:x[0],pass:x[1]}))};
 }
-root.SteelCSVStructuralExchange=Object.freeze({csvRows,buildProposal,selfTest});
+
+function auditProposal(proposal,options){
+ const opt=options||{},issues=[],warnings=[];
+ if(!proposal||!Array.isArray(proposal.nodes)||!Array.isArray(proposal.members))return {success:false,issues:["proposal must contain nodes and members arrays"],warnings,summary:null,solverEligible:false,designApproved:false};
+ const tol=Number.isFinite(opt.coordinateToleranceM)&&opt.coordinateToleranceM>0?opt.coordinateToleranceM:1e-6;
+ const ids=new Set(),degree=new Map(),adj=new Map(),coords=new Map();
+ proposal.nodes.forEach(n=>{ids.add(n.id);degree.set(n.id,0);adj.set(n.id,[]);const key=[n.x,n.y,n.z].map(v=>Math.round(v/tol)).join("|");if(coords.has(key))warnings.push("nodes "+coords.get(key)+" and "+n.id+" have coincident/near-coincident coordinates within "+tol+" m");else coords.set(key,n.id);});
+ const seenMembers=new Set();let min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity],orphan=[];
+ proposal.nodes.forEach(n=>[n.x,n.y,n.z].forEach((v,i)=>{if(Number.isFinite(v)){min[i]=Math.min(min[i],v);max[i]=Math.max(max[i],v);}}));
+ proposal.members.forEach(m=>{if(seenMembers.has(m.id))issues.push("duplicate member id "+m.id);seenMembers.add(m.id);if(!ids.has(m.start)||!ids.has(m.end)){issues.push("member "+m.id+" references missing node");return;}degree.set(m.start,(degree.get(m.start)||0)+1);degree.set(m.end,(degree.get(m.end)||0)+1);adj.get(m.start).push(m.end);adj.get(m.end).push(m.start);});
+ degree.forEach((d,id)=>{if(d===0)orphan.push(id);});
+ if(orphan.length)warnings.push("unconnected/orphan nodes: "+orphan.join(", "));
+ const components=[],visited=new Set();
+ proposal.nodes.forEach(n=>{if(visited.has(n.id))return;const stack=[n.id],part=[];visited.add(n.id);while(stack.length){const id=stack.pop();part.push(id);(adj.get(id)||[]).forEach(next=>{if(!visited.has(next)){visited.add(next);stack.push(next);}});}components.push(part);});
+ if(components.length>1)warnings.push("geometry contains "+components.length+" disconnected components; this is informational and may be intentional");
+ const lengths=proposal.members.map(m=>{const a=proposal.nodes.find(n=>n.id===m.start),b=proposal.nodes.find(n=>n.id===m.end);return a&&b?Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z):null;}).filter(Number.isFinite);
+ const summary={nodeCount:proposal.nodes.length,memberCount:proposal.members.length,componentCount:components.length,componentNodeCounts:components.map(c=>c.length),orphanNodeIds:orphan,duplicateOrNearCoordinatePairs:coords.size,coordinateBoundsM:{min,max},memberLengthM:lengths.length?{min:Math.min(...lengths),max:Math.max(...lengths)}:null,coordinateToleranceM:tol};
+ if(!proposal.nodes.length)issues.push("proposal has no nodes");
+ if(!proposal.members.length)warnings.push("proposal has no members");
+ return {success:issues.length===0,issues,warnings,summary,components,solverEligible:false,designApproved:false,geometryActivation:false};
+}
+function auditSelfTest(){
+ const p={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2,y:0,z:0},{id:"C",x:5,y:0,z:0},{id:"D",x:5,y:0,z:0}],members:[{id:"M1",start:"A",end:"B"},{id:"M2",start:"C",end:"D"}]};
+ const r=auditProposal(p),checks=[
+ ["counts reported",r.summary.nodeCount===4&&r.summary.memberCount===2],
+ ["multiple components are warnings not fatal",r.success&&r.summary.componentCount===2],
+ ["orphan nodes detected",r.summary.orphanNodeIds.length===0],
+ ["coincident coordinates warned",r.warnings.some(x=>x.includes("coincident"))],
+ ["component sizes retained",r.summary.componentNodeCounts.join(",")==="2,2"],
+ ["solver and approval remain blocked",r.solverEligible===false&&r.designApproved===false&&r.geometryActivation===false],
+ ["empty proposal rejected",auditProposal({nodes:[],members:[]}).success===false]
+ ];
+ return {passed:checks.filter(x=>x[1]).length,total:checks.length,failed:checks.filter(x=>!x[1]).map(x=>x[0]),tests:checks.map(x=>({name:x[0],pass:x[1]}))};
+}
+
+root.SteelCSVStructuralExchange=Object.freeze({csvRows,buildProposal,selfTest,auditProposal,auditSelfTest});
 })(typeof window!=="undefined"?window:globalThis);
