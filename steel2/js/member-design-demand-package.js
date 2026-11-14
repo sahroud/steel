@@ -33,7 +33,7 @@ function build(diagramCases,options){
 }
 function getLast(){return last?JSON.parse(JSON.stringify(last)):null;}
 function selfTest(){
- const row=x=>({x_m:x,N_N:1,Vy_N:2,Vz_N:3,T_Nm:4,My_Nm:5,Mz_Nm:6});
+ const row=(x,extra={})=>({x_m:x,N_N:1,Vy_N:2,Vz_N:3,T_Nm:4,My_Nm:5,Mz_Nm:6,...extra});
  const src={document:"calc.xlsx",revision:"rev-1",locator:"Sheet1!A1:F2",authority:"engineer-review"};
  const c={success:true,loadCaseId:"LC1",source:src,units:"N,N.m,m",prismaticDiagrams:[{memberId:"M1",length_m:2,localAxes:{x:[1,0,0]},stations:[row(0),row(2)]}]};
  const good=build([c],{expectedMemberIds:["M1"]});
