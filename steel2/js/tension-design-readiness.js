@@ -125,7 +125,7 @@ function init(){
 function selfTest(){
  const saved={env:root.SteelMemberForceEnvelope,model:root.SteelStructuralModel};
  const baseEnv={allCasesEquilibriumOK:true,invalidForceVectors:[],analysisMemberSetMismatchCases:[],unreportedMemberIds:[],duplicateMemberIdsByCase:[],localEndForceConvention:{version:1,verifiedSignCases:{axialTension:{endI:"negative Fx_i",endJ:"positive Fx_j"}}},cases:[{label:"T1"},{label:"C1"}],members:[{id:"B1",simultaneousCases:[{label:"T1",endI:{N:-100000},endJ:{N:120000}},{label:"C1",endI:{N:50000},endJ:{N:-60000}}]}]};
- root.SteelMemberForceEnvelope={getLast:()=>baseEnv,getSimultaneousCaseDemand:(row,label)=>{const c=row.simultaneousCases.find(x=>x.label===label);return {endI:{tension:Math.max(0,-c.endI.N)},endJ:{tension:Math.max(0,c.endJ.N)}};}};
+ root.SteelMemberForceEnvelope={getLast:()=>baseEnv,getSimultaneousCaseDemand:(row,label)=>{const c=row.simultaneousCases.find(x=>x.label===label),end=(e,sign)=>({tension:Math.max(0,sign*e.N),Vy:e.Vy||0,Vz:e.Vz||0,T:e.T||0,My:e.My||0,Mz:e.Mz||0});return {endI:end(c.endI,-1),endJ:end(c.endJ,1)};}};
  root.SteelStructuralModel={getData:()=>({members:[{id:"B1",sectionKey:"roofBrace"}]})};
  const tests=[],t=(name,fn)=>{try{tests.push({name,pass:fn()===true});}catch(e){tests.push({name,pass:false,error:e.message});}};
  t("extracts maximum tension and governing member, case and end",()=>{const r=extractGroupTensionDemand("roofBrace");return r.ready&&r.forceDemandKN===120&&r.memberCount===1&&r.caseCount===2&&r.governing.memberId==="B1"&&r.governing.caseLabel==="T1"&&r.governing.end==="J";});
