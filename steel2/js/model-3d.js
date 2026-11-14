@@ -254,6 +254,23 @@
         }else{
           box.textContent+="\nگزارش نیروهای اعضای بحرانی در دسترس نیست.";
         }
+        if(result.taperedSectionForceDiagrams){
+          const td=result.taperedSectionForceDiagrams;
+          if(td.success){
+            const summary=["","نمودار نیروهای قطعات متغیرمقطع: بازسازی مستقل هر قطعه و هر ترکیب بار با موفقیت انجام شد."];
+            td.loadCases.forEach(c=>{
+              summary.push("ترکیب "+c.label+":");
+              c.members.forEach(m=>{
+                summary.push("  عضو "+m.parentMemberId+" — طول "+Number(m.totalLength_m).toFixed(3)+" m — "+m.segmentCount+" قطعه");
+                m.segments.forEach(s=>summary.push("    قطعه "+s.segmentIndex+" ("+s.segmentId+"): "+s.length_m.toFixed(3)+" m، "+s.stations.length+" ایستگاه؛ از "+s.startStation_m.toFixed(3)+" تا "+s.endStation_m.toFixed(3)+" m"));
+              });
+            });
+            summary.push("فایل JSON شامل مقادیر کامل N، Vy، Vz، T، My و Mz در تمام ایستگاه‌ها با دکمه دانلود قابل دریافت است؛ این گزارش کنترل مقاومت یا تأیید طراحی نیست.");
+            box.textContent+="\\n"+summary.join("\\n");
+          }else{
+            box.textContent+="\\nنمودار نیروهای قطعات متغیرمقطع تولید نشد؛ اطلاعات بارگذاری/هندسه/تعادل کافی نیست: "+(td.issues||[]).slice(0,6).join("؛ ");
+          }
+        }
         if(craneEnvelope){
           box.textContent+="\n\nتحلیل خودکار جرثقیل سقفی: "+craneEnvelope.total+" موقعیت قطار چرخ جداگانه حل شد؛ موقعیت بحرانی نمونه‌برداری‌شده: "+craneEnvelope.results[craneEnvelope.criticalCase].referencePosition_m.toFixed(3)+" m؛ بیشینه تغییرمکان انتقالی در این مجموعه: "+(craneEnvelope.maxTranslation_m*1000).toFixed(3)+" mm؛ پوش نیروهای انتهایی اعضا برای "+(craneEnvelope.memberForceEnvelope?.cases?.length||0)+" موقعیت و "+(craneEnvelope.memberForceEnvelope?.rows?.length||0)+" عضو استخراج شد. بار مرده و وزن خود اعضا، بار چرخ با ضریب دینامیکی قائم "+Number(window.SteelCraneReadiness.getData().verticalImpact)+" و نیروهای افقی مستند (در صورت فعال بودن) منظور شده‌اند. این پوش، جایگزین ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی یا طراحی نهایی تیر حمال و اتصالات نیست.";
         }
