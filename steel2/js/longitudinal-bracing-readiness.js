@@ -34,43 +34,40 @@ function audit(model,loads){
  // It is not automatically accepted as a collector: its connection and stiffness must
  // be represented in the FEM model and verified from drawings.
  const braceTargets=[];
- wallBraces.forEach(m=>[m.start,m.end].forEach(n=>braceTargets.push({nodeId:String(n),braceId:String(m.id),braceType:"wallBrace",longitudinalKey:"wallGirt"})));
- roofBraces.forEach(m=>[m.start,m.end].forEach(n=>braceTargets.push({nodeId:String(n),braceId:String(m.id),braceType:"roofBrace",longitudinalKey:"roofPurlin"})));
+ wallBraces.forEach(m=>[m.start,m.end].forEach(n=>braceTargets.push({nodeId:String(n),braceId:String(m.id),braceType:"wallBrace"})));
+ roofBraces.forEach(m=>[m.start,m.end].forEach(n=>braceTargets.push({nodeId:String(n),braceId:String(m.id),braceType:"roofBrace"})));
  const adjacency=new Map();
  const add=(from,edge)=>{const k=String(from);if(!adjacency.has(k))adjacency.set(k,[]);adjacency.get(k).push(edge);};
  members.forEach(m=>{
-  if(m.sectionKey==="endGirt")return; // Never use the loaded end-girt itself as its own longitudinal collector path.
+  // The loaded end-girt is the source, not a collector; bracing members are target elements.
+  // The intervening end-wall posts, columns, rafters, purlins and girts must be real FEM members.
+  if(["endGirt","wallBrace","roofBrace"].includes(m.sectionKey))return;
   if(!nodeIds.has(String(m.start))||!nodeIds.has(String(m.end)))return;
   add(m.start,{to:String(m.end),id:String(m.id),sectionKey:m.sectionKey});
   add(m.end,{to:String(m.start),id:String(m.id),sectionKey:m.sectionKey});
  });
- function trace(sourceNode,longitudinalKey){
-  const queue=[{node:String(sourceNode),usedLongitudinal:false,memberIds:[],sectionKeys:[]}],seen=new Set([String(sourceNode)+"|0"]);
+ function trace(sourceNode){
+  const queue=[{node:String(sourceNode),memberIds:[],sectionKeys:[]}],seen=new Set([String(sourceNode)]);
   while(queue.length){
    const cur=queue.shift();
-   const target=braceTargets.find(t=>t.nodeId===cur.node&&t.longitudinalKey===longitudinalKey);
-   if(target&&cur.usedLongitudinal)return{ok:true,sourceNode:String(sourceNode),targetNode:cur.node,braceId:target.braceId,braceType:target.braceType,memberIds:cur.memberIds,sectionKeys:cur.sectionKeys};
+   const target=braceTargets.find(t=>t.nodeId===cur.node);
+   if(target&&cur.memberIds.length)return{ok:true,sourceNode:String(sourceNode),targetNode:cur.node,braceId:target.braceId,braceType:target.braceType,memberIds:cur.memberIds,sectionKeys:cur.sectionKeys};
    for(const e of adjacency.get(cur.node)||[]){
-    const used=cur.usedLongitudinal||e.sectionKey===longitudinalKey;
-    const key=e.to+"|"+(used?1:0);if(seen.has(key))continue;seen.add(key);
-    queue.push({node:e.to,usedLongitudinal:used,memberIds:[...cur.memberIds,e.id],sectionKeys:[...cur.sectionKeys,e.sectionKey]});
+    if(seen.has(e.to))continue;seen.add(e.to);
+    queue.push({node:e.to,memberIds:[...cur.memberIds,e.id],sectionKeys:[...cur.sectionKeys,e.sectionKey]});
    }
   }
   return{ok:false,sourceNode:String(sourceNode),targetNode:null,braceId:null,braceType:null,memberIds:[],sectionKeys:[]};
  }
  const routes=[];
  endGirts.forEach(m=>{
-  [m.start,m.end].forEach(nodeId=>{
-   const options=[trace(nodeId,"wallGirt"),trace(nodeId,"roofPurlin")].filter(x=>x.ok);
-   const route=options.sort((a,b)=>a.memberIds.length-b.memberIds.length)[0]||{ok:false,sourceNode:String(nodeId),targetNode:null,braceId:null,braceType:null,memberIds:[],sectionKeys:[]};
-   routes.push({endGirtId:String(m.id),endFace:m.endFace,nodeId:String(nodeId),...route});
-  });
+  [m.start,m.end].forEach(nodeId=>routes.push({endGirtId:String(m.id),endFace:m.endFace,nodeId:String(nodeId),...trace(nodeId)}));
  });
  const missingRoutes=routes.filter(x=>!x.ok);
- if(missingRoutes.length)issues.push("برای "+missingRoutes.length+" انتهای گرت بارگیر، مسیر پیوسته از طریق گرت طولی/پرلین تا گره مهاربند پیدا نشد؛ collector/دیافراگم نباید فرض شود.");
+ if(missingRoutes.length)issues.push("برای "+missingRoutes.length+" انتهای گرت بارگیر، مسیر گره‌ای از طریق اعضای واقعی قاب انتهایی تا یک گره مهاربند پیدا نشد؛ مسیر collector/دیافراگم فرض نمی‌شود.");
  const validLoads=loadChecks.length>0&&loadChecks.every(x=>x.ok);
  const routeOK=routes.length>0&&missingRoutes.length===0;
- rows.push({id:"endwall-wind-to-longitudinal-bracing",label:"مسیر باد دیوار انتهایی تا مهاربندهای طولی",memberCount:loadChecks.length,coveredCount:loadChecks.filter(x=>x.ok).length,missingCount:missingRoutes.length+loadChecks.filter(x=>!x.ok).length,status:validLoads&&routeOK?"connected":"incomplete",loadChecks,routes,transfer:"end-wall pressure → end-girt → connected longitudinal wall-girt/roof-purlin member → brace endpoint"});
+ rows.push({id:"endwall-wind-to-longitudinal-bracing",label:"مسیر باد دیوار انتهایی تا مهاربندهای طولی",memberCount:loadChecks.length,coveredCount:loadChecks.filter(x=>x.ok).length,missingCount:missingRoutes.length+loadChecks.filter(x=>!x.ok).length,status:validLoads&&routeOK?"connected":"incomplete",loadChecks,routes,transfer:"end-wall pressure → end-girt → end-post/column/rafter FEM members → longitudinal brace end node"});
  return{success:issues.length===0&&validLoads&&routeOK,applicable:true,activeFaces:activeFaces.map(x=>x[0]),issues,rows,loadChecks,routes,missingRouteCount:missingRoutes.length,
   topologyOnly:true,diaphragmStiffnessVerified:false,collectorCapacityVerified:false,analysisEnabled:false,designApproved:false,
   limitations:["این ممیزی فقط اشتراک گره و پیوستگی هندسی مسیر را بررسی می‌کند؛ سختی دیافراگم، عملکرد collector، لغزش اتصالات و تقسیم واقعی نیرو را اثبات نمی‌کند.","پرلین/گرت فقط وقتی می‌تواند در تحلیل نقش انتقالی داشته باشد که خواص مقطع، اتصالات و قیود واقعی آن در مدل FEM درست تعریف شده باشد.","بارهای باد موضعی، ناحیه مثلثی گابل و طراحی ظرفیت مهاربند/اتصال در این ماژول کنترل نمی‌شود."]};
@@ -85,10 +82,10 @@ function selfTest(){
  t("complete end-girt to wall-brace route accepted",()=>audit(base,{windEndFront:3,windEndBack:0}).success);
  t("missing loaded-face end-girt rejected",()=>!audit({...base,members:base.members.filter(m=>m.sectionKey!=="endGirt")},{windEndFront:3,windEndBack:0}).success);
  t("pressure-to-line-load mismatch rejected",()=>{const m=JSON.parse(JSON.stringify(base));m.members[0].lineLoads.windEnd=5;return !audit(m,{windEndFront:3,windEndBack:0}).success;});
- t("route without longitudinal girt or purlin rejected",()=>{const m=JSON.parse(JSON.stringify(base));m.members=m.members.filter(x=>x.sectionKey!=="wallGirt");return !audit(m,{windEndFront:3,windEndBack:0}).success;});
+ t("end-wall frame members provide an explicit shared-node path to brace",()=>{const m={nodes:[{id:"e1"},{id:"c1"},{id:"b1"}],members:[{id:"E",sectionKey:"endGirt",endFace:"front",start:"e1",end:"e1",tributaryHeight:2,lineLoads:{windEnd:6}},{id:"EP",sectionKey:"endPost",start:"e1",end:"c1"},{id:"WB",sectionKey:"wallBrace",start:"c1",end:"b1"}]};return audit(m,{windEndFront:3,windEndBack:0}).success;});
  t("disconnected brace network rejected",()=>{const m=JSON.parse(JSON.stringify(base));m.members=m.members.filter(x=>x.id!=="WB"&&x.id!=="WB2");return !audit(m,{windEndFront:3,windEndBack:0}).success;});
- t("loaded end-girt cannot serve as its own collector bridge",()=>{const m={nodes:[{id:"a"},{id:"b"},{id:"c"},{id:"d"}],members:[{id:"E",sectionKey:"endGirt",endFace:"front",start:"a",end:"b",tributaryHeight:2,lineLoads:{windEnd:6}},{id:"WG",sectionKey:"wallGirt",start:"b",end:"c"},{id:"WB",sectionKey:"wallBrace",start:"c",end:"d"}]};const r=audit(m,{windEndFront:3,windEndBack:0});return !r.success&&r.routes.some(x=>x.nodeId==="a"&&!x.ok);});
- t("roof purlin path to roof brace accepted",()=>{const m=JSON.parse(JSON.stringify(base));m.members=m.members.filter(x=>x.sectionKey!=="wallGirt"&&x.sectionKey!=="wallBrace");m.members.push({id:"P1",sectionKey:"roofPurlin",start:"e1",end:"g1"},{id:"P2",sectionKey:"roofPurlin",start:"e2",end:"g2"},{id:"RB1",sectionKey:"roofBrace",start:"g1",end:"b1"},{id:"RB2",sectionKey:"roofBrace",start:"g2",end:"b2"});return audit(m,{windEndFront:3,windEndBack:0}).success;});
+ t("loaded end-girt cannot serve as its own structural bridge",()=>{const m={nodes:[{id:"a"},{id:"b"},{id:"c"},{id:"d"}],members:[{id:"E",sectionKey:"endGirt",endFace:"front",start:"a",end:"b",tributaryHeight:2,lineLoads:{windEnd:6}},{id:"WB",sectionKey:"wallBrace",start:"b",end:"c"}]};const r=audit(m,{windEndFront:3,windEndBack:0});return !r.success&&r.routes.some(x=>x.nodeId==="a"&&!x.ok);});
+ t("roof purlin and end-frame path to roof brace accepted",()=>{const m=JSON.parse(JSON.stringify(base));m.members=m.members.filter(x=>x.sectionKey!=="wallGirt"&&x.sectionKey!=="wallBrace");m.members.push({id:"P1",sectionKey:"roofPurlin",start:"e1",end:"g1"},{id:"P2",sectionKey:"roofPurlin",start:"e2",end:"g2"},{id:"RB1",sectionKey:"roofBrace",start:"g1",end:"b1"},{id:"RB2",sectionKey:"roofBrace",start:"g2",end:"b2"});return audit(m,{windEndFront:3,windEndBack:0}).success;});
  t("does not claim diaphragm or design approval",()=>{const r=audit(base,{windEndFront:3,windEndBack:0});return r.topologyOnly&&r.diaphragmStiffnessVerified===false&&r.collectorCapacityVerified===false&&r.designApproved===false;});
  return{passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests};
 }
