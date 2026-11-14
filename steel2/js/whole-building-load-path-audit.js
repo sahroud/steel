@@ -61,6 +61,19 @@ function audit(model,loads){
  if(rafterDuplicate.length)issues.push("بار سطحی بام هم‌زمان به پرلین و رفتر تخصیص یافته است؛ احتمال دوباره‌شماری: "+rafterDuplicate.slice(0,8).join("، "));
  rows.push({id:"rafter-reaction-path",label:"رفترها ـ واکنش پرلین و وزن خود عضو",memberCount:groups.rafters.length,coveredCount:groups.rafters.length-rafterMissing.length-rafterDuplicate.length,missingCount:rafterMissing.length,invalidCount:rafterDuplicate.length,status:rafterMissing.length||rafterDuplicate.length?"incomplete":"assigned",transfer:"purlin support reactions at shared FEM nodes"});
  [["مهاربند دیوار",groups.wallBraces],["مهاربند سقف",groups.roofBraces]].forEach(([label,list])=>{rows.push({id:label,label,memberCount:list.length,coveredCount:list.length,missingCount:0,invalidCount:0,status:list.length?"structural-path":"missing"});if(!list.length)issues.push(label+": عضو مستقلی در مدل پیدا نشد.");});
+ // A longitudinal wall girt must meet an actual frame-column segment at both ends;
+ // generic graph reachability alone is not sufficient evidence of this load transfer.
+ const columnIncidence=new Map();
+ members.filter(m=>m.sectionKey==="column").forEach(m=>[m.start,m.end].forEach(n=>{const k=String(n);if(!columnIncidence.has(k))columnIncidence.set(k,[]);columnIncidence.get(k).push(m.id);}));
+ const wallGirtEndpointChecks=[];
+ groups.wallGirts.forEach(m=>[m.start,m.end].forEach(nodeId=>{
+  const linked=columnIncidence.get(String(nodeId))||[];
+  wallGirtEndpointChecks.push({memberId:m.id,nodeId:String(nodeId),columnMemberIds:linked,ok:linked.length>0});
+ }));
+ const unsupportedGirtEnds=wallGirtEndpointChecks.filter(x=>!x.ok);
+ if(!groups.wallGirts.length)issues.push("برای ممیزی اتصال گرت طولی به ستون، هیچ گرتی وجود ندارد.");
+ if(unsupportedGirtEnds.length)issues.push("انتهای "+unsupportedGirtEnds.length+" گرت طولی به قطعه واقعی ستون قاب با شناسه گره مشترک متصل نیست: "+unsupportedGirtEnds.slice(0,8).map(x=>x.memberId+"@"+x.nodeId).join("، "));
+ rows.push({id:"wall-girt-column-transfer",label:"اتصال گرت طولی به ستون‌های قاب",memberCount:wallGirtEndpointChecks.length,coveredCount:wallGirtEndpointChecks.length-unsupportedGirtEnds.length,missingCount:unsupportedGirtEnds.length,invalidCount:0,status:unsupportedGirtEnds.length?"incomplete":"connected",checks:wallGirtEndpointChecks,transfer:"wall cladding → wall girt → shared FEM node → frame column"});
  // Loaded member endpoints must remain in the connected structural graph leading to base supports.
  const adjacency=new Map(),nodeIds=new Set((model?.nodes||[]).map(n=>String(n.id)));
  const link=(x,y)=>{x=String(x);y=String(y);if(!adjacency.has(x))adjacency.set(x,new Set());if(!adjacency.has(y))adjacency.set(y,new Set());adjacency.get(x).add(y);adjacency.get(y).add(x);};
@@ -133,6 +146,7 @@ function selfTest(){
   {id:"R2",sectionKey:"rafter",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
   {id:"P1",sectionKey:"roofPurlin",side:"left",start:"B",end:"T",lineLoads:{dead:1,live:.5,snow:.5,wind:0,windLeft:-.2,windRight:-.2,windEnd:0,tributaryWidth:1.2}},
   {id:"W1",sectionKey:"wallGirt",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:.3,windLeft:0,windRight:0,windEnd:0,tributaryHeight:2}},
+  {id:"C1",sectionKey:"column",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0}},
   {id:"E1",sectionKey:"endGirt",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryHeight:2}},
   {id:"WB",sectionKey:"wallBrace",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0}},
   {id:"RB",sectionKey:"roofBrace",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0}}
@@ -141,6 +155,7 @@ function selfTest(){
  const loads={deadLeft:.5,deadRight:.5,liveLeft:.5,liveRight:.5,snowLeft:1,snowRight:1,windLeft:-.2,windRight:-.2,windWall:.3,windEndFront:0,windEndBack:0,combinations:[{id:"C1",name:"نمونه",dead:1.2,live:1.6,snow:0}]};
  test("complete member load paths accepted",()=>audit(model,loads).success);
  test("missing roof wind transfer detected",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[2].lineLoads.windLeft;return !audit(p,loads).success;});
+ test("wall girt ends require shared frame-column nodes",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="column")};return !audit(p,loads).success&&audit(p,loads).rows.find(x=>x.id==="wall-girt-column-transfer").missingCount===2;});
  test("missing wall girt detected",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="wallGirt")};return !audit(p,loads).success;});
  test("missing end-wall girt detected",()=>{const p={...model,members:model.members.filter(m=>m.sectionKey!=="endGirt")};return !audit(p,loads).success;});
  test("missing area load input detected",()=>{const p={...loads};delete p.snowRight;return !audit(model,p).success;});
