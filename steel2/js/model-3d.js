@@ -801,10 +801,18 @@
       girtHeights.forEach((y,gi)=>{
         const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
         const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
-        const upper=gi===girtHeights.length-1?height:(y+girtHeights[gi+1])/2;
+        const nextBoundary=gi===girtHeights.length-1?Infinity:(y+girtHeights[gi+1])/2;
         for(let i=0;i<active.length-1;i++){
-          const a=addNode(nodes,active[i].x,y,z,"endwall-girt"),b=addNode(nodes,active[i+1].x,y,z,"endwall-girt");
-          addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{endFace:face,row:gi+1,tributaryHeight:upper-lower});
+          const x1=active[i].x,x2=active[i+1].x,xMid=(x1+x2)/2;
+          // End-wall tributary height is local to this girt segment. The upper
+          // strip is clipped by the actual sloping roof profile, not the eave
+          // height; xs includes the ridge, so roofY is linear on each segment.
+          const upper=Math.min(nextBoundary,roofY(xMid));
+          const tributaryHeight=upper-lower;
+          if(!(tributaryHeight>0&&Number.isFinite(tributaryHeight)))
+            throw new Error("ارتفاع بارگیر موضعی گرت انتهایی نامعتبر است؛ مدل FEM متوقف شد.");
+          const a=addNode(nodes,x1,y,z,"endwall-girt"),b=addNode(nodes,x2,y,z,"endwall-girt");
+          addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{endFace:face,row:gi+1,tributaryHeight,tributaryHeightLowerM:lower,tributaryHeightUpperM:upper});
         }
       });
     });
