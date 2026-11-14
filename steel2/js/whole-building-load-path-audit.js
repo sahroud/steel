@@ -105,7 +105,7 @@ function audit(model,loads){
  });
  comboRows.forEach(c=>{if(!c.valid)issues.push("ضرایب ترکیب "+c.name+" ناقص یا نامعتبر است: "+c.missing.join("، "));});
  const allAssigned=rows.length>0&&rows.every(r=>r.status==="assigned"||r.status==="structural-path"||r.status==="not-applicable");
- return {success:issues.length===0&&allAssigned,issues,rows,combinations:comboRows,connectivity:{supportNodeCount:supports.length,disconnectedMemberIds:disconnected},
+ return {success:issues.length===0&&allAssigned,issues,rows,wallDeadLoadTransfer:wallTransfer||null,combinations:comboRows,connectivity:{supportNodeCount:supports.length,disconnectedMemberIds:disconnected},
   inventory:{memberCount:members.length,rafterCount:groups.rafters.length,purlinCount:groups.purlins.length,wallGirtCount:groups.wallGirts.length,endGirtCount:groups.endGirts.length,wallBraceCount:groups.wallBraces.length,roofBraceCount:groups.roofBraces.length,frameCount,rafterFrameCount:frameIds.length},
   scope:"ممیزی تخصیص ورودی‌های بار موجود به اعضا؛ نه تأیید مقدار بار، ضرایب آیین‌نامه‌ای، انتقال بار نهایی یا ایمنی سازه.",
   analysisEnabled:false,designApproved:false};
