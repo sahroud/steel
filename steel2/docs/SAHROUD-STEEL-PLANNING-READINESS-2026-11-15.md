@@ -91,3 +91,34 @@ Also provide the crane manufacturer's bridge/end-truck/trolley weights, wheel co
 `solverForReferenceEnabled = false`
 `designApproved = false`
 `mainBranchModified = false`
+
+
+## 2026-11-14 evening execution update — SPS parser delivered
+
+### Implemented
+- Added `steel2/js/legacy-sps-parser.js` as a standalone read-only parser.
+- Added `steel2/docs/legacy-sps-parser-contract.md` defining its input, output, prohibited inferences, and future activation gate.
+- Added `steel2/reference-projects/shahrood-24x60-crane30t-1396-sps-source-line-extraction.json` containing 658 raw key/value records with source line numbers, section names, indexed-key groups, and explicit fail-closed flags.
+- The original Dropbox SPS file was read but not modified.
+
+### Actual-source parse result
+- Source: `/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58).SPS`
+- 661 lines; 658 parsed entries; one section (`UserInfo`); 143 trailing-numeric key groups.
+- No duplicate-key or unparsed-line warnings in the extracted source text.
+- Seven parser self-tests passed (7/7).
+- The parser preserves numeric-looking values as strings and records line provenance.
+- No unit inference, physical station/member mapping, geometry generation, solver activation, or design approval is performed.
+
+### Next critical data gate
+The source SPS is now line-traceable. The next high-value task is workbook cell-level mapping and native-model interchange. The current extracted workbook text does not supply reliable sheet/cell addresses; request an export of the original workbook sheets (including formulas and cell addresses) and a native model export (IFC, SDNF/CIS/2, or node/member/section-coordinate CSV). Until these are available, keep SPS section candidates unmapped and do not connect the parser to the solver.
+
+### Updated state
+- `spsParserImplemented=true`
+- `spsActualSourceParsed=true`
+- `spsRawEntriesArchived=658`
+- `spsParserSelfTests=7/7`
+- `spsGeometryActivated=false`
+- `referenceModelReady=false`
+- `solverForReferenceEnabled=false`
+- `designApproved=false`
+- `mainBranchModified=false`
