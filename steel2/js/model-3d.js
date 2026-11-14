@@ -235,7 +235,7 @@
           box.textContent+="\nگزارش نیروهای اعضای بحرانی در دسترس نیست.";
         }
         if(craneEnvelope){
-          box.textContent+="\n\nتحلیل خودکار جرثقیل سقفی: "+craneEnvelope.total+" موقعیت قطار چرخ جداگانه حل شد؛ موقعیت بحرانی نمونه‌برداری‌شده: "+craneEnvelope.results[craneEnvelope.criticalCase].referencePosition_m.toFixed(3)+" m؛ بیشینه تغییرمکان انتقالی در این مجموعه: "+(craneEnvelope.maxTranslation_m*1000).toFixed(3)+" mm. بار مرده و وزن خود اعضا، بار چرخ با ضریب دینامیکی قائم "+Number(window.SteelCraneReadiness.getData().verticalImpact)+" و نیروهای افقی مستند (در صورت فعال بودن) منظور شده‌اند. این پوش، جایگزین ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی یا طراحی نهایی تیر حمال و اتصالات نیست.";
+          box.textContent+="\n\nتحلیل خودکار جرثقیل سقفی: "+craneEnvelope.total+" موقعیت قطار چرخ جداگانه حل شد؛ موقعیت بحرانی نمونه‌برداری‌شده: "+craneEnvelope.results[craneEnvelope.criticalCase].referencePosition_m.toFixed(3)+" m؛ بیشینه تغییرمکان انتقالی در این مجموعه: "+(craneEnvelope.maxTranslation_m*1000).toFixed(3)+" mm؛ پوش نیروهای انتهایی اعضا برای "+(craneEnvelope.memberForceEnvelope?.cases?.length||0)+" موقعیت و "+(craneEnvelope.memberForceEnvelope?.rows?.length||0)+" عضو استخراج شد. بار مرده و وزن خود اعضا، بار چرخ با ضریب دینامیکی قائم "+Number(window.SteelCraneReadiness.getData().verticalImpact)+" و نیروهای افقی مستند (در صورت فعال بودن) منظور شده‌اند. این پوش، جایگزین ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی یا طراحی نهایی تیر حمال و اتصالات نیست.";
         }
         box.style.color="#15803d";
         window.SteelStructuralModel.last3DResult=result;
