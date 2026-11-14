@@ -1406,8 +1406,10 @@
     if(!model)build();
     const combos=window.SteelLoads?.getData?.().combinations;
     if(!Array.isArray(combos)||!combos.length)throw new Error("ترکیبات بار در دسترس نیستند.");
+    const invalidCombo=combos.find(c=>!c||["dead","live","snow"].some(k=>c[k]===undefined||c[k]===null||c[k]==="")||["dead","live","snow"].some(k=>!Number.isFinite(Number(c[k]))||Number(c[k])<0));
+    if(invalidCombo)throw new Error("ضرایب یکی از ترکیبات بار ناقص یا نامعتبر است؛ مقدار تهی/نامشخص به صفر تبدیل نمی‌شود.");
     const gravity=combos.map((c,i)=>({label:String(c.name||("ترکیب ثقلی "+(i+1))),factors:{dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow)}}));
-    if(gravity.some(c=>!c.label.trim()||Object.values(c.factors).some(v=>!Number.isFinite(v))))throw new Error("نام یا ضرایب یکی از ترکیبات بار نامعتبر/ناقص است؛ مقدار نامشخص نباید به‌صورت صفر فرض شود.");
+    if(gravity.some(c=>!c.label.trim()||Object.values(c.factors).some(v=>!Number.isFinite(v))))throw new Error("نام یا ضرایب یکی از ترکیبات بار نامعتبر/ناقص است.");
     const windPresent=model.members.some(m=>["windLeft","windRight","wind","windEnd"].some(k=>Math.abs(Number(m.lineLoads?.[k])||0)>1e-12));
     const cases=gravity.map(c=>({label:c.label,factors:c.factors}));
     if(windPresent)gravity.forEach(c=>[1,-1].forEach(sign=>cases.push({label:c.label+" + باد "+(sign>0?"مثبت":"منفی")+" (ضریب ۱٫۰)",factors:c.factors,wind:1,windSign:sign})));
