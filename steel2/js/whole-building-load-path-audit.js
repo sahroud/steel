@@ -79,7 +79,7 @@ function audit(model,loads){
  const missingRoofSideAssignments=groups.purlins.filter(m=>m.side==="left"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="right"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="ridge"?!(finite(m.lineLoads?.tributaryWidthLeft)&&m.lineLoads.tributaryWidthLeft>0&&finite(m.lineLoads?.tributaryWidthRight)&&m.lineLoads.tributaryWidthRight>0):true);
  if(missingRoofSideAssignments.length)issues.push("عرض بارگیر چپ/راست پرلین یا پرلین تاج نامعتبر است: "+missingRoofSideAssignments.slice(0,10).map(m=>String(m.id)).join("، "));
  const wallEnvelope=root.SteelDesignCore?.getData?.()?.wallEnvelope;
- const wallTransfer=root.SteelWallDeadLoadTransfer?.audit?.(model)||null;
+ const wallTransfer=wallEnvelope&&typeof wallEnvelope==="object"?root.SteelWallDeadLoadTransfer?.audit?.(model)||null:null;
  if(wallEnvelope&&typeof wallEnvelope==="object"){
   const faces=["front","rear","left","right"].filter(face=>wallEnvelope[face]?.material);
   const wallReady=wallTransfer?.success===true&&wallTransfer?.loadTransferEnabled===true;
@@ -125,6 +125,8 @@ function run(){
  return result;
 }
 function selfTest(){
+ const oldCore=root.SteelDesignCore;
+ root.SteelDesignCore={getData:()=>({})};
  const t=[],test=(name,fn)=>{try{t.push({name,ok:fn()!==false});}catch(e){t.push({name,ok:false,error:e.message});}};
  const members=[
   {id:"R1",axis:"transverse",frame:1,type:"رفتر چپ",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
@@ -162,6 +164,7 @@ function selfTest(){
  test("selected wall materials require a documented dead-load support path",()=>{const old=root.SteelDesignCore,oldTransfer=root.SteelWallDeadLoadTransfer;root.SteelDesignCore={getData:()=>({wallEnvelope:{front:{material:"brick"},rear:{material:"sandwich-panel"},left:{material:"metal-sheet"},right:{material:"brick"}}})};root.SteelWallDeadLoadTransfer=null;const r=audit(model,loads);root.SteelDesignCore=old;root.SteelWallDeadLoadTransfer=oldTransfer;return !r.success&&r.issues.some(x=>x.includes("وزن مرده پوسته دیوارها"));});
  test("nonzero end-wall wind blocks unmodelled gable triangle",()=>{const p={...loads,windEndFront:.4};return !audit(model,p).success&&audit(model,p).issues.some(x=>x.includes("ناحیه مثلثی"));});
  test("zero end-wall wind marks gable triangle not applicable",()=>{const p={...loads,windEndFront:0,windEndBack:0};return audit(model,p).rows.find(x=>x.id==="endwall-gable-wind").status==="not-applicable";});
+ root.SteelDesignCore=oldCore;
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
 }
 function mount(){
