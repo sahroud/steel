@@ -29,7 +29,8 @@ function audit(data){
  const positive=["ratedCapacity_t","runwaySpan_m","wheelsPerSide","wheelSpacing_m","cranesCount","serviceYears"];
  positive.forEach(k=>{if(d[k]!==""&&Number(d[k])<=0)issues.push(k+" باید بزرگ‌تر از صفر باشد.");});
  ["trolleyMass_t","bridgeMass_t","minWheelLoad_t","dailyCycles"].forEach(k=>{if(d[k]!==""&&Number(d[k])<0)issues.push(k+" نمی‌تواند منفی باشد.");});
- ["verticalImpact","transverseCoeff","longitudinalCoeff"].forEach(k=>{if(d[k]!==""&&Number(d[k])<0)issues.push(k+" نمی‌تواند منفی باشد.");});
+ if(d.verticalImpact!==""&&Number(d.verticalImpact)<=0)issues.push("ضریب اثر دینامیکی قائم باید مثبت باشد؛ مقدار آن مستقیماً در بارهای قائم استاتیکی چرخ ضرب می‌شود.");
+ ["transverseCoeff","longitudinalCoeff"].forEach(k=>{if(d[k]!==""&&Number(d[k])<0)issues.push(k+" نمی‌تواند منفی باشد.");});
  if(d.wheelsPerSide!==""&&!Number.isInteger(Number(d.wheelsPerSide)))issues.push("تعداد چرخ در هر سمت باید عدد صحیح باشد.");
  if(d.cranesCount!==""&&!Number.isInteger(Number(d.cranesCount)))issues.push("تعداد جرثقیل‌ها باید عدد صحیح باشد.");
  if(d.maxWheelLoad_t!==""&&Number(d.maxWheelLoad_t)<=0)issues.push("حداکثر بار چرخ باید بزرگ‌تر از صفر باشد.");
