@@ -210,8 +210,14 @@ function audit(model,loads){
  if(gableApplicable&&!gableSupportAudit)issues.push("ماژول ممیزی توپولوژی تکیه‌گاه گابل در دسترس نیست؛ وضعیت باد انتهایی قابل ارزیابی نیست.");
  if(gableApplicable&&gableSupportAudit&&!gableSupportAudit.success)issues.push("توپولوژی تکیه‌گاه گابل ناقص است: "+gableSupportAudit.issues.slice(0,8).join("؛ "));
  if(gableApplicable)rows.push({id:"endwall-gable-support-topology",label:"پیوستگی ستونک‌ها، گرت‌ها و وتر گابل در دو وجه انتهایی",memberCount:members.filter(m=>["endPost","endGirt"].includes(m.sectionKey)).length,coveredCount:gableSupportAudit?.faces?.filter(f=>f.success).length||0,missingCount:gableSupportAudit?.faces?.filter(f=>!f.success).length||0,status:gableSupportAudit?.success?"connected":"incomplete",details:gableSupportAudit?.faces||[]});
+ const longitudinalBracing=root.SteelLongitudinalBracingReadiness?.audit?.(model,loads)||null;
+ if(!longitudinalBracing)issues.push("ممیزی مسیر باد طولی تا مهاربندها بارگذاری نشده است؛ تحلیل باد انتهایی باید fail-closed بماند.");
+ if(longitudinalBracing?.applicable){
+  if(!longitudinalBracing.success)issues.push("مسیر باد دیوار انتهایی تا مهاربند طولی کامل نیست: "+longitudinalBracing.issues.join("؛ "));
+  rows.push(...(longitudinalBracing.rows||[]));
+ }else if(longitudinalBracing)rows.push({id:"endwall-wind-to-longitudinal-bracing",label:"مسیر باد دیوار انتهایی تا مهاربندهای طولی",memberCount:0,coveredCount:0,missingCount:0,status:"not-applicable"});
  const allAssigned=rows.length>0&&rows.every(r=>r.status==="assigned"||r.status==="structural-path"||r.status==="connected"||r.status==="not-applicable");
- return {success:issues.length===0&&allAssigned,issues,rows,wallDeadLoadTransfer:wallTransfer||null,gableSupportAudit,combinations:comboRows,connectivity:{supportNodeCount:supports.length,disconnectedMemberIds:disconnected},
+ return {success:issues.length===0&&allAssigned,issues,rows,wallDeadLoadTransfer:wallTransfer||null,gableSupportAudit,longitudinalBracing,combinations:comboRows,connectivity:{supportNodeCount:supports.length,disconnectedMemberIds:disconnected},
   inventory:{memberCount:members.length,rafterCount:groups.rafters.length,purlinCount:groups.purlins.length,wallGirtCount:groups.wallGirts.length,endGirtCount:groups.endGirts.length,wallBraceCount:groups.wallBraces.length,roofBraceCount:groups.roofBraces.length,frameCount,rafterFrameCount:frameIds.length},
   scope:"ممیزی تخصیص ورودی‌های بار موجود به اعضا؛ نه تأیید مقدار بار، ضرایب آیین‌نامه‌ای، انتقال بار نهایی یا ایمنی سازه.",
   analysisEnabled:false,designApproved:false};
