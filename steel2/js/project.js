@@ -676,6 +676,7 @@
 
     window.SteelProject = {
         getData,
+        saveSnapshot: () => persistSnapshot(getData()),
         validate,
         save,
         loadFile,
