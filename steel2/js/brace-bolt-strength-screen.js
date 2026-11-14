@@ -48,6 +48,7 @@ function analyze(envelope,model,connectionData){
    if(!Array.isArray(arr)||arr.length!==c.boltCount){issues.push(b.memberId+"/"+end+"/"+d.caseLabel+": توزیع صریح نیرو برای تک‌تک پیچ‌ها ثبت نشده است.");return;}
    const transferred=arr.reduce((s,x)=>s+(finite(x.transferN)?x.transferN:NaN),0);
    if(!finite(transferred)||Math.abs(transferred-tension)>Math.max(1,0.01*tension)){issues.push(b.memberId+"/"+end+"/"+d.caseLabel+": جمع نیروی انتقالی پیچ‌ها با نیروی محوری FEM در محدوده ۱٪ تطبیق ندارد.");return;}
+   if(arr.some(x=>!finite(x.tensionN)||!finite(x.shearPerPlaneN)||Math.abs(Math.hypot(x.tensionN,x.shearPerPlaneN)-x.transferN)>Math.max(1,0.01*x.transferN))){issues.push(b.memberId+"/"+end+"/"+d.caseLabel+": برآیند کشش و برش محلی هر پیچ با مؤلفه انتقالی ثبت‌شده آن در محدوده ۱٪ برابر نیست.");return;}
    arr.forEach((x,i)=>rows.push({memberId:b.memberId,end,caseLabel:d.caseLabel,boltIndex:i+1,transferN:x.transferN,...calculateBolt(c,x)}));
   });
  }));
