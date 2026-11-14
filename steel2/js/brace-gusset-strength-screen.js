@@ -11,10 +11,12 @@ const $=id=>document.getElementById(id);
 function calculate(connection,demand){
  const issues=[];
  const req=["plateThicknessMm","whitmoreWidthMm","grossShearAreaMm2","netShearAreaMm2","netTensionAreaMm2","plateFyMPa","plateFuMPa","blockShearUbs","eccentricityMm"];
+ ["loadPathReviewed","whitmoreGeometryReviewed","blockShearGeometryReviewed","connectionDrawingReviewed"].forEach(k=>{if(connection[k]!==true)issues.push("بازبینی مستند "+k+" انجام نشده است.");});
+ if(!String(connection.drawingReference||"").trim())issues.push("مرجع نقشه اتصال ثبت نشده است.");
  req.forEach(k=>{if(!finite(connection[k]))issues.push("ورودی "+k+" ناموجود/نامعتبر است.");});
  if(issues.length)return {ok:false,issues};
  if(connection.eccentricityMm!==0)issues.push("خروج از مرکزیت غیرصفر است؛ این غربال محوری و بدون لنگر قابل استفاده نیست.");
- if(connection.plateThicknessMm<=0||connection.whitmoreWidthMm<=0||connection.plateFyMPa<=0||connection.plateFuMPa<=0)issues.push("ابعاد یا خواص مصالح باید مثبت باشند.");
+ if(connection.plateThicknessMm<=0||connection.whitmoreWidthMm<=0||connection.plateFyMPa<=0||connection.plateFuMPa<=0||connection.grossShearAreaMm2<=0||connection.netShearAreaMm2<=0||connection.netTensionAreaMm2<=0)issues.push("ابعاد، مساحت‌ها یا خواص مصالح باید مثبت باشند.");
  if(connection.plateFuMPa<connection.plateFyMPa)issues.push("Fu ورق از Fy کمتر است؛ داده مصالح بازبینی شود.");
  if(connection.netShearAreaMm2>connection.grossShearAreaMm2)issues.push("Anv از Agv بیشتر است.");
  if(![0.5,1].includes(connection.blockShearUbs))issues.push("Ubs باید 0.5 یا 1 و بر اساس توزیع تنش مستند باشد.");
@@ -93,7 +95,7 @@ function init(){
  $("btnBraceGussetStrengthRun").addEventListener("click",run);
 }
 function selfTest(){
- const c={plateThicknessMm:10,whitmoreWidthMm:150,grossShearAreaMm2:1500,netShearAreaMm2:1200,netTensionAreaMm2:600,plateFyMPa:235,plateFuMPa:360,blockShearUbs:1,eccentricityMm:0};
+ const c={plateThicknessMm:10,whitmoreWidthMm:150,grossShearAreaMm2:1500,netShearAreaMm2:1200,netTensionAreaMm2:600,plateFyMPa:235,plateFuMPa:360,blockShearUbs:1,eccentricityMm:0,drawingReference:"D-01",loadPathReviewed:true,whitmoreGeometryReviewed:true,blockShearGeometryReviewed:true,connectionDrawingReviewed:true};
  const tests=[],t=(name,fn)=>{try{tests.push({name,pass:fn()===true});}catch(e){tests.push({name,pass:false,error:e.message});}};
  t("Whitmore tensile yielding uses phi 0.90 Fy Ag",()=>{const r=calculate(c,100000);return r.ok&&Math.abs(r.whitmore.availableN-317250)<1e-6;});
  t("block shear uses J4-5 minimum of rupture and yielding branches",()=>{const r=calculate(c,100000);return r.ok&&Math.abs(r.blockShear.availableN-0.75*Math.min(0.6*360*1200+360*600,0.6*235*1500+360*600))<1e-6;});
