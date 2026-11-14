@@ -97,7 +97,7 @@ function prepareNodalLoads(model,pressures,windFactor=1,windSign=1){
  }
  const merged=new Map();
  loads.forEach(x=>{const v=merged.get(x.nodeId)||[0,0,0,0,0,0];x.values.forEach((q,i)=>v[i]+=q);merged.set(x.nodeId,v);});
- const nodalLoads=[...merged].map(([nodeId,values])=>({nodeId,values}));
+ const nodalLoads=[...merged].filter(([,values])=>values.some(v=>Math.abs(v)>1e-10)).map(([nodeId,values])=>({nodeId,values}));
  return{success:issues.length===0,loads:nodalLoads,rows,issues,windFactor,windSign,analysisEnabled:true,designApproved:false,method:"consistent beam nodal residual loads from exact linear tributary-height variation plus distributed eccentric torsion; mean uniform force remains on each end-girt",limitations:["این ماژول فقط برای گرت‌های افقی انتهایی و فشار باد یکنواخت هر وجه است.","بار میانگین یکنواخت در analysisLoad عضو باقی می‌ماند؛ این ماژول فقط اختلاف خطی و گشتاور ناشی از خروج از مرکزیت را به‌صورت بار سازگار گره‌ای می‌افزاید.","مقطع، اتصالات، ورق پوسته، پیچ و ظرفیت گرت/ستونک در این ماژول طراحی نمی‌شوند.","بار باد و ضرایب اقلیمی باید جداگانه از مرجع معتبر تأیید شوند."]};
 }
 function selfTest(){
@@ -108,7 +108,7 @@ function selfTest(){
  const model={geometry:g,nodes,members:[member]};
  const r=prepareNodalLoads(model,{"end-wall-front":0.3,"end-wall-back":0},1,1);
  t("constant band produces zero residual/eccentric nodal loads",()=>r.success&&r.loads.length===0&&r.rows.length===1&&r.rows[0].success);
- const sloped={...member,tributaryHeight:4,tributaryHeightLowerM:1,tributaryHeightUpperM:5};
+ const sloped={...member,start:"C",end:"D",tributaryHeight:4,tributaryHeightLowerM:1,tributaryHeightUpperM:5};
  const slopeModel={geometry:{span:10,height:4,rise:2},nodes:[{id:"C",x:0,y:2,z:0},{id:"D",x:5,y:2,z:0}],members:[sloped]};
  const sr=prepareNodalLoads(slopeModel,{"end-wall-front":0.3,"end-wall-back":0},1,1);
  t("sloping roof strip produces consistent residual and eccentric nodal loads",()=>sr.success&&sr.loads.length===2&&sr.rows[0].success&&Math.abs(sr.rows[0].expectedEccentricTorque_Nm)>1);
