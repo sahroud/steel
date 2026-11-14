@@ -67,7 +67,7 @@ function selfTest(){
  const row=(x,extra={})=>({x_m:x,N_N:1,Vy_N:2,Vz_N:3,T_Nm:4,My_Nm:5,Mz_Nm:6,...extra});
  const base={success:true,loadCaseId:"LC1",source:{document:"fixture"},units:"N,N.m,m",prismaticDiagrams:[{memberId:"M1",parentMemberId:"M1",length_m:2,localAxes:{x:[1,0,0]},stations:[row(0),row(2)]}]};
  const good=build([base],{expectedMemberIds:["M1"]});
- const other=build([{...base,loadCaseId:"LC2",prismaticDiagrams:[{...base.prismaticDiagrams[0],stations:[row(0,{My:99}),row(2,{My:88})]}]}]);
+ const other=build([{...base,loadCaseId:"LC2",prismaticDiagrams:[{...base.prismaticDiagrams[0],stations:[row(0,{My_Nm:99}),row(2,{My_Nm:88})]}]}]);
  const missing=build([{...base,success:false}]);
  const duplicate=build([{...base,prismaticDiagrams:[{...base.prismaticDiagrams[0],stations:[row(0),row(0)]}]}]);
  const incomplete=build([{...base,prismaticDiagrams:[{...base.prismaticDiagrams[0],stations:[{...row(0),Mz_Nm:NaN}]}]}]);
