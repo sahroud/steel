@@ -542,42 +542,36 @@
         }
         const original = loadsApi.getData();
         if (!original) throw new Error("اطلاعات بارگذاری پروژه خوانده نشد.");
-        const windKeys = ["windLeft","windRight","windWall","windEndFront","windEndBack"];
-        const windValues = windKeys.map(k => original[k]);
-        if (windValues.some(v => v === "" || v === null || v === undefined || !Number.isFinite(Number(v)))) {
-            const msg = $("analysisMessage");
-            if (msg) msg.textContent = "تحلیل ترکیبات متوقف شد: فشارهای باد باید برای تمام سطوح مربوط صریح و عددی باشند.";
-            return {success:false,status:"insufficient_data"};
+        const windApi=window.SteelDirectionalWind3D;
+        if(!windApi||typeof windApi.createCases!=="function"){
+            const msg=$("analysisMessage");
+            if(msg)msg.textContent="تحلیل ترکیبات متوقف شد: مبدل باد جهت‌دار و حالات مستقل فشار داخلی بارگذاری نشده‌اند.";
+            return {success:false,status:"missing_directional_wind_adapter"};
         }
-        const hasWind = windValues.some(v => Math.abs(Number(v)) > 1e-12);
-        if (!hasWind) {
-            const msg = $("analysisMessage");
-            if (msg) msg.textContent = "تحلیل ترکیبات متوقف شد: تمام فشارهای باد صفرند؛ بار باد آیین‌نامه‌ای هنوز به فشارهای طراحی سقف و دیوار تبدیل و وارد نشده است. صفر را نمی‌توان جایگزین بار باد نامشخص کرد.";
-            return {success:false,status:"insufficient_data"};
+        let windBuild;
+        try{windBuild=windApi.createCases();}
+        catch(error){
+            const msg=$("analysisMessage");
+            if(msg)msg.textContent="تحلیل ترکیبات متوقف شد: "+String(error.message||error);
+            return {success:false,status:"directional_wind_inputs_incomplete",error:String(error.message||error)};
         }
-        const signs = hasWind ? [1,-1] : [1];
-        const cases = [{
-            label:"ترکیب ۱ ـ 1.4D",
-            factors:{dead:1.4,live:0,snow:0,wind:0},windSign:1
-        }];
-        [{key:"live",title:"Lr"},{key:"snow",title:"S"}].forEach(action => {
-            signs.forEach(sign => cases.push({
-                label:"ترکیب ۳ ـ 1.2D + 1.6"+action.title+" + 0.7W"+(hasWind?(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"):""),
-                factors:{dead:1.2,live:action.key==="live"?1.6:0,
-                    snow:action.key==="snow"?1.6:0,wind:hasWind?0.7:0},
-                windSign:sign
-            }));
-        });
-        if(hasWind) signs.forEach(sign => cases.push({
-            label:"ترکیب ۶ ـ 0.9D + 1.4W"+(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"),
-            factors:{dead:0.9,live:0,snow:0,wind:1.4},windSign:sign
-        }));
-
+        if(!windBuild||!Array.isArray(windBuild.cases)||windBuild.cases.length!==24){
+            const msg=$("analysisMessage");
+            if(msg)msg.textContent="تحلیل ترکیبات متوقف شد: انتظار ۲۴ حالت باد جهت‌دار (۴ جهت × ۲ فشار داخلی × ۳ ترکیب) می‌رفت؛ مجموعه تولیدشده ناقص است.";
+            return {success:false,status:"incomplete_directional_wind_cases"};
+        }
+        const cases=[{
+            id:"ULS-01-1.4D",label:"ترکیب ۱ ـ 1.4D (بدون باد)",
+            factors:{dead:1.4,live:0,snow:0,wind:0},windSign:1,
+            directionalWindPressures:null,directionalWindCaseId:null,
+            source:{code:"مبحث ششم ۱۳۹۸",clause:"۶-۲-۳-۲، ترکیب ۱"}
+        },...windBuild.cases];
         const rows=[];
         const summaries=[];
         for(const item of cases){
             const result=await model.analyze3D(item);
             if(!result||!result.success)throw new Error("حل سه‌بعدی ترکیب انجام نشد: "+item.label);
+            if(!result.equilibrium||result.equilibrium.ok!==true)throw new Error("تعادل عددی ترکیب "+item.label+" برقرار/تأیید نشده است؛ حالت برای پوش طراحی پذیرفته نشد.");
             let peakN=0,peakV=0,peakM=0,criticalMember="";
             (result.members||[]).forEach(member=>{
                 const f=member.localEndForces||[];
@@ -589,7 +583,7 @@
                 if(n>peakN||v>peakV||mm>peakM)criticalMember=member.id;
                 peakN=Math.max(peakN,n);peakV=Math.max(peakV,v);peakM=Math.max(peakM,mm);
             });
-            const itemResult={name:item.label,label:item.label,factors:{...item.factors},windSign:item.windSign,envelope:{
+            const itemResult={id:item.id||item.directionalWindCaseId||"ULS-01-1.4D",name:item.label,label:item.label,factors:{...item.factors},windSign:item.windSign,directionalWindCaseId:item.directionalWindCaseId||null,source:item.source||null,envelope:{
                 N:{value:peakN/1000,member:criticalMember,end:"بیشینه دو انتها"},
                 V:{value:peakV/1000,member:criticalMember,end:"برآیند برش دو انتها"},
                 M:{value:peakM/1000,member:criticalMember,end:"برآیند لنگر دو انتها"}},
@@ -612,18 +606,18 @@
         const message=$("analysisMessage");
         if(message) message.innerHTML=
             "<h4>تحلیل ترکیبات بار سه‌بعدی ـ مقدماتی</h4>"+
-            "<p>تعداد حالت‌های حل‌شده: <b>"+summaries.length+"</b>؛ گره‌ها و اعضا در مدل سه‌بعدی کامل لحاظ شده‌اند.</p>"+
+            "<p>تعداد حالت‌های حل‌شده: <b>"+summaries.length+"</b>؛ شامل ۱ حالت 1.4D بدون باد و ۲۴ حالت باد جهت‌دار (۴ جهت × ۲ فشار داخلی × ۳ ترکیب).</p>"+
             "<div style='overflow-x:auto'><table style='width:100%;min-width:760px;border-collapse:collapse'><thead><tr>"+
             "<th>ردیف</th><th>ترکیب</th><th>بیشینه |N| (kN)</th><th>بیشینه |V| (kN)</th>"+
             "<th>بیشینه |M| (kN.m)</th><th>جابجایی کل (mm)</th><th>گره بحرانی</th><th>ux / uy / uz (mm)</th><th>تعادل</th></tr></thead><tbody>"+
             rows.join("")+"</tbody></table></div>"+
             "<div class='notice'><b>دامنه و محدودیت‌ها</b>"+
-            "<p>این مرحله ترکیب‌های موجود D، Lr، S و W را در مدل سه‌بعدی اجرا می‌کند. فشار باد سقف، دیوارهای طولی و دیوارهای انتهاییِ دارای ورودی مستقل در ترکیبات منظور می‌شوند.</p>"+
-            "<p>ترکیب‌های وابسته به L، R و E و اثر T ساخته نمی‌شوند؛ ورودی مستقل آن‌ها هنوز وجود ندارد. ترکیبات فقط برای بارهای واردشده و با ضرایب فعلی برنامه‌اند و پیش از استفاده طراحی باید با متن رسمی مبحث ششم ۱۳۹۸ و اصلاحیه‌ها بازبینی شوند.</p>"+
+            "<p>باد از دفتر جهت‌دار و به‌صورت فشار خالص مستقل شش سطح، در چهار جهت اصلی و دو حالت فشار داخلی مثبت/منفی به مدل سه‌بعدی منتقل شده است. ضرایب باد ۰٫۷ در ترکیبات ۳ و ۱٫۴ در ترکیب ۶ اعمال می‌شوند؛ این ضرایب فقط یک‌بار در انتقال بار اعمال می‌شوند.</p>"+
+            "<p>این مسیر شامل 1.4D بدون باد، دو شاخه 1.2D+1.6Lr+0.7W و 1.2D+1.6S+0.7W و شاخه 0.9D+1.4W است. ترکیب ۴ به‌دلیل نبود ورودی مستقل بار زنده عمومی L، و نیز R، E و T در این گردش‌کار ساخته نمی‌شوند. ضرایب و فشارهای سطحی باید با متن رسمی مبحث ششم ۱۳۹۸، اصلاحیه‌ها و شرایط پروژه تطبیق داده شوند.</p>"+
             "<p>برای هر حالت، شناسه گره دارای بیشینه جابه‌جایی و مؤلفه‌های انتقالی ux/uy/uz نیز گزارش شده‌اند تا راستای حرکت و مسیر احتمالی ناپایداری قابل تشخیص باشد.</p>"+
             "<p>نیروها از برآیند نیروهای انتهایی اعضا استخراج شده‌اند؛ کنترل مقاومت، کمانش، P-Delta، تغییرمکان مجاز و اتصالات همچنان مستقل و ضروری است. تعادل عددی به‌تنهایی اثبات‌کننده پایداری یا کفایت طراحی نیست.</p></div>";
         setStatus("تحلیل سه‌بعدی ترکیبات بار موجود انجام شد.");
-        return {success:true,cases:summaries};
+        return {success:true,cases:summaries,windCaseCount:windBuild.caseCount,limitations:windBuild.limitations||[]};
     }
 
     function calculateCombinationsButton() {
