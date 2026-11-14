@@ -338,6 +338,7 @@
 
         check("steelGrade", !!d.material.grade,
             "نوع فولاد را از گواهی یا استاندارد محصول انتخاب کنید.");
+        if($("steelGrade")?.value==="CUSTOM")check("steelGradeCustom",!!$("steelGradeCustom")?.value.trim(),"نام دقیق گرید سفارشی را وارد کنید.");
         check("steelThickness",Number.isFinite(d.material.thickness_mm)&&d.material.thickness_mm>0,
             "ضخامت واقعی محصول فولادی برای تعیین خواص لازم است.");
 
