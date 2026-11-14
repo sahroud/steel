@@ -10,10 +10,12 @@ function audit(model,loads){
  const nodeIds=nodes.filter(n=>n?.id!==undefined&&n?.id!==null&&String(n.id).trim()!=="").map(n=>String(n.id)),duplicateNodeIds=[...new Set(nodeIds.filter((x,i)=>nodeIds.indexOf(x)!==i))],memberIds=members.filter(m=>m?.id!==undefined&&m?.id!==null&&String(m.id).trim()!=="").map(m=>String(m.id)),duplicateMemberIds=[...new Set(memberIds.filter((x,i)=>memberIds.indexOf(x)!==i))];
  if(missingNodeIds.length)issues.push("گره‌هایی با شناسه خالی: "+missingNodeIds.join("، "));if(missingMemberIds.length)issues.push("اعضایی با شناسه خالی: "+missingMemberIds.join("، "));
  if(duplicateNodeIds.length)issues.push("شناسه گره تکراری در مدل تازه: "+duplicateNodeIds.join("، "));if(duplicateMemberIds.length)issues.push("شناسه عضو تکراری در مدل تازه: "+duplicateMemberIds.join("، "));
+ const invalidNodeCoordinates=nodes.map((n,i)=>({n,i})).filter(x=>![x.n?.x,x.n?.y,x.n?.z].every(v=>typeof v==="number"&&Number.isFinite(v))).map(x=>x.i);
+ if(invalidNodeCoordinates.length)issues.push("مختصات x/y/z گره‌ها عددی و متناهی نیست: "+invalidNodeCoordinates.join("، "));
  const missingEndpoints=[],zeroLength=[],nodeMap=new Map(nodes.map(n=>[String(n.id),n]));
  members.forEach(m=>{const a=nodeMap.get(String(m.start)),b=nodeMap.get(String(m.end));if(!a||!b){missingEndpoints.push(String(m.id));return;}const L=Math.hypot(Number(a.x)-Number(b.x),Number(a.y)-Number(b.y),Number(a.z)-Number(b.z));if(!(Number.isFinite(L)&&L>1e-8))zeroLength.push(String(m.id));});
  if(missingEndpoints.length)issues.push("اعضایی با گره ابتدا/انتها ناموجود: "+missingEndpoints.join("، "));if(zeroLength.length)issues.push("اعضای با طول هندسی صفر/نامعتبر: "+zeroLength.join("، "));
- const geometryIntegrity={success:!missingNodeIds.length&&!missingMemberIds.length&&!duplicateNodeIds.length&&!duplicateMemberIds.length&&!missingEndpoints.length&&!zeroLength.length,missingNodeIds,missingMemberIds,duplicateNodeIds,duplicateMemberIds,missingEndpoints,zeroLength};
+ const geometryIntegrity={success:!missingNodeIds.length&&!missingMemberIds.length&&!duplicateNodeIds.length&&!duplicateMemberIds.length&&!invalidNodeCoordinates.length&&!missingEndpoints.length&&!zeroLength.length,missingNodeIds,missingMemberIds,duplicateNodeIds,duplicateMemberIds,invalidNodeCoordinates,missingEndpoints,zeroLength};
  const gableTopology=root.SteelEndWallGableSupportAudit?.audit?.(model)||null,wholeBuilding=root.SteelWholeBuildingLoadPathAudit?.audit?.(model,loads||{})||null,longitudinalBracing=root.SteelLongitudinalBracingReadiness?.audit?.(model,loads||{})||null;
  if(!gableTopology)issues.push("ممیزی توپولوژی گابل بارگذاری نشده است.");else if(!gableTopology.success)issues.push("توپولوژی گرت/ستونک/وتر گابل ناقص است.");
  if(!wholeBuilding)issues.push("ممیزی مسیر بار کل ساختمان بارگذاری نشده است.");else if(!wholeBuilding.success)issues.push(...(wholeBuilding.issues||["ممیزی مسیر بار کل ساختمان ناموفق است."]));
@@ -26,6 +28,7 @@ function selfTest(){const prior={gable:root.SteelEndWallGableSupportAudit,whole:
  t("rejects blank node IDs",()=>{setup();return !audit({...model,nodes:[{...model.nodes[0],id:""},model.nodes[1]]},{}).geometryIntegrity.success;});
  t("rejects blank member IDs",()=>{setup();return !audit({...model,members:[{...model.members[0],id:""}]},{}).geometryIntegrity.success;});
  t("rejects non-finite node coordinates",()=>{setup();return !audit({...model,nodes:[model.nodes[0],{...model.nodes[1],z:NaN}]},{}).geometryIntegrity.success;});
+ t("rejects non-finite coordinates on isolated nodes",()=>{setup();return !audit({...model,nodes:[...model.nodes,{id:"ISOLATED",x:0,y:Infinity,z:0}]},{}).geometryIntegrity.success;});
  root.SteelEndWallGableSupportAudit=prior.gable;root.SteelWholeBuildingLoadPathAudit=prior.whole;root.SteelLongitudinalBracingReadiness=prior.longitudinal;
  tests.push({name:"self-test restores shared audit APIs",pass:root.SteelEndWallGableSupportAudit===prior.gable&&root.SteelWholeBuildingLoadPathAudit===prior.whole&&root.SteelLongitudinalBracingReadiness===prior.longitudinal});
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"fresh-model data integrity and audit orchestration only; not structural analysis or design approval"};}
