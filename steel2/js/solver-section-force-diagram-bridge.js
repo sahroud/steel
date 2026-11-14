@@ -35,6 +35,7 @@ function build(model,runnerOutput,options){
  }
  joined.forEach(m=>{
   if(m.taperApplied===true||m.taperSegmentCount!=null)return;
+  if(m.prismatic===false){issues.push("عضو "+m.id+" صریحاً غیرمنشوری معرفی شده اما قطعات متغیرمقطع برای آن تعریف نشده‌اند.");return;}
   const ledger=m.analysisLoad||{};
   const complete=ledger.loadDataComplete===true||m.loadDataComplete===true||options.loadCompletenessByMember?.[String(m.id)]===true;
   if(!complete){issues.push("کامل‌بودن دفتر بارگذاری عضو "+m.id+" صریحاً تأیید نشده است.");return;}
@@ -65,6 +66,7 @@ function selfTest(){
  add("uniform local load included in reconstructed section actions",()=>{const m=make([0,-500,0]),r=run(m,[0,-1000,0]),d=build(m,r);return d.success&&d.prismaticDiagrams[0].stations[0].Vy_N<d.prismaticDiagrams[0].stations.at(-1).Vy_N&&Math.abs(d.prismaticDiagrams[0].stations.at(-1).Vy_N+1000)<1e-6;});
  add("missing load completeness blocked",()=>{const m=make([0,0,0]);delete m.members[0].analysisLoad.loadDataComplete;return build(m,run(m)).status==="insufficient_data";});
  add("missing uniform load vector blocked",()=>{const m=make([0,0,0]);delete m.members[0].analysisLoad.uniformLocal;return build(m,run(m)).status==="insufficient_data";});
+ add("explicit non-prismatic member without segment model blocked",()=>{const m=make([0,0,0],{prismatic:false});return build(m,run(m)).status==="insufficient_data";});
  add("point load on member blocked",()=>{const m=make([0,0,0]);m.members[0].analysisLoad.pointLoads=[{x:1,values:[0,-1,0]}];return build(m,run(m)).status==="insufficient_data";});
  add("solver imbalance blocked",()=>{const m=make([0,0,0]),r=run(m);r.solverResult.equilibrium.ok=false;return build(m,r).status==="insufficient_data";});
  add("missing model member result blocked",()=>{const m=make([0,0,0]),r=run(m);r.solverResult.members=[];return build(m,r).status==="insufficient_data";});
