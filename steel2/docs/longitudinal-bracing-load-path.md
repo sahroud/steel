@@ -36,3 +36,10 @@ The actual force distribution must come from the global FEM solution for each va
 - `SteelMemberDesignScopeGate.selfTest()`: 8 tests.
 
 These are deterministic software tests, not browser validation, independent solver comparison, or engineering approval.
+
+
+## Axial end-force sign normalization
+
+The solver local end-force convention is version 1: for a tensile member action, `Fx_i` is negative and `Fx_j` is positive; compression reverses both signs. The force-envelope demand helper now normalizes each end to tension-positive (`-Fx_i` at end I and `+Fx_j` at end J). The brace demand audit performs the same end-aware normalization only when the exact solver convention metadata is present. It reports raw end actions and separate tension/compression magnitudes per end; it still does not calculate resistance or approve a brace. Duplicate load-combination labels are rejected before analysis.
+
+Regression coverage adds paired tension/compression tests at both ends and an unrecognized-convention rejection test. These are software checks; they do not replace independent solver benchmarking or engineering review.
