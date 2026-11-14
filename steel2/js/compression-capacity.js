@@ -16,9 +16,9 @@ function fcrFromFe(Fy,Fe){
 }
 function analyze(input){
  const d=input||{},issues=[],warnings=[];
- const required=["Ag_mm2","Ix_mm4","Iy_mm4","J_mm4","h0_mm","Lx_mm","Ly_mm","Lz_mm","Kx","Ky","Kz","Fy_MPa"];
+ const required=["Ag_mm2","Ix_mm4","Iy_mm4","J_mm4","h0_mm","Lx_mm","Ly_mm","Lz_mm","Kx","Ky","Kz","Fy_MPa","E_MPa","G_MPa"];
  required.forEach(k=>{if(!finitePositive(d[k]))issues.push(k+" باید مقدار مثبت و معتبر داشته باشد.");});
- const E=Number(d.E_MPa??200000),nu=Number(d.nu??0.3),G=Number(d.G_MPa??(E/(2*(1+nu))));
+ const E=Number(d.E_MPa),G=Number(d.G_MPa);
  if(!finitePositive(E)||!finitePositive(G))issues.push("E و G باید مثبت باشند.");
  if(d.sectionType!=="doubly-symmetric-I")issues.push("نسخه فعلی فقط برای مقطع I دارای دو محور تقارن معتبر است.");
  if(d.localSlendernessReviewed!==true)issues.push("کنترل لاغری موضعی بال و جان طبق جدول‌های مبحث دهم ثبت نشده است.");
@@ -44,14 +44,14 @@ function analyze(input){
  return {ok:true,issues,warnings,scope:"global-buckling-only",section:{Ag_mm2:A,rx_mm:rx,ry_mm:ry,Cw_mm6:Cw},slenderness:{x:lambdaX,y:lambdaY,max:Math.max(lambdaX,lambdaY)},elasticCriticalStress_MPa:{x:FeX,y:FeY,torsional:FeT},governingMode:governing.mode,Fe_MPa:governing.Fe,Fcr_MPa:curve.Fcr,curveBranch:curve.branch,Pn_kN:Pn,LRFD:{phi:0.9,designStrength_kN:phiPn},ASD:{Omega:1.67,allowableStrength_kN:allowable},disclaimer:"محاسبه محدود مقاومت کمانش کلی برای مقطع I دو‌محوره متقارن و غیرلاغر؛ این نتیجه به‌تنهایی تأیید نهایی طراحی یا مجوز اجرا نیست."};
 }
 function selfTest(){
- const base={sectionType:"doubly-symmetric-I",Ag_mm2:10000,Ix_mm4:8e8,Iy_mm4:1e8,J_mm4:2e6,h0_mm:500,Lx_mm:6000,Ly_mm:6000,Lz_mm:6000,Kx:1,Ky:1,Kz:1,Fy_MPa:235,E_MPa:200000,nu:0.3,localSlendernessReviewed:true,localSlendernessClass:"non-slender"};
+ const base={sectionType:"doubly-symmetric-I",Ag_mm2:10000,Ix_mm4:8e8,Iy_mm4:1e8,J_mm4:2e6,h0_mm:500,Lx_mm:6000,Ly_mm:6000,Lz_mm:6000,Kx:1,Ky:1,Kz:1,Fy_MPa:235,E_MPa:200000,G_MPa:76923,localSlendernessReviewed:true,localSlendernessClass:"non-slender"};
  const tests=[];
  const t=(name,fn)=>{try{tests.push({name,pass:!!fn()});}catch(e){tests.push({name,pass:false,error:e.message});}};
  t("valid doubly symmetric I section",()=>analyze(base).ok);
  t("flexural and torsional modes reported",()=>{const r=analyze(base);return !!r.elasticCriticalStress_MPa.x&&!!r.elasticCriticalStress_MPa.y&&!!r.elasticCriticalStress_MPa.torsional&&r.governingMode;});
  t("LRFD and ASD factors",()=>{const r=analyze(base);return Math.abs(r.LRFD.designStrength_kN/r.Pn_kN-.9)<1e-12&&Math.abs(r.Pn_kN/r.ASD.allowableStrength_kN-1.67)<1e-12;});
  t("invalid missing dimensions rejected",()=>!analyze({...base,Lx_mm:0}).ok);
- t("asymmetric section rejected",()=>!analyze({...base,sectionType:"channel"}).ok);
+ t("missing elastic properties rejected without defaults",()=>!analyze({...base,E_MPa:null}).ok&&!analyze({...base,G_MPa:null}).ok);\n t("asymmetric section rejected",()=>!analyze({...base,sectionType:"channel"}).ok);
  t("local slenderness not reviewed rejected",()=>!analyze({...base,localSlendernessReviewed:false}).ok);
  t("slender elements require effective-area implementation",()=>!analyze({...base,localSlendernessClass:"slender"}).ok);
  t("large slenderness is reported without unverified cutoff",()=>{const r=analyze({...base,Lx_mm:30000,Ly_mm:30000,Lz_mm:30000});return r.ok&&r.slenderness.max>200&&r.warnings.some(x=>x.includes("سقف عددی"));});
