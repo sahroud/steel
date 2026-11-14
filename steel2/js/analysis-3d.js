@@ -193,7 +193,10 @@ function analyze(model,options){
    if(rj){ids[9]=rj[0];ids[10]=rj[1];}
   }
   addBlock(K,ids,kg);
-  const q=m.analysisLoad&&m.analysisLoad.uniformLocal?m.analysisLoad.uniformLocal.map(Number):[0,0,0];
+  const declaredLoad=m.analysisLoad&&m.analysisLoad.uniformLocal;
+  if(options.requireExplicitMemberLoads===true&&(!Array.isArray(declaredLoad)||declaredLoad.length!==3))
+   throw Error("بار عضو "+m.id+" در مدل تحلیل صریحاً تعریف نشده است؛ حتی بار صفر نیز باید به‌صورت [0,0,0] ثبت شود.");
+  const q=Array.isArray(declaredLoad)?declaredLoad.map(Number):[0,0,0];
   if(q.length!==3||q.some(v=>!Number.isFinite(v)))throw Error("بار گسترده محلی عضو "+m.id+" معتبر نیست.");
   const fl=equivalentUniformLoad(q,tr.L);
   const releasedLoad=condenseMemberEndReleases(kl,fl,endReleases);
