@@ -43,3 +43,10 @@ These are deterministic software tests, not browser validation, independent solv
 The solver local end-force convention is version 1: for a tensile member action, `Fx_i` is negative and `Fx_j` is positive; compression reverses both signs. The force-envelope demand helper now normalizes each end to tension-positive (`-Fx_i` at end I and `+Fx_j` at end J). The brace demand audit performs the same end-aware normalization only when the exact solver convention metadata is present. It reports raw end actions and separate tension/compression magnitudes per end; it still does not calculate resistance or approve a brace. Duplicate load-combination labels are rejected before analysis.
 
 Regression coverage adds paired tension/compression tests at both ends and an unrecognized-convention rejection test. These are software checks; they do not replace independent solver benchmarking or engineering review.
+
+
+## Fresh generated-model audit in the application
+
+The model panel now has a dedicated action, **ممیزی هندسه تازه‌ساخته و مسیر بار**. The action calls `SteelStructuralModel.build()` at click time, then passes that exact returned model object to `SteelFreshModelStructuralAudit.audit()`. The report includes node/member identity checks, missing endpoints, zero-length members, end-wall gable topology, the whole-building load-path audit, and the longitudinal-bracing readiness result. It records the model generation timestamp and member counts. This avoids treating a stored `default-project.json` structural snapshot as if it were the current FEM model.
+
+The audit is a user-triggered browser check; it has not been run against the current browser inputs in this development session. A successful topology result remains distinct from a stiffness/collector analysis or code design approval.
