@@ -128,7 +128,8 @@
       '<div class="field"><label for="modelGirtSpacing">فاصله قیدهای افقی دیوار (m)</label><input id="modelGirtSpacing" type="number" min="0.3" step="0.05" value="3.00"></div>' +
       '<div class="field"><label for="modelEndPostSpacing">فاصله ستونک‌های دیوار انتهایی (m)</label><input id="modelEndPostSpacing" type="number" min="1" step="0.1" value="4.00"></div>' +
       '<div class="field"><label for="modelBraceBays">تعداد دهانه مهاربندی در ابتدا و انتها</label><input id="modelBraceBays" type="number" min="0" step="1" value="1"></div></div>' +
-      '<div class="button-grid"><button type="button" id="btnBuildFullModel" class="btn primary">تولید و ترسیم تمام اجزای سوله</button><button type="button" id="btnCheck3DSections" class="btn secondary">بررسی آمادگی مقاطع تحلیل سه‌بعدی</button></div>' +
+      '<div class="button-grid"><button type="button" id="btnBuildFullModel" class="btn primary">تولید و ترسیم تمام اجزای سوله</button><button type="button" id="btnCheck3DSections" class="btn secondary">بررسی آمادگی مقاطع تحلیل سه‌بعدی</button><button type="button" id="btnAuditFreshModel" class="btn secondary">ممیزی هندسه تازه‌ساخته و مسیر بار</button></div>' +
+      '<div id="freshModelAuditResult" class="notice">پس از تولید مدل، پیوستگی گابل، گرت‌های انتهایی، مسیر باد طولی و سلامت اتصال گره‌ها روی همین مدل ممیزی می‌شود.</div>' +
       '<div id="modelProgress" class="model-progress" hidden aria-live="polite"><div class="model-progress-head"><strong id="modelProgressText">در حال آماده‌سازی…</strong><span id="modelProgressElapsed">۰٫۰ ثانیه</span></div><div class="model-progress-track"><span></span></div><small>حل ماتریس در پردازشگر پس‌زمینه انجام می‌شود؛ نوار پیشرفت و زمان‌سنج باید در طول تحلیل فعال بمانند.</small></div>' +
       '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
@@ -138,6 +139,21 @@
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
+    $("btnAuditFreshModel").addEventListener("click", function () {
+      const box=$("freshModelAuditResult");
+      try {
+        const fresh=build();draw();showSummary();
+        if(!window.SteelFreshModelStructuralAudit?.audit)throw new Error("ماژول ممیزی مدل تازه‌ساخته‌شده بارگذاری نشده است.");
+        const report=window.SteelFreshModelStructuralAudit.audit(fresh,window.SteelLoads?.getData?.()||{});
+        window.SteelStructuralModel.lastFreshModelAudit=report;
+        box.textContent="ممیزی مدل بازسازی‌شده در "+(report.generatedAt||"زمان نامشخص")+"\n"+
+          "گره‌ها: "+report.inventory.nodeCount+" | اعضا: "+report.inventory.memberCount+" | گرت انتهایی: "+report.inventory.endGirtCount+" | مهاربند سقف/دیوار: "+report.inventory.roofBraceCount+"/"+report.inventory.wallBraceCount+"\n"+
+          "سلامت هندسه: "+(report.geometryIntegrity.success?"موفق":"ناقص")+" | گابل: "+(report.gableTopology?.success?"موفق":"ناقص")+" | ممیزی کل مسیر بار: "+(report.wholeBuilding?.success?"موفق":"ناقص")+" | باد طولی: "+(report.longitudinalBracing?.applicable?(report.longitudinalBracing.success?"مسیر توپولوژیک برقرار":"مسیر ناقص"):"غیرفعال")+"\n"+
+          "موارد مسدودکننده: "+report.issues.length+"\n"+report.issues.map((x,i)=>(i+1)+". "+x).join("\n")+"\n"+
+          "این گزارش فقط ممیزی هندسه/مسیر بار است؛ سختی دیافراگم، ظرفیت اعضا و اتصالات یا تأیید طراحی را اثبات نمی‌کند.";
+        box.style.color=report.success?"#166534":"#b45309";
+      } catch(error) {box.textContent="ممیزی مدل تازه‌ساخته‌شده انجام نشد: "+error.message;box.style.color="#b45309";}
+    });
     $("btnBuildFullModel").addEventListener("click", function () {
       runWithProgress("در حال تولید گره‌ها، قاب‌ها، پرلین‌ها و مهاربندها…", stage => {
         build(); draw(); showSummary();
