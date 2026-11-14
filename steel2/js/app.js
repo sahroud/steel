@@ -542,6 +542,8 @@
         }
         const original = loadsApi.getData();
         if (!original) throw new Error("اطلاعات بارگذاری پروژه خوانده نشد.");
+        if(typeof model.build!=="function")throw new Error("سازنده مدل سه‌بعدی در دسترس نیست.");
+        model.build();
         const windApi=window.SteelDirectionalWind3D;
         if(!windApi||typeof windApi.createCases!=="function"){
             const msg=$("analysisMessage");
