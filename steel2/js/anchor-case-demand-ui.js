@@ -13,7 +13,7 @@ function buildAnchors(layout){
 function calculateSelected(selection,layout){
  if(!selection?.row||!selection?.case||!selection?.mapped)throw Error("ابتدا یک گره پایه و حالت بار معتبر انتخاب کنید.");
  if(layout?.signConfirmed!==true)throw Error("ابتدا قرارداد علامت نیروها را پس از کنترل با مدل تأیید کنید.");
- if(layout?.geometryConfirmed!==true)throw Error("تطبیق آرایش انکرها با نقشه اجرایی/وضعیت واقعی پایه باید صریحاً تأیید شود.");
+ if(layout?.geometryConfirmed!==true)throw Error("تطبیق هندسه و آرایش انکرها با نقشه اجرایی/وضعیت واقعی پایه باید صریحاً تأیید شود.");
  const anchors=buildAnchors(layout),m=selection.mapped;
  const action=[m.Vx_kN*1000,m.N_tensionPositive_kN*1000,m.Vz_kN*1000,m.Mx_kNm*1000,m.Ty_kNm*1000,m.Mz_kNm*1000];
  if(!action.every(Number.isFinite))throw Error("کنش شش‌مؤلفه‌ای انتخاب‌شده کامل و معتبر نیست.");
