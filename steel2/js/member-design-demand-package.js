@@ -40,9 +40,9 @@ function selfTest(){
  const noSource=build([{...c,source:{document:"x"}}],{expectedMemberIds:["M1"]});
  const noMember=build([c],{expectedMemberIds:["M1","M2"]});
  const duplicate=build([c,c],{expectedMemberIds:["M1"]});
- const mixed=build([{...c,loadCaseId:"LC2",prismaticDiagrams:[{...c.prismaticDiagrams[0],stations:[row(0,{My_Nm:99}),row(2,{My_Nm:99})]}]}],{expectedMemberIds:["M1"]});
+ const mixed=build([c,{...c,loadCaseId:"LC2",prismaticDiagrams:[{...c.prismaticDiagrams[0],stations:[row(0,{My_Nm:99}),row(2,{My_Nm:99})]}]}],{expectedMemberIds:["M1"]});
  const tapered=build([{success:true,loadCaseId:"T1",source:src,units:"N,N.m,m",prismaticDiagrams:[],taperedReport:{success:true,loadCases:[{label:"T1",members:[{parentMemberId:"R",totalLength_m:3,segmentCount:1,complete:true,segments:[{segmentId:"R1",segmentIndex:1,startStation_m:0,endStation_m:3,length_m:3,stations:[{...row(0),memberStation_m:0},{...row(3),memberStation_m:3}]}]}]}]}}],{expectedMemberIds:["R"]});
- const t=[good.success&&good.designGate.designApproved===false,noSource.success===false,noMember.success===false,duplicate.success===false,mixed.success&&mixed.members[0].cases[0].stations[0].actions.My!==mixed.members[0].cases[0].stations[1].actions.My,tapered.success&&tapered.members[0].cases[0].segments.length===1];
+ const t=[good.success&&good.designGate.designApproved===false,noSource.success===false,noMember.success===false,duplicate.success===false,mixed.success&&mixed.members[0].cases.length===2&&mixed.members[0].cases[0].stations[0].actions.My===5&&mixed.members[0].cases[1].stations[0].actions.My===99,tapered.success&&tapered.members[0].cases[0].segments.length===1];
  return {passed:t.filter(Boolean).length,failed:t.filter(x=>!x).length,total:t.length,tests:t};
 }
 root.SteelMemberDesignDemandPackage={build,getLast,selfTest};
