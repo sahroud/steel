@@ -44,22 +44,21 @@
     }
 
     function getGeometry() {
-        const span = num("span", 20);
-        const rise = num("rise", 2);
-        const spacing = num("spacing", 5);
-        const length = num("length", 30);
+        const span = num("span", null);
+        const rise = num("rise", null);
+        const spacing = num("spacing", null);
+        const length = num("length", null);
 
         const half = span / 2;
         const baseSlopeLength = Math.sqrt(
             half * half + rise * rise
         );
 
-        // پیش‌آمدگی‌های مصوب پروژه: ۸۰ سانتی‌متر در امتداد شیب
-        // در هر لبه جانبی و ۸۰ سانتی‌متر در هر انتهای طولی
-        const sideOverhang = 0.80;
-        const endOverhang = 0.80;
-        const slopeLength = baseSlopeLength + sideOverhang;
-        const roofLength = length + 2 * endOverhang;
+        // پیش‌آمدگی‌ها باید برای همین پروژه صریحاً ثبت شوند.
+        const sideOverhang = num("purlinSideOverhang", null);
+        const endOverhang = num("purlinEndOverhang", null);
+        const slopeLength = sideOverhang === null ? null : baseSlopeLength + sideOverhang;
+        const roofLength = endOverhang === null ? null : length + 2 * endOverhang;
         const angle = Math.atan2(rise, half);
 
         return {
@@ -373,8 +372,9 @@
     }
 
     function validate(s, g) {
-        if (g.spacing <= 0 || g.length <= 0 ||
-            g.slopeLength <= 0) {
+        if (![g.span, g.rise, g.spacing, g.length, g.sideOverhang, g.endOverhang].every(Number.isFinite) ||
+            g.span <= 0 || g.rise < 0 || g.spacing <= 0 || g.length <= 0 ||
+            g.sideOverhang < 0 || g.endOverhang < 0 || !Number.isFinite(g.slopeLength) || g.slopeLength <= 0) {
             return "مشخصات هندسی سقف معتبر نیست.";
         }
 
@@ -397,7 +397,14 @@
         if (s.pitch <= 0) {
             return "فاصله انتخابی پرلین باید مثبت باشد.";
         }
-
+        const loads = getLoads();
+        const loadKeys = ["deadLeft","deadRight","liveLeft","liveRight","snowLeft","snowRight","windLeft","windRight"];
+        if (!loadKeys.every(k => loads[k] !== null && loads[k] !== undefined && Number.isFinite(Number(loads[k])))) {
+            return "اطلاعات بارگذاری کامل نیست؛ بار هر دو شیب را صریحاً مشخص کنید.";
+        }
+        if (!Number.isFinite(g.roofLength) || !Number.isFinite(g.frames)) {
+            return "هندسه کامل سقف و پیش‌آمدگی‌ها در دسترس نیست.";
+        }
         return "";
     }
 
@@ -409,8 +416,11 @@
         const error = validate(s, g);
 
         if (error) {
-            $("purlinResults").textContent = error;
-            return null;
+            lastResult = null;
+            window.SteelRoofPurlins.lastResult = null;
+            const out = $("purlinResults");
+            if (out) out.textContent = "اطلاعات ناکافی — " + error + " نتیجه قبلی معتبر نیست.";
+            return { status: "insufficient_data", reason: error };
         }
 
         const sections = makeSections(s.family);
@@ -670,8 +680,11 @@
         const error = validate(s, g);
 
         if (error) {
-            $("purlinResults").textContent = error;
-            return;
+            lastResult = null;
+            window.SteelRoofPurlins.lastResult = null;
+            const out = $("purlinResults");
+            if (out) out.textContent = "اطلاعات ناکافی — " + error + " نتیجه قبلی معتبر نیست.";
+            return { status: "insufficient_data", reason: error };
         }
 
         let section;
@@ -882,7 +895,12 @@
                 </div>
             </div>
 
-            <h4>۵ ـ مشخصات مصالح</h4>
+            <h4>۵ ـ پیش‌آمدگی‌های سقف (ورودی اجباری پروژه)</h4>
+            <div class="form-grid">
+                <div class="field"><label for="purlinSideOverhang">پیش‌آمدگی جانبی در امتداد شیب، هر طرف (m)</label><input id="purlinSideOverhang" type="number" min="0" step="0.01" placeholder="مقدار واقعی پروژه"></div>
+                <div class="field"><label for="purlinEndOverhang">پیش‌آمدگی طولی ابتدا و انتها، هر طرف (m)</label><input id="purlinEndOverhang" type="number" min="0" step="0.01" placeholder="مقدار واقعی پروژه"></div>
+            </div>
+            <h4>۶ ـ مشخصات مصالح</h4>
 
             <div class="form-grid">
                 <div class="field">
@@ -955,13 +973,18 @@
     }
 
     function getData() {
-        return Object.assign({}, readSettings());
+        return Object.assign({}, readSettings(), {
+            sideOverhang: num("purlinSideOverhang", null),
+            endOverhang: num("purlinEndOverhang", null)
+        });
     }
 
     function setData(data) {
         if (!data || typeof data !== "object") return;
 
         const map = {
+            sideOverhang: "purlinSideOverhang",
+            endOverhang: "purlinEndOverhang",
             family: "purlinFamily",
             pitchMin: "purlinPitchMin",
             pitchMax: "purlinPitchMax",
