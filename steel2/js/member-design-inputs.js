@@ -9,8 +9,8 @@ const groups=[
  {key:"roofBrace",label:"مهاربندهای سقف"},{key:"wallBrace",label:"مهاربندهای دیوار"},{key:"roofEdge",label:"اعضای لبه سقف"}
 ];
 const fields=[
- ["t_mm","ضخامت فولاد t (mm)"],["Fy","Fy (MPa)"],["Fu","Fu (MPa)"],["Kx","Kx"],["Ky","Ky"],
- ["Lcx","طول مؤثر فشاری حول x (m)"],["Lcy","طول مؤثر فشاری حول y (m)"],
+ ["t_mm","ضخامت فولاد t (mm)"],["Fy","Fy (MPa)"],["Fu","Fu (MPa)"],["E_MPa","مدول الاستیسیته E (MPa)"],["G_MPa","مدول برشی G (MPa)"],["Kx","Kx"],["Ky","Ky"],["Kz","Kz"],
+ ["Lcx","طول مؤثر فشاری حول x (m)"],["Lcy","طول مؤثر فشاری حول y (m)"],["Lcz","طول مؤثر پیچشی (m)"],
  ["Lb","طول مهارنشده خمشی Lb (m)"],["Cb","Cb"]
 ];
 let data={schemaVersion:1,groups:{}};
@@ -53,7 +53,7 @@ function validate(){
   const raw=data.groups[g.key]||{};
   if(!raw.applyToAll)return;
   const x=getForGroup(g.key);
-  ["Fy","Fu","Kx","Ky","Lcx","Lcy","Lb","Cb"].forEach(k=>{
+  ["Fy","Fu","E_MPa","G_MPa","Kx","Ky","Kz","Lcx","Lcy","Lcz","Lb","Cb"].forEach(k=>{
    if(!(Number.isFinite(x[k])&&x[k]>0))issues.push(g.label+": مقدار "+k+" برای اعمال گروهی باید مثبت و معتبر باشد.");
   });
   if(x.Fu<x.Fy)issues.push(g.label+": Fu کمتر از Fy ثبت شده است؛ داده مصالح را بازبینی کنید.");
