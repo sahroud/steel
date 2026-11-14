@@ -769,11 +769,12 @@
     const loads=window.SteelLoads?.getData?.()||{};
     const frameTrib=frames.map((z,i)=>i===0?(frames[1]-z)/2:i===frames.length-1?(z-frames[i-1])/2:(frames[i+1]-frames[i-1])/2);
     members.forEach(m=>{
+      m.lineLoads={dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,unit:"kN/m",loadRole:"self-weight-only-or-connected-reactions"};
       if(m.axis==="transverse"){
         const fi=(m.frame||1)-1,tw=frameTrib[fi]||spacing;
-        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:(loads.deadLeft||0)*tw,live:(loads.liveLeft||0)*tw,snow:(loads.snowLeft||0)*tw,wind:0,unit:"kN/m",tributaryWidth:tw};
-        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw,live:(loads.liveRight||0)*tw,snow:(loads.snowRight||0)*tw,wind:0,unit:"kN/m",tributaryWidth:tw};
-        else m.lineLoads={wind:0,unit:"kN/m",tributaryWidth:tw};
+        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,unit:"kN/m",loadRole:"purlin-support-reactions-and-member-self-weight",tributaryWidth:tw};
+        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,unit:"kN/m",loadRole:"purlin-support-reactions-and-member-self-weight",tributaryWidth:tw};
+        else m.lineLoads={dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,unit:"kN/m",loadRole:"self-weight-only-or-connected-reactions",tributaryWidth:tw};
       } else if(m.sectionKey==="roofPurlin"){
         const w=m.tributaryWidth||0;
         if(m.side==="ridge"){
@@ -784,19 +785,19 @@
             snow:(loads.snowLeft||0)*wl+(loads.snowRight||0)*wr,
             wind:(loads.windLeft||0)*wl+(loads.windRight||0)*wr,
             windLeft:(loads.windLeft||0)*wl,windRight:(loads.windRight||0)*wr,
-            unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr
+            windEnd:0,loadRole:"roof-surface-tributary-load",unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr
           };
         }else{
           const side=m.side==="left"?"Left":"Right";
-          m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,windLeft:m.side==="left"?(loads.windLeft||0)*w:0,windRight:m.side==="right"?(loads.windRight||0)*w:0,unit:"kN/m",tributaryWidth:w};
+          m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,windLeft:m.side==="left"?(loads.windLeft||0)*w:0,windRight:m.side==="right"?(loads.windRight||0)*w:0,windEnd:0,loadRole:"roof-surface-tributary-load",unit:"kN/m",tributaryWidth:w};
         }
       } else if(m.sectionKey==="wallGirt"){
         const h=m.tributaryHeight||0;
-        m.lineLoads={wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h};
+        m.lineLoads={dead:0,live:0,snow:0,wind:(loads.windWall||0)*h,windLeft:0,windRight:0,windEnd:0,loadRole:"longitudinal-wall-pressure",unit:"kN/m",tributaryHeight:h};
       } else if(m.sectionKey==="endGirt"){
         const h=m.tributaryHeight||0;
         const pressure=m.endFace==="front"?(loads.windEndFront||0):(loads.windEndBack||0);
-        m.lineLoads={windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure};
+        m.lineLoads={dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:pressure*h,loadRole:"end-wall-pressure-below-gable",unit:"kN/m",tributaryHeight:h,pressureKPa:pressure};
       }
     });
     const runwayOffsetInput=$("craneRunwayAxisOffset"),runwaySupportInput=$("craneRunwaySupportType");
