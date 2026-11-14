@@ -121,6 +121,8 @@
       '<div id="craneRunwayRailMovingResult" class="notice">پوش بار متحرک هنوز محاسبه نشده است.</div>' +
       '<div class="form-grid">' +
       '<div class="field"><label for="modelPurlinSpacing">فاصله پرلین‌های سقف (m)</label><input id="modelPurlinSpacing" type="number" min="0.3" step="0.05" value="0.95"></div>' +
+      '<div class="field"><label for="modelRoofOverhang">پیش‌آمدگی عرضی سقف از لبه رفتر (m)</label><input id="modelRoofOverhang" type="number" min="0" step="0.05" value="0"></div>' +
+      '<div class="field"><label for="modelEndOverhang">پیش‌آمدگی طولی سقف در دو انتهای سوله (m)</label><input id="modelEndOverhang" type="number" min="0" step="0.05" value="0"></div>' +
       '<div class="field"><label for="modelPurlinClipDeduction">کسر مجموع دو انتهای کلیپس از طول برش هر پرلین (m)</label><input id="modelPurlinClipDeduction" type="number" min="0" step="0.005" value="0"></div>' +
       '<div class="field"><label for="modelPurlinAssemblyGap">لقی مونتاژ کل هر قطعه پرلین (m)</label><input id="modelPurlinAssemblyGap" type="number" min="0" step="0.005" value="0"></div>' +
       '<div class="field"><label for="modelGirtSpacing">فاصله قیدهای افقی دیوار (m)</label><input id="modelGirtSpacing" type="number" min="0.3" step="0.05" value="3.00"></div>' +
@@ -588,11 +590,13 @@
     const craneEnabled=!!craneData.enabled;
     const runwayElevation=Number(craneData.runwayElevation_m);
     const psp=val("modelPurlinSpacing",1.2), gsp=val("modelGirtSpacing",1.5), endsp=val("modelEndPostSpacing",4);
+    const roofOverhang=val("modelRoofOverhang",0), endOverhang=val("modelEndOverhang",0);
     const braceBays=Math.max(0,Math.floor(val("modelBraceBays",1)));
-    if ([span,length,spacing,height,psp,gsp,endsp].some(x=>!(x>0)) || rise<0) throw new Error("ابعاد اصلی و فاصله اعضای فرعی باید مثبت باشند.");
+    if ([span,length,spacing,height,psp,gsp,endsp].some(x=>!(x>0)) || rise<0 || !Number.isFinite(roofOverhang) || roofOverhang<0 || !Number.isFinite(endOverhang) || endOverhang<0)
+      throw new Error("ابعاد اصلی، فاصله اعضای فرعی و پیش‌آمدگی‌های سقف باید معتبر و نامنفی باشند.");
     const frames=[0]; for(let z=spacing;z<length-1e-8;z+=spacing) frames.push(z);
     if(length-frames[frames.length-1]>1e-8) frames.push(length);
-    const nodes=[],members=[],frameNodes=[],half=span/2,slope=Math.hypot(half,rise),cs=half/slope,sn=rise/slope,over=0.8;
+    const nodes=[],members=[],frameNodes=[],half=span/2,slope=Math.hypot(half,rise),cs=half/slope,sn=rise/slope,over=roofOverhang;
     const girtHeights=[],nGirt=Math.max(0,Math.floor(height/gsp));
     for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
     const roofY=x=>height+(x<=half?rise*x/half:rise*(span-x)/half);
@@ -661,7 +665,7 @@
       // Each bay is one fabricated piece. End-bay pieces pass over the end frame.
       for(let bay=0;bay<frames.length-1;bay++){
         const z1=frames[bay],z2=frames[bay+1],axisLength=z2-z1;
-        const frontExtension=bay===0?over:0, rearExtension=bay===frames.length-2?over:0;
+        const frontExtension=bay===0?endOverhang:0, rearExtension=bay===frames.length-2?endOverhang:0;
         const fabricationLength=axisLength+frontExtension+rearExtension-clipDeduction-assemblyGap;
         if(!(fabricationLength>0))throw new Error("طول برش پرلین در دهانه "+(bay+1)+" مثبت نیست؛ ابعاد کلیپس و لقی مونتاژ را بررسی کنید.");
         const pieceId="PURLIN_"+station.row+"_"+station.side+"_BAY_"+(bay+1);
@@ -686,12 +690,12 @@
       }
     });
     // Connect the transverse roof-edge member to every purlin tail.
-    [-over,length+over].forEach(z=>{
+    [-endOverhang,length+endOverhang].forEach(z=>{
       const edgeStations=Array.from(purlinStations.values()).sort((a,b)=>a.x-b.x);
       const edge=edgeStations.map(station=>addNode(nodes,station.x,roofY(station.x),z,"roof-edge"));
       for(let i=0;i<edge.length-1;i++){
         addMember(members,edge[i],edge[i+1],"تیر لبه عرضی پیش‌آمدگی سقف","roofEdge",{
-          endFace:z<0?"front":"rear",overhang:0.8,
+          endFace:z<0?"front":"rear",overhang:endOverhang,
           stationStart:edgeStations[i].row,stationEnd:edgeStations[i+1].row,
           connectsPurlinTail:true
         });
@@ -797,7 +801,7 @@
     const runwayRailLayoutInputs=readRunwayRailLayoutInputs();
     const runwayRailLayoutAudit=auditRunwayRailLayout(runwayRailLayoutInputs,length,runwayLoadPathInputs);
     const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,length,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType,sectionInputs:runwaySectionInputs,sectionAudit:runwaySectionAudit,stiffenerInputs:runwayStiffenerInputs,webAudit:runwayWebAudit,loadPathInputs:runwayLoadPathInputs,loadPathAudit:runwayLoadPathAudit,contactScreen:runwayContactScreen,fasteningInputs:runwayFasteningInputs,fasteningAudit:runwayFasteningAudit,railLayoutInputs:runwayRailLayoutInputs,railLayoutAudit:runwayRailLayoutAudit});
-    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,roofPurlinActualSpacing:purlinLayout.actualSpacingM,roofPurlinIntervalsPerSlope:purlinLayout.intervals,roofPurlinStationCountPerSlope:purlinLayout.stationCount,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry,railFemInputs:{...readRunwayRailFEMInputs(),movingTrainJson:String($("craneRunwayRailMovingTrain")?.value||""),movingStepM:String($("craneRunwayRailMovingStep")?.value||"0.25")}},roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
+    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,roofPurlinActualSpacing:purlinLayout.actualSpacingM,roofPurlinIntervalsPerSlope:purlinLayout.intervals,roofPurlinStationCountPerSlope:purlinLayout.stationCount,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry,railFemInputs:{...readRunwayRailFEMInputs(),movingTrainJson:String($("craneRunwayRailMovingTrain")?.value||""),movingStepM:String($("craneRunwayRailMovingStep")?.value||"0.25")}},roofOverhang,endOverhang},nodes,members,generatedAt:new Date().toISOString()};
     if(window.SteelCrane3DMeshProposal&&model.geometry.craneRunway.enabled){
       model.geometry.craneRunway.meshProposal=window.SteelCrane3DMeshProposal.audit(model);
     }
