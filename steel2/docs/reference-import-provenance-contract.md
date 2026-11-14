@@ -28,3 +28,8 @@ The lifecycle does not itself grant solver eligibility. A later, separately revi
 - A suffix or object number is not automatically a physical station or member ID.
 - No geometry, load, or design result may be activated solely because it parses.
 - Legacy values remain historical until current code basis and project conditions are re-established.
+
+
+## Coordinate convention clarification — 2026-11-14
+
+Coordinates in a global or local structural model may legitimately be negative when the chosen origin lies inside or outside the structure. The import schema therefore accepts signed numeric coordinates (or null when unresolved); it does not impose a non-negative lower bound. Coordinate axis, reference origin, units, and member start/end orientation remain separate required engineering interpretations and must be resolved before geometry activation.
