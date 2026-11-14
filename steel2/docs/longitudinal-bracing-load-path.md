@@ -57,3 +57,8 @@ The audit is a user-triggered browser check; it has not been run against the cur
 The tensile-input readiness audit now attempts to obtain the maximum tensile axial demand for each configured member group (`roofBrace`, `wallBrace`, and `endPost`) from the current member-force envelope. It normalizes end I as `-Fx_i` and end J as `+Fx_j`, then searches all exact load-case labels and all members in the group. Extraction is blocked unless the envelope is equilibrated, the solver sign convention is recognized, and every group member has complete per-case force vectors. A manually entered demand is retained but compared with the FEM-derived maximum and a warning is emitted when the difference exceeds 1% (with a 0.01 kN floor).
 
 This bridge supplies demand only. Gross yielding, net/effective-section rupture, block shear, shear lag, gusset, bolt and weld resistance remain unimplemented pending the applicable official clause set and connection geometry.
+
+
+## FEM compression-demand bridge
+
+The compression-member readiness audit now extracts the maximum compression demand for each configured member group from the current member-force envelope. It checks both ends of every member and every exact load-case label, retaining the governing member, case and end. Extraction is blocked unless all cases equilibrate, the verified axial sign convention is present, all force vectors are valid, and the member/case coverage is exact. This is demand extraction only; it does not calculate compression resistance, effective length, local slenderness, flexural-torsional buckling or N-M interaction.
