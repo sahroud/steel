@@ -79,9 +79,9 @@ function audit(model,loads){
  const missingRoofSideAssignments=groups.purlins.filter(m=>m.side==="left"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="right"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="ridge"?!(finite(m.lineLoads?.tributaryWidthLeft)&&m.lineLoads.tributaryWidthLeft>0&&finite(m.lineLoads?.tributaryWidthRight)&&m.lineLoads.tributaryWidthRight>0):true);
  if(missingRoofSideAssignments.length)issues.push("عرض بارگیر چپ/راست پرلین یا پرلین تاج نامعتبر است: "+missingRoofSideAssignments.slice(0,10).map(m=>String(m.id)).join("، "));
  const wallEnvelope=root.SteelDesignCore?.getData?.()?.wallEnvelope;
+ const wallTransfer=root.SteelWallDeadLoadTransfer?.audit?.(model)||null;
  if(wallEnvelope&&typeof wallEnvelope==="object"){
   const faces=["front","rear","left","right"].filter(face=>wallEnvelope[face]?.material);
-  const wallTransfer=root.SteelWallDeadLoadTransfer?.audit?.(model);
   const wallReady=wallTransfer?.success===true&&wallTransfer?.loadTransferEnabled===true;
   if(faces.length&&!wallReady)issues.push("وزن مرده پوسته دیوارها به مدل سازه/واکنش فونداسیون منتقل نشده است؛ نوع مصالح به‌تنهایی مسیر بار را مشخص نمی‌کند. برای هر وجه باید اتکای دیوار به فونداسیون یا انتقال به گرت/ستونک و وزن سطحی مستند شود.");
   if(faces.length)rows.push({id:"wall-cladding-dead-load",label:"وزن مرده پوسته دیوارها",memberCount:faces.length,coveredCount:wallReady?faces.length:0,missingCount:wallReady?0:faces.length,invalidCount:0,status:wallReady?"assigned":"incomplete",faces,transfer:"wall cladding/masonry → documented support system → steel frame or foundation"});
