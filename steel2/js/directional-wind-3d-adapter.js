@@ -129,7 +129,48 @@ function auditGablePressure(pressures,model){
  if(!eccentricTransfer?.success)throw Error("ممیزی بارهای گره‌ای سازگار و پیچش ناشی از خروج از مرکزیت گابل ناموفق است: "+(eccentricTransfer?.issues||["ماژول انتقال خارج از مرکزیت بارگذاری نشده است."]).join("؛ "));
  return {ready:true,activeSurfaces:active,topology,coverage,resultants,eccentricTransfer:{success:true,memberCount:eccentricTransfer.rows.length,nodalLoadCount:eccentricTransfer.loads.length},scope:"end-wall pressure transferred to horizontal end-girts; exact strip resultants and consistent eccentric nodal loads audited",analysisEnabled:false,designApproved:false};
 }
-function createCases(){const a=audit();if(!a.ready)throw Error("انتقال باد جهت‌دار متوقف شد: "+a.issues.join("؛ "));const w=root.SteelDirectionalWind.getData(),combos=root.SteelLoads?.getData?.()?.combinations;if(!Array.isArray(combos)||!combos.length)throw Error("ترکیبات ثقلی موجود نیستند.");const cases=[],model=root.SteelStructuralModel?.getData?.();DIRS.forEach(d=>["positive","negative"].forEach(s=>{const key=s==="positive"?"netWithPositiveInternal":"netWithNegativeInternal",pressures={};SURFACES.forEach(k=>pressures[k]=w.directions[d].surfaces[k][key]);auditGablePressure(pressures,model);combos.forEach((c,i)=>{const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:1};if(["dead","live","snow"].some(k=>c[k]===undefined||c[k]===null||c[k]===""||!finite(factors[k])||factors[k]<0))throw Error("ضریب ترکیب بار نامعتبر است: "+String(c.name||i+1));cases.push({id:"WIND-"+d.toUpperCase()+"-INT-"+s.toUpperCase()+"-C"+(i+1),label:String(c.name||("ترکیب "+(i+1)))+" | "+w.directions[d].label+" | فشار داخلی "+s,factors,windSign:1,directionalWindCaseId:d+"-"+s,directionalWindPressures:{direction:d,internalPressureSign:s,surfaces:pressures,unit:"kN/m2"},analysisEnabled:false,designApproved:false});});}));return{cases,caseCount:cases.length,analysisEnabled:false,designApproved:false,limitations:["Cpهای دستی و مقدماتی و نیازمند تطبیق رسمی‌اند.","ترکیبات بار فعلی هنوز تأیید نهایی آیین‌نامه‌ای نشده‌اند.","نواحی لبه/گوشه، بازشوهای غالب، پیچش کلی و فشار بر اجزای فرعی کامل نیست.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش و طراحی عضو/اتصال در این ماژول انجام نمی‌شود."]};}
+function createCases(){
+ const a=audit();
+ if(!a.ready)throw Error("انتقال باد جهت‌دار متوقف شد: "+a.issues.join("؛ "));
+ const w=root.SteelDirectionalWind.getData(),loads=root.SteelLoads?.getData?.(),model=root.SteelStructuralModel?.getData?.();
+ if(!loads||!model)throw Error("دفتر بارگذاری یا مدل هندسی برای ساخت حالات باد در دسترس نیست.");
+ const requiredLoads=["deadLeft","deadRight","liveLeft","liveRight","snowLeft","snowRight"];
+ const missing=requiredLoads.filter(k=>loads[k]===undefined||loads[k]===null||loads[k]===""||!Number.isFinite(Number(loads[k])));
+ if(missing.length)throw Error("ورودی‌های صریح D/Lr/S برای تحلیل باد ناقص‌اند: "+missing.join("، "));
+ const patterns=[
+  {id:"ULS-03-LR",label:"1.2D + 1.6Lr + 0.7W",factors:{dead:1.2,live:1.6,snow:0,wind:0.7}},
+  {id:"ULS-03-S",label:"1.2D + 1.6S + 0.7W",factors:{dead:1.2,live:0,snow:1.6,wind:0.7}},
+  {id:"ULS-06",label:"0.9D + 1.4W",factors:{dead:0.9,live:0,snow:0,wind:1.4}}
+ ];
+ const cases=[];
+ DIRS.forEach(d=>["positive","negative"].forEach(s=>{
+  const key=s==="positive"?"netWithPositiveInternal":"netWithNegativeInternal",pressures={};
+  SURFACES.forEach(k=>pressures[k]=w.directions[d].surfaces[k][key]);
+  auditGablePressure(pressures,model);
+  patterns.forEach(pattern=>{
+   cases.push({
+    id:"WIND-"+d.toUpperCase()+"-INT-"+s.toUpperCase()+"-"+pattern.id,
+    label:pattern.label+" | "+w.directions[d].label+" | فشار داخلی "+s,
+    factors:{...pattern.factors},windSign:1,
+    directionalWindCaseId:d+"-"+s+"-"+pattern.id,
+    directionalWindPressures:{direction:d,internalPressureSign:s,surfaces:pressures,unit:"kN/m2"},
+    source:{code:"مبحث ششم ۱۳۹۸",clause:pattern.id==="ULS-06"?"۶-۲-۳-۲، ترکیب ۶":"۶-۲-۳-۲، ترکیب ۳",
+      note:"قالب محدود به D/Lr/S/W موجود؛ نیازمند تطبیق مهندس مسئول با متن رسمی و شرایط پروژه"},
+    analysisEnabled:false,designApproved:false
+   });
+  });
+ }));
+ return{cases,caseCount:cases.length,patternCount:patterns.length,directionCount:DIRS.length,internalPressurePatternCount:2,
+  patterns:patterns.map(x=>({id:x.id,label:x.label,factors:{...x.factors}}),
+  analysisEnabled:false,designApproved:false,
+  limitations:[
+   "حالات باد فقط از ترکیبات ۳ و ۶ مبحث ششم ۱۳۹۸ و ورودی‌های D/Lr/S موجود ساخته می‌شوند؛ ترکیب ۴ به‌دلیل نبود بار زنده عمومی L مستقل ساخته نمی‌شود.",
+   "1.4D باید جداگانه و بدون باد تحلیل شود.",
+   "Cpها/فشارهای دفتر باد دستی و مقدماتی‌اند و باید با منبع رسمی پروژه تطبیق داده شوند.",
+   "نواحی لبه/گوشه، بازشوهای غالب، پیچش کلی و فشار بر اجزای فرعی کامل نیست.",
+   "تحلیل خطی مرتبه اول است؛ P-Delta، کمانش و طراحی عضو/اتصال در این ماژول انجام نمی‌شود."
+  ]};
+}
 let lastRun=null;
 function buildWindForceEnvelope(model,results){
  const api=root.SteelMemberForceEnvelope;
@@ -156,11 +197,11 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     const surfaces={};SURFACES.forEach(k=>surfaces[k]={netWithPositiveInternal:k.startsWith("end-wall-")?0:1,netWithNegativeInternal:k.startsWith("end-wall-")?0:1});
     const directions={};DIRS.forEach(d=>directions[d]={label:d,surfaces});
     root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
-    root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
+    root.SteelLoads={getData:()=>({deadLeft:1,deadRight:1,liveLeft:0,liveRight:0,snowLeft:0,snowRight:0})};
     root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5,length:10,height:6},nodes:[{id:"L0",x:0,y:0,z:0},{id:"L1",x:0,y:0,z:10},{id:"R0",x:20,y:0,z:0},{id:"R1",x:20,y:0,z:10}],members:[
      {id:"PL",sectionKey:"roofPurlin",side:"left",start:"L0",end:"L1",tributaryWidth:Math.hypot(10,5)},{id:"PR",sectionKey:"roofPurlin",side:"right",start:"R0",end:"R1",tributaryWidth:Math.hypot(10,5)},{id:"WL",sectionKey:"wallGirt",side:"left",start:"L0",end:"L1",tributaryHeight:6},{id:"WR",sectionKey:"wallGirt",side:"right",start:"R0",end:"R1",tributaryHeight:6},{id:"EG",sectionKey:"endGirt",endFace:"front",start:"L0",end:"R0",tributaryHeight:1}
     ]})};
-    return createCases().caseCount===8;
+    const built=createCases();return built.caseCount===24&&built.patternCount===3&&built.cases.every(x=>x.factors.wind===0.7||x.factors.wind===1.4)&&built.cases.some(x=>x.factors.live===1.6&&x.factors.snow===0)&&built.cases.some(x=>x.factors.live===0&&x.factors.snow===1.6)&&built.cases.some(x=>x.factors.dead===0.9&&x.factors.wind===1.4);
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
   });
   ck("case builder admits nonzero gable pressure only after exact area, centroid and eccentric-load transfer are available",()=>{
@@ -179,7 +220,7 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
     root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
     root.SteelStructuralModel={getData:()=>({geometry:gable.geometry,nodes,members})};
-    try{const result=createCases(),transfer=root.SteelGableEccentricLoadTransfer.prepareNodalLoads(root.SteelStructuralModel.getData(),result.cases[0].directionalWindPressures.surfaces,1,1);return result.cases.length===8&&transfer.success&&transfer.loads.length>0;}catch(e){return false;}
+    try{const result=createCases(),transfer=root.SteelGableEccentricLoadTransfer.prepareNodalLoads(root.SteelStructuralModel.getData(),result.cases[0].directionalWindPressures.surfaces,1,1);return result.cases.length===24&&result.cases[0].factors.wind===0.7&&transfer.success&&transfer.loads.length>0;}catch(e){return false;}
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
   });
  ck("tributary surface areas close exactly",()=>{const nodes=[{id:"a",x:0,y:0,z:0},{id:"b",x:0,y:0,z:5},{id:"c",x:10,y:0,z:0},{id:"d",x:10,y:0,z:5}];const members=[{id:"pl",sectionKey:"roofPurlin",side:"left",start:"a",end:"b",tributaryWidth:Math.hypot(5,5)},{id:"pr",sectionKey:"roofPurlin",side:"right",start:"c",end:"d",tributaryWidth:Math.hypot(5,5)},{id:"wl",sectionKey:"wallGirt",side:"left",start:"a",end:"b",tributaryHeight:5},{id:"wr",sectionKey:"wallGirt",side:"right",start:"c",end:"d",tributaryHeight:5}];const q=auditTributaryAreaCoverage({geometry:{span:10,rise:5,length:5,height:5},nodes,members});return q.success&&q.rows.length===4;});
