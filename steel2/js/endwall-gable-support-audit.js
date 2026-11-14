@@ -60,8 +60,18 @@ function audit(model){
    const active=xs.filter(x=>roofY(x)>=y-1e-6);
    for(let i=0;i<active.length-1;i++){
     const x1=active[i],x2=active[i+1];
-    const count=girts.filter(m=>{const a=getNode(m.start),b=getNode(m.end);return a&&b&&near(a.y,y)&&near(b.y,y)&&near(a.z,z)&&near(b.z,z)&&((near(a.x,x1)&&near(b.x,x2))||(near(a.x,x2)&&near(b.x,x1)));}).length;
+    const matching=girts.filter(m=>{const a=getNode(m.start),b=getNode(m.end);return a&&b&&near(a.y,y)&&near(b.y,y)&&near(a.z,z)&&near(b.z,z)&&((near(a.x,x1)&&near(b.x,x2))||(near(a.x,x2)&&near(b.x,x1)));});
+    const count=matching.length;
     if(count!==1)fail("ردیف گرت y="+y+" بین x="+x1+" و x="+x2+" باید دقیقاً یک عضو داشته باشد؛ تعداد: "+count);
+    matching.forEach(m=>{
+     const a=getNode(m.start),b=getNode(m.end);
+     const connected=(id,x)=>members.some(v=>{
+      if(!["column","endPost"].includes(v.sectionKey))return false;
+      if(v.start!==id&&v.end!==id)return false;
+      const p=getNode(id);return !!p&&near(p.x,x)&&near(p.z,z);
+     });
+     if(!connected(m.start,a.x)||!connected(m.end,b.x))fail("اتصال گره‌ای گرت "+m.id+" به ستون/ستونک در دو انتها برقرار نیست.");
+    });
    }
   });
   const faceOk=local.length===0;
@@ -98,6 +108,7 @@ function selfTest(){
  test("missing upper gable post segment is rejected",()=>{const m=fixture();const target=m.members.find(x=>x.sectionKey==="endPost"&&x.endFace==="front"&&(()=>{const a=m.nodes.find(n=>n.id===x.start),b=m.nodes.find(n=>n.id===x.end);return a&&b&&Math.max(a.y,b.y)>6;})());m.members=m.members.filter(x=>x!==target);return !audit(m).success;});
  test("duplicate end-girt segment is rejected",()=>{const m=fixture(),x=m.members.find(x=>x.sectionKey==="endGirt"&&x.endFace==="front");m.members.push({...x,id:"DUP"});return !audit(m).success;});
  test("missing rafter chord path is rejected",()=>{const m=fixture();m.members=m.members.filter(x=>!(x.sectionKey==="rafter"&&x.frame===1));return !audit(m).success;});
+ test("disconnected end-girt endpoint is rejected",()=>{const m=fixture(),g=m.members.find(x=>x.sectionKey==="endGirt"&&x.endFace==="front");const old=m.nodes.find(n=>n.id===g.start);const duplicate={...old,id:"DISCONNECTED"};m.nodes.push(duplicate);g.start=duplicate.id;return !audit(m).success;});
  test("audit never enables analysis or approves design",()=>{const r=audit(fixture());return r.analysisEnabled===false&&r.designApproved===false;});
  const passed=checks.filter(x=>x.ok).length;return{passed,failed:checks.length-passed,total:checks.length,checks};
 }
