@@ -589,10 +589,11 @@
                 if(n>peakN||v>peakV||mm>peakM)criticalMember=member.id;
                 peakN=Math.max(peakN,n);peakV=Math.max(peakV,v);peakM=Math.max(peakM,mm);
             });
-            const itemResult={name:item.label,envelope:{
+            const itemResult={name:item.label,label:item.label,factors:{...item.factors},windSign:item.windSign,envelope:{
                 N:{value:peakN/1000,member:criticalMember,end:"بیشینه دو انتها"},
                 V:{value:peakV/1000,member:criticalMember,end:"برآیند برش دو انتها"},
                 M:{value:peakM/1000,member:criticalMember,end:"برآیند لنگر دو انتها"}},
+                members:(result.members||[]).map(member=>({id:String(member.id),localEndForces:Array.isArray(member.localEndForces)?member.localEndForces.slice(0,12):[]})),
                 maxDisplacement:result.maxTranslation||0,
                 criticalNode:result.maxDisplacement?.nodeId||"—",
                 displacementComponents:(result.maxDisplacement?.components||[0,0,0]).map(v=>Number(v)||0),
