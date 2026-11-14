@@ -78,6 +78,12 @@ function audit(model,loads){
  if(missingTributaryHeight.length)issues.push("ارتفاع بارگیر گرت‌های طولی/انتهایی ناقص است: "+missingTributaryHeight.slice(0,10).map(m=>String(m.id)).join("، "));
  const missingRoofSideAssignments=groups.purlins.filter(m=>m.side==="left"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="right"?!(finite(m.lineLoads?.tributaryWidth)&&m.lineLoads.tributaryWidth>0):m.side==="ridge"?!(finite(m.lineLoads?.tributaryWidthLeft)&&m.lineLoads.tributaryWidthLeft>0&&finite(m.lineLoads?.tributaryWidthRight)&&m.lineLoads.tributaryWidthRight>0):true);
  if(missingRoofSideAssignments.length)issues.push("عرض بارگیر چپ/راست پرلین یا پرلین تاج نامعتبر است: "+missingRoofSideAssignments.slice(0,10).map(m=>String(m.id)).join("، "));
+ const gableChords=members.filter(m=>m.sectionKey==="rafter"&&m.axis==="endwall");
+ const frontEndWind=num(loads?.windEndFront),backEndWind=num(loads?.windEndBack);
+ const gableWindActive=(frontEndWind!==null&&Math.abs(frontEndWind)>1e-12)||(backEndWind!==null&&Math.abs(backEndWind)>1e-12);
+ const gableTransferReady=gableChords.length>0&&gableChords.every(m=>m.lineLoads?.gableWindTransfer===true&&finite(m.lineLoads?.gableWind));
+ if(gableWindActive&&!gableTransferReady)issues.push("باد دیوار انتهایی در ناحیه مثلثی بالای آخرین گرت هنوز مسیر بار مستند به رفتر قاب انتهایی/ستونک‌ها ندارد؛ تحلیل با باد انتهایی متوقف شود تا روش انتقال پوسته و عرض/ارتفاع بارگیر مستند شود.");
+ rows.push({id:"endwall-gable-wind",label:"باد ناحیه مثلثی دیوار انتهایی",memberCount:gableChords.length,coveredCount:gableTransferReady?gableChords.length:0,missingCount:gableWindActive&&!gableTransferReady?Math.max(1,gableChords.length):0,invalidCount:0,status:!gableWindActive?"not-applicable":gableTransferReady?"assigned":"incomplete",transfer:"gable cladding → documented end-wall post/top-chord tributary load → end frame"});
  const frameIds=[...new Set(groups.rafters.map(m=>Number(m.frame)).filter(Number.isFinite))];
  const frameCount=Array.isArray(model?.geometry?.frames)?model.geometry.frames.length:0;
  if(frameCount&&frameIds.length!==frameCount)issues.push("پوشش رفترها در قاب‌ها کامل نیست: "+frameIds.length+" از "+frameCount+" قاب دارای عضو رفتر شناسایی شد.");
@@ -90,7 +96,7 @@ function audit(model,loads){
   return {id:String(c.id??i),name:String(c.name??("ترکیب "+(i+1))),factors,valid:missing.length===0,missing};
  });
  comboRows.forEach(c=>{if(!c.valid)issues.push("ضرایب ترکیب "+c.name+" ناقص یا نامعتبر است: "+c.missing.join("، "));});
- const allAssigned=rows.length>0&&rows.every(r=>r.status==="assigned"||r.status==="structural-path");
+ const allAssigned=rows.length>0&&rows.every(r=>r.status==="assigned"||r.status==="structural-path"||r.status==="not-applicable");
  return {success:issues.length===0&&allAssigned,issues,rows,combinations:comboRows,connectivity:{supportNodeCount:supports.length,disconnectedMemberIds:disconnected},
   inventory:{memberCount:members.length,rafterCount:groups.rafters.length,purlinCount:groups.purlins.length,wallGirtCount:groups.wallGirts.length,endGirtCount:groups.endGirts.length,wallBraceCount:groups.wallBraces.length,roofBraceCount:groups.roofBraces.length,frameCount,rafterFrameCount:frameIds.length},
   scope:"ممیزی تخصیص ورودی‌های بار موجود به اعضا؛ نه تأیید مقدار بار، ضرایب آیین‌نامه‌ای، انتقال بار نهایی یا ایمنی سازه.",
@@ -132,7 +138,7 @@ function selfTest(){
  test("roof purlin tributary width required",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].lineLoads.tributaryWidth=0;return !audit(p,loads).success;});
  test("incomplete combination factors detected",()=>{const p={...loads,combinations:[{id:"C",dead:1.2,live:null,snow:0}]};return !audit(model,p).success;});
  test("duplicate member identifiers detected",()=>{const p={...model,members:[...members,{...members[0]}]};return !audit(p,loads).success;});
- test("all load groups explicitly reported",()=>audit(model,loads).rows.length===9);
+ test("all load groups explicitly reported",()=>audit(model,loads).rows.length===10);
  test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.2);
  test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
  test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
@@ -145,6 +151,8 @@ function selfTest(){
   test("wall and end-wall tributary heights are required",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[3].lineLoads.tributaryHeight;return !audit(p,loads).success;});
   test("all member paths must reach a declared base support",()=>{const p=JSON.parse(JSON.stringify(model));p.members[5].start="ORPHAN";return !audit(p,loads).success;});
  test("empty combination list allowed as load-path audit only",()=>{const p={...loads,combinations:[]};return audit(model,p).success;});
+ test("nonzero end-wall wind blocks unmodelled gable triangle",()=>{const p={...loads,windEndFront:.4};return !audit(model,p).success&&audit(model,p).issues.some(x=>x.includes("ناحیه مثلثی"));});
+ test("zero end-wall wind marks gable triangle not applicable",()=>{const p={...loads,windEndFront:0,windEndBack:0};return audit(model,p).rows.find(x=>x.id==="endwall-gable-wind").status==="not-applicable";});
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
 }
 function mount(){
