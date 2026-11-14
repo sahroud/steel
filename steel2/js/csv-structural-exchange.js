@@ -77,13 +77,13 @@ function auditProposal(proposal,options){
  return {success:issues.length===0,issues,warnings,summary,components,solverEligible:false,designApproved:false,geometryActivation:false};
 }
 function auditSelfTest(){
- const p={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2,y:0,z:0},{id:"C",x:5,y:0,z:0},{id:"D",x:5,y:0,z:0}],members:[{id:"M1",start:"A",end:"B"},{id:"M2",start:"C",end:"D"}]};
+ const p={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2,y:0,z:0},{id:"C",x:5,y:0,z:0},{id:"D",x:5,y:0,z:0},{id:"E",x:9,y:0,z:0}],members:[{id:"M1",start:"A",end:"B"},{id:"M2",start:"C",end:"D"}]};
  const r=auditProposal(p),checks=[
- ["counts reported",r.summary.nodeCount===4&&r.summary.memberCount===2],
- ["multiple components are warnings not fatal",r.success&&r.summary.componentCount===2],
- ["orphan nodes detected",r.summary.orphanNodeIds.length===0],
+ ["counts reported",r.summary.nodeCount===5&&r.summary.memberCount===2],
+ ["multiple components are warnings not fatal",r.success&&r.summary.componentCount===3],
+ ["orphan nodes detected",r.summary.orphanNodeIds.join(",")==="E"],
  ["coincident coordinates warned",r.warnings.some(x=>x.includes("coincident"))],
- ["component sizes retained",r.summary.componentNodeCounts.join(",")==="2,2"],
+ ["component sizes retained",r.summary.componentNodeCounts.join(",")==="2,2,1"],
  ["solver and approval remain blocked",r.solverEligible===false&&r.designApproved===false&&r.geometryActivation===false],
  ["empty proposal rejected",auditProposal({nodes:[],members:[]}).success===false]
  ];
