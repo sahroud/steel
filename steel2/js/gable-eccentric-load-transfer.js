@@ -119,6 +119,7 @@ function selfTest(){
  t("girt crossing ridge is rejected",()=>{const x=stripGeometry({...member,tributaryHeight:2,tributaryHeightLowerM:1,tributaryHeightUpperM:3},{id:"E",x:4,y:2,z:0},{id:"F",x:6,y:2,z:0},g);return !x.success;});
  t("missing strip bounds fail closed",()=>{const x=prepareNodalLoads({...model,members:[{...member,tributaryHeightLowerM:undefined}]},{"end-wall-front":0.3,"end-wall-back":0});return !x.success;});
  t("zero wind creates no eccentric loads",()=>{const x=prepareNodalLoads(model,{"end-wall-front":0,"end-wall-back":0},1,1);return x.success&&x.loads.length===0;});
+ t("generated gable loads are accepted by the 3D solver with equilibrium",()=>{if(!root.SteelFrame3D?.analyze)return false;const m={geometry:{span:10,height:4,rise:2},nodes:[{id:"A",x:0,y:2,z:0},{id:"B",x:5,y:2,z:0}],members:[{id:"G1",start:"A",end:"B",sectionKey:"endGirt",endFace:"front",tributaryHeight:4,tributaryHeightLowerM:1,tributaryHeightUpperM:5}]};const transfer=prepareNodalLoads(m,{"end-wall-front":0.3,"end-wall-back":0},1,1);m.members[0].analysisLoad={uniformLocal:[0,0,1200]};const r=root.SteelFrame3D.analyze(m,{sectionResolver:()=>({E:200e9,G:77e9,A:0.01,Iy:8e-5,Iz:2e-5,J:1e-5}),supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]}],nodalLoads:transfer.loads});return transfer.success&&r.success&&r.equilibrium?.ok===true;});
  t("invalid wind factor is rejected",()=>!prepareNodalLoads(model,{"end-wall-front":0.3,"end-wall-back":0},-1,1).success);
  return{passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
