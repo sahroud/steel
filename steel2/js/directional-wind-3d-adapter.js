@@ -161,7 +161,7 @@ function createCases(){
   });
  }));
  return{cases,caseCount:cases.length,patternCount:patterns.length,directionCount:DIRS.length,internalPressurePatternCount:2,
-  patterns:patterns.map(x=>({id:x.id,label:x.label,factors:{...x.factors}}),
+  patterns:patterns.map(x=>({id:x.id,label:x.label,factors:{...x.factors}})),
   analysisEnabled:false,designApproved:false,
   limitations:[
    "حالات باد فقط از ترکیبات ۳ و ۶ مبحث ششم ۱۳۹۸ و ورودی‌های D/Lr/S موجود ساخته می‌شوند؛ ترکیب ۴ به‌دلیل نبود بار زنده عمومی L مستقل ساخته نمی‌شود.",
@@ -218,7 +218,7 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     members.push({id:"WL",sectionKey:"wallGirt",side:"left",start:"WL0",end:"WL1",tributaryHeight:6});
     members.push({id:"WR",sectionKey:"wallGirt",side:"right",start:"WR0",end:"WR1",tributaryHeight:6});
     root.SteelDirectionalWind={getData:()=>({ready:true,directions})};
-    root.SteelLoads={getData:()=>({combinations:[{name:"test",dead:1,live:0,snow:0}]})};
+    root.SteelLoads={getData:()=>({deadLeft:1,deadRight:1,liveLeft:0,liveRight:0,snowLeft:0,snowRight:0})};
     root.SteelStructuralModel={getData:()=>({geometry:gable.geometry,nodes,members})};
     try{const result=createCases(),transfer=root.SteelGableEccentricLoadTransfer.prepareNodalLoads(root.SteelStructuralModel.getData(),result.cases[0].directionalWindPressures.surfaces,1,1);return result.cases.length===24&&result.cases[0].factors.wind===0.7&&transfer.success&&transfer.loads.length>0;}catch(e){return false;}
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
