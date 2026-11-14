@@ -27,7 +27,7 @@
   const fullGableTriangleArea=span*rise/2;
   const faceResults=faces.map(face=>{
    const posts=endPosts.filter(m=>m.endFace===face);
-   const chords=topChords.filter(m=>m.endFace===face);
+   const chords=topChords.filter(m=>m.gableChordFace===face);
    const girts=endGirts.filter(m=>m.endFace===face);
    const postGroups=new Map();
    posts.forEach(m=>{const key=String(m.post);if(!postGroups.has(key))postGroups.set(key,[]);postGroups.get(key).push(m);});
