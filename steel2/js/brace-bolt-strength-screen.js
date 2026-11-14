@@ -16,6 +16,8 @@ function calculateBolt(c,d){
  if(c.boltConnectionType!=="bearing-type")issues.push("این موتور فقط اتصال bearing-type را پوشش می‌دهد؛ اتصال slip-critical باید جداگانه کنترل شود.");
  if(c.eccentricityMm!==0)issues.push("خروج از مرکزیت غیرصفر است؛ تحلیل گروه پیچ خارج از مرکز در این نسخه وجود ندارد.");
  if(c.boltPryingIncluded!==true)issues.push("تقاضای کشش پیچ باید اثر prying را لحاظ کند یا عدم نیاز آن مستند شده باشد.");
+ if(!String(c.boltGrade||"").trim())issues.push("گرید پیچ باید مستند باشد.");
+ if(c.loadPathReviewed!==true||c.connectionDrawingReviewed!==true)issues.push("بازبینی مسیر انتقال نیرو و تطبیق نقشه اتصال الزامی است.");
  if(![true,false].includes(c.threadsInShearPlane))issues.push("وضعیت رزوه در صفحه برش باید مشخص باشد.");
  if(!["yes","no"].includes(c.deformationAtServiceLoad))issues.push("ملاک تغییرشکل سوراخ در بار سرویس باید مشخص شود.");
  if(c.shearPlaneCount!==1)issues.push("این نسخه فقط یک صفحه برش پیچ را محاسبه می‌کند؛ چندصفحه‌ای نیازمند توزیع صریح برش در هر صفحه است.");
@@ -65,7 +67,7 @@ function run(){const r=analyze(root.SteelMemberForceEnvelope?.getLast?.(),root.S
 function init(){if(document.getElementById("braceBoltStrengthPanel"))return;const p=document.createElement("section");p.className="panel";p.id="braceBoltStrengthPanel";p.innerHTML="<div class='panel-title'><h3>غربال مقاومت اتصال پیچی مهاربند</h3><span class='status'>AISC 360-22 · LRFD مقدماتی</span></div><div class='notice'>مشخصات Ab، Fnt، Fnv و تقاضای تک‌تک پیچ‌ها برای هر ترکیب را از مدارک معتبر وارد کنید. توزیع نیرو بین پیچ‌ها خودکار فرض نمی‌شود. فقط یک صفحه برش و سوراخ استاندارد بررسی می‌شود.</div><button type='button' class='btn primary' id='btnBraceBoltStrengthRun'>محاسبه مقاومت پیچ‌ها</button><div id='braceBoltStrengthResult' class='notice'>ابتدا اطلاعات اتصال و JSON نیروهای هر پیچ را تکمیل کنید.</div>";const a=document.getElementById("braceGussetStrengthPanel");if(a?.parentNode)a.insertAdjacentElement("afterend",p);else document.querySelector("main")?.appendChild(p);document.getElementById("btnBraceBoltStrengthRun").addEventListener("click",run);}
 
 function selfTest(){
- const c={boltAbMm2:245,boltFntMPa:620,boltFnvMPa:372,boltDiameterMm:20,holeDiameterMm:22,connectedThicknessMm:10,connectedFuMPa:360,shearPlaneCount:1,boltHoleType:"standard",boltConnectionType:"bearing-type",deformationAtServiceLoad:"yes",eccentricityMm:0,boltPryingIncluded:true,threadsInShearPlane:false};
+ const c={boltAbMm2:245,boltFntMPa:620,boltFnvMPa:372,boltDiameterMm:20,holeDiameterMm:22,connectedThicknessMm:10,connectedFuMPa:360,shearPlaneCount:1,boltHoleType:"standard",boltConnectionType:"bearing-type",deformationAtServiceLoad:"yes",eccentricityMm:0,boltPryingIncluded:true,threadsInShearPlane:false,boltGrade:"8.8",loadPathReviewed:true,connectionDrawingReviewed:true};
  const t=[],add=(n,f)=>{try{t.push({name:n,pass:f()===true});}catch(e){t.push({name:n,pass:false,error:e.message});}};
  const d={tensionN:10000,shearPerPlaneN:15000,clearDistanceMm:30};
  add("calculates bolt shear resistance with LRFD phi 0.75",()=>{const r=calculateBolt(c,d);return r.ok&&Math.abs(r.shear.availableN-0.75*372*245)<1e-6;});
