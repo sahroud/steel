@@ -11,7 +11,8 @@ function section(s){
  const Ix=2*((b*Math.pow(tf,3))/12+b*tf*Math.pow((d-tf)/2,2))+tw*Math.pow(hw,3)/12;
  const Iy=2*tf*Math.pow(b,3)/12+hw*Math.pow(tw,3)/12;
  const J=(2*b*Math.pow(tf,3)+hw*Math.pow(tw,3))/3;
- return {A_mm2:A,Ix_mm4:Ix,Iy_mm4:Iy,J_mm4_thinWall:J,rx_mm:Math.sqrt(Ix/A),ry_mm:Math.sqrt(Iy/A),Sx_mm3:Ix/(d/2),Sy_mm3:Iy/(b/2),webClearDepth_mm:hw,depth_mm:d,flangeWidth_mm:b,flangeThickness_mm:tf,webThickness_mm:tw};
+ const h0=d-tf,Cw_mm6=Iy*h0*h0/4,Zpx_mm3=b*tf*(d-tf)+tw*hw*hw/4,Zpy_mm3=tf*b*b/2+hw*tw*tw/4,Aw_mm2=hw*tw;
+ return {A_mm2:A,Ix_mm4:Ix,Iy_mm4:Iy,J_mm4_thinWall:J,Cw_mm6,rx_mm:Math.sqrt(Ix/A),ry_mm:Math.sqrt(Iy/A),Sx_mm3:Ix/(d/2),Sy_mm3:Iy/(b/2),Zpx_mm3,Zpy_mm3,Aw_mm2,webClearDepth_mm:hw,flangeOutstand_mm:(b-tw)/2,flangeOutstandRatio:(b-tw)/(2*tf),webDepthThicknessRatio:hw/tw,depth_mm:d,flangeWidth_mm:b,flangeThickness_mm:tf,webThickness_mm:tw};
 }
 function evaluate(input){
  const x=input||{},issues=[],L=num(x.length_m),raw=Array.isArray(x.stations)?x.stations:[];
@@ -55,7 +56,9 @@ function evaluate(input){
 function selfTest(){
  const base={length_m:6,sectionFamily:"welded-I",geometrySource:"shop-drawing",dimensionsVerified:true,maxStationSpacing_m:1,stations:[{x_m:0,depth_mm:500,flangeWidth_mm:200,flangeThickness_mm:12,webThickness_mm:8},{x_m:6,depth_mm:500,flangeWidth_mm:200,flangeThickness_mm:12,webThickness_mm:8}]};
  const a=evaluate(base),b=evaluate({...base,stations:[{...base.stations[0]},{...base.stations[1],depth_mm:900}]}),c=evaluate({...base,dimensionsVerified:false}),d=evaluate({...base,stations:[base.stations[0],{...base.stations[1],depth_mm:10}]});
- const checks=[a.ok&&a.memberType==="prismatic"&&a.stations.length===7,b.ok&&b.memberType==="non-prismatic"&&b.stations[3].properties.depth_mm>500,!c.ok,!d.ok];
+ const p=section({depth_mm:500,flangeWidth_mm:200,flangeThickness_mm:12,webThickness_mm:8});
+ const propertyCheck=p.Cw_mm6>0&&p.Zpx_mm3>p.Sx_mm3&&p.Aw_mm2===3808&&p.flangeOutstand_mm===96;
+ const checks=[a.ok&&a.memberType==="prismatic"&&a.stations.length===7,b.ok&&b.memberType==="non-prismatic"&&b.stations[3].properties.depth_mm>500,!c.ok,!d.ok,propertyCheck];
  return {passed:checks.filter(Boolean).length,failed:checks.filter(v=>!v).length,checks};
 }
 root.SteelPrismaticNonprismaticSection={evaluate,sectionProperties:section,selfTest};
