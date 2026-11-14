@@ -52,9 +52,10 @@ function run(){
   window.SteelStructuralModel.draw?.();
   audit=window.SteelFreshModelStructuralAudit?.audit?.(model,window.SteelLoads?.getData?.()||{})||null;
   window.SteelAutoWorkflow?.run?.();
-  drawings=window.SteelConstructionDrawings?.build?.()||null;
+  try{drawings=window.SteelConstructionDrawings?.build?.()||null;}catch(e){drawings={success:false,issue:e?.message||String(e)};}
+  let boq=null;try{boq=window.SteelProjectBOQ?.refresh?.()||null;}catch(e){boq={success:false,issue:e?.message||String(e)};}
   const workflow=$("steelAutoWorkflowResults")?.innerText||"";
-  lastRun={generatedAt:new Date().toISOString(),inputs:d,model:{nodeCount:model.nodes?.length||0,memberCount:model.members?.length||0,nodes:model.nodes,members:model.members},freshModelAudit:audit,workflowReport:workflow,combinationResults:window.SteelAnalysis?.combinationResults||[],drawings:drawings,boq:window.SteelProjectBOQ?.getLast?.()||window.SteelProjectBOQ?.getData?.()||null,limitations:["این اجرا به معنی تکمیل طراحی آیین‌نامه‌ای نیست.","تحلیل سه‌بعدی کامل همه اعضای طولی/مهاربندها هنوز باید مستقل اعتبارسنجی شود.","ظرفیت همه اعضا، اتصالات، انکرها، بتن و خاک تا تکمیل داده و ماژول معتبر تأیید نمی‌شود.","داده اقلیمی شهر باید از منبع رسمی و موقعیت دقیق پروژه کنترل شود.","نقشه‌های موجود پارامتریک/شماتیک‌اند و لزوماً نقشه اجرایی نیستند."]};
+  lastRun={generatedAt:new Date().toISOString(),inputs:d,model:{nodeCount:model.nodes?.length||0,memberCount:model.members?.length||0,nodes:model.nodes,members:model.members},freshModelAudit:audit,workflowReport:workflow,combinationResults:window.SteelAnalysis?.combinationResults||[],drawings:drawings,boq:boq,limitations:["این اجرا به معنی تکمیل طراحی آیین‌نامه‌ای نیست.","تحلیل سه‌بعدی کامل همه اعضای طولی/مهاربندها هنوز باید مستقل اعتبارسنجی شود.","ظرفیت همه اعضا، اتصالات، انکرها، بتن و خاک تا تکمیل داده و ماژول معتبر تأیید نمی‌شود.","داده اقلیمی شهر باید از منبع رسمی و موقعیت دقیق پروژه کنترل شود.","نقشه‌های موجود پارامتریک/شماتیک‌اند و لزوماً نقشه اجرایی نیستند."]};
   status.textContent="مدل ساخته شد: "+lastRun.model.nodeCount+" گره و "+lastRun.model.memberCount+" عضو.\nممیزی مدل تازه: "+(audit?.success?"موفق در کنترل‌های موجود":"ناقص/نیازمند بررسی")+"\nگزارش مراحل خودکار در بخش تخصصی قابل مشاهده است.\nهیچ تأیید نهایی مهندسی از این اجرا استنباط نمی‌شود.";
   $("ssExportStatus").textContent="مدل آماده است؛ خروجی‌های مورد نظر را انتخاب کنید.";
  }catch(e){status.textContent="توقف امن: "+(e?.message||String(e))+"\nنتیجه تأییدنشده صادر نشد.";}
@@ -70,14 +71,14 @@ function report(){
 function makeRTF(s){return "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\viewkind4\\uc1\\f0\\fs22 "+s.split("\n").map(x=>"\\par "+rtf(x)).join("")+"}";}
 function csvRows(){
  const d=lastRun?.boq,rows=Array.isArray(d)?d:(d?.rows||d?.items||d?.lines||[]);
- return rows.map(x=>[x.code||x.key||"",x.label||x.description||x.name||"",x.quantity??x.qty??"",x.unit||"",x.source||x.status||""]);
+ return rows.map(x=>[x.category||x.code||x.key||"",x.description||x.label||x.name||"",x.quantity??x.qty??"",x.unit||"",x.status||x.source||""]);
 }
 function exportFiles(){
  if(!lastRun){$("ssExportStatus").textContent="ابتدا مدل را اجرا کنید.";return;}
  const done=[];
  if($("ssOutReport").checked){download("SAHROUD-STEEL-Calculation-Report.rtf",makeRTF(report()),"application/rtf;charset=utf-8");done.push("گزارش RTF قابل بازشدن در Word");}
  if($("ssOutJSON").checked){download("SAHROUD-STEEL-Project-Package.json",JSON.stringify(lastRun,null,2),"application/json;charset=utf-8");done.push("بسته JSON");}
- if($("ssOutBOQ").checked){const rows=csvRows();if(rows.length){const q=x=>'"'+String(x??"").replace(/"/g,'""')+'"';download("SAHROUD-STEEL-BOQ.csv","\uFEFF"+[["کد","شرح","مقدار","واحد","وضعیت"],...rows].map(r=>r.map(q).join(",")).join("\r\n"),"text/csv;charset=utf-8");done.push("متره CSV");}else done.push("متره هنوز خروجی قابل استخراج ندارد");}
+ if($("ssOutBOQ").checked){const snap=lastRun.boq,rows=csvRows();if(snap?.rows?.length&&window.SteelProjectBOQ?.csv){download("SAHROUD-STEEL-BOQ.csv",window.SteelProjectBOQ.csv(snap),"text/csv;charset=utf-8");done.push("متره CSV");}else if(rows.length){const q=x=>'"'+String(x??"").replace(/"/g,'""')+'"';download("SAHROUD-STEEL-BOQ.csv","\uFEFF"+[["بخش","شرح","مقدار","واحد","وضعیت"],...rows].map(r=>r.map(q).join(",")).join("\r\n"),"text/csv;charset=utf-8");done.push("متره CSV");}else done.push("متره هنوز خروجی قابل استخراج ندارد");}
  if($("ssOutCode").checked){download("SAHROUD-STEEL-Readiness.txt",report(),"text/plain;charset=utf-8");done.push("گزارش کنترل‌ها");}
  if($("ssOutPDF").checked){printReport();done.push("پنجره چاپ گزارش؛ گزینه Save as PDF را انتخاب کنید");}
  $("ssExportStatus").textContent=done.join("؛ ");
