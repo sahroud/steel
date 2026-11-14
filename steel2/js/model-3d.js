@@ -1369,6 +1369,10 @@
     if(!window.SteelMemberLoadPreflight?.audit)throw new Error("ماژول ممیزی نهایی بار تک‌تک اعضا بارگذاری نشده است.");
     const preparedMemberLoadAudit=window.SteelMemberLoadPreflight.audit(analysisModel.members);
     if(!preparedMemberLoadAudit.success)throw new Error("ممیزی نهایی بار اعضا پیش از حل‌گر ناموفق است: "+preparedMemberLoadAudit.issues.slice(0,10).join("؛ "));
+    // A complete member load ledger plus explicit local/global uniform vectors certifies
+    // the supported uniform member-load model for section-force reconstruction.
+    // This is load-data completeness only; it is not a resistance/design approval.
+    analysisModel.members.forEach(m=>{if(m.analysisLoad)m.analysisLoad.loadDataComplete=preparedMemberLoadAudit.success;});
     const fixed= $("baseConnection")?.value==="fixed";
     const supports=analysisModel.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>({
       nodeId:n.id,
