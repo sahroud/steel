@@ -5,6 +5,7 @@
 (function(root){
 "use strict";
 const finite=v=>typeof v==="number"&&Number.isFinite(v);
+const expectedAxialConvention={endI:"negative Fx_i",endJ:"positive Fx_j"};
 function audit(envelope,model){
  const issues=[],rows=[],members=Array.isArray(model?.members)?model.members:[];
  const braces=members.filter(m=>m.sectionKey==="wallBrace"||m.sectionKey==="roofBrace");
@@ -13,6 +14,9 @@ function audit(envelope,model){
  if(envelope?.allCasesEquilibriumOK!==true)issues.push("تعادل تمام حالت‌های تحلیل در پوش نیرو تأیید نشده است.");
  if((envelope?.invalidForceVectors||[]).length)issues.push("پوش نیرو دارای بردار نیروی نامعتبر است.");
  if((envelope?.analysisMemberSetMismatchCases||[]).length)issues.push("مجموعه اعضای تحلیل در ترکیبات یکسان نیست.");
+ const signCases=envelope?.localEndForceConvention?.verifiedSignCases?.axialTension;
+ const signConventionVerified=envelope?.localEndForceConvention?.version===1&&signCases?.endI===expectedAxialConvention.endI&&signCases?.endJ===expectedAxialConvention.endJ;
+ if(braces.length&&!signConventionVerified)issues.push("قرارداد علامت نیروی محوری دو انتهای عضو با قرارداد اعتبارسنجی‌شده حل‌گر تطبیق ندارد؛ طبقه‌بندی کشش/فشار مجاز نیست.");
  if((envelope?.unreportedMemberIds||[]).length)issues.push("برخی اعضای مدل در نتایج تحلیل گزارش نشده‌اند.");
  const envById=new Map((envelope?.members||[]).map(m=>[String(m.id),m]));
  braces.forEach(brace=>{
@@ -23,7 +27,8 @@ function audit(envelope,model){
   cases.forEach(c=>{
    const label=String(c.label||""),i=c.endI?.N,j=c.endJ?.N;
    if(!label||seen.has(label)||!finite(i)||!finite(j)){issues.push("حالت بار یا مؤلفه محوری دو سر مهاربند "+brace.id+" ناقص/تکراری است.");return;}
-   seen.add(label);demands.push({caseLabel:label,endI_N:i,endJ_N:j,maxAbsAxial_N:Math.max(Math.abs(i),Math.abs(j))});
+   seen.add(label);const ti=signConventionVerified?-i:null,tj=signConventionVerified?j:null;
+   demands.push({caseLabel:label,endI_N:i,endJ_N:j,endI_tension_N:signConventionVerified?Math.max(0,ti):null,endI_compression_N:signConventionVerified?Math.max(0,-ti):null,endJ_tension_N:signConventionVerified?Math.max(0,tj):null,endJ_compression_N:signConventionVerified?Math.max(0,-tj):null,maxAbsAxial_N:Math.max(Math.abs(i),Math.abs(j))});
   });
   rows.push({memberId:String(brace.id),sectionKey:brace.sectionKey,memberLength_m:finite(Number(brace.length))?Number(brace.length):null,caseCount:demands.length,simultaneousDemands:demands,forceConvention:envelope?.localEndForceConvention||null,status:demands.length===cases.length&&cases.length>0?"demand-extracted":"incomplete"});
  });
@@ -45,7 +50,7 @@ function audit(envelope,model){
 }
 function selfTest(){
  const model={members:[{id:"WB1",sectionKey:"wallBrace",length:5},{id:"RB1",sectionKey:"roofBrace",length:7}]};
- const envelope={allCasesEquilibriumOK:true,localEndForceConvention:{version:"test"},cases:[{label:"C1"},{label:"C2"}],members:[
+ const envelope={allCasesEquilibriumOK:true,localEndForceConvention:{version:1,verifiedSignCases:{axialTension:{endI:"negative Fx_i",endJ:"positive Fx_j"}}},cases:[{label:"C1"},{label:"C2"}],members:[
  {id:"WB1",simultaneousCases:[{label:"C1",endI:{N:100},endJ:{N:-120}},{label:"C2",endI:{N:80},endJ:{N:90}}]},
  {id:"RB1",simultaneousCases:[{label:"C1",endI:{N:200},endJ:{N:-220}},{label:"C2",endI:{N:180},endJ:{N:190}}]}]};
  const tests=[],t=(name,fn)=>{try{tests.push({name,pass:fn()===true});}catch(e){tests.push({name,pass:false,error:e.message});}};
@@ -58,6 +63,9 @@ function selfTest(){
  t("rejects non-equilibrated envelope",()=>!audit({...envelope,allCasesEquilibriumOK:false},model).success);
  t("rejects unknown local force convention",()=>!audit({...envelope,localEndForceConvention:null},model).success);
  t("rejects malformed axial end force",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[0].endI.N="100";return !audit(e,model).success;});
+ t("normalizes tensile actions at opposite member ends consistently",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[0].endI.N=-100;e.members[0].simultaneousCases[0].endJ.N=120;const r=audit(e,model),d=r.rows[0].simultaneousDemands[0];return r.success&&d.endI_tension_N===100&&d.endJ_tension_N===120&&d.endI_compression_N===0&&d.endJ_compression_N===0;});
+ t("normalizes compressive actions at opposite member ends consistently",()=>{const e=JSON.parse(JSON.stringify(envelope));e.members[0].simultaneousCases[0].endI.N=100;e.members[0].simultaneousCases[0].endJ.N=-120;const r=audit(e,model),d=r.rows[0].simultaneousDemands[0];return r.success&&d.endI_compression_N===100&&d.endJ_compression_N===120&&d.endI_tension_N===0&&d.endJ_tension_N===0;});
+ t("rejects unrecognized axial sign convention",()=>!audit({...envelope,localEndForceConvention:{version:2,verifiedSignCases:{axialTension:{endI:"wrong",endJ:"wrong"}}}},model).success);
  t("never reports capacity or design approval",()=>{const r=audit(envelope,model);return r.demandOnly&&r.analysisEnabled===false&&r.designApproved===false&&!r.rows.some(x=>"capacity_kN" in x);});
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software regression only; no member capacity verification"};
 }
