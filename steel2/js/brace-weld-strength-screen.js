@@ -72,6 +72,8 @@ function selfTest(){
  add("rejects Fu lower than Fy",()=>!calculateSegment({...c,baseMetalFuMPa:200},s).ok);
  add("rejects zero weld length",()=>!calculateSegment(c,{...s,effectiveLengthMm:0}).ok);
  add("does not issue design approval",()=>calculateSegment(c,s).designApproved===false);
+ add("rejects eccentric weld group",()=>!calculateSegment({...c,eccentricityMm:5},s).ok);
+ add("requires weld layout and load-path review",()=>!calculateSegment({...c,weldLayoutReference:"",loadPathReviewed:false},s).ok);
  return {passed:t.filter(x=>x.pass).length,failed:t.filter(x=>!x.pass).length,total:t.length,tests:t};
 }
 root.SteelBraceWeldStrengthScreen={effectiveLength,calculateSegment,analyze,run,selfTest};
