@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "legacy-crane-source-reconciliation",
+  "projectId": "SHAHROUD-24X60-CRANE30T-1396",
+  "source": {
+    "fileId": "id:K87BL9jA6x0AAAAAAACK1A",
+    "path": "/soole/FRAME Span(24)x60x12.75m-Crane 30t-SHAHROOD(1396-8-11@12,58).xlsx",
+    "method": "Dropbox extracted workbook text; sheet/cell coordinates unavailable in connector extraction",
+    "sourceReliability": "transcribed_legacy_values_not_independently_verified"
+  },
+  "commonInputs": {
+    "ratedCapacity_t": 30,
+    "trolleyMass_t": 4.5,
+    "trolleyWheelCount_reported": 4,
+    "trolleyWheelSpacing_m": 1.5,
+    "runwayWheelSpacing_m": 3.75,
+    "verticalImpactFactor": 1.25,
+    "reportedHorizontalFactors": {
+      "transverse": 0.2,
+      "longitudinal": 0.2
+    },
+    "bridgeCount_reported": 2,
+    "fatigueCycles_reported": 547500,
+    "maxMovesPerDay_reported": 50,
+    "serviceLifeYears_reported": 30
+  },
+  "distinctLegacyCases": [
+    {
+      "caseId": "CRANE-TYPE1-LEFT-LEGACY",
+      "trolleyWheelReaction_noImpact_t": 8.63,
+      "trolleyWheelReaction_withImpact_t": 10.78,
+      "bridgeMassUsed_t": 25.3,
+      "bridgeCount": 2,
+      "runwayWheelReaction_withImpact_t": 28.79,
+      "formula": "1.25 × [8.63 + 25.3/4 + 8.63×(24−1.5)/24]",
+      "supportReaction_reported_t": 16.7,
+      "sourceContext": "Workbook text around CRANE TYPE 1; maximum runway wheel reaction with impact"
+    },
+    {
+      "caseId": "CRANE-TYPE1-RIGHT-LEGACY",
+      "trolleyWheelReaction_noImpact_t": 7.8,
+      "trolleyWheelReaction_withImpact_t": 9.8,
+      "bridgeMassUsed_t": 8.1,
+      "bridgeCount": 2,
+      "runwayWheelReaction_withImpact_t": 21.49,
+      "formula": "1.25 × [7.8 + 8.1/4 + 7.8×(22.4−1.25)/22.4]",
+      "supportReaction_reported_t": 11.5,
+      "sourceContext": "Workbook text around right-side crane analysis"
+    },
+    {
+      "caseId": "CRANE-TYPE1-OTHER-WORKBOOK-SUMMARY",
+      "bridgeMass_t": 25.28,
+      "bridgeMassSource": "Workbook crane summary row",
+      "status": "mass_value_present_without_unambiguous bridge assignment in flattened extraction"
+    }
+  ],
+  "otherReportedValuesToReconcile": [
+    {
+      "value": 22.8,
+      "unit": "t",
+      "field": "bridgeMass",
+      "source": "previously transcribed workbook/report context",
+      "status": "conflicts_with_25.3_and_25.28; sheet/cell mapping needed"
+    },
+    {
+      "value": 26.588,
+      "unit": "tf",
+      "field": "runwayWheelReactionWithImpact",
+      "source": "prior extracted calculation note",
+      "status": "does_not_match_visible_28.79t_case; retain as unmapped legacy value until source cell/case identified"
+    }
+  ],
+  "interpretationLimits": [
+    "Workbook extraction flattened multiple worksheets; no cell addresses, formulas or merged-cell layout are available in this transcript.",
+    "Left/right cases must remain separate until bridge, runway and crane IDs are matched to drawings and supplier data.",
+    "Do not average or select one bridge mass/reaction value.",
+    "30 t rated capacity is not the same as maximum wheel reaction.",
+    "Do not apply these legacy values to the new solver until wheel positions, number of wheels, load distribution, bridge/end-truck mass and load direction are confirmed.",
+    "Legacy dynamic and horizontal factors require review against selected current design basis."
+  ],
+  "importGate": {
+    "status": "blocked_pending_vendor_data_and_sheet_cell_mapping",
+    "solverEnabled": false,
+    "designApproved": false
+  }
+}
