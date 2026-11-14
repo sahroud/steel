@@ -7,6 +7,7 @@ function run(){
  const checks=[];
  const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
  test("isolated nodal load-case runner self-test",()=>{const r=root.SteelNodalLoadCaseRunner?.selfTest?.();return r?.passed===11&&r.failed===0?"SI unit conversion, explicit inputs, isolated model, equilibrium and simultaneous member end actions: 11/11":false;});
+ test("solver action demand bridge self-test",()=>{const r=root.SteelSolverActionDemandBridge?.selfTest?.();return r?.passed===10&&r.failed===0?"12-component local end action mapping, case traceability, completeness and no-design-approval guards: 10/10":false;});
  test("design basis evidence intake is registered without approval",()=>{const x=root.SteelDesignBasisIntake;return x&&x.fields?.length===20?"20 evidence fields exposed; collection remains separate from design approval":false;});
  test("reference model viewer is registered independently of active project",()=>{return !!root.SteelReferenceModelViewer?"Isolated reference viewer API registered":false;});
  test("engineering roadmap exposes parallel workstreams and gates",()=>{const p=root.SteelEngineeringRoadmap?.phases;return Array.isArray(p)&&p.length===11&&p.every(x=>x.id&&x.gate)?"11 engineering workstreams and acceptance gates registered":false;});
