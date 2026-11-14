@@ -93,7 +93,9 @@ function audit(input){
   groups[g]={label,complete:local.length===0,issues:local,connectionType:d.connectionType,Ag_cm2:d.Ag_cm2,An_cm2:d.An_cm2,Ae_cm2:d.Ae_cm2,U:d.U,forceDemandKN:manualDemand??(demandBridge.ready?demandBridge.forceDemandKN:null),computedForceDemandKN:demandBridge.forceDemandKN,demandSource:demandBridge.ready?demandBridge.source:null,demandMemberCount:demandBridge.memberCount,demandCaseCount:demandBridge.caseCount,governingTension:demandBridge.governing,capacityScreen:capacityScreen||{ok:false,issues:["موتور غربال ظرفیت یا تقاضای FEM معتبر در دسترس نیست."],designApproved:false}};
   local.forEach(x=>issues.push(label+": "+x));
  });
- return {schemaVersion:1,readyForDataReview:issues.length===0,issues,warnings,groups,
+ const connectionAudit=root.SteelBraceConnectionReadiness?.audit?.();
+ if(connectionAudit&&connectionAudit.braceMemberCount>0)connectionAudit.issues.forEach(x=>issues.push("ممیزی اتصال مهاربند: "+x));
+ return {schemaVersion:1,readyForDataReview:issues.length===0,issues,warnings,groups,connectionAudit,
   note:"این ممیزی فقط کفایت داده‌های ورودی را می‌سنجد. ظرفیت تسلیم سطح ناخالص، گسیختگی سطح خالص/مؤثر، تأخیر برشی، خروج از مرکزیت و گسیختگی بلوکی محاسبه نشده‌اند.",
   disclaimer:"تا زمان پیاده‌سازی و اعتبارسنجی ضوابط رسمی مبحث دهم، این گزارش مجوز طراحی یا اجرا نیست."};
 }
@@ -113,7 +115,7 @@ function renderResult(r){
  const host=$("tensionDesignResults");if(!host)return;
  const demandRows=Object.values(r.groups||{}).map(g=>"<li>"+esc(g.label)+": "+(Number.isFinite(g.computedForceDemandKN)?g.computedForceDemandKN.toFixed(3)+" kN":"استخراج نشده")+(g.governingTension?" — "+esc(g.governingTension.memberId)+" / "+esc(g.governingTension.caseLabel)+" / انتهای "+esc(g.governingTension.end):"")+" — "+(g.demandSource?esc(g.demandSource):"نیازمند بررسی پوش نیرو")+"</li>").join("");
  const screenRows=Object.values(r.groups||{}).map(g=>{const x=g.capacityScreen;if(!x?.ok)return "<li>"+esc(g.label)+": غربال انجام نشد — "+esc((x?.issues||[]).join("؛ ")||"اطلاعات ناکافی")+"</li>";return "<li>"+esc(g.label)+": LRFD="+x.LRFD.designStrength_kN.toFixed(2)+" kN، نسبت تقاضا/مقاومت="+x.LRFD.utilization.toFixed(3)+"؛ ASD="+x.ASD.allowableStrength_kN.toFixed(2)+" kN، نسبت تقاضا/مجاز="+x.ASD.utilization.toFixed(3)+"؛ حالت حاکم LRFD: "+esc(x.LRFD.governing)+"؛ عضو/ترکیب: "+esc(x.governingMember||"—")+"/"+esc(x.governingCase||"—")+"</li>";}).join("");
- host.innerHTML="<h4>"+(r.readyForDataReview?"داده‌های اولیه تکمیل شده‌اند؛ کنترل‌های اتصال همچنان باید مستقل تکمیل شوند":"ورودی‌های ناقص برای طراحی کششی")+"</h4><h4>بیشینه تقاضای کششی استخراج‌شده از FEM</h4><ul>"+demandRows+"</ul><h4>غربال مقدماتی مقاومت کششی — غیرنهایی</h4><ul>"+screenRows+"</ul>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در این ممیزی شناسایی نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+"<div class='notice'>"+esc(r.note)+"<br>"+esc(r.disclaimer)+"</div>";
+ host.innerHTML="<h4>"+(r.readyForDataReview?"داده‌های اولیه تکمیل شده‌اند؛ کنترل‌های اتصال همچنان باید مستقل تکمیل شوند":"ورودی‌های ناقص برای طراحی کششی")+"</h4><h4>بیشینه تقاضای کششی استخراج‌شده از FEM</h4><ul>"+demandRows+"</ul><h4>غربال مقدماتی مقاومت کششی — غیرنهایی</h4><ul>"+screenRows+"</ul>"+(r.issues.length?"<ul>"+r.issues.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"<p>کمبود اجباری در این ممیزی شناسایی نشد.</p>")+(r.warnings.length?"<h4>هشدارها</h4><ul>"+r.warnings.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"")+(r.connectionAudit?("<h4>وضعیت اتصالات دو انتهای مهاربندها</h4><p>اتصالات مورد انتظار: "+r.connectionAudit.expectedConnectionCount+"؛ رکورد ثبت‌شده: "+r.connectionAudit.recordCount+"؛ وضعیت: "+(r.connectionAudit.ready?"کفایت داده‌ها":"ناقص")+"</p>"):"")+"<div class='notice'>"+esc(r.note)+"<br>"+esc(r.disclaimer)+"</div>";
 }
 function init(){
  if($("tensionDesignReadinessPanel"))return;
