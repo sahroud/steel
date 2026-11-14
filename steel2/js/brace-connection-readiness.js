@@ -124,7 +124,7 @@ function selfTest(){
  t("requires explicit plate material strengths and block-shear Ubs",()=>!audit({connections:both.map(x=>({...x,plateFyMPa:null,plateFuMPa:null,blockShearUbs:null}))},model).ready);
  t("rejects unsupported block-shear Ubs",()=>!audit({connections:both.map(x=>({...x,plateFyMPa:235,plateFuMPa:360,blockShearUbs:0.75}))},model).ready);
  t("never issues capacity or approval",()=>{const r=audit({connections:both},model);return r.analysisEnabled===false&&r.designApproved===false&&!r.capacity;});
- t("connection records survive project data round-trip",()=>{const old=getData();setData({connections:both});const x=getData(),ok=x.connections.length===2&&x.connections[0].memberId==="B1"&&x.connections[1].end==="J";setData(old);return ok;});
+ t("connection records survive project data round-trip",()=>{const old=getData();setData({connections:both});const x=getData(),ok=x.connections.length===2&&x.connections[0].memberId==="B1"&&x.connections[1].end==="J"&&x.connections[0].boltCaseDemandsJson==="{}"&&x.connections[0].boltConnectionType==="bearing-type"&&x.connections[0].boltPryingIncluded===true;setData(old);return ok;});
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"brace-end connection geometry and document completeness only; no code resistance calculation"};
 }
 root.SteelBraceConnectionReadiness={getData,setData,readUI:getData,audit,render,selfTest};
