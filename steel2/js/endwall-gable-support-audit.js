@@ -5,6 +5,7 @@
 (function(root){
 "use strict";
 const finite=v=>Number.isFinite(Number(v));
+const near=(a,b)=>Math.abs(Number(a)-Number(b))<=1e-6;
 function audit(model){
  const issues=[],faces=[],g=model?.geometry||{},nodes=Array.isArray(model?.nodes)?model.nodes:[],members=Array.isArray(model?.members)?model.members:[];
  const span=Number(g.span),length=Number(g.length),height=Number(g.height),rise=Number(g.rise),postSpacing=Number(g.endPostSpacing);
