@@ -87,6 +87,10 @@
       const loadOK=window.SteelLoads?.check?.()===true;
       addLine(rows,"همگام‌سازی و کنترل ورودی‌های بار",loadOK,
         loadOK?"بارهای موجود و علامت باد حفظ شدند.":"ورودی‌های بار یا پارامترهای اقلیمی نیازمند اصلاح‌اند.");
+      if(!loadOK) {
+        setReport(rows,"گزارش اجرای خودکار — توقف به علت ورودی بار نامعتبر");
+        return;
+      }
 
       // خواص مصالح باید پیش از ساخت/اعتبارسنجی مقاطع اولیه آماده شوند.
       const materialOK=prepareMaterial(rows);
