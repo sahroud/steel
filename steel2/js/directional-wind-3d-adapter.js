@@ -158,10 +158,10 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     root.SteelStructuralModel={getData:()=>({geometry:{span:20,rise:5,length:10,height:6},nodes:[{id:"L0",x:0,y:0,z:0},{id:"L1",x:0,y:0,z:10},{id:"R0",x:20,y:0,z:0},{id:"R1",x:20,y:0,z:10}],members:[
      {id:"PL",sectionKey:"roofPurlin",side:"left",start:"L0",end:"L1",tributaryWidth:Math.hypot(10,5)},{id:"PR",sectionKey:"roofPurlin",side:"right",start:"R0",end:"R1",tributaryWidth:Math.hypot(10,5)},{id:"WL",sectionKey:"wallGirt",side:"left",start:"L0",end:"L1",tributaryHeight:6},{id:"WR",sectionKey:"wallGirt",side:"right",start:"R0",end:"R1",tributaryHeight:6},{id:"EG",sectionKey:"endGirt",endFace:"front",start:"L0",end:"R0",tributaryHeight:1}
     ]})};
-    return createCases().caseCount===8;
+    try{createCases();return false;}catch(e){return e.message.includes("خروج از مرکزیت");}
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
   });
-  ck("case builder accepts nonzero gable pressure only after topology and area audits",()=>{
+  ck("case builder blocks nonzero gable pressure until cladding-to-girt eccentricity is modeled",()=>{
    const oldWind=root.SteelDirectionalWind,oldLoads=root.SteelLoads,oldModel=root.SteelStructuralModel;
    try{
     const surfaces={};SURFACES.forEach(k=>surfaces[k]={netWithPositiveInternal:k==="end-wall-front"?0.25:0,netWithNegativeInternal:0});
