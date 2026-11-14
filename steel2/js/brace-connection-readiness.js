@@ -11,7 +11,8 @@ const COMMON=[
  ["grossShearAreaMm2","سطح ناخالص مسیر برشی Agv (mm²)"],
  ["netShearAreaMm2","سطح خالص مسیر برشی Anv (mm²)"],
  ["netTensionAreaMm2","سطح خالص مسیر کششی Ant (mm²)"],
- ["eccentricityMm","خروج از مرکزیت اتصال (mm)"]
+ ["eccentricityMm","خروج از مرکزیت اتصال (mm)"],
+ ["plateFyMPa","تنش تسلیم ورق گاست Fy (MPa)"],["plateFuMPa","تنش نهایی ورق گاست Fu (MPa)"],["blockShearUbs","ضریب Ubs بلوکی (فقط 0.5 یا 1)"]
 ];
 const BOLTED=[
  ["boltCount","تعداد پیچ"],["boltDiameterMm","قطر اسمی پیچ (mm)"],["holeDiameterMm","قطر سوراخ (mm)"],
@@ -45,7 +46,7 @@ function currentBraceMembers(model){
  const m=model||root.SteelStructuralModel?.getData?.();
  return Array.isArray(m?.members)?m.members.filter(x=>GROUPS.has(x.sectionKey)&&String(x.id??"").trim()):[];
 }
-function blank(memberId,end){return {memberId:String(memberId),end,connectionType:"",drawingReference:"",plateThicknessMm:null,connectedThicknessMm:null,whitmoreWidthMm:null,grossShearAreaMm2:null,netShearAreaMm2:null,netTensionAreaMm2:null,eccentricityMm:null,boltCount:null,boltDiameterMm:null,holeDiameterMm:null,edgeDistanceMm:null,pitchMm:null,gageMm:null,shearPlaneCount:null,boltGrade:"",threadsInShearPlane:null,weldCount:null,weldSizeMm:null,weldEffectiveLengthMm:null,electrodeFexxMPa:null,weldLayoutReference:"",loadPathReviewed:false,blockShearGeometryReviewed:false,whitmoreGeometryReviewed:false,connectionDrawingReviewed:false};}
+function blank(memberId,end){return {memberId:String(memberId),end,connectionType:"",drawingReference:"",plateThicknessMm:null,connectedThicknessMm:null,whitmoreWidthMm:null,grossShearAreaMm2:null,netShearAreaMm2:null,netTensionAreaMm2:null,eccentricityMm:null,plateFyMPa:null,plateFuMPa:null,blockShearUbs:null,boltCount:null,boltDiameterMm:null,holeDiameterMm:null,edgeDistanceMm:null,pitchMm:null,gageMm:null,shearPlaneCount:null,boltGrade:"",threadsInShearPlane:null,weldCount:null,weldSizeMm:null,weldEffectiveLengthMm:null,electrodeFexxMPa:null,weldLayoutReference:"",loadPathReviewed:false,blockShearGeometryReviewed:false,whitmoreGeometryReviewed:false,connectionDrawingReviewed:false};}
 function rowsForModel(model){
  const rows=new Map(data.connections.map(r=>[key(r.memberId,r.end),r]));
  return currentBraceMembers(model).flatMap(m=>["I","J"].map(end=>rows.get(key(m.id,end))||blank(m.id,end)));
@@ -66,6 +67,7 @@ function audit(input,model){
   if(!c.drawingReference.trim())local.push("شماره نقشه/جزئیات اجرایی اتصال ثبت نشده است.");
   for(const [field,label] of COMMON){if(field==="eccentricityMm"){if(!Number.isFinite(c[field])||c[field]<0)local.push(label+" باید از نقشه وارد شود و غیرمنفی باشد.");}else if(!Number.isFinite(c[field])||c[field]<=0)local.push(label+" باید از نقشه وارد شود.");}
   if(c.netShearAreaMm2>0&&c.grossShearAreaMm2>0&&c.netShearAreaMm2>c.grossShearAreaMm2)local.push("سطح خالص برشی از سطح ناخالص برشی بزرگ‌تر است.");
+  if(![0.5,1].includes(c.blockShearUbs))local.push("Ubs باید با توزیع تنش مستند و فقط برابر 0.5 یا 1 باشد.");
   if(!c.loadPathReviewed)local.push("مسیر انتقال نیرو از عضو به گاست‌پلیت و تکیه‌گاه بازبینی نشده است.");
   if(!c.whitmoreGeometryReviewed)local.push("هندسه و عرض Whitmore از نقشه/محاسبه مستند بازبینی نشده است.");
   if(!c.blockShearGeometryReviewed)local.push("مسیرهای سطح گسیختگی بلوکی و مساحت‌های مربوط بازبینی نشده‌اند.");
@@ -115,6 +117,8 @@ function selfTest(){
  t("requires welded size length and electrode strength",()=>{const r=audit({connections:both.map(x=>({...x,connectionType:"welded",weldCount:2,weldSizeMm:6,weldEffectiveLengthMm:120,electrodeFexxMPa:490,weldLayoutReference:"W-02"}))},model);return r.ready;});
  t("requires welded layout reference",()=>!audit({connections:both.map(x=>({...x,connectionType:"welded",weldCount:2,weldSizeMm:6,weldEffectiveLengthMm:120,electrodeFexxMPa:490,weldLayoutReference:""}))},model).ready);
  t("rejects missing eccentricity",()=>!audit({connections:both.map(x=>({...x,eccentricityMm:null}))},model).ready);
+ t("requires explicit plate material strengths and block-shear Ubs",()=>!audit({connections:both.map(x=>({...x,plateFyMPa:null,plateFuMPa:null,blockShearUbs:null}))},model).ready);
+ t("rejects unsupported block-shear Ubs",()=>!audit({connections:both.map(x=>({...x,plateFyMPa:235,plateFuMPa:360,blockShearUbs:0.75}))},model).ready);
  t("never issues capacity or approval",()=>{const r=audit({connections:both},model);return r.analysisEnabled===false&&r.designApproved===false&&!r.capacity;});
  t("connection records survive project data round-trip",()=>{const old=getData();setData({connections:both});const x=getData(),ok=x.connections.length===2&&x.connections[0].memberId==="B1"&&x.connections[1].end==="J";setData(old);return ok;});
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"brace-end connection geometry and document completeness only; no code resistance calculation"};
