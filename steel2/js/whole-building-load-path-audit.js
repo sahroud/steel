@@ -177,7 +177,7 @@ function selfTest(){
  test("roof purlin tributary width required",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].lineLoads.tributaryWidth=0;return !audit(p,loads).success;});
  test("incomplete combination factors detected",()=>{const p={...loads,combinations:[{id:"C",dead:1.2,live:null,snow:0}]};return !audit(model,p).success;});
  test("duplicate member identifiers detected",()=>{const p={...model,members:[...members,{...members[0]}]};return !audit(p,loads).success;});
- test("all load groups explicitly reported",()=>audit(model,loads).rows.length===11);
+ test("all load groups explicitly reported",()=>audit(model,loads).rows.length===12);
  test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.2);
  test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
  test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
