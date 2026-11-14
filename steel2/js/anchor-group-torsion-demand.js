@@ -35,6 +35,22 @@ function fromFoundationDemand(demand,anchors){
  const result=distribute(torsion,anchors);
  return {...result,source:{nodeId:String(demand.nodeId??""),caseId:String(demand.caseId??""),columnActionTy_Nm:torsion},mapping:"FoundationReactionBridge.columnActionN_Nm[4] → global vertical-axis My; anchor coordinates x_m/z_m",scope:"انتقال صرفاً تقاضای پیچش حول محور قائم از واکنش پایه به گروه انکر؛ سایر مؤلفه‌های برش و کشش در این محاسبه وارد نمی‌شوند.",analysisEnabled:false,designApproved:false};
 }
+function fromFoundationBridgeResult(bridgeResult,anchorsByNode){
+ const issues=[],demands=Array.isArray(bridgeResult?.demands)?bridgeResult.demands:[],groups=anchorsByNode&&typeof anchorsByNode==="object"?anchorsByNode:{};
+ if(bridgeResult?.ok!==true)issues.push("ابتدا باید ممیزی پل واکنش فونداسیون با موفقیت انجام شده باشد.");
+ if(!demands.length)issues.push("فهرست تقاضاهای مستقل گره/حالت بار در پل واکنش خالی است.");
+ if(issues.length)return{ok:false,issues,results:[],analysisEnabled:false,designApproved:false};
+ const results=[];
+ demands.forEach(d=>{
+  const id=String(d?.nodeId??""),anchors=groups[id];
+  if(!id||!Array.isArray(anchors)){issues.push("مختصات انکربولت برای گره پایه "+(id||"نامشخص")+" تعریف نشده است.");return;}
+  const mapped=fromFoundationDemand(d,anchors);
+  if(!mapped.ok){issues.push("گره "+id+" / حالت "+String(d.caseId??"")+": "+mapped.issues.join("؛ "));return;}
+  results.push(mapped);
+ });
+ if(results.length!==demands.length)issues.push("تعداد گروه‌های توزیع‌شده با تعداد تقاضاهای مستقل واکنش برابر نیست.");
+ return{ok:issues.length===0,ready:issues.length===0,issues,results:issues.length?[]:results,caseCount:new Set(demands.map(d=>String(d.caseId))).size,supportCount:new Set(demands.map(d=>String(d.nodeId))).size,independentNodeCaseDemands:true,combinesEnvelopeExtrema:false,analysisEnabled:false,designApproved:false,scope:"توزیع تقاضای پیچش خالص هر گره/حالت بار؛ بدون ظرفیت‌سنجی یا اندرکنش نیروها."};
+}
 function selfTest(){
  const checks=[],ck=(name,fn)=>{try{checks.push({name,ok:fn()===true});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
  const square=[{id:"A",x_m:-.1,z_m:-.1},{id:"B",x_m:.1,z_m:-.1},{id:"C",x_m:.1,z_m:.1},{id:"D",x_m:-.1,z_m:.1}];
@@ -52,7 +68,12 @@ function selfTest(){
  ck("rejects missing foundation reaction vector",()=>!fromFoundationDemand({nodeId:"B",caseId:"C"},square).ok);
  ck("rejects non-finite foundation reaction component",()=>!fromFoundationDemand({...reaction,columnActionN_Nm:[1,2,3,4,NaN,6]},square).ok);
  ck("foundation-to-anchor adapter remains demand-only",()=>{const r=fromFoundationDemand(reaction,square);return r.analysisEnabled===false&&r.designApproved===false;});
+ const bridge={ok:true,demands:[reaction,{...reaction,nodeId:"BASE-2",caseId:"ULS-8",columnActionN_Nm:[0,0,0,0,-3000,0]}]};
+ ck("maps every support and load case from successful foundation bridge",()=>{const r=fromFoundationBridgeResult(bridge,{"BASE-1":square,"BASE-2":square});return r.ok&&r.results.length===2&&r.caseCount===2&&r.supportCount===2;});
+ ck("keeps repeated support cases independent",()=>{const r=fromFoundationBridgeResult({ok:true,demands:[reaction,{...reaction,caseId:"SLS-1"}]},{"BASE-1":square});return r.ok&&r.results.length===2&&r.results[0].source.caseId!==r.results[1].source.caseId;});
+ ck("rejects a missing anchor group without partial output",()=>{const r=fromFoundationBridgeResult(bridge,{"BASE-1":square});return !r.ok&&r.results.length===0;});
+ ck("rejects an unapproved foundation reaction bridge",()=>!fromFoundationBridgeResult({...bridge,ok:false},{"BASE-1":square,"BASE-2":square}).ok);
  const passed=checks.filter(x=>x.ok).length;return{passed,failed:checks.length-passed,total:checks.length,checks,analysisEnabled:false,designApproved:false};
 }
-root.SteelAnchorGroupTorsionDemand={distribute,fromFoundationDemand,selfTest};
+root.SteelAnchorGroupTorsionDemand={distribute,fromFoundationDemand,fromFoundationBridgeResult,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
