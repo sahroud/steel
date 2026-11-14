@@ -51,7 +51,7 @@ function render(){
  const out=$("craneBayConfigurationAudit");
  if(!out)return;
  const g=root.SteelStructuralModel?.model?.geometry;
- const count=Number(g?.frames?.length||0)-1;
+ const count=Number(g?.bayCount)||((Number(g?.length)>0&&Number(g?.spacing)>0)?Math.ceil(Number(g.length)/Number(g.spacing)):0);
  const r=readAndAudit(count);
  out.textContent=(r.valid?"جانمایی معتبر؛ ":"جانمایی نامعتبر؛ ")+(r.solverCompatible?"با مسیر FEM فعلی سازگار است.":"تحلیل خودکار جرثقیل تا تکمیل پشتیبانی چنددهانه/چندجرثقیل مسدود است.")+" دهانه‌های فعال: "+(r.activeBays||[]).join("، ")+"؛ دهانه‌های بدون جرثقیل: "+(r.unassignedBays||[]).join("، ")+"؛ "+[...(r.issues||[]),...(r.warnings||[])].join(" | ");
 }
