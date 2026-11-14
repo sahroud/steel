@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sahroud.github.io/steel/schemas/reference-import-record.schema.json",
+  "title": "SAHROUD STEEL Reference Import Record",
+  "description": "Evidence-first normalized record for importing legacy project data. This schema does not approve engineering values.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "projectId",
+    "source",
+    "raw",
+    "interpretation",
+    "gate"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "path",
+        "format",
+        "locator"
+      ],
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "format": {
+          "enum": [
+            "SPS",
+            "XLSX",
+            "DOC",
+            "M3",
+            "IFC",
+            "SDNF",
+            "CIS2",
+            "CSV",
+            "OTHER"
+          ]
+        },
+        "locator": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "line": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "section": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string"
+            },
+            "sheet": {
+              "type": "string"
+            },
+            "cell": {
+              "type": "string"
+            },
+            "objectId": {
+              "type": "string"
+            },
+            "page": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "minProperties": 1
+        },
+        "sourceRevision": {
+          "type": "string"
+        },
+        "extractedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "raw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        "unitToken": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "interpretation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semanticStatus",
+        "meaning",
+        "normalizedValue",
+        "unit",
+        "entityRef",
+        "coordinate",
+        "orientation"
+      ],
+      "properties": {
+        "semanticStatus": {
+          "enum": [
+            "unmapped",
+            "candidate",
+            "cross_checked",
+            "reviewed"
+          ]
+        },
+        "meaning": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "normalizedValue": {
+          "type": [
+            "number",
+            "integer",
+            "string",
+            "boolean",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "entityRef": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coordinate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "orientation": {
+          "enum": [
+            "unresolved",
+            "global",
+            "local",
+            "start_to_end",
+            "end_to_start",
+            "not_applicable"
+          ]
+        },
+        "mappingEvidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reviewedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "solverEligible",
+        "designApproved"
+      ],
+      "properties": {
+        "solverEligible": {
+          "const": false
+        },
+        "designApproved": {
+          "const": false
+        },
+        "blockReason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
