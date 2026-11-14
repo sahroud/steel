@@ -29,6 +29,12 @@ function distribute(momentNm,anchors){
  if(!equilibrium.ok)issues.push("تعادل نیرو/گشتاور توزیع پیچش گروه انکر برقرار نیست.");
  return{ok:issues.length===0,ready:issues.length===0,centroid_m:{x:cx,z:cz},polarCoordinateSum_m2:J,demands,equilibrium,units:{moment:"N.m",force:"N",coordinates:"m"},method:"elastic tangential distribution: Fx=My*z/J, Fz=-My*x/J, coordinates measured from anchor-group centroid",scope:"تقاضای برشی ناشی از پیچش قائم فقط؛ بدون اندرکنش با برش مستقیم، کشش انکر، سختی صفحه‌ستون، تماس بتن، ظرفیت فولاد/بتن، اثر اهرمی یا طراحی آیین‌نامه‌ای.",analysisEnabled:false,designApproved:false};
 }
+function fromFoundationDemand(demand,anchors){
+ if(!demand||!Array.isArray(demand.columnActionN_Nm)||demand.columnActionN_Nm.length!==6||!demand.columnActionN_Nm.every(finite))return{ok:false,issues:["تقاضای واکنش فونداسیون باید بردار شش‌مؤلفه‌ای معتبر columnActionN_Nm داشته باشد."],demands:[],analysisEnabled:false,designApproved:false};
+ const torsion=demand.columnActionN_Nm[4];
+ const result=distribute(torsion,anchors);
+ return {...result,source:{nodeId:String(demand.nodeId??""),caseId:String(demand.caseId??""),columnActionTy_Nm:torsion},mapping:"FoundationReactionBridge.columnActionN_Nm[4] → global vertical-axis My; anchor coordinates x_m/z_m",scope:"انتقال صرفاً تقاضای پیچش حول محور قائم از واکنش پایه به گروه انکر؛ سایر مؤلفه‌های برش و کشش در این محاسبه وارد نمی‌شوند.",analysisEnabled:false,designApproved:false};
+}
 function selfTest(){
  const checks=[],ck=(name,fn)=>{try{checks.push({name,ok:fn()===true});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
  const square=[{id:"A",x_m:-.1,z_m:-.1},{id:"B",x_m:.1,z_m:-.1},{id:"C",x_m:.1,z_m:.1},{id:"D",x_m:-.1,z_m:.1}];
@@ -40,7 +46,13 @@ function selfTest(){
  ck("rejects non-finite coordinates",()=>!distribute(1000,[square[0],{...square[1],x_m:NaN}]).ok);
  ck("rejects coincident anchor group with no torsional lever arm",()=>!distribute(1000,square.map(a=>({...a,x_m:0,z_m:0})).map((a,i)=>({...a,id:"P"+i}))).ok);
  ck("does not approve anchor or foundation design",()=>{const r=distribute(1000,square);return r.analysisEnabled===false&&r.designApproved===false;});
+ const reaction={nodeId:"BASE-1",caseId:"ULS-7",columnActionN_Nm:[100,200,300,400,5000,600]};
+ ck("maps foundation column-action Ty from the correct sixth-DOF slot",()=>{const r=fromFoundationDemand(reaction,square);return r.ok&&r.source.columnActionTy_Nm===5000&&Math.abs(r.equilibrium.recoveredMy_Nm-5000)<1e-8;});
+ ck("preserves support node and load-case identity",()=>{const r=fromFoundationDemand(reaction,square);return r.ok&&r.source.nodeId==="BASE-1"&&r.source.caseId==="ULS-7";});
+ ck("rejects missing foundation reaction vector",()=>!fromFoundationDemand({nodeId:"B",caseId:"C"},square).ok);
+ ck("rejects non-finite foundation reaction component",()=>!fromFoundationDemand({...reaction,columnActionN_Nm:[1,2,3,4,NaN,6]},square).ok);
+ ck("foundation-to-anchor adapter remains demand-only",()=>{const r=fromFoundationDemand(reaction,square);return r.analysisEnabled===false&&r.designApproved===false;});
  const passed=checks.filter(x=>x.ok).length;return{passed,failed:checks.length-passed,total:checks.length,checks,analysisEnabled:false,designApproved:false};
 }
-root.SteelAnchorGroupTorsionDemand={distribute,selfTest};
+root.SteelAnchorGroupTorsionDemand={distribute,fromFoundationDemand,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
