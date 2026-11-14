@@ -112,4 +112,5 @@ function selfTest(){
  return {passed:checks.filter(Boolean).length,failed:checks.filter(x=>!x).length,checks};
 }
 root.SteelTaperedSectionForceDiagram={build,selfTest};
+if(root.SteelTaperedCaseForceBridge)root.SteelTaperedCaseForceBridge.buildSectionForceDiagrams=(model,cases,options)=>build(model,cases,options);
 })(typeof window!=="undefined"?window:globalThis);
