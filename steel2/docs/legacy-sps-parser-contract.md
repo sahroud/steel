@@ -1,6 +1,6 @@
 # Legacy SPS parser contract — SAHROUD STEEL
 
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Status:** read-only extraction utility; not an engineering importer.
 
 ## Purpose
