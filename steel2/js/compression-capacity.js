@@ -51,7 +51,8 @@ function selfTest(){
  t("flexural and torsional modes reported",()=>{const r=analyze(base);return !!r.elasticCriticalStress_MPa.x&&!!r.elasticCriticalStress_MPa.y&&!!r.elasticCriticalStress_MPa.torsional&&r.governingMode;});
  t("LRFD and ASD factors",()=>{const r=analyze(base);return Math.abs(r.LRFD.designStrength_kN/r.Pn_kN-.9)<1e-12&&Math.abs(r.Pn_kN/r.ASD.allowableStrength_kN-1.67)<1e-12;});
  t("invalid missing dimensions rejected",()=>!analyze({...base,Lx_mm:0}).ok);
- t("missing elastic properties rejected without defaults",()=>!analyze({...base,E_MPa:null}).ok&&!analyze({...base,G_MPa:null}).ok);\n t("asymmetric section rejected",()=>!analyze({...base,sectionType:"channel"}).ok);
+ t("missing elastic properties rejected without defaults",()=>!analyze({...base,E_MPa:null}).ok&&!analyze({...base,G_MPa:null}).ok);
+ t("asymmetric section rejected",()=>!analyze({...base,sectionType:"channel"}).ok);
  t("local slenderness not reviewed rejected",()=>!analyze({...base,localSlendernessReviewed:false}).ok);
  t("slender elements require effective-area implementation",()=>!analyze({...base,localSlendernessClass:"slender"}).ok);
  t("large slenderness is reported without unverified cutoff",()=>{const r=analyze({...base,Lx_mm:30000,Ly_mm:30000,Lz_mm:30000});return r.ok&&r.slenderness.max>200&&r.warnings.some(x=>x.includes("سقف عددی"));});
