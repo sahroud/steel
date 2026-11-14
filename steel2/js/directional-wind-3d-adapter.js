@@ -76,6 +76,37 @@ function auditGableTributaryAreaCoverage(model){
  });
  return{success:issues.length===0,issues,rows,method:"sum(horizontal girt segment length × exact average local tributary height), compared with integral of the actual roof profile",analysisEnabled:false,designApproved:false};
 }
+function auditGableLoadResultants(pressures,model){
+ const issues=[],faces=[],nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n])),members=model?.members||[],g=model?.geometry||{};
+ const span=Number(g.span),height=Number(g.height),rise=Number(g.rise);
+ if(!(span>0&&height>0&&rise>=0))return{success:false,issues:["ابعاد برای ممیزی برآیند بار گابل معتبر نیست."],faces};
+ const expectedArea=span*(height+rise/2);
+ ["front","rear"].forEach(face=>{
+  const key=face==="front"?"end-wall-front":"end-wall-back",p=pressures?.[key],items=members.filter(m=>m.sectionKey==="endGirt"&&m.endFace===face);
+  if(!finite(p)){issues.push("فشار سطح "+key+" برای ممیزی برآیند عددی و متناهی نیست.");return;}
+  if(!items.length){issues.push("هیچ گرتی برای محاسبه برآیند "+key+" وجود ندارد.");return;}
+  const seen=new Set();let area=0,Fz=0,Mx=0,My=0,invalid=0;
+  items.forEach(m=>{
+   const a=nodes.get(String(m.start)),b=nodes.get(String(m.end)),h=Number(m.tributaryHeight??m.lineLoads?.tributaryHeight);
+   if(!a||!b||![a.x,a.y,a.z,b.x,b.y,b.z,h].every(Number.isFinite)||!(h>0)||Math.abs(a.y-b.y)>1e-7||Math.abs(a.z-b.z)>1e-7){issues.push("هندسه یا ارتفاع بارگیر گرت "+m.id+" برای برآیند "+face+" نامعتبر است.");invalid++;return;}
+   const dx=Math.abs(b.x-a.x),x=(a.x+b.x)/2,y=(a.y+b.y)/2,z=(a.z+b.z)/2;
+   if(!(dx>1e-8)){issues.push("طول گرت "+m.id+" برای برآیند "+face+" صفر یا نامعتبر است.");invalid++;return;}
+   const ends=[a.x,b.x].sort((u,v)=>u-v),signature=[ends[0],ends[1],y,z].map(v=>Number(v).toFixed(7)).join("|");
+   if(seen.has(signature)){issues.push("قطعه گرت تکراری و دارای بار دوباره‌شماری‌شونده در وجه "+face+": "+m.id);invalid++;return;}
+   seen.add(signature);
+   const A=dx*h,sign=face==="front"?1:-1,force=sign*p*A;
+   area+=A;Fz+=force;Mx+=y*force;My-=x*force;
+  });
+  const expectedF=(face==="front"?1:-1)*p*expectedArea;
+  const tol=Math.max(1e-7,Math.abs(expectedF)*1e-7);
+  const areaOk=invalid===0&&Math.abs(area-expectedArea)<=Math.max(1e-5,expectedArea*1e-3);
+  const forceOk=invalid===0&&Math.abs(Fz-expectedF)<=tol;
+  if(!areaOk)issues.push("مساحت مؤثر گرت‌ها برای برآیند "+face+" با سطح واقعی برابر نیست.");
+  if(!forceOk)issues.push("برآیند نیروی خطی گرت‌های "+face+" با فشار × مساحت سطح برابر نیست.");
+  faces.push({face,surface:key,pressureKPa:p,assignedAreaM2:area,expectedAreaM2:expectedArea,forceZ_kN:Fz,expectedForceZ_kN:expectedF,momentX_kNm:Mx,momentY_kNm:My,equivalentLoadCentroidX_m:Math.abs(Fz)>1e-12?-My/Fz:null,equivalentLoadCentroidY_m:Math.abs(Fz)>1e-12?Mx/Fz:null,memberCount:items.length,areaEquilibrium:areaOk,forceEquilibrium:forceOk});
+ });
+ return{success:issues.length===0,issues,faces,method:"integrate each end-girt equivalent line load p × tributaryHeight over its horizontal member length; recover global force and first moments from the actual member centerlines",analysisEnabled:false,designApproved:false};
+}
 function auditGablePressure(pressures,model){
  const keys=["end-wall-front","end-wall-back"],active=keys.filter(k=>!finite(pressures?.[k])||Math.abs(pressures[k])>1e-12);
  if(active.some(k=>!finite(pressures?.[k])))throw Error("فشار باد دیوار انتهایی برای ممیزی ناحیه مثلثی ناقص است.");
@@ -85,7 +116,9 @@ function auditGablePressure(pressures,model){
  if(!topology?.success)throw Error("ممیزی توپولوژی ستونک/گرت/وتر گابل ناموفق است: "+(topology?.issues||[]).join("؛ "));
  const coverage=auditGableTributaryAreaCoverage(model);
  if(!coverage.success)throw Error("ممیزی مساحت بارگیر گابل ناموفق است: "+coverage.issues.join("؛ "));
- return {ready:true,activeSurfaces:active,topology,coverage,scope:"end-wall pressure transferred to horizontal end-girts using locally clipped tributary heights; topology and total surface-area closure audited",analysisEnabled:false,designApproved:false};
+ const resultants=auditGableLoadResultants(pressures,model);
+ if(!resultants.success)throw Error("ممیزی برآیند نیرو/ممان بار گابل ناموفق است: "+resultants.issues.join("؛ "));
+ return {ready:true,activeSurfaces:active,topology,coverage,resultants,scope:"end-wall pressure transferred to horizontal end-girts; topology, tributary area, equivalent force and first moments audited",analysisEnabled:false,designApproved:false};
 }
 function createCases(){const a=audit();if(!a.ready)throw Error("انتقال باد جهت‌دار متوقف شد: "+a.issues.join("؛ "));const w=root.SteelDirectionalWind.getData(),combos=root.SteelLoads?.getData?.()?.combinations;if(!Array.isArray(combos)||!combos.length)throw Error("ترکیبات ثقلی موجود نیستند.");const cases=[],model=root.SteelStructuralModel?.getData?.();DIRS.forEach(d=>["positive","negative"].forEach(s=>{const key=s==="positive"?"netWithPositiveInternal":"netWithNegativeInternal",pressures={};SURFACES.forEach(k=>pressures[k]=w.directions[d].surfaces[k][key]);auditGablePressure(pressures,model);combos.forEach((c,i)=>{const factors={dead:Number(c.dead),live:Number(c.live),snow:Number(c.snow),wind:1};if(["dead","live","snow"].some(k=>c[k]===undefined||c[k]===null||c[k]===""||!finite(factors[k])||factors[k]<0))throw Error("ضریب ترکیب بار نامعتبر است: "+String(c.name||i+1));cases.push({id:"WIND-"+d.toUpperCase()+"-INT-"+s.toUpperCase()+"-C"+(i+1),label:String(c.name||("ترکیب "+(i+1)))+" | "+w.directions[d].label+" | فشار داخلی "+s,factors,windSign:1,directionalWindCaseId:d+"-"+s,directionalWindPressures:{direction:d,internalPressureSign:s,surfaces:pressures,unit:"kN/m2"},analysisEnabled:false,designApproved:false});});}));return{cases,caseCount:cases.length,analysisEnabled:false,designApproved:false,limitations:["Cpهای دستی و مقدماتی و نیازمند تطبیق رسمی‌اند.","ترکیبات بار فعلی هنوز تأیید نهایی آیین‌نامه‌ای نشده‌اند.","نواحی لبه/گوشه، بازشوهای غالب، پیچش کلی و فشار بر اجزای فرعی کامل نیست.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش و طراحی عضو/اتصال در این ماژول انجام نمی‌شود."]};}
 let lastRun=null;
@@ -102,6 +135,10 @@ async function run(){const b=createCases(),solve=root.SteelStructuralModel?.anal
 function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});}catch(e){t.push({name:n,pass:false,error:e.message});}};ck("4 directions",()=>DIRS.length===4&&new Set(DIRS).size===4);ck("6 surfaces",()=>SURFACES.length===6&&new Set(SURFACES).size===6);ck("8 wind/internal patterns",()=>DIRS.length*2===8);ck("finite pressure guard",()=>finite(0)&&!finite(null)&&!finite("1"));ck("pressure surfaces",()=>SURFACES.includes("roof-left")&&SURFACES.includes("end-wall-back"));ck("signed direction IDs",()=>DIRS.includes("x-negative")&&DIRS.includes("z-negative"));ck("wind action distinct",()=>({dead:1.2,live:0.5,snow:1.6,wind:1}).wind===1);ck("approval remains disabled",()=>true);ck("analysis remains preliminary",()=>true);ck("all directions unique",()=>new Set(DIRS).size===4);ck("all surfaces unique",()=>new Set(SURFACES).size===6);ck("does not invent pressures",()=>createCases.toString().includes("netWithPositiveInternal"));
   ck("nonzero gable wind requires a real support and tributary-area model",()=>{try{auditGablePressure({"end-wall-front":0.2,"end-wall-back":0});return false;}catch(e){return e.message.includes("هندسه و اعضای واقعی");}});
   ck("zero gable wind remains valid without activating gable transfer",()=>auditGablePressure({"end-wall-front":0,"end-wall-back":0}).ready);
+  ck("gable equivalent end-girt force resultant matches pressure times full wall area",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableLoadResultants({"end-wall-front":0.25,"end-wall-back":-0.1},m);return r.success&&r.faces.length===2&&Math.abs(r.faces[0].forceZ_kN-35)<1e-8&&Math.abs(r.faces[1].forceZ_kN-14)<1e-8;});
+  ck("gable equivalent first moments are recovered from actual girt elevations and stations",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableLoadResultants({"end-wall-front":0.25,"end-wall-back":0},m);return r.success&&r.faces[0].momentX_kNm>0&&Number.isFinite(r.faces[0].momentY_kNm)&&r.faces[0].equivalentLoadCentroidX_m>=0&&r.faces[0].equivalentLoadCentroidY_m>0;});
+  ck("duplicate gable girt segment is rejected to prevent double-counting",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),g=m.members.find(x=>x.sectionKey==="endGirt"&&x.endFace==="front");m.members.push({...g,id:"DUPLICATE-RESULTANT"});return !auditGableLoadResultants({"end-wall-front":0.25,"end-wall-back":0},m).success;});
+
   ck("gable tributary areas close to the exact trapezoidal wall area on both faces",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.(),r=auditGableTributaryAreaCoverage(m);return !!r?.success&&r.rows.length===2&&r.rows.every(x=>Math.abs(x.assignedAreaM2-x.expectedAreaM2)<1e-8);});
   ck("gable area audit rejects a missing tributary strip",()=>{const m=root.SteelEndWallGableSupportAudit?.fixture?.();m.members=m.members.filter(x=>!(x.sectionKey==="endGirt"&&x.endFace==="front"&&x.row===2));return !auditGableTributaryAreaCoverage(m).success;});
   ck("case builder creates all eight directional/internal cases only when gable wind is zero",()=>{
@@ -166,5 +203,5 @@ function mountRunControl(){
  button.addEventListener("click",async()=>{button.disabled=true;out.textContent="در حال تحلیل جهت‌ها و فشارهای داخلی...";try{const r=await run();out.textContent="حل "+r.caseCount+" حالت باد با تعادل برقرار انجام شد. اعضای دارای پوش نیرو: "+r.memberForceEnvelope.rows.length+"؛ پوش نیرو برای همه اعضا و حالات ثبت شد. ضرایب دستی و مقدماتی‌اند؛ این نتیجه تأیید طراحی نیست.";}catch(e){out.textContent="تحلیل باد متوقف شد: "+String(e.message||e);}finally{button.disabled=false;}});
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mountRunControl);else mountRunControl();}
-root.SteelDirectionalWind3D={audit,auditGablePressure,auditGableTributaryAreaCoverage,auditTributaryAreaCoverage,createCases,run,selfTest,mapMemberLoad,combineGlobalLoads,buildWindForceEnvelope,getLastRun:()=>lastRun};
+root.SteelDirectionalWind3D={audit,auditGablePressure,auditGableTributaryAreaCoverage,auditGableLoadResultants,auditTributaryAreaCoverage,createCases,run,selfTest,mapMemberLoad,combineGlobalLoads,buildWindForceEnvelope,getLastRun:()=>lastRun};
 })(typeof window!=="undefined"?window:globalThis);
