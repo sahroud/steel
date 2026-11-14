@@ -1130,7 +1130,7 @@
           };
           analysisModel.members.push({
             id:memberId,start:ni.id,end:nj.id,type:"شناژ بتنی",
-            sectionKey:"tieBeam",endReleases:releases,
+            sectionKey:"tieBeam",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,unit:"kN/m",loadRole:"concrete-member-self-weight"},endReleases:releases,
             // Base-node joint is located at the common footing/tie top datum.
             // The beam physical centroidal axis is h/2 below that joint.
             endOffsets:{i:[0,-Number(route.heightM)/2,0],j:[0,-Number(route.heightM)/2,0]},
