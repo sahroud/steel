@@ -135,7 +135,7 @@
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
       '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option></select></div></div>' +
-      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnSolverSelfTest" class="btn secondary">آزمون صحت هسته تحلیل</button><button type="button" id="btnTieBeamIntegrationTest" class="btn secondary">آزمون یکپارچگی شناژ</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
+      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnSolverSelfTest" class="btn secondary">آزمون صحت هسته تحلیل</button><button type="button" id="btnTieBeamIntegrationTest" class="btn secondary">آزمون یکپارچگی شناژ</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button><button type="button" id="btnDownloadTaperedForceDiagrams" class="btn secondary" disabled>دانلود نمودار نیروهای قطعات متغیرمقطع</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
@@ -260,18 +260,30 @@
         box.style.color="#15803d";
         window.SteelStructuralModel.last3DResult=result;
         window.SteelStructuralModel.lastCraneEnvelope=craneEnvelope;
+        const taperedDiagramButton=$("btnDownloadTaperedForceDiagrams");
+        if(taperedDiagramButton)taperedDiagramButton.disabled=!result.taperedSectionForceDiagrams?.success;
         renderCriticalRafterDiagram(result,"تحلیل مدل اصلی");
       } catch(e) {
         box.textContent="تحلیل سه‌بعدی انجام نشد: "+e.message+
           "؛ این پیام برای جلوگیری از ارائه نتیجه نادرست نمایش داده شده است.";
         box.style.color="#b45309";
         window.SteelStructuralModel.last3DResult=null;
+        const taperedDiagramButton=$("btnDownloadTaperedForceDiagrams");if(taperedDiagramButton)taperedDiagramButton.disabled=true;
       }
       }, e => {
         box.textContent = "تحلیل سه‌بعدی انجام نشد: " + e.message;
         box.style.color = "#b45309";
         window.SteelStructuralModel.last3DResult = null;
       });
+    });
+    $("btnDownloadTaperedForceDiagrams")?.addEventListener("click",function(){
+      const report=window.SteelStructuralModel?.last3DResult?.taperedSectionForceDiagrams;
+      if(!report?.success)return;
+      const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json;charset=utf-8"});
+      const url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url;a.download="sahroud-steel-tapered-member-force-diagrams.json";
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
     });
     $("btnTestSpan10").addEventListener("click", function () {
       runWithProgress("در حال آماده‌سازی آزمایش مقایسه‌ای دهانه ۱۰ متر…", async stage => {
