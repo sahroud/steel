@@ -31,7 +31,8 @@
 
     function num(id, fallback) {
         const el = $(id);
-        const n = el ? Number(el.value) : NaN;
+        if (!el || el.value === "" || el.value === null || el.value === undefined) return fallback;
+        const n = Number(el.value);
         return Number.isFinite(n) ? n : fallback;
     }
 
