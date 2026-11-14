@@ -241,7 +241,7 @@
         <div class="notice">
             الگوی تکمیلی برگرفته از گزارش سوله‌پرداز: ظرفیت جرثقیل، وزن ارابه و پل، فاصله چرخ‌ها،
             اثر ضربه قائم و نیروهای افقی، تعداد دفعات کار و کنترل خستگی.
-            این بخش فعلاً اطلاعات ورودی و نواقص را ممیزی می‌کند و هنوز واکنش چرخ یا ظرفیت تیر حمال را محاسبه نمی‌کند.
+            این بخش اطلاعات ورودی و نواقص را ممیزی می‌کند. با فعال‌بودن جرثقیل سقفی، اجرای تحلیل سه‌بعدی کل سوله به‌صورت خودکار جاروب موقعیت قطار چرخ، محاسبه واکنش دو ریل و انتقال بار به تیر حمال و قاب را نیز اجرا می‌کند؛ طراحی نهایی تیر حمال، اتصالات و خستگی همچنان کنترل جداگانه می‌خواهد.
         </div>
         <label class="field"><input id="crane_enabled" type="checkbox"> این پروژه دارای جرثقیل سقفی است</label>
         <div class="form-grid">
@@ -251,7 +251,7 @@
             <div class="field"><label for="crane_runwaySpan_m">دهانه تیر حمال (متر)</label><input id="crane_runwaySpan_m" type="number" min="0" step="0.01"></div>
             <div class="field"><label for="crane_wheelsPerSide">تعداد چرخ در هر سمت ارابه</label><input id="crane_wheelsPerSide" type="number" min="1" step="1"></div>
             <div class="field"><label for="crane_wheelSpacing_m">فاصله چرخ‌ها (متر)</label><input id="crane_wheelSpacing_m" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_verticalImpact">ضریب اثر دینامیکی قائم (ورودی مستند)</label><input id="crane_verticalImpact" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="crane_verticalImpact">ضریب افزایش قائم مستند (در بار استاتیکی چرخ ضرب می‌شود)</label><input id="crane_verticalImpact" type="number" min="0" step="0.01"></div>
             <div class="field"><label for="crane_transverseCoeff">ضریب نیروی افقی عرضی (ورودی مستند)</label><input id="crane_transverseCoeff" type="number" min="0" step="0.01"></div>
             <div class="field"><label for="crane_longitudinalCoeff">ضریب نیروی ترمز طولی (ورودی مستند)</label><input id="crane_longitudinalCoeff" type="number" min="0" step="0.01"></div>
             <div class="field"><label for="crane_cranesCount">تعداد جرثقیل‌ها</label><input id="crane_cranesCount" type="number" min="1" step="1"></div>
