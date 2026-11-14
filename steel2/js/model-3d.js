@@ -1064,7 +1064,7 @@
         factors:{dead:Number(combo.dead)||0,live:Number(combo.live)||0,snow:Number(combo.snow)||0},
         deadFactor:Number(combo.dead)||0};
     }
-    if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود.");
+    if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود.");\n     if(!window.SteelWholeBuildingLoadPathAudit?.audit)throw new Error("ماژول ممیزی مسیر بار کل ساختمان بارگذاری نشده است؛ تحلیل متوقف شد.");\n     const loadPathAudit=window.SteelWholeBuildingLoadPathAudit.audit(model,window.SteelLoads?.getData?.()||{});\n     window.SteelStructuralModel.lastLoadPathAudit=loadPathAudit;\n     if(!loadPathAudit.success)throw new Error("تحلیل سه‌بعدی به‌دلیل نقص ممیزی مسیر بار متوقف شد: "+loadPathAudit.issues.slice(0,8).join("؛ "));
     const analysisModel={
       nodes:model.nodes.map(n=>({...n})),
       members:model.members.map(m=>({...m}))
