@@ -82,9 +82,9 @@ function audit(model){
  const success=issues.length===0&&rows.length===FACES.filter(f=>walls[f]?.material).length;
  return {success,loadTransferEnabled:success,issues,rows,nodalLoads,totalWeightKN:rows.filter(r=>r.status==="assigned").reduce((s,r)=>s+r.weightKN,0),method:"foundation-bearing wall dead weight distributed to explicit base support nodes by tributary wall area",limits:["Only walls explicitly bearing on the modeled base support nodes are supported in this version.","This is a tributary reaction distribution, not a continuous strip-footing/soil-contact model or footing design.","Walls with openings are blocked until opening-localized tributary areas are modelled.","Steel-secondary and independent wall support systems are not transferred.","Gable wind is separate and remains blocked until its cladding-to-post/top-chord path is defined."],analysisEnabled:false,designApproved:false};
 }
-function prepareNodalLoads(model,deadFactor){
+function prepareNodalLoads(model,deadFactor,precomputedAudit){
  const factor=num(deadFactor);if(factor===null||factor<0)throw Error("ضریب بار مرده دیوار نامعتبر است.");
- const a=audit(model);if(!a.success)throw Error("انتقال وزن مرده دیوار ناقص است: "+a.issues.join("؛ "));
+ const a=precomputedAudit||audit(model);if(!a.success||a.loadTransferEnabled!==true)throw Error("انتقال وزن مرده دیوار ناقص است: "+(a.issues||[]).join("؛ "));
  if(factor===0)return [];
  const map=new Map();
  a.nodalLoads.forEach(n=>{const old=map.get(n.nodeId)||{nodeId:n.nodeId,values:[0,0,0,0,0,0],sources:[]};n.values.forEach((v,i)=>old.values[i]+=v*factor);old.sources.push({face:n.face,sourceWeightKN:n.sourceWeightKN*factor});map.set(n.nodeId,old);});
