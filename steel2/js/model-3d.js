@@ -620,7 +620,9 @@
     if(!purlinLayout?.ok)throw new Error(purlinLayout?.reason||"ماژول تعیین فاصله پرلین‌ها بارگذاری نشده است.");
     const roofRows=purlinLayout.intervals;
     // Every purlin/rafter crossing is a shared structural node, not two coincident but disconnected nodes.
-    const roofXs=[0,span];
+    const endWallCount=Math.max(1,Math.ceil(span/endsp));
+    const endWallXs=Array.from(new Set([...Array.from({length:endWallCount+1},(_,i)=>span*i/endWallCount),half])).sort((a,b)=>a-b);
+    const roofXs=[0,span,...endWallXs];
     [-1,1].forEach(side=>{for(let ri=0;ri<=roofRows;ri++){
       const t=ri/roofRows;
       roofXs.push(side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t));
@@ -645,7 +647,8 @@
       for(let j=0;j<roofLine.length-1;j++){
         const a=roofLine[j],b=roofLine[j+1],mid=(a.x+b.x)/2;
         const isOverhang=mid<0||mid>span;
-        addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",segment:j+1,connectedPurlinNodes:true});
+        const isGableChord=(fi===0||fi===frames.length-1)&&endWallXs.some(x=>Math.abs(x-a.x)<1e-7)&&endWallXs.some(x=>Math.abs(x-b.x)<1e-7);
+        addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",segment:j+1,connectedPurlinNodes:true,gableChordFace:isGableChord?(fi===0?"front":"rear"):null});
       }
       const runwayLeft=craneEnabled?addNode(nodes,0,runwayElevation,z,"runway-support"):null;
       const runwayRight=craneEnabled?addNode(nodes,span,runwayElevation,z,"runway-support"):null;
@@ -723,7 +726,7 @@
       for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"قید افقی طولی دیوار","wallGirt",{side:si===0?"left":"right",row:gi+1,tributaryHeight:upper-lower});
     }));
     [0,length].forEach((z,endIndex)=>{
-      const count=Math.max(1,Math.ceil(span/endsp)), xs=Array.from(new Set([...Array.from({length:count+1},(_,i)=>span*i/count),half])).sort((a,b)=>a-b);
+      const xs=endWallXs;
       const face=endIndex===0?"front":"rear";
       // End-wall posts are split at every girt intersection so the secondary
       // members share actual nodes instead of crossing disconnected lines.
@@ -735,10 +738,16 @@
         for(let j=0;j<vertical.length-1;j++)
           addMember(members,vertical[j],vertical[j+1],"ستونک میانی دیوار انتهایی","endPost",{endFace:face,post:i,segment:j+1});
       }
-      // Gable top chord connects the heads of the end posts to the main eaves/ridge.
+      // The gable top chord is the end-frame rafter itself. Reuse its exact
+      // segmented FEM members; a second coincident chord would double stiffness.
       const topChord=xs.map(x=>addNode(nodes,x,roofY(x),z,"endwall-head"));
-      for(let i=0;i<topChord.length-1;i++)
-        addMember(members,topChord[i],topChord[i+1],"رفتر قاب دیوار انتهایی","rafter",{endFace:face,axis:"endwall"});
+      const endFrameNumber=endIndex===0?1:frames.length;
+      for(let i=0;i<topChord.length-1;i++){
+        const a=topChord[i],b=topChord[i+1];
+        const shared=members.some(m=>m.sectionKey==="rafter"&&m.axis==="transverse"&&m.frame===endFrameNumber&&
+          ((m.start===a.id&&m.end===b.id)||(m.start===b.id&&m.end===a.id)));
+        if(!shared)throw new Error("رفتر قاب انتهایی با وتر بالایی دیوار انتهایی در قطعه "+(i+1)+" هم‌گره/هم‌عضو نیست؛ مدل FEM برای جلوگیری از مسیر بار ناقص متوقف شد.");
+      }
       girtHeights.forEach((y,gi)=>{
         const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
         const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
