@@ -13,7 +13,7 @@
   const nodes=new Map(model.nodes.map(n=>[n.id,n])),members=model.members;
   const endPosts=members.filter(m=>m.sectionKey==="endPost");
   const endGirts=members.filter(m=>m.sectionKey==="endGirt");
-  const topChords=members.filter(m=>m.sectionKey==="rafter"&&m.axis==="endwall");
+  const topChords=members.filter(m=>m.sectionKey==="rafter"&&["front","rear"].includes(m.gableChordFace));
   const faces=["front","rear"];
   const roofY=x=>height+rise*(x<=span/2?x/(span/2):(span-x)/(span/2));
   const topGirtY=endGirts.reduce((v,m)=>Math.max(v,num(nodes.get(m.start)?.y),num(nodes.get(m.end)?.y)),0);
@@ -110,6 +110,19 @@
    }catch(e){box.textContent="ممیزی دیوار انتهایی انجام نشد: "+e.message;box.style.color="#b45309";}
   });
  }
- window.SteelEndWallAudit={audit,getLastResult:()=>window.SteelEndWallAudit.lastResult||null,lastResult:null,designEligible:false,loadTransferEnabled:false};
+  function selfTest(){
+  const nodes=[],members=[];
+  ["front","rear"].forEach((face,fi)=>{
+   const z=fi===0?0:20, ids=[0,5,10].map((x,i)=>"G_"+face+"_"+i);
+   [0,5,10].forEach((x,i)=>nodes.push({id:ids[i],x,y:i===1?7:5,z,kind:"endwall-head"}));
+   members.push({id:"C1_"+face,start:ids[0],end:ids[1],sectionKey:"rafter",gableChordFace:face});
+   members.push({id:"C2_"+face,start:ids[1],end:ids[2],sectionKey:"rafter",gableChordFace:face});
+   const base="B_"+face;nodes.push({id:base,x:5,y:0,z,kind:"endwall-base"});
+   members.push({id:"P_"+face,post:1,endFace:face,start:base,end:ids[1],sectionKey:"endPost"});
+  });
+  const result=audit({geometry:{span:10,length:20,height:5,rise:2},nodes,members});
+  return {passed:result.faces.filter(x=>x.topologyOk).length,total:2,failed:result.faces.filter(x=>!x.topologyOk).length,faces:result.faces};
+ }
+window.SteelEndWallAudit={audit,getLastResult:()=>window.SteelEndWallAudit.lastResult||null,lastResult:null,designEligible:false,loadTransferEnabled:false,selfTest};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",render);else render();
 })();
