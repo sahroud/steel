@@ -88,7 +88,7 @@ function fixture(){
   });
   const chord=xs.map(x=>add(x,roofY(x),z,"rafter"));
   for(let i=0;i<chord.length-1;i++)addM(chord[i],chord[i+1],"rafter",{axis:"transverse",frame:fi+1});
-  [3,6].forEach(y=>{const active=xs.filter(x=>roofY(x)>=y-1e-7);for(let i=0;i<active.length-1;i++){const a=nodes.find(n=>near(n.x,active[i])&&near(n.y,y)&&near(n.z,z)),b=nodes.find(n=>near(n.x,active[i+1])&&near(n.y,y)&&near(n.z,z));addM(a,b,"endGirt",{endFace:fi===0?"front":"rear"});}});
+  [3,6].forEach((y,gi,levels)=>{const lower=gi===0?0:(levels[gi-1]+y)/2,next=gi===levels.length-1?Infinity:(y+levels[gi+1])/2;const active=xs.filter(x=>roofY(x)>=y-1e-7);for(let i=0;i<active.length-1;i++){const x1=active[i],x2=active[i+1],mid=(x1+x2)/2,upper=Math.min(next,roofY(mid)),a=nodes.find(n=>near(n.x,x1)&&near(n.y,y)&&near(n.z,z)),b=nodes.find(n=>near(n.x,x2)&&near(n.y,y)&&near(n.z,z));addM(a,b,"endGirt",{endFace:fi===0?"front":"rear",row:gi+1,tributaryHeight:upper-lower});}});
  });
  return{geometry:{span,length,height,rise,endPostSpacing},nodes,members};
 }
@@ -101,5 +101,5 @@ function selfTest(){
  test("audit never enables analysis or approves design",()=>{const r=audit(fixture());return r.analysisEnabled===false&&r.designApproved===false;});
  const passed=checks.filter(x=>x.ok).length;return{passed,failed:checks.length-passed,total:checks.length,checks};
 }
-root.SteelEndWallGableSupportAudit={audit,selfTest};
+root.SteelEndWallGableSupportAudit={audit,selfTest,fixture};
 })(typeof window!=="undefined"?window:globalThis);
