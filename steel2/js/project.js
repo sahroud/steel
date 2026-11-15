@@ -77,7 +77,9 @@
         const rise = Number($("rise")?.value);
         const height = Number($("height")?.value);
         if (!(span > 0) || !(rise >= 0) || !(height > 0)) return;
-        const slope = rise / (span / 2) * 100;
+        const roofSystem = $("structuralSystem")?.value || "portal-gable";
+        const isSingleSlope = roofSystem === "portal-single-slope";
+        const slope = rise / (isSingleSlope ? span : span / 2) * 100;
         if ($("roofSlopeDisplay")) $("roofSlopeDisplay").textContent = slope.toFixed(1).replace(".", "٫") + "٪";
         if ($("roofRiseDisplay")) $("roofRiseDisplay").textContent = rise.toFixed(2).replace(".", "٫") + " متر";
         if ($("roofTotalHeightDisplay")) $("roofTotalHeightDisplay").textContent = (height + rise).toFixed(2).replace(".", "٫") + " متر";
@@ -122,7 +124,7 @@
             commercial: "commercial",
             other: "other"
         };
-        const systemMap = { "portal-gable": "rigid-portal" };
+        const systemMap = { "portal-gable": "rigid-portal", "portal-single-slope": "rigid-portal" };
         const current = window.SteelDesignCore.getData();
         window.SteelDesignCore.setData(Object.assign({}, current, {
             occupancy: categoryMap[$("projectCategory")?.value] || "other",
@@ -350,7 +352,8 @@
         const count=$("setupFrameCount"),area=$("setupRoofArea"),status=$("projectSetupStatus");
         if(count)count.textContent=Number.isFinite(frames)?String(frames):"—";
         if(area)area.textContent=Number.isFinite(span)&&Number.isFinite(length)?(span*length).toFixed(1)+" m²":"—";
-        if(status)status.textContent="محل: "+city+" | تاج: "+(height+rise).toFixed(2)+" m | جرثقیل: "+(crane?"فعال":"ندارد");
+        const singleSlope=$("structuralSystem")?.value==="portal-single-slope";
+        if(status)status.textContent="محل: "+city+" | "+(singleSlope?"ارتفاع لبه بلند: ":"ارتفاع تاج: ")+(height+rise).toFixed(2)+" m | "+(singleSlope?"سقف تک‌شیب":"سقف دوشیب")+" | جرثقیل: "+(crane?"فعال":"ندارد");
     }
 
     function validate() {
@@ -779,9 +782,9 @@
             }
         });
 
-        ["span", "rise", "height"].forEach(function (id) {
+        ["span", "rise", "height", "structuralSystem"].forEach(function (id) {
             const el = $(id);
-            if (el) el.addEventListener("input", updateRoofGeometry);
+            if (el) { el.addEventListener("input", updateRoofGeometry); el.addEventListener("change", updateRoofGeometry); }
         });
         ["span","length","spacing","height","rise","city","cityName","projectCategory","structuralSystem","crane_enabled"].forEach(function(id){
             const el=$(id); if(el){el.addEventListener("input",updateProjectSetupSummary);el.addEventListener("change",function(){
