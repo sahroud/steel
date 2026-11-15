@@ -29,12 +29,12 @@ else out+=line([x,0,zSide0],[x,d.span,zSide1],"#176b87",3);
 }
 // Longitudinal eave and ridge beams
 for(const y of [0,d.span])out+=line([0,y,roofZ(d,y)],[d.length,y,roofZ(d,y)],"#16845b",2.5);
-if(d.roof==="gable")out+=line([0,d.span/2,d.height+d.rise],[d.length,d.span/2,d.height+d.rise],"#16845b",2.5);
+if(d.roof==="gable")for(const off of [-0.4,0.4]){const y=d.span/2+off;out+=line([0,y,roofZ(d,y)],[d.length,y,roofZ(d,y)],"#16845b",2.5);}
 // Roof purlins, shown as longitudinal lines at regular transverse positions
 const purlinCount=Math.max(2,Math.ceil(d.span/d.purlinSpacing));
 for(let i=1;i<purlinCount;i++){const y=d.span*i/purlinCount;out+=line([0,y,roofZ(d,y)],[d.length,y,roofZ(d,y)],"#b07825",1.35);}
 // Side-wall girts at nominal 1.5 m vertical spacing, following the wall top
-for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/d.girtCount;out+=line([0,0,z],[d.length,0,z],"#6c8491",1.25)+line([0,d.span,z],[d.length,d.span,z],"#6c8491",1.25); }
+for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/(d.girtCount+1);out+=line([0,0,z],[d.length,0,z],"#6c8491",1.25)+line([0,d.span,z],[d.length,d.span,z],"#6c8491",1.25); }
 const postBays3d=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postActual3d=d.span/postBays3d;
 for(const x of [0,d.length])for(let k=1;k<postBays3d;k++){const y=k*postActual3d;out+=line([x,y,0],[x,y,roofZ(d,y)],"#7b5b9a",1.8);}
 // Schematic X bracing in the first and last longitudinal bays on both side walls
@@ -94,10 +94,10 @@ function endSVG(d){
 
 function girtElevationSVG(d){
  const W=760,H=300,L=65,R=25,base=220,sc=Math.min((W-L-R)/d.length,145/d.height),top=base-d.height*sc;
- const count=d.girtCount,actual=d.height/count;
+ const count=d.girtCount,actual=d.height/(count+1);
  let s='<path d="M'+L+' '+base+' H'+(W-R)+'" stroke="#8799a2" stroke-width="2"/>';
  frameStations(d).forEach((x,i)=>{const px=L+x*sc;s+='<path d="M'+px+' '+base+' V'+top+'" stroke="#176b87" stroke-width="2.5"/><text x="'+px+'" y="'+(base+17)+'" text-anchor="middle" font-size="9" fill="#20313d">'+(i+1)+'</text>';});
- for(let i=0;i<count;i++){const yy=top+i*actual*sc;s+='<path d="M'+L+' '+yy+' H'+(W-R)+'" stroke="#6c8491" stroke-width="2"/>';}
+ for(let i=0;i<count;i++){const yy=top+(i+1)*actual*sc;s+='<path d="M'+L+' '+yy+' H'+(W-R)+'" stroke="#6c8491" stroke-width="2"/>';}
  s+='<text x="'+(W/2)+'" y="18" text-anchor="middle" font-size="12" fill="#20313d">'+count+' ردیف قید افقی در هر دیوار طولی · فاصله مساوی قائم '+actual.toFixed(3)+' متر · ردیف اول در بالای ستون</text>';
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای طولی با قیدهای افقی">'+s+'</svg>';
 }
@@ -117,7 +117,7 @@ function memberSchedule(d){
  const rows=[],xs=frameStations(d),bays=xs.length-1;
  const add=(group,mark,a,b,section)=>{const len=Math.sqrt((b[0]-a[0])**2+(b[1]-a[1])**2+(b[2]-a[2])**2);rows.push({group,mark,a:coord(...a),b:coord(...b),len:len.toFixed(3),section});};
  for(const side of [{y:0,n:"لبه چپ"},{y:d.span,n:"لبه راست"}])for(let i=0;i<bays;i++)add("تیر لبه طولی",side.n+"-"+(i+1),[xs[i],side.y,d.height],[xs[i+1],side.y,d.height],d.eaveBeamSection);
- if(d.roof==="gable")for(let i=0;i<bays;i++)add("تیر طولی تاج","RIDGE-"+(i+1),[xs[i],d.span/2,d.height+d.rise],[xs[i+1],d.span/2,d.height+d.rise],d.ridgeBeamSection);
+ if(d.roof==="gable")for(const side of [{off:-0.4,n:"چپ"},{off:0.4,n:"راست"}]){const y=d.span/2+side.off,z=roofZ(d,y);for(let i=0;i<bays;i++)add("تیر طولی تاج","RIDGE-"+side.n+"-"+(i+1),[xs[i],y,z],[xs[i+1],y,z],d.ridgeBeamSection);}
  const pCount=Math.max(2,Math.ceil(d.span/d.purlinSpacing));
  for(let j=1;j<pCount;j++){const y=d.span*j/pCount,z=roofZ(d,y);for(let i=0;i<bays;i++)add("پرلین طولی","P"+j+"-"+(i+1),[xs[i],y,z],[xs[i+1],y,z],d.purlinSection);}
  for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/d.girtCount;for(const side of [{y:0,n:"دیوار چپ"},{y:d.span,n:"دیوار راست"}])for(let i=0;i<bays;i++)add("قید افقی طولی","G"+(j+1)+"-"+side.n+"-"+(i+1),[xs[i],side.y,z],[xs[i+1],side.y,z],d.girtSection);}
