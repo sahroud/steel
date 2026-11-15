@@ -466,3 +466,18 @@ th {
   .home-primary-actions #homeWorkflowStatus,
   .home-primary-actions #projectSetupStatus { grid-column: 1; }
 }
+
+.home-advanced-tools { padding: 0 !important; overflow: hidden; }
+.home-advanced-tools > details > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  min-height: 52px;
+  color: #123b52;
+  background: #edf4f7;
+  font-weight: 800;
+}
+.home-advanced-tools > details > summary::-webkit-details-marker { display: none; }
+.home-advanced-tools > details[open] > summary { border-bottom: 1px solid var(--border); }
+.home-advanced-tools #homeAdvancedContent { padding: 8px 12px; }
+.home-advanced-tools #homeAdvancedContent > .panel { margin: 9px 0; }
