@@ -39,102 +39,53 @@
         <input id="projectFile" type="file" accept=".json" hidden>
     </div>
 
-    <section class="panel">
+    <section class="panel project-setup" id="projectSetupPanel">
         <div class="panel-title">
-            <h3>۱ ـ مشخصات پروژه</h3>
-            <span class="status">آماده ورود اطلاعات</span>
+            <div><span class="setup-eyebrow">ENGINEERING PROJECT INTAKE</span><h3>تعریف پروژه و مشخصات پایه سازه</h3></div>
+            <span class="status">گام ۱ ـ تشکیل پرونده مهندسی</span>
         </div>
-
-        <div class="form-grid">
-            <div class="field">
-                <label for="projectName">نام پروژه</label>
-                <input id="projectName" type="text" value="سوله صنعتی">
-            </div>
-            <div class="field">
-                <label for="owner">کارفرما</label>
-                <input id="owner" type="text" placeholder="نام کارفرما">
-            </div>
-            <div class="field">
-                <label for="designer">طراح</label>
-                <input id="designer" type="text" placeholder="نام مهندس">
-            </div>
-            <div class="field">
-                <label for="city">شهر پروژه</label>
+        <p class="setup-intro">اطلاعات زیر مبنای تشکیل مدل هندسی و پرونده طراحی است. واحد همه ابعاد طولی متر است. بارهای اقلیمی و مشخصات مصالح باید در مراحل تخصصی با مرجع معتبر تأیید شوند.</p>
+        <div class="setup-section-title">مشخصات شناسنامه‌ای و موقعیت پروژه</div>
+        <div class="setup-grid">
+            <div class="field"><label for="projectName">نام پروژه</label><input id="projectName" type="text" value="سوله صنعتی" placeholder="نام مشخص پروژه"></div>
+            <div class="field"><label for="projectCategory">نوع کاربری ساختمان</label><select id="projectCategory"><option value="industrial-workshop">کارگاه صنعتی</option><option value="warehouse">انبار و مرکز نگهداری</option><option value="production">سالن تولید</option><option value="agricultural">سوله کشاورزی</option><option value="commercial">ساختمان تجاری</option><option value="other">سایر کاربری‌ها</option></select></div>
+            <div class="field"><label for="city">شهر محل احداث</label>
                 <select id="city">
-                    <option value="custom">ورود بارگذاری توسط کاربر</option>
-                    <option value="shahroud" selected>شاهرود (پیش‌فرض)</option>
-                    <option value="semnan">سمنان</option>
-                    <option value="tehran">تهران</option>
-                    <option value="mashhad">مشهد</option>
-                    <option value="tabriz">تبریز</option>
-                    <option value="isfahan">اصفهان</option>
-                    <option value="yazd">یزد</option>
-                    <option value="rasht">رشت</option>
-                    <option value="sari">ساری</option>
-                    <option value="kerman">کرمان</option>
-                    <option value="other">سایر شهرها</option>
+                    <option value="shahroud" selected>شاهرود ـ سمنان</option><option value="semnan">سمنان</option><option value="tehran">تهران</option><option value="mashhad">مشهد</option><option value="tabriz">تبریز</option><option value="isfahan">اصفهان</option><option value="yazd">یزد</option><option value="rasht">رشت</option><option value="sari">ساری</option><option value="kerman">کرمان</option><option value="custom">سایر شهرها / ورود دستی</option>
                 </select>
-                <input id="cityName" type="text" placeholder="نام شهر محل اجرای پروژه را وارد کنید" style="display:none;margin-top:8px">
-                <small class="geometry-hint">برای شهرهای خارج از فهرست، گزینه «سایر شهرها» را انتخاب و نام دقیق شهر را وارد کنید.</small>
+                <input id="cityName" type="text" placeholder="نام دقیق شهر و استان" style="display:none;margin-top:8px">
             </div>
+            <div class="field"><label for="owner">کارفرما / مالک</label><input id="owner" type="text" placeholder="نام کارفرما یا شرکت"></div>
+            <div class="field"><label for="designer">طراح / دفتر مهندسی</label><input id="designer" type="text" placeholder="نام مهندس یا دفتر"></div>
+            <div class="field"><label for="baseConnection">شرایط اتصال پای ستون</label><select id="baseConnection"><option value="pinned" selected>مفصلی ـ انتقال نیرو بدون لنگر گیردار</option><option value="fixed">گیردار ـ نیازمند جزئیات اتصال و فونداسیون متناظر</option></select></div>
+        </div>
+        <div class="setup-section-title">سیستم سازه‌ای و ابعاد هندسی</div>
+        <div class="setup-grid">
+            <div class="field"><label for="structuralSystem">سیستم باربر اصلی</label><select id="structuralSystem"><option value="portal-gable" selected>قاب پرتال فولادی دوشیب</option></select><small>هندسه خودکار این مرحله برای قاب پرتال دوشیب تعریف شده است.</small></div>
+            <div class="field"><label for="span">دهانه عرضی سوله (m)</label><input id="span" type="number" min="1" step="0.1" value="12"></div>
+            <div class="field"><label for="length">طول کل سوله (m)</label><input id="length" type="number" min="1" step="0.1" value="36"></div>
+            <div class="field"><label for="spacing">فاصله محور تا محور قاب‌ها (m)</label><input id="spacing" type="number" min="1" step="0.1" value="6"></div>
+            <div class="field"><label for="height">ارتفاع کناری تا زیر تیر/رفتر (m)</label><input id="height" type="number" min="1" step="0.1" value="6"></div>
+            <div class="field"><label for="rise">افزایش ارتفاع تاج نسبت به کناره (m)</label><input id="rise" type="number" min="0" step="0.1" value="1.2"></div>
+            <div class="field"><label for="frames">تعداد قاب‌ها (محاسبه خودکار)</label><input id="frames" type="number" readonly value="7"></div>
+        </div>
+        <div class="roof-auto-summary setup-metrics">
+            <div><span>شیب هندسی سقف</span><strong id="roofSlopeDisplay">۲۰٫۰٪</strong></div>
+            <div><span>ارتفاع تاج</span><strong id="roofTotalHeightDisplay">۷٫۲۰ متر</strong></div>
+            <div><span>تعداد قاب محاسبه‌شده</span><strong id="setupFrameCount">۷</strong></div>
+            <div><span>مساحت تقریبی تصویر افقی سقف</span><strong id="setupRoofArea">۴۳۲ m²</strong></div>
+        </div>
+        <div class="setup-section-title">تجهیزات و شرایط خاص پروژه</div>
+        <div class="setup-equipment-row">
+            <label class="crane-choice" for="crane_enabled"><input id="crane_enabled" type="checkbox"><span><b>جرثقیل سقفی در پروژه وجود دارد</b><small>در صورت فعال‌سازی، مشخصات فنی و بارهای چرخ باید در بخش اطلاعات تخصصی جرثقیل تکمیل شود.</small></span></label>
+            <div class="field"><label for="projectNotes">توضیحات اولیه پروژه</label><input id="projectNotes" type="text" placeholder="مثلاً دو دهانه، سالن گرم، توسعه آتی و ..."></div>
+        </div>
+        <div class="setup-notice"><b>نکته مهندسی:</b> انتخاب شهر به‌تنهایی بار باد، برف یا زلزله را نهایی نمی‌کند. محل دقیق، ارتفاع، رده اهمیت، شرایط زمین، ویرایش آیین‌نامه و مدارک پروژه باید پیش از طراحی بارگذاری تأیید شوند. مشخصات کاربری در این مرحله شناسنامه‌ای است و به‌تنهایی ضریب بار یا ظرفیت سازه تولید نمی‌کند.</div>
+        <div class="setup-footer">
+            <button id="btnApplyProjectSetup" class="btn primary" type="button">ثبت مشخصات و آماده‌سازی مدل</button>
+            <span id="projectSetupStatus">اطلاعات با تغییر هر فیلد ذخیره خودکار می‌شوند.</span>
         </div>
     </section>
-
-    <section class="panel">
-        <div class="panel-title">
-            <h3>۲ ـ مشخصات هندسی</h3>
-        </div>
-        <div class="geometry-grid">
-            <div class="field">
-                <label for="span">دهانه سوله (متر)</label>
-                <input id="span" type="number" min="1" step="0.1" value="12">
-            </div>
-            <div class="field">
-                <label for="length">طول سوله (متر)</label>
-                <input id="length" type="number" min="1" step="0.1" value="36">
-            </div>
-            <div class="field">
-                <label for="spacing">فاصله قاب‌ها (متر)</label>
-                <input id="spacing" type="number" min="1" step="0.1" value="6">
-            </div>
-            <div class="field">
-                <label for="height">ارتفاع ستون (متر)</label>
-                <input id="height" type="number" min="1" step="0.1" value="6">
-            </div>
-            <div class="field">
-                <label for="frames">تعداد قاب‌ها</label>
-                <input id="frames" type="number" readonly value="7">
-            </div>
-            <div class="field"><label for="rise">افزایش ارتفاع تاج نسبت به ستون (متر)</label><input id="rise" type="number" min="0" step="0.1" value="1.2"></div>
-        </div>
-        <div class="roof-auto-summary">
-            <div><span>شیب محاسبه‌شده سقف</span><strong id="roofSlopeDisplay">۲۰٫۰٪</strong></div>
-            <div><span>افزایش ارتفاع تا تاج</span><strong id="roofRiseDisplay">۱٫۲۰ متر</strong></div>
-            <div><span>ارتفاع کل تاج</span><strong id="roofTotalHeightDisplay">۷٫۲۰ متر</strong></div>
-        </div>
-        <p class="geometry-hint">ارتفاع تاج با توجه به دهانه و ارتفاع ستون به‌صورت خودکار محاسبه می‌شود. شیب نهایی باید با نوع پوشش سقف و دستورالعمل سازنده کنترل شود.</p>
-    </section>
-
-    <section class="panel">
-        <div class="panel-title">
-            <h3>۳ ـ شرایط تکیه‌گاهی قاب</h3>
-        </div>
-        <div class="form-grid">
-            <div class="field">
-                <label for="baseConnection">نوع اتصال پای ستون</label>
-                <select id="baseConnection">
-                    <option value="pinned" selected>مفصلی (پیش‌فرض)</option>
-                    <option value="fixed">گیردار</option>
-                </select>
-            </div>
-        </div>
-        <div class="notice">
-            در حالت مفصلی، دوران پای ستون آزاد و جابه‌جایی افقی و قائم مهار است.
-            در حالت گیردار، هر سه درجه آزادی پای ستون مهار می‌شود.
-            انتخاب این گزینه باید با جزئیات واقعی صفحه‌ستون، انکربولت و فونداسیون مطابقت داشته باشد.
-        </div>
-    </section>
-
     <section class="panel">
         <div class="panel-title">
             <h3>۴ ـ بارگذاری مقدماتی</h3>
@@ -243,7 +194,7 @@
             اثر ضربه قائم و نیروهای افقی، تعداد دفعات کار و کنترل خستگی.
             این بخش اطلاعات ورودی و نواقص را ممیزی می‌کند. با فعال‌بودن جرثقیل سقفی، اجرای تحلیل سه‌بعدی کل سوله به‌صورت خودکار جاروب موقعیت قطار چرخ، محاسبه واکنش دو ریل و انتقال بار به تیر حمال و قاب را نیز اجرا می‌کند؛ طراحی نهایی تیر حمال، اتصالات و خستگی همچنان کنترل جداگانه می‌خواهد.
         </div>
-        <label class="field"><input id="crane_enabled" type="checkbox"> این پروژه دارای جرثقیل سقفی است</label>
+        <details class="crane-advanced-details" id="craneAdvancedDetails"><summary>ورود اطلاعات فنی جرثقیل، بار چرخ و مدارک سازنده</summary>
         <div class="form-grid">
             <div class="field"><label for="crane_ratedCapacity_t">ظرفیت اسمی جرثقیل (تن)</label><input id="crane_ratedCapacity_t" type="number" min="0" step="0.1"></div>
             <div class="field"><label for="crane_trolleyMass_t">وزن ارابه (تن)</label><input id="crane_trolleyMass_t" type="number" min="0" step="0.01"></div>
@@ -278,6 +229,7 @@
         <div id="craneBayConfigurationAudit" class="notice">پس از تولید مدل هندسی، تعداد دهانه‌ها و جانمایی جرثقیل‌ها ممیزی می‌شود.</div>
         <div class="button-grid"><button id="craneMultiBayMeshProposalButton" class="btn secondary" type="button">تهیه پیشنهاد هندسه تیر حمال برای دهانه‌های انتخابی</button></div>
         <div id="craneMultiBayMeshProposalResults" class="notice">پس از تولید مدل سه‌بعدی، هندسه پیشنهادی مستقل سامانه ریل و دهانه‌های تخصیص‌یافته ممیزی می‌شود؛ این پیشنهاد وارد حل‌گر نمی‌شود.</div>
+            </details>
     </section>
 
 
