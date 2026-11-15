@@ -179,11 +179,28 @@
             `).join("");
 
             const responseRows = buildResponseTable(combos);
+            const scopeAudit = window.SteelMemberDesignScopeGate?.audit?.() || null;
+            const scopeRows = scopeAudit?.rows?.map(row => `
+                <tr>
+                    <td>${esc(row.label)}</td>
+                    <td>${fmt(row.memberCount, 0)}</td>
+                    <td>${esc(row.status === "blocked" ? "مسدود" : "محدود و غیرنهایی")}</td>
+                    <td>${esc((row.missing || []).join("؛ "))}</td>
+                </tr>
+            `).join("") || "";
+            const scopeSummary = scopeAudit
+                ? `گروه‌های عضو بررسی‌شده: ${scopeAudit.summary.groups}؛ گروه‌های مسدود: ${scopeAudit.summary.blocked}؛ گروه‌های دارای موتور محدود: ${scopeAudit.summary.limitedOnly}.`
+                : "ممیزی دامنه طراحی اعضا در دسترس نیست؛ وضعیت طراحی تأییدنشده باقی می‌ماند.";
 
             let html = `
                 <div id="printableFinalReport">
 
-                    <h2>گزارش تجمیعی طراحی سازه فولادی</h2>
+                    <h2>گزارش محاسبات مقدماتی سازه فولادی — غیرقابل استفاده برای اجرا</h2>
+                    <div class="notice" style="border:2px solid #b91c1c;padding:12px">
+                        <b>وضعیت قطعی این گزارش: طراحی تأیید نشده است.</b>
+                        <p>این خروجی صرفاً تجمیع نتایج موجود نرم‌افزار است؛ نقشه ساخت، دفترچه محاسبات نهایی یا مجوز اجرا نیست.</p>
+                        <p>${esc(scopeSummary)}</p>
+                    </div>
 
                     <p>
                         تاریخ تهیه:
@@ -315,7 +332,21 @@
 
             html += `
                     <section class="report-section">
-                        <h3>۹. محدودیت‌ها و هشدارهای مهندسی</h3>
+                        <h3>۹. ممیزی دامنه طراحی اعضا و موارد مسدودکننده</h3>
+                        <div class="notice">
+                            <b>نتیجه ممیزی:</b> هیچ گروه عضوی از این مسیر مجوز طراحی اجرایی دریافت نمی‌کند.
+                            <p>${esc(scopeSummary)}</p>
+                        </div>
+                        <div style="overflow-x:auto">
+                            <table>
+                                <thead><tr><th>گروه عضو</th><th>تعداد</th><th>وضعیت</th><th>موارد تکمیل‌نشده</th></tr></thead>
+                                <tbody>${scopeRows || '<tr><td colspan="4">ممیزی دامنه طراحی در دسترس نیست.</td></tr>'}</tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="report-section">
+                        <h3>۱۰. محدودیت‌ها و هشدارهای مهندسی</h3>
 
                         <div class="notice">
                             <p>
