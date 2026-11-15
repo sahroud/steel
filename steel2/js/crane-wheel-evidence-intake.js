@@ -92,8 +92,8 @@ function init(){
  '<div class="field"><label for="cwei_locator">صفحه / شیت / جدول دقیق</label><input id="cwei_locator"></div>'+
  '<div class="field"><label for="cwei_basis">مبنای بار</label><select id="cwei_basis"><option value="">انتخاب کنید</option><option value="static_without_impact">بار قائم استاتیکی، بدون ضریب ضربه</option></select></div>'+
  '</div><div class="field"><label for="cwei_mapping">شرح تطبیق نقشه: این جدول دقیقاً متعلق به کدام پل و کدام خطوط ریل است؟</label><textarea id="cwei_mapping" rows="2"></textarea></div>'+
- '<div class="field"><label for="cwei_left">بارهای چرخ ریل چپ (JSON؛ offset_m، P_N منفی، source، document)</label><textarea id="cwei_left" rows="5" placeholder='[{"offset_m":0,"P_N":-10000,"source":"Vendor table","document":"DWG-01 / Row 2"}]'></textarea></div>'+
- '<div class="field"><label for="cwei_right">بارهای چرخ ریل راست (JSON؛ هر چرخ مستقل)</label><textarea id="cwei_right" rows="5" placeholder='[{"offset_m":0,"P_N":-10000,"source":"Vendor table","document":"DWG-01 / Row 3"}]'></textarea></div>'+
+ '<div class="field"><label for="cwei_left">بارهای چرخ ریل چپ (JSON؛ offset_m، P_N منفی، source، document)</label><textarea id="cwei_left" rows="5"></textarea></div>'+
+ '<div class="field"><label for="cwei_right">بارهای چرخ ریل راست (JSON؛ هر چرخ مستقل)</label><textarea id="cwei_right" rows="5"></textarea></div>'+
  '<label class="field"><input type="checkbox" id="cwei_verified"> تطبیق پرونده، هویت پل، خطوط ریل، تعداد و بار تک‌تک چرخ‌ها را با مدارک سازنده بررسی کرده‌ام.</label>'+
  '<div class="button-grid"><button class="btn secondary" type="button" id="cwei_audit">ممیزی شواهد بار چرخ</button><button class="btn primary" type="button" id="cwei_apply">انتقال جدول معتبر به پنل دو ریل</button><button class="btn secondary" type="button" id="cwei_export">دریافت JSON شواهد</button></div><div id="cwei_result" class="notice">اطلاعات بار چرخ هنوز وارد نشده است.</div>';
  anchor.insertAdjacentElement("beforebegin",p);
