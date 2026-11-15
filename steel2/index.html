@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#123b52">
 <meta name="description" content="ورود مشخصات و پیش‌نمایش هندسی سوله">
 <title>SAHROUD STEEL | شروع سریع</title>
-<link rel="stylesheet" href="fast.css?v=20261115-endframe-girtcount">
-<script defer src="fast-app.js?v=20261115-endframe-girtcount"></script>
+<link rel="stylesheet" href="fast.css?v=20261115-longitudinal-schedule">
+<script defer src="fast-app.js?v=20261115-longitudinal-schedule"></script>
 </head>
 <body>
 <header class="top">
@@ -35,6 +35,7 @@
       <div class="field"><label for="spacing">فاصله قاب‌ها (متر)</label><input id="spacing" type="number" min="1" max="20" step="0.1" value="6"></div>
       <div class="field"><label for="height">ارتفاع ستون تا لبه سقف (متر)</label><input id="height" type="number" min="1" max="40" step="0.1" value="6"></div>
       <div class="field"><label for="girtCount">تعداد قیدهای افقی در هر دیوار طولی</label><input id="girtCount" type="number" min="1" max="20" step="1" value="4"></div>
+      <div class="field"><label for="purlinSpacing">حداکثر فاصله پرلین‌های سقف (متر)</label><input id="purlinSpacing" type="number" min="0.3" max="4" step="0.1" value="1.5"></div>
       <div class="field"><label for="endPostSpacing">حداکثر فاصله ستونک‌های دیوار انتهایی (متر)</label><input id="endPostSpacing" type="number" min="1" max="12" step="0.1" value="4"></div>
       <div class="field"><label for="slopePercent">شیب سقف (درصد)</label><input id="slopePercent" type="number" min="0.1" max="100" step="0.5" value="20"></div>
       <div class="field"><label for="rise">خیز تاج / اختلاف ارتفاع دو لبه (متر) ـ محاسبه خودکار</label><input id="rise" type="number" min="0.001" max="100" step="0.001" value="1.2" readonly></div>
@@ -54,8 +55,22 @@
     <div id="status" class="status" role="status" aria-live="polite">پروژه آماده ورود اطلاعات است.</div>
   </section>
 
+  <section class="card" aria-labelledby="sectionsTitle">
+    <h3 id="sectionsTitle">۳. ثبت نام مقاطع اعضا</h3>
+    <p class="hint">نام یا مشخصات مقطع را می‌توانید وارد کنید. مقدار «تعیین نشده» به معنی نبود طراحی و تأیید مقطع است؛ این قسمت فقط برای ثبت اطلاعات و تهیه جدول است.</p>
+    <div class="grid">
+      <div class="field"><label for="mainFrameSection">قاب اصلی (ستون و رفتر)</label><input id="mainFrameSection" value="تعیین نشده"></div>
+      <div class="field"><label for="eaveBeamSection">تیرهای لبه طولی</label><input id="eaveBeamSection" value="تعیین نشده"></div>
+      <div class="field"><label for="ridgeBeamSection">تیر طولی تاج</label><input id="ridgeBeamSection" value="تعیین نشده"></div>
+      <div class="field"><label for="purlinSection">پرلین سقف</label><input id="purlinSection" value="تعیین نشده"></div>
+      <div class="field"><label for="girtSection">قیدهای افقی دیوار</label><input id="girtSection" value="تعیین نشده"></div>
+      <div class="field"><label for="endPostSection">ستونک‌های باربر انتهایی</label><input id="endPostSection" value="تعیین نشده"></div>
+      <div class="field"><label for="bracingSection">مهاربندها</label><input id="bracingSection" value="تعیین نشده"></div>
+    </div>
+  </section>
+
   <section id="preview" class="card hidden" aria-labelledby="previewTitle">
-    <h3 id="previewTitle">۳. پیش‌نمایش هندسی</h3>
+    <h3 id="previewTitle">۴. پیش‌نمایش و جداول هندسی</h3>
     <div class="preview-grid">
       <div class="drawing"><h4>نمای قاب عرضی</h4><div id="frameDrawing" class="empty">پس از ساخت نمایش داده می‌شود.</div></div>
       <div class="drawing"><h4>نمای طولی دیوار جانبی و محل قاب‌ها</h4><div id="longDrawing" class="empty">پس از ساخت نمایش داده می‌شود.</div></div>
@@ -64,6 +79,8 @@
       <div class="drawing"><h4>نمای شماتیک سه‌بعدی</h4><div id="modelDrawing" class="empty">پس از ساخت نمایش داده می‌شود.</div></div>
     </div>
     <div class="table-wrap"><h4>جدول مختصات قاب‌ها در طول سوله</h4><div id="frameTable"></div></div>
+    <div class="table-wrap"><h4>جدول اعضای طولی، ستونک‌های انتهایی، مقاطع ثبت‌شده و مختصات سه‌بعدی</h4><div id="memberTable"></div></div>
+    <p class="notice">مختصات به متر و به ترتیب (X,Y,Z) است: X در امتداد طول از قاب اول، Y در عرض از دیوار سمت صفر تا دیوار مقابل، و Z از کف. طول‌ها هندسی‌اند و طول برش، وصله، همپوشانی و جزئیات اتصال را شامل نمی‌شوند.</p>
     <div class="metrics-legend"><span>آبی: قاب‌های اصلی</span><span>سبز: تیرهای طولی لبه و تاج</span><span>کهربایی: پرلین‌های سقف</span><span>خاکستری: لاپه‌های دیوار</span><span>قرمز: مهاربندی‌های شماتیک</span></div>
     <div id="metrics" class="metrics"></div>
     <p class="notice">این خروجی فقط نمایش هندسه اولیه است؛ تحلیل بار، طراحی مقاطع، کنترل اتصالات، فونداسیون و تأیید آیین‌نامه‌ای در این نسخه انجام نمی‌شود.</p>
