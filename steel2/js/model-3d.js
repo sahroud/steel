@@ -766,6 +766,8 @@
     return {passed:checks.filter(Boolean).length,total:checks.length,checks};
   }
   function build() {
+    if($("structuralSystem")?.value==="portal-single-slope")
+      throw new Error("مدل سه‌بعدی تک‌شیب هنوز تکمیل نشده است؛ فقط پیش‌نمایش دوبعدی نمایش داده می‌شود.");
     const span=val("span",20), length=val("length",30), spacing=val("spacing",5), height=val("height",6), rise=val("rise",2);
     const craneData=window.SteelCraneReadiness?.getData?.()||{};
     const craneEnabled=!!craneData.enabled;
@@ -1759,6 +1761,11 @@
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
+    if($("structuralSystem")?.value==="portal-single-slope"){
+      model=null;
+      if(window.SteelDrawing?.drawFrame)window.SteelDrawing.drawFrame();
+      return;
+    }
     if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});if($("craneRunwayAxisOffset")&&g.craneRunway?.axisOffsetM!=null)$("craneRunwayAxisOffset").value=g.craneRunway.axisOffsetM;if($("craneRunwaySupportType"))$("craneRunwaySupportType").value=g.craneRunway?.supportType||"";Object.entries(RUNWAY_SECTION_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.sectionInputs?.[key]??(key==="steelGrade"?"ST37":"");});Object.entries(RUNWAY_STIFFENER_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.stiffenerInputs?.[key]??"";});Object.entries(RUNWAY_LOAD_PATH_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.loadPathInputs?.[key]??"";});Object.entries(RUNWAY_FASTENING_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.fasteningInputs?.[key]??"";});Object.entries(RUNWAY_RAIL_LAYOUT_FIELD_IDS).forEach(([key,id])=>{const el=$(id);if(el)el.value=g.craneRunway?.railLayoutInputs?.[key]??(key==="firstSupportOffset_m"?"0":"");});const rf=g.craneRunway?.railFemInputs||{};if($("craneRunwayRailSupportStiffness"))$("craneRunwayRailSupportStiffness").value=rf.supportStiffnessCsv||"";if($("craneRunwayRailSupportStiffnessSource"))$("craneRunwayRailSupportStiffnessSource").value=rf.supportStiffnessSource||"";if($("craneRunwayRailWheelLoads"))$("craneRunwayRailWheelLoads").value=rf.pointLoadsJson||"";if($("craneRunwayRailMovingTrain"))$("craneRunwayRailMovingTrain").value=rf.movingTrainJson||"";if($("craneRunwayRailMovingStep"))$("craneRunwayRailMovingStep").value=rf.movingStepM||"0.25";}
     build();draw();showSummary();
   }
