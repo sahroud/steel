@@ -583,7 +583,7 @@
     }
 
     // تحلیل مستقل ترکیبات بار
-    async function calculateCombinations() {
+    async function calculateCombinations(onProgress) {
         const model = window.SteelStructuralModel;
         const loadsApi = window.SteelLoads;
         if (!model || typeof model.analyze3D !== "function" || !loadsApi) {
@@ -616,7 +616,13 @@
         const cases=build3DCombinationCases(windBuild);
         const rows=[];
         const summaries=[];
-        for(const item of cases){
+        for(let caseIndex=0;caseIndex<cases.length;caseIndex++){
+            const item=cases[caseIndex];
+            if(typeof onProgress==="function")onProgress({index:caseIndex+1,total:cases.length,label:item.label});
+            const progressMessage=$("analysisMessage");
+            if(progressMessage)progressMessage.textContent="تحلیل حالت "+(caseIndex+1)+" از "+cases.length+": "+item.label+" — حل در پردازشگر پس‌زمینه…";
+            // Paint progress before starting the next worker; do not monopolize the page event loop.
+            await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
             const result=await model.analyze3D(item);
             if(!result||!result.success)throw new Error("حل سه‌بعدی ترکیب انجام نشد: "+item.label);
             if(!result.equilibrium||result.equilibrium.ok!==true)throw new Error("تعادل عددی ترکیب "+item.label+" برقرار/تأیید نشده است؛ حالت برای پوش طراحی پذیرفته نشد.");
@@ -699,7 +705,10 @@
         // اجازه می‌دهیم پیام شروع قبل از محاسبات سنگین روی صفحه دیده شود.
         setTimeout(async function () {
             try {
-                const result = await calculateCombinations();
+                const result = await calculateCombinations(progress => {
+                    if (button) button.textContent = "تحلیل " + progress.index + "/" + progress.total;
+                    if (message) message.textContent = "حالت " + progress.index + " از " + progress.total + ": " + progress.label + " — در حال حل سه‌بعدی…";
+                });
                 if (result && result.success) {
                     setStatus("تحلیل ترکیبات بار با موفقیت انجام شد.");
                 } else if (message && (!message.textContent || !message.textContent.trim())) {
