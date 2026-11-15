@@ -92,8 +92,9 @@
     }
 
     function shouldOpen(title) {
-        // Keep the first screen compact: expose actions/results, collapse detail inputs.
-        return /عملیات پروژه|گالری نماهای سازه|مدل هندسی کامل سوله|نتایج تحلیل|اجرای هوشمند و یکپارچه پروژه/.test(title);
+        // صفحه شروع فقط فرم مشخصات و پیش‌نمایش سبک قاب را باز نگه می‌دارد.
+        // گالری، مدل کامل، بارگذاری، تحلیل و ابزارهای تخصصی با درخواست کاربر باز می‌شوند.
+        return /تعریف پروژه و مشخصات پایه سازه|نمایش قاب/.test(title);
     }
 
     function organize(panel) {
