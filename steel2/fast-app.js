@@ -9,7 +9,7 @@ function calculatedRise(span,slopePercent,roof){const run=roof==="gable"?span/2:
 function updateRise(){const span=Number($("span").value),slope=Number($("slopePercent").value),roof=$("roof").value;if(Number.isFinite(span)&&span>0&&Number.isFinite(slope)&&slope>0){$("rise").value=calculatedRise(span,slope,roof).toFixed(3);}}
 function write(d){Object.keys(defaults).forEach(k=>{const el=$(k);if(el&&d[k]!==undefined)el.value=d[k];});if(!$("slopePercent").value)$("slopePercent").value=20;updateRise();$("craneCapacity").disabled=$("crane").value==="no";}
 function status(msg,error){const el=$("status");el.textContent=msg;el.classList.toggle("error",!!error);}
-function valid(d){if(!d.projectName||!d.city)return "نام پروژه و شهر را وارد کنید.";for(const [k,n] of [["span","دهانه"],["length","طول"],["spacing","فاصله قاب‌ها"],["height","ارتفاع ستون"],["girtCount","تعداد قیدهای افقی"],["endPostSpacing","فاصله ستونک‌های انتهایی"],["purlinSpacing","حداکثر فاصله پرلین‌ها"],["rise","ارتفاع تاج / اختلاف ارتفاع سقف"]])if(!Number.isFinite(d[k])||d[k]<=0)return "مقدار "+n+" باید بزرگ‌تر از صفر باشد.";if(!Number.isFinite(d.slopePercent)||d.slopePercent<=0||d.slopePercent>100)return "شیب سقف باید بین صفر و ۱۰۰ درصد باشد.";if(d.spacing>d.length)return "فاصله قاب‌ها نمی‌تواند از طول سوله بیشتر باشد.";if(!Number.isInteger(d.girtCount)||d.girtCount<1||d.girtCount>20||d.endPostSpacing>d.span||d.purlinSpacing<=0||d.purlinSpacing>4)return "فاصله قیدها یا ستونک‌های انتهایی را بررسی کنید.";if(d.rise>=d.height*2)return "ارتفاع تاج یا اختلاف ارتفاع سقف را بررسی کنید.";if(d.crane==="yes"&&d.craneCapacity<=0)return "ظرفیت جرثقیل را وارد کنید.";return "";}
+function valid(d){if(!d.projectName||!d.city)return "نام پروژه و شهر را وارد کنید.";for(const [k,n] of [["span","دهانه"],["length","طول"],["spacing","فاصله قاب‌ها"],["height","ارتفاع ستون"],["girtCount","تعداد قیدهای افقی"],["endPostSpacing","فاصله ستونک‌های انتهایی"],["purlinSpacing","حداکثر فاصله پرلین‌ها"],["rise","ارتفاع تاج / اختلاف ارتفاع سقف"]])if(!Number.isFinite(d[k])||d[k]<=0)return "مقدار "+n+" باید بزرگ‌تر از صفر باشد.";if(!Number.isFinite(d.slopePercent)||d.slopePercent<=0||d.slopePercent>100)return "شیب سقف باید بین صفر و ۱۰۰ درصد باشد.";if(d.spacing>d.length)return "فاصله قاب‌ها نمی‌تواند از طول سوله بیشتر باشد.";if(!Number.isInteger(d.girtCount)||d.girtCount<0||d.girtCount>20||d.endPostSpacing>d.span||d.purlinSpacing<=0||d.purlinSpacing>4)return "فاصله قیدها یا ستونک‌های انتهایی را بررسی کنید.";if(d.rise>=d.height*2)return "ارتفاع تاج یا اختلاف ارتفاع سقف را بررسی کنید.";if(d.crane==="yes"&&d.craneCapacity<=0)return "ظرفیت جرثقیل را وارد کنید.";return "";}
 function roofZ(d,y){return d.roof==="gable"?d.height+d.rise*(1-Math.abs(y-d.span/2)/(d.span/2)):d.height+d.rise*y/d.span;}
 function frameSVG(d){const W=640,H=340,m=62,base=276,scale=Math.min((W-2*m)/d.span,(base-52)/(d.height+d.rise)),x0=(W-d.span*scale)/2,x1=x0+d.span*scale,z0=base-d.height*scale,z1=base-(d.height+d.rise)*scale;let roof;
 if(d.roof==="gable"){const xm=(x0+x1)/2;roof="M "+x0+" "+z0+" L "+xm+" "+z1+" L "+x1+" "+z0;}
@@ -132,12 +132,35 @@ function memberSchedule(d){
  return '<table><thead><tr><th>گروه عضو</th><th>شناسه</th><th>مختصات ابتدا X,Y,Z (m)</th><th>مختصات انتها X,Y,Z (m)</th><th>طول (m)</th><th>مقطع ثبت‌شده</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.group)+'</td><td>'+esc(r.mark)+'</td><td dir="ltr">'+r.a+'</td><td dir="ltr">'+r.b+'</td><td>'+r.len+'</td><td>'+esc(r.section||"تعیین نشده")+'</td></tr>').join('')+'</tbody></table>';
 }
 
+
+function connectionSchedule(d){
+ const xs=frameStations(d), rows=[];
+ const addLine=(group,mark,y,z)=>xs.forEach((x,i)=>rows.push({frame:i+1,x,y,z,group,mark,splice:(i>0&&i<xs.length-1)?"مرز قطعات مجاور؛ وصله فقط پس از طراحی":"—"}));
+ [0,d.span].forEach((y,i)=>addLine("تیر لبه طولی",i?"EB-R":"EB-L",y,d.height));
+ if(d.roof==="gable")for(const side of [{off:-.4,n:"RL"},{off:.4,n:"RR"}]){const y=d.span/2+side.off;addLine("تیر تاج طولی",side.n,y,roofZ(d,y));}
+ const pc=Math.max(2,Math.ceil(d.span/d.purlinSpacing));
+ for(let j=1;j<pc;j++){const y=d.span*j/pc;addLine("پرلین", "P"+j,y,roofZ(d,y));}
+ for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/(d.girtCount+1);addLine("قید افقی", "G"+(j+1)+"-L",0,z);addLine("قید افقی","G"+(j+1)+"-R",d.span,z);}
+ return '<table><thead><tr><th>قاب</th><th>X (m)</th><th>گروه عضو</th><th>شناسه خط</th><th>گره (X,Y,Z) m</th><th>وضعیت اتصال / وصله</th></tr></thead><tbody>'+
+ rows.map(r=>'<tr><td>'+r.frame+'</td><td>'+r.x.toFixed(3)+'</td><td>'+r.group+'</td><td>'+r.mark+'</td><td dir="ltr">'+coord(r.x,r.y,r.z)+'</td><td>'+(r.splice==="—"?"گره اتصال هندسی به قاب؛ جزئیات اتصال تعیین نشده":r.splice+"؛ ابعاد و نوع اتصال تعیین نشده")+'</td></tr>').join('')+
+ '</tbody></table>';
+}
+function cutList(d){
+ const box=document.createElement("div");box.innerHTML=memberSchedule(d);
+ const rows=Array.from(box.querySelectorAll("tbody tr")).map(tr=>Array.from(tr.children).map(td=>td.textContent.trim())).filter(c=>c.length>=6&&c[4]!=="—");
+ const groups=new Map();
+ rows.forEach(c=>{const key=[c[0],c[5],c[4]].join("|");groups.set(key,(groups.get(key)||0)+1);});
+ return '<table><thead><tr><th>گروه عضو</th><th>مقطع ثبت‌شده</th><th>طول هندسی هر قطعه (m)</th><th>تعداد قطعه</th><th>طول هندسی کل (m)</th></tr></thead><tbody>'+
+ Array.from(groups.entries()).map(([k,n])=>{const [g,sec,len]=k.split("|"),v=Number(len);return '<tr><td>'+esc(g)+'</td><td>'+esc(sec)+'</td><td>'+v.toFixed(3)+'</td><td>'+n+'</td><td>'+(v*n).toFixed(3)+'</td></tr>';}).join('')+
+ '</tbody></table>';
+}
+
 function draw(d){
  const xs=frameStations(d),bays=xs.length-1,actual=d.length/bays;
  $("frameDrawing").innerHTML=frameSVG(d);$("longDrawing").innerHTML=girtElevationSVG(d);$("planDrawing").innerHTML=planSVG(d);$("endDrawing").innerHTML=endSVG(d);$("modelDrawing").innerHTML=modelSVG(d);
  $("frameTable").innerHTML='<table><thead><tr><th>شماره قاب</th><th>مختصات از مبدأ (متر)</th><th>فاصله تا قاب بعدی (متر)</th></tr></thead><tbody>'+xs.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+x.toFixed(3)+'</td><td>'+(i<bays?actual.toFixed(3):'—')+'</td></tr>').join('')+'</tbody></table>';
- $("memberTable").innerHTML=memberSchedule(d);
- $("metrics").innerHTML=[["دهانه",d.span+" m"],["طول",d.length+" m"],["تعداد قاب",xs.length],["تعداد دهانه طولی",bays],["فاصله واقعی قاب‌ها",actual.toFixed(3)+" m"],["فاصله واقعی پرلین‌ها",(d.span/Math.max(2,Math.ceil(d.span/d.purlinSpacing))).toFixed(3)+" m"],["تعداد قید افقی هر دیوار طولی",d.girtCount],["فاصله مساوی قائم قیدها",(d.height/d.girtCount).toFixed(3)+" m"],["ستونک میانی هر قاب انتهایی",Math.max(0,Math.ceil(d.span/d.endPostSpacing)-1)],["فاصله واقعی ستونک‌های انتهایی",(d.span/Math.ceil(d.span/d.endPostSpacing)).toFixed(3)+" m"],["فولاد",d.steel],["جرثقیل",d.crane==="yes"?d.craneCapacity+" تن":"ندارد"],["نوع سقف",d.roof==="gable"?"دو شیب":"تک‌شیب"],["شیب سقف",d.slopePercent+"٪"],["خیز / اختلاف ارتفاع",d.rise.toFixed(3)+" m"]].map(x=>'<span class="metric">'+x[0]+': <b>'+x[1]+'</b></span>').join("");
+ $("memberTable").innerHTML=memberSchedule(d);$("connectionTable").innerHTML=connectionSchedule(d);$("cutTable").innerHTML=cutList(d);
+ $("metrics").innerHTML=[["دهانه",d.span+" m"],["طول",d.length+" m"],["تعداد قاب",xs.length],["تعداد دهانه طولی",bays],["فاصله واقعی قاب‌ها",actual.toFixed(3)+" m"],["فاصله واقعی پرلین‌ها",(d.span/Math.max(2,Math.ceil(d.span/d.purlinSpacing))).toFixed(3)+" m"],["تعداد قید افقی هر دیوار طولی",d.girtCount],["فاصله قائم قیدها",(d.height/(d.girtCount+1)).toFixed(3)+" m"],["ستونک میانی هر قاب انتهایی",Math.max(0,Math.ceil(d.span/d.endPostSpacing)-1)],["فاصله واقعی ستونک‌های انتهایی",(d.span/Math.ceil(d.span/d.endPostSpacing)).toFixed(3)+" m"],["فولاد",d.steel],["جرثقیل",d.crane==="yes"?d.craneCapacity+" تن":"ندارد"],["نوع سقف",d.roof==="gable"?"دو شیب":"تک‌شیب"],["شیب سقف",d.slopePercent+"٪"],["خیز / اختلاف ارتفاع",d.rise.toFixed(3)+" m"]].map(x=>'<span class="metric">'+x[0]+': <b>'+x[1]+'</b></span>').join("");
  $("preview").classList.remove("hidden");
 }
 function save(){const d=read(),e=valid(d);if(e){status(e,true);return false;}try{localStorage.setItem(KEY,JSON.stringify(d));status("مشخصات پروژه در همین مرورگر ذخیره شد.");return true;}catch(err){status("ذخیره خودکار مرورگر ممکن نشد؛ از خروجی JSON استفاده کنید.",true);return false;}}
