@@ -1,488 +1,72 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#123b52">
-<title>SAHROUD STEEL | سامانه یکپارچه طراحی سوله</title>
-<link rel="stylesheet" href="style.css?v=20261115-compact-home2">
-<script defer src="js/m6-load-combination-templates.js?v=20261113-m6-combos1"></script>
+<meta name="description" content="ورود مشخصات و پیش‌نمایش هندسی سوله">
+<title>SAHROUD STEEL | شروع سریع</title>
+<link rel="stylesheet" href="fast.css?v=1">
+<script defer src="fast-app.js?v=1"></script>
 </head>
 <body>
-
-<header class="header">
-    <div class="brand">
-        <div class="logo">S</div>
-        <div>
-            <h1>SAHROUD STEEL</h1>
-            <p>سامانه یکپارچه طراحی، تحلیل و مستندسازی سوله</p>
-        </div>
-    </div>
-    <div class="version">نسخه 2.1 ـ کارگاه یکپارچه</div>
+<header class="top">
+  <div class="brand"><div class="logo">S</div><div><h1>SAHROUD STEEL</h1><p>ورود مشخصات و ساخت پیش‌نمایش هندسی سوله</p></div></div>
+  <span class="ver">نسخه سبک ـ مرحله ورود اطلاعات</span>
 </header>
+<main>
+  <div class="intro"><h2>تعریف پروژه</h2><p>ابتدا مشخصات اصلی را وارد کنید؛ سپس پیش‌نمایش دوبعدی و شماتیک سه‌بعدی را بسازید.</p></div>
 
-<main class="container">
-
-    <section class="welcome">
-        <h2>طراحی و تحلیل مقدماتی سوله</h2>
-        <p>ورود مشخصات هندسی، بارگذاری اولیه، ترسیم قاب و بررسی نتایج تحلیل</p>
-    </section>
-
-    <div class="quick-actions" role="group" aria-label="عملیات سریع پروژه">
-        <div class="quick-actions-title">پروژه فعال</div>
-        <div class="quick-actions-buttons">
-            <button id="btnLoad" class="btn secondary" type="button">بازکردن پروژه</button>
-            <button id="btnSave" class="btn secondary" type="button">ذخیره پروژه</button>
-        </div>
-        <div id="projectStatus" class="quick-project-status">پروژه آماده است؛ آخرین پروژه پس از بارگذاری به‌صورت خودکار نگهداری می‌شود.</div>
-        <input id="projectFile" type="file" accept=".json" hidden>
+  <section class="card" aria-labelledby="identityTitle">
+    <h3 id="identityTitle">۱. مشخصات پروژه</h3>
+    <div class="grid">
+      <div class="field"><label for="projectName">نام پروژه</label><input id="projectName" value="سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود"></div>
+      <div class="field"><label for="city">شهر و استان</label><input id="city" value="شاهرود ـ سمنان"></div>
+      <div class="field"><label for="owner">کارفرما</label><input id="owner" value="شرکت شهرک‌های صنعتی"></div>
+      <div class="field"><label for="designer">مهندس طراح</label><input id="designer" value="مهندس احمد نوری"></div>
     </div>
+  </section>
 
-    <section class="panel project-setup" id="projectSetupPanel">
-        <div class="panel-title">
-            <div><span class="setup-eyebrow">ENGINEERING PROJECT INTAKE</span><h3>تعریف پروژه و مشخصات پایه سازه</h3></div>
-            <span class="status">گام ۱ ـ تشکیل پرونده مهندسی</span>
-        </div>
-        <p class="setup-intro">اطلاعات زیر مبنای تشکیل مدل هندسی و پرونده طراحی است. واحد همه ابعاد طولی متر است. بارهای اقلیمی و مشخصات مصالح باید در مراحل تخصصی با مرجع معتبر تأیید شوند.</p>
-        <div class="setup-section-title">مشخصات شناسنامه‌ای و موقعیت پروژه</div>
-        <div class="setup-grid">
-            <div class="field"><label for="projectName">نام پروژه</label><input id="projectName" type="text" value="سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود" placeholder="نام مشخص پروژه"></div>
-            <div class="field"><label for="projectCategory">نوع کاربری ساختمان</label><select id="projectCategory"><option value="industrial-workshop">کارگاه صنعتی</option><option value="warehouse">انبار و مرکز نگهداری</option><option value="production">سالن تولید</option><option value="agricultural">سوله کشاورزی</option><option value="commercial">ساختمان تجاری</option><option value="other">سایر کاربری‌ها</option></select></div>
-            <div class="field"><label for="city">شهر محل احداث</label>
-                <select id="city">
-                    <option value="shahroud" selected>شاهرود ـ سمنان</option><option value="semnan">سمنان</option><option value="tehran">تهران</option><option value="mashhad">مشهد</option><option value="tabriz">تبریز</option><option value="isfahan">اصفهان</option><option value="yazd">یزد</option><option value="rasht">رشت</option><option value="sari">ساری</option><option value="kerman">کرمان</option><option value="custom">سایر شهرها / ورود دستی</option>
-                </select>
-                <input id="cityName" type="text" placeholder="نام دقیق شهر و استان" style="display:none;margin-top:8px">
-            </div>
-            <div class="field"><label for="owner">کارفرما / مالک</label><input id="owner" type="text" list="ownerSuggestions" value="شرکت شهرک‌های صنعتی" placeholder="نام کارفرما یا شرکت"><datalist id="ownerSuggestions"><option value="شرکت شهرک‌های صنعتی"></option><option value="شرکت شهرک‌های صنعتی استان سمنان"></option><option value="شخص حقیقی"></option></datalist></div>
-            <div class="field"><label for="designer">طراح / دفتر مهندسی</label><input id="designer" type="text" list="designerSuggestions" value="مهندس احمد نوری" placeholder="نام مهندس یا دفتر"><datalist id="designerSuggestions"><option value="مهندس احمد نوری"></option><option value="دفتر مهندسی احمد نوری"></option></datalist></div>
-            <div class="field"><label for="projectSteelGrade">رده فولاد مصرفی</label><input id="projectSteelGrade" type="text" list="projectSteelGradeSuggestions" value="ST37" placeholder="مثلاً ST37 یا ST52"><datalist id="projectSteelGradeSuggestions"><option value="ST37"></option><option value="ST52"></option><option value="S235"></option><option value="S275"></option><option value="S355"></option></datalist><small>رده فولاد قابل انتخاب یا ورود دستی است؛ خواص طراحی باید با گواهی مصالح و ضخامت محصول تطبیق داده شود.</small></div><div class="field"><label for="baseConnection">شرایط اتصال پای ستون</label><select id="baseConnection"><option value="pinned" selected>مفصلی ـ انتقال نیرو بدون لنگر گیردار</option><option value="fixed">گیردار ـ نیازمند جزئیات اتصال و فونداسیون متناظر</option></select></div>
-        </div>
-        <div class="setup-section-title">سیستم سازه‌ای و ابعاد هندسی</div>
-        <div class="setup-grid">
-            <div class="field"><label for="structuralSystem">سیستم باربر اصلی</label><select id="structuralSystem"><option value="portal-gable" selected>قاب پرتال فولادی دوشیب</option><option value="portal-single-slope">قاب پرتال فولادی تک‌شیب</option></select><small id="roofSystemHelp">در حالت تک‌شیب، سمت راست سقف بلندتر در نظر گرفته می‌شود؛ تحلیل سه‌بعدی تا تکمیل مدل اختصاصی تک‌شیب اجرا نمی‌شود.</small></div>
-            <div class="field"><label for="span">دهانه عرضی سوله (m)</label><input id="span" type="number" min="1" step="0.1" value="12"></div>
-            <div class="field"><label for="length">طول کل سوله (m)</label><input id="length" type="number" min="1" step="0.1" value="36"></div>
-            <div class="field"><label for="spacing">فاصله محور تا محور قاب‌ها (m)</label><input id="spacing" type="number" min="1" step="0.1" value="6"></div>
-            <div class="field"><label for="height">ارتفاع کناری تا زیر تیر/رفتر (m)</label><input id="height" type="number" min="1" step="0.1" value="6"></div>
-            <div class="field"><label for="rise">افزایش ارتفاع تاج نسبت به کناره (m)</label><input id="rise" type="number" min="0" step="0.1" value="1.2"></div>
-            <div class="field"><label for="frames">تعداد قاب‌ها (محاسبه خودکار)</label><input id="frames" type="number" readonly value="7"></div>
-        </div>
-        <div class="roof-auto-summary setup-metrics">
-            <div><span>شیب هندسی سقف</span><strong id="roofSlopeDisplay">۲۰٫۰٪</strong></div>
-            <div><span>ارتفاع تاج</span><strong id="roofTotalHeightDisplay">۷٫۲۰ متر</strong></div>
-            <div><span>تعداد قاب محاسبه‌شده</span><strong id="setupFrameCount">۷</strong></div>
-            <div><span>مساحت تقریبی تصویر افقی سقف</span><strong id="setupRoofArea">۴۳۲ m²</strong></div>
-        </div>
-        <div class="setup-section-title">تجهیزات و شرایط خاص پروژه</div>
-        <div class="setup-equipment-row">
-            <label class="crane-choice" for="crane_enabled"><input id="crane_enabled" type="checkbox"><span><b>جرثقیل سقفی در پروژه وجود دارد</b><small>در صورت فعال‌سازی، مشخصات فنی و بارهای چرخ باید در بخش اطلاعات تخصصی جرثقیل تکمیل شود.</small></span></label>
-            <div class="field"><label for="projectNotes">توضیحات اولیه پروژه</label><input id="projectNotes" type="text" placeholder="مثلاً دو دهانه، سالن گرم، توسعه آتی و ..."></div>
-        </div>
-        <div class="setup-notice"><b>نکته مهندسی:</b> انتخاب شهر به‌تنهایی بار باد، برف یا زلزله را نهایی نمی‌کند. محل دقیق، ارتفاع، رده اهمیت، شرایط زمین، ویرایش آیین‌نامه و مدارک پروژه باید پیش از طراحی بارگذاری تأیید شوند. مشخصات کاربری در این مرحله شناسنامه‌ای است و به‌تنهایی ضریب بار یا ظرفیت سازه تولید نمی‌کند.</div>
-        <div class="setup-footer home-primary-actions">
-            <button id="btnApplyProjectSetup" class="btn secondary" type="button">۱ ـ ثبت مشخصات پروژه</button>
-            <button id="btnBuildModelFromHome" class="btn primary" type="button">۲ ـ ساخت مدل هندسی کامل سوله</button>
-            <span id="projectSetupStatus">ابتدا مشخصات را تکمیل و ثبت کنید؛ سپس مدل هندسی را بسازید.</span>
-            <span id="homeWorkflowStatus" role="status" aria-live="polite">آماده ورود اطلاعات</span>
-        </div>
-    </section>
-    <section class="panel">
-        <div class="panel-title">
-            <h3>۴ ـ بارگذاری مقدماتی</h3>
-        </div>
-        <div class="form-grid">
-            <div class="field">
-                <label for="dead">بار مرده سقف (kN/m²)</label>
-                <input id="dead" type="number" min="0" step="0.01" value="0.50">
-            </div>
-            <div class="field">
-                <label for="live">بار زنده سقف (kN/m²)</label>
-                <input id="live" type="number" min="0" step="0.01" value="0.75">
-            </div>
-            <div class="field">
-                <label for="wind">فشار باد ورودی (kN/m²)</label>
-                <input id="wind" type="number" min="0" step="0.01" value="0">
-            </div>
-            <div class="field">
-                <label for="snow">بار برف ورودی (kN/m²)</label>
-                <input id="snow" type="number" min="0" step="0.01" value="0">
-            </div>
-        </div>
-        <div class="notice">
-            ⚠️ مقادیر بار باد و برف باید از مبانی معتبر طراحی و شرایط واقعی محل پروژه تعیین شوند.
-            انتخاب شهر به‌تنهایی بار آیین‌نامه‌ای معتبر تولید نمی‌کند.
-        </div>
-    </section>
+  <section class="card" aria-labelledby="geometryTitle">
+    <h3 id="geometryTitle">۲. مشخصات هندسی و سازه‌ای</h3>
+    <div class="grid">
+      <div class="field"><label for="span">دهانه سوله (متر)</label><input id="span" type="number" min="1" max="100" step="0.1" value="12"></div>
+      <div class="field"><label for="length">طول سوله (متر)</label><input id="length" type="number" min="1" max="500" step="0.1" value="36"></div>
+      <div class="field"><label for="spacing">فاصله قاب‌ها (متر)</label><input id="spacing" type="number" min="1" max="20" step="0.1" value="6"></div>
+      <div class="field"><label for="height">ارتفاع ستون تا لبه سقف (متر)</label><input id="height" type="number" min="1" max="40" step="0.1" value="6"></div>
+      <div class="field"><label for="rise">ارتفاع تاج / اختلاف ارتفاع سقف (متر)</label><input id="rise" type="number" min="0.1" max="20" step="0.1" value="1.2"></div>
+      <div class="field"><label for="roof">نوع سقف</label><select id="roof"><option value="gable" selected>دو شیب</option><option value="single">تک‌شیب</option></select></div>
+      <div class="field"><label for="steel">نوع فولاد</label><select id="steel"><option selected>ST37</option><option>ST52</option><option>S235</option><option>S355</option><option>سایر / نیازمند گواهی</option></select></div>
+      <div class="field"><label for="crane">جرثقیل سقفی</label><select id="crane"><option value="no" selected>ندارد</option><option value="yes">دارد</option></select></div>
+      <div class="field"><label for="craneCapacity">ظرفیت جرثقیل (تن)</label><input id="craneCapacity" type="number" min="0.1" max="500" step="0.5" value="5" disabled></div>
+    </div>
+    <p class="hint">توجه: انتخاب فولاد یا شهر به‌تنهایی برای تعیین بارهای طراحی و تأیید سازه کافی نیست.</p>
+    <div class="actions">
+      <button id="btnBuild" class="btn primary" type="button">ساخت پیش‌نمایش هندسی</button>
+      <button id="btnSave" class="btn secondary" type="button">ذخیره پروژه و دریافت JSON</button>
+      <button id="btnExport" class="btn outline" type="button">دریافت فایل JSON</button>
+      <button id="btnImport" class="btn outline" type="button">بازکردن فایل پروژه</button>
+      <input id="fileImport" class="hidden" type="file" accept=".json,application/json">
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite">پروژه آماده ورود اطلاعات است.</div>
+  </section>
 
-    <section class="panel">
-        <div class="panel-title">
-            <h3>۵ ـ نمایش قاب</h3>
-        </div>
-        <div class="drawing-area">
-            <svg id="frameDrawing"
-                 viewBox="0 0 600 300"
-                 xmlns="http://www.w3.org/2000/svg">
-                <rect x="0" y="0" width="600" height="300" fill="#f8fafc"/>
-                <line x1="50" y1="250" x2="550" y2="250"
-                      stroke="#64748b" stroke-width="2"/>
-                <text x="300" y="150" text-anchor="middle"
-                      fill="#64748b" font-size="18">
-                    قاب پس از اتصال فایل ترسیم نمایش داده می‌شود
-                </text>
-            </svg>
-        </div>
-        <div class="drawing-info">
-            <span>مدل سه‌بعدی جانمایی سوله</span>
-            <span>واحد طول: متر</span>
-        </div>
-    </section>
+  <section id="preview" class="card hidden" aria-labelledby="previewTitle">
+    <h3 id="previewTitle">۳. پیش‌نمایش هندسی</h3>
+    <div class="preview-grid">
+      <div class="drawing"><h4>نمای دوبعدی قاب عرضی</h4><div id="frameDrawing" class="empty">پیش‌نمایش پس از ساخت ظاهر می‌شود.</div></div>
+      <div class="drawing"><h4>نمای شماتیک سه‌بعدی</h4><div id="modelDrawing" class="empty">پیش‌نمایش پس از ساخت ظاهر می‌شود.</div></div>
+    </div>
+    <div id="metrics" class="metrics"></div>
+    <p class="notice">این خروجی فقط نمایش هندسه اولیه است؛ تحلیل بار، طراحی مقاطع، کنترل اتصالات، فونداسیون و تأیید آیین‌نامه‌ای در این نسخه انجام نمی‌شود.</p>
+  </section>
 
-    <section class="panel structure-views-panel" id="structureViewsPanel">
-        <div class="panel-title"><div><h3>گالری نماهای سازه</h3><span class="status">برای جابه‌جایی، صفحه را افقی بکشید</span></div><span id="structureViewCounter" class="status">نمای ۱ از ۴</span></div>
-        <div class="structure-view-controls"><button id="structureViewPrev" class="btn secondary" type="button" disabled>نمای قبلی</button><button id="structureViewNext" class="btn primary" type="button">نمای بعدی</button></div>
-        <div id="structureViewTrack" class="structure-view-track" aria-label="نماهای افقی سازه"></div>
-        <p class="structure-view-note">این نماها برای مشاهده هندسه و جانمایی اولیه هستند. نمایش بادبند و جرثقیل شماتیک است و جایگزین مدل تحلیل، کنترل اتصالات یا نقشه ساخت نیست.</p>
-    </section>
-
-<section class="panel">
-        <div class="panel-title">
-            <h3>۶ ـ عملیات پروژه</h3>
-        </div>
-        <div class="button-grid">
-            <button id="btnDraw" class="btn primary" type="button">
-                ترسیم قاب
-            </button>
-            <button id="btnCalculate" class="btn success" type="button">
-                تحلیل مقدماتی
-            </button>
-            <button id="btnCombinations" class="btn success" type="button">
-                تحلیل ترکیبات بار
-            </button>
-
-            <details class="tools-menu">
-                <summary>ابزارهای تخصصی و کنترل‌های تکمیلی</summary>
-                <div class="button-grid">
-                    <button id="btnOpenConnection" class="btn secondary" type="button">طراحی اتصال کنسول</button>
-                    <button id="btnOpenRoofPurlins" class="btn secondary" type="button">طراحی پرلین سقف</button>
-                    <button id="btnOpenLongitudinalCantilever" class="btn secondary" type="button">کنترل کنسول طولی پرلین</button>
-                </div>
-            </details>
-        </div>
-    </section>
-
-    <section class="panel">
-        <div class="panel-title">
-            <h3>۷ ـ نتایج تحلیل</h3>
-        </div>
-        <div id="results">
-            <div class="result-card">
-                <span>جابه‌جایی گره</span>
-                <strong id="displacement">--</strong>
-            </div>
-            <div class="result-card">
-                <span>واکنش تکیه‌گاهی</span>
-                <strong id="reaction">--</strong>
-            </div>
-            <div class="result-card">
-                <span>تعداد اعضای قاب دوبعدی تحلیل‌شده</span>
-                <strong id="memberCount">4</strong>
-            </div>
-        </div>
-        <div id="analysisMessage" class="notice">
-            ابتدا مشخصات پروژه را وارد کنید.
-        </div>
-    </section>
-
-
-    <section class="panel" id="craneReadinessPanel">
-        <div class="panel-title"><h3>اطلاعات جرثقیل و تیر حمال</h3></div>
-        <div class="notice">
-            الگوی تکمیلی برگرفته از گزارش سوله‌پرداز: ظرفیت جرثقیل، وزن ارابه و پل، فاصله چرخ‌ها،
-            اثر ضربه قائم و نیروهای افقی، تعداد دفعات کار و کنترل خستگی.
-            این بخش اطلاعات ورودی و نواقص را ممیزی می‌کند. با فعال‌بودن جرثقیل سقفی، اجرای تحلیل سه‌بعدی کل سوله به‌صورت خودکار جاروب موقعیت قطار چرخ، محاسبه واکنش دو ریل و انتقال بار به تیر حمال و قاب را نیز اجرا می‌کند؛ طراحی نهایی تیر حمال، اتصالات و خستگی همچنان کنترل جداگانه می‌خواهد.
-        </div>
-        <details class="crane-advanced-details" id="craneAdvancedDetails"><summary>ورود اطلاعات فنی جرثقیل، بار چرخ و مدارک سازنده</summary>
-        <div class="form-grid">
-            <div class="field"><label for="crane_ratedCapacity_t">ظرفیت اسمی جرثقیل (تن)</label><input id="crane_ratedCapacity_t" type="number" min="0" step="0.1"></div>
-            <div class="field"><label for="crane_trolleyMass_t">وزن ارابه (تن)</label><input id="crane_trolleyMass_t" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_bridgeMass_t">وزن پل جرثقیل (تن)</label><input id="crane_bridgeMass_t" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_runwaySpan_m">دهانه تیر حمال (متر)</label><input id="crane_runwaySpan_m" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_wheelsPerSide">تعداد چرخ در هر سمت ارابه</label><input id="crane_wheelsPerSide" type="number" min="1" step="1"></div>
-            <div class="field"><label for="crane_wheelSpacing_m">فاصله چرخ‌ها (متر)</label><input id="crane_wheelSpacing_m" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_verticalImpact">ضریب افزایش قائم مستند (در بار استاتیکی چرخ ضرب می‌شود)</label><input id="crane_verticalImpact" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_transverseCoeff">ضریب نیروی افقی عرضی (ورودی مستند)</label><input id="crane_transverseCoeff" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_longitudinalCoeff">ضریب نیروی ترمز طولی (ورودی مستند)</label><input id="crane_longitudinalCoeff" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_cranesCount">تعداد جرثقیل‌ها</label><input id="crane_cranesCount" type="number" min="1" step="1"></div>
-            <div class="field"><label for="crane_runwayElevation_m">تراز ریل از کف (متر)</label><input id="crane_runwayElevation_m" type="number" step="0.01"></div>
-            <div class="notice">با فعال‌بودن جرثقیل، مدل هندسی ستون‌ها در همین تراز به گره مشترک تقسیم می‌شود تا محل اتصال آینده تیر حمال مشخص باشد. این گره به‌تنهایی مدل تیر حمال، براکت یا بار جرثقیل نیست.</div>
-            <div class="field"><label for="crane_maxWheelLoad_t">حداکثر بار هر چرخ روی یک ریل (تن)</label><input id="crane_maxWheelLoad_t" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_minWheelLoad_t">حداقل بار هر چرخ روی یک ریل (تن)</label><input id="crane_minWheelLoad_t" type="number" min="0" step="0.01"></div>
-            <div class="field"><label for="crane_wheelLoadSource">منبع بار چرخ</label><select id="crane_wheelLoadSource"><option value="">انتخاب کنید</option><option value="manufacturer_catalog">کاتالوگ سازنده</option><option value="manufacturer_drawing">نقشه سازنده</option><option value="certified_calculation">محاسبات تأییدشده سازنده</option></select></div>
-            <div class="field"><label for="crane_wheelLoadDocument">شماره نقشه / صفحه کاتالوگ</label><input id="crane_wheelLoadDocument" type="text"></div>
-            <div class="field"><label for="crane_dailyCycles">تعداد سیکل کاری روزانه</label><input id="crane_dailyCycles" type="number" min="0" step="1"></div>
-            <div class="field"><label for="crane_serviceYears">عمر بهره‌برداری (سال)</label><input id="crane_serviceYears" type="number" min="0" step="1"></div>
-            <div class="field"><label for="crane_manufacturer">سازنده / مدل جرثقیل</label><input id="crane_manufacturer" type="text"></div>
-            <div class="field"><label for="crane_standard">استاندارد / کلاس کاری اعلام‌شده</label><input id="crane_standard" type="text"></div>
-            <div class="field"><label for="crane_notes">توضیحات و مرجع کاتالوگ</label><input id="crane_notes" type="text"></div>
-        </div>
-        <div class="button-grid"><button id="crane_audit" class="btn secondary" type="button">ممیزی ورودی‌های جرثقیل</button></div>
-        <div id="crane_results"></div>
-        <div class="field">
-            <label for="craneBayConfigurationJson">جانمایی جرثقیل‌ها در دهانه‌های سوله (JSON)</label>
-            <textarea id="craneBayConfigurationJson" rows="5" placeholder='[{"id":"CR-1","runwaySystemId":"R1","bays":[1,2,3],"ratedCapacity_t":10,"bridgeMass_t":8,"trolleyMass_t":1,"wheelsPerSide":4,"wheelSpacing_m":1.5,"maxWheelLoad_t":4,"minWheelLoad_t":1,"verticalImpact":1.2,"wheelLoadSource":"manufacturer","wheelLoadDocument":"DWG-01"},{"id":"CR-2","runwaySystemId":"R1","bays":[6,7]}]'></textarea>
-            <small>شماره دهانه‌ها از ابتدای طول سوله و از ۱ شروع می‌شود. هر جرثقیل با شناسه مستقل و فهرست دهانه‌های خود تعریف می‌شود. تخصیص هم‌زمان یک دهانه به دو جرثقیل فعلاً رد می‌شود.</small>
-        </div>
-        <div class="button-grid"><button id="craneBayConfigurationAuditButton" class="btn secondary" type="button">ممیزی جانمایی جرثقیل‌ها</button></div>
-        <div id="craneBayConfigurationAudit" class="notice">پس از تولید مدل هندسی، تعداد دهانه‌ها و جانمایی جرثقیل‌ها ممیزی می‌شود.</div>
-        <div class="button-grid"><button id="craneMultiBayMeshProposalButton" class="btn secondary" type="button">تهیه پیشنهاد هندسه تیر حمال برای دهانه‌های انتخابی</button></div>
-        <div id="craneMultiBayMeshProposalResults" class="notice">پس از تولید مدل سه‌بعدی، هندسه پیشنهادی مستقل سامانه ریل و دهانه‌های تخصیص‌یافته ممیزی می‌شود؛ این پیشنهاد وارد حل‌گر نمی‌شود.</div>
-            </details>
-    </section>
-
-
-    <section class="panel" id="craneTrainAnalysisPanel">
-        <div class="panel-title"><h3>تحلیل استاتیکی قطار چرخ جرثقیل روی تیر حمال</h3></div>
-        <div class="notice">
-            این ابزار تحلیل موقعیت ثابت، پوش متحرک لنگر و پوش برش/واکنش یک قطار چرخ مستند را روی تیر ساده دو سر مفصل انجام می‌دهد.
-            فاصله‌ها از چرخ اول به‌صورت تجمعی و بار هر چرخ جداگانه وارد می‌شود. این ابزار هنوز تیر پیوسته، اثر دینامیکی یا طراحی تیر حمال را انجام نمی‌دهد.
-        </div>
-        <div class="form-grid">
-            <div class="field"><label for="craneTrain_span_m">دهانه آزاد تیر حمال (متر)</label><input id="craneTrain_span_m" type="number" min="0.01" step="0.01" placeholder="مثلاً 6"></div>
-            <div class="field"><label for="craneTrain_firstWheelOffset_m">موقعیت چرخ اول از تکیه‌گاه چپ (متر)</label><input id="craneTrain_firstWheelOffset_m" type="number" step="0.01" value="0"></div>
-            <div class="field"><label for="craneTrain_positions_m">فاصله تجمعی چرخ‌ها از چرخ اول (متر، جداشده با ویرگول)</label><input id="craneTrain_positions_m" type="text" value="0, 1.5" placeholder="0, 1.5, 3.0"></div>
-            <div class="field"><label for="craneTrain_loads_t">بار مستقل هر چرخ (تن، به همان ترتیب)</label><input id="craneTrain_loads_t" type="text" placeholder="مثلاً 8.2, 7.9"></div>
-            <div class="field"><label for="craneTrain_loadSource">منبع مستند بارهای تک‌تک چرخ‌ها</label><input id="craneTrain_loadSource" type="text" placeholder="کاتالوگ سازنده / محاسبات تأییدشده"></div>
-            <div class="field"><label for="craneTrain_loadDocument">شماره صفحه یا مرجع نقشه</label><input id="craneTrain_loadDocument" type="text" placeholder="صفحه / شماره نقشه"></div>
-        </div>
-        <div class="button-grid"><button id="craneTrain_calculate" class="btn secondary" type="button">تحلیل موقعیت فعلی چرخ‌ها</button><button id="craneTrain_envelope" class="btn primary" type="button">محاسبه پوش دقیق لنگر متحرک</button><button id="craneTrain_shearEnvelope" class="btn secondary" type="button">پوش برش و واکنش‌ها</button></div>
-        <div id="craneTrain_results"></div>
-        <div class="notice">واحد بار ورودی تن‌نیرو فرض شده و با ضریب تبدیل استاندارد 9.80665 به kN تبدیل می‌شود. خروجی صرفاً تحلیل استاتیکی مقدماتی است؛ برای طراحی اجرایی باید مدل واقعی تیر، تکیه‌گاه، پیچش، بارهای افقی، ضربه، خستگی و ضوابط مربوط جداگانه کنترل شوند.</div>
-    </section>
-
-    <section class="panel" id="cantileverCheckPanel">
-        <div class="panel-title">
-            <h3>کنترل کنسول‌های رفتر</h3>
-        </div>
-        <div class="notice">
-            استخراج تقاضای خمشی، نیروهای محل اتصال و خیز نسبی نوک کنسول از ترکیبات بار.
-        </div>
-        <div class="button-grid">
-            <button id="btnCantileverCheck" class="btn primary" type="button">محاسبه کنترل کنسول‌ها</button>
-        </div>
-        <div id="cantileverCheckResults"></div>
-    </section>
-
-    <footer>
-        <p>SAHROUD STEEL</p>
-        <p>ابزار تحلیل مقدماتی سازه فولادی</p>
-        <p>
-            نتایج این نسخه جایگزین محاسبات و تأیید مهندس محاسب برای اجرای ساختمان نیست.
-        </p>
-    </footer>
-
+  <details class="advanced">
+    <summary>نسخه کامل قبلی و ابزارهای مهندسی (آزمایشی)</summary>
+    <p>برای دسترسی به محیط قبلی شامل بارگذاری، تحلیل و ماژول‌های تخصصی از این پیوند استفاده کنید. این محیط هنوز نیازمند تکمیل و آزمایش است.</p>
+    <p><a href="legacy.html">بازکردن محیط کامل قبلی</a></p>
+  </details>
+  <div class="footer">SAHROUD STEEL · ابزار ورود اطلاعات و پیش‌نمایش هندسی</div>
 </main>
-
-<script>
-(function () {
-    "use strict";
-    const slope = 0.20;
-    const fmt = value => Number(value).toLocaleString("fa-IR", {minimumFractionDigits:2, maximumFractionDigits:2});
-    window.updateRoofGeometry = function () {
-        const span = Number(document.getElementById("span")?.value);
-        const height = Number(document.getElementById("height")?.value);
-        const riseField = document.getElementById("rise");
-        if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(height) || height <= 0) return;
-        const rise = span * 0.5 * slope;
-        if (riseField) riseField.value = rise.toFixed(6);
-        const slopeEl = document.getElementById("roofSlopeDisplay");
-        const riseEl = document.getElementById("roofRiseDisplay");
-        const totalEl = document.getElementById("roofTotalHeightDisplay");
-        if (slopeEl) slopeEl.textContent = "۲۰٪";
-        if (riseEl) riseEl.textContent = fmt(rise) + " متر";
-        if (totalEl) totalEl.textContent = fmt(height + rise) + " متر";
-    };
-    ["span", "height"].forEach(id => document.getElementById(id)?.addEventListener("input", window.updateRoofGeometry));
-    window.addEventListener("DOMContentLoaded", window.updateRoofGeometry);
-    window.updateRoofGeometry();
-})();
-</script>
-<script defer src="js/project.js?v=20261115-explicit-model-build1"></script>
-<script defer src="js/crane-readiness.js?v=20261114-dynamic-factor1"></script>
-<script defer src="js/crane-load-path-classifier.js?v=20261113-crane-load-path-classifier4"></script>
-<script defer src="js/crane-train-analysis.js?v=20261113-static-train3"></script>
-<script defer src="js/crane-horizontal-loads.js?v=20261113-horizontal-inputs2"></script>
-<script defer src="js/drawing.js?v=20261115-single-slope-preview1"></script>
-<script defer src="js/purlin-spacing-layout.js?v=20261114-purlin-spacing1"></script>
-    <script defer src="js/member-load-preflight-audit.js?v=20261114-member-load-preflight1"></script>
-<script defer src="js/gable-eccentric-load-transfer.js?v=20261114-gable-eccentric-transfer3"></script>
- <script defer src="js/tapered-section-property-audit.js?v=20261114-taper-property-audit1"></script>
-<script defer src="js/model-3d.js?v=20261115-deferred-build1"></script>
-<script defer src="js/crane-3d-mesh-proposal.js?v=20261113-mesh-proposal1"></script>
-<script defer src="js/crane-3d-integration.js?v=20261114-explicit-load-ledger1"></script>
-<script defer src="js/crane-3d-load-transfer.js?v=20261114-crane-independent-load-ledger1"></script>
-<script defer src="js/crane-girder-local-screen.js?v=20261113-local-screen5"></script>
-<script defer src="js/tributary-audit.js?v=20261112tributary1"></script>
-<script defer src="js/load-path-audit.js?v=20261112loadpath1"></script>
-<script defer src="js/end-wall-audit.js?v=20261114-shared-gable-chord1"></script>
-<script defer src="js/masonry-wall-audit.js?v=20261112masonry1"></script>
-<script defer src="js/quantity-takeoff.js?v=20261113-fabrication-boq-enrich1"></script>
-<script defer src="js/steel-fabrication-takeoff.js?v=20261113-project-boq-refresh1"></script>
-<script defer src="js/market-price-engine.js?v=20261112market9"></script>
-<script defer src="js/code-reference-registry.js?v=20261112codes3"></script>
-<script defer src="js/cost-estimate-engine.js?v=20261113-blinding-cost-bridge1"></script>
-<script defer src="js/foundation-takeoff.js?v=20261113-continuous-tie-rebar2"></script>
-<script defer src="js/geotechnical-data-panel.js?v=20261112geotech1"></script>
-<script defer src="js/tie-beam-layout.js?v=20261113-schematic1"></script>\n<script defer src="js/site-work-takeoff.js?v=20261113-sitework-blinding1"></script>
-<script defer src="js/tie-beam-integration-test.js?v=20261112tie-test1"></script>
-<script defer src="js/tie-beam-reinforcement.js?v=20261113-continuous-footing-bars1"></script>
-<script defer src="js/anchor-baseplate-takeoff.js?v=20261113-project-boq-refresh1"></script>
-<script defer src="js/project-boq-registry.js?v=20261113-project-boq-blinding2"></script>
-<script defer src="js/footing-structural-screen.js?v=20261113-rebar-minimum1"></script>
-<script defer src="js/footing-sizing-assistant.js?v=20261112footing-sizing2"></script>
-<script defer src="js/rail-beam-fem.js?v=20261113-moving-envelope1"></script>
-<script defer src="js/crane-two-rail-transfer.js?v=20261114-static-wheel-inputs1"></script>
-<script defer src="js/crane-wheel-evidence-intake.js?v=20261115-wheel-evidence2"></script>
-<script defer src="js/crane-bay-configuration.js?v=20261114-bay-allocation1"></script>
-<script defer src="js/crane-multi-bay-mesh-proposal.js?v=20261114-multi-bay-proposal1"></script>
-<script defer src="js/crane-runway-girder.js?v=20261113-girder-sync-audit2"></script>
-<script defer src="js/crane-load-path-audit.js?v=20261113-load-path-audit1"></script>
-<script defer src="js/analysis-3d.js?v=20261114-purlin-support-transfer-test1"></script>
-<script defer src="tests/analysis-3d-analytical-benchmarks.js?v=20261114-analytical-benchmarks1"></script>
-<script defer src="tests/tapered-member-mesh-convergence.js?v=20261114-tapered-mesh-convergence1"></script>
-<script defer src="js/analysis.js?v=20261111b"></script>
-<script defer src="js/sections.js?v=20261115-grade-normalization1"></script>
-<script defer src="js/section-geometry-audit.js?v=20261113-geometry-audit2"></script>
-<script defer src="js/tapered-member-sections.js?v=20261113-tapered-seg5"></script>
-<script defer src="js/tapered-member-force-audit.js?v=20261114-taper-force-audit1"></script>
-<script defer src="js/tapered-member-design-readiness.js?v=20261114-taper-readiness1"></script>
-<script defer src="js/tapered-fabrication-economics.js?v=20261114-taper-economics1"></script>
-<script defer src="js/tapered-fabrication-ui.js?v=20261114-taper-economics-ui1"></script>
-<script defer src="js/tapered-case-force-bridge.js?v=20261114-taper-case-force-bridge1"></script>
-<script defer src="js/girder.js?v=20261109"></script>
-<script defer src="js/stability.js?v=20261109"></script>
-<script defer src="js/desing.js?v=2"></script>
-<script defer src="js/interaction.js?v=3"></script>
-<script defer src="js/shear.js?v=20261109"></script>
-<script defer src="js/flexure.js?v=1"></script>
-<script defer src="js/final-report.js?v=20261109"></script>
-<script defer src="js/openings.js?v=20261112windscenario1"></script>
-<script defer src="js/views.js?v=1"></script>
-<script defer src="js/bracing.js?v=1"></script>
-<script defer src="js/ties.js?v=1"></script>
-<script defer src="js/loads.js?v=20261115-load-init-fix1"></script>
-<script defer src="js/design-core.js?v=20261114-wall-dead-support-inputs3"></script>
- <script defer src="js/wall-dead-load-transfer.js?v=20261114-foundation-wall-dead4"></script>
-<script defer src="js/climate-database.js?v=20261115-city-provenance3"></script>
-<script defer src="js/climate-load-engine.js?v=20261112cgcpbasis4"></script>
-<script defer src="js/wind-basis-engine.js?v=20261112windbasis3"></script>
-<script defer src="js/directional-wind-engine.js?v=20261112directionalwind5"></script>
-<script defer src="js/wind-zone-engine.js?v=20261112windzones1"></script>
-<script defer src="js/wind-code-registry.js?v=20261112windregistry1"></script>
-<script defer src="js/force-diagrams.js?v=3"></script>
-<script defer src="js/roof-ties.js?v=1"></script>
-<script defer src="js/roof-purlins.js?v=20261112z180purlin1"></script>
-<script defer src="js/longitudinal-cantilever.js?v=20261111c"></script>
-<script defer src="js/app.js?v=20261115-single-slope-analysis-guard1"></script>
-<script defer src="js/cantilever-check.js?v=1"></script>
-<script defer src="js/connection-design.js?v=20261110d"></script>
-<script defer src="js/connection-demand-registry.js?v=20261113-demand1"></script>
-<script defer src="js/knee-connection-geometry.js?v=20261113-knee1"></script>
-<script defer src="js/purlin-cantilever-connection.js?v=20261110l"></script>
-<script defer src="js/ui-organization.js?v=20261115-gallery-open1"></script>
-<script defer src="js/m6-analysis-coverage-audit.js?v=20261114-m6-family-audit1"></script>
-<script defer src="js/auto-workflow.js?v=20261114-m6-family-coverage1"></script>
-<script defer src="js/project-diagnostics.js?v=20261112diag1"></script>
-<script defer src="js/construction-drawings.js?v=20261113-continuous-tie-drawing1"></script>
-<script defer src="js/foundation-rebar-drawings.js?v=20261113-rebar-drawings2"></script>
-<script defer src="js/baseplate-anchor-drawings.js?v=20261113-baseplate-drawings2"></script>
-<script defer src="js/anchor-demand-screen.js?v=20261113-torsion-demand1"></script>
-<script defer src="js/baseplate-thickness-screen.js?v=20261113-baseplate-thickness1"></script>
-<script defer src="js/baseplate-partial-contact-screen.js?v=20261113-partial-contact1"></script>
-<script defer src="js/base-reaction-transfer.js?v=20261113-reaction-transfer2"></script>
-<script defer src="js/anchor-steel-capacity-screen.js?v=20261113-anchor-steel1"></script>
-<script defer src="js/baseplate-bearing-capacity-screen.js?v=20261113-bearing1"></script>
-<script defer src="js/anchor-geometry-check.js?v=20261113-anchor-geometry1"></script>
-<script defer src="js/baseplate-weld-screen.js?v=20261113-base-weld1"></script>
-<script defer src="js/baseplate-stiffener-screen.js?v=20261113-stiffener1"></script>
-<script defer src="js/concrete-anchor-capacity-screen.js?v=20261113-concrete-anchor1"></script>
-<script defer src="js/base-connection-report.js?v=20261113-base-report1"></script>
-<script defer src="js/member-force-envelope.js?v=20261114-exact-case-coverage1"></script>
-<script defer src="js/brace-force-demand-audit.js?v=20261114-governing-end-demands2"></script>
-<script defer src="js/member-section-force-diagram.js?v=20261113-section-equilibrium1"></script>
-<script defer src="js/tapered-section-force-diagram.js?v=20261114-tapered-segment-diagram1"></script>
-<script defer src="js/member-design-scope-gate.js?v=20261114-all-member-scope1"></script>
-<script defer src="js/prismatic-nonprismatic-section.js?v=20261114-prismatic-nonprismatic1"></script>
-<script defer src="js/design-code-registry.js?v=20261114-iran-code-transition1"></script>
-<script defer src="js/crane-girder-design-basis.js?v=20261113-basis1"></script>
-<script defer src="js/crane-girder-fatigue-readiness.js?v=20261113-fatigue1"></script>
-<script defer src="js/crane-girder-connection-readiness.js?v=20261113-eccentric-demand1"></script>
-<script defer src="js/crane-bracket-column-demand-transfer.js?v=20261113-column-demand1"></script>
-<script defer src="js/crane-bracket-column-fem-adapter.js?v=20261113-column-fem-adapter2"></script>
-<script defer src="js/crane-runway-serviceability-audit.js?v=20261113-serviceability1"></script>
-<script defer src="js/crane-engineering-chain-audit.js?v=20261113-chain-audit1"></script>
-<script defer src="js/member-design-inputs.js?v=20261113-member-inputs5"></script>
-<script defer src="js/member-design-readiness.js?v=20261113-readiness3"></script>
-<script defer src="js/tension-capacity-screen.js?v=20261114-m10-tension-screen1"></script>
-<script defer src="js/tension-design-readiness.js?v=20261114-brace-connection-linked4"></script>
-<script defer src="js/brace-connection-readiness.js?v=20261114-brace-end-geometry6"></script>
-<script defer src="js/brace-gusset-strength-screen.js?v=20261114-gusset-j4-screen1"></script>
-<script defer src="js/brace-bolt-strength-screen.js?v=20261114-bolt-j3-screen4"></script>
-<script defer src="js/brace-slip-critical-screen.js?v=20261114-slip-j3-screen1"></script>
-<script defer src="js/bolt-geometry-screen.js?v=20261114-bolt-geometry-j3-screen1"></script>
-<script defer src="js/brace-weld-strength-screen.js?v=20261114-weld-j2-screen4"></script>
-<script defer src="js/weld-group-eccentric-screen.js?v=20261114-weld-group-eccentric1"></script>
-<script defer src="js/compression-design-readiness.js?v=20261114-fem-compression-demand1"></script>
-<script defer src="js/compression-capacity.js?v=20261113-compression-capacity2"></script>
-<script defer src="js/compression-design-integration.js?v=20261114-axial-only-screen2"></script>
-<script defer src="js/simultaneous-member-action-audit.js?v=20261114-simultaneous-actions1"></script>
-<script defer src="js/flexure-shear-readiness.js?v=20261114-case-end-demand-provenance1"></script>
-<script defer src="js/load-combination-registry.js?v=20261113-combination1"></script>
-<script defer src="js/load-case-evidence-contract.js?v=20261114-load-evidence1"></script>
-<script defer src="js/solver-model-proposal-adapter.js?v=20261114-solver-proposal2"></script>
-<script defer src="js/member-simultaneous-action-contract.js?v=20261114-member-actions1"></script>
-<script defer src="js/load-case-workbench.js?v=20261114-load-workbench1"></script>
-<script defer src="js/nodal-load-case-runner.js?v=20261114-nodal-runner1"></script>
-<script defer src="js/solver-action-demand-bridge.js?v=20261114-action-bridge1"></script>
-<script defer src="js/solver-end-action-sign-benchmarks.js?v=20261114-sign-benchmarks1"></script>
-<script defer src="js/solver-section-force-diagram-bridge.js?v=20261114-section-diagram-bridge2"></script>
-<script defer src="js/station-demand-adapter.js?v=20261114-station-demand1"></script>
-<script defer src="js/member-design-demand-package.js?v=20261115-demand-package1"></script>
-<script defer src="js/member-demand-combination-bridge.js?v=20261115-demand-combination1"></script>
-<script defer src="js/member-demand-combination-ui.js?v=20261115-demand-combination-ui2"></script>
-<script defer src="js/climate-design-readiness.js?v=20261113-climate-gate1"></script>
-<script defer src="js/endwall-gable-support-audit.js?v=20261114-gable-area-fixture2"></script>
-<script defer src="js/longitudinal-bracing-readiness.js?v=20261114-longitudinal-brace-path1"></script>
-<script defer src="js/whole-building-load-path-audit.js?v=20261114-gable-endgirt-transfer1"></script>
-<script defer src="js/fresh-model-structural-audit.js?v=20261114-fresh-model-audit1"></script>
-<script defer src="js/directional-wind-3d-adapter.js?v=20261114-m6-family-tags1"></script>
-<script defer src="js/seismic-equivalent-lateral-adapter.js?v=20261113-seismic-adapter1"></script>
-<script defer src="js/structural-load-chain.js?v=20261113-solved-member-released-ledger1"></script>
-<script defer src="js/crane-bracket-column-analysis-bridge.js?v=20261113-explicit-analysis-bridge1"></script>
-<script defer src="js/foundation-reaction-audit.js?v=20261113-foundation-audit1"></script>
-<script defer src="js/legacy-sps-parser.js?v=20261114-sps-parser1"></script>
-<script defer src="js/reference-import-evidence-validator.js?v=20261114-evidence-validator1"></script>
-<script defer src="js/csv-structural-exchange.js?v=20261114-csv-exchange3"></script>
-<script defer src="js/reference-model-import-ui.js?v=20261114-import-ui1"></script>
-<script defer src="js/reference-model-viewer.js?v=20261114-viewer1"></script>
-<script defer src="js/engineering-workstream-dashboard.js?v=20261114-roadmap1"></script>
-<script defer src="js/design-basis-intake.js?v=20261114-basis1"></script>
-<script defer src="js/engineering-regression-tests.js?v=20261114-loadpath-fem-regression1"></script>
-<script defer src="js/displacement-envelope.js?v=20261114-strict-load-factors1"></script>
-<script defer src="js/member-detail-drawings.js?v=20261113-member-detail1"></script>
-
-<script async src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
-<script defer src="js/dropbox-integration.js?v=20261112projectupload1"></script>
-
-<script defer src="js/building-coverage-matrix.js?v=20261113-building-coverage1"></script>
-<script defer src="js/anchor-group-torsion-demand.js?v=20261114-anchor-foundation-bridge3"></script>
-<script defer src="js/foundation-reaction-bridge.js?v=20261113-chain-adapter1"></script>
-<script defer src="js/anchor-steel-group-audit.js?v=20261114-anchor-group-steel1"></script>
-<script defer src="js/anchor-case-demand-bridge.js?v=20261114-anchor-case-demand1"></script>
-<script defer src="js/anchor-case-demand-ui.js?v=20261114-anchor-case-demand-ui2"></script>
-<script defer src="js/structure-view-gallery.js?v=20261115-no-auto-build-fit2"></script>
-<script defer src="js/project-workspace.js?v=20261114-workspace-snapshot-guards5"></script>
-<script defer src="js/home-workflow.js?v=20261115-compact-start2"></script>
 </body>
 </html>
