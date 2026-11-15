@@ -3,13 +3,13 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id),KEY="sahroudSteel.fastProject.v1";
-const defaults={projectName:"سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود",city:"شاهرود ـ سمنان",owner:"شرکت شهرک‌های صنعتی",designer:"مهندس احمد نوری",span:12,length:36,spacing:6,height:6,girtCount:4,endPostSpacing:4,slopePercent:20,rise:1.2,roof:"gable",steel:"ST37",crane:"no",craneCapacity:0};
-function read(){return {projectName:$("projectName").value.trim(),city:$("city").value.trim(),owner:$("owner").value.trim(),designer:$("designer").value.trim(),span:Number($("span").value),length:Number($("length").value),spacing:Number($("spacing").value),height:Number($("height").value),girtCount:Number($("girtCount").value),endPostSpacing:Number($("endPostSpacing").value),slopePercent:Number($("slopePercent").value),rise:Number($("rise").value),roof:$("roof").value,steel:$("steel").value,crane:$("crane").value,craneCapacity:Number($("craneCapacity").value)||0};}
+const defaults={projectName:"سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود",city:"شاهرود ـ سمنان",owner:"شرکت شهرک‌های صنعتی",designer:"مهندس احمد نوری",span:12,length:36,spacing:6,height:6,girtCount:4,endPostSpacing:4,purlinSpacing:1.5,mainFrameSection:"تعیین نشده",eaveBeamSection:"تعیین نشده",ridgeBeamSection:"تعیین نشده",purlinSection:"تعیین نشده",girtSection:"تعیین نشده",endPostSection:"تعیین نشده",bracingSection:"تعیین نشده",slopePercent:20,rise:1.2,roof:"gable",steel:"ST37",crane:"no",craneCapacity:0};
+function read(){return {projectName:$("projectName").value.trim(),city:$("city").value.trim(),owner:$("owner").value.trim(),designer:$("designer").value.trim(),span:Number($("span").value),length:Number($("length").value),spacing:Number($("spacing").value),height:Number($("height").value),girtCount:Number($("girtCount").value),endPostSpacing:Number($("endPostSpacing").value),purlinSpacing:Number($("purlinSpacing").value),mainFrameSection:$("mainFrameSection").value.trim(),eaveBeamSection:$("eaveBeamSection").value.trim(),ridgeBeamSection:$("ridgeBeamSection").value.trim(),purlinSection:$("purlinSection").value.trim(),girtSection:$("girtSection").value.trim(),endPostSection:$("endPostSection").value.trim(),bracingSection:$("bracingSection").value.trim(),slopePercent:Number($("slopePercent").value),rise:Number($("rise").value),roof:$("roof").value,steel:$("steel").value,crane:$("crane").value,craneCapacity:Number($("craneCapacity").value)||0};}
 function calculatedRise(span,slopePercent,roof){const run=roof==="gable"?span/2:span;return run*slopePercent/100;}
 function updateRise(){const span=Number($("span").value),slope=Number($("slopePercent").value),roof=$("roof").value;if(Number.isFinite(span)&&span>0&&Number.isFinite(slope)&&slope>0){$("rise").value=calculatedRise(span,slope,roof).toFixed(3);}}
 function write(d){Object.keys(defaults).forEach(k=>{const el=$(k);if(el&&d[k]!==undefined)el.value=d[k];});if(!$("slopePercent").value)$("slopePercent").value=20;updateRise();$("craneCapacity").disabled=$("crane").value==="no";}
 function status(msg,error){const el=$("status");el.textContent=msg;el.classList.toggle("error",!!error);}
-function valid(d){if(!d.projectName||!d.city)return "نام پروژه و شهر را وارد کنید.";for(const [k,n] of [["span","دهانه"],["length","طول"],["spacing","فاصله قاب‌ها"],["height","ارتفاع ستون"],["girtCount","تعداد قیدهای افقی"],["endPostSpacing","فاصله ستونک‌های انتهایی"],["rise","ارتفاع تاج / اختلاف ارتفاع سقف"]])if(!Number.isFinite(d[k])||d[k]<=0)return "مقدار "+n+" باید بزرگ‌تر از صفر باشد.";if(!Number.isFinite(d.slopePercent)||d.slopePercent<=0||d.slopePercent>100)return "شیب سقف باید بین صفر و ۱۰۰ درصد باشد.";if(d.spacing>d.length)return "فاصله قاب‌ها نمی‌تواند از طول سوله بیشتر باشد.";if(!Number.isInteger(d.girtCount)||d.girtCount<1||d.girtCount>20||d.endPostSpacing>d.span)return "فاصله قیدها یا ستونک‌های انتهایی را بررسی کنید.";if(d.rise>=d.height*2)return "ارتفاع تاج یا اختلاف ارتفاع سقف را بررسی کنید.";if(d.crane==="yes"&&d.craneCapacity<=0)return "ظرفیت جرثقیل را وارد کنید.";return "";}
+function valid(d){if(!d.projectName||!d.city)return "نام پروژه و شهر را وارد کنید.";for(const [k,n] of [["span","دهانه"],["length","طول"],["spacing","فاصله قاب‌ها"],["height","ارتفاع ستون"],["girtCount","تعداد قیدهای افقی"],["endPostSpacing","فاصله ستونک‌های انتهایی"],["purlinSpacing","حداکثر فاصله پرلین‌ها"],["rise","ارتفاع تاج / اختلاف ارتفاع سقف"]])if(!Number.isFinite(d[k])||d[k]<=0)return "مقدار "+n+" باید بزرگ‌تر از صفر باشد.";if(!Number.isFinite(d.slopePercent)||d.slopePercent<=0||d.slopePercent>100)return "شیب سقف باید بین صفر و ۱۰۰ درصد باشد.";if(d.spacing>d.length)return "فاصله قاب‌ها نمی‌تواند از طول سوله بیشتر باشد.";if(!Number.isInteger(d.girtCount)||d.girtCount<1||d.girtCount>20||d.endPostSpacing>d.span||d.purlinSpacing<=0||d.purlinSpacing>4)return "فاصله قیدها یا ستونک‌های انتهایی را بررسی کنید.";if(d.rise>=d.height*2)return "ارتفاع تاج یا اختلاف ارتفاع سقف را بررسی کنید.";if(d.crane==="yes"&&d.craneCapacity<=0)return "ظرفیت جرثقیل را وارد کنید.";return "";}
 function roofZ(d,y){return d.roof==="gable"?d.height+d.rise*(1-Math.abs(y-d.span/2)/(d.span/2)):d.height+d.rise*y/d.span;}
 function frameSVG(d){const W=640,H=340,m=62,base=276,scale=Math.min((W-2*m)/d.span,(base-52)/(d.height+d.rise)),x0=(W-d.span*scale)/2,x1=x0+d.span*scale,z0=base-d.height*scale,z1=base-(d.height+d.rise)*scale;let roof;
 if(d.roof==="gable"){const xm=(x0+x1)/2;roof="M "+x0+" "+z0+" L "+xm+" "+z1+" L "+x1+" "+z0;}
@@ -31,7 +31,7 @@ else out+=line([x,0,zSide0],[x,d.span,zSide1],"#176b87",3);
 for(const y of [0,d.span])out+=line([0,y,roofZ(d,y)],[d.length,y,roofZ(d,y)],"#16845b",2.5);
 if(d.roof==="gable")out+=line([0,d.span/2,d.height+d.rise],[d.length,d.span/2,d.height+d.rise],"#16845b",2.5);
 // Roof purlins, shown as longitudinal lines at regular transverse positions
-const purlinCount=Math.max(2,Math.ceil(d.span/1.5));
+const purlinCount=Math.max(2,Math.ceil(d.span/d.purlinSpacing));
 for(let i=1;i<purlinCount;i++){const y=d.span*i/purlinCount;out+=line([0,y,roofZ(d,y)],[d.length,y,roofZ(d,y)],"#b07825",1.35);}
 // Side-wall girts at nominal 1.5 m vertical spacing, following the wall top
 for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/d.girtCount;out+=line([0,0,z],[d.length,0,z],"#6c8491",1.25)+line([0,d.span,z],[d.length,d.span,z],"#6c8491",1.25); }
@@ -59,7 +59,7 @@ function planSVG(d){
  const xs=frameStations(d),W=760,H=320,L=65,T=45,R=25,B=245,sc=Math.min((W-L-R)/d.length,(B-T)/d.span),x1=L+d.length*sc,y1=T+d.span*sc;
  let s='<rect x="'+L+'" y="'+T+'" width="'+(x1-L)+'" height="'+(y1-T)+'" fill="#f8fbfc" stroke="#526b78" stroke-width="2"/>';
  xs.forEach((x,i)=>{const px=L+x*sc;s+='<line x1="'+px+'" y1="'+T+'" x2="'+px+'" y2="'+y1+'" stroke="#176b87" stroke-width="2"/><text x="'+px+'" y="'+(T-12)+'" text-anchor="middle" font-size="10" fill="#176b87">'+(i+1)+'</text>';});
- const pc=Math.max(2,Math.ceil(d.span/1.5));for(let i=1;i<pc;i++){const py=T+d.span*i/pc*sc;s+='<line x1="'+L+'" y1="'+py+'" x2="'+x1+'" y2="'+py+'" stroke="#b07825" stroke-width="1"/>';}
+ const pc=Math.max(2,Math.ceil(d.span/d.purlinSpacing));for(let i=1;i<pc;i++){const py=T+d.span*i/pc*sc;s+='<line x1="'+L+'" y1="'+py+'" x2="'+x1+'" y2="'+py+'" stroke="#b07825" stroke-width="1"/>';}
  if(xs.length>1){for(const bi of [0,xs.length-2]){const xa=L+xs[bi]*sc,xb=L+xs[bi+1]*sc;s+='<path d="M'+xa+' '+T+' L'+xb+' '+y1+' M'+xa+' '+y1+' L'+xb+' '+T+'" stroke="#b34c42" stroke-width="2" fill="none"/>';}}
  s+='<text x="'+((L+x1)/2)+'" y="'+(y1+27)+'" text-anchor="middle" font-size="12" fill="#20313d">طول '+d.length+' m</text><text x="'+(x1+8)+'" y="'+((T+y1)/2)+'" font-size="11" fill="#20313d">'+d.span+' m</text>';
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="پلان سقف و محل قاب‌ها">'+s+'</svg>';
@@ -110,11 +110,29 @@ function endPostsSVG(d){
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="ستونک‌های میانی قاب‌های انتهایی">'+s+'</svg>';
 }
 
+
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function coord(x,y,z){return "("+x.toFixed(3)+", "+y.toFixed(3)+", "+z.toFixed(3)+")";}
+function memberSchedule(d){
+ const rows=[],xs=frameStations(d),bays=xs.length-1;
+ const add=(group,mark,a,b,section)=>{const len=Math.sqrt((b[0]-a[0])**2+(b[1]-a[1])**2+(b[2]-a[2])**2);rows.push({group,mark,a:coord(...a),b:coord(...b),len:len.toFixed(3),section});};
+ for(const side of [{y:0,n:"لبه چپ"},{y:d.span,n:"لبه راست"}])for(let i=0;i<bays;i++)add("تیر لبه طولی",side.n+"-"+(i+1),[xs[i],side.y,d.height],[xs[i+1],side.y,d.height],d.eaveBeamSection);
+ if(d.roof==="gable")for(let i=0;i<bays;i++)add("تیر طولی تاج","RIDGE-"+(i+1),[xs[i],d.span/2,d.height+d.rise],[xs[i+1],d.span/2,d.height+d.rise],d.ridgeBeamSection);
+ const pCount=Math.max(2,Math.ceil(d.span/d.purlinSpacing));
+ for(let j=0;j<=pCount;j++){const y=d.span*j/pCount,z=roofZ(d,y);for(let i=0;i<bays;i++)add("پرلین طولی","P"+j+"-"+(i+1),[xs[i],y,z],[xs[i+1],y,z],d.purlinSection);}
+ for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/d.girtCount;for(const side of [{y:0,n:"دیوار چپ"},{y:d.span,n:"دیوار راست"}])for(let i=0;i<bays;i++)add("قید افقی طولی","G"+(j+1)+"-"+side.n+"-"+(i+1),[xs[i],side.y,z],[xs[i+1],side.y,z],d.girtSection);}
+ const postBays=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postGap=d.span/postBays;
+ for(const end of [{x:0,n:"ابتدا"},{x:d.length,n:"انتها"}])for(let j=1;j<postBays;j++){const y=j*postGap;add("ستونک باربر انتهایی","EP-"+end.n+"-"+j,[end.x,y,0],[end.x,y,roofZ(d,y)],d.endPostSection);}
+ xs.forEach((x,i)=>rows.push({group:"قاب اصلی (مجموعه)",mark:"F"+(i+1),a:coord(x,0,0),b:coord(x,d.span,roofZ(d,d.span)),len:"—",section:d.mainFrameSection}));
+ return '<table><thead><tr><th>گروه عضو</th><th>شناسه</th><th>مختصات ابتدا X,Y,Z (m)</th><th>مختصات انتها X,Y,Z (m)</th><th>طول (m)</th><th>مقطع ثبت‌شده</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.group)+'</td><td>'+esc(r.mark)+'</td><td dir="ltr">'+r.a+'</td><td dir="ltr">'+r.b+'</td><td>'+r.len+'</td><td>'+esc(r.section||"تعیین نشده")+'</td></tr>').join('')+'</tbody></table>';
+}
+
 function draw(d){
  const xs=frameStations(d),bays=xs.length-1,actual=d.length/bays;
  $("frameDrawing").innerHTML=frameSVG(d);$("longDrawing").innerHTML=girtElevationSVG(d);$("planDrawing").innerHTML=planSVG(d);$("endDrawing").innerHTML=endSVG(d);$("modelDrawing").innerHTML=modelSVG(d);
  $("frameTable").innerHTML='<table><thead><tr><th>شماره قاب</th><th>مختصات از مبدأ (متر)</th><th>فاصله تا قاب بعدی (متر)</th></tr></thead><tbody>'+xs.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+x.toFixed(3)+'</td><td>'+(i<bays?actual.toFixed(3):'—')+'</td></tr>').join('')+'</tbody></table>';
- $("metrics").innerHTML=[["دهانه",d.span+" m"],["طول",d.length+" m"],["تعداد قاب",xs.length],["تعداد دهانه طولی",bays],["فاصله واقعی قاب‌ها",actual.toFixed(3)+" m"],["تعداد قید افقی هر دیوار طولی",d.girtCount],["فاصله مساوی قائم قیدها",(d.height/d.girtCount).toFixed(3)+" m"],["ستونک میانی هر قاب انتهایی",Math.max(0,Math.ceil(d.span/d.endPostSpacing)-1)],["فاصله واقعی ستونک‌های انتهایی",(d.span/Math.ceil(d.span/d.endPostSpacing)).toFixed(3)+" m"],["فولاد",d.steel],["جرثقیل",d.crane==="yes"?d.craneCapacity+" تن":"ندارد"],["نوع سقف",d.roof==="gable"?"دو شیب":"تک‌شیب"],["شیب سقف",d.slopePercent+"٪"],["خیز / اختلاف ارتفاع",d.rise.toFixed(3)+" m"]].map(x=>'<span class="metric">'+x[0]+': <b>'+x[1]+'</b></span>').join("");
+ $("memberTable").innerHTML=memberSchedule(d);
+ $("metrics").innerHTML=[["دهانه",d.span+" m"],["طول",d.length+" m"],["تعداد قاب",xs.length],["تعداد دهانه طولی",bays],["فاصله واقعی قاب‌ها",actual.toFixed(3)+" m"],["فاصله واقعی پرلین‌ها",(d.span/Math.max(2,Math.ceil(d.span/d.purlinSpacing))).toFixed(3)+" m"],["تعداد قید افقی هر دیوار طولی",d.girtCount],["فاصله مساوی قائم قیدها",(d.height/d.girtCount).toFixed(3)+" m"],["ستونک میانی هر قاب انتهایی",Math.max(0,Math.ceil(d.span/d.endPostSpacing)-1)],["فاصله واقعی ستونک‌های انتهایی",(d.span/Math.ceil(d.span/d.endPostSpacing)).toFixed(3)+" m"],["فولاد",d.steel],["جرثقیل",d.crane==="yes"?d.craneCapacity+" تن":"ندارد"],["نوع سقف",d.roof==="gable"?"دو شیب":"تک‌شیب"],["شیب سقف",d.slopePercent+"٪"],["خیز / اختلاف ارتفاع",d.rise.toFixed(3)+" m"]].map(x=>'<span class="metric">'+x[0]+': <b>'+x[1]+'</b></span>').join("");
  $("preview").classList.remove("hidden");
 }
 function save(){const d=read(),e=valid(d);if(e){status(e,true);return false;}try{localStorage.setItem(KEY,JSON.stringify(d));status("مشخصات پروژه در همین مرورگر ذخیره شد.");return true;}catch(err){status("ذخیره خودکار مرورگر ممکن نشد؛ از خروجی JSON استفاده کنید.",true);return false;}}
