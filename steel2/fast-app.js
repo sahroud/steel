@@ -72,7 +72,7 @@ function planSVG(d){
  let s='<rect x="'+L+'" y="'+T+'" width="'+(x1-L)+'" height="'+(y1-T)+'" fill="#f8fbfc" stroke="#526b78" stroke-width="2"/>';
  xs.forEach((x,i)=>{const px=L+x*sc;s+='<line x1="'+px+'" y1="'+T+'" x2="'+px+'" y2="'+y1+'" stroke="#176b87" stroke-width="2"/><text x="'+px+'" y="'+(T-12)+'" text-anchor="middle" font-size="10" fill="#176b87">'+(i+1)+'</text>';});
  const pc=Math.max(2,Math.ceil(d.span/d.purlinSpacing));for(let i=1;i<pc;i++){const py=T+d.span*i/pc*sc;s+='<line x1="'+L+'" y1="'+py+'" x2="'+x1+'" y2="'+py+'" stroke="#b07825" stroke-width="1"/>';}
- if(xs.length>1){for(const bi of [0,xs.length-2]){const xa=L+xs[bi]*sc,xb=L+xs[bi+1]*sc;s+='<path d="M'+xa+' '+T+' L'+xb+' '+y1+' M'+xa+' '+y1+' L'+xb+' '+T+'" stroke="#b34c42" stroke-width="2" fill="none"/>';}}
+ const roofBays=[...new Set([0,xs.length-2,...(Array.isArray(d.longitudinalBracingBays)?d.longitudinalBracingBays:[])])].filter(i=>i>=0&&i<xs.length-1);if(xs.length>1){for(const bi of roofBays){const xa=L+xs[bi]*sc,xb=L+xs[bi+1]*sc;s+='<path d="M'+xa+' '+T+' L'+xb+' '+y1+' M'+xa+' '+y1+' L'+xb+' '+T+'" stroke="#b34c42" stroke-width="2" fill="none"/>';}}
  s+='<text x="'+((L+x1)/2)+'" y="'+(y1+27)+'" text-anchor="middle" font-size="12" fill="#20313d">طول '+d.length+' m</text><text x="'+(x1+8)+'" y="'+((T+y1)/2)+'" font-size="11" fill="#20313d">'+d.span+' m</text>';
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="پلان سقف و محل قاب‌ها">'+s+'</svg>';
 }
