@@ -34,8 +34,10 @@ if(d.roof==="gable")out+=line([0,d.span/2,d.height+d.rise],[d.length,d.span/2,d.
 const purlinCount=Math.max(2,Math.ceil(d.span/1.5));
 for(let i=1;i<purlinCount;i++){const y=d.span*i/purlinCount;out+=line([0,y,roofZ(d,y)],[d.length,y,roofZ(d,y)],"#b07825",1.35);}
 // Side-wall girts at nominal 1.5 m vertical spacing, following the wall top
-const girtCount=Math.max(1,Math.floor(d.height/1.5));
-for(let j=1;j<=girtCount;j++){const z=d.height*j/(girtCount+1);out+=line([0,0,z],[d.length,0,z],"#6c8491",1.25);const z2=Math.min(z,zSide1-.25);out+=line([0,d.span,z2],[d.length,d.span,z2],"#6c8491",1.25);}
+const girtBays3d=Math.max(1,Math.ceil(d.height/d.girtSpacing)),girtActual3d=d.height/girtBays3d;
+for(let j=1;j<girtBays3d;j++){const z=j*girtActual3d;out+=line([0,0,z],[d.length,0,z],"#6c8491",1.25)+line([0,d.span,z],[d.length,d.span,z],"#6c8491",1.25);}
+const postBays3d=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postActual3d=d.span/postBays3d;
+for(const x of [0,d.length])for(let k=1;k<postBays3d;k++){const y=k*postActual3d;out+=line([x,y,0],[x,y,roofZ(d,y)],"#7b5b9a",1.8);}
 // Schematic X bracing in the first and last longitudinal bays on both side walls
 if(xs.length>1){const bays=[0,xs.length-2];for(const bi of bays){const xa=xs[bi],xb=xs[bi+1];for(const y of [0,d.span]){const top=roofZ(d,y)*.82;out+=line([xa,y,.35],[xb,y,top],"#b34c42",1.7)+line([xa,y,top],[xb,y,.35],"#b34c42",1.7);}}}
 // Roof-plane diagonal bracing in the first and last bays
