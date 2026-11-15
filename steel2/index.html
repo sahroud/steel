@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#123b52">
 <meta name="description" content="ورود مشخصات و پیش‌نمایش هندسی سوله">
 <title>SAHROUD STEEL | شروع سریع</title>
-<link rel="stylesheet" href="fast.css?v=20261115-longitudinal-bracing-v3">
-<script defer src="fast-app.js?v=20261115-longitudinal-bracing-v3"></script>
+<link rel="stylesheet" href="fast.css?v=20261115-climate-city-link-v1">
+<script defer src="fast-app.js?v=20261115-climate-city-link-v1"></script>
 </head>
 <body>
 <header class="top">
@@ -21,10 +21,24 @@
     <h3 id="identityTitle">۱. مشخصات پروژه</h3>
     <div class="grid">
       <div class="field"><label for="projectName">نام پروژه</label><input id="projectName" value="سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود"></div>
-      <div class="field"><label for="city">شهر و استان</label><input id="city" value="شاهرود ـ سمنان"></div>
+      <div class="field"><label for="city">شهر پروژه</label><select id="city" aria-label="انتخاب شهر پروژه"></select></div>
       <div class="field"><label for="owner">کارفرما</label><input id="owner" value="شرکت شهرک‌های صنعتی"></div>
       <div class="field"><label for="designer">مهندس طراح</label><input id="designer" value="مهندس احمد نوری"></div>
     </div>
+  </section>
+
+  <section class="card" aria-labelledby="climateTitle">
+    <h3 id="climateTitle">۲. اطلاعات اقلیمی شهر انتخابی</h3>
+    <p class="hint">با انتخاب شهر، داده‌های موجود در بانک نمایش داده می‌شوند. اگر داده معتبر ثبت نشده باشد، فیلد خالی می‌ماند؛ مقادیر را فقط با ذکر منبع معتبر وارد کنید.</p>
+    <div class="grid">
+      <div class="field"><label for="climateGroundSnow">بار برف مبنا (kN/m²)</label><input id="climateGroundSnow" type="number" min="0" step="0.01" placeholder="داده معتبر لازم است"></div>
+      <div class="field"><label for="climateBasicWind">سرعت مبنای باد (km/h)</label><input id="climateBasicWind" type="number" min="0" step="0.1" placeholder="داده معتبر لازم است"></div>
+      <div class="field"><label for="climateElevation">ارتفاع از سطح دریا (m)</label><input id="climateElevation" type="number" min="0" max="6000" step="1" placeholder="ارتفاع محل دقیق پروژه"></div>
+      <div class="field"><label for="climateSnowRegion">منطقه برف</label><input id="climateSnowRegion" type="number" min="1" max="4" step="1" placeholder="از نقشه / جدول رسمی"></div>
+      <div class="field" style="grid-column:1/-1"><label for="climateSource">منبع و توضیحات داده اقلیمی</label><input id="climateSource" type="text" placeholder="عنوان جدول، ویرایش آیین‌نامه، صفحه و نشانی منبع"></div>
+    </div>
+    <div id="climateStatus" class="status" role="status" aria-live="polite">اطلاعات اقلیمی هنوز بررسی نشده است.</div>
+    <p class="hint">وضعیت فعلی بانک: فقط برای شاهرود مقادیر مقدماتی ثبت شده‌اند؛ سرعت باد ۹۰ km/h، برف مبنا ۱٫۰ kN/m² و ارتفاع ۱۳۵۰ متر. این سه مقدار تأیید نهایی نشده‌اند. داده‌های این بخش فعلاً در پرونده پروژه ذخیره می‌شوند و هنوز به بارهای نهایی یا تحلیل سازه‌ای اعمال نمی‌شوند.</p>
   </section>
 
   <section class="card" aria-labelledby="geometryTitle">
