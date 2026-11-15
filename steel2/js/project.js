@@ -803,11 +803,9 @@
             if(error){setStatus(error);if($("projectSetupStatus"))$("projectSetupStatus").textContent=error;return;}
             const saved=persistSnapshot(getData());
             if(window.SteelDrawing&&typeof window.SteelDrawing.drawFrame==="function")window.SteelDrawing.drawFrame();
-            // ساخت مدل کامل فقط با فرمان صریح ثبت مشخصات انجام می‌شود؛ نه در هر تغییر فیلد.
+            // ثبت مشخصات فقط ذخیره و پیش‌نمایش دوبعدی را به‌روز می‌کند.
+            // تولید مدل سه‌بعدی سنگین فقط با دکمه مستقل «ساخت مدل هندسی» انجام می‌شود.
             const singleSlope=$("structuralSystem")?.value==="portal-single-slope";
-            if(!singleSlope&&window.SteelStructuralModel&&typeof window.SteelStructuralModel.build==="function"){
-                try{window.SteelStructuralModel.build();window.SteelStructuralModel.draw();}catch(modelError){console.error(modelError);setStatus("پیش‌نمایش دوبعدی به‌روز شد؛ مدل سه‌بعدی نیازمند بررسی است: "+modelError.message);}
-            }
             const saveMessage=saved?"مشخصات پروژه ثبت و در حافظه مرورگر ذخیره شد.":"مشخصات بررسی شد، اما ذخیره خودکار مرورگر ناموفق بود؛ از ذخیره پروژه فایل JSON بگیرید.";
             setStatus(singleSlope?saveMessage+" مدل سه‌بعدی تک‌شیب هنوز آماده تحلیل نیست.":saveMessage);
             if($("projectSetupStatus"))$("projectSetupStatus").textContent=singleSlope?"مشخصات و پیش‌نمایش دوبعدی تک‌شیب ثبت شد؛ مدل سه‌بعدی و تحلیل این سیستم هنوز آماده نیست.":"مشخصات ذخیره شد و پیش‌نمایش قاب به‌روزرسانی شد؛ بارگذاری و کنترل‌های طراحی هنوز باید تکمیل شوند.";
