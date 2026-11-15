@@ -43,6 +43,9 @@
         const eaveY = groundY - height * scale;
         const ridgeY = groundY - (height + rise) * scale;
         const midX = (leftX + rightX) / 2;
+        const roofSystem = document.getElementById("structuralSystem")?.value || "portal-gable";
+        const isSingleSlope = roofSystem === "portal-single-slope";
+        const rightEaveY = isSingleSlope ? groundY - (height + rise) * scale : eaveY;
 
         function el(name, attrs, parent = svg) {
             const node = document.createElementNS(NS, name);
@@ -116,25 +119,37 @@
 
         line(35, baseY, W - 35, baseY, "#64748b", 2);
         line(leftX, baseY, leftX, eaveY, "#176b9b", 7);
-        line(rightX, baseY, rightX, eaveY, "#176b9b", 7);
-        const roofAngle = Math.atan2(rise, span / 2);
-        const tipOffsetX = overhang * scale * Math.cos(roofAngle);
-        const tipOffsetY = overhang * scale * Math.sin(roofAngle);
-        const leftTipX = leftX - tipOffsetX;
-        const leftTipY = eaveY + tipOffsetY;
-        const rightTipX = rightX + tipOffsetX;
-        const rightTipY = eaveY + tipOffsetY;
-
-        line(leftTipX, leftTipY, leftX, eaveY, "#b45309", 5);
-        line(leftX, eaveY, midX, ridgeY, "#d97706", 7);
-        line(midX, ridgeY, rightX, eaveY, "#d97706", 7);
-        line(rightX, eaveY, rightTipX, rightTipY, "#b45309", 5);
+        line(rightX, baseY, rightX, rightEaveY, "#176b9b", 7);
+        let leftTipX, leftTipY, rightTipX, rightTipY;
+        if (isSingleSlope) {
+            const angle = Math.atan2(rise, span);
+            const dx = overhang * scale * Math.cos(angle);
+            const dy = overhang * scale * Math.sin(angle);
+            leftTipX = leftX - dx; leftTipY = eaveY + dy;
+            rightTipX = rightX + dx; rightTipY = rightEaveY + dy;
+            line(leftTipX, leftTipY, leftX, eaveY, "#b45309", 5);
+            line(leftX, eaveY, rightX, rightEaveY, "#d97706", 7);
+            line(rightX, rightEaveY, rightTipX, rightTipY, "#b45309", 5);
+            label(midX, (eaveY + rightEaveY) / 2 - 12, "سقف تک‌شیب", 11, "#9a3412");
+        } else {
+            const roofAngle = Math.atan2(rise, span / 2);
+            const tipOffsetX = overhang * scale * Math.cos(roofAngle);
+            const tipOffsetY = overhang * scale * Math.sin(roofAngle);
+            leftTipX = leftX - tipOffsetX; leftTipY = eaveY + tipOffsetY;
+            rightTipX = rightX + tipOffsetX; rightTipY = eaveY + tipOffsetY;
+            line(leftTipX, leftTipY, leftX, eaveY, "#b45309", 5);
+            line(leftX, eaveY, midX, ridgeY, "#d97706", 7);
+            line(midX, ridgeY, rightX, eaveY, "#d97706", 7);
+            line(rightX, eaveY, rightTipX, rightTipY, "#b45309", 5);
+            label(midX, ridgeY - 12, "C");
+        }
         label(leftTipX, leftTipY - 9, "کنسول ۰٫۸ m", 9, "#92400e");
         label(rightTipX, rightTipY - 9, "کنسول ۰٫۸ m", 9, "#92400e");
 
         [
-            [leftX, baseY], [leftX, eaveY], [midX, ridgeY],
-            [rightX, eaveY], [rightX, baseY]
+            [leftX, baseY], [leftX, eaveY],
+            ...(isSingleSlope ? [] : [[midX, ridgeY]]),
+            [rightX, rightEaveY], [rightX, baseY]
         ].forEach(([x, y]) => {
             el("circle", {
                 cx: x, cy: y, r: 5, fill: "#ffffff",
@@ -152,8 +167,8 @@
 
         label(leftX - 17, baseY + 29, "A");
         label(leftX - 17, eaveY - 10, "B");
-        label(midX, ridgeY - 12, "C");
-        label(rightX + 17, eaveY - 10, "D");
+        if (!isSingleSlope) label(midX, ridgeY - 12, "C");
+        label(rightX + 17, rightEaveY - 10, "D");
         label(rightX + 17, baseY + 29, "E");
 
         const dimY = Math.min(baseY + 55, 292);
@@ -172,8 +187,9 @@
         hLabel.setAttribute("transform",
             `rotate(-90 ${dimX - 5} ${(baseY + eaveY) / 2})`);
 
-        label(midX + 45, ridgeY + 18, `اختلاف ارتفاع تاج و ستون: ${rise} m`, 11, "#9a3412");
-        label(W / 2, 18, "نمای دوبعدی قاب سوله", 13, "#123b52");
+        label(midX + 45, isSingleSlope ? (eaveY + rightEaveY) / 2 + 22 : ridgeY + 18,
+            isSingleSlope ? `اختلاف ارتفاع دو لبه سقف: ${rise} m` : `اختلاف ارتفاع تاج و ستون: ${rise} m`, 11, "#9a3412");
+        label(W / 2, 18, isSingleSlope ? "نمای دوبعدی قاب تک‌شیب سوله" : "نمای دوبعدی قاب سوله", 13, "#123b52");
 
         const status = document.getElementById("projectStatus");
         if (status) {
@@ -192,7 +208,7 @@
             field.addEventListener("change", drawFrame);
             field.dataset.drawingListener = "1";
         }
-        ["span", "height"].forEach(id => {
+        ["span", "height", "rise", "structuralSystem"].forEach(id => {
             const input = document.getElementById(id);
             if (input && !input.dataset.frameDrawingListener) {
                 input.addEventListener("input", drawFrame);
