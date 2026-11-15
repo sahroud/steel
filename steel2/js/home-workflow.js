@@ -1,8 +1,46 @@
 /* SAHROUD STEEL — compact home workflow
-   Project intake is lightweight; full geometry is built only on explicit request. */
+   Core intake and preview stay visible; advanced panels are grouped without deleting their controls. */
 (function () {
   "use strict";
+
+  function compactPanels() {
+    const main = document.querySelector("main");
+    const setup = document.getElementById("projectSetupPanel");
+    const drawing = document.getElementById("frameDrawing")?.closest(".panel");
+    const gallery = document.getElementById("structureViewsPanel");
+    if (!main || !setup || !drawing || !gallery) return;
+
+    let shell = document.getElementById("homeAdvancedTools");
+    if (!shell) {
+      shell = document.createElement("section");
+      shell.className = "panel home-advanced-tools";
+      shell.id = "homeAdvancedTools";
+      shell.innerHTML = '<details><summary>بخش‌های تخصصی و آزمایش‌ها — بارگذاری، تحلیل، طراحی اعضا، جرثقیل و گزارش‌ها</summary><div id="homeAdvancedContent"></div></details>';
+      gallery.insertAdjacentElement("afterend", shell);
+    }
+    const content = document.getElementById("homeAdvancedContent");
+    if (!content) return;
+
+    Array.from(main.querySelectorAll(":scope > .panel")).forEach(panel => {
+      if (panel === setup || panel === drawing || panel === gallery || panel === shell) return;
+      content.appendChild(panel);
+    });
+
+    if (!shell.dataset.watchPanels) {
+      shell.dataset.watchPanels = "1";
+      const observer = new MutationObserver(() => {
+        Array.from(main.querySelectorAll(".panel")).forEach(panel => {
+          if (panel === setup || panel === drawing || panel === gallery || panel === shell) return;
+          if (!content.contains(panel)) content.appendChild(panel);
+        });
+      });
+      observer.observe(main, { childList: true, subtree: true });
+    }
+  }
+
   function init() {
+    compactPanels();
+
     const start = document.getElementById("btnBuildModelFromHome");
     if (!start || start.dataset.bound === "1") return;
     start.dataset.bound = "1";
@@ -49,14 +87,14 @@
         const summary = document.getElementById("fullModelSummary");
         if (model && model.nodes?.length && model.members?.length) {
           window.SteelStructureViewGallery?.update?.();
-          const gallery = document.getElementById("structureViewsPanel");
-          const details = gallery?.querySelector(":scope > details");
-          if (details) details.open = true;
-          setStatus("مدل هندسی ساخته شد: " + model.nodes.length + " گره و " + model.members.length + " عضو. نماها پایین همین صفحه باز شدند.");
-          gallery?.scrollIntoView({ behavior: "smooth", block: "start" });
+          const galleryPanel = document.getElementById("structureViewsPanel");
+          const galleryDetails = galleryPanel?.querySelector(":scope > details");
+          if (galleryDetails) galleryDetails.open = true;
+          setStatus("مدل هندسی ساخته شد: " + model.nodes.length + " گره و " + model.members.length + " عضو. نماها در بخش گالری باز شدند.");
+          galleryPanel?.scrollIntoView({ behavior: "smooth", block: "start" });
         } else {
           const message = summary?.textContent?.trim();
-          setStatus(message || "مدل ساخته نشد؛ پیام خطا را در بخش مدل هندسی بررسی کنید.");
+          setStatus(message || "مدل ساخته نشد؛ پیام خطا را در بخش تخصصی مدل هندسی بررسی کنید.");
         }
         running = false;
         start.disabled = false;
