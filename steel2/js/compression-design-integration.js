@@ -159,6 +159,8 @@ function selfTest(){
   {name:"pure axial case is separately identified",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"A",sectionKey:"column",ends:[{label:"A1",values:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}]})[0];return x.axialOnlyCase&&!x.interactionRequired;})()},
   {name:"bending in any other combination blocks pure-axial screening",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"MIX",sectionKey:"column",ends:[{label:"AXIAL",values:[2000,0,0,0,0,0,-2000,0,0,0,0,0]},{label:"BENDING",values:[1000,0,0,0,0,250000,-1000,0,0,0,0,0]}]}]})[0];return x.interactionRequired&&!x.axialOnlyCase;})()},
   {name:"invalid force vectors are ignored",pass:!rows.some(r=>r.id==="BAD")},
+  {name:"3D combinations are mapped without losing per-case concurrent actions",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]},{id:"U2",members:[{id:"M1",localEndForces:[1500,0,0,0,0,0,-1500,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column",length:6}]});return x.success&&x.members[0].coverageComplete&&x.members[0].caseCount===2&&x.members[0].compressionDemand_kN===1.5;})()},
+  {name:"missing member in any 3D combination blocks its demand coverage",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]},{id:"U2",members:[]}],{members:[{id:"M1",sectionKey:"column"}]});return !x.success&&!x.members[0].coverageComplete;})()},
   {name:"member capacity calculated with explicit unbraced lengths",pass:good.ok&&good.LRFD.designStrength_kN>0},
   {name:"missing member unbraced lengths are blocked",pass:!missing.ok},
   {name:"unconfirmed section-property mapping is blocked",pass:!mismatch.ok},
