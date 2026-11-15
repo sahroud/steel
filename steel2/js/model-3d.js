@@ -165,7 +165,7 @@
       runWithProgress("در حال تولید گره‌ها، قاب‌ها، پرلین‌ها و مهاربندها…", stage => {
         build(); draw(); showSummary();
         stage("ترسیم مدل و تکمیل خلاصه هندسی انجام شد.");
-      }, e => { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; });
+      }, e => { $("fullModelSummary").textContent = "خطا در تولید مدل سه‌بعدی: " + e.message + "؛ نمای دوبعدی قاب حفظ شد."; if(typeof originalDrawFrame==="function")originalDrawFrame(); });
     });
     $("btnSolverSelfTest").addEventListener("click", function () {
       const box=$("fullModel3DResult");
@@ -1002,8 +1002,8 @@
     const runwayRailLayoutAudit=auditRunwayRailLayout(runwayRailLayoutInputs,length,runwayLoadPathInputs);
     const runwayGeometry=buildCraneRunwayGeometry({enabled:craneEnabled,span,length,frames,runwayElevation,offsetM:runwayOffset,supportType:runwaySupportType,sectionInputs:runwaySectionInputs,sectionAudit:runwaySectionAudit,stiffenerInputs:runwayStiffenerInputs,webAudit:runwayWebAudit,loadPathInputs:runwayLoadPathInputs,loadPathAudit:runwayLoadPathAudit,contactScreen:runwayContactScreen,fasteningInputs:runwayFasteningInputs,fasteningAudit:runwayFasteningAudit,railLayoutInputs:runwayRailLayoutInputs,railLayoutAudit:runwayRailLayoutAudit});
     const purlinSupportAudit=auditPurlinRafterConnectivity(nodes,members,frames);
-    if(!purlinSupportAudit.ok)throw new Error("ممیزی اتصال پرلین به رفتر/تیر لبه ناموفق است: "+JSON.stringify(purlinSupportAudit.issues.slice(0,8)));
-    model={version:1,geometry:{span,length,spacing,height,rise,bayCount:frames.length-1,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,roofPurlinActualSpacing:purlinLayout.actualSpacingM,roofPurlinIntervalsPerSlope:purlinLayout.intervals,roofPurlinStationCountPerSlope:purlinLayout.stationCount,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry,railFemInputs:{...readRunwayRailFEMInputs(),movingTrainJson:String($("craneRunwayRailMovingTrain")?.value||""),movingStepM:String($("craneRunwayRailMovingStep")?.value||"0.25")}},roofOverhang,endOverhang},nodes,members,generatedAt:new Date().toISOString(),purlinSupportAudit};
+    // شکست ممیزی توپولوژی نباید نمایش هندسه را متوقف کند؛ نتیجه ممیزی جداگانه گزارش می‌شود.
+    model={version:1,geometry:{span,length,spacing,height,rise,frames:frames.slice(),bayCount:frames.length-1,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,roofPurlinActualSpacing:purlinLayout.actualSpacingM,roofPurlinIntervalsPerSlope:purlinLayout.intervals,roofPurlinStationCountPerSlope:purlinLayout.stationCount,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,craneRunway:{enabled:craneEnabled,elevationM:craneEnabled?runwayElevation:null,supportNodeCount:craneEnabled?frameNodes.length*2:0,...runwayGeometry,railFemInputs:{...readRunwayRailFEMInputs(),movingTrainJson:String($("craneRunwayRailMovingTrain")?.value||""),movingStepM:String($("craneRunwayRailMovingStep")?.value||"0.25")}},roofOverhang,endOverhang},nodes,members,generatedAt:new Date().toISOString(),purlinSupportAudit};
     if(window.SteelCrane3DMeshProposal&&model.geometry.craneRunway.enabled){
       model.geometry.craneRunway.meshProposal=window.SteelCrane3DMeshProposal.audit(model);
     }
@@ -1782,7 +1782,12 @@
       document.head.appendChild(style);
     }
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFullModel=draw;}
-    try{build();draw();showSummary();}catch(e){console.warn(e);}
+    try{build();draw();showSummary();}catch(e){
+      console.error("SAHROUD STEEL model initialization failed:",e);
+      const summary=$("fullModelSummary");
+      if(summary)summary.textContent="مدل سه‌بعدی ساخته نشد: "+(e?.message||String(e))+"؛ نمای دوبعدی قاب برای مشاهده هندسه پایه حفظ شد.";
+      if(typeof originalDrawFrame==="function")originalDrawFrame();
+    }
   }
   window.SteelStructuralModel={build,draw,setCameraView,getCameraView:()=>({...cameraView}),getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
