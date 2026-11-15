@@ -60,7 +60,8 @@ function saveCurrentCity(){
  if([wind,snow,elev].some(v=>v!==null&&!Number.isFinite(v))){alert("مقادیر اقلیمی باید عددی باشند.");return;}
  const source=(c.source||"").trim();
  if((wind!==null||snow!==null)&&!source){alert("برای ثبت مقدار باد یا برف، منبع داده را وارد کنید.");return;}
- records[id]={id,name,basicWind:wind,groundSnow:snow,basicWindPressure:null,snowRegion:null,elevation:elev,source,sourceDate:new Date().toISOString().slice(0,10),status:source?"ثبت کاربر؛ نیازمند کنترل منبع":"فاقد داده عددی"};
+ const previous=records[id]||{};
+ records[id]={...previous,id,name,basicWind:wind,groundSnow:snow,basicWindPressure:previous.basicWindPressure??null,snowRegion:previous.snowRegion??null,elevation:elev,source,sourceDate:new Date().toISOString().slice(0,10),verified:false,status:source?"ثبت کاربر؛ نیازمند کنترل منبع":"فاقد داده عددی"};
  refreshStatus(); alert("رکورد شهر در بانک جاری ثبت شد. برای انتقال آن، پروژه را ذخیره یا از بانک خروجی JSON بگیرید.");
 }
 function exportDatabase(){
@@ -101,7 +102,7 @@ function getData(){return {schema:"sahroud-steel-climate-db",version:1,records:J
 function setData(data){
  if(!data||data.schema!=="sahroud-steel-climate-db"||!data.records)return;
  const cleanNumber=v=>v===null||v===undefined||v===""?null:(Number.isFinite(Number(v))?Number(v):null);
- Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,seismicZone:r.seismicZone??null,meanAnnualTemperature:cleanNumber(r.meanAnnualTemperature),designTemperature:cleanNumber(r.designTemperature),status:String(r.status||"")};});
+ Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),siteCoordinates:r.siteCoordinates&&Number.isFinite(Number(r.siteCoordinates.latitude))&&Number.isFinite(Number(r.siteCoordinates.longitude))?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,seismicZone:r.seismicZone??null,meanAnnualTemperature:cleanNumber(r.meanAnnualTemperature),designTemperature:cleanNumber(r.designTemperature),status:String(r.status||"")};});
  applyShahroudReference();
  refreshStatus();
 }
