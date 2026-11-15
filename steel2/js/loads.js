@@ -776,9 +776,9 @@
             const savedClimate = climateCity.value;
             if (["other","custom",""].includes(projectCity.value)) {
                 syncClimateFromProject();
-            } else if (knownClimateCodes.includes(projectCity.value)) {
+            } else if (isKnownClimateCity(projectCity.value)) {
                 syncClimateFromProject();
-            } else if (knownClimateCodes.includes(savedClimate)) {
+            } else if (isKnownClimateCity(savedClimate)) {
                 syncProjectFromClimate();
             } else {
                 syncClimateFromProject();
@@ -801,19 +801,21 @@
         }
 
         const panel = $("advancedLoadPanel");
-
+        if (!panel) {
+            console.error("SAHROUD STEEL: پنل مدیریت بارگذاری ساخته نشد.");
+            return;
+        }
         panel.addEventListener("input", function (event) {
-            if (
-                event.target &&
-                event.target.matches("input, textarea, select")
-            ) {
+            if (event.target && event.target.matches("input, textarea, select")) {
                 summary();
                 updateWindReference();
             }
         });
 
-        $("btnLoadCheck").addEventListener("click", check);
-        $("btnLoadReset").addEventListener("click", reset);
+        const checkButton = $("btnLoadCheck");
+        const resetButton = $("btnLoadReset");
+        if (checkButton) checkButton.addEventListener("click", check);
+        if (resetButton) resetButton.addEventListener("click", reset);
 
         if ($("buildingDominantOpening")) $("buildingDominantOpening").value = state.climate.dominantOpening || "unknown";
         summary();
