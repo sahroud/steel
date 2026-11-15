@@ -365,3 +365,41 @@ th {
   .quick-actions-buttons button { flex: 1 1 0; }
   .quick-project-status { font-size: 10px; }
 }
+
+/* Professional project intake — SAHROUD STEEL */
+.project-setup{border:1px solid #b8cbd5;background:linear-gradient(160deg,#f8fbfd 0%,#fff 60%,#f2f7fa 100%);box-shadow:0 8px 26px rgba(15,45,65,.09);padding:20px}
+.project-setup .panel-title{align-items:flex-start;margin-bottom:8px}
+.project-setup .panel-title h3{font-size:19px;color:#123b52;margin:3px 0 0}
+.setup-eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#54788a}
+.setup-intro{color:#536b78;font-size:13px;line-height:1.9;margin:7px 0 18px}
+.setup-section-title{font-size:13px;font-weight:800;color:#123b52;border-right:4px solid #1c718d;padding:4px 10px;margin:18px 0 10px}
+.setup-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px}
+.project-setup .field{min-width:0;margin:0}
+.project-setup .field label{font-size:12px;font-weight:700;color:#294858;margin-bottom:6px}
+.project-setup input,.project-setup select{min-height:43px;border:1px solid #c6d4dc;border-radius:9px;background:#fff;padding:9px 11px;font-size:14px}
+.project-setup input:focus,.project-setup select:focus{outline:2px solid rgba(28,113,141,.18);border-color:#1c718d}
+.project-setup small{display:block;line-height:1.6;margin-top:5px}
+.project-setup .setup-metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px}
+.project-setup .setup-metrics>div{background:#edf4f7;border-color:#d1e0e7;padding:11px}
+.project-setup .setup-metrics strong{font-size:16px}
+.setup-equipment-row{display:grid;grid-template-columns:minmax(230px,1fr) 2fr;gap:14px;align-items:center}
+.crane-choice{display:flex;gap:11px;align-items:center;padding:12px;border:1px solid #c7d8e0;border-radius:10px;background:#edf5f8;cursor:pointer}
+.crane-choice input{width:20px;height:20px;min-height:20px;accent-color:#176b87}
+.crane-choice b{display:block;color:#123b52;font-size:13px}
+.crane-choice small{color:#5b7180}
+.setup-notice{margin-top:15px;padding:12px 14px;border-right:4px solid #bd8b36;background:#fff8e9;color:#69542f;font-size:12px;line-height:1.9;border-radius:7px}
+.setup-footer{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;padding-top:13px;border-top:1px solid #dce6eb}
+.setup-footer button{min-width:230px;min-height:44px}
+.setup-footer span{font-size:11px;color:#607683}
+.crane-advanced-details{margin-top:14px;border:1px solid #c8d8df;border-radius:10px;padding:10px 13px;background:#fbfdfe}
+.crane-advanced-details>summary{cursor:pointer;font-weight:800;color:#123b52;padding:6px}
+#craneReadinessPanel .notice{line-height:1.8}
+@media(max-width:850px){.setup-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){
+ .project-setup{padding:13px}
+ .project-setup .panel-title{display:block}
+ .setup-grid,.setup-equipment-row{grid-template-columns:1fr}
+ .project-setup .setup-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .setup-footer button{width:100%;min-width:0}
+ .setup-footer span{font-size:10px}
+}
