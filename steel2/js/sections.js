@@ -497,12 +497,13 @@
         const grade=$("steelGrade"),thick=$("steelThickness"),fy=$("steelFy"),fu=$("steelFu"),note=$("steelGradeNotice"),custom=$("steelGradeCustom");
         if(!grade||!fy||!fu)return;
         if(custom)custom.style.display=grade.value==="CUSTOM"?"block":"none";
-        const t=Number(thick?.value||10),g=grade.value,defaults=getMaterialDefaults(g,t);
+        const t=Number(thick?.value),g=grade.value,defaults=getMaterialDefaults(g,t);
         if(defaults.Fy_MPa!==null)fy.value=String(defaults.Fy_MPa);else fy.value="";
         if(defaults.Fu_MPa!==null)fu.value=String(defaults.Fu_MPa);else fu.value="";
         if(note){
             if(g==="CUSTOM")note.textContent="گرید سفارشی انتخاب شده است؛ نام دقیق فولاد و مقادیر Fy و Fu را از استاندارد محصول یا گواهی کارخانه وارد کنید.";
-            else note.textContent=defaults.source+"؛ ضخامت "+t+" mm، Fy="+(defaults.Fy_MPa??"نامشخص")+" MPa، Fu حداقل="+(defaults.Fu_MPa??"نامشخص")+" MPa (بازه کششی مرجع "+(defaults.FuRange_MPa?.join("–")||"نامشخص")+"). این اعداد جایگزین گواهی مصالح نیستند.";
+            else if(["ST37-2","ST52-3"].includes(g)&&!(Number.isFinite(t)&&t>0))note.textContent="برای تعیین Fy و Fu، ضخامت واقعی ورق/محصول را وارد کنید؛ تا آن زمان مقادیر مقاومت خالی می‌مانند و هیچ ضخامت پیش‌فرضی فرض نمی‌شود.";
+            else note.textContent=defaults.source+(Number.isFinite(t)&&t>0?"؛ ضخامت "+t+" mm":"")+"، Fy="+(defaults.Fy_MPa??"نامشخص")+" MPa، Fu حداقل="+(defaults.Fu_MPa??"نامشخص")+" MPa (بازه کششی مرجع "+(defaults.FuRange_MPa?.join("–")||"نامشخص")+"). این اعداد جایگزین گواهی مصالح نیستند.";
         }
     }
     function installMaterialGradeControls(){
