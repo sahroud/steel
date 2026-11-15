@@ -425,3 +425,44 @@ th {
 .structure-camera-help{font-size:11px;color:#647783;margin-inline-start:5px}
 .structure-view-svg{user-select:none;-webkit-user-select:none}
 @media(max-width:650px){.structure-camera-controls{gap:5px}.structure-camera-controls button{min-width:40px;min-height:42px;padding:4px 10px}.structure-camera-help{width:100%;margin-top:2px}}
+
+
+/* Compact, fast-start home screen */
+.home-primary-actions {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1.25fr);
+  gap: 9px;
+  align-items: center;
+}
+.home-primary-actions button {
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  font-size: 14px;
+}
+.home-primary-actions #homeWorkflowStatus {
+  grid-column: 1 / -1;
+  display: block;
+  min-height: 22px;
+  color: #31566a;
+  font-size: 12px;
+  padding: 5px 2px;
+}
+.home-primary-actions #projectSetupStatus {
+  grid-column: 1 / -1;
+  display: block;
+  font-size: 11px;
+}
+.panel.smart-organized:not(:has(> details[open])) {
+  box-shadow: 0 2px 7px rgba(20,48,65,.04);
+}
+.panel.smart-organized > details > summary {
+  min-height: 45px;
+}
+@media(max-width:600px) {
+  .home-primary-actions { grid-template-columns: 1fr; }
+  .home-primary-actions button { min-height: 46px; }
+  .home-primary-actions #homeWorkflowStatus,
+  .home-primary-actions #projectSetupStatus { grid-column: 1; }
+}
