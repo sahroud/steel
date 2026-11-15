@@ -155,11 +155,32 @@ function cutList(d){
  '</tbody></table>';
 }
 
+function dimensionSchedule(d){
+ const xs=frameStations(d),rows=[
+ ["دهانه عرضی",d.span.toFixed(3)+" m"],
+ ["طول کل",d.length.toFixed(3)+" m"],
+ ["ارتفاع ستون تا لبه",d.height.toFixed(3)+" m"],
+ ["ارتفاع تاج قاب",d.roof==="gable"?(d.height+d.rise).toFixed(3)+" m":"—"],
+ ["خیز سقف دوشیب / اختلاف ارتفاع تک‌شیب",d.rise.toFixed(3)+" m"],
+ ["شیب سقف",d.slopePercent+"٪"],
+ ["تعداد قاب / دهانه طولی",xs.length+" / "+(xs.length-1)],
+ ["محورهای قاب از مبدأ X",xs.map(x=>x.toFixed(3)).join(" ؛ ")+" m"],
+ ["تعداد قید افقی در هر دیوار",String(d.girtCount)],
+ ["تراز قیدهای افقی از کف",Array.from({length:d.girtCount},(_,i)=>(d.height*(i+1)/(d.girtCount+1)).toFixed(3)).join(" ؛ ")+" m"],
+ ["فاصله تیر تاج اول از محور تاج","0.400 m"],
+ ["فاصله تیر تاج دوم از محور تاج","0.400 m"],
+ ["فاصله بین دو تیر تاج","0.800 m"],
+ ["تراز هر تیر تاج از کف",d.roof==="gable"?[roofZ(d,d.span/2-.4),roofZ(d,d.span/2+.4)].map(z=>z.toFixed(3)).join(" ؛ ")+" m":"برای سقف تک‌شیب تعریف نشده"],
+ ["فاصله واقعی پرلین‌ها",(d.span/Math.max(2,Math.ceil(d.span/d.purlinSpacing))).toFixed(3)+" m"]
+ ];
+ return '<table><thead><tr><th>پارامتر اندازه‌گذاری</th><th>مقدار / مختصات</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</tbody></table>';
+}
+
 function draw(d){
  const xs=frameStations(d),bays=xs.length-1,actual=d.length/bays;
  $("frameDrawing").innerHTML=frameSVG(d);$("longDrawing").innerHTML=girtElevationSVG(d);$("planDrawing").innerHTML=planSVG(d);$("endDrawing").innerHTML=endSVG(d);$("modelDrawing").innerHTML=modelSVG(d);
  $("frameTable").innerHTML='<table><thead><tr><th>شماره قاب</th><th>مختصات از مبدأ (متر)</th><th>فاصله تا قاب بعدی (متر)</th></tr></thead><tbody>'+xs.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+x.toFixed(3)+'</td><td>'+(i<bays?actual.toFixed(3):'—')+'</td></tr>').join('')+'</tbody></table>';
- $("memberTable").innerHTML=memberSchedule(d);$("connectionTable").innerHTML=connectionSchedule(d);$("cutTable").innerHTML=cutList(d);
+ $("memberTable").innerHTML=memberSchedule(d);$("dimensionTable").innerHTML=dimensionSchedule(d);$("connectionTable").innerHTML=connectionSchedule(d);$("cutTable").innerHTML=cutList(d);
  $("metrics").innerHTML=[["دهانه",d.span+" m"],["طول",d.length+" m"],["تعداد قاب",xs.length],["تعداد دهانه طولی",bays],["فاصله واقعی قاب‌ها",actual.toFixed(3)+" m"],["فاصله واقعی پرلین‌ها",(d.span/Math.max(2,Math.ceil(d.span/d.purlinSpacing))).toFixed(3)+" m"],["تعداد قید افقی هر دیوار طولی",d.girtCount],["فاصله قائم قیدها",(d.height/(d.girtCount+1)).toFixed(3)+" m"],["ستونک میانی هر قاب انتهایی",Math.max(0,Math.ceil(d.span/d.endPostSpacing)-1)],["فاصله واقعی ستونک‌های انتهایی",(d.span/Math.ceil(d.span/d.endPostSpacing)).toFixed(3)+" m"],["فولاد",d.steel],["جرثقیل",d.crane==="yes"?d.craneCapacity+" تن":"ندارد"],["نوع سقف",d.roof==="gable"?"دو شیب":"تک‌شیب"],["شیب سقف",d.slopePercent+"٪"],["خیز / اختلاف ارتفاع",d.rise.toFixed(3)+" m"]].map(x=>'<span class="metric">'+x[0]+': <b>'+x[1]+'</b></span>').join("");
  $("preview").classList.remove("hidden");
 }
