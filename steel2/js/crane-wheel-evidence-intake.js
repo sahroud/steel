@@ -64,10 +64,10 @@ function apply(){
  const r=collect();if(!r.success)return r;
  const two=root.SteelCraneTwoRailTransfer;
  if(!two?.getData||!two?.setData){r.success=false;r.issues.push("پنل انتقال دو ریل بارگذاری نشده است.");render(r);return r;}
+ const readiness=root.SteelCraneReadiness?.getData?.();
+ if(!readiness||!readiness.enabled||Number(readiness.wheelsPerSide)!==r.wheelsPerSide){r.success=false;r.issues.push("ابتدا جرثقیل را فعال و تعداد چرخ هر سمت را دقیقاً با این جدول منطبق کنید؛ هیچ داده‌ای منتقل نشد.");render(r);return r;}
  const current=two.getData();
  two.setData({...current,leftWheelsJson:JSON.stringify(r.leftWheels),rightWheelsJson:JSON.stringify(r.rightWheels)});
- const readiness=root.SteelCraneReadiness?.getData?.();
- if(!readiness||Number(readiness.wheelsPerSide)!==r.wheelsPerSide){r.success=false;r.issues.push("تعداد چرخ هر سمت با پنل اطلاعات جرثقیل منطبق نیست؛ هیچ جاروبی اجرا نشد.");render(r);return r;}
  const host=$("cwei_result");
  if(host)host.insertAdjacentHTML("beforeend","<p>جدول چرخ به ورودی‌های دو ریل منتقل شد؛ تحلیل اجرا نشده است. اکنون ورودی‌های هندسه/سختی ریل را بازبینی و سپس جداگانه ممیزی و اجرا کنید.</p>");
  return r;
