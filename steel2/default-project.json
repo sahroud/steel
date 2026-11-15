@@ -1,6 +1,6 @@
 {
-  "projectName": "سوله صنعتی",
-  "owner": "شرکت شهرکهای صنعتی",
+  "projectName": "سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود",
+  "owner": "شرکت شهرک‌های صنعتی",
   "designer": "مهندس احمد نوری",
   "city": "shahroud",
   "baseConnection": "pinned",
@@ -7951,5 +7951,7 @@
   },
   "projectCategory": "industrial-workshop",
   "structuralSystem": "portal-gable",
-  "projectNotes": ""
+  "projectNotes": "",
+  "steelGrade": "ST37",
+  "crane_enabled": false
 }
