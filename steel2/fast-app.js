@@ -120,7 +120,7 @@ function memberSchedule(d){
  if(d.roof==="gable")for(const side of [{off:-0.4,n:"چپ"},{off:0.4,n:"راست"}]){const y=d.span/2+side.off,z=roofZ(d,y);for(let i=0;i<bays;i++)add("تیر طولی تاج","RIDGE-"+side.n+"-"+(i+1),[xs[i],y,z],[xs[i+1],y,z],d.ridgeBeamSection);}
  const pCount=Math.max(2,Math.ceil(d.span/d.purlinSpacing));
  for(let j=1;j<pCount;j++){const y=d.span*j/pCount,z=roofZ(d,y);for(let i=0;i<bays;i++)add("پرلین طولی","P"+j+"-"+(i+1),[xs[i],y,z],[xs[i+1],y,z],d.purlinSection);}
- for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/d.girtCount;for(const side of [{y:0,n:"دیوار چپ"},{y:d.span,n:"دیوار راست"}])for(let i=0;i<bays;i++)add("قید افقی طولی","G"+(j+1)+"-"+side.n+"-"+(i+1),[xs[i],side.y,z],[xs[i+1],side.y,z],d.girtSection);}
+ for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/(d.girtCount+1);for(const side of [{y:0,n:"دیوار چپ"},{y:d.span,n:"دیوار راست"}])for(let i=0;i<bays;i++)add("قید افقی طولی","G"+(j+1)+"-"+side.n+"-"+(i+1),[xs[i],side.y,z],[xs[i+1],side.y,z],d.girtSection);}
  const postBays=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postGap=d.span/postBays;
  for(const end of [{x:0,n:"ابتدا"},{x:d.length,n:"انتها"}])for(let j=1;j<postBays;j++){const y=j*postGap;add("ستونک باربر انتهایی","EP-"+end.n+"-"+j,[end.x,y,0],[end.x,y,roofZ(d,y)],d.endPostSection);}
  // بادبندهای دیوار طولی فقط در دهانه اول و آخر، از پای ستون به گره بالای قاب.
