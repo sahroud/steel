@@ -91,8 +91,8 @@
 
     function normalizeProjectSteelGrade(value) {
         const grade = String(value || "").trim().toUpperCase();
-        if (/^ST\\s*37(?:[- ]?2)?$/.test(grade)) return "ST37-2";
-        if (/^ST\\s*52(?:[- ]?3)?$/.test(grade)) return "ST52-3";
+        if (/^ST\s*37(?:[- ]?2)?$/.test(grade)) return "ST37-2";
+        if (/^ST\s*52(?:[- ]?3)?$/.test(grade)) return "ST52-3";
         return "CUSTOM";
     }
 
@@ -776,7 +776,6 @@
         });
         const projectGrade = $("projectSteelGrade");
         if (projectGrade) {
-            projectGrade.addEventListener("input", function(){ syncProjectSteelGradeToSection(true); });
             projectGrade.addEventListener("change", function(){ syncProjectSteelGradeToSection(true); });
         }
         const applySetup=$("btnApplyProjectSetup");
