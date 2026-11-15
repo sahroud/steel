@@ -7952,6 +7952,6 @@
   "projectCategory": "industrial-workshop",
   "structuralSystem": "portal-gable",
   "projectNotes": "",
-  "steelGrade": "ST37",
-  "crane_enabled": false
+  "crane_enabled": false,
+  "projectSteelGrade": "ST37"
 }
