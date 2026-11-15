@@ -731,37 +731,42 @@
         const projectCityName = $("cityName");
         const climateCustomCity = $("climateCustomCity");
         if (climateCity && projectCity) {
-            const cityNames = {
-                shahroud: "شاهرود", semnan: "سمنان", tehran: "تهران",
-                mashhad: "مشهد", tabriz: "تبریز", isfahan: "اصفهان",
-                yazd: "یزد", rasht: "رشت", sari: "ساری", kerman: "کرمان"
+            const cityNameFor = code => {
+                const option = Array.from(climateCity.options || []).find(o => o.value === code);
+                return option ? option.textContent.trim() : "";
             };
-            const knownClimateCodes = Object.keys(cityNames);
+            const isKnownClimateCity = code =>
+                !!code && !["other","custom",""].includes(code) &&
+                (!!cityNameFor(code) || Array.from(projectCity.options || []).some(o => o.value === code));
             const syncClimateFromProject = () => {
                 const selected = projectCity.value;
-                if (knownClimateCodes.includes(selected)) {
+                if (isKnownClimateCity(selected)) {
                     climateCity.value = selected;
-                    if (climateCustomCity) climateCustomCity.value = cityNames[selected];
+                    const label = cityNameFor(selected) ||
+                        projectCity.selectedOptions?.[0]?.textContent?.trim() || "";
+                    if (climateCustomCity && label) climateCustomCity.value = label;
                 } else {
                     climateCity.value = "other";
                     const name = (projectCityName?.value || "").trim();
-                    if (climateCustomCity && name) climateCustomCity.value = name;
+                    if (climateCustomCity) climateCustomCity.value = name;
                 }
                 if (projectCityName) projectCityName.style.display =
                     ["other", "custom"].includes(selected) ? "" : "none";
+                // The city database fills climate fields and emits input/change so the load engine reads them.
+                window.SteelClimateDB?.loadSelectedCity?.();
             };
             const syncProjectFromClimate = () => {
                 const selected = climateCity.value;
-                if (knownClimateCodes.includes(selected)) {
+                if (isKnownClimateCity(selected)) {
                     projectCity.value = selected;
                     if (projectCityName) {
-                        projectCityName.value = cityNames[selected];
+                        projectCityName.value = cityNameFor(selected);
                         projectCityName.style.display = "none";
                     }
                 } else {
                     projectCity.value = "other";
                     if (projectCityName) {
-                        projectCityName.value = (climateCustomCity?.value || cityNames[selected] || "").trim();
+                        projectCityName.value = (climateCustomCity?.value || "").trim();
                         projectCityName.style.display = "";
                     }
                 }
@@ -783,6 +788,7 @@
                 if (["other","custom"].includes(projectCity.value)) {
                     climateCity.value = "other";
                     if (climateCustomCity) climateCustomCity.value = projectCityName.value;
+                    window.SteelClimateDB?.loadSelectedCity?.();
                 }
             });
             climateCity.addEventListener("change", syncProjectFromClimate);
