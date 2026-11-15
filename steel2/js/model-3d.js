@@ -492,10 +492,45 @@
       } catch(e) { $("fullModel3DReadiness").textContent="خطا در بررسی: "+e.message; }
       }, e => { $("fullModel3DReadiness").textContent = "خطا در بررسی: " + e.message; });
     });
-    ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays","craneRunwayAxisOffset","craneRunwaySupportType",...Object.values(RUNWAY_SECTION_FIELD_IDS),...Object.values(RUNWAY_STIFFENER_FIELD_IDS),...Object.values(RUNWAY_LOAD_PATH_FIELD_IDS),...Object.values(RUNWAY_FASTENING_FIELD_IDS),...Object.values(RUNWAY_RAIL_LAYOUT_FIELD_IDS),"craneRunwayRailSupportStiffness","craneRunwayRailSupportStiffnessSource","craneRunwayRailWheelLoads","craneRunwayRailMovingTrain","craneRunwayRailMovingStep"].forEach(id => $(id)?.addEventListener("change", function () { try { build(); draw(); showSummary(); const box=$("craneRunwaySectionAudit");if(box&&model?.geometry?.craneRunway){const a=model.geometry.craneRunway.sectionAudit||{};box.textContent="ممیزی مشخصات: "+(a.ready?"اطلاعات اولیه کامل است؛ طراحی هنوز انجام نشده":"نیازمند تکمیل/اصلاح — موارد ناقص: "+(a.missing||[]).join("، ")+"؛ خطاهای عددی: "+(a.invalid||[]).join("، ")+"؛ "+(a.dimensional||[]).join("، "));const wb=$("craneRunwayWebAudit"),w=model.geometry.craneRunway.webAudit||{};if(wb)wb.textContent="ممیزی جان و سخت‌کننده: "+(w.ready?"اطلاعات کامل؛ کنترل ظرفیت انجام نشده":"ناقص/نیازمند اصلاح — "+(w.missing||[]).join("، ")+"؛ "+(w.invalid||[]).join("، ")+"؛ "+(w.dimensional||[]).join("، "))+(Number.isFinite(w.webSlenderness)?"؛ h/tw="+w.webSlenderness.toFixed(1):"");const lp=model.geometry.craneRunway.loadPathAudit||{},lb=$("craneRunwayLoadPathAudit");if(lb)lb.textContent="ممیزی مسیر بار ریل و چرخ: "+(lp.ready?"ابعاد اولیه کامل؛ ظرفیت/توزیع بار محاسبه نشده":"ناقص/نیازمند اصلاح — "+(lp.missing||[]).join("، ")+"؛ "+(lp.invalid||[]).join("، ")+"؛ "+(lp.dimensional||[]).join("، "));const fa=model.geometry.craneRunway.fasteningAudit||{},fb=$("craneRunwayFasteningAudit");if(fb)fb.textContent="ممیزی بست و پد: "+(fa.ready?"اطلاعات اولیه کامل؛ ظرفیت و توزیع نیرو محاسبه نشده":"ناقص/نیازمند اصلاح — "+(fa.missing||[]).join("، ")+"؛ "+(fa.invalid||[]).join("، ")+"؛ "+(fa.dimensional||[]).join("، "));const ra=model.geometry.craneRunway.railLayoutAudit||{},rb=$("craneRunwayRailLayoutAudit");if(rb)rb.textContent="ممیزی مدل طولی ریل: "+(ra.ready?"ورودی‌های اولیه کامل؛ تحلیل تیر ریل هنوز غیرفعال":"ناقص/نیازمند اصلاح — "+(ra.missing||[]).join("، ")+"؛ "+(ra.invalid||[]).join("، ")+"؛ "+(ra.dimensional||[]).join("، "));}} catch (_) {} }));
+      let modelRefreshTimer=null;
+  function refreshModelAfterInput(){
+    if(modelRefreshTimer)clearTimeout(modelRefreshTimer);
+    modelRefreshTimer=setTimeout(()=>{
+      modelRefreshTimer=null;
+      try{
+        build();draw();showSummary();
+        const crane=model?.geometry?.craneRunway;
+        if(!crane)return;
+        const renderAudit=(id,title,a,readyText)=>{const box=$(id);if(!box)return;box.textContent=title+": "+(a?.ready?readyText:"ناقص/نیازمند اصلاح — "+[...(a?.missing||[]),...(a?.invalid||[]),...(a?.dimensional||[])].join("؛ "));};
+        renderAudit("craneRunwaySectionAudit","ممیزی مشخصات",crane.sectionAudit,"اطلاعات اولیه کامل است؛ طراحی هنوز انجام نشده");
+        renderAudit("craneRunwayWebAudit","ممیزی جان و سخت‌کننده",crane.webAudit,"اطلاعات کامل؛ کنترل ظرفیت انجام نشده");
+        renderAudit("craneRunwayLoadPathAudit","ممیزی مسیر بار ریل و چرخ",crane.loadPathAudit,"ابعاد اولیه کامل؛ ظرفیت/توزیع بار محاسبه نشده");
+        renderAudit("craneRunwayFasteningAudit","ممیزی بست و پد",crane.fasteningAudit,"اطلاعات اولیه کامل؛ ظرفیت و توزیع نیرو محاسبه نشده");
+        renderAudit("craneRunwayRailLayoutAudit","ممیزی مدل طولی ریل",crane.railLayoutAudit,"ورودی‌های اولیه کامل؛ تحلیل تیر ریل هنوز غیرفعال");
+      }catch(error){console.error("به‌روزرسانی مدل هندسی:",error);}
+    },180);
+  }
+  ["span","length","spacing","height","rise","modelPurlinSpacing","modelGirtSpacing","modelEndPostSpacing","modelBraceBays","craneRunwayAxisOffset","craneRunwaySupportType",...Object.values(RUNWAY_SECTION_FIELD_IDS),...Object.values(RUNWAY_STIFFENER_FIELD_IDS),...Object.values(RUNWAY_LOAD_PATH_FIELD_IDS),...Object.values(RUNWAY_FASTENING_FIELD_IDS),...Object.values(RUNWAY_RAIL_LAYOUT_FIELD_IDS),"craneRunwayRailSupportStiffness","craneRunwayRailSupportStiffnessSource","craneRunwayRailWheelLoads","craneRunwayRailMovingTrain","craneRunwayRailMovingStep"].forEach(id=>$(id)?.addEventListener("change",refreshModelAfterInput));
   }
   function val(id, fallback) { const e=$(id), n=e?Number(e.value):fallback; return Number.isFinite(n)?n:fallback; }
-  function addNode(nodes,x,y,z,kind) { const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7); if(old){if(kind==="roof-edge")old.kind="roof-edge";return old;} const n={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"}; nodes.push(n); return n; }
+  // مختصات گره‌ها با هش فضایی جست‌وجو می‌شوند؛ جست‌وجوی خطی قبلی در کل آرایه
+  // هنگام ساخت مدل‌های بزرگ، زمان ساخت را به‌صورت درجه‌دو افزایش می‌داد.
+  const nodeSpatialIndexes = new WeakMap();
+  function addNode(nodes,x,y,z,kind) {
+    let index=nodeSpatialIndexes.get(nodes);
+    if(!index){index=new Map();nodeSpatialIndexes.set(nodes,index);}
+    const q=1e-7,ix=Math.round(x/q),iy=Math.round(y/q),iz=Math.round(z/q);
+    let old=null;
+    for(let dx=-1;dx<=1&&!old;dx++)for(let dy=-1;dy<=1&&!old;dy++)for(let dz=-1;dz<=1&&!old;dz++){
+      const bucket=index.get((ix+dx)+","+(iy+dy)+","+(iz+dz));
+      if(!bucket)continue;
+      old=bucket.find(n=>Math.abs(n.x-x)<q&&Math.abs(n.y-y)<q&&Math.abs(n.z-z)<q)||null;
+    }
+    if(old){if(kind==="roof-edge")old.kind="roof-edge";return old;}
+    const n={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"};nodes.push(n);
+    const key=ix+","+iy+","+iz, bucket=index.get(key)||[];
+    bucket.push(n);index.set(key,bucket);return n;
+  }
   function addMember(members,a,b,type,sectionKey,extra) {
     members.push({id:type.toUpperCase().replace(/[^A-Z0-9]+/g,"_")+"_"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
   }
@@ -987,8 +1022,11 @@
     el("rect",{x:0,y:0,width:W,height:H,fill:"#f8fafc"});
     const colors={column:"#176b9b",rafter:"#d97706",roofPurlin:"#0f766e",wallGirt:"#64748b",wallBrace:"#dc2626",roofBrace:"#b91c1c",endPost:"#2563eb",endGirt:"#94a3b8",roofEdge:"#b45309"};
     const widths={column:5,rafter:4,roofPurlin:1.8,wallGirt:1.8,wallBrace:2.5,roofBrace:2.5,endPost:2.2,endGirt:1.5,roofEdge:3};
-    ["roofPurlin","wallGirt","endGirt","endPost","roofBrace","wallBrace","roofEdge","column","rafter"].forEach(type=>model.members.filter(m=>m.sectionKey===type).forEach(m=>{
-      const a=model.nodes.find(n=>n.id===m.start),b=model.nodes.find(n=>n.id===m.end);if(!a||!b)return;
+    const nodeById=new Map(model.nodes.map(n=>[n.id,n]));
+    const membersByType=new Map();
+    model.members.forEach(member=>{const key=member.sectionKey;if(!membersByType.has(key))membersByType.set(key,[]);membersByType.get(key).push(member);});
+    ["roofPurlin","wallGirt","endGirt","endPost","roofBrace","wallBrace","roofEdge","column","rafter"].forEach(type=>(membersByType.get(type)||[]).forEach(m=>{
+      const a=nodeById.get(m.start),b=nodeById.get(m.end);if(!a||!b)return;
       let aa=a,bb=b;
       if(type==="roofPurlin"&&m.separatePiece){
         const dir=Math.sign(b.z-a.z)||1;
@@ -1736,7 +1774,7 @@
       style.textContent = ".model-progress{position:fixed;top:10px;left:10px;right:10px;z-index:2147483000;margin:0;padding:14px;border:3px solid #075985;border-radius:12px;background:#ffffff;color:#102a43;box-shadow:0 8px 28px rgba(0,0,0,.35)}.model-progress[hidden]{display:none!important}.model-progress-head{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px}.model-progress-track{height:9px;overflow:hidden;border-radius:99px;background:#d9e8ee;margin:10px 0}.model-progress-track span{display:block;width:38%;height:100%;border-radius:99px;background:linear-gradient(90deg,#176b87,#20a4b8);animation:sahroudProgress 1.15s ease-in-out infinite alternate}.model-progress small{display:block;color:#526b78;font-size:11px}@keyframes sahroudProgress{from{transform:translateX(165%)}to{transform:translateX(-265%)}}";
       document.head.appendChild(style);
     }
-    if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
+    if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
   window.SteelStructuralModel={build,draw,setCameraView,getCameraView:()=>({...cameraView}),getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
