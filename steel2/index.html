@@ -47,7 +47,7 @@
         <p class="setup-intro">اطلاعات زیر مبنای تشکیل مدل هندسی و پرونده طراحی است. واحد همه ابعاد طولی متر است. بارهای اقلیمی و مشخصات مصالح باید در مراحل تخصصی با مرجع معتبر تأیید شوند.</p>
         <div class="setup-section-title">مشخصات شناسنامه‌ای و موقعیت پروژه</div>
         <div class="setup-grid">
-            <div class="field"><label for="projectName">نام پروژه</label><input id="projectName" type="text" value="سوله صنعتی" placeholder="نام مشخص پروژه"></div>
+            <div class="field"><label for="projectName">نام پروژه</label><input id="projectName" type="text" value="سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود" placeholder="نام مشخص پروژه"></div>
             <div class="field"><label for="projectCategory">نوع کاربری ساختمان</label><select id="projectCategory"><option value="industrial-workshop">کارگاه صنعتی</option><option value="warehouse">انبار و مرکز نگهداری</option><option value="production">سالن تولید</option><option value="agricultural">سوله کشاورزی</option><option value="commercial">ساختمان تجاری</option><option value="other">سایر کاربری‌ها</option></select></div>
             <div class="field"><label for="city">شهر محل احداث</label>
                 <select id="city">
@@ -55,9 +55,9 @@
                 </select>
                 <input id="cityName" type="text" placeholder="نام دقیق شهر و استان" style="display:none;margin-top:8px">
             </div>
-            <div class="field"><label for="owner">کارفرما / مالک</label><input id="owner" type="text" placeholder="نام کارفرما یا شرکت"></div>
-            <div class="field"><label for="designer">طراح / دفتر مهندسی</label><input id="designer" type="text" placeholder="نام مهندس یا دفتر"></div>
-            <div class="field"><label for="baseConnection">شرایط اتصال پای ستون</label><select id="baseConnection"><option value="pinned" selected>مفصلی ـ انتقال نیرو بدون لنگر گیردار</option><option value="fixed">گیردار ـ نیازمند جزئیات اتصال و فونداسیون متناظر</option></select></div>
+            <div class="field"><label for="owner">کارفرما / مالک</label><input id="owner" type="text" list="ownerSuggestions" value="شرکت شهرک‌های صنعتی" placeholder="نام کارفرما یا شرکت"><datalist id="ownerSuggestions"><option value="شرکت شهرک‌های صنعتی"></option><option value="شرکت شهرک‌های صنعتی استان سمنان"></option><option value="شخص حقیقی"></option></datalist></div>
+            <div class="field"><label for="designer">طراح / دفتر مهندسی</label><input id="designer" type="text" list="designerSuggestions" value="مهندس احمد نوری" placeholder="نام مهندس یا دفتر"><datalist id="designerSuggestions"><option value="مهندس احمد نوری"></option><option value="دفتر مهندسی احمد نوری"></option></datalist></div>
+            <div class="field"><label for="steelGrade">رده فولاد مصرفی</label><input id="steelGrade" type="text" list="steelGradeSuggestions" value="ST37" placeholder="مثلاً ST37 یا ST52"><datalist id="steelGradeSuggestions"><option value="ST37"></option><option value="ST52"></option><option value="S235"></option><option value="S275"></option><option value="S355"></option></datalist><small>رده فولاد قابل انتخاب یا ورود دستی است؛ خواص طراحی باید با گواهی مصالح و ضخامت محصول تطبیق داده شود.</small></div><div class="field"><label for="baseConnection">شرایط اتصال پای ستون</label><select id="baseConnection"><option value="pinned" selected>مفصلی ـ انتقال نیرو بدون لنگر گیردار</option><option value="fixed">گیردار ـ نیازمند جزئیات اتصال و فونداسیون متناظر</option></select></div>
         </div>
         <div class="setup-section-title">سیستم سازه‌ای و ابعاد هندسی</div>
         <div class="setup-grid">
