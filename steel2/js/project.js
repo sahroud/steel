@@ -102,6 +102,9 @@
             designer: $("designer") ? $("designer").value.trim() : "",
             city: $("city") ? $("city").value : "",
             cityName: $("cityName") ? $("cityName").value.trim() : "",
+            projectCategory: $("projectCategory") ? $("projectCategory").value : "industrial-workshop",
+            structuralSystem: $("structuralSystem") ? $("structuralSystem").value : "portal-gable",
+            projectNotes: $("projectNotes") ? $("projectNotes").value.trim() : "",
             baseConnection: getBaseConnection(),
 
             span: getNumber("span"),
@@ -297,6 +300,16 @@
         $("frames").value = Math.ceil(length / spacing) + 1;
     }
 
+    function updateProjectSetupSummary() {
+        const span=getNumber("span"),length=getNumber("length"),rise=getNumber("rise"),height=getNumber("height"),frames=getNumber("frames");
+        const city=$( "city" )?.selectedOptions?.[0]?.textContent||"—";
+        const crane=!!$("crane_enabled")?.checked;
+        const count=$("setupFrameCount"),area=$("setupRoofArea"),status=$("projectSetupStatus");
+        if(count)count.textContent=Number.isFinite(frames)?String(frames):"—";
+        if(area)area.textContent=Number.isFinite(span)&&Number.isFinite(length)?(span*length).toFixed(1)+" m²":"—";
+        if(status)status.textContent="محل: "+city+" | تاج: "+(height+rise).toFixed(2)+" m | جرثقیل: "+(crane?"فعال":"ندارد");
+    }
+
     function validate() {
         if (window.SteelLoads) {
             if (typeof window.SteelLoads.syncLegacyInputs === "function") {
@@ -429,6 +442,9 @@
             "designer",
             "city",
             "cityName",
+            "projectCategory",
+            "structuralSystem",
+            "projectNotes",
             "span",
             "length",
             "spacing",
@@ -645,6 +661,8 @@
         }
 
         window.SteelMarketPrices?.syncProjectCity?.();
+        const craneDetails=$("craneAdvancedDetails"); if(craneDetails)craneDetails.open=!!$("crane_enabled")?.checked;
+        updateProjectSetupSummary();
         persistSnapshot(getData());
         setStatus(
             "پروژه بازیابی شد؛ تنظیمات قیدهای دیوار، قیدهای سقف، پرلین‌ها و اتصال کنسول نیز بازیابی شدند."
@@ -688,6 +706,7 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         updateFrameCount();
+        updateProjectSetupSummary();
 
         ["length", "spacing"].forEach(function (id) {
             const el = $(id);
@@ -700,6 +719,22 @@
         ["span", "rise", "height"].forEach(function (id) {
             const el = $(id);
             if (el) el.addEventListener("input", updateRoofGeometry);
+        });
+        ["span","length","spacing","height","rise","city","cityName","projectCategory","crane_enabled"].forEach(function(id){
+            const el=$(id); if(el){el.addEventListener("input",updateProjectSetupSummary);el.addEventListener("change",function(){
+                if(id==="crane_enabled"){const details=$("craneAdvancedDetails");if(details)details.open=!!el.checked;}
+                updateProjectSetupSummary();
+            });}
+        });
+        const applySetup=$("btnApplyProjectSetup");
+        if(applySetup)applySetup.addEventListener("click",function(){
+            const error=validate();
+            if(error){setStatus(error);if($("projectSetupStatus"))$("projectSetupStatus").textContent=error;return;}
+            const saved=persistSnapshot(getData());
+            if(window.SteelDrawing&&typeof window.SteelDrawing.drawFrame==="function")window.SteelDrawing.drawFrame();
+            setStatus(saved?"مشخصات پروژه ثبت و در حافظه مرورگر ذخیره شد.":"مشخصات بررسی شد، اما ذخیره خودکار مرورگر ناموفق بود؛ از ذخیره پروژه فایل JSON بگیرید.");
+            if($("projectSetupStatus"))$("projectSetupStatus").textContent="پرونده پروژه ثبت شد؛ گام بعدی ترسیم قاب و تکمیل بارگذاری است.";
+            $("drawingArea")?.scrollIntoView?.({behavior:"smooth",block:"start"});
         });
 
         if ($("baseConnection")) {
