@@ -37,8 +37,8 @@ for(let i=1;i<purlinCount;i++){const y=d.span*i/purlinCount;out+=line([0,y,roofZ
 for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/(d.girtCount+1);out+=line([0,0,z],[d.length,0,z],"#6c8491",1.25)+line([0,d.span,z],[d.length,d.span,z],"#6c8491",1.25); }
 const postBays3d=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postActual3d=d.span/postBays3d;
 for(const x of [0,d.length])for(let k=1;k<postBays3d;k++){const y=k*postActual3d;out+=line([x,y,0],[x,y,roofZ(d,y)],"#7b5b9a",1.8);}
-// Schematic X bracing in the first and last longitudinal bays on both side walls
-if(xs.length>1){const bays=[0,xs.length-2];for(const bi of bays){const xa=xs[bi],xb=xs[bi+1];for(const y of [0,d.span]){const top=roofZ(d,y)*.82;out+=line([xa,y,.35],[xb,y,top],"#b34c42",1.7)+line([xa,y,top],[xb,y,.35],"#b34c42",1.7);}}}
+// مهاربند دیواری فقط در دهانه اول و آخر طولی؛ هر دو دیوار طولی.
+if(xs.length>1){const braceBays=[...new Set([0,xs.length-2])];for(const bi of braceBays){const xa=xs[bi],xb=xs[bi+1];for(const side of [{y:0,n:"front"},{y:d.span,n:"rear"}]){const y=side.y,z0=0.35,z1=roofZ(d,y);const color="#c52f27";out+=line([xa,y,z0],[xb,y,z1],color,3.2)+line([xa,y,z1],[xb,y,z0],color,3.2);const p0=iso(xa,y,z0),p1=iso(xb,y,z1),p2=iso(xa,y,z1),p3=iso(xb,y,z0);for(const p of [p0,p1,p2,p3])out+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.2" fill="'+color+'" stroke="#fff" stroke-width="1"/>';}}}
 // Roof-plane diagonal bracing in the first and last bays
 if(xs.length>1){for(const bi of [0,xs.length-2]){const xa=xs[bi],xb=xs[bi+1];if(d.roof==="gable"){out+=line([xa,0,roofZ(d,0)],[xb,d.span/2,d.height+d.rise],"#b34c42",1.5)+line([xa,d.span/2,d.height+d.rise],[xb,d.span,roofZ(d,d.span)],"#b34c42",1.5);}else{out+=line([xa,0,roofZ(d,0)],[xb,d.span,roofZ(d,d.span)],"#b34c42",1.5)+line([xa,d.span,roofZ(d,d.span)],[xb,0,roofZ(d,0)],"#b34c42",1.5);}}}
 // Base perimeter
@@ -82,11 +82,8 @@ function endSVG(d){
  }else{
    s+='<path d="M'+x0+' '+zAt(0)+' L'+(x0+d.span*sc)+' '+zAt(d.span)+'" stroke="#176b87" stroke-width="4" fill="none"/>';
  }
- // مهاربندهای ضربدری؛ هر انتها دقیقاً به گره پای ستون یا سر ستونک متصل است.
- for(let i=0;i<bays;i++){
-   const xa=xs[i],xb=xs[i+1],za=zAt(i*actual),zb=zAt((i+1)*actual);
-   s+='<path d="M'+xa+' '+base+' L'+xb+' '+zb+' M'+xb+' '+base+' L'+xa+' '+za+'" stroke="#b34c42" stroke-width="2" fill="none"/>';
- }
+ // در نمای انتهایی، ستونک‌ها و قاب نشان داده می‌شوند؛ بادبند دیوار طولی در نمای طولی نمایش دارد.
+
  s+='<text x="'+(W/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="#20313d">'+(bays-1)+' ستونک میانی باربر · فاصله محور تا محور '+actual.toFixed(3)+' متر · اتصال سر ستونک‌ها به قاب</text>';
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای انتهایی قاب با ستونک‌های باربر و مهاربندهای متصل به گره‌ها">'+s+'</svg>';
 }
@@ -98,6 +95,9 @@ function girtElevationSVG(d){
  let s='<path d="M'+L+' '+base+' H'+(W-R)+'" stroke="#8799a2" stroke-width="2"/>';
  frameStations(d).forEach((x,i)=>{const px=L+x*sc;s+='<path d="M'+px+' '+base+' V'+top+'" stroke="#176b87" stroke-width="2.5"/><text x="'+px+'" y="'+(base+17)+'" text-anchor="middle" font-size="9" fill="#20313d">'+(i+1)+'</text>';});
  for(let i=0;i<count;i++){const yy=top+(i+1)*actual*sc;s+='<path d="M'+L+' '+yy+' H'+(W-R)+'" stroke="#6c8491" stroke-width="2"/>';}
+ // بادبند دیواری در دهانه اول و آخر؛ سایر دهانه‌ها بدون بادبند دیواری.
+ const wallBraceBays=[...new Set([0,frameStations(d).length-2])];
+ wallBraceBays.forEach(bi=>{const xa=L+frameStations(d)[bi]*sc,xb=L+frameStations(d)[bi+1]*sc;s+='<path d="M'+xa+' '+base+' L'+xb+' '+top+' M'+xa+' '+top+' L'+xb+' '+base+'" stroke="#c52f27" stroke-width="3" fill="none"/>';});
  s+='<text x="'+(W/2)+'" y="18" text-anchor="middle" font-size="12" fill="#20313d">'+count+' ردیف قید افقی در هر دیوار طولی · فاصله مساوی قائم '+actual.toFixed(3)+' متر · ردیف اول در بالای ستون</text>';
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای طولی با قیدهای افقی">'+s+'</svg>';
 }
@@ -123,9 +123,9 @@ function memberSchedule(d){
  for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/d.girtCount;for(const side of [{y:0,n:"دیوار چپ"},{y:d.span,n:"دیوار راست"}])for(let i=0;i<bays;i++)add("قید افقی طولی","G"+(j+1)+"-"+side.n+"-"+(i+1),[xs[i],side.y,z],[xs[i+1],side.y,z],d.girtSection);}
  const postBays=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postGap=d.span/postBays;
  for(const end of [{x:0,n:"ابتدا"},{x:d.length,n:"انتها"}])for(let j=1;j<postBays;j++){const y=j*postGap;add("ستونک باربر انتهایی","EP-"+end.n+"-"+j,[end.x,y,0],[end.x,y,roofZ(d,y)],d.endPostSection);}
- // مهاربندهای دیوار طولی در دهانه اول و آخر؛ مختصات مطابق هندسه شماتیک نما
+ // بادبندهای دیوار طولی فقط در دهانه اول و آخر، از پای ستون به گره بالای قاب.
  const braceBays=[...new Set([0,Math.max(0,bays-1)])];
- for(const bi of braceBays){const xa=xs[bi],xb=xs[bi+1];for(const side of [{y:0,n:"چپ"},{y:d.span,n:"راست"}]){const top=roofZ(d,side.y)*.82;add("مهاربند ضربدری دیوار","WB-"+side.n+"-"+(bi+1)+"A",[xa,side.y,.35],[xb,side.y,top],d.bracingSection);add("مهاربند ضربدری دیوار","WB-"+side.n+"-"+(bi+1)+"B",[xa,side.y,top],[xb,side.y,.35],d.bracingSection);}}
+ for(const bi of braceBays){const xa=xs[bi],xb=xs[bi+1];for(const side of [{y:0,n:"چپ"},{y:d.span,n:"راست"}]){const top=roofZ(d,side.y);add("مهاربند ضربدری دیوار","WB-"+side.n+"-"+(bi+1)+"A",[xa,side.y,0],[xb,side.y,top],d.bracingSection);add("مهاربند ضربدری دیوار","WB-"+side.n+"-"+(bi+1)+"B",[xa,side.y,top],[xb,side.y,0],d.bracingSection);}}
  // مهاربندهای صفحه سقف در دهانه اول و آخر
  for(const bi of braceBays){const xa=xs[bi],xb=xs[bi+1];if(d.roof==="gable"){add("مهاربند صفحه سقف","RB-"+(bi+1)+"A",[xa,0,roofZ(d,0)],[xb,d.span/2,d.height+d.rise],d.bracingSection);add("مهاربند صفحه سقف","RB-"+(bi+1)+"B",[xa,d.span/2,d.height+d.rise],[xb,d.span,roofZ(d,d.span)],d.bracingSection);}else{add("مهاربند صفحه سقف","RB-"+(bi+1)+"A",[xa,0,roofZ(d,0)],[xb,d.span,roofZ(d,d.span)],d.bracingSection);add("مهاربند صفحه سقف","RB-"+(bi+1)+"B",[xa,d.span,roofZ(d,d.span)],[xb,0,roofZ(d,0)],d.bracingSection);}}
  xs.forEach((x,i)=>rows.push({group:"قاب اصلی (مجموعه)",mark:"F"+(i+1),a:coord(x,0,0),b:coord(x,d.span,roofZ(d,d.span)),len:"—",section:d.mainFrameSection}));
