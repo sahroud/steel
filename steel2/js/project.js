@@ -733,7 +733,7 @@
             const saved=persistSnapshot(getData());
             if(window.SteelDrawing&&typeof window.SteelDrawing.drawFrame==="function")window.SteelDrawing.drawFrame();
             setStatus(saved?"مشخصات پروژه ثبت و در حافظه مرورگر ذخیره شد.":"مشخصات بررسی شد، اما ذخیره خودکار مرورگر ناموفق بود؛ از ذخیره پروژه فایل JSON بگیرید.");
-            if($("projectSetupStatus"))$("projectSetupStatus").textContent="پرونده پروژه ثبت شد؛ گام بعدی ترسیم قاب و تکمیل بارگذاری است.";
+            if($("projectSetupStatus"))$("projectSetupStatus").textContent="مشخصات ذخیره شد و پیش‌نمایش قاب به‌روزرسانی شد؛ بارگذاری و کنترل‌های طراحی هنوز باید تکمیل شوند.";
             $("drawingArea")?.scrollIntoView?.({behavior:"smooth",block:"start"});
         });
 
