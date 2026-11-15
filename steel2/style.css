@@ -416,3 +416,12 @@ th {
 .structure-view-note{font-size:11px;color:#647783;margin:8px 2px 0;line-height:1.8}
 .structure-view-controls button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:650px){.structure-view-slide{padding:6px}.structure-view-slide h4{font-size:13px}.structure-view-svg{min-height:230px}.structure-view-controls button{min-height:40px}}
+
+
+/* Interactive 3D camera controls */
+.structure-camera-controls{display:flex;align-items:center;justify-content:flex-start;gap:7px;flex-wrap:wrap;margin:4px 2px 10px;direction:rtl}
+.structure-camera-controls button{flex:0 0 auto;min-width:42px;min-height:40px;padding:5px 12px;margin:0;border:1px solid #b8ccd7;background:#eaf3f7;color:#123b52;font-size:18px;font-weight:800;touch-action:manipulation}
+.structure-camera-controls button:active{background:#d5e7ef}
+.structure-camera-help{font-size:11px;color:#647783;margin-inline-start:5px}
+.structure-view-svg{user-select:none;-webkit-user-select:none}
+@media(max-width:650px){.structure-camera-controls{gap:5px}.structure-camera-controls button{min-width:40px;min-height:42px;padding:4px 10px}.structure-camera-help{width:100%;margin-top:2px}}
