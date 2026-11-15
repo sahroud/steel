@@ -7,7 +7,7 @@
 <meta name="description" content="ورود مشخصات و پیش‌نمایش هندسی سوله">
 <title>SAHROUD STEEL | شروع سریع</title>
 <link rel="stylesheet" href="fast.css?v=20261115-clean1">
-<script defer src="fast-app.js?v=20261115-slope20"></script>
+<script defer src="fast-app.js?v=20261115-geometry2"></script>
 </head>
 <body>
 <header class="top">
@@ -55,9 +55,13 @@
   <section id="preview" class="card hidden" aria-labelledby="previewTitle">
     <h3 id="previewTitle">۳. پیش‌نمایش هندسی</h3>
     <div class="preview-grid">
-      <div class="drawing"><h4>نمای دوبعدی قاب عرضی</h4><div id="frameDrawing" class="empty">پیش‌نمایش پس از ساخت ظاهر می‌شود.</div></div>
-      <div class="drawing"><h4>نمای شماتیک سه‌بعدی</h4><div id="modelDrawing" class="empty">پیش‌نمایش پس از ساخت ظاهر می‌شود.</div></div>
+      <div class="drawing"><h4>نمای قاب عرضی</h4><div id="frameDrawing" class="empty">پس از ساخت نمایش داده می‌شود.</div></div>
+      <div class="drawing"><h4>نمای طولی دیوار جانبی و محل قاب‌ها</h4><div id="longDrawing" class="empty">پس از ساخت نمایش داده می‌شود.</div></div>
+      <div class="drawing"><h4>پلان سقف و موقعیت قاب‌ها و مهاربندها</h4><div id="planDrawing" class="empty">پس از ساخت نمایش داده می‌شود.</div></div>
+      <div class="drawing"><h4>نمای انتهایی اول</h4><div id="endDrawing" class="empty">پس از ساخت نمایش داده می‌شود.</div></div>
+      <div class="drawing"><h4>نمای شماتیک سه‌بعدی</h4><div id="modelDrawing" class="empty">پس از ساخت نمایش داده می‌شود.</div></div>
     </div>
+    <div class="table-wrap"><h4>جدول مختصات قاب‌ها در طول سوله</h4><div id="frameTable"></div></div>
     <div class="metrics-legend"><span>آبی: قاب‌های اصلی</span><span>سبز: تیرهای طولی لبه و تاج</span><span>کهربایی: پرلین‌های سقف</span><span>خاکستری: لاپه‌های دیوار</span><span>قرمز: مهاربندی‌های شماتیک</span></div>
     <div id="metrics" class="metrics"></div>
     <p class="notice">این خروجی فقط نمایش هندسه اولیه است؛ تحلیل بار، طراحی مقاطع، کنترل اتصالات، فونداسیون و تأیید آیین‌نامه‌ای در این نسخه انجام نمی‌شود.</p>
