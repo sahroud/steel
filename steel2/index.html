@@ -7,7 +7,7 @@
 <meta name="description" content="ورود مشخصات و پیش‌نمایش هندسی سوله">
 <title>SAHROUD STEEL | شروع سریع</title>
 <link rel="stylesheet" href="fast.css?v=20261115-clean1">
-<script defer src="fast-app.js?v=20261115-geometry2"></script>
+<script defer src="fast-app.js?v=20261115-girts-posts"></script>
 </head>
 <body>
 <header class="top">
@@ -34,6 +34,8 @@
       <div class="field"><label for="length">طول سوله (متر)</label><input id="length" type="number" min="1" max="500" step="0.1" value="36"></div>
       <div class="field"><label for="spacing">فاصله قاب‌ها (متر)</label><input id="spacing" type="number" min="1" max="20" step="0.1" value="6"></div>
       <div class="field"><label for="height">ارتفاع ستون تا لبه سقف (متر)</label><input id="height" type="number" min="1" max="40" step="0.1" value="6"></div>
+      <div class="field"><label for="girtSpacing">فاصله قائم قیدهای افقی دیوار (متر)</label><input id="girtSpacing" type="number" min="0.3" max="4" step="0.1" value="1.5"></div>
+      <div class="field"><label for="endPostSpacing">حداکثر فاصله ستونک‌های دیوار انتهایی (متر)</label><input id="endPostSpacing" type="number" min="1" max="12" step="0.1" value="4"></div>
       <div class="field"><label for="slopePercent">شیب سقف (درصد)</label><input id="slopePercent" type="number" min="0.1" max="100" step="0.5" value="20"></div>
       <div class="field"><label for="rise">خیز تاج / اختلاف ارتفاع دو لبه (متر) ـ محاسبه خودکار</label><input id="rise" type="number" min="0.001" max="100" step="0.001" value="1.2" readonly></div>
       <div class="field"><label for="roof">نوع سقف</label><select id="roof"><option value="gable" selected>دو شیب</option><option value="single">تک‌شیب</option></select></div>
