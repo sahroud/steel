@@ -43,7 +43,7 @@ if(xs.length>1){const braceBays=[...new Set([0,xs.length-2])];for(const bi of br
 if(xs.length>1){for(const bi of [0,xs.length-2]){const xa=xs[bi],xb=xs[bi+1];if(d.roof==="gable"){out+=line([xa,0,roofZ(d,0)],[xb,d.span/2,d.height+d.rise],"#b34c42",1.5)+line([xa,d.span/2,d.height+d.rise],[xb,d.span,roofZ(d,d.span)],"#b34c42",1.5);}else{out+=line([xa,0,roofZ(d,0)],[xb,d.span,roofZ(d,d.span)],"#b34c42",1.5)+line([xa,d.span,roofZ(d,d.span)],[xb,0,roofZ(d,0)],"#b34c42",1.5);}}}
 // Base perimeter
 const p1=iso(0,0,0),p2=iso(d.length,0,0),p3=iso(d.length,d.span,0),p4=iso(0,d.span,0);
-out+='<path d="M'+p1[0]+' '+p1[1]+' L'+p2[0]+' '+p2[1]+' L'+p3[0]+' '+p3[1]+' L'+p4[0]+' '+p4[1]+' Z" fill="none" stroke="#8a9ba4" stroke-dasharray="4 4"/><text x="755" y="24" text-anchor="end" fill="#657984" font-size="12">شماتیک هندسه؛ اعضای فرعی و مهاربندها نمایشی‌اند</text>';
+out+='<path d="M'+p1[0]+' '+p1[1]+' L'+p2[0]+' '+p2[1]+' L'+p3[0]+' '+p3[1]+' L'+p4[0]+' '+p4[1]+' Z" fill="none" stroke="#8a9ba4" stroke-dasharray="4 4"/><text x="755" y="24" text-anchor="end" fill="#657984" font-size="12">شماتیک هندسه؛ بادبند دیواری فقط در دهانه طولی اول و آخر هر دو دیوار جانبی است؛ اعضا هنوز طراحی نشده‌اند</text>';
 return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای سه‌بعدی هندسه سوله با تیرهای متصل به ستون‌ها">'+out+'</svg>';
 }
 
