@@ -93,6 +93,7 @@
         const grade = String(value || "").trim().toUpperCase();
         if (/^ST\s*37(?:[- ]?2)?$/.test(grade)) return "ST37-2";
         if (/^ST\s*52(?:[- ]?3)?$/.test(grade)) return "ST52-3";
+        // EN grades such as S235/S275/S355 are not silently aliased to historical ST grades.
         return "CUSTOM";
     }
 
