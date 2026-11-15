@@ -192,6 +192,30 @@
                 ? `گروه‌های عضو بررسی‌شده: ${scopeAudit.summary.groups}؛ گروه‌های مسدود: ${scopeAudit.summary.blocked}؛ گروه‌های دارای موتور محدود: ${scopeAudit.summary.limitedOnly}.`
                 : "ممیزی دامنه طراحی اعضا در دسترس نیست؛ وضعیت طراحی تأییدنشده باقی می‌ماند.";
 
+            const actionDemandRows = combos.flatMap(combo => (combo.members || []).map(member => {
+                const f = Array.isArray(member.localEndForces) ? member.localEndForces : [];
+                const valid = f.length >= 12 && f.slice(0, 12).every(value => Number.isFinite(Number(value)));
+                const cell = (value, scale) => valid ? fmt(Number(value) / scale) : "—";
+                const memberLabel = member.parentMemberId
+                    ? String(member.parentMemberId) + " / " + String(member.id)
+                    : String(member.id || "—");
+                const taperLabel = member.taperApplied
+                    ? "متغیرمقطع ـ قطعه " + String(member.taperSegmentIndex || "—") + " از " + String(member.taperSegmentCount || "—")
+                    : "منشوری";
+                return `
+                    <tr>
+                        <td>${esc(combo.id || combo.label || combo.name || "—")}</td>
+                        <td>${esc(memberLabel)}</td>
+                        <td>${esc(taperLabel)}</td>
+                        <td>${cell(f[0],1000)}</td><td>${cell(f[1],1000)}</td><td>${cell(f[2],1000)}</td>
+                        <td>${cell(f[3],1000)}</td><td>${cell(f[4],1000)}</td><td>${cell(f[5],1000)}</td>
+                        <td>${cell(f[6],1000)}</td><td>${cell(f[7],1000)}</td><td>${cell(f[8],1000)}</td>
+                        <td>${cell(f[9],1000)}</td><td>${cell(f[10],1000)}</td><td>${cell(f[11],1000)}</td>
+                        <td>${valid ? "کامل" : "ناقص ـ غیرقابل استفاده برای طراحی"}</td>
+                    </tr>`;
+            })).join("");
+            const actionDemandCount = combos.reduce((sum, combo) => sum + (Array.isArray(combo.members) ? combo.members.length : 0), 0);
+
             let html = `
                 <div id="printableFinalReport">
 
@@ -346,7 +370,32 @@
                     </section>
 
                     <section class="report-section">
-                        <h3>۱۰. محدودیت‌ها و هشدارهای مهندسی</h3>
+                        <h3>۱۰. دفتر نیروهای هم‌زمان اعضا در تحلیل سه‌بعدی</h3>
+                        <div class="notice">
+                            این جدول، بردار شش‌مؤلفه‌ای هم‌زمان هر عضو را در هر حالت تحلیل و در دو انتهای I و J نگه می‌دارد؛ مؤلفه‌های حاکم از ترکیب‌های متفاوت با یکدیگر مخلوط نشده‌اند.
+                            نیروها بر حسب kN و لنگرها/پیچش بر حسب kN.m هستند. اعضای متغیرمقطع به تفکیک قطعه تحلیل نمایش داده می‌شوند.
+                            این دفتر فقط تقاضای تحلیل است و به‌تنهایی کنترل ظرفیت، پایداری یا تأیید آیین‌نامه‌ای نیست.
+                            تعداد رکوردهای عضو/حالت: ${fmt(actionDemandCount,0)}.
+                        </div>
+                        <div style="overflow-x:auto">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">حالت بار</th><th rowspan="2">شناسه عضو / قطعه</th><th rowspan="2">نوع مقطع</th>
+                                        <th colspan="6">انتهای I</th><th colspan="6">انتهای J</th><th rowspan="2">کامل بودن</th>
+                                    </tr>
+                                    <tr>
+                                        <th>N</th><th>Vy</th><th>Vz</th><th>T</th><th>My</th><th>Mz</th>
+                                        <th>N</th><th>Vy</th><th>Vz</th><th>T</th><th>My</th><th>Mz</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${actionDemandRows || '<tr><td colspan="16">نیروهای انتهایی سه‌بعدی در خروجی موجود نیستند.</td></tr>'}</tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="report-section">
+                        <h3>۱۱. محدودیت‌ها و هشدارهای مهندسی</h3>
 
                         <div class="notice">
                             <p>
