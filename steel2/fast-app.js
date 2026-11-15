@@ -127,8 +127,8 @@ function memberSchedule(d){
  const postBays=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postGap=d.span/postBays;
  for(const end of [{x:0,n:"ابتدا"},{x:d.length,n:"انتها"}])for(let j=1;j<postBays;j++){const y=j*postGap;add("ستونک باربر انتهایی","EP-"+end.n+"-"+j,[end.x,y,0],[end.x,y,roofZ(d,y)],d.endPostSection);}
  // بادبند ضربدری فقط در قاب‌های ابتدایی و انتهایی، بین ستون اصلی و ستونک اول در دو طرف قاب.
- const postBays=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postGap=d.span/postBays;
- for(const end of [{x:0,n:"ابتدایی"},{x:d.length,n:"انتهایی"}])for(const side of [{a:0,b:postGap,n:"چپ"},{a:d.span-postGap,b:d.span,n:"راست"}]){const za=roofZ(d,side.a),zb=roofZ(d,side.b),mark="EB-"+end.n+"-"+side.n;add("بادبند ضربدری قاب انتهایی",mark+"-A",[end.x,side.a,0],[end.x,side.b,zb],d.bracingSection);add("بادبند ضربدری قاب انتهایی",mark+"-B",[end.x,side.a,za],[end.x,side.b,0],d.bracingSection);}
+ const bracePostBays=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),bracePostGap=d.span/bracePostBays;
+ for(const end of [{x:0,n:"ابتدایی"},{x:d.length,n:"انتهایی"}])for(const side of [{a:0,b:bracePostGap,n:"چپ"},{a:d.span-bracePostGap,b:d.span,n:"راست"}]){const za=roofZ(d,side.a),zb=roofZ(d,side.b),mark="EB-"+end.n+"-"+side.n;add("بادبند ضربدری قاب انتهایی",mark+"-A",[end.x,side.a,0],[end.x,side.b,zb],d.bracingSection);add("بادبند ضربدری قاب انتهایی",mark+"-B",[end.x,side.a,za],[end.x,side.b,0],d.bracingSection);}
  // مهاربندهای صفحه سقف در دهانه اول و آخر طولی
  const braceBays=[...new Set([0,Math.max(0,bays-1)])];
  for(const bi of braceBays){const xa=xs[bi],xb=xs[bi+1];if(d.roof==="gable"){add("مهاربند صفحه سقف","RB-"+(bi+1)+"A",[xa,0,roofZ(d,0)],[xb,d.span/2,d.height+d.rise],d.bracingSection);add("مهاربند صفحه سقف","RB-"+(bi+1)+"B",[xa,d.span/2,d.height+d.rise],[xb,d.span,roofZ(d,d.span)],d.bracingSection);}else{add("مهاربند صفحه سقف","RB-"+(bi+1)+"A",[xa,0,roofZ(d,0)],[xb,d.span,roofZ(d,d.span)],d.bracingSection);add("مهاربند صفحه سقف","RB-"+(bi+1)+"B",[xa,d.span,roofZ(d,d.span)],[xb,0,roofZ(d,0)],d.bracingSection);}}
