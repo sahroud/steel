@@ -3,6 +3,13 @@
   "use strict";
   const $ = id => document.getElementById(id), NS = "http://www.w3.org/2000/svg";
   let model = null, originalDrawFrame = null, progressRunning = false;
+  const cameraView = { azimuth: 0, zoom: 1 };
+  function setCameraView(next) {
+    if (Number.isFinite(Number(next?.azimuth))) cameraView.azimuth = Number(next.azimuth);
+    if (Number.isFinite(Number(next?.zoom))) cameraView.zoom = Math.max(0.65, Math.min(2.5, Number(next.zoom)));
+    if (model) draw();
+    return { ...cameraView };
+  }
   function runWithProgress(startLabel, task, onError) {
     if (progressRunning) return;
     progressRunning = true;
@@ -973,7 +980,8 @@
   function draw() {
     if(!model) build(); const svg=$("frameDrawing"); if(!svg)return false;
     const g=model.geometry,W=900,H=480,sx=Math.min(430/(g.span+0.8),300/(g.length+1.6)),sy=Math.min(190/(g.height+g.rise),sx),scale=Math.min(sx,sy);
-    const ox=120,oy=330,dx=scale,dz=scale*0.55,dy=scale*0.92,P=n=>({x:ox+n.x*dx+n.z*dz,y:oy-n.y*dy-n.z*dz*0.52});
+    const ox=120,oy=330,dx=scale,dz=scale*0.55,dy=scale*0.92,az=cameraView.azimuth*Math.PI/180,ca=Math.cos(az),sa=Math.sin(az),zoom=cameraView.zoom;
+    const P=n=>{const cx=n.x-g.span/2,cz=n.z-g.length/2,rx=cx*ca-cz*sa,rz=cx*sa+cz*ca,bx=ox+g.span/2*dx+g.length/2*dz+rx*dx+rz*dz,by=oy-n.y*dy-(rz+g.length/2)*dz*0.52;return{x:W/2+(bx-W/2)*zoom,y:H/2+(by-H/2)*zoom};};
     svg.innerHTML="";svg.setAttribute("viewBox","0 0 "+W+" "+H);svg.setAttribute("preserveAspectRatio","xMidYMid meet");
     const el=(tag,attrs)=>{const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));svg.appendChild(e);return e;};
     el("rect",{x:0,y:0,width:W,height:H,fill:"#f8fafc"});
@@ -1010,7 +1018,7 @@
       (runway.railSegments||[]).forEach(segment=>{const x=segment.side==="left"?-runway.axisOffsetM:g.span+runway.axisOffsetM,y=g.craneRunway.elevationM+Number(runway.loadPathInputs?.railHeight_mm||0)/1000;const p=P({x,y,z:segment.startM}),q=P({x,y,z:segment.endM});el("line",{x1:p.x,y1:p.y,x2:q.x,y2:q.y,stroke:"#f59e0b","stroke-width":2.2,"stroke-linecap":"round"});if(segment.jointAtStart){el("circle",{cx:p.x,cy:p.y,r:3.2,fill:"#dc2626",stroke:"#ffffff","stroke-width":0.8});}});
     }
     const title=el("text",{x:W/2,y:25,"text-anchor":"middle",fill:"#123b52","font-size":17,"font-family":"Tahoma,Arial"});title.textContent="مدل سه‌بعدی جانمایی اجزای سوله";
-    const note=el("text",{x:W/2,y:455,"text-anchor":"middle",fill:"#64748b","font-size":11,"font-family":"Tahoma,Arial"});note.textContent="نمای شماتیک آکسونومتریک ـ مقیاس تصویری";
+    const note=el("text",{x:W/2,y:455,"text-anchor":"middle",fill:"#64748b","font-size":11,"font-family":"Tahoma,Arial"});note.textContent="نمای آکسونومتریک مدل هندسی جاری | چرخش افقی: "+Math.round(cameraView.azimuth)+"° | بزرگنمایی: "+cameraView.zoom.toFixed(2)+"×";
     return true;
   }
   function renderCriticalRafterDiagram(result, contextLabel) {
@@ -1727,6 +1735,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,setCameraView,getCameraView:()=>({...cameraView}),getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
