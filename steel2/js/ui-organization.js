@@ -93,7 +93,7 @@
 
     function shouldOpen(title) {
         // Keep the first screen compact: expose actions/results, collapse detail inputs.
-        return /عملیات پروژه|مدل هندسی کامل سوله|نتایج تحلیل|اجرای هوشمند و یکپارچه پروژه/.test(title);
+        return /عملیات پروژه|گالری نماهای سازه|مدل هندسی کامل سوله|نتایج تحلیل|اجرای هوشمند و یکپارچه پروژه/.test(title);
     }
 
     function organize(panel) {
