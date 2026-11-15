@@ -3,13 +3,13 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id),KEY="sahroudSteel.fastProject.v1";
-const defaults={projectName:"سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود",city:"شاهرود ـ سمنان",owner:"شرکت شهرک‌های صنعتی",designer:"مهندس احمد نوری",span:12,length:36,spacing:6,height:6,girtSpacing:1.5,endPostSpacing:4,slopePercent:20,rise:1.2,roof:"gable",steel:"ST37",crane:"no",craneCapacity:0};
-function read(){return {projectName:$("projectName").value.trim(),city:$("city").value.trim(),owner:$("owner").value.trim(),designer:$("designer").value.trim(),span:Number($("span").value),length:Number($("length").value),spacing:Number($("spacing").value),height:Number($("height").value),girtSpacing:Number($("girtSpacing").value),endPostSpacing:Number($("endPostSpacing").value),slopePercent:Number($("slopePercent").value),rise:Number($("rise").value),roof:$("roof").value,steel:$("steel").value,crane:$("crane").value,craneCapacity:Number($("craneCapacity").value)||0};}
+const defaults={projectName:"سوله ۱۲×۳۶ متر ـ شهرک صنعتی شاهرود",city:"شاهرود ـ سمنان",owner:"شرکت شهرک‌های صنعتی",designer:"مهندس احمد نوری",span:12,length:36,spacing:6,height:6,girtCount:4,endPostSpacing:4,slopePercent:20,rise:1.2,roof:"gable",steel:"ST37",crane:"no",craneCapacity:0};
+function read(){return {projectName:$("projectName").value.trim(),city:$("city").value.trim(),owner:$("owner").value.trim(),designer:$("designer").value.trim(),span:Number($("span").value),length:Number($("length").value),spacing:Number($("spacing").value),height:Number($("height").value),girtCount:Number($("girtCount").value),endPostSpacing:Number($("endPostSpacing").value),slopePercent:Number($("slopePercent").value),rise:Number($("rise").value),roof:$("roof").value,steel:$("steel").value,crane:$("crane").value,craneCapacity:Number($("craneCapacity").value)||0};}
 function calculatedRise(span,slopePercent,roof){const run=roof==="gable"?span/2:span;return run*slopePercent/100;}
 function updateRise(){const span=Number($("span").value),slope=Number($("slopePercent").value),roof=$("roof").value;if(Number.isFinite(span)&&span>0&&Number.isFinite(slope)&&slope>0){$("rise").value=calculatedRise(span,slope,roof).toFixed(3);}}
 function write(d){Object.keys(defaults).forEach(k=>{const el=$(k);if(el&&d[k]!==undefined)el.value=d[k];});if(!$("slopePercent").value)$("slopePercent").value=20;updateRise();$("craneCapacity").disabled=$("crane").value==="no";}
 function status(msg,error){const el=$("status");el.textContent=msg;el.classList.toggle("error",!!error);}
-function valid(d){if(!d.projectName||!d.city)return "نام پروژه و شهر را وارد کنید.";for(const [k,n] of [["span","دهانه"],["length","طول"],["spacing","فاصله قاب‌ها"],["height","ارتفاع ستون"],["girtSpacing","فاصله قیدهای افقی"],["endPostSpacing","فاصله ستونک‌های انتهایی"],["rise","ارتفاع تاج / اختلاف ارتفاع سقف"]])if(!Number.isFinite(d[k])||d[k]<=0)return "مقدار "+n+" باید بزرگ‌تر از صفر باشد.";if(!Number.isFinite(d.slopePercent)||d.slopePercent<=0||d.slopePercent>100)return "شیب سقف باید بین صفر و ۱۰۰ درصد باشد.";if(d.spacing>d.length)return "فاصله قاب‌ها نمی‌تواند از طول سوله بیشتر باشد.";if(d.girtSpacing>4||d.endPostSpacing>d.span)return "فاصله قیدها یا ستونک‌های انتهایی را بررسی کنید.";if(d.rise>=d.height*2)return "ارتفاع تاج یا اختلاف ارتفاع سقف را بررسی کنید.";if(d.crane==="yes"&&d.craneCapacity<=0)return "ظرفیت جرثقیل را وارد کنید.";return "";}
+function valid(d){if(!d.projectName||!d.city)return "نام پروژه و شهر را وارد کنید.";for(const [k,n] of [["span","دهانه"],["length","طول"],["spacing","فاصله قاب‌ها"],["height","ارتفاع ستون"],["girtCount","تعداد قیدهای افقی"],["endPostSpacing","فاصله ستونک‌های انتهایی"],["rise","ارتفاع تاج / اختلاف ارتفاع سقف"]])if(!Number.isFinite(d[k])||d[k]<=0)return "مقدار "+n+" باید بزرگ‌تر از صفر باشد.";if(!Number.isFinite(d.slopePercent)||d.slopePercent<=0||d.slopePercent>100)return "شیب سقف باید بین صفر و ۱۰۰ درصد باشد.";if(d.spacing>d.length)return "فاصله قاب‌ها نمی‌تواند از طول سوله بیشتر باشد.";if(!Number.isInteger(d.girtCount)||d.girtCount<1||d.girtCount>20||d.endPostSpacing>d.span)return "فاصله قیدها یا ستونک‌های انتهایی را بررسی کنید.";if(d.rise>=d.height*2)return "ارتفاع تاج یا اختلاف ارتفاع سقف را بررسی کنید.";if(d.crane==="yes"&&d.craneCapacity<=0)return "ظرفیت جرثقیل را وارد کنید.";return "";}
 function roofZ(d,y){return d.roof==="gable"?d.height+d.rise*(1-Math.abs(y-d.span/2)/(d.span/2)):d.height+d.rise*y/d.span;}
 function frameSVG(d){const W=640,H=340,m=62,base=276,scale=Math.min((W-2*m)/d.span,(base-52)/(d.height+d.rise)),x0=(W-d.span*scale)/2,x1=x0+d.span*scale,z0=base-d.height*scale,z1=base-(d.height+d.rise)*scale;let roof;
 if(d.roof==="gable"){const xm=(x0+x1)/2;roof="M "+x0+" "+z0+" L "+xm+" "+z1+" L "+x1+" "+z0;}
@@ -34,8 +34,7 @@ if(d.roof==="gable")out+=line([0,d.span/2,d.height+d.rise],[d.length,d.span/2,d.
 const purlinCount=Math.max(2,Math.ceil(d.span/1.5));
 for(let i=1;i<purlinCount;i++){const y=d.span*i/purlinCount;out+=line([0,y,roofZ(d,y)],[d.length,y,roofZ(d,y)],"#b07825",1.35);}
 // Side-wall girts at nominal 1.5 m vertical spacing, following the wall top
-const girtBays3d=Math.max(1,Math.ceil(d.height/d.girtSpacing)),girtActual3d=d.height/girtBays3d;
-for(let j=1;j<girtBays3d;j++){const z=j*girtActual3d;out+=line([0,0,z],[d.length,0,z],"#6c8491",1.25)+line([0,d.span,z],[d.length,d.span,z],"#6c8491",1.25);}
+for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/d.girtCount;out+=line([0,0,z],[d.length,0,z],"#6c8491",1.25)+line([0,d.span,z],[d.length,d.span,z],"#6c8491",1.25); }
 const postBays3d=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postActual3d=d.span/postBays3d;
 for(const x of [0,d.length])for(let k=1;k<postBays3d;k++){const y=k*postActual3d;out+=line([x,y,0],[x,y,roofZ(d,y)],"#7b5b9a",1.8);}
 // Schematic X bracing in the first and last longitudinal bays on both side walls
@@ -66,20 +65,40 @@ function planSVG(d){
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="پلان سقف و محل قاب‌ها">'+s+'</svg>';
 }
 function endSVG(d){
- const W=640,H=340,m=62,base=276,scale=Math.min((W-2*m)/d.span,(base-52)/(d.height+d.rise)),x0=(W-d.span*scale)/2,x1=x0+d.span*scale,z0=base-d.height*scale,z1=base-(d.height+d.rise)*scale;
- let p;if(d.roof==="gable"){const xm=(x0+x1)/2;p='M'+x0+' '+z0+' L'+xm+' '+z1+' L'+x1+' '+z0;}else p='M'+x0+' '+z0+' L'+x1+' '+z1;
- const s='<path d="M35 '+base+' H605" stroke="#8799a2" stroke-width="2"/><path d="M'+x0+' '+base+' V'+z0+' '+p.slice(p.indexOf('L'))+' V'+base+'" fill="none" stroke="#176b87" stroke-width="4"/><text x="'+(W/2)+'" y="'+(base+34)+'" text-anchor="middle" font-size="12" fill="#20313d">دهانه '+d.span+' متر</text><text x="'+x0+'" y="'+(z0-10)+'" text-anchor="middle" font-size="11" fill="#20313d">'+d.height+' m</text><text x="'+x1+'" y="'+(z1-10)+'" text-anchor="middle" font-size="11" fill="#20313d">'+(d.height+(d.roof==="single"?d.rise:0)).toFixed(2)+' m</text>';
- return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای انتهایی سوله">'+s+'</svg>';
+ const W=640,H=340,m=62,base=276,sc=Math.min((W-2*m)/d.span,(base-52)/(d.height+d.rise)),x0=(W-d.span*sc)/2;
+ const bays=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),actual=d.span/bays;
+ const xs=Array.from({length:bays+1},(_,i)=>x0+i*actual*sc);
+ const zAt=y=>base-roofZ(d,y)*sc;
+ let s='<path d="M35 '+base+' H605" stroke="#8799a2" stroke-width="2"/>';
+ // ستون‌های اصلی و ستونک‌های باربر همگی از کف تا گره واقعی قاب رسم می‌شوند.
+ for(let i=0;i<=bays;i++){
+   const y=i*actual,x=xs[i],zt=zAt(y);
+   s+='<path d="M'+x+' '+base+' L'+x+' '+zt+'" stroke="'+(i===0||i===bays?'#176b87':'#7b5b9a')+'" stroke-width="'+(i===0||i===bays?4:3)+'" fill="none"/>';
+ }
+ // تیر سقف قاب، پیوسته و متصل به سر تمام ستون‌ها
+ if(d.roof==="gable"){
+   const xm=(x0+x0+d.span*sc)/2,zm=zAt(d.span/2);
+   s+='<path d="M'+x0+' '+zAt(0)+' L'+xm+' '+zm+' L'+(x0+d.span*sc)+' '+zAt(d.span)+'" stroke="#176b87" stroke-width="4" fill="none"/>';
+ }else{
+   s+='<path d="M'+x0+' '+zAt(0)+' L'+(x0+d.span*sc)+' '+zAt(d.span)+'" stroke="#176b87" stroke-width="4" fill="none"/>';
+ }
+ // مهاربندهای ضربدری؛ هر انتها دقیقاً به گره پای ستون یا سر ستونک متصل است.
+ for(let i=0;i<bays;i++){
+   const xa=xs[i],xb=xs[i+1],za=zAt(i*actual),zb=zAt((i+1)*actual);
+   s+='<path d="M'+xa+' '+base+' L'+xb+' '+zb+' M'+xb+' '+base+' L'+xa+' '+za+'" stroke="#b34c42" stroke-width="2" fill="none"/>';
+ }
+ s+='<text x="'+(W/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="#20313d">'+(bays-1)+' ستونک میانی باربر · فاصله محور تا محور '+actual.toFixed(3)+' متر · اتصال سر ستونک‌ها به قاب</text>';
+ return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای انتهایی قاب با ستونک‌های باربر و مهاربندهای متصل به گره‌ها">'+s+'</svg>';
 }
 
 
 function girtElevationSVG(d){
  const W=760,H=300,L=65,R=25,base=220,sc=Math.min((W-L-R)/d.length,145/d.height),top=base-d.height*sc;
- const bays=Math.max(1,Math.ceil(d.height/d.girtSpacing)),actual=d.height/bays;
+ const count=d.girtCount,actual=d.height/count;
  let s='<path d="M'+L+' '+base+' H'+(W-R)+'" stroke="#8799a2" stroke-width="2"/>';
  frameStations(d).forEach((x,i)=>{const px=L+x*sc;s+='<path d="M'+px+' '+base+' V'+top+'" stroke="#176b87" stroke-width="2.5"/><text x="'+px+'" y="'+(base+17)+'" text-anchor="middle" font-size="9" fill="#20313d">'+(i+1)+'</text>';});
- for(let i=1;i<bays;i++){const yy=base-i*actual*sc;s+='<path d="M'+L+' '+yy+' H'+(W-R)+'" stroke="#6c8491" stroke-width="2"/>';}
- s+='<text x="'+(W/2)+'" y="18" text-anchor="middle" font-size="12" fill="#20313d">'+(bays-1)+' ردیف قید افقی در هر دیوار طولی · فاصله قائم واقعی '+actual.toFixed(3)+' متر</text>';
+ for(let i=0;i<count;i++){const yy=top+i*actual*sc;s+='<path d="M'+L+' '+yy+' H'+(W-R)+'" stroke="#6c8491" stroke-width="2"/>';}
+ s+='<text x="'+(W/2)+'" y="18" text-anchor="middle" font-size="12" fill="#20313d">'+count+' ردیف قید افقی در هر دیوار طولی · فاصله مساوی قائم '+actual.toFixed(3)+' متر · ردیف اول در بالای ستون</text>';
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای طولی با قیدهای افقی">'+s+'</svg>';
 }
 function endPostsSVG(d){
@@ -93,9 +112,9 @@ function endPostsSVG(d){
 
 function draw(d){
  const xs=frameStations(d),bays=xs.length-1,actual=d.length/bays;
- $("frameDrawing").innerHTML=frameSVG(d);$("longDrawing").innerHTML=girtElevationSVG(d);$("planDrawing").innerHTML=planSVG(d);$("endDrawing").innerHTML=endSVG(d)+endPostsSVG(d);$("modelDrawing").innerHTML=modelSVG(d);
+ $("frameDrawing").innerHTML=frameSVG(d);$("longDrawing").innerHTML=girtElevationSVG(d);$("planDrawing").innerHTML=planSVG(d);$("endDrawing").innerHTML=endSVG(d);$("modelDrawing").innerHTML=modelSVG(d);
  $("frameTable").innerHTML='<table><thead><tr><th>شماره قاب</th><th>مختصات از مبدأ (متر)</th><th>فاصله تا قاب بعدی (متر)</th></tr></thead><tbody>'+xs.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+x.toFixed(3)+'</td><td>'+(i<bays?actual.toFixed(3):'—')+'</td></tr>').join('')+'</tbody></table>';
- $("metrics").innerHTML=[["دهانه",d.span+" m"],["طول",d.length+" m"],["تعداد قاب",xs.length],["تعداد دهانه طولی",bays],["فاصله واقعی قاب‌ها",actual.toFixed(3)+" m"],["ردیف قید افقی هر دیوار طولی",Math.max(0,Math.ceil(d.height/d.girtSpacing)-1)],["فاصله قائم واقعی قیدها",(d.height/Math.ceil(d.height/d.girtSpacing)).toFixed(3)+" m"],["ستونک میانی هر قاب انتهایی",Math.max(0,Math.ceil(d.span/d.endPostSpacing)-1)],["فاصله واقعی ستونک‌های انتهایی",(d.span/Math.ceil(d.span/d.endPostSpacing)).toFixed(3)+" m"],["فولاد",d.steel],["جرثقیل",d.crane==="yes"?d.craneCapacity+" تن":"ندارد"],["نوع سقف",d.roof==="gable"?"دو شیب":"تک‌شیب"],["شیب سقف",d.slopePercent+"٪"],["خیز / اختلاف ارتفاع",d.rise.toFixed(3)+" m"]].map(x=>'<span class="metric">'+x[0]+': <b>'+x[1]+'</b></span>').join("");
+ $("metrics").innerHTML=[["دهانه",d.span+" m"],["طول",d.length+" m"],["تعداد قاب",xs.length],["تعداد دهانه طولی",bays],["فاصله واقعی قاب‌ها",actual.toFixed(3)+" m"],["تعداد قید افقی هر دیوار طولی",d.girtCount],["فاصله مساوی قائم قیدها",(d.height/d.girtCount).toFixed(3)+" m"],["ستونک میانی هر قاب انتهایی",Math.max(0,Math.ceil(d.span/d.endPostSpacing)-1)],["فاصله واقعی ستونک‌های انتهایی",(d.span/Math.ceil(d.span/d.endPostSpacing)).toFixed(3)+" m"],["فولاد",d.steel],["جرثقیل",d.crane==="yes"?d.craneCapacity+" تن":"ندارد"],["نوع سقف",d.roof==="gable"?"دو شیب":"تک‌شیب"],["شیب سقف",d.slopePercent+"٪"],["خیز / اختلاف ارتفاع",d.rise.toFixed(3)+" m"]].map(x=>'<span class="metric">'+x[0]+': <b>'+x[1]+'</b></span>').join("");
  $("preview").classList.remove("hidden");
 }
 function save(){const d=read(),e=valid(d);if(e){status(e,true);return false;}try{localStorage.setItem(KEY,JSON.stringify(d));status("مشخصات پروژه در همین مرورگر ذخیره شد.");return true;}catch(err){status("ذخیره خودکار مرورگر ممکن نشد؛ از خروجی JSON استفاده کنید.",true);return false;}}
