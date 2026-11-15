@@ -1782,12 +1782,10 @@
       document.head.appendChild(style);
     }
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFullModel=draw;}
-    try{build();draw();showSummary();}catch(e){
-      console.error("SAHROUD STEEL model initialization failed:",e);
-      const summary=$("fullModelSummary");
-      if(summary)summary.textContent="مدل سه‌بعدی ساخته نشد: "+(e?.message||String(e))+"؛ نمای دوبعدی قاب برای مشاهده هندسه پایه حفظ شد.";
-      if(typeof originalDrawFrame==="function")originalDrawFrame();
-    }
+    /* Do not generate the full 3D mesh during page startup. On phones this can block the UI before the user can enter project data. Keep the lightweight 2D frame visible; build the full model only after an explicit user action. */
+    if(typeof originalDrawFrame==="function")originalDrawFrame();
+    const summary=$("fullModelSummary");
+    if(summary)summary.textContent="مدل سه‌بعدی هنوز ساخته نشده است. پس از تکمیل ورودی‌ها، «ساخت مدل هندسی کامل» را بزنید.";
   }
   window.SteelStructuralModel={build,draw,setCameraView,getCameraView:()=>({...cameraView}),getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
