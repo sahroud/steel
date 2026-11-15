@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#123b52">
 <meta name="description" content="ورود مشخصات و پیش‌نمایش هندسی سوله">
 <title>SAHROUD STEEL | شروع سریع</title>
-<link rel="stylesheet" href="fast.css?v=20261115-girts-posts">
-<script defer src="fast-app.js?v=20261115-girts-posts"></script>
+<link rel="stylesheet" href="fast.css?v=20261115-endframe-girtcount">
+<script defer src="fast-app.js?v=20261115-endframe-girtcount"></script>
 </head>
 <body>
 <header class="top">
@@ -34,7 +34,7 @@
       <div class="field"><label for="length">طول سوله (متر)</label><input id="length" type="number" min="1" max="500" step="0.1" value="36"></div>
       <div class="field"><label for="spacing">فاصله قاب‌ها (متر)</label><input id="spacing" type="number" min="1" max="20" step="0.1" value="6"></div>
       <div class="field"><label for="height">ارتفاع ستون تا لبه سقف (متر)</label><input id="height" type="number" min="1" max="40" step="0.1" value="6"></div>
-      <div class="field"><label for="girtSpacing">فاصله قائم قیدهای افقی دیوار (متر)</label><input id="girtSpacing" type="number" min="0.3" max="4" step="0.1" value="1.5"></div>
+      <div class="field"><label for="girtCount">تعداد قیدهای افقی در هر دیوار طولی</label><input id="girtCount" type="number" min="1" max="20" step="1" value="4"></div>
       <div class="field"><label for="endPostSpacing">حداکثر فاصله ستونک‌های دیوار انتهایی (متر)</label><input id="endPostSpacing" type="number" min="1" max="12" step="0.1" value="4"></div>
       <div class="field"><label for="slopePercent">شیب سقف (درصد)</label><input id="slopePercent" type="number" min="0.1" max="100" step="0.5" value="20"></div>
       <div class="field"><label for="rise">خیز تاج / اختلاف ارتفاع دو لبه (متر) ـ محاسبه خودکار</label><input id="rise" type="number" min="0.001" max="100" step="0.001" value="1.2" readonly></div>
@@ -43,7 +43,7 @@
       <div class="field"><label for="crane">جرثقیل سقفی</label><select id="crane"><option value="no" selected>ندارد</option><option value="yes">دارد</option></select></div>
       <div class="field"><label for="craneCapacity">ظرفیت جرثقیل (تن)</label><input id="craneCapacity" type="number" min="0.1" max="500" step="0.5" value="5" disabled></div>
     </div>
-    <p class="hint">شیب پیش‌فرض ۲۰٪ است. با تغییر دهانه، نوع سقف یا درصد شیب، خیز/اختلاف ارتفاع به‌طور خودکار محاسبه می‌شود. در سقف دوشیب، شیب روی نصف دهانه و در سقف تک‌شیب روی کل دهانه اعمال می‌شود. انتخاب فولاد یا شهر به‌تنهایی برای تعیین بارهای طراحی و تأیید سازه کافی نیست.</p>
+    <p class="hint">شیب پیش‌فرض ۲۰٪ است. قیدهای افقی از بالای ستون و با فاصله مساوی به سمت پایین چیده می‌شوند؛ اگر تعداد یک باشد فقط یک قید در بالای ستون قرار می‌گیرد. با تغییر دهانه، نوع سقف یا درصد شیب، خیز/اختلاف ارتفاع به‌طور خودکار محاسبه می‌شود. در سقف دوشیب، شیب روی نصف دهانه و در سقف تک‌شیب روی کل دهانه اعمال می‌شود. انتخاب فولاد یا شهر به‌تنهایی برای تعیین بارهای طراحی و تأیید سازه کافی نیست.</p>
     <div class="actions">
       <button id="btnBuild" class="btn primary" type="button">ساخت پیش‌نمایش هندسی</button>
       <button id="btnSave" class="btn secondary" type="button">ذخیره پروژه و دریافت JSON</button>
