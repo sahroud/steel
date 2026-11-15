@@ -192,7 +192,7 @@ async function runMemberDesignPipeline(loadCaseSpecs,options){
  const seen=new Set();
  specs.forEach(s=>{
   const id=String(s?.id??"").trim();
-  if(!id||seen.has(id))issues.push("شناسه حالت بار خالی یا تکراری است: "+id);
+  if(typeof s?.id!=="string"||!id||seen.has(id))issues.push("شناسه حالت بار باید رشته‌ای، غیرخالی و یکتا باشد: "+id);
   seen.add(id);
   const src=s?.source||{};
   ["document","revision","locator","authority"].forEach(k=>{
@@ -203,6 +203,7 @@ async function runMemberDesignPipeline(loadCaseSpecs,options){
  if(new Set(expected).size!==expected.length)issues.push("شناسه اعضای مورد انتظار تکراری است.");
  const comboCases=(combinationSet?.loadCases||[]).map(c=>String(c?.id??""));
  const comboIds=new Set(comboCases);
+ comboCases.forEach(id=>{if(!seen.has(id))issues.push("حالت "+(id||"?")+" در دفترچه ترکیبات ثبت شده ولی خروجی حل‌شده متناظر ندارد.");});
  (combinationSet?.combinations||[]).forEach(c=>{
   Object.keys(c?.factors||{}).forEach(id=>{
    if(!seen.has(id))issues.push("حالت "+id+" که در ترکیب "+String(c?.id||"?")+" استفاده شده، در ورودی حل‌گر وجود ندارد.");
@@ -229,14 +230,15 @@ async function runMemberDesignPipeline(loadCaseSpecs,options){
   const demand=root.SteelMemberDesignDemandPackage.buildFromSolverCases(model,runnerCases,{expectedMemberIds:expected});
   if(demand.success!==true)return{success:false,status:"member-demand-evidence-incomplete",issues:demand.issues||["بسته تقاضای اعضا کامل نشد."],loadCaseCount:solved.caseCount,demand,analysisEnabled:false,designApproved:false};
   const proposal=root.SteelMemberDemandCombinationBridge.build(demand,combinationSet,assumptions);
+  const loadLedgerVerified=solved.results.every(r=>r.externalLoadLedger?.complete===true&&r.externalLoadLedgerComparison?.ok===true);
   return{
-   success:proposal.success===true,
-   status:proposal.success?"combined-member-demand-proposal":"combination-proposal-incomplete",
+   success:proposal.success===true&&loadLedgerVerified,
+   status:!loadLedgerVerified?"load-ledger-audit-incomplete":(proposal.success?"combined-member-demand-proposal":"combination-proposal-incomplete"),
    caseCount:solved.caseCount,
    equilibriumAudit:solved.results.map(r=>({id:r.id,ok:r.equilibrium.ok,externalLoadLedgerComplete:r.externalLoadLedger.complete,externalLoadLedgerMatchesSolver:r.externalLoadLedgerComparison.ok})),
    demandPackage:demand,
    combinationProposal:proposal,
-   issues:proposal.issues||[],
+   issues:[...(proposal.issues||[]),...(!loadLedgerVerified?["دفتر بار خارجی و تطبیق مستقل آن با بردار بار اعمال‌شده در یک یا چند حالت کامل/منطبق نیست؛ پیشنهاد ترکیب برای طراحی قابل پذیرش نیست."]:[])],
    capacityCalculated:false,
    codeChecksCalculated:false,
    analysisEnabled:false,
