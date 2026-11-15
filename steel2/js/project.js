@@ -89,6 +89,47 @@
         return el ? Number(el.value) : NaN;
     }
 
+    function normalizeProjectSteelGrade(value) {
+        const grade = String(value || "").trim().toUpperCase();
+        if (/^ST\\s*37(?:[- ]?2)?$/.test(grade)) return "ST37-2";
+        if (/^ST\\s*52(?:[- ]?3)?$/.test(grade)) return "ST52-3";
+        return "CUSTOM";
+    }
+
+    function syncProjectSteelGradeToSection(applyDefaults) {
+        const source = $("projectSteelGrade");
+        const target = $("steelGrade");
+        if (!source || !target) return;
+        const normalized = normalizeProjectSteelGrade(source.value);
+        target.value = normalized;
+        const custom = $("steelGradeCustom");
+        if (custom) {
+            custom.value = normalized === "CUSTOM" ? source.value.trim() : "";
+            custom.style.display = normalized === "CUSTOM" ? "block" : "none";
+        }
+        if (applyDefaults) target.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function syncProjectDesignBrief() {
+        if (!window.SteelDesignCore || typeof window.SteelDesignCore.getData !== "function" ||
+            typeof window.SteelDesignCore.setData !== "function") return;
+        const categoryMap = {
+            "industrial-workshop": "workshop",
+            warehouse: "storage",
+            production: "industrial",
+            agricultural: "agricultural",
+            commercial: "commercial",
+            other: "other"
+        };
+        const systemMap = { "portal-gable": "rigid-portal" };
+        const current = window.SteelDesignCore.getData();
+        window.SteelDesignCore.setData(Object.assign({}, current, {
+            occupancy: categoryMap[$("projectCategory")?.value] || "other",
+            structuralSystem: systemMap[$("structuralSystem")?.value] || current.structuralSystem,
+            crane: $("crane_enabled")?.checked ? "yes" : "no"
+        }));
+    }
+
     function getBaseConnection() {
         const el = $("baseConnection");
         if (!el) return "pinned";
@@ -100,7 +141,7 @@
             projectName: $("projectName") ? $("projectName").value.trim() : "",
             owner: $("owner") ? $("owner").value.trim() : "",
             designer: $("designer") ? $("designer").value.trim() : "",
-            steelGrade: $("steelGrade") ? $("steelGrade").value.trim() : "ST37",
+            projectSteelGrade: $("projectSteelGrade") ? $("projectSteelGrade").value.trim() : "ST37",
             city: $("city") ? $("city").value : "",
             cityName: $("cityName") ? $("cityName").value.trim() : "",
             projectCategory: $("projectCategory") ? $("projectCategory").value : "industrial-workshop",
@@ -441,7 +482,7 @@
             "projectName",
             "owner",
             "designer",
-            "steelGrade",
+            "projectSteelGrade",
             "city",
             "cityName",
             "projectCategory",
@@ -458,6 +499,9 @@
             "snow"
         ];
 
+        if (data.projectSteelGrade === undefined && data.steelGrade !== undefined) {
+            data.projectSteelGrade = data.steelGrade;
+        }
         fields.forEach(function (id) {
             if (data[id] !== undefined && $(id)) {
                 $(id).value = data[id];
@@ -599,6 +643,7 @@
                 enclosure: legacyClimate.openingState
             });
         }
+        syncProjectDesignBrief();
 
         if (data.climateDatabase && window.SteelClimateDB &&
             typeof window.SteelClimateDB.setData === "function") {
@@ -722,12 +767,18 @@
             const el = $(id);
             if (el) el.addEventListener("input", updateRoofGeometry);
         });
-        ["span","length","spacing","height","rise","city","cityName","projectCategory","crane_enabled"].forEach(function(id){
+        ["span","length","spacing","height","rise","city","cityName","projectCategory","structuralSystem","crane_enabled"].forEach(function(id){
             const el=$(id); if(el){el.addEventListener("input",updateProjectSetupSummary);el.addEventListener("change",function(){
                 if(id==="crane_enabled"){const details=$("craneAdvancedDetails");if(details)details.open=!!el.checked;}
                 updateProjectSetupSummary();
+                if (["projectCategory","structuralSystem","crane_enabled"].includes(id)) syncProjectDesignBrief();
             });}
         });
+        const projectGrade = $("projectSteelGrade");
+        if (projectGrade) {
+            projectGrade.addEventListener("input", function(){ syncProjectSteelGradeToSection(true); });
+            projectGrade.addEventListener("change", function(){ syncProjectSteelGradeToSection(true); });
+        }
         const applySetup=$("btnApplyProjectSetup");
         if(applySetup)applySetup.addEventListener("click",function(){
             const error=validate();
