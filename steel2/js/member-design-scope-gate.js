@@ -42,6 +42,11 @@ const LABELS={
 };
 function audit(){
  const env=root.SteelMemberForceEnvelope?.getLast?.()||null;
+ const demand=root.SteelMemberDesignDemandPackage?.getLast?.()||null;
+ const demandPackage={available:!!demand,success:demand?.success===true,status:demand?.status||"not-built",caseCount:Array.isArray(demand?.caseIds)?demand.caseIds.length:0,memberCount:Array.isArray(demand?.members)?demand.members.length:0,issues:Array.isArray(demand?.issues)?demand.issues.slice():[],blockers:Array.isArray(demand?.designGate?.blockers)?demand.designGate.blockers.slice():[],designApproved:false};
+ const workbench=root.SteelLoadCaseWorkbench?.read?.()||null;
+ const combinationAudit=workbench&&root.SteelLoadCaseWorkbench?.audit?root.SteelLoadCaseWorkbench.audit(workbench):null;
+ const combinationStatus={available:!!combinationAudit,success:combinationAudit?.success===true,loadCaseCount:Array.isArray(workbench?.loadCases)?workbench.loadCases.length:0,combinationCount:Array.isArray(workbench?.combinations)?workbench.combinations.length:0,issues:Array.isArray(combinationAudit?.issues)?combinationAudit.issues.slice():[],linkedToDemandPackage:false,solverEffectsAvailable:false,designApproved:false};
  const rows=GROUPS.map(g=>{
   const members=Array.isArray(env?.members)?env.members.filter(m=>g.key==="braces"?["wallBrace","roofBrace"].includes(m.sectionKey):m.sectionKey===g.key):[];
   const missing=[...g.required];
@@ -56,7 +61,9 @@ function audit(){
   const supported=SUPPORT[g.key]||[];
   return {group:g.key,label:g.label,memberCount:members.length,availableLimitedEngines:supported,missing:blockers,status:blockers.length?"blocked":"limited-only",designApproved:false};
  });
- return {designApproved:false,rows,summary:{groups:rows.length,blocked:rows.filter(x=>x.status==="blocked").length,limitedOnly:rows.filter(x=>x.status==="limited-only").length},rules:[
+ return {designApproved:false,rows,demandPackage,combinationStatus,summary:{groups:rows.length,blocked:rows.filter(x=>x.status==="blocked").length,limitedOnly:rows.filter(x=>x.status==="limited-only").length,demandPackageAvailable:demandPackage.available,demandPackageComplete:demandPackage.success,documentedCombinationSetValid:combinationStatus.success,combinationsLinkedToDemand:false},rules:[
+  "بسته تقاضای ایستگاهی فقط در صورت ساخت موفق نمایش داده می‌شود؛ این وضعیت به‌تنهایی مجوز طراحی نیست.",
+  "ممیزی ترکیب‌ها در دفترچه شواهد، جایگزین اجرای تحلیل اثر ترکیب‌ها و اتصال آن‌ها به بسته تقاضا نیست.",
   "هیچ‌یک از مسیرهای این ممیزی مجوز طراحی اجرایی صادر نمی‌کند.",
   "وجود موتور محدود کمانش فشاری ستون به معنی کنترل کامل ستون نیست.",
   "کنترل مقدماتی لاپه موجود، جایگزین روش طراحی سردنورد و کمانش موضعی/اعوجاجی نیست.",
@@ -77,7 +84,9 @@ function selfTest(){
   {name:"brace group remains blocked pending capacity and collector checks",ok:r.rows[4].status==="blocked"&&r.rows[4].missing.some(x=>x.includes("کمانش کلی"))&&r.rows[4].missing.some(x=>x.includes("جمع‌کننده"))},
   {name:"crane girder requires wheel loads, fatigue and web crippling",ok:r.rows.find(x=>x.group==="craneRunwayGirder")?.missing.some(x=>x.includes("خستگی"))&&r.rows.find(x=>x.group==="craneRunwayGirder")?.status==="blocked"},
  {name:"reinforced concrete tie remains outside steel capacity engine",ok:r.rows.find(x=>x.group==="tieBeam")?.missing.some(x=>x.includes("بتن"))},
- {name:"no group receives design approval",ok:r.rows.every(x=>x.designApproved===false)&&r.designApproved===false}
+ {name:"no group receives design approval",ok:r.rows.every(x=>x.designApproved===false)&&r.designApproved===false},
+  {name:"demand package status is exposed without design approval",ok:r.demandPackage&&r.demandPackage.designApproved===false&&r.designApproved===false},
+  {name:"combination audit is not treated as solver demand linkage",ok:r.combinationStatus&&r.combinationStatus.linkedToDemandPackage===false&&r.combinationStatus.solverEffectsAvailable===false}
  ];
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,tests};
 }
@@ -85,7 +94,10 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;","
 function render(){
  const host=document.getElementById("memberDesignScopeGateResults");if(!host)return;
  const r=audit();
- host.innerHTML="<h4>وضعیت مسیر طراحی اعضا</h4><p>گروه‌های مسدود: "+r.summary.blocked+" از "+r.summary.groups+" — هیچ گروهی تأیید طراحی نشده است.</p><div style='overflow-x:auto'><table class='data-table'><thead><tr><th>گروه</th><th>تعداد اعضای دارای پوش نیرو</th><th>موتور محدود موجود</th><th>موارد تکمیل‌نشده</th><th>وضعیت</th></tr></thead><tbody>"+r.rows.map(x=>"<tr><td>"+esc(x.label)+"</td><td>"+x.memberCount+"</td><td>"+esc(x.availableLimitedEngines.join("، ")||"ندارد")+"</td><td>"+esc(x.missing.join("؛ "))+"</td><td>مسدود / غیرنهایی</td></tr>").join("")+"</tbody></table></div><div class='notice'>"+r.rules.map(esc).join("<br>")+"</div>";
+ const d=r.demandPackage,k=r.combinationStatus;
+ const demandText="بسته تقاضا: "+(d.available?(d.success?"ساخته شده؛ "+d.caseCount+" حالت و "+d.memberCount+" عضو":"ناقص / ناموفق"):"هنوز ساخته نشده")+" — ترکیب‌های مستند: "+k.combinationCount+" از "+k.loadCaseCount+" حالت بار؛ "+(k.success?"ممیزی ساختاری موفق":"ممیزی ناقص یا ناموفق")+" — اتصال ترکیب‌ها به تقاضای تحلیل: انجام نشده است.";
+ const details=[...d.issues,...d.blockers,...k.issues].filter(Boolean);
+ host.innerHTML="<h4>وضعیت مسیر طراحی اعضا</h4><p>گروه‌های مسدود: "+r.summary.blocked+" از "+r.summary.groups+" — هیچ گروهی تأیید طراحی نشده است.</p><div class='notice'>"+esc(demandText)+(details.length?"<br>"+esc(details.join("؛ ")):"")+"</div><div style='overflow-x:auto'><table class='data-table'><thead><tr><th>گروه</th><th>تعداد اعضای دارای پوش نیرو</th><th>موتور محدود موجود</th><th>موارد تکمیل‌نشده</th><th>وضعیت</th></tr></thead><tbody>"+r.rows.map(x=>"<tr><td>"+esc(x.label)+"</td><td>"+x.memberCount+"</td><td>"+esc(x.availableLimitedEngines.join("، ")||"ندارد")+"</td><td>"+esc(x.missing.join("؛ "))+"</td><td>مسدود / غیرنهایی</td></tr>").join("")+"</tbody></table></div><div class='notice'>"+r.rules.map(esc).join("<br>")+"</div>";
 }
 function init(){
  if(document.getElementById("memberDesignScopeGatePanel"))return;
