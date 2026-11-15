@@ -752,6 +752,21 @@
         getBaseConnection
     };
 
+    // Surface uncaught script/worker failures in the existing project status area
+    // so a failed button action does not appear to do nothing.
+    if (!window.__sahroudRuntimeDiagnosticsInstalled) {
+        window.__sahroudRuntimeDiagnosticsInstalled = true;
+        window.addEventListener("error", function (event) {
+            const detail = event && (event.message || event.error?.message);
+            if (detail) setStatus("خطای اجرای برنامه: " + String(detail).slice(0, 240));
+        });
+        window.addEventListener("unhandledrejection", function (event) {
+            const reason = event?.reason;
+            const detail = reason?.message || String(reason || "وعده ناموفق");
+            setStatus("خطای عملیات: " + detail.slice(0, 240));
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         updateFrameCount();
         updateProjectSetupSummary();
