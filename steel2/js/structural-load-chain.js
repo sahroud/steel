@@ -179,6 +179,74 @@ async function runSeismic(input){
  const built=seismic.createCases(input,model);
  return run(built.cases.map(c=>({id:c.id,label:c.label,loadCase:c})));
 }
+async function runMemberDesignPipeline(loadCaseSpecs,options){
+ options=options||{};
+ const issues=[];
+ const specs=Array.isArray(loadCaseSpecs)?loadCaseSpecs:[];
+ const expected=Array.isArray(options.expectedMemberIds)?options.expectedMemberIds.map(String):[];
+ const combinationSet=options.combinationSet||root.SteelLoadCaseWorkbench?.read?.();
+ if(!specs.length)issues.push("برای زنجیره طراحی، حالت‌های بار حل‌شونده باید صریحاً ارائه شوند.");
+ if(!expected.length)issues.push("فهرست شناسه اعضای فیزیکی مورد انتظار الزامی است.");
+ if(!combinationSet||!Array.isArray(combinationSet.loadCases)||!Array.isArray(combinationSet.combinations))
+  issues.push("دفترچه حالت‌ها و ترکیبات بار در دسترس نیست.");
+ const seen=new Set();
+ specs.forEach(s=>{
+  const id=String(s?.id??"").trim();
+  if(!id||seen.has(id))issues.push("شناسه حالت بار خالی یا تکراری است: "+id);
+  seen.add(id);
+  const src=s?.source||{};
+  ["document","revision","locator","authority"].forEach(k=>{
+   if(typeof src[k]!=="string"||!src[k].trim())issues.push("مدرک حالت "+(id||"?")+" فاقد "+k+" است.");
+  });
+  if(!Object.prototype.hasOwnProperty.call(s||{},"loadCase"))issues.push("ورودی حل‌گر برای حالت "+(id||"?")+" مشخص نشده است.");
+ });
+ if(new Set(expected).size!==expected.length)issues.push("شناسه اعضای مورد انتظار تکراری است.");
+ const comboCases=(combinationSet?.loadCases||[]).map(c=>String(c?.id??""));
+ const comboIds=new Set(comboCases);
+ (combinationSet?.combinations||[]).forEach(c=>{
+  Object.keys(c?.factors||{}).forEach(id=>{
+   if(!seen.has(id))issues.push("حالت "+id+" که در ترکیب "+String(c?.id||"?")+" استفاده شده، در ورودی حل‌گر وجود ندارد.");
+   if(!comboIds.has(id))issues.push("حالت "+id+" در دفترچه ترکیبات ثبت نشده است.");
+  });
+ });
+ if(!root.SteelMemberDesignDemandPackage?.buildFromSolverCases)
+  issues.push("بسته تقاضای اعضا بارگذاری نشده است.");
+ if(!root.SteelMemberDemandCombinationBridge?.build)
+  issues.push("پل ترکیب تقاضای اعضا بارگذاری نشده است.");
+ const assumptions=options.assumptions||{};
+ ["sameModelRevision","sameGeometry","sameSupports","sameStiffnessModel","linearElasticFirstOrder"].forEach(k=>{
+  if(assumptions[k]!==true)issues.push("فرض تحلیل باید صریحاً تأیید شود: "+k);
+ });
+ if(issues.length)return{success:false,status:"blocked-before-analysis",issues,analysisEnabled:false,designApproved:false};
+ try{
+  const solved=await run(specs);
+  const sourceById=new Map(specs.map(s=>[s.id,s.source]));
+  const runnerCases=solved.results.map(row=>({
+   ...row.solverResult,
+   simultaneousActionCase:{caseId:row.id,source:sourceById.get(row.id)}
+  }));
+  const model=root.SteelStructuralModel?.getData?.();
+  const demand=root.SteelMemberDesignDemandPackage.buildFromSolverCases(model,runnerCases,{expectedMemberIds:expected});
+  if(demand.success!==true)return{success:false,status:"member-demand-evidence-incomplete",issues:demand.issues||["بسته تقاضای اعضا کامل نشد."],loadCaseCount:solved.caseCount,demand,analysisEnabled:false,designApproved:false};
+  const proposal=root.SteelMemberDemandCombinationBridge.build(demand,combinationSet,assumptions);
+  return{
+   success:proposal.success===true,
+   status:proposal.success?"combined-member-demand-proposal":"combination-proposal-incomplete",
+   caseCount:solved.caseCount,
+   equilibriumAudit:solved.results.map(r=>({id:r.id,ok:r.equilibrium.ok,externalLoadLedgerComplete:r.externalLoadLedger.complete,externalLoadLedgerMatchesSolver:r.externalLoadLedgerComparison.ok})),
+   demandPackage:demand,
+   combinationProposal:proposal,
+   issues:proposal.issues||[],
+   capacityCalculated:false,
+   codeChecksCalculated:false,
+   analysisEnabled:false,
+   designApproved:false,
+   nextRequired:"تبدیل قرارداد علامت و محورها برای هر خانواده عضو، سپس کنترل مقاومت، پایداری، تغییرمکان و اتصالات با مبنای آیین‌نامه‌ای تأییدشده."
+  };
+ }catch(error){
+  return{success:false,status:"solver-or-demand-failure",issues:[String(error?.message||error)],analysisEnabled:false,designApproved:false};
+ }
+}
 function selfTest(){
  const tests=[],ck=(name,fn)=>{try{tests.push({name,pass:!!fn()});}catch(e){tests.push({name,pass:false,error:e.message});}};
  const model={nodes:[{id:"B1",x:0,y:0,z:0,kind:"base"},{id:"B2",x:4,y:0,z:0,kind:"endwall-base"},{id:"N",x:0,y:3,z:0,kind:"frame"}],members:[{id:"C1",start:"B1",end:"N"},{id:"C2",start:"B2",end:"N"}]};
@@ -217,5 +285,5 @@ function selfTest(){
  ck("seismic cases use explicit seismic distributor input",()=>typeof runSeismic==="function"&&runSeismic.toString().includes("SteelSeismicEquivalentLateral"));
  return{passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests,analysisEnabled:false,designApproved:false};
 }
-root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,run,runDirectionalWind,runSeismic,selfTest};
+root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,run,runDirectionalWind,runSeismic,runMemberDesignPipeline,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
