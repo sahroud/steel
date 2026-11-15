@@ -34,7 +34,7 @@
       <div class="field"><label for="length">طول سوله (متر)</label><input id="length" type="number" min="1" max="500" step="0.1" value="36"></div>
       <div class="field"><label for="spacing">فاصله قاب‌ها (متر)</label><input id="spacing" type="number" min="1" max="20" step="0.1" value="6"></div>
       <div class="field"><label for="height">ارتفاع ستون تا لبه سقف (متر)</label><input id="height" type="number" min="1" max="40" step="0.1" value="6"></div>
-      <div class="field"><label for="girtCount">تعداد قیدهای افقی در هر دیوار طولی</label><input id="girtCount" type="number" min="1" max="20" step="1" value="4"></div>
+      <div class="field"><label for="girtCount">تعداد قیدهای افقی در هر دیوار طولی</label><input id="girtCount" type="number" min="0" max="20" step="1" value="4"></div>
       <div class="field"><label for="purlinSpacing">حداکثر فاصله پرلین‌های سقف (متر)</label><input id="purlinSpacing" type="number" min="0.3" max="4" step="0.1" value="1.5"></div>
       <div class="field"><label for="endPostSpacing">حداکثر فاصله ستونک‌های دیوار انتهایی (متر)</label><input id="endPostSpacing" type="number" min="1" max="12" step="0.1" value="4"></div>
       <div class="field"><label for="slopePercent">شیب سقف (درصد)</label><input id="slopePercent" type="number" min="0.1" max="100" step="0.5" value="20"></div>
@@ -44,7 +44,7 @@
       <div class="field"><label for="crane">جرثقیل سقفی</label><select id="crane"><option value="no" selected>ندارد</option><option value="yes">دارد</option></select></div>
       <div class="field"><label for="craneCapacity">ظرفیت جرثقیل (تن)</label><input id="craneCapacity" type="number" min="0.1" max="500" step="0.5" value="5" disabled></div>
     </div>
-    <p class="hint">شیب پیش‌فرض ۲۰٪ است. قیدهای افقی از بالای ستون و با فاصله مساوی به سمت پایین چیده می‌شوند؛ اگر تعداد یک باشد فقط یک قید در بالای ستون قرار می‌گیرد. با تغییر دهانه، نوع سقف یا درصد شیب، خیز/اختلاف ارتفاع به‌طور خودکار محاسبه می‌شود. در سقف دوشیب، شیب روی نصف دهانه و در سقف تک‌شیب روی کل دهانه اعمال می‌شود. انتخاب فولاد یا شهر به‌تنهایی برای تعیین بارهای طراحی و تأیید سازه کافی نیست.</p>
+    <p class="hint">شیب پیش‌فرض ۲۰٪ است. قید افقی روی بالای ستون قرار نمی‌گیرد؛ اگر تعداد بیشتر از صفر باشد، تعداد قیدها در ارتفاع ستون به فواصل مساوی تقسیم می‌شود و فاصله از دو انتهای ستون نیز لحاظ می‌شود. مقدار صفر یعنی بدون قید افقی. با تغییر دهانه، نوع سقف یا درصد شیب، خیز/اختلاف ارتفاع به‌طور خودکار محاسبه می‌شود. در سقف دوشیب، شیب روی نصف دهانه و در سقف تک‌شیب روی کل دهانه اعمال می‌شود. انتخاب فولاد یا شهر به‌تنهایی برای تعیین بارهای طراحی و تأیید سازه کافی نیست.</p>
     <div class="actions">
       <button id="btnBuild" class="btn primary" type="button">ساخت پیش‌نمایش هندسی</button>
       <button id="btnSave" class="btn secondary" type="button">ذخیره پروژه و دریافت JSON</button>
@@ -61,7 +61,7 @@
     <div class="grid">
       <div class="field"><label for="mainFrameSection">قاب اصلی (ستون و رفتر)</label><input id="mainFrameSection" value="تعیین نشده"></div>
       <div class="field"><label for="eaveBeamSection">تیرهای لبه طولی</label><input id="eaveBeamSection" value="تعیین نشده"></div>
-      <div class="field"><label for="ridgeBeamSection">تیر طولی تاج</label><input id="ridgeBeamSection" value="تعیین نشده"></div>
+      <div class="field"><label for="ridgeBeamSection">دو تیر طولی تاج، هر یک با فاصله ۴۰ سانتی‌متر از محور تاج</label><input id="ridgeBeamSection" value="تعیین نشده"></div>
       <div class="field"><label for="purlinSection">پرلین سقف</label><input id="purlinSection" value="تعیین نشده"></div>
       <div class="field"><label for="girtSection">قیدهای افقی دیوار</label><input id="girtSection" value="تعیین نشده"></div>
       <div class="field"><label for="endPostSection">ستونک‌های باربر انتهایی</label><input id="endPostSection" value="تعیین نشده"></div>
@@ -80,7 +80,9 @@
     </div>
     <div class="table-wrap"><h4>جدول مختصات قاب‌ها در طول سوله</h4><div id="frameTable"></div></div>
     <div class="table-wrap"><h4>جدول اعضای طولی، ستونک‌های انتهایی، مقاطع ثبت‌شده و مختصات سه‌بعدی</h4><div id="memberTable"></div></div>
-    <p class="notice">مختصات به متر و به ترتیب (X,Y,Z) است: X در امتداد طول از قاب اول، Y در عرض از دیوار سمت صفر تا دیوار مقابل، و Z از کف. طول‌ها هندسی‌اند و طول برش، وصله، همپوشانی و جزئیات اتصال را شامل نمی‌شوند.</p>
+    <div class="table-wrap"><h4>جدول گره‌های اتصال تیرهای طولی به قاب‌ها و محل‌های مرزی قطعات</h4><div id="connectionTable"></div></div>
+    <div class="table-wrap"><h4>فهرست برش اولیه اعضا بر اساس طول هندسی</h4><div id="cutTable"></div></div>
+    <p class="notice">مختصات به متر و به ترتیب (X,Y,Z) است: X در امتداد طول از قاب اول، Y در عرض از دیوار سمت صفر تا دیوار مقابل، و Z از کف. طول‌های فهرست برش، طول هندسی قطعات بین قاب‌ها هستند؛ اضافه‌طول برش، پخ، همپوشانی و کسورات اتصال لحاظ نشده‌اند. مرز قطعات طولی در محور قاب‌ها فقط محل پیشنهادی بررسی وصله است، نه دستور قطعی وصله. اتصال تیرها به قاب در جدول به‌صورت گره هندسی ثبت شده و هیچ ابعاد صفحه، پیچ یا جوشی حدس زده نشده است.</p>
     <div class="metrics-legend"><span>آبی: قاب‌های اصلی</span><span>سبز: تیرهای طولی لبه و تاج</span><span>کهربایی: پرلین‌های سقف</span><span>خاکستری: لاپه‌های دیوار</span><span>قرمز: مهاربندی‌های شماتیک</span></div>
     <div id="metrics" class="metrics"></div>
     <p class="notice">این خروجی فقط نمایش هندسه اولیه است؛ تحلیل بار، طراحی مقاطع، کنترل اتصالات، فونداسیون و تأیید آیین‌نامه‌ای در این نسخه انجام نمی‌شود.</p>
