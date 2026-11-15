@@ -6,7 +6,7 @@ const cities = [
 ["shahroud","شاهرود"],["semnan","سمنان"],["tehran","تهران"],["mashhad","مشهد"],["tabriz","تبریز"],["isfahan","اصفهان"],["yazd","یزد"],["rasht","رشت"],["sari","ساری"],["kerman","کرمان"],["arak","اراک"],["ardabil","اردبیل"],["urmia","ارومیه"],["ahvaz","اهواز"],["bandar-abbas","بندرعباس"],["bushehr","بوشهر"],["birjand","بیرجند"],["bojnord","بجنورد"],["hamedan","همدان"],["sanandaj","سنندج"],["kermanshah","کرمانشاه"],["ilam","ایلام"],["khorramabad","خرم‌آباد"],["qazvin","قزوین"],["zanjan","زنجان"],["gorgan","گرگان"],["yasuj","یاسوج"],["shiraz","شیراز"],["zahedan","زاهدان"],["zabol","زابل"],["qom","قم"],["kish","کیش"],["abadan","آبادان"],["dezful","دزفول"],["sabzevar","سبزوار"],["neyshabur","نیشابور"],["damghan","دامغان"],["garmsar","گرمسار"],["torbat-heydariyeh","تربت حیدریه"],["chabahar","چابهار"],["bandar-anzali","بندر انزلی"],["amol","آمل"],["babol","بابل"]
 ];
 let records = {};
-cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:null,elevation:null,source:"",sourceDate:"",status:"نیازمند ورود و تطبیق با منبع رسمی"});
+cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:null,basicWindPressure:null,snowRegion:null,elevation:null,seismicZone:null,meanAnnualTemperature:null,designTemperature:null,source:"",sourceTitle:"",sourceUrl:"",sourceDate:"",codeEdition:"",verified:false,status:"نیازمند ورود و تطبیق با منبع رسمی"});
 function applyShahroudReference(){
  const r=records.shahroud;if(!r)return;
  r.name="شاهرود";r.basicWind=90;r.basicWindPressure=0.383;r.groundSnow=1.0;r.snowRegion=3;
@@ -24,16 +24,26 @@ function refreshStatus(){
 }
 function loadSelectedCity(){
  const id=$("climateCity")?.value, r=records[id]; if(!r)return;
- if($("climateCustomCity"))$("climateCustomCity").value=r.name;
- if($("climateGroundSnow"))$("climateGroundSnow").value=r.groundSnow===null?"":r.groundSnow;
- if($("climateBasicWind"))$("climateBasicWind").value=r.basicWind===null?"":r.basicWind;
- if($("climateElevation"))$("climateElevation").value=r.elevation===null?"":r.elevation;
- if($("climateSource"))$("climateSource").value=r.source||"";
+ const assign=(field,value)=>{
+  const el=$(field);if(!el)return;
+  el.value=value===null||value===undefined?"":String(value);
+  el.dispatchEvent(new Event("input",{bubbles:true}));
+  el.dispatchEvent(new Event("change",{bubbles:true}));
+ };
+ assign("climateCustomCity",r.name);
+ assign("climateGroundSnow",r.groundSnow);
+ assign("climateBasicWind",r.basicWind);
+ assign("climateElevation",r.elevation);
+ assign("climateSource",r.source||"");
  const status=$("climateNotice");
- if(status)status.textContent=(r.basicWind!==null||r.groundSnow!==null)
-   ?"مبحث ششم ۱۳۹۸ برای شاهرود: V=۹۰ km/h، q≈۰٫۳۸۳ kN/m²، منطقه برف ۳ و Ps=۱٫۰ kN/m². Ps بار مبناست و بار نهایی بام باید جداگانه محاسبه شود."
-   :"برای این شهر هنوز داده عددی ثبت نشده است؛ مقادیر شهر قبلی پاک شدند تا اشتباهاً به این شهر تخصیص نیابند.";
+ if(status){
+  const available=[r.basicWind!==null&&r.basicWind!==undefined,r.groundSnow!==null&&r.groundSnow!==undefined,r.elevation!==null&&r.elevation!==undefined].filter(Boolean).length;
+  status.textContent=available
+   ?("اطلاعات ثبت‌شده "+r.name+": "+(r.basicWind!=null?"سرعت مبنای باد "+r.basicWind+" km/h؛ ":"")+(r.groundSnow!=null?"برف مبنا "+r.groundSnow+" kN/m²؛ ":"")+(r.elevation!=null?"ارتفاع "+r.elevation+" m؛ ":"")+"منبع: "+(r.source||"ثبت نشده")+" | وضعیت: "+(r.status||"نیازمند بررسی")+". مقادیر مبنا هستند و بارهای نهایی باید طبق ویرایش آیین‌نامه و شرایط دقیق محل محاسبه شوند.")
+   :"برای "+r.name+" داده عددی معتبر در بانک فعلی ثبت نشده است؛ فیلدهای شهر قبلی پاک شدند و هیچ مقدار حدسی جایگزین نشد.";
+ }
  refreshStatus();
+ window.dispatchEvent(new CustomEvent("sahroud:climate-city-loaded",{detail:{city:id,record:JSON.parse(JSON.stringify(r))}}));
 }
 function addOptions(){
  const sel=$("climateCity"), legacy=$("city"); if(!sel)return;
@@ -68,7 +78,7 @@ function importDatabase(event){
     const r=data.records[id];if(!r||typeof r!=="object")return;
     const n=v=>v===null||v===""||v===undefined?null:Number(v),wind=n(r.basicWind),snow=n(r.groundSnow),elev=n(r.elevation);
     if([wind,snow,elev].some(v=>v!==null&&(!Number.isFinite(v)||v<0)))return;
-    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,siteCoordinates:r.siteCoordinates&&typeof r.siteCoordinates==="object"?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"واردشده؛ نیازمند کنترل")};
+    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,siteCoordinates:r.siteCoordinates&&typeof r.siteCoordinates==="object"?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),seismicZone:r.seismicZone??null,meanAnnualTemperature:n(r.meanAnnualTemperature),designTemperature:n(r.designTemperature),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,status:String(r.status||"واردشده؛ نیازمند کنترل")};
    });
    applyShahroudReference();refreshStatus();loadSelectedCity();alert("بانک اقلیمی وارد شد؛ داده مرجع شاهرود حفظ شد.");
   }catch(e){alert("خطا در وارد کردن بانک: "+e.message);}
@@ -91,7 +101,7 @@ function getData(){return {schema:"sahroud-steel-climate-db",version:1,records:J
 function setData(data){
  if(!data||data.schema!=="sahroud-steel-climate-db"||!data.records)return;
  const cleanNumber=v=>v===null||v===undefined||v===""?null:(Number.isFinite(Number(v))?Number(v):null);
- Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
+ Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,seismicZone:r.seismicZone??null,meanAnnualTemperature:cleanNumber(r.meanAnnualTemperature),designTemperature:cleanNumber(r.designTemperature),status:String(r.status||"")};});
  applyShahroudReference();
  refreshStatus();
 }
@@ -103,6 +113,6 @@ records.shahroud.snowRegion=3;
 records.shahroud.source="مبحث ششم ویرایش چهارم ۱۳۹۸؛ جدول ۶-۱۰-۱ برای سرعت مبنای باد شاهرود: ۹۰ km/h؛ فشار مبنا از رابطه ۶-۱۰-۲: حدود ۰٫۳۸۳ kN/m². مقدار برف طبق رکورد قبلی پروژه و جداگانه نیازمند تطبیق نهایی است.";
 records.shahroud.sourceDate="1398";
 records.shahroud.status="سرعت باد با جدول ویرایش ۱۳۹۸ تطبیق داده شد؛ ارتفاع محل همچنان تقریبی است و بار برف نیازمند کنترل مستقل";
-window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity};
+window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity,getCity:id=>records[id]?JSON.parse(JSON.stringify(records[id])):null};
 document.addEventListener("DOMContentLoaded",()=>{ensureTools();addOptions();});
 })();
