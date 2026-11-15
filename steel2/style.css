@@ -403,3 +403,16 @@ th {
  .setup-footer button{width:100%;min-width:0}
  .setup-footer span{font-size:10px}
 }
+
+
+/* Swipeable structural view gallery */
+.structure-views-panel{overflow:hidden}
+.structure-view-controls{display:flex;justify-content:space-between;gap:10px;margin:8px 0}
+.structure-view-controls button{min-width:112px}
+.structure-view-track{display:flex;direction:ltr;gap:12px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding:4px 2px 12px;touch-action:pan-x pan-y}
+.structure-view-slide{direction:rtl;flex:0 0 100%;min-width:100%;scroll-snap-align:start;border:1px solid #d4e0e7;border-radius:12px;background:#fbfdfe;padding:10px;box-sizing:border-box}
+.structure-view-slide h4{margin:2px 4px 9px;color:#123b52;font-size:14px}
+.structure-view-svg{display:block;width:100%;height:auto;max-height:520px;background:#f8fafc;border-radius:8px}
+.structure-view-note{font-size:11px;color:#647783;margin:8px 2px 0;line-height:1.8}
+.structure-view-controls button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:650px){.structure-view-slide{padding:6px}.structure-view-slide h4{font-size:13px}.structure-view-svg{min-height:230px}.structure-view-controls button{min-height:40px}}
