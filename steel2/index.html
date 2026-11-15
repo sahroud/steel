@@ -7,7 +7,7 @@
 <meta name="description" content="ورود مشخصات و پیش‌نمایش هندسی سوله">
 <title>SAHROUD STEEL | شروع سریع</title>
 <link rel="stylesheet" href="fast.css?v=20261115-clean1">
-<script defer src="fast-app.js?v=20261115-geometry1"></script>
+<script defer src="fast-app.js?v=20261115-slope20"></script>
 </head>
 <body>
 <header class="top">
@@ -34,13 +34,14 @@
       <div class="field"><label for="length">طول سوله (متر)</label><input id="length" type="number" min="1" max="500" step="0.1" value="36"></div>
       <div class="field"><label for="spacing">فاصله قاب‌ها (متر)</label><input id="spacing" type="number" min="1" max="20" step="0.1" value="6"></div>
       <div class="field"><label for="height">ارتفاع ستون تا لبه سقف (متر)</label><input id="height" type="number" min="1" max="40" step="0.1" value="6"></div>
-      <div class="field"><label for="rise">ارتفاع تاج / اختلاف ارتفاع سقف (متر)</label><input id="rise" type="number" min="0.1" max="20" step="0.1" value="1.2"></div>
+      <div class="field"><label for="slopePercent">شیب سقف (درصد)</label><input id="slopePercent" type="number" min="0.1" max="100" step="0.5" value="20"></div>
+      <div class="field"><label for="rise">خیز تاج / اختلاف ارتفاع دو لبه (متر) ـ محاسبه خودکار</label><input id="rise" type="number" min="0.001" max="100" step="0.001" value="1.2" readonly></div>
       <div class="field"><label for="roof">نوع سقف</label><select id="roof"><option value="gable" selected>دو شیب</option><option value="single">تک‌شیب</option></select></div>
       <div class="field"><label for="steel">نوع فولاد</label><select id="steel"><option selected>ST37</option><option>ST52</option><option>S235</option><option>S355</option><option>سایر / نیازمند گواهی</option></select></div>
       <div class="field"><label for="crane">جرثقیل سقفی</label><select id="crane"><option value="no" selected>ندارد</option><option value="yes">دارد</option></select></div>
       <div class="field"><label for="craneCapacity">ظرفیت جرثقیل (تن)</label><input id="craneCapacity" type="number" min="0.1" max="500" step="0.5" value="5" disabled></div>
     </div>
-    <p class="hint">توجه: انتخاب فولاد یا شهر به‌تنهایی برای تعیین بارهای طراحی و تأیید سازه کافی نیست.</p>
+    <p class="hint">شیب پیش‌فرض ۲۰٪ است. با تغییر دهانه، نوع سقف یا درصد شیب، خیز/اختلاف ارتفاع به‌طور خودکار محاسبه می‌شود. در سقف دوشیب، شیب روی نصف دهانه و در سقف تک‌شیب روی کل دهانه اعمال می‌شود. انتخاب فولاد یا شهر به‌تنهایی برای تعیین بارهای طراحی و تأیید سازه کافی نیست.</p>
     <div class="actions">
       <button id="btnBuild" class="btn primary" type="button">ساخت پیش‌نمایش هندسی</button>
       <button id="btnSave" class="btn secondary" type="button">ذخیره پروژه و دریافت JSON</button>
