@@ -18,6 +18,12 @@
     }
 
     function validateProject() {
+        if (document.getElementById("structuralSystem")?.value === "portal-single-slope") {
+            const message = "قاب تک‌شیب در پیش‌نمایش هندسی پشتیبانی می‌شود، اما مدل سه‌بعدی و انتقال بار این نوع سقف هنوز تکمیل نشده است؛ تحلیل متوقف شد تا نتیجه نادرست تولید نشود.";
+            setStatus(message);
+            alert(message);
+            return false;
+        }
         if (!window.SteelProject) {
             alert("مدیریت پروژه بارگذاری نشده است.");
             return false;
