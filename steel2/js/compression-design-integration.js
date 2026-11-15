@@ -100,35 +100,49 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
  const cases=Array.isArray(combinations)?combinations:[];
  if(!cases.length)return {success:false,issues:["نتایج ترکیبات تحلیل سه‌بعدی در دسترس نیستند."],members:[],expectedCaseCount:0};
  const modelMembers=Array.isArray(modelData?.members)?modelData.members:[];
- const modelById=new Map(modelMembers.map(m=>[String(m.id),m]));
- const ids=new Set(),issues=[];
+ const issues=[],modelById=new Map(),resultIds=new Set();
+ if(!modelMembers.length)issues.push("فهرست اعضای مدل مرجع موجود نیست؛ کنترل کامل بودن پوشش تحلیل ممکن نیست.");
+ modelMembers.forEach((m,i)=>{
+  const id=String(m?.id??"").trim();
+  if(!id){issues.push("شناسه یکی از اعضای مدل مرجع خالی است.");return;}
+  if(modelById.has(id))issues.push("شناسه عضو در مدل مرجع تکراری است: "+id+".");
+  else modelById.set(id,m);
+ });
  cases.forEach((c,ci)=>{
-  if(!Array.isArray(c?.members))issues.push("فهرست اعضای ترکیب "+(c?.label||ci+1)+" موجود نیست.");
-  (c?.members||[]).forEach(m=>{
-   const id=String(m?.id??"");
-   if(!id)issues.push("شناسه عضو در نتایج سه‌بعدی خالی است.");
-   if(ids.has(id)===false)ids.add(id);
+  const label=String(c?.id||c?.label||c?.name||ci+1);
+  if(!Array.isArray(c?.members)){issues.push("فهرست اعضای ترکیب "+label+" موجود نیست.");return;}
+  c.members.forEach(m=>{
+   const id=String(m?.id??"").trim();
+   if(!id){issues.push("شناسه عضو در نتایج ترکیب "+label+" خالی است.");return;}
+   resultIds.add(id);
   });
  });
- const rows=[...ids].map(id=>{
+ const allIds=new Set([...modelById.keys(),...resultIds]);
+ resultIds.forEach(id=>{if(!modelById.has(id))issues.push("عضو "+id+" در نتایج تحلیل وجود دارد اما در مدل مرجع یافت نشد.");});
+ const rows=[...allIds].map(id=>{
   const source=modelById.get(id)||{};
-  const sample=(cases.find(c=>(c.members||[]).some(m=>String(m.id)===id))?.members||[]).find(m=>String(m.id)===id)||{};
-  const ends=cases.map(c=>{
-   const matches=(c.members||[]).filter(m=>String(m.id)===id);
-   if(matches.length!==1)return {label:String(c.id||c.label||c.name||"—"),values:[],invalidForceVector:true};
-   return {label:String(c.id||c.label||c.name||"—"),values:Array.isArray(matches[0].localEndForces)?matches[0].localEndForces.slice(0,12):[],invalidForceVector:false};
+  const sample=(cases.find(c=>Array.isArray(c?.members)&&c.members.some(m=>String(m?.id??"").trim()===id))?.members||[]).find(m=>String(m?.id??"").trim()===id)||{};
+  const ends=cases.map((c,ci)=>{
+   const label=String(c?.id||c?.label||c?.name||"—");
+   const matches=Array.isArray(c?.members)?c.members.filter(m=>String(m?.id??"").trim()===id):[];
+   if(matches.length!==1)return {label,values:[],invalidForceVector:true};
+   const forces=matches[0]?.localEndForces;
+   return {label,values:Array.isArray(forces)?forces.slice(0,12):[],invalidForceVector:false};
   });
   return {id,parentMemberId:sample.parentMemberId||source.parentMemberId||null,taperSegmentIndex:sample.taperSegmentIndex??source.taperSegmentIndex??null,
    sectionKey:String(source.sectionKey||sample.sectionKey||source.section?.sectionKey||""),length:Number(sample.length||source.length)||null,ends};
  });
- const expectedIds=[...ids];
  cases.forEach(c=>{
-  const seen=(c.members||[]).map(m=>String(m.id));
-  if(new Set(seen).size!==seen.length)issues.push("شناسه عضو تکراری در ترکیب "+String(c.id||c.label||"—")+".");
-  expectedIds.forEach(id=>{if(seen.filter(x=>x===id).length!==1)issues.push("عضو "+id+" در ترکیب "+String(c.id||c.label||"—")+" دقیقاً یک نتیجه ندارد.");});
+  const members=Array.isArray(c?.members)?c.members:[];
+  const seen=members.map(m=>String(m?.id??"").trim()).filter(Boolean);
+  if(new Set(seen).size!==seen.length)issues.push("شناسه عضو تکراری در ترکیب "+String(c?.id||c?.label||"—")+".");
+  modelById.forEach((_,id)=>{
+   const count=seen.filter(x=>x===id).length;
+   if(count!==1)issues.push("عضو "+id+" در ترکیب "+String(c?.id||c?.label||"—")+" دقیقاً یک نتیجه ندارد.");
+  });
  });
  const prepared=buildCompressionDemandRows({members:rows,expectedCaseCount:cases.length});
- return {success:issues.length===0,members:prepared,expectedCaseCount:cases.length,caseIds:cases.map(c=>String(c.id||c.label||c.name||"—")),issues};
+ return {success:issues.length===0,members:prepared,expectedCaseCount:cases.length,caseIds:cases.map(c=>String(c?.id||c?.label||c?.name||"—")),issues};
 }
 
 function evaluateAxialOnlyMember(row,base,override,taperedEnabled){
@@ -161,6 +175,9 @@ function selfTest(){
   {name:"invalid force vectors are retained as blocked evidence, never silently ignored",pass:(()=>{const x=rows.find(r=>r.id==="BAD");return !!x&&x.coverageComplete===false&&x.invalidCaseCount===1;})()},
   {name:"3D combinations are mapped without losing per-case concurrent actions",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]},{id:"U2",members:[{id:"M1",localEndForces:[1500,0,0,0,0,0,-1500,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column",length:6}]});return x.success&&x.members[0].coverageComplete&&x.members[0].caseCount===2&&x.members[0].compressionDemand_kN===1.5;})()},
   {name:"missing member in any 3D combination blocks its demand coverage",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]},{id:"U2",members:[]}],{members:[{id:"M1",sectionKey:"column"}]});return !x.success&&!x.members[0].coverageComplete;})()},
+  {name:"model member absent from every combination is retained and blocked",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]},{id:"U2",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column"},{id:"M2",sectionKey:"rafter"}]});const m=x.members.find(r=>r.id==="M2");return !x.success&&!!m&&m.coverageComplete===false&&m.invalidCaseCount===2;})()},
+  {name:"results for members outside the reference model block completeness",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]},{id:"EXTRA",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column"}]});return !x.success&&x.issues.some(s=>s.includes("در مدل مرجع یافت نشد"));})()},
+  {name:"missing model member registry blocks completeness",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{});return !x.success&&x.issues.some(s=>s.includes("مدل مرجع موجود نیست"));})()},
   {name:"member capacity calculated with explicit unbraced lengths",pass:good.ok&&good.LRFD.designStrength_kN>0},
   {name:"missing member unbraced lengths are blocked",pass:!missing.ok},
   {name:"unconfirmed section-property mapping is blocked",pass:!mismatch.ok},
