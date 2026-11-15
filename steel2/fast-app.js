@@ -119,10 +119,15 @@ function memberSchedule(d){
  for(const side of [{y:0,n:"لبه چپ"},{y:d.span,n:"لبه راست"}])for(let i=0;i<bays;i++)add("تیر لبه طولی",side.n+"-"+(i+1),[xs[i],side.y,d.height],[xs[i+1],side.y,d.height],d.eaveBeamSection);
  if(d.roof==="gable")for(let i=0;i<bays;i++)add("تیر طولی تاج","RIDGE-"+(i+1),[xs[i],d.span/2,d.height+d.rise],[xs[i+1],d.span/2,d.height+d.rise],d.ridgeBeamSection);
  const pCount=Math.max(2,Math.ceil(d.span/d.purlinSpacing));
- for(let j=0;j<=pCount;j++){const y=d.span*j/pCount,z=roofZ(d,y);for(let i=0;i<bays;i++)add("پرلین طولی","P"+j+"-"+(i+1),[xs[i],y,z],[xs[i+1],y,z],d.purlinSection);}
+ for(let j=1;j<pCount;j++){const y=d.span*j/pCount,z=roofZ(d,y);for(let i=0;i<bays;i++)add("پرلین طولی","P"+j+"-"+(i+1),[xs[i],y,z],[xs[i+1],y,z],d.purlinSection);}
  for(let j=0;j<d.girtCount;j++){const z=d.height*(d.girtCount-j)/d.girtCount;for(const side of [{y:0,n:"دیوار چپ"},{y:d.span,n:"دیوار راست"}])for(let i=0;i<bays;i++)add("قید افقی طولی","G"+(j+1)+"-"+side.n+"-"+(i+1),[xs[i],side.y,z],[xs[i+1],side.y,z],d.girtSection);}
  const postBays=Math.max(1,Math.ceil(d.span/d.endPostSpacing)),postGap=d.span/postBays;
  for(const end of [{x:0,n:"ابتدا"},{x:d.length,n:"انتها"}])for(let j=1;j<postBays;j++){const y=j*postGap;add("ستونک باربر انتهایی","EP-"+end.n+"-"+j,[end.x,y,0],[end.x,y,roofZ(d,y)],d.endPostSection);}
+ // مهاربندهای دیوار طولی در دهانه اول و آخر؛ مختصات مطابق هندسه شماتیک نما
+ const braceBays=[...new Set([0,Math.max(0,bays-1)])];
+ for(const bi of braceBays){const xa=xs[bi],xb=xs[bi+1];for(const side of [{y:0,n:"چپ"},{y:d.span,n:"راست"}]){const top=roofZ(d,side.y)*.82;add("مهاربند ضربدری دیوار","WB-"+side.n+"-"+(bi+1)+"A",[xa,side.y,.35],[xb,side.y,top],d.bracingSection);add("مهاربند ضربدری دیوار","WB-"+side.n+"-"+(bi+1)+"B",[xa,side.y,top],[xb,side.y,.35],d.bracingSection);}}
+ // مهاربندهای صفحه سقف در دهانه اول و آخر
+ for(const bi of braceBays){const xa=xs[bi],xb=xs[bi+1];if(d.roof==="gable"){add("مهاربند صفحه سقف","RB-"+(bi+1)+"A",[xa,0,roofZ(d,0)],[xb,d.span/2,d.height+d.rise],d.bracingSection);add("مهاربند صفحه سقف","RB-"+(bi+1)+"B",[xa,d.span/2,d.height+d.rise],[xb,d.span,roofZ(d,d.span)],d.bracingSection);}else{add("مهاربند صفحه سقف","RB-"+(bi+1)+"A",[xa,0,roofZ(d,0)],[xb,d.span,roofZ(d,d.span)],d.bracingSection);add("مهاربند صفحه سقف","RB-"+(bi+1)+"B",[xa,d.span,roofZ(d,d.span)],[xb,0,roofZ(d,0)],d.bracingSection);}}
  xs.forEach((x,i)=>rows.push({group:"قاب اصلی (مجموعه)",mark:"F"+(i+1),a:coord(x,0,0),b:coord(x,d.span,roofZ(d,d.span)),len:"—",section:d.mainFrameSection}));
  return '<table><thead><tr><th>گروه عضو</th><th>شناسه</th><th>مختصات ابتدا X,Y,Z (m)</th><th>مختصات انتها X,Y,Z (m)</th><th>طول (m)</th><th>مقطع ثبت‌شده</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.group)+'</td><td>'+esc(r.mark)+'</td><td dir="ltr">'+r.a+'</td><td dir="ltr">'+r.b+'</td><td>'+r.len+'</td><td>'+esc(r.section||"تعیین نشده")+'</td></tr>').join('')+'</tbody></table>';
 }
