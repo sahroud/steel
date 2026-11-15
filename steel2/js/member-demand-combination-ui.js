@@ -62,15 +62,17 @@ function renderProposal(result){
 }
 function build(){
  const x=readInputs(),r=renderReadiness();
- if(!r.ready){lastProposal=null;renderProposal({success:false,proposals:[],issues:["بسته تقاضا و ممیزی دفترچه باید هر دو موفق باشند."],designApproved:false});return lastProposal;}
+ if(!r.ready){lastProposal=null;lastProposal={success:false,proposals:[],issues:["بسته تقاضا و ممیزی دفترچه باید هر دو موفق باشند."],designApproved:false};renderProposal(lastProposal);return clone(lastProposal);}
  const assumptions=selectedAssumptions();
  if(ASSUMPTIONS.some(([k])=>assumptions[k]!==true)){
-  lastProposal=null;renderProposal({success:false,proposals:[],issues:["هر پنج فرض باید بررسی و صریحاً علامت‌گذاری شوند."],designApproved:false});return;
+  lastProposal={success:false,proposals:[],issues:["هر پنج فرض باید بررسی و صریحاً علامت‌گذاری شوند."],designApproved:false};renderProposal(lastProposal);return clone(lastProposal);
  }
  const engine=root.SteelMemberDemandCombinationBridge?.build;
- if(typeof engine!=="function"){lastProposal=null;renderProposal({success:false,proposals:[],issues:["موتور پیشنهاد ترکیب بار بارگذاری نشده است."],designApproved:false});return lastProposal;}
- try{lastProposal=engine(x.demand,x.combinationSet,assumptions);renderProposal(lastProposal);}
- catch(e){lastProposal=null;renderProposal({success:false,proposals:[],issues:[String(e?.message||e)],designApproved:false});}
+ if(typeof engine!=="function"){lastProposal={success:false,proposals:[],issues:["موتور پیشنهاد ترکیب بار بارگذاری نشده است."],designApproved:false};renderProposal(lastProposal);return clone(lastProposal);}
+ try{lastProposal=engine(x.demand,x.combinationSet,assumptions);}
+ catch(e){lastProposal={success:false,proposals:[],issues:[String(e?.message||e)],designApproved:false};}
+ renderProposal(lastProposal);
+ return clone(lastProposal);
 }
 function exportProposal(){
  if(!lastProposal){renderProposal({success:false,proposals:[],issues:["ابتدا یک پیشنهاد موفق بسازید."],designApproved:false});return;}
