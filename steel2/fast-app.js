@@ -83,9 +83,14 @@ function endSVG(d){
  }else{
    s+='<path d="M'+x0+' '+zAt(0)+' L'+(x0+d.span*sc)+' '+zAt(d.span)+'" stroke="#176b87" stroke-width="4" fill="none"/>';
  }
- // در نمای انتهایی، ستونک‌ها و قاب نشان داده می‌شوند؛ بادبند دیوار طولی در نمای طولی نمایش دارد.
-
- s+='<text x="'+(W/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="#20313d">'+(bays-1)+' ستونک میانی باربر · فاصله محور تا محور '+actual.toFixed(3)+' متر · اتصال سر ستونک‌ها به قاب</text>';
+ // بادبند ضربدری در دهانه کناری چپ و راست قاب انتهایی؛ از ستون اصلی تا اولین ستونک.
+ const bracePairs=[[0,1],[bays-1,bays]];
+ for(const pair of bracePairs){
+   const i=pair[0],j=pair[1],xa=xs[i],xb=xs[j],za=zAt(i*actual),zb=zAt(j*actual);
+   s+='<path d="M'+xa+' '+base+' L'+xb+' '+zb+' M'+xa+' '+za+' L'+xb+' '+base+'" stroke="#c52f27" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
+   for(const p of [[xa,base],[xb,zb],[xa,za],[xb,base]])s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3" fill="#c52f27" stroke="#fff" stroke-width="1"/>';
+ }
+ s+='<text x="'+(W/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="#20313d">'+(bays-1)+' ستونک میانی · بادبند ضربدری فقط در دهانه اول و آخر قاب انتهایی</text>';
  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="نمای انتهایی قاب با ستونک‌های باربر و مهاربندهای متصل به گره‌ها">'+s+'</svg>';
 }
 
