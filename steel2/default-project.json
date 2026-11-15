@@ -7948,5 +7948,8 @@
     "plateWidth": "130",
     "pitch": "60",
     "gage": "60"
-  }
+  },
+  "projectCategory": "industrial-workshop",
+  "structuralSystem": "portal-gable",
+  "projectNotes": ""
 }
