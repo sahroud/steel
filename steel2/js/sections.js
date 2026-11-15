@@ -270,7 +270,8 @@
         if (!data || typeof data !== "object") return;
 
         const storedGrade=String(data.material?.grade||"ST37-2");
-        const normalizedGrade=/ST52/i.test(storedGrade)?"ST52-3":/ST37|S235/i.test(storedGrade)?"ST37-2":"CUSTOM";
+        // Keep EN S235/S275/S355 distinct from historical DIN ST37/ST52 grades.
+        const normalizedGrade=/^ST\s*52(?:[- ]?3)?$/i.test(storedGrade)?"ST52-3":/^ST\s*37(?:[- ]?2)?$/i.test(storedGrade)?"ST37-2":"CUSTOM";
         const fields = {
             steelGrade: normalizedGrade,
             steelGradeCustom: normalizedGrade==="CUSTOM"?storedGrade:"",
