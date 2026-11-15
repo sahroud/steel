@@ -62,13 +62,13 @@ function renderProposal(result){
 }
 function build(){
  const x=readInputs(),r=renderReadiness();
- if(!r.ready){lastProposal=null;renderProposal({success:false,proposals:[],issues:["بسته تقاضا و ممیزی دفترچه باید هر دو موفق باشند."],designApproved:false});return;}
+ if(!r.ready){lastProposal=null;renderProposal({success:false,proposals:[],issues:["بسته تقاضا و ممیزی دفترچه باید هر دو موفق باشند."],designApproved:false});return lastProposal;}
  const assumptions=selectedAssumptions();
  if(ASSUMPTIONS.some(([k])=>assumptions[k]!==true)){
   lastProposal=null;renderProposal({success:false,proposals:[],issues:["هر پنج فرض باید بررسی و صریحاً علامت‌گذاری شوند."],designApproved:false});return;
  }
  const engine=root.SteelMemberDemandCombinationBridge?.build;
- if(typeof engine!=="function"){lastProposal=null;renderProposal({success:false,proposals:[],issues:["موتور پیشنهاد ترکیب بار بارگذاری نشده است."],designApproved:false});return;}
+ if(typeof engine!=="function"){lastProposal=null;renderProposal({success:false,proposals:[],issues:["موتور پیشنهاد ترکیب بار بارگذاری نشده است."],designApproved:false});return lastProposal;}
  try{lastProposal=engine(x.demand,x.combinationSet,assumptions);renderProposal(lastProposal);}
  catch(e){lastProposal=null;renderProposal({success:false,proposals:[],issues:[String(e?.message||e)],designApproved:false});}
 }
