@@ -1154,9 +1154,13 @@
         return;
       }
       let settled=false;
+      const watchdog=setTimeout(()=>{
+        finish(reject,new Error("پردازشگر تحلیل سه‌بعدی پس از ۱۲۰ ثانیه پاسخ نداد؛ اجرای این حالت متوقف شد تا دکمه قفل نماند."));
+      },120000);
       const finish=(fn,value)=>{
         if(settled)return;
         settled=true;
+        clearTimeout(watchdog);
         worker.terminate();
         fn(value);
       };
