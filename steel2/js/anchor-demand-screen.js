@@ -72,9 +72,10 @@ function run(){
  const vals={};["rows","cols","pitchX","pitchZ","tension","momentX","momentZ","shearX","shearZ","torsionY"].forEach(k=>vals[k]=num(state[k]));
  try{
   if(!state.signConfirmed)throw Error("ابتدا قرارداد علامت نیروها را تأیید کنید.");
+  if(!state.geometryConfirmed)throw Error("ابتدا هندسه و مختصات گروه بولت را با نقشه واقعی تطبیق و تأیید کنید.");
   const r=distribute(vals),tc=num(state.tensionCapacity),vc=num(state.shearCapacity);
   r.bolts.forEach(b=>{b.tensionRatio=tc>0?b.tensionKN/tc:null;b.shearRatio=vc>0?b.shearResultKN/vc:null;b.capacityStatus=tc>0&&vc>0?(b.tensionRatio<=1&&b.shearRatio<=1?"هر دو نسبت جداگانه ≤ ۱":"حداقل یک نسبت جداگانه > ۱"):"ظرفیت کامل وارد نشده؛ کنترل ظرفیت باز است";});
-  r.input={...vals,tensionCapacity:tc,shearCapacity:vc,signConfirmed:true};r.limitations=["توزیع کشش الاستیک با صفحه صلب و بدون prying است؛ توزیع واقعی ممکن است متفاوت باشد.","برش بین بولت‌ها مساوی فرض شده و اثر اصطکاک تماس، کلید برشی و لغزش لحاظ نشده است.","ظرفیت فولادی، شکست مخروطی بتن، pullout، pry-out، side-face blowout، فاصله لبه، فاصله محوری، اثر گروه، لرزه‌ای، خستگی و اندرکنش آیین‌نامه‌ای کنترل نشده‌اند.","ظرفیت‌های اختیاری صرفاً از ورودی کاربر خوانده می‌شوند و نرم‌افزار صحت آن‌ها را تأیید نمی‌کند."];
+  r.input={...vals,tensionCapacity:tc,shearCapacity:vc,signConfirmed:true,geometryConfirmed:true};r.limitations=["توزیع کشش الاستیک با صفحه صلب و بدون prying است؛ توزیع واقعی ممکن است متفاوت باشد.","برش بین بولت‌ها مساوی فرض شده و اثر اصطکاک تماس، کلید برشی و لغزش لحاظ نشده است.","ظرفیت فولادی، شکست مخروطی بتن، pullout، pry-out، side-face blowout، فاصله لبه، فاصله محوری، اثر گروه، لرزه‌ای، خستگی و اندرکنش آیین‌نامه‌ای کنترل نشده‌اند.","ظرفیت‌های اختیاری صرفاً از ورودی کاربر خوانده می‌شوند و نرم‌افزار صحت آن‌ها را تأیید نمی‌کند."];
   last=r;const body=$("anchorDemandRows");body.replaceChildren();
   r.bolts.forEach(b=>{const tr=document.createElement("tr");[b.mark,fmt(b.x),fmt(b.z),fmt(b.tensionKN),fmt(b.shearXKN),fmt(b.shearZKN),fmt(b.shearResultKN),b.capacityStatus].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);});
   const torsionText=" | پیچش Y: "+fmt(r.torsionYKNm)+" kN.m؛ اختلاف تعادل پیچش: "+fmt(r.torsionResidualKNm)+" kN.m (توزیع الاستیک گروه صلب؛ بدون کنترل ظرفیت)";
