@@ -28,6 +28,42 @@ function collect(combos){
  if(!out.length)throw Error("نیروی انتهایی قابل خواندن در نتایج تحلیل پیدا نشد.");
  return out;
 }
+function collectFromEnvelope(envelope,model){
+ if(!envelope||!Array.isArray(envelope.members)||!Array.isArray(envelope.cases)||!envelope.cases.length)throw Error("پوش نیروی تحلیل همه ترکیبات در دسترس نیست؛ ابتدا «تحلیل همه ترکیبات و استخراج نیروها» را اجرا کنید.");
+ if(envelope.allCasesEquilibriumOK!==true)throw Error("تعادل یک یا چند ترکیب بار تأیید نشده است؛ استخراج تقاضای اتصال متوقف شد.");
+ if(envelope.caseLabelCoverageOK!==true||(envelope.unreportedMemberIds||[]).length||(envelope.invalidForceVectors||[]).length||(envelope.analysisMemberSetMismatchCases||[]).length)throw Error("پوش نیرو از نظر پوشش اعضا/ترکیبات کامل نیست؛ تقاضای اتصال قابل استخراج نیست.");
+ const convention=envelope.localEndForceConvention;
+ if(convention?.version!==1||convention?.basis!=="member-local")throw Error("قرارداد محور/علامت نیروهای محلی حل‌گر نامشخص است.");
+ const modelMembers=Array.isArray(model?.members)?model.members:[];
+ const byId=new Map(modelMembers.map(m=>[String(m.id),m]));
+ if(byId.size!==modelMembers.length)throw Error("شناسه عضو مدل تکراری است؛ تطبیق نیروی اتصال ممکن نیست.");
+ const joints=collectJoints(model);
+ if(!joints.success)throw Error("ممیزی توپولوژی مدل برای اتصال ناموفق است: "+joints.issues.slice(0,5).join("؛ "));
+ const jointByNode=new Map(joints.joints.map(j=>[String(j.nodeId),j]));
+ const expected=envelope.cases.map(x=>String(x.label||"").trim());
+ if(expected.some(x=>!x)||new Set(expected).size!==expected.length)throw Error("نام ترکیبات بار خالی یا تکراری است.");
+ const rows=[],seen=new Set();
+ envelope.members.forEach(m=>{
+  const id=String(m.id),source=byId.get(id);
+  if(!source)throw Error("عضو تحلیل‌شده "+id+" در مدل جاری پیدا نشد.");
+  if(seen.has(id))throw Error("عضو تکراری در پوش نیرو: "+id);seen.add(id);
+  const cases=Array.isArray(m.simultaneousCases)?m.simultaneousCases:[];
+  const labels=cases.map(x=>String(x.label||""));
+  if(cases.length!==expected.length||expected.some(x=>!labels.includes(x))||new Set(labels).size!==labels.length)throw Error("پوش ترکیبات عضو "+id+" ناقص یا تکراری است.");
+  cases.forEach(c=>{
+   const v=c.sourceVector;
+   if(!Array.isArray(v)||v.length!==12||!v.every(Number.isFinite))throw Error("بردار ۱۲ مؤلفه‌ای نیرو برای عضو "+id+" / "+c.label+" معتبر نیست.");
+   [["i",source.start,v.slice(0,6)],["j",source.end,v.slice(6,12)]].forEach(([end,nodeId,a])=>{
+    const joint=jointByNode.get(String(nodeId));
+    if(!joint)return;
+    const values={N:a[0]/1000,Vy:a[1]/1000,Vz:a[2]/1000,T:a[3]/1000,My:a[4]/1000,Mz:a[5]/1000};
+    rows.push({combination:String(c.label),memberName:String(source.name||source.label||id),memberId:id,sectionKey:String(source.sectionKey||m.sectionKey||""),end,nodeId:String(nodeId),jointType:joint.type,jointLabel:joint.label,length:num(m.length??source.length),actions:values,rawActionsSI:{N:a[0],Vy:a[1],Vz:a[2],T:a[3],My:a[4],Mz:a[5]},forceConventionVersion:convention.version,actionBasis:"member-local solver element end action; sign retained; not joint resultant"});
+   });
+  });
+ });
+ if(!rows.length)throw Error("هیچ انتهای عضوی در گره‌های اتصال مشترک، نیروی معتبر ندارد.");
+ return rows;
+}
 function memberLabel(key){
  const labels={column:"ستون",rafter:"رفتر",roofPurlin:"لاپه سقف",purlin:"لاپه",wallGirt:"وال‌پست/گیرت دیوار",roofBrace:"مهاربند سقف",wallBrace:"مهاربند دیوار",endPost:"ستونک انتهایی",endGirt:"تیر انتهایی",roofEdge:"عضو لبه سقف",craneRunwayGirder:"تیر حمال جرثقیل",tieBeam:"تیر رابط/شناژ",craneBracket:"کنسول جرثقیل"};
  return labels[key]||String(key||"عضو نامشخص");
@@ -76,8 +112,8 @@ function collectJoints(model){
 }
 const csvCell=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
 function toCsv(rows){
- const h=["ترکیب بار","عضو","شناسه","مقطع","انتها","طول m","N kN","Vy kN","Vz kN","T kN.m","My kN.m","Mz kN.m"];
- return "\uFEFF"+[h,...rows.map(r=>[r.combination,r.memberName,r.memberId,r.sectionKey,r.end,r.length,...["N","Vy","Vz","T","My","Mz"].map(k=>r.actions[k])])].map(a=>a.map(csvCell).join(",")).join("\r\n");
+ const h=["ترکیب بار","عضو","شناسه","مقطع","انتها","گره اتصال","نوع اتصال","طول m","N kN","Vy kN","Vz kN","T kN.m","My kN.m","Mz kN.m"];
+ return "\uFEFF"+[h,...rows.map(r=>[r.combination,r.memberName,r.memberId,r.sectionKey,r.end,r.nodeId||"",r.jointLabel||"",r.length,...["N","Vy","Vz","T","My","Mz"].map(k=>r.actions[k])])].map(a=>a.map(csvCell).join(",")).join("\r\n");
 }
 function test(){
  const f=[{name:"C1",members:[{id:1,name:"رفتر",length:5,axialStart:-100,shearStart:20,momentStart:30,axialEnd:-90,shearEnd:-10,momentEnd:0}]},{name:"C2",members:[{id:1,name:"رفتر",length:5,axialStart:80,shearStart:-35,momentStart:-45,axialEnd:70,shearEnd:15,momentEnd:0}]}];
@@ -89,7 +125,9 @@ function test(){
  ["جهت ابتدا و انتها حفظ می‌شود",r[0].end==="i"&&r[1].end==="j"],
  ["مؤلفه ناموجود جعل نمی‌شود",r[0].actions.Vz===null&&r[0].actions.T===null],
  ["CSV شامل همه رکوردهاست",toCsv(r).split("\r\n").length===5],
- ["فهرست اتصال، زانویی و پای ستون را از توپولوژی می‌سازد",joint.success&&joint.joints.some(x=>x.type==="knee")&&joint.joints.some(x=>x.type==="base")]
+ ["فهرست اتصال، زانویی و پای ستون را از توپولوژی می‌سازد",joint.success&&joint.joints.some(x=>x.type==="knee")&&joint.joints.some(x=>x.type==="base")],
+ ["تقاضای اتصال از بردار هم‌زمان حل‌گر و گره صحیح استخراج می‌شود",()=>{const model={nodes:[{id:"A",x:0,y:0,z:0,kind:"base"},{id:"B",x:0,y:5,z:0,kind:"eave"},{id:"C",x:5,y:6,z:0}],members:[{id:"COL",start:"A",end:"B",sectionKey:"column"},{id:"RAF",start:"B",end:"C",sectionKey:"rafter"}]};const v=[1000,2000,3000,4000,5000,6000,-1000,-2000,-3000,-4000,-5000,-6000];const env={allCasesEquilibriumOK:true,caseLabelCoverageOK:true,unreportedMemberIds:[],invalidForceVectors:[],analysisMemberSetMismatchCases:[],localEndForceConvention:{version:1,basis:"member-local"},cases:[{label:"U1"}],members:[{id:"COL",simultaneousCases:[{label:"U1",sourceVector:v}]},{id:"RAF",simultaneousCases:[{label:"U1",sourceVector:v}]}]};const x=collectFromEnvelope(env,model);const row=x.find(z=>z.memberId==="COL"&&z.end==="j");return row?.nodeId==="B"&&row.jointType==="knee"&&row.actions.N===-1&&row.rawActionsSI.Mz===6000; }],
+ ["تقاضای اتصال با پوش ترکیبات ناقص مسدود می‌شود",()=>{const env={allCasesEquilibriumOK:true,caseLabelCoverageOK:true,unreportedMemberIds:[],invalidForceVectors:[],analysisMemberSetMismatchCases:[],localEndForceConvention:{version:1,basis:"member-local"},cases:[{label:"U1"},{label:"U2"}],members:[]};try{collectFromEnvelope(env,{nodes:[],members:[]});return false;}catch(e){return true;}}]
  ];
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
@@ -153,7 +191,7 @@ function mount(){
  $("connDemandMember").addEventListener("change",render);$("connDemandEnd").addEventListener("change",render);
  $("btnExportConnectionDemand").addEventListener("click",()=>{if(!records.length)return;const u=URL.createObjectURL(new Blob([toCsv(records)],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=u;a.download="sahroud-steel-connection-demands.csv";a.click();URL.revokeObjectURL(u);});
 }
-root.SteelConnectionDemandRegistry={collect,toCsv,test,endActions,collectJoints};
+root.SteelConnectionDemandRegistry={collect,collectFromEnvelope,toCsv,test,endActions,collectJoints};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.SteelConnectionDemandRegistry;
 if(root.document){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
