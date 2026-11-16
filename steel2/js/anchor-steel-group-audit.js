@@ -28,5 +28,12 @@ function selfTest(){
  t("never claims interaction or design approval",()=>{const r=compare(demand,input);return r.analysisEnabled===false&&r.designApproved===false&&r.limitations.some(x=>x.includes("اندرکنش"));});
  return{passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
-root.SteelAnchorSteelGroupAudit={compare,selfTest};
+function compareFoundationCases(nodeId,foundationResult,geometryGroups,input){
+ const builder=root.SteelConcreteAnchorCapacity;
+ if(typeof builder?.buildCaseDemandBatch!=="function")throw Error("مسیر دسته‌جمعی تقاضای انکر برای ترکیبات بار بارگذاری نشده است.");
+ const built=builder.buildCaseDemandBatch(nodeId,foundationResult,geometryGroups);
+ const result=compare(built.results,input);
+ return{...result,geometryAudit:built.geometryAudit,source:built.source,caseLabels:built.caseLabels,combinesEnvelopeExtrema:false};
+}
+root.SteelAnchorSteelGroupAudit={compare,compareFoundationCases,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
