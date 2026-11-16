@@ -46,8 +46,9 @@ function audit(){
  const demandPackage={available:!!demand,success:demand?.success===true,status:demand?.status||"not-built",caseCount:Array.isArray(demand?.caseIds)?demand.caseIds.length:0,memberCount:Array.isArray(demand?.members)?demand.members.length:0,issues:Array.isArray(demand?.issues)?demand.issues.slice():[],blockers:Array.isArray(demand?.designGate?.blockers)?demand.designGate.blockers.slice():[],designApproved:false};
  const workbench=root.SteelLoadCaseWorkbench?.read?.()||null;
  const combinationAudit=workbench&&root.SteelLoadCaseWorkbench?.audit?root.SteelLoadCaseWorkbench.audit(workbench):null;
- const combinationBridge={engineAvailable:!!root.SteelMemberDemandCombinationBridge?.build,proposalExecuted:false,proposalSuccess:false,designApproved:false};
- const combinationStatus={available:!!combinationAudit,success:combinationAudit?.success===true,loadCaseCount:Array.isArray(workbench?.loadCases)?workbench.loadCases.length:0,combinationCount:Array.isArray(workbench?.combinations)?workbench.combinations.length:0,issues:Array.isArray(combinationAudit?.issues)?combinationAudit.issues.slice():[],linkedToDemandPackage:false,solverEffectsAvailable:false,designApproved:false};
+ const proposal=demand?.combinationProposal||null;
+ const combinationBridge={engineAvailable:!!root.SteelMemberDemandCombinationBridge?.build,proposalExecuted:!!proposal,proposalSuccess:proposal?.success===true,status:proposal?.status||"not-executed",issues:Array.isArray(proposal?.issues)?proposal.issues.slice():[],designApproved:false};
+ const combinationStatus={available:!!combinationAudit,success:combinationAudit?.success===true,loadCaseCount:Array.isArray(workbench?.loadCases)?workbench.loadCases.length:0,combinationCount:Array.isArray(workbench?.combinations)?workbench.combinations.length:0,issues:Array.isArray(combinationAudit?.issues)?combinationAudit.issues.slice():[],linkedToDemandPackage:proposal?.success===true,solverDemandCasesAvailable:proposal?.success===true,designApproved:false};
  const rows=GROUPS.map(g=>{
   const members=Array.isArray(env?.members)?env.members.filter(m=>g.key==="braces"?["wallBrace","roofBrace"].includes(m.sectionKey):m.sectionKey===g.key):[];
   const missing=[...g.required];
@@ -62,7 +63,7 @@ function audit(){
   const supported=SUPPORT[g.key]||[];
   return {group:g.key,label:g.label,memberCount:members.length,availableLimitedEngines:supported,missing:blockers,status:blockers.length?"blocked":"limited-only",designApproved:false};
  });
- return {designApproved:false,rows,demandPackage,combinationStatus,combinationBridge,summary:{groups:rows.length,blocked:rows.filter(x=>x.status==="blocked").length,limitedOnly:rows.filter(x=>x.status==="limited-only").length,demandPackageAvailable:demandPackage.available,demandPackageComplete:demandPackage.success,documentedCombinationSetValid:combinationStatus.success,combinationsLinkedToDemand:false},rules:[
+ return {designApproved:false,rows,demandPackage,combinationStatus,combinationBridge,summary:{groups:rows.length,blocked:rows.filter(x=>x.status==="blocked").length,limitedOnly:rows.filter(x=>x.status==="limited-only").length,demandPackageAvailable:demandPackage.available,demandPackageComplete:demandPackage.success,documentedCombinationSetValid:combinationStatus.success,combinationsLinkedToDemand:combinationStatus.linkedToDemandPackage},rules:[
   "بسته تقاضای ایستگاهی فقط در صورت ساخت موفق نمایش داده می‌شود؛ این وضعیت به‌تنهایی مجوز طراحی نیست.",
   "ممیزی ترکیب‌ها در دفترچه شواهد، جایگزین اجرای تحلیل اثر ترکیب‌ها و اتصال آن‌ها به بسته تقاضا نیست.",
   "هیچ‌یک از مسیرهای این ممیزی مجوز طراحی اجرایی صادر نمی‌کند.",
@@ -97,9 +98,9 @@ function render(){
  const host=document.getElementById("memberDesignScopeGateResults");if(!host)return;
  const r=audit();
  const d=r.demandPackage,k=r.combinationStatus;
- const bridgeText="مبدل تقاضای ترکیبی: "+(r.combinationBridge.engineAvailable?"آماده استفاده؛ هنوز اجرا نشده":"ماژول بارگذاری نشده")+".";
- const demandText="بسته تقاضا: "+(d.available?(d.success?"ساخته شده؛ "+d.caseCount+" حالت و "+d.memberCount+" عضو":"ناقص / ناموفق"):"هنوز ساخته نشده")+" — ترکیب‌های مستند: "+k.combinationCount+" از "+k.loadCaseCount+" حالت بار؛ "+(k.success?"ممیزی ساختاری موفق":"ممیزی ناقص یا ناموفق")+" — اتصال ترکیب‌ها به تقاضای تحلیل: انجام نشده است.";
- const details=[...d.issues,...d.blockers,...k.issues].filter(Boolean);
+ const bridgeText="مبدل تقاضای ترکیبی: "+(r.combinationBridge.proposalExecuted?(r.combinationBridge.proposalSuccess?"پیشنهاد ترکیب نیرو ساخته شده؛ تأیید طراحی نیست":"اجرا شده اما مسدود/ناموفق"):(r.combinationBridge.engineAvailable?"آماده استفاده؛ هنوز اجرا نشده":"ماژول بارگذاری نشده"))+".";
+ const demandText="بسته تقاضا: "+(d.available?(d.success?"ساخته شده؛ "+d.caseCount+" حالت و "+d.memberCount+" عضو":"ناقص / ناموفق"):"هنوز ساخته نشده")+" — دفترچه ترکیب‌ها: "+k.combinationCount+" از "+k.loadCaseCount+" حالت بار؛ "+(k.success?"ممیزی ساختاری موفق":"ممیزی ناقص یا ناموفق")+" — اتصال تقاضای تحلیل به پیشنهاد ترکیب: "+(k.linkedToDemandPackage?"انجام شده":"انجام نشده")+"؛ این اتصال ظرفیت عضو را تأیید نمی‌کند.";
+ const details=[...d.issues,...d.blockers,...k.issues,...r.combinationBridge.issues].filter(Boolean);
  host.innerHTML="<h4>وضعیت مسیر طراحی اعضا</h4><p>گروه‌های مسدود: "+r.summary.blocked+" از "+r.summary.groups+" — هیچ گروهی تأیید طراحی نشده است.</p><div class='notice'>"+esc(bridgeText)+"<br>"+esc(demandText)+(details.length?"<br>"+esc(details.join("؛ ")):"")+"</div><div style='overflow-x:auto'><table class='data-table'><thead><tr><th>گروه</th><th>تعداد اعضای دارای پوش نیرو</th><th>موتور محدود موجود</th><th>موارد تکمیل‌نشده</th><th>وضعیت</th></tr></thead><tbody>"+r.rows.map(x=>"<tr><td>"+esc(x.label)+"</td><td>"+x.memberCount+"</td><td>"+esc(x.availableLimitedEngines.join("، ")||"ندارد")+"</td><td>"+esc(x.missing.join("؛ "))+"</td><td>مسدود / غیرنهایی</td></tr>").join("")+"</tbody></table></div><div class='notice'>"+r.rules.map(esc).join("<br>")+"</div>";
 }
 function init(){
