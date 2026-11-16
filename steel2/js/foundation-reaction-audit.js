@@ -41,6 +41,32 @@ function audit(envelope,model,footingSpecFor){
    if(!d||![d.width,d.length,d.thickness].every(v=>finite(Number(v))&&Number(v)>0))issues.push("ابعاد پی اختصاصی گره معتبر نیست: "+id);
   }
  });
+ const tieBeam= envelope?.tieBeamIntegration;
+ const tieBeamAudit={checked:false,routeCount:0,segmentCount:0,issues:[]};
+ if(tieBeam){
+  tieBeamAudit.checked=true;
+  const included=Array.isArray(tieBeam.included)?tieBeam.included:[];
+  const skipped=Array.isArray(tieBeam.skipped)?tieBeam.skipped:[];
+  const segmentIds=new Set(),supportIds=new Set(supports.map(n=>String(n.id)));
+  tieBeamAudit.routeCount=included.length;
+  included.forEach(route=>{
+   const id=String(route?.id??"");
+   const start=String(route?.start??""),end=String(route?.end??"");
+   const mids=Array.isArray(route?.intermediateBaseNodes)?route.intermediateBaseNodes.map(String):[];
+   const members=Array.isArray(route?.memberIds)?route.memberIds.map(String):[];
+   const count=Number(route?.segmentCount);
+   if(!id||!start||!end)tieBeamAudit.issues.push("شناژ با شناسه یا گره ابتدا/انتهای خالی در مسیر انتقال به پی ثبت شده است.");
+   if(!supportIds.has(start)||!supportIds.has(end))tieBeamAudit.issues.push("دو انتهای شناژ "+(id||"?")+" به گره پایه واقعی متصل نیستند.");
+   mids.forEach(nodeId=>{if(!supportIds.has(nodeId))tieBeamAudit.issues.push("گره میانی شناژ "+(id||"?")+" تکیه‌گاه فونداسیون شناخته‌شده نیست: "+nodeId);});
+   if(!Number.isInteger(count)||count<1||members.length!==count)tieBeamAudit.issues.push("تعداد قطعات شناژ "+(id||"?")+" با فهرست شناسه قطعات برابر نیست.");
+   members.forEach(memberId=>{if(!memberId||segmentIds.has(memberId))tieBeamAudit.issues.push("شناسه قطعه شناژ خالی یا تکراری است: "+memberId);segmentIds.add(memberId);});
+   tieBeamAudit.segmentCount+=members.length;
+   if(!Number.isFinite(Number(route.lengthM))||Number(route.lengthM)<=0)tieBeamAudit.issues.push("طول مسیر شناژ "+(id||"?")+" نامعتبر است.");
+  });
+  if(skipped.length)tieBeamAudit.issues.push("یک یا چند مسیر شناژ از تحلیل حذف شده است؛ انتقال بار فونداسیون کامل نیست.");
+  if(tieBeam.activeInAnalysis===false&&included.length)tieBeamAudit.issues.push("مسیرهای شناژ ثبت شده‌اند ولی در تحلیل فعال نیستند.");
+  issues.push(...tieBeamAudit.issues);
+ }
  const caseLabels=new Set();
  (envelope?.cases||[]).forEach(c=>{
   if(!c?.label||caseLabels.has(c.label))issues.push("نام حالت بار در پوش خالی یا تکراری است: "+String(c?.label));
@@ -60,7 +86,7 @@ function audit(envelope,model,footingSpecFor){
   });
   return{label:c.label,solverSupportResultant:{Fx:F[0],Fy:F[1],Fz:F[2],Mx:M[0],My:M[1],Mz:M[2]},momentReference:"global origin (0,0,0)",units:{force:"N",moment:"N.m"}};
  });
- return{ok:issues.length===0,issues,supportCount:supports.length,rowCount:rowById.size,caseCount:envelope?.cases?.length||0,resultants,scope:"data completeness and support reaction resultants only; not independent external-load equilibrium, not design"};
+ return{ok:issues.length===0,issues,supportCount:supports.length,rowCount:rowById.size,caseCount:envelope?.cases?.length||0,tieBeamAudit,resultants,scope:"data completeness and support reaction resultants only; not independent external-load equilibrium, not design"};
 }
 function selfTest(){
  const model={nodes:[{id:"B1",x:0,y:0,z:0,kind:"base"},{id:"B2",x:2,y:0,z:0,kind:"endwall-base"}]};
@@ -78,7 +104,11 @@ function selfTest(){
   ["envelope min max mismatch rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,envelopes:r.envelopes.map((e,i)=>i===0?{min:-1,max:1}:e)}:r)},model).ok],
   ["failed equilibrium rejected",!audit({...env,cases:[{label:"C1",equilibrium:{ok:false}}]},model).ok],
   ["missing footing dimensions rejected",!audit(env,model,()=>({width:0,length:1,thickness:1})).ok],
-  ["global-origin moment includes r cross F",good.resultants[0].solverSupportResultant.My===21]
+  ["global-origin moment includes r cross F",good.resultants[0].solverSupportResultant.My===21],
+  ["audits tie-beam endpoints and intermediate supports",audit({...env,tieBeamIntegration:{included:[{id:"T1",start:"B1",end:"B2",intermediateBaseNodes:[],memberIds:["TB1"],segmentCount:1,lengthM:2}],skipped:[],activeInAnalysis:true}},model).tieBeamAudit.issues.length===0],
+  ["rejects tie-beam endpoint not connected to footing support",!audit({...env,tieBeamIntegration:{included:[{id:"T1",start:"B1",end:"GHOST",intermediateBaseNodes:[],memberIds:["TB1"],segmentCount:1,lengthM:2}],skipped:[],activeInAnalysis:true}},model).ok],
+  ["rejects tie-beam segment count mismatch",!audit({...env,tieBeamIntegration:{included:[{id:"T1",start:"B1",end:"B2",intermediateBaseNodes:[],memberIds:["TB1"],segmentCount:2,lengthM:2}],skipped:[],activeInAnalysis:true}},model).ok],
+  ["rejects skipped tie-beam route",!audit({...env,tieBeamIntegration:{included:[],skipped:[{id:"T2"}],activeInAnalysis:false}},model).ok]
  ];
  return{passed:tests.filter(x=>x[1]).length,failed:tests.filter(x=>!x[1]).length,total:tests.length,tests};
 }
