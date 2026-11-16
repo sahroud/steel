@@ -7,6 +7,33 @@
 "use strict";
 const finite=v=>typeof v==="number"&&Number.isFinite(v);
 const txt=v=>String(v??"").trim();
+function auditDefinitions(input){
+ const p=input||{},issues=[],caseIds=new Set(),comboIds=new Set();
+ const cases=Array.isArray(p.loadCases)?p.loadCases:[];
+ const combos=Array.isArray(p.combinations)?p.combinations:[];
+ cases.forEach((c,i)=>{
+  const id=txt(c?.id),category=txt(c?.category);
+  if(!id)issues.push("حالت بار شماره "+(i+1)+" شناسه ندارد.");
+  else if(caseIds.has(id))issues.push("شناسه حالت بار تکراری است: "+id);
+  else caseIds.add(id);
+  if(!category)issues.push("دسته بار برای "+(id||i+1)+" ثبت نشده است.");
+ });
+ combos.forEach((c,i)=>{
+  const id=txt(c?.id);
+  if(!id)issues.push("ترکیب شماره "+(i+1)+" شناسه ندارد.");
+  else if(comboIds.has(id))issues.push("شناسه ترکیب تکراری است: "+id);
+  else comboIds.add(id);
+  const src=c?.source||{};
+  if(!txt(src.code)||!txt(src.edition)||!txt(src.clause)||!txt(src.document))issues.push("مرجع آیین‌نامه‌ای کامل برای ترکیب "+(id||i+1)+" ثبت نشده است.");
+  const factors=c?.factors;
+  if(!factors||typeof factors!=="object"||Array.isArray(factors)||!Object.keys(factors).length){issues.push("ضرایب ترکیب "+(id||i+1)+" خالی است.");return;}
+  Object.entries(factors).forEach(([caseId,factor])=>{
+   if(!caseIds.has(caseId))issues.push("حالت بار مرجع "+caseId+" در ترکیب "+(id||i+1)+" وجود ندارد.");
+   if(!finite(factor))issues.push("ضریب ترکیب برای "+caseId+" عدد متناهی نیست.");
+  });
+ });
+ return {success:issues.length===0&&cases.length>0&&combos.length>0,issues,caseCount:cases.length,combinationCount:combos.length,analysisEnabled:false,designApproved:false,scope:"definition-only; no load effects or solver results"};
+}
 function audit(input){
  const p=input||{},issues=[],rows=[],ids=new Set();
  const cases=Array.isArray(p.loadCases)?p.loadCases:[];
@@ -70,8 +97,12 @@ function selfTest(){
  test("empty effect vector rejected",()=>{const p=JSON.parse(JSON.stringify(base));p.loadCases[0].effects={};return !audit(p).success;});
  test("empty combination list rejected",()=>!audit({loadCases:base.loadCases,combinations:[]}).success);
  test("no implicit factors or code presets",()=>Object.keys(audit({}).combinations).length===0);
+ test("definition audit validates coefficients without synthetic effect vectors",()=>auditDefinitions({loadCases:[{id:"D",category:"dead"}],combinations:[{id:"C",factors:{D:1},source:{code:"M6",edition:"1398",clause:"6-1",document:"approved"}}]}).success);
+ test("definition audit rejects unknown factor case",()=>!auditDefinitions({loadCases:[{id:"D",category:"dead"}],combinations:[{id:"C",factors:{X:1},source:{code:"M6",edition:"1398",clause:"6-1",document:"approved"}}]}).success);
+ test("definition audit rejects incomplete source",()=>!auditDefinitions({loadCases:[{id:"D",category:"dead"}],combinations:[{id:"C",factors:{D:1},source:{code:"M6"}}]}).success);
+ test("definition audit never approves design",()=>auditDefinitions({loadCases:[{id:"D",category:"dead"}],combinations:[{id:"C",factors:{D:1},source:{code:"M6",edition:"1398",clause:"6-1",document:"approved"}}]}).designApproved===false);
  test("never enables analysis or approves design",()=>{const r=audit(base);return r.analysisEnabled===false&&r.designApproved===false;});
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t};
 }
-root.SteelLoadCombinationRegistry={audit,selfTest};
+root.SteelLoadCombinationRegistry={audit,auditDefinitions,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
