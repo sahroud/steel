@@ -62,6 +62,23 @@ function addPointOnGirder(model,memberRow,z,forceGlobal,offsetGlobal,nodal,sourc
  return true;
 }
 let lastAnalysis=null;
+function auditSourceProvenance(sourceDocuments,horizontalInput){
+ const required=["document","revision","locator","authority"],rows=[],issues=[];
+ const addRow=(name,value)=>{
+  const record=value&&typeof value==="object"&&!Array.isArray(value)?value:{document:value};
+  const missing=required.filter(k=>!String(record?.[k]??"").trim());
+  rows.push({name,missing,complete:missing.length===0});
+  if(missing.length)issues.push(name+" فاقد "+missing.join("، "));
+ };
+ const d=sourceDocuments||{};
+ addRow("منبع هندسه ریل",d.geometrySource);
+ addRow("منبع سختی تکیه‌گاه",d.supportStiffnessSource);
+ addRow("منبع مسیر/فاصله چرخ",d.wheelTrackSource);
+ if(!Array.isArray(d.wheelSources)||!d.wheelSources.length)issues.push("منابع اختصاصی چرخ‌ها ثبت نشده‌اند.");
+ (Array.isArray(d.wheelSources)?d.wheelSources:[]).forEach((w,i)=>addRow("منبع چرخ "+(i+1)+" ("+(w?.side||"بدون سمت")+")",w));
+ if(horizontalInput?.enabled)addRow("منبع بار افقی جرثقیل",horizontalInput);
+ return {complete:issues.length===0,requiredFields:required,sourceCount:rows.length,completeCount:rows.filter(x=>x.complete).length,incompleteCount:rows.filter(x=>!x.complete).length,rows,issues,designApproved:false,scope:"فقط کامل‌بودن شناسنامه منبع را بررسی می‌کند؛ صحت مقدار بار، تفسیر بند آیین‌نامه یا تأیید طراحی را اثبات نمی‌کند."};
+}
 function prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,config){
  const issues=[],d=config||{},c=transferResult?.cases?.[caseIndex];
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))issues.push("مدل سه‌بعدی معتبر نیست.");
@@ -112,15 +129,16 @@ function prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,c
   }
  }
  const sourceDocs=c?.sourceDocuments;
- if(c&&(!sourceDocs?.geometrySource||!sourceDocs?.supportStiffnessSource||!sourceDocs?.wheelTrackSource||!Array.isArray(sourceDocs?.wheelSources)||sourceDocs.wheelSources.some(w=>!w.source||!w.document)))issues.push("زنجیره اسناد هندسه، سختی تکیه‌گاه و بار چرخ برای این حالت کامل نیست.");
+ const sourceProvenanceAudit=auditSourceProvenance(sourceDocs,horizontalInput);
+ if(c&&(!sourceDocs?.geometrySource||!sourceDocs?.supportStiffnessSource||!sourceDocs?.wheelTrackSource||!Array.isArray(sourceDocs?.wheelSources)||sourceDocs.wheelSources.some(w=>!w.source||!w.document)))issues.push("زنجیره اسناد پایه هندسه، سختی تکیه‌گاه و بار چرخ برای این حالت کامل نیست.");
  const loads=[...nodal.values()].map(x=>({nodeId:x.nodeId,values:x.values,sources:x.sources}));
  const ok=issues.length===0&&loads.length>0;
- return {success:ok,ready:ok,solverInputReady:ok,analysisEnabled:false,caseIndex,referencePosition_m:c?.referencePosition_m??null,nodalLoads:loads,loadCount:loads.length,sourceDocuments:sourceDocs||null,horizontalAudit,issues,modelFingerprint:model?{nodeCount:model.nodes.length,memberCount:model.members.length}:null,note:"بارهای قائم واکنش ریل روی گره‌های دقیق تیر حمال اعمال می‌شوند؛ نیروهای افقی در محل واقعی چرخ با بارهای گره‌ای معادل سازگار تیر توزیع می‌شوند. خروج از مرکزیت باید از نقشه وارد شود. هنوز کنترل مقاومت/اتصال و تأیید طراحی انجام نشده است."};
+ return {success:ok,ready:ok,solverInputReady:ok,analysisEnabled:false,caseIndex,referencePosition_m:c?.referencePosition_m??null,nodalLoads:loads,loadCount:loads.length,sourceDocuments:sourceDocs||null,sourceProvenanceAudit,readyForCodeDesign:sourceProvenanceAudit.complete===true,horizontalAudit,issues,modelFingerprint:model?{nodeCount:model.nodes.length,memberCount:model.members.length}:null,note:"بارهای قائم واکنش ریل روی گره‌های دقیق تیر حمال اعمال می‌شوند؛ نیروهای افقی در محل واقعی چرخ با بارهای گره‌ای معادل سازگار تیر توزیع می‌شوند. خروج از مرکزیت باید از نقشه وارد شود. هنوز کنترل مقاومت/اتصال و تأیید طراحی انجام نشده است."};
 }
 function prepareAll(model,transferResult,horizontalInput,trainInput,config){
  if(!transferResult?.success)return {success:false,analysisEnabled:false,issues:["نتیجه تحلیل هم‌زمان دو ریل در دسترس نیست."]};
  const cases=transferResult.cases.map((_,i)=>prepareCase(model,transferResult,i,horizontalInput,trainInput,config));
- return {success:cases.every(x=>x.success),analysisEnabled:false,total:cases.length,readyCount:cases.filter(x=>x.success).length,blockedCount:cases.filter(x=>!x.success).length,cases,issues:cases.flatMap(x=>x.issues).slice(0,50)};
+ return {success:cases.every(x=>x.success),analysisEnabled:false,readyForCodeDesign:false,sourceProvenanceComplete:cases.every(x=>x.sourceProvenanceAudit?.complete===true),sourceProvenanceIncompleteCount:cases.filter(x=>x.sourceProvenanceAudit?.complete!==true).length,total:cases.length,readyCount:cases.filter(x=>x.success).length,blockedCount:cases.filter(x=>!x.success).length,cases,issues:cases.flatMap(x=>x.issues).slice(0,50)};
 }
 function auditCraneType(config){
  const d=config||{};
@@ -343,6 +361,12 @@ async function analyzeAllFromUI(options){
   note:"پوش تغییرمکان از نتایج حالات جداگانه؛ بیشینه‌های غیرهم‌زمان نیرو/لنگر با هم جمع نشده‌اند. این مرحله هنوز ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی و طراحی نهایی تیر حمال/اتصالات را تأیید نمی‌کند."};
  return lastAutomaticEnvelope;
 }
+function selfTestSourceProvenance(){
+ const legacy={geometrySource:"GA-1",wheelTrackSource:"GA-2",supportStiffnessSource:"TEST-1",wheelSources:[{side:"left",offset_m:0,source:"CR-1",document:"p.2"}]};
+ const full={geometrySource:{document:"نقشه مصوب",revision:"A",locator:"GA-1",authority:"کارفرما"},wheelTrackSource:{document:"نقشه مصوب",revision:"A",locator:"GA-2",authority:"کارفرما"},supportStiffnessSource:{document:"گزارش آزمایش",revision:"1",locator:"بخش ۲",authority:"آزمایشگاه"},wheelSources:[{side:"left",document:"کاتالوگ سازنده",revision:"2026",locator:"صفحه ۲",authority:"سازنده"}]};
+ const a=auditSourceProvenance(legacy,null),b=auditSourceProvenance(full,null),h=auditSourceProvenance(full,{enabled:true,source:"CR-1",document:"p.3"});
+ return {checks:[{name:"rejects shorthand source identifiers as full provenance",ok:!a.complete&&a.incompleteCount===4},{name:"accepts explicit document, revision, locator and authority",ok:b.complete&&b.incompleteCount===0},{name:"requires horizontal-load provenance when enabled",ok:!h.complete}],analysisEnabled:false,designApproved:false};
+}
 function selfTest(){
  const checks=[],t=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
  t("vertical dynamic factor scales both rail wheel trains without changing source sign",()=>{const x=applyVerticalImpact({leftWheels:[{P_N:-1000,source:"S",document:"p1"}],rightWheels:[{P_N:-1200,source:"S",document:"p1"}]},1.25);return x.leftWheels[0].P_N===-1250&&x.rightWheels[0].P_N===-1500&&x.leftWheels[0].staticInputP_N===-1000;});
@@ -472,6 +496,6 @@ function ensurePanel(){
  });
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,selfTest,buildMovingForceEnvelope,buildCraneSupportReactionEnvelope,buildCraneDemandTraceAudit,buildCraneBaseReactionCsv,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
+root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,auditSourceProvenance,selfTestSourceProvenance,selfTest,buildMovingForceEnvelope,buildCraneSupportReactionEnvelope,buildCraneDemandTraceAudit,buildCraneBaseReactionCsv,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
 })(typeof window!=="undefined"?window:globalThis);
 
