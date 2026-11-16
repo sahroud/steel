@@ -32,7 +32,7 @@ function validate(d){
  warnings.push("مقاومت فولاد، گسیختگی مخروطی بتن، بیرون‌کشیدگی، بیرون‌زدگی جانبی، شکست لبه در برش، pryout و الزامات لرزه‌ای هنوز محاسبه نشده‌اند.");
  warnings.push("مقادیر fya، Futa، سطح مؤثر رزوه و ابعاد سر باید از گواهی مصالح و نقشه/کاتالوگ معتبر برداشت شوند؛ مقدار پیش‌فرض یا حدس مجاز نیست.");
  const ok=issues.length===0&&type==="cast_in_headed";
- return{ok,readyForFutureCalculation:ok,anchorType:type,issues,warnings,capacityCalculated:false,analysisEnabled:false,designApproved:false,codeComplianceStatus:"not_evaluated"};
+ return{ok,inputStructurallyComplete:ok,readyForFutureCalculation:false,minimumGeometryStatus:"blocked_source_verification",minimumGeometryClause:"9-18-7",anchorType:type,issues,warnings,capacityCalculated:false,analysisEnabled:false,designApproved:false,codeComplianceStatus:"not_evaluated"};
 }
 function mount(){
  if(!root.document||document.getElementById("anchorDesignInputContract"))return;
@@ -56,13 +56,13 @@ function mount(){
  document.getElementById("adiValidate").addEventListener("click",()=>{
  const d={anchorType:choice("adiType"),rows:val("adiRows"),cols:val("adiCols"),diameterMm:val("adiDia"),fyaMPa:val("adiFya"),futaMPa:val("adiFuta"),hefMm:val("adiHef"),fcMPa:val("adiFc"),memberThicknessMm:val("adiThickness"),memberWidthMm:val("adiWidth"),memberLengthMm:val("adiLength"),headDiameterMm:val("adiHeadDia"),headThicknessMm:val("adiHeadThk"),threadPitchMm:val("adiThread"),edgeXmm:val("adiEdgeX"),edgeZmm:val("adiEdgeZ"),edgeXFarMm:val("adiEdgeXFar"),edgeZFarMm:val("adiEdgeZFar"),pitchXmm:val("adiPitchX"),pitchZmm:val("adiPitchZ"),concreteCondition:choice("adiCrack"),concreteType:choice("adiConcrete"),installation:choice("adiInstall"),edgeReinforcement:choice("adiEdgeRebar")==="yes"?true:choice("adiEdgeRebar")==="no"?false:null,seismicDemand:choice("adiSeismic")==="yes"?true:choice("adiSeismic")==="no"?false:null};
  attest.forEach(x=>d[x[0]]=choice("adi_"+x[0])==="yes");
- const r=validate(d),out=document.getElementById("adiResult");out.textContent=(r.ok?"ورودی‌ها از نظر ساختار اولیه کامل‌اند؛ ظرفیت و انطباق آیین‌نامه‌ای هنوز ارزیابی نشده است.":"ورودی ناقص یا خارج از دامنه محاسبه است.")+"\n"+[...r.issues,...r.warnings].map((x,i)=>(i+1)+". "+x).join("\n");out.dataset.ready=r.readyForFutureCalculation?"true":"false";
+ const r=validate(d),out=document.getElementById("adiResult");out.textContent=(r.ok?"ورودی‌ها از نظر ساختار اولیه کامل‌اند؛ کنترل حداقل‌های بند ۹-۱۸-۷ هنوز مسدود است و ظرفیت/انطباق آیین‌نامه‌ای ارزیابی نشده است.":"ورودی ناقص یا خارج از دامنه محاسبه است.")+"\n"+[...r.issues,...r.warnings].map((x,i)=>(i+1)+". "+x).join("\n");out.dataset.ready=r.readyForFutureCalculation?"true":"false";
  });
 }
 function selfTest(){
  const base={anchorType:"cast_in_headed",rows:2,cols:2,diameterMm:20,fyaMPa:400,futaMPa:700,hefMm:160,fcMPa:30,memberThicknessMm:300,memberWidthMm:500,memberLengthMm:500,headDiameterMm:40,headThicknessMm:12,threadPitchMm:2.5,edgeXmm:150,edgeZmm:150,edgeXFarMm:150,edgeZFarMm:150,pitchXmm:160,pitchZmm:160,concreteCondition:"cracked",concreteType:"normal",installation:"cast_before_concrete",edgeReinforcement:true,seismicDemand:true,manufacturerDataVerified:true,anchorDetailVerified:true,reinforcementLayoutVerified:true,edgeDistanceVerified:true,inspectionPlan:true,installationRecord:true};
  const a=validate(base),b=validate({...base,anchorType:"adhesive"}),c=validate({...base,hefMm:350}),d=validate({...base,pitchXmm:null}),e=validate({...base,concreteCondition:""}),g=validate({...base,memberWidthMm:400}),h=validate({...base,inspectionPlan:false}),j=validate({...base,headDiameterMm:15});
- const checks=[a.ok&&a.readyForFutureCalculation&&!a.capacityCalculated&&!a.designApproved,!b.ok,!c.ok,!d.ok,!e.ok,!g.ok,!h.ok,!j.ok];
+ const checks=[a.ok&&!a.readyForFutureCalculation&&a.minimumGeometryStatus==="blocked_source_verification"&&!a.capacityCalculated&&!a.designApproved,!b.ok,!c.ok,!d.ok,!e.ok,!g.ok,!h.ok,!j.ok];
  return{passed:checks.filter(Boolean).length,failed:checks.filter(x=>!x).length,total:checks.length,checks};
 }
 root.SteelAnchorDesignInputContract={validate,selfTest};
