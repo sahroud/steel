@@ -1496,6 +1496,8 @@
     const wallDeadLoadAudit=loadPathAudit.wallDeadLoadTransfer;
     if(!wallDeadLoadAudit?.success||wallDeadLoadAudit.loadTransferEnabled!==true)throw new Error("انتقال وزن مرده دیوار به تکیه‌گاه‌های فونداسیون کامل نیست: "+(wallDeadLoadAudit?.issues||["ممیزی مسیر بار، انتقال معتبر وزن دیوار را تأیید نکرد."]).join("؛ "));
     const wallDeadNodalLoads=window.SteelWallDeadLoadTransfer.prepareNodalLoads(model,selected.deadFactor,wallDeadLoadAudit);
+    const wallDeadMemberLoads=window.SteelWallDeadLoadTransfer.prepareMemberLineLoads(model,selected.deadFactor,wallDeadLoadAudit);
+    wallDeadMemberLoads.forEach(load=>{const member=analysisModel.members.find(x=>String(x.id)===load.memberId);if(!member)throw new Error("عضو شناژ متناظر با بار دیوار پیدا نشد: "+load.memberId);member.lineLoads.dead=Number(member.lineLoads.dead||0)+load.lineLoadKNm;member.lineLoads.wallMasonryDead=load.lineLoadKNm;});
     let gableWindEccentricTransfer={success:true,loads:[],rows:[],issues:[],analysisEnabled:false,designApproved:false};
     if(selected.directionalWindPressures){
       if(!window.SteelGableEccentricLoadTransfer?.prepareNodalLoads)throw new Error("ماژول انتقال خروج از مرکزیت باد گابل بارگذاری نشده است.");
@@ -1514,7 +1516,7 @@
     const customNodalLoads=[...nodalMap.values()];
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
     result.additionalNodalLoadCount=customNodalLoads.length;
-    result.wallDeadLoadTransfer={totalWeightKN:wallDeadLoadAudit.totalWeightKN,deadFactor:selected.deadFactor,appliedWeightKN:wallDeadLoadAudit.totalWeightKN*selected.deadFactor,faces:wallDeadLoadAudit.rows,nodalLoads:wallDeadNodalLoads};
+    result.wallDeadLoadTransfer={totalWeightKN:wallDeadLoadAudit.totalWeightKN,deadFactor:selected.deadFactor,appliedWeightKN:wallDeadLoadAudit.totalWeightKN*selected.deadFactor,faces:wallDeadLoadAudit.rows,nodalLoads:wallDeadNodalLoads,memberLineLoads:wallDeadMemberLoads,appliedToTieBeamMembers:wallDeadMemberLoads.length>0};
     result.gableWindEccentricTransfer={success:gableWindEccentricTransfer.success,windFactor:gableWindEccentricTransfer.windFactor??0,windSign:gableWindEccentricTransfer.windSign??1,memberCount:gableWindEccentricTransfer.rows.length,nodalLoadCount:gableWindEccentricTransfer.loads.length,rows:gableWindEccentricTransfer.rows,method:gableWindEccentricTransfer.method,analysisEnabled:!!selected.directionalWindPressures,designApproved:false};
     result.loadPathAudit=loadPathAudit;
      result.preparedMemberLoadAudit=preparedMemberLoadAudit;
