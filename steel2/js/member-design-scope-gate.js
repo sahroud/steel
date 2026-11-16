@@ -35,7 +35,7 @@ const LABELS={
  "cold-formed-local-distortional":"کمانش موضعی و اعوجاجی مقطع سردنورد",
  restraint:"مهار جانبی و پیچشی واقعی","biaxial-actions":"بارگذاری دو‌محوره و پیچش",
  connections:"اتصالات و پیچ‌های لاپه/قید",
- "brace-force-demand":"استخراج نیروهای محوری هم‌زمان هر ترکیب",tension:"ظرفیت کششی و گسیختگی مقطع مهاربند",
+ "analysis-integrity":"سلامت تحلیل: تعادل، پوشش اعضا/حالت‌ها و بردارهای نیرو", "brace-force-demand":"استخراج نیروهای محوری هم‌زمان هر ترکیب",tension:"ظرفیت کششی و گسیختگی مقطع مهاربند",
  "unbraced-length":"طول مهارنشده و ضریب طول مؤثر مستند","collector-diaphragm":"دیافراگم و جمع‌کننده و انتقال بار طولی مستند",
  "local-distortional-buckling":"کمانش موضعی و اعوجاجی مقطع","exact-section":"هندسه و خواص مقطع واقعی","wheel-load-envelope":"قطار بار چرخ و پوش نیروهای جرثقیل",
  "web-crippling":"لهیدگی جان و اثر بار متمرکز چرخ","fatigue":"خستگی و طیف چرخه بار","serviceability":"تغییرمکان و ارتعاش بهره‌برداری",
@@ -49,11 +49,24 @@ function audit(){
  const workbench=root.SteelLoadCaseWorkbench?.read?.()||null;
  const combinationAudit=workbench&&root.SteelLoadCaseWorkbench?.audit?root.SteelLoadCaseWorkbench.audit(workbench):null;
  const proposal=demand?.combinationProposal||null;
+ const integrityIssues=[];
+ if(!env)integrityIssues.push("پوش نیرو/خروجی تحلیل هنوز ساخته نشده است.");
+ else{
+  if(env.allCasesEquilibriumOK!==true)integrityIssues.push("تعادل عددی تمام حالت‌های تحلیل تأیید نشده است.");
+  if(env.caseLabelCoverageOK!==true)integrityIssues.push("پوشش کامل و یکتای برچسب ترکیب‌های تحلیل تأیید نشده است.");
+  if((env.invalidForceVectors||[]).length)integrityIssues.push("بردارهای نیروی انتهایی نامعتبر وجود دارد.");
+  if((env.unreportedMemberIds||[]).length)integrityIssues.push("اعضای مدل در گزارش نیرو جا افتاده‌اند.");
+  if((env.extraMemberIds||[]).length)integrityIssues.push("شناسه عضو خارج از مدل در گزارش نیرو وجود دارد.");
+  if((env.analysisMemberSetMismatchCases||[]).length)integrityIssues.push("مجموعه اعضای تحلیل بین حالت‌های بار یکسان نیست.");
+  if((env.duplicateMemberIdsByCase||[]).length)integrityIssues.push("شناسه عضو در یک حالت تحلیل تکراری است.");
+  if(env.taperedForceTrace?.applicable===true&&env.taperedForceTrace?.allApplicableCasesComplete!==true)integrityIssues.push("ردیابی نیرو در قطعات تیرورق متغیرمقطع کامل نیست.");
+ }
  const combinationBridge={engineAvailable:!!root.SteelMemberDemandCombinationBridge?.build,proposalExecuted:!!proposal,proposalSuccess:proposal?.success===true,status:proposal?.status||"not-executed",issues:Array.isArray(proposal?.issues)?proposal.issues.slice():[],designApproved:false};
  const combinationStatus={available:!!combinationAudit,success:combinationAudit?.success===true,loadCaseCount:Array.isArray(workbench?.loadCases)?workbench.loadCases.length:0,combinationCount:Array.isArray(workbench?.combinations)?workbench.combinations.length:0,issues:Array.isArray(combinationAudit?.issues)?combinationAudit.issues.slice():[],linkedToDemandPackage:proposal?.success===true,solverDemandCasesAvailable:proposal?.success===true,designApproved:false};
  const rows=GROUPS.map(g=>{
   const members=Array.isArray(env?.members)?env.members.filter(m=>g.key==="braces"?["wallBrace","roofBrace"].includes(m.sectionKey):m.sectionKey===g.key):[];
   const missing=[...g.required];
+  if(integrityIssues.length)missing.unshift("analysis-integrity");
   if(g.key==="braces"&&root.SteelBraceForceDemandAudit?.audit&&env){const br=root.SteelBraceForceDemandAudit.audit(env,root.SteelStructuralModel?.getData?.());if(br.success)missing.splice(missing.indexOf("brace-force-demand"),1);}
   if(!members.length)missing.unshift("وجود اعضا و نیروهای معتبر در مدل");
   if(g.key==="column"&&root.SteelCompressionCapacity?.analyze)missing.splice(missing.indexOf("compression"),1);
@@ -67,7 +80,7 @@ function audit(){
   if(["roofPurlin","wallGirt","endGirt"].includes(g.key)&&root.SteelColdFormedMemberContract?.audit)supported.push("قرارداد ممیزی خواص واقعی، کمانش موضعی/اعوجاجی، مهار، تقاضای هم‌زمان و اتصالات؛ بدون محاسبه ظرفیت");
   return {group:g.key,label:g.label,memberCount:members.length,availableLimitedEngines:supported,missing:blockers,status:blockers.length?"blocked":"limited-only",designApproved:false};
  });
- return {designApproved:false,rows,demandPackage,combinationStatus,combinationBridge,summary:{groups:rows.length,blocked:rows.filter(x=>x.status==="blocked").length,limitedOnly:rows.filter(x=>x.status==="limited-only").length,demandPackageAvailable:demandPackage.available,demandPackageComplete:demandPackage.success,documentedCombinationSetValid:combinationStatus.success,combinationsLinkedToDemand:combinationStatus.linkedToDemandPackage},rules:[
+ return {designApproved:false,rows,demandPackage,combinationStatus,combinationBridge,analysisIntegrity:{success:integrityIssues.length===0,issues:integrityIssues},summary:{groups:rows.length,blocked:rows.filter(x=>x.status==="blocked").length,limitedOnly:rows.filter(x=>x.status==="limited-only").length,demandPackageAvailable:demandPackage.available,demandPackageComplete:demandPackage.success,documentedCombinationSetValid:combinationStatus.success,combinationsLinkedToDemand:combinationStatus.linkedToDemandPackage},rules:[
   "بسته تقاضای ایستگاهی فقط در صورت ساخت موفق نمایش داده می‌شود؛ این وضعیت به‌تنهایی مجوز طراحی نیست.",
   "ممیزی ترکیب‌ها در دفترچه شواهد، جایگزین اجرای تحلیل اثر ترکیب‌ها و اتصال آن‌ها به بسته تقاضا نیست.",
   "هیچ‌یک از مسیرهای این ممیزی مجوز طراحی اجرایی صادر نمی‌کند.",
@@ -98,7 +111,8 @@ function selfTest(){
  {name:"no group receives design approval",ok:r.rows.every(x=>x.designApproved===false)&&r.designApproved===false},
   {name:"demand package status is exposed without design approval",ok:r.demandPackage&&r.demandPackage.designApproved===false&&r.designApproved===false},
   {name:"combination audit is not treated as solver demand linkage",ok:r.combinationStatus&&r.combinationStatus.linkedToDemandPackage===false&&r.combinationStatus.solverDemandCasesAvailable===false},
-  {name:"combination demand bridge is surfaced as unexecuted and non-approving",ok:r.combinationBridge&&r.combinationBridge.designApproved===false&&r.combinationBridge.proposalExecuted===false}
+  {name:"combination demand bridge is surfaced as unexecuted and non-approving",ok:r.combinationBridge&&r.combinationBridge.designApproved===false&&r.combinationBridge.proposalExecuted===false},
+ {name:"analysis equilibrium and coverage integrity are mandatory",ok:r.rows.every(x=>x.missing.includes("سلامت تحلیل: تعادل، پوشش اعضا/حالت‌ها و بردارهای نیرو"))}
  ];
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,tests};
 }
@@ -109,7 +123,7 @@ function render(){
  const d=r.demandPackage,k=r.combinationStatus;
  const bridgeText="مبدل تقاضای ترکیبی: "+(r.combinationBridge.proposalExecuted?(r.combinationBridge.proposalSuccess?"پیشنهاد ترکیب نیرو ساخته شده؛ تأیید طراحی نیست":"اجرا شده اما مسدود/ناموفق"):(r.combinationBridge.engineAvailable?"آماده استفاده؛ هنوز اجرا نشده":"ماژول بارگذاری نشده"))+".";
  const demandText="بسته تقاضا: "+(d.available?(d.success?"ساخته شده؛ "+d.caseCount+" حالت و "+d.memberCount+" عضو":"ناقص / ناموفق"):"هنوز ساخته نشده")+" — دفترچه ترکیب‌ها: "+k.combinationCount+" از "+k.loadCaseCount+" حالت بار؛ "+(k.success?"ممیزی ساختاری موفق":"ممیزی ناقص یا ناموفق")+" — اتصال تقاضای تحلیل به پیشنهاد ترکیب: "+(k.linkedToDemandPackage?"انجام شده":"انجام نشده")+"؛ این اتصال ظرفیت عضو را تأیید نمی‌کند.";
- const details=[...d.issues,...d.blockers,...k.issues,...r.combinationBridge.issues].filter(Boolean);
+ const details=[...r.analysisIntegrity.issues,...d.issues,...d.blockers,...k.issues,...r.combinationBridge.issues].filter(Boolean);
  host.innerHTML="<h4>وضعیت مسیر طراحی اعضا</h4><p>گروه‌های مسدود: "+r.summary.blocked+" از "+r.summary.groups+" — هیچ گروهی تأیید طراحی نشده است.</p><div class='notice'>"+esc(bridgeText)+"<br>"+esc(demandText)+(details.length?"<br>"+esc(details.join("؛ ")):"")+"</div><div style='overflow-x:auto'><table class='data-table'><thead><tr><th>گروه</th><th>تعداد اعضای دارای پوش نیرو</th><th>موتور محدود موجود</th><th>موارد تکمیل‌نشده</th><th>وضعیت</th></tr></thead><tbody>"+r.rows.map(x=>"<tr><td>"+esc(x.label)+"</td><td>"+x.memberCount+"</td><td>"+esc(x.availableLimitedEngines.join("، ")||"ندارد")+"</td><td>"+esc(x.missing.join("؛ "))+"</td><td>مسدود / غیرنهایی</td></tr>").join("")+"</tbody></table></div><div class='notice'>"+r.rules.map(esc).join("<br>")+"</div>";
 }
 function init(){
