@@ -25,14 +25,49 @@ function mount(){
  const panel=$("baseReactionTransferPanel");if(!panel||$("brtAnchorDemandRun"))return;
  const box=root.document.createElement("section");box.className="panel";box.id="brtAnchorDemandPanel";
  box.innerHTML=`<div class="panel-title"><h3>توزیع واکنش انتخابی بین تک‌تک انکرها</h3><span class="status">تقاضا؛ بدون تأیید ظرفیت</span></div><div class="notice">پس از استخراج واکنش‌ها، یک گره پایه و یک حالت بار را انتخاب کنید. آرایش و گام بولت‌ها از پنل گروه بولت خوانده می‌شود؛ پیش از محاسبه باید هم قرارداد علامت و هم تطبیق هندسه با نقشه اجرایی را تأیید کرده باشید. هر حالت بار جداگانه محاسبه می‌شود.</div><div class="button-grid"><button id="brtAnchorDemandRun" class="btn primary" type="button">محاسبه تقاضای انکرهای این حالت</button><button id="brtAnchorDemandJson" class="btn secondary" type="button" disabled>گزارش JSON تقاضای انکر</button></div><div id="brtAnchorDemandSummary" class="notice">هنوز تقاضای انکر برای حالت انتخابی محاسبه نشده است.</div><div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:760px"><thead><tr><th>انکر</th><th>X (m)</th><th>Z (m)</th><th>کشش (kN)</th><th>فشار محوری (kN)</th><th>برش X (kN)</th><th>برش Z (kN)</th><th>برش برآیند (kN)</th></tr></thead><tbody id="brtAnchorDemandRows"></tbody></table></div>
+<div class="notice" style="margin-top:16px"><strong>تقاضای جرثقیل سقفی در پای ستون و گروه انکر</strong><br>پس از اجرای جاروب کامل و موفق موقعیت‌های جرثقیل، گره پایه و موقعیت قطار را انتخاب کنید. هندسه گروه انکر واردشده در همین پنل فقط برای پایه انتخابی استفاده می‌شود؛ برای پایه‌های دیگر باید هندسه جداگانه تعریف و تأیید شود. این مسیر هر موقعیت را مستقل نگه می‌دارد و با ترکیبات بار عادی جمع نمی‌کند.</div><div class="form-grid"><div class="field"><label for="brtCraneNode">گره پایه جرثقیل</label><select id="brtCraneNode"><option value="">ابتدا جاروب جرثقیل را اجرا کنید</option></select></div><div class="field"><label for="brtCraneCase">موقعیت جرثقیل</label><select id="brtCraneCase"><option value="">ابتدا جاروب جرثقیل را اجرا کنید</option></select></div></div><div class="button-grid"><button id="brtCraneAnchorRun" class="btn primary" type="button">محاسبه تقاضای انکر در موقعیت جرثقیل</button><button id="brtCraneAnchorJson" class="btn secondary" type="button" disabled>گزارش JSON تقاضای جرثقیل/انکر</button></div><div id="brtCraneAnchorSummary" class="notice">هنوز تقاضای جرثقیل به گروه انکر منتقل نشده است.</div>
 <div class="notice" style="margin-top:12px">غربال مستقل مقاومت فولادی انکرها: پارامترهای Fnt، Fnv، Ase و φ را فقط از آیین‌نامه و مشخصات واقعی انکر وارد کنید. کشش و برش جداگانه سنجیده می‌شوند؛ اندرکنش و شکست بتن در این بخش کنترل نمی‌شود.</div>
 <div class="form-grid"><div class="field"><label>سطح مؤثر کششی Ase (mm²)</label><input id="brtAsAse" type="number" min="0" step="0.1"></div><div class="field"><label>تنش اسمی کششی Fnt (MPa)</label><input id="brtAsFnt" type="number" min="0" step="1"></div><div class="field"><label>تنش اسمی برشی Fnv (MPa)</label><input id="brtAsFnv" type="number" min="0" step="1"></div><div class="field"><label>ضریب مقاومت کشش φt</label><input id="brtAsPhiT" type="number" min="0" max="1" step="0.01"></div><div class="field"><label>ضریب مقاومت برش φv</label><input id="brtAsPhiV" type="number" min="0" max="1" step="0.01"></div></div>
 <div class="button-grid"><button id="brtAnchorSteelRun" class="btn secondary" type="button">مقایسه مقاومت فولادی تک‌تک انکرها</button></div><div id="brtAnchorSteelSummary" class="notice">پس از محاسبه تقاضای انکر، پارامترهای مستند را وارد کنید.</div>
 <div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:680px"><thead><tr><th>انکر / حالت</th><th>نسبت کشش</th><th>نسبت برش</th><th>ظرفیت کشش (kN)</th><th>ظرفیت برش (kN)</th><th>وضعیت غربال جداگانه</th></tr></thead><tbody id="brtAnchorSteelRows"></tbody></table></div>`;
  panel.insertAdjacentElement("afterend",box);
- let last=null;
+ let last=null,lastCrane=null;
+ const craneNode=$("brtCraneNode"),craneCase=$("brtCraneCase"),craneSummary=$("brtCraneAnchorSummary"),craneRun=$("brtCraneAnchorRun"),craneJson=$("brtCraneAnchorJson");
+ function refreshCraneChoices(){
+  const envelope=root.SteelCrane3DLoadTransfer?.getLastAutomaticEnvelope?.(),trace=envelope?.demandTraceAudit;
+  const model=root.SteelStructuralModel?.build?.()||root.SteelStructuralModel?.model;
+  const audit=root.SteelFoundationReactionBridge?.auditCraneDemandTrace?.(trace,model);
+  craneNode.replaceChildren();craneCase.replaceChildren();
+  if(!audit?.ok){craneNode.add(new Option("جاروب کامل/ممیزی موفق موجود نیست",""));craneCase.add(new Option("موقعیت موجود نیست",""));return false;}
+  [...new Set(audit.demands.map(d=>d.nodeId))].forEach(id=>craneNode.add(new Option(id,id)));
+  audit.cases.forEach(c=>craneCase.add(new Option(c.label,c.label)));
+  return true;
+ }
+ craneRun.addEventListener("click",()=>{
+  try{
+   const envelope=root.SteelCrane3DLoadTransfer?.getLastAutomaticEnvelope?.(),trace=envelope?.demandTraceAudit;
+   const model=root.SteelStructuralModel?.build?.()||root.SteelStructuralModel?.model;
+   const audit=root.SteelFoundationReactionBridge?.auditCraneDemandTrace?.(trace,model);
+   if(!audit?.ok)throw Error(audit?.issues?.join("؛ ")||"ابتدا جاروب کامل جرثقیل را اجرا کنید.");
+   const nodeId=craneNode.value,caseId=craneCase.value;
+   const demand=audit.demands.find(d=>d.nodeId===nodeId&&d.caseId===caseId);
+   if(!demand)throw Error("تقاضای مستقل این پایه/موقعیت در ردیابی جرثقیل یافت نشد.");
+   const v=demand.columnActionN_Nm,selection={row:{nodeId},case:{label:caseId},mapped:{Vx_kN:v[0]/1000,N_tensionPositive_kN:v[1]/1000,Vz_kN:v[2]/1000,Mx_kNm:v[3]/1000,Ty_kNm:v[4]/1000,Mz_kNm:v[5]/1000}};
+   const layout=root.SteelAnchorDemandScreen?.getData?.();
+   lastCrane=calculateSelected(selection,layout);
+   if(!lastCrane.ok)throw Error(lastCrane.issues.join("؛ "));
+   lastCrane.cranePosition={caseId,caseIndex:demand.caseIndex,referencePosition_m:demand.referencePosition_m};
+   const f=x=>(x/1000).toLocaleString("fa-IR",{maximumFractionDigits:4});
+   craneSummary.textContent="گره "+nodeId+" | "+caseId+" | موقعیت قطار: "+demand.referencePosition_m+" m | تعداد انکر: "+lastCrane.anchors.length+" | بیشینه کشش: "+f(Math.max(...lastCrane.anchors.map(a=>a.tensionDemand_N)))+" kN | بیشینه برش: "+f(Math.max(...lastCrane.anchors.map(a=>a.resultantShear_N)))+" kN | تعادل: "+(lastCrane.equilibrium.ok?"برقرار":"نامعتبر")+". فقط تقاضا؛ نه ظرفیت‌سنجی یا تأیید طراحی.";
+   const body=$("brtAnchorDemandRows");body.replaceChildren();
+   lastCrane.anchors.forEach(a=>{const tr=root.document.createElement("tr");[a.anchorId,a.x_m,a.z_m,f(a.tensionDemand_N),f(a.compressionDemand_N),f(a.totalShearX_N),f(a.totalShearZ_N),f(a.resultantShear_N)].forEach(x=>{const td=root.document.createElement("td");td.textContent=String(x);tr.appendChild(td);});body.appendChild(tr);});
+   craneJson.disabled=false;
+  }catch(e){lastCrane=null;craneSummary.textContent="انتقال/محاسبه متوقف شد: "+String(e.message||e);craneJson.disabled=true;}
+ });
+ craneJson.addEventListener("click",()=>{if(!lastCrane)return;const blob=new Blob([JSON.stringify({schema:"SAHROUD-STEEL-CRANE-ANCHOR-DEMAND-1.0",generatedAt:new Date().toISOString(),analysisEnabled:false,designApproved:false,result:lastCrane},null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=root.document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Crane-Anchor-Demand.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
  $("brtAnchorDemandRun").addEventListener("click",()=>{
   try{
+   refreshCraneChoices();
    const selection=root.SteelBaseReactionTransfer?.selected?.();
    const layout=root.SteelAnchorDemandScreen?.getData?.();
    last=calculateSelected(selection,layout);
@@ -66,6 +101,6 @@ function selfTest(){
  ck("requires as-built geometry confirmation",()=>{try{calculateSelected(selection,{rows:2,cols:2,pitchX:100,pitchZ:100,signConfirmed:true});return false;}catch(e){return e.message.includes("هندسه");}});
  return{passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
-root.SteelAnchorCaseDemandUI={buildAnchors,calculateSelected,selfTest,mount};
+root.SteelAnchorCaseDemandUI={buildAnchors,calculateSelected,refreshCraneChoices,selfTest,mount};
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
