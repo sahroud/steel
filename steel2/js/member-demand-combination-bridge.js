@@ -34,7 +34,7 @@ function build(demandPackage,combinationSet,assumptions){
  const packageCaseIds=Array.isArray(p.caseIds)?p.caseIds.map(txt):[];
  const caseIds=new Set();
  loadCases.forEach(c=>{const id=txt(c?.id);if(!id)issues.push("حالت بار بدون شناسه است.");if(caseIds.has(id))issues.push("شناسه حالت بار تکراری است: "+id);caseIds.add(id);if(!packageCaseIds.includes(id))issues.push("حالت بار "+id+" در بسته تقاضا موجود نیست.");});
- const registryInput={loadCases:loadCases.map(c=>({id:c.id,category:c.category||"evidence"})),combinations};
+ const registryInput={loadCases:loadCases.map(c=>({id:c.id,category:c.category})),combinations};
  const registry=root.SteelLoadCombinationRegistry?.auditDefinitions?.(registryInput);
  if(!registry)issues.push("رجیستری ترکیب بار بارگذاری نشده است.");
  else issues.push(...registry.issues);
@@ -106,6 +106,7 @@ function selfTest(){
   ["source case IDs and explicit factors retained",()=>ok.proposals[0].factors.D===1.2&&ok.proposals[0].members[0].stations[0].sourceCaseIds.length===2],
   ["missing assumptions fail closed",()=>!build(pkg,combos,{}).success],
   ["missing code source rejected",()=>{const x=JSON.parse(JSON.stringify(combos));delete x.combinations[0].source.clause;return !build(pkg,x,assumptions).success;}],
+  ["missing load-case category is not defaulted",()=>{const x=JSON.parse(JSON.stringify(combos));x.loadCases[0].category="";return !build(pkg,x,assumptions).success;}],
   ["unknown factor case rejected",()=>{const x=JSON.parse(JSON.stringify(combos));x.combinations[0].factors.X=1;return !build(pkg,x,assumptions).success;}],
   ["missing member case rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases.pop();return !build(x,combos,assumptions).success;}],
   ["station coordinate mismatch rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[1].xMember_m=2.1;return !build(x,combos,assumptions).success;}],
