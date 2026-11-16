@@ -48,19 +48,25 @@ function auditCraneDemandTrace(trace,model){
  const nodeMap=new Map(bases.map(n=>[String(n.id),n]));
  const expected=new Set((trace?.cases||[]).map(c=>String(c.caseIndex)+"|"+String(c.referencePosition_m)));
  if(expected.size!==(trace?.cases||[]).length)issues.push("شناسه موقعیت/حالت جرثقیل تکراری است.");
- const demands=[],seen=new Set(),coverage=new Map();
+ const demands=[],seen=new Set(),coverage=new Map(),supportRowsSeen=new Set();
  (trace?.supports||[]).forEach(row=>{
-  const nodeId=String(row?.nodeId??""),node=nodeMap.get(nodeId);
+  const nodeId=String(row?.nodeId??"");
+  if(supportRowsSeen.has(nodeId))issues.push("ردیف پایه تکراری در بسته ردیابی جرثقیل: "+nodeId);
+  supportRowsSeen.add(nodeId);
+  const node=nodeMap.get(nodeId);
   if(!node){issues.push("گره واکنش جرثقیل در مدل پایه واقعی وجود ندارد: "+nodeId);return;}
   if(![node.x,node.y,node.z].every(finite)){issues.push("مختصات گره پایه جرثقیل نامعتبر است: "+nodeId);return;}
   const entries=Array.isArray(row.cases)?row.cases:[];
   if(entries.length!==expected.size)issues.push("پوش موقعیت‌های جرثقیل برای پایه "+nodeId+" ناقص است.");
   entries.forEach(c=>{
    const key=String(c?.caseIndex)+"|"+String(c?.referencePosition_m);
+   if(!Number.isInteger(c?.caseIndex)||!finite(c?.referencePosition_m))issues.push("شماره حالت یا موقعیت جرثقیل برای پایه "+nodeId+" معتبر نیست.");
    if(!expected.has(key))issues.push("حالت/موقعیت ناشناخته برای پایه "+nodeId+": "+key);
    const unique=nodeId+"|"+key;if(seen.has(unique))issues.push("تقاضای تکراری پایه/موقعیت جرثقیل: "+unique);seen.add(unique);
    const a=c?.columnAction,r=c?.solverReaction,keys=["Fx","Fy","Fz","Mx","My","Mz"];
    if(!a||!r||![...keys.map(k=>a[k]),...keys.map(k=>r[k])].every(finite)){issues.push("بردار واکنش/کنش ستون شش‌مؤلفه‌ای نامعتبر: "+unique);return;}
+   const signTolerance=1e-7*Math.max(1,...keys.map(k=>Math.abs(r[k])));
+   if(keys.some(k=>Math.abs(a[k]+r[k])>signTolerance)){issues.push("قرارداد علامت کنش ستون و واکنش حل‌گر در شش مؤلفه برای "+unique+" برقرار نیست؛ انتقال به انکر متوقف شد.");return;}
    const caseId="CRANE-"+(Number(c.caseIndex)+1)+"@"+Number(c.referencePosition_m).toFixed(4)+"m";
    demands.push({nodeId,caseId,caseIndex:c.caseIndex,referencePosition_m:c.referencePosition_m,
     coordinatesM:{x:Number(node.x),y:Number(node.y),z:Number(node.z)},kind:node.kind,
@@ -152,6 +158,8 @@ function selfTest(){
   ck("never enables analysis or design approval",()=>{const r=audit(env,model);return !r.analysisEnabled&&!r.designApproved&&r.demands.every(d=>d.torsionDesignRequired);});
   ck("adapts structural load-chain output without mixing cases",()=>{const run={success:true,results:env.cases.map((c,i)=>({id:c.label,label:c.label,equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:values[0]*(i+1),Fy:values[1],Fz:values[2],Mx:values[3],My:values[4],Mz:values[5]}}]}))};const r=auditStructuralRun(run,model);return r.ok&&r.demands.length===2&&r.demands[0].caseId!==r.demands[1].caseId;});
   ck("adapts crane support actions per physical base and position",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2},{caseIndex:1,referencePosition_m:4}],supports:[{nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}},{caseIndex:1,referencePosition_m:4,solverReaction:{Fx:2,Fy:3,Fz:4,Mx:5,My:6,Mz:7},columnAction:{Fx:-2,Fy:-3,Fz:-4,Mx:-5,My:-6,Mz:-7}}]}]};const r=auditCraneDemandTrace(trace,model);return r.ok&&r.demands.length===2&&r.demands[1].caseId.includes("@4.0000m")&&r.demands[0].columnActionN_Nm[4]===-5;});
+  ck("rejects inconsistent solver-reaction and column-action signs",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2}],supports:[{nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:5,Mz:-6}}]}]};return !auditCraneDemandTrace(trace,model).ok;});
+  ck("rejects duplicate physical support rows",()=>{const row={nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]};const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2}],supports:[row,JSON.parse(JSON.stringify(row))]};return !auditCraneDemandTrace(trace,model).ok;});
   ck("rejects incomplete crane position coverage",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2},{caseIndex:1,referencePosition_m:4}],supports:[{nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}]};return !auditCraneDemandTrace(trace,model).ok;});
   ck("blocks crane support IDs absent from physical base nodes",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2}],supports:[{nodeId:"GHOST",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}]};return !auditCraneDemandTrace(trace,model).ok;});
   ck("rejects structural run with failed equilibrium",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:false},reactions:[]}]};return !auditStructuralRun(run,model).ok;});
