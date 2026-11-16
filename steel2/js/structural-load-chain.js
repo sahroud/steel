@@ -14,7 +14,7 @@ function auditSolverContract(api,model){
  if(!api||typeof api.getData!=="function")issues.push("SteelStructuralModel.getData() در دسترس نیست.");
  if(!Array.isArray(model?.nodes)||!Array.isArray(model?.members))issues.push("مدل باید آرایه گره‌ها و اعضا داشته باشد.");
  const ids=new Set();
- (model?.nodes||[]).forEach(n=>{const id=String(n?.id??"");if(!id||ids.has(id))issues.push("شناسه گره خالی یا تکراری است: "+id);ids.add(id);});
+ (model?.nodes||[]).forEach(n=>{const id=String(n?.id??"");if(!id||ids.has(id))issues.push("شناسه گره خالی یا تکراری است: "+id);ids.add(id);if(![n?.x,n?.y,n?.z].every(finite))issues.push("مختصات سه‌بعدی گره "+(id||"?")+" ناقص یا نامعتبر است.");});
  const supports=supportNodes(model);
  if(!supports.length)issues.push("گره پایه با kind=base یا endwall-base در مدل پیدا نشد.");
  const memberIds=new Set();
@@ -38,7 +38,8 @@ function extractSupportReactions(result,model){
   // Solver reaction is support-on-structure; the opposite is the column action
   // delivered to the base plate/anchors/foundation.
   const columnAction=reaction.map(v=>-v);
-  return{nodeId:String(n.id),coordinatesM:{x:Number(n.x)||0,y:Number(n.y)||0,z:Number(n.z)||0},kind:n.kind,
+  if(![n.x,n.y,n.z].every(finite))throw Error("مختصات گره پایه "+String(n.id)+" باید سه مؤلفه عددی معتبر داشته باشد.");
+  return{nodeId:String(n.id),coordinatesM:{x:n.x,y:n.y,z:n.z},kind:n.kind,
    solverReaction:{Fx:reaction[0],Fy:reaction[1],Fz:reaction[2],Mx:reaction[3],My:reaction[4],Mz:reaction[5]},
    columnAction:{Fx:columnAction[0],Fy:columnAction[1],Fz:columnAction[2],Mx:columnAction[3],My:columnAction[4],Mz:columnAction[5]},
    units:{force:"N",moment:"N.m"},designStatus:"demand_only_not_designed"};
@@ -256,6 +257,7 @@ function selfTest(){
  ck("solver contract accepted",()=>auditSolverContract(api,model).ready);
  ck("missing solver blocked",()=>!auditSolverContract({},model).ready);
  ck("missing base nodes blocked",()=>!auditSolverContract(api,{nodes:[{id:"N"}],members:[]}).ready);
+  ck("nonfinite model node coordinates blocked",()=>!auditSolverContract(api,{nodes:[{id:"B",x:0,y:0,z:NaN,kind:"base"}],members:[]}).ready);
  ck("duplicate node blocked",()=>!auditSolverContract(api,{nodes:[{id:"B",kind:"base"},{id:"B",kind:"base"}],members:[]}).ready);
  const res={reactions:[{nodeId:"B1",values:[100,200,300,4,5,6]},{nodeId:"B2",values:[-10,-20,-30,-1,-2,-3]}]};
  const x=extractSupportReactions(res,model);
@@ -266,6 +268,7 @@ function selfTest(){
  ck("nodal moment sum retained separately",()=>x.componentwiseNodalMomentSum.Mx===3&&x.componentwiseNodalMomentSum.My===3&&x.componentwiseNodalMomentSum.Mz===3);
  ck("global resultant reference is explicit",()=>x.resultantMomentReference.includes("global origin"));
  ck("missing support reaction blocked",()=>{try{extractSupportReactions({reactions:[res.reactions[0]]},model);return false;}catch(e){return true;}});
+  ck("missing support coordinate blocked instead of silently replacing it with zero",()=>{try{extractSupportReactions(res,{...model,nodes:model.nodes.map(n=>n.id==="B1"?{...n,x:undefined}:n)});return false;}catch(e){return true;}});
  ck("duplicate reaction blocked",()=>{try{extractSupportReactions({reactions:[res.reactions[0],res.reactions[0],res.reactions[1]]},model);return false;}catch(e){return true;}});
  ck("nonfinite reaction blocked",()=>{try{extractSupportReactions({reactions:[{nodeId:"B1",values:[0,0,0,0,0,NaN]},{nodeId:"B2",values:[0,0,0,0,0,0]}]},model);return false;}catch(e){return true;}});
  const eqGood={ok:true,appliedForceN:[0,-1000,0],supportReactionN:[0,1000,0],forceResidualN:[0,0,0],appliedMomentNm:[0,0,0],supportMomentNm:[0,0,0],momentResidualNm:[0,0,0],relativeForceResidual:0,relativeMomentResidual:0};
