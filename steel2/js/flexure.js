@@ -208,7 +208,7 @@
                         <td>${fmt(c.sxMinCm3)}</td>
                         <td>${fmt(c.nominalKNm)}</td>
                         <td>${fmt(c.designKNm)}</td>
-                        <td>${fmt(r.demand)}</td>
+                        <td>${hasDemand?fmt(r.demand):"—"}</td>
                         <td>${hasDemand?fmt(r.ratio):"—"}</td>
                         <td>${!hasDemand?"فاقد داده ـ کنترل نشد":pass ? "قبول مقدماتی" : "نیاز به بررسی"}</td>
                         <td>${esc(r.combination)}</td>
