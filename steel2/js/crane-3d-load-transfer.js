@@ -162,6 +162,24 @@ function applyVerticalImpact(input,factor){
  }
  return out;
 }
+function auditMainFrameMemberCoverage(model,samples,rows){
+ const issues=[],members=Array.isArray(model?.members)?model.members:[];
+ const byId=new Map((rows||[]).map(r=>[String(r.id),r]));
+ const families=[{key:"column",label:"ستون قاب اصلی"},{key:"rafter",label:"رفتر قاب اصلی"}];
+ const summary={};
+ families.forEach(f=>{
+  const expected=members.filter(m=>m.sectionKey===f.key);
+  const missing=expected.filter(m=>{
+   const row=byId.get(String(m.id));
+   return !row||Number(row.caseCount)!==samples.length||!Array.isArray(row.simultaneousCases)||row.simultaneousCases.length!==samples.length;
+  });
+  const valid=expected.length-missing.length;
+  summary[f.key]={label:f.label,memberCount:expected.length,coveredCount:valid,missingMemberIds:missing.map(m=>String(m.id))};
+  if(!expected.length)issues.push("هیچ عضو "+f.label+" در مدل اصلی برای ردیابی اثر جرثقیل وجود ندارد.");
+  if(missing.length)issues.push("پوش نیروی "+f.label+" در همه موقعیت‌های جرثقیل کامل نیست: "+missing.slice(0,10).map(m=>String(m.id)).join("، "));
+ });
+ return {success:issues.length===0,caseCount:samples.length,families:summary,issues,scope:"پوش نیروهای انتهایی اعضای ستون و رفتر قاب اصلی در هر موقعیت جرثقیل؛ مقادیر محلی اعضا هستند و برآیند گره‌ای/طراحی اتصال محسوب نمی‌شوند."};
+}
 function buildMovingForceEnvelope(model,results){
  const api=root.SteelMemberForceEnvelope;
  if(!api?.buildRows||!api?.auditCoverage)throw Error("ماژول پوش نیروهای اعضا در دسترس نیست.");
@@ -175,7 +193,9 @@ function buildMovingForceEnvelope(model,results){
  const rows=api.buildRows(model,samples),coverage=api.auditCoverage(model,samples,rows);
  if(coverage.invalidForceVectors.length||coverage.analysisMemberSetMismatchCases.length||coverage.duplicateMemberIdsByCase.length||coverage.unreportedMemberIds.length)throw Error("پوش نیروهای جرثقیل ناقص است: بردار نامعتبر "+coverage.invalidForceVectors.length+"، اختلاف اعضا "+coverage.analysisMemberSetMismatchCases.length+"، عضو گزارش‌نشده "+coverage.unreportedMemberIds.length);
  if(rows.some(r=>r.caseCount!==samples.length))throw Error("برای بعضی اعضا نیروی هر موقعیت جرثقیل ثبت نشده است.");
- return {rows,coverage,cases:samples.map(x=>({label:x.label,caseIndex:x.caseIndex,referencePosition_m:x.referencePosition_m,equilibrium:x.equilibrium})),units:"N,N.m",simultaneousEndForcesPreserved:true,scope:"پوش مؤلفه‌ای نیروهای انتهایی؛ کنترل ظرفیت و اندرکنش آیین‌نامه‌ای نیست."};
+ const mainFrameCoverage=auditMainFrameMemberCoverage(model,samples,rows);
+ if(!mainFrameCoverage.success)throw Error("ردیابی اثر جرثقیل تا اعضای اصلی ستون و رفتر کامل نیست: "+mainFrameCoverage.issues.join("؛ "));
+ return {rows,coverage,mainFrameCoverage,cases:samples.map(x=>({label:x.label,caseIndex:x.caseIndex,referencePosition_m:x.referencePosition_m,equilibrium:x.equilibrium})),units:"N,N.m",simultaneousEndForcesPreserved:true,scope:"پوش مؤلفه‌ای نیروهای انتهایی؛ کنترل ظرفیت و اندرکنش آیین‌نامه‌ای نیست."};
 }
 async function analyzeAllFromUI(options){
  const opt=options||{},progress=typeof opt.onProgress==="function"?opt.onProgress:()=>{},maxCases=Number.isInteger(opt.maxCases)&&opt.maxCases>0?opt.maxCases:300;
@@ -226,7 +246,7 @@ async function analyzeAllFromUI(options){
  const critical=results.reduce((best,x)=>!best||x.maxTranslation_m>best.maxTranslation_m?x:best,null);
  let memberForceEnvelope;
  try{memberForceEnvelope=buildMovingForceEnvelope(model,results);}catch(e){return {success:false,analysisEnabled:false,total:results.length,completed:results.length,issues:["استخراج پوش نیروهای اعضای جرثقیل ناموفق است: "+String(e.message||e)],results};}
- lastAutomaticEnvelope={success:true,analysisEnabled:false,total:results.length,results,memberForceEnvelope,criticalCase:critical?.caseIndex??null,maxTranslation_m:critical?.maxTranslation_m??null,
+ lastAutomaticEnvelope={success:true,analysisEnabled:false,total:results.length,results,memberForceEnvelope,mainFrameCoverage:memberForceEnvelope.mainFrameCoverage,criticalCase:critical?.caseIndex??null,maxTranslation_m:critical?.maxTranslation_m??null,
   loadBasis:"بار مرده و وزن خود اعضا + بار چرخ‌های قائم با ضریب دینامیکی قائم اعمال‌شده + نیروهای افقی مستند در صورت فعال‌بودن؛ هر موقعیت قطار جداگانه حل شده است.",
   note:"پوش تغییرمکان از نتایج حالات جداگانه؛ بیشینه‌های غیرهم‌زمان نیرو/لنگر با هم جمع نشده‌اند. این مرحله هنوز ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی و طراحی نهایی تیر حمال/اتصالات را تأیید نمی‌کند."};
  return lastAutomaticEnvelope;
@@ -266,6 +286,8 @@ function selfTest(){
  const expected=1000*25*25/(6*2e11*1e-4);
  const actual=solver?.displacements.find(n=>n.nodeId==="B")?.values[0];
  t("consistent horizontal point load matches cantilever closed-form deflection",()=>!!solver?.success&&solver.equilibrium.ok&&Math.abs(actual-expected)<expected*1e-7);
+ t("main-frame coverage rejects a missing column action row",()=>{const m={members:[{id:"C1",sectionKey:"column"},{id:"R1",sectionKey:"rafter"}]},samples=[{label:"A"},{label:"B"}],rows=[{id:"C1",caseCount:2,simultaneousCases:[{},{}]},{id:"R1",caseCount:1,simultaneousCases:[{}]}],a=auditMainFrameMemberCoverage(m,samples,rows);return !a.success&&a.issues.some(x=>x.includes("رفتر قاب اصلی"));});
+ t("main-frame coverage accepts complete column and rafter force traces",()=>{const m={members:[{id:"C1",sectionKey:"column"},{id:"R1",sectionKey:"rafter"}]},samples=[{label:"A"},{label:"B"}],rows=[{id:"C1",caseCount:2,simultaneousCases:[{},{}]},{id:"R1",caseCount:2,simultaneousCases:[{},{}]}],a=auditMainFrameMemberCoverage(m,samples,rows);return a.success&&a.families.column.coveredCount===1&&a.families.rafter.coveredCount===1;});
  t("keeps analysis approval disabled",()=>r.analysisEnabled===false&&r.solverInputReady===true);
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
