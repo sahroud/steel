@@ -58,6 +58,7 @@ function mount(){
    lastCrane=calculateSelected(selection,layout);
    if(!lastCrane.ok)throw Error(lastCrane.issues.join("؛ "));
    lastCrane.cranePosition={caseId,caseIndex:demand.caseIndex,referencePosition_m:demand.referencePosition_m};
+   last=lastCrane;
    const f=x=>(x/1000).toLocaleString("fa-IR",{maximumFractionDigits:4});
    craneSummary.textContent="گره "+nodeId+" | "+caseId+" | موقعیت قطار: "+demand.referencePosition_m+" m | تعداد انکر: "+lastCrane.anchors.length+" | بیشینه کشش: "+f(Math.max(...lastCrane.anchors.map(a=>a.tensionDemand_N)))+" kN | بیشینه برش: "+f(Math.max(...lastCrane.anchors.map(a=>a.resultantShear_N)))+" kN | تعادل: "+(lastCrane.equilibrium.ok?"برقرار":"نامعتبر")+". فقط تقاضا؛ نه ظرفیت‌سنجی یا تأیید طراحی.";
    const body=$("brtAnchorDemandRows");body.replaceChildren();
@@ -68,7 +69,6 @@ function mount(){
  craneJson.addEventListener("click",()=>{if(!lastCrane)return;const blob=new Blob([JSON.stringify({schema:"SAHROUD-STEEL-CRANE-ANCHOR-DEMAND-1.0",generatedAt:new Date().toISOString(),analysisEnabled:false,designApproved:false,result:lastCrane},null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=root.document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Crane-Anchor-Demand.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
  $("brtAnchorDemandRun").addEventListener("click",()=>{
   try{
-   refreshCraneChoices();
    const selection=root.SteelBaseReactionTransfer?.selected?.();
    const layout=root.SteelAnchorDemandScreen?.getData?.();
    last=calculateSelected(selection,layout);
