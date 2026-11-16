@@ -146,7 +146,10 @@ async function analyzeCase(caseIndex,transferResult,horizontalInput,trainInput,c
  const externalLoadLedger=chain.buildExternalLoadLedger(model,result?.members,p.nodalLoads,result?.equivalentReleasedRotationLoads||[]);
  const externalLoadLedgerComparison=chain.compareExternalLedger(externalLoadLedger,result?.equilibrium);
  if(!externalLoadLedgerComparison?.ok)return {success:false,analysisEnabled:false,transfer:p,result,equilibriumAudit,externalLoadLedger,externalLoadLedgerComparison,issues:["دفتر مستقل بار خارجی با برآیند بار اعمال‌شده حل‌گر تطبیق ندارد: "+(externalLoadLedgerComparison?.issues||[]).join("؛ ")]};
- lastAnalysis={success:true,analysisEnabled:false,caseIndex,transfer:p,result,equilibriumAudit,externalLoadLedger,externalLoadLedgerComparison,loadPathAudit:{ok:true,method:"independent external-load resultant and solver equilibrium recheck",designApproved:false}};
+ if(typeof chain.extractSupportReactions!=="function")return {success:false,analysisEnabled:false,transfer:p,result,equilibriumAudit,externalLoadLedger,externalLoadLedgerComparison,issues:["استخراج مستقل واکنش گره‌های پایه در دفتر زنجیره بار موجود نیست؛ خروجی فونداسیون ساخته نمی‌شود."]};
+ let supportReactionActions;
+ try{supportReactionActions=chain.extractSupportReactions(result,model);}catch(e){return {success:false,analysisEnabled:false,transfer:p,result,equilibriumAudit,externalLoadLedger,externalLoadLedgerComparison,issues:["استخراج واکنش پایه/نیروی ستون ناموفق است: "+String(e.message||e)]};}
+ lastAnalysis={success:true,analysisEnabled:false,caseIndex,transfer:p,result,equilibriumAudit,externalLoadLedger,externalLoadLedgerComparison,supportReactionActions,loadPathAudit:{ok:true,method:"independent external-load resultant, solver equilibrium recheck and explicit base support reaction extraction",designApproved:false}};
  return lastAnalysis;
 }
 let lastAutomaticEnvelope=null;
@@ -161,6 +164,32 @@ function applyVerticalImpact(input,factor){
    dynamicFactorApplied:f,staticInputP_N:Number(w.P_N)}));
  }
  return out;
+}
+function buildCraneSupportReactionEnvelope(model,results){
+ const issues=[],supports=(model?.nodes||[]).filter(n=>n.kind==="base"||n.kind==="endwall-base");
+ if(!supports.length)issues.push("گره پایه برای استخراج واکنش‌های فونداسیون جرثقیل وجود ندارد.");
+ if(!Array.isArray(results)||!results.length)issues.push("نتایج موقعیت‌های جرثقیل برای استخراج واکنش پایه موجود نیست.");
+ const expected=new Set(supports.map(n=>String(n.id))),byNode=new Map();
+ (results||[]).forEach((sample,index)=>{
+  const rows=sample?.analysis?.supportReactionActions?.rows;
+  if(!Array.isArray(rows)){issues.push("واکنش‌های پایه در موقعیت "+(index+1)+" موجود نیست.");return;}
+  const seen=new Set();
+  rows.forEach(row=>{
+   const id=String(row?.nodeId??"");
+   if(!expected.has(id)){issues.push("واکنش گره غیرپایه یا ناشناخته در موقعیت "+(index+1)+": "+id);return;}
+   if(seen.has(id)){issues.push("واکنش تکراری گره پایه "+id+" در موقعیت "+(index+1));return;}
+   seen.add(id);
+   const action=row.columnAction,solver=row.solverReaction;
+   const keys=["Fx","Fy","Fz","Mx","My","Mz"];
+   if(!action||!solver||keys.some(k=>!Number.isFinite(action[k])||!Number.isFinite(solver[k]))){issues.push("شش مؤلفه واکنش/نیروی ستون در گره "+id+" و موقعیت "+(index+1)+" معتبر نیست.");return;}
+   if(!byNode.has(id))byNode.set(id,[]);
+   byNode.get(id).push({caseIndex:sample.caseIndex??index,referencePosition_m:sample.referencePosition_m,solverReaction:{...solver},columnAction:{...action}});
+  });
+  const missing=[...expected].filter(id=>!seen.has(id));
+  if(missing.length)issues.push("واکنش گره‌های پایه در موقعیت "+(index+1)+" ناقص است: "+missing.join("، "));
+ });
+ const rows=[...byNode.entries()].map(([nodeId,cases])=>({nodeId,caseCount:cases.length,cases,components:Object.fromEntries(["Fx","Fy","Fz","Mx","My","Mz"].map(k=>[k,{min:cases.reduce((a,b)=>b.columnAction[k]<a.columnAction[k]?b:a,cases[0])?.columnAction[k]??null,max:cases.reduce((a,b)=>b.columnAction[k]>a.columnAction[k]?b:a,cases[0])?.columnAction[k]??null}]))}));
+ return{success:issues.length===0,rows,caseCount:results?.length||0,supportNodeCount:supports.length,issues,units:{force:"N",moment:"N.m"},scope:"واکنش کل پایه و نیروی متناظر ستون برای هر موقعیت جرثقیل شامل وزن مرده و بارهای فعال همان حالت؛ فقط تقاضا، نه طراحی صفحه‌ستون/مهار/پی."};
 }
 function auditMainFrameMemberCoverage(model,samples,rows){
  const issues=[],members=Array.isArray(model?.members)?model.members:[];
@@ -244,9 +273,11 @@ async function analyzeAllFromUI(options){
   results.push({caseIndex:i,referencePosition_m:one.transfer.referencePosition_m,maxTranslation_m:Number(one.result.maxTranslation),equilibrium:one.result.equilibrium,analysis:one});
  }
  const critical=results.reduce((best,x)=>!best||x.maxTranslation_m>best.maxTranslation_m?x:best,null);
+ const supportReactionEnvelope=buildCraneSupportReactionEnvelope(model,results);
+ if(!supportReactionEnvelope.success)return {success:false,analysisEnabled:false,total:results.length,completed:results.length,issues:["پوش واکنش‌های پایه جرثقیل ناقص است: "+supportReactionEnvelope.issues.join("؛ ")],results};
  let memberForceEnvelope;
  try{memberForceEnvelope=buildMovingForceEnvelope(model,results);}catch(e){return {success:false,analysisEnabled:false,total:results.length,completed:results.length,issues:["استخراج پوش نیروهای اعضای جرثقیل ناموفق است: "+String(e.message||e)],results};}
- lastAutomaticEnvelope={success:true,analysisEnabled:false,total:results.length,results,memberForceEnvelope,mainFrameCoverage:memberForceEnvelope.mainFrameCoverage,criticalCase:critical?.caseIndex??null,maxTranslation_m:critical?.maxTranslation_m??null,
+ lastAutomaticEnvelope={success:true,analysisEnabled:false,total:results.length,results,memberForceEnvelope,mainFrameCoverage:memberForceEnvelope.mainFrameCoverage,supportReactionEnvelope,criticalCase:critical?.caseIndex??null,maxTranslation_m:critical?.maxTranslation_m??null,
   loadBasis:"بار مرده و وزن خود اعضا + بار چرخ‌های قائم با ضریب دینامیکی قائم اعمال‌شده + نیروهای افقی مستند در صورت فعال‌بودن؛ هر موقعیت قطار جداگانه حل شده است.",
   note:"پوش تغییرمکان از نتایج حالات جداگانه؛ بیشینه‌های غیرهم‌زمان نیرو/لنگر با هم جمع نشده‌اند. این مرحله هنوز ترکیبات کامل آیین‌نامه‌ای جرثقیل، خستگی و طراحی نهایی تیر حمال/اتصالات را تأیید نمی‌کند."};
  return lastAutomaticEnvelope;
@@ -286,6 +317,8 @@ function selfTest(){
  const expected=1000*25*25/(6*2e11*1e-4);
  const actual=solver?.displacements.find(n=>n.nodeId==="B")?.values[0];
  t("consistent horizontal point load matches cantilever closed-form deflection",()=>!!solver?.success&&solver.equilibrium.ok&&Math.abs(actual-expected)<expected*1e-7);
+ t("crane base reaction envelope rejects a missing support reaction",()=>{const m={nodes:[{id:"B1",kind:"base"},{id:"B2",kind:"base"}]},r=[{caseIndex:0,referencePosition_m:1,analysis:{supportReactionActions:{rows:[{nodeId:"B1",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}}}],a=buildCraneSupportReactionEnvelope(m,r);return !a.success&&a.issues.some(x=>x.includes("B2"));});
+ t("crane base reaction envelope preserves column action signs per position",()=>{const m={nodes:[{id:"B1",kind:"base"}]},r=[{caseIndex:0,referencePosition_m:1,analysis:{supportReactionActions:{rows:[{nodeId:"B1",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}}}],a=buildCraneSupportReactionEnvelope(m,r);return a.success&&a.rows[0].cases[0].columnAction.Fy===-2&&a.rows[0].cases[0].solverReaction.Fy===2;});
  t("main-frame coverage rejects a missing column action row",()=>{const m={members:[{id:"C1",sectionKey:"column"},{id:"R1",sectionKey:"rafter"}]},samples=[{label:"A"},{label:"B"}],rows=[{id:"C1",caseCount:2,simultaneousCases:[{},{}]},{id:"R1",caseCount:1,simultaneousCases:[{}]}],a=auditMainFrameMemberCoverage(m,samples,rows);return !a.success&&a.issues.some(x=>x.includes("رفتر قاب اصلی"));});
  t("main-frame coverage accepts complete column and rafter force traces",()=>{const m={members:[{id:"C1",sectionKey:"column"},{id:"R1",sectionKey:"rafter"}]},samples=[{label:"A"},{label:"B"}],rows=[{id:"C1",caseCount:2,simultaneousCases:[{},{}]},{id:"R1",caseCount:2,simultaneousCases:[{},{}]}],a=auditMainFrameMemberCoverage(m,samples,rows);return a.success&&a.families.column.coveredCount===1&&a.families.rafter.coveredCount===1;});
  t("keeps analysis approval disabled",()=>r.analysisEnabled===false&&r.solverInputReady===true);
@@ -335,6 +368,6 @@ function ensurePanel(){
  });
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,selfTest,buildMovingForceEnvelope,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
+root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,selfTest,buildMovingForceEnvelope,buildCraneSupportReactionEnvelope,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
 })(typeof window!=="undefined"?window:globalThis);
 
