@@ -19,6 +19,27 @@ function build(model,runnerOutput,options){
  if(!modelMembers.length||!solved.length)issues.push("فهرست اعضای مدل یا نتایج حل‌شده خالی است.");
  modelById.forEach((m,id)=>{if(!solvedById.has(id))issues.push("نتیجه عضو "+id+" در حل‌گر موجود نیست.");});
  solvedById.forEach((m,id)=>{if(!modelById.has(id))issues.push("عضو حل‌شده "+id+" در مدل ورودی وجود ندارد.");});
+ // Audit the runner's case-labelled simultaneous vectors against the solver's
+ // authoritative 12-component local end-force rows before reconstructing diagrams.
+ const traceRows=Array.isArray(sim?.members)?sim.members:[];
+ const traceById=new Map();
+ traceRows.forEach(m=>{
+  const id=String(m?.id??"");
+  if(!id||traceById.has(id)){issues.push("ردیابی همزمان حالت بار دارای شناسه خالی/تکراری است: "+id);return;}
+  traceById.set(id,m);
+ });
+ if(traceRows.length!==solved.length)issues.push("تعداد اعضای بردارهای همزمان با نتایج حل‌گر برابر نیست.");
+ solvedById.forEach((m,id)=>{
+  const trace=traceById.get(id);
+  if(!trace){issues.push("بردار همزمان عضو "+id+" در حالت بار موجود نیست.");return;}
+  const f=m?.localEndForces,start=trace.endI||{},end=trace.endJ||{};
+  const traced=[start.Fx,start.Fy,start.Fz,start.Mx,start.My,start.Mz,end.Fx,end.Fy,end.Fz,end.Mx,end.My,end.Mz];
+  if(!Array.isArray(f)||f.length!==12||!f.every(finite)||!traced.every(finite)){
+   issues.push("۱۲ مؤلفه نیرو/لنگر برای تطبیق ردیابی عضو "+id+" کامل و متناهی نیست.");return;
+  }
+  if(f.some((v,i)=>v!==traced[i]))issues.push("بردار همزمان ثبت‌شده عضو "+id+" با خروجی حل‌گر در همین حالت بار یکسان نیست.");
+ });
+ traceById.forEach((m,id)=>{if(!solvedById.has(id))issues.push("ردیابی همزمان عضو اضافی "+id+" در مدل حل‌شده وجود دارد.");});
  if(issues.length)return {success:false,status:"insufficient_data",issues,loadCaseId:sim?.caseId||null,designApproved:false,capacityCalculated:false};
  const joined=modelMembers.map(m=>{
   const s=solvedById.get(String(m.id));
@@ -70,6 +91,9 @@ function selfTest(){
  add("point load on member blocked",()=>{const m=make([0,0,0]);m.members[0].analysisLoad.pointLoads=[{x:1,values:[0,-1,0]}];return build(m,run(m)).status==="insufficient_data";});
  add("solver imbalance blocked",()=>{const m=make([0,0,0]),r=run(m);r.solverResult.equilibrium.ok=false;return build(m,r).status==="insufficient_data";});
  add("missing model member result blocked",()=>{const m=make([0,0,0]),r=run(m);r.solverResult.members=[];return build(m,r).status==="insufficient_data";});
+ add("missing simultaneous force trace blocked",()=>{const m=make([0,0,0]),r=run(m);r.simultaneousActionCase.members=[];return build(m,r).status==="insufficient_data";});
+ add("mismatched simultaneous force trace blocked",()=>{const m=make([0,0,0]),r=run(m);r.simultaneousActionCase.members[0].endI.Fy+=1;return build(m,r).status==="insufficient_data";});
+ add("duplicate simultaneous trace member blocked",()=>{const m=make([0,0,0]),r=run(m);r.simultaneousActionCase.members.push(r.simultaneousActionCase.members[0]);return build(m,r).status==="insufficient_data";});
  add("live solver to segmented tapered section diagrams",()=>{const model={nodes:[{id:"n0",x:0,y:0,z:0},{id:"n1",x:2,y:0,z:0},{id:"n2",x:5,y:0,z:0}],members:[{id:"T1",start:"n0",end:"n1",length:2,parentMemberId:"R1",taperApplied:true,taperSegmentIndex:1,taperSegmentCount:2,analysisLoad:{uniformLocal:[0,0,0],loadDataComplete:true}},{id:"T2",start:"n1",end:"n2",length:3,parentMemberId:"R1",taperApplied:true,taperSegmentIndex:2,taperSegmentCount:2,analysisLoad:{uniformLocal:[0,0,0],loadDataComplete:true}}]};const r=run(model,[0,-1000,0]),d=build(model,r);return d.success&&d.taperedReport?.loadCases?.[0]?.members?.[0]?.segments?.length===2&&d.taperedReport.loadCases[0].members[0].segments[1].startStation_m===2;});
  add("no design approval or capacity claim",()=>{const m=make([0,0,0]),d=build(m,run(m));return d.designApproved===false&&d.capacityCalculated===false&&d.readyForCodeDesign===false;});
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
