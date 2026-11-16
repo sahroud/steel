@@ -303,7 +303,8 @@
                 demand[name] = {
                     value: 0,
                     combination: "—",
-                    position: "—"
+                    position: "—",
+                    samples: 0
                 };
             });
 
@@ -317,8 +318,12 @@
                     ) return;
 
                     const L = Number(member.length);
-
-                    if (!(Number.isFinite(L) && L > 0)) return;
+                    if (!(Number.isFinite(L) && L > 0) ||
+                        !Number.isFinite(Number(member.axialStart)) ||
+                        !Number.isFinite(Number(member.localLoadX))) {
+                        throw new Error("طول یا داده نیروی محوری عضو «"+member.name+"» ناقص است؛ کنترل متوقف شد.");
+                    }
+                    demand[member.name].samples++;
 
                     // چون نیروی محوری تحت بار گسترده یکنواخت خطی است،
                     // بیشینه فشار در یکی از دو انتهای عضو رخ می‌دهد.
@@ -346,13 +351,14 @@
                 const result = members[name];
                 const d = demand[name];
 
-                const ratio = result.capacityKN > 0
+                const hasDemand = d.samples > 0;
+                const ratio = hasDemand && result.capacityKN > 0
                     ? d.value / result.capacityKN
-                    : Infinity;
+                    : null;
 
-                const status = ratio <= 1
-                    ? "قبول مقدماتی"
-                    : "عدم کفایت مقدماتی";
+                const status = !hasDemand
+                    ? "فاقد داده ـ کنترل نشد"
+                    : ratio <= 1 ? "قبول مقدماتی" : "عدم کفایت مقدماتی";
 
                 return `
                     <tr>
@@ -362,7 +368,7 @@
                         <td>${fmt(result.y.slenderness, 1)}</td>
                         <td>${result.controllingAxis}</td>
                         <td>${fmt(result.capacityKN)}</td>
-                        <td>${fmt(ratio * 100, 1)}%</td>
+                        <td>${ratio===null?"—":fmt(ratio * 100, 1)+"%"}</td>
                         <td>${status}</td>
                         <td>${d.combination}</td>
                         <td>${d.position}</td>
