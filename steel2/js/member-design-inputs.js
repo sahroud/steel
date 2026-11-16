@@ -4,9 +4,15 @@
 (function(root){
 "use strict";
 const groups=[
- {key:"column",label:"ستون‌ها"},{key:"rafter",label:"رفترها"},
- {key:"endPost",label:"ستونک‌های انتهایی"},{key:"endGirt",label:"تیرهای انتهایی"},
- {key:"roofBrace",label:"مهاربندهای سقف"},{key:"wallBrace",label:"مهاربندهای دیوار"},{key:"roofEdge",label:"اعضای لبه سقف"}
+ {key:"column",label:"ستون‌ها",family:"hot-rolled"},
+ {key:"rafter",label:"تیرها و رفترها",family:"hot-rolled-or-built-up"},
+ {key:"endPost",label:"ستونک‌های انتهایی",family:"hot-rolled-or-built-up"},
+ {key:"endGirt",label:"تیرهای انتهایی",family:"section-specific"},
+ {key:"roofPurlin",label:"لاپه‌های سقف",family:"cold-formed-or-hot-rolled"},
+ {key:"wallGirt",label:"قیدهای دیوار",family:"cold-formed-or-hot-rolled"},
+ {key:"roofBrace",label:"مهاربندهای سقف",family:"brace"},
+ {key:"wallBrace",label:"مهاربندهای دیوار",family:"brace"},
+ {key:"roofEdge",label:"اعضای لبه سقف",family:"section-specific"}
 ];
 const fields=[
  ["t_mm","ضخامت فولاد t (mm)"],["Fy","Fy (MPa)"],["Fu","Fu (MPa)"],["E_MPa","مدول الاستیسیته E (MPa)"],["G_MPa","مدول برشی G (MPa)"],["Kx","Kx"],["Ky","Ky"],["Kz","Kz"],
@@ -63,14 +69,14 @@ function validate(){
 }
 function render(){
  const host=$("memberDesignInputsContent");if(!host)return;
- host.innerHTML='<div class="notice">این قسمت پارامترهای طراحی اعضای فولادی نوردشده را به تفکیک گروه ثبت می‌کند. گرید از پنل مصالح به ارث می‌رسد؛ ضخامت هر گروه را جداگانه وارد کنید تا Fy/Fu پیش‌فرض متناسب با ضخامت محاسبه شود. ورود دستی Fy/Fu بر مقدار ارث‌رسیده اولویت دارد؛ اگر ضخامت گروه را وارد نکنید، ضخامت عمومی پنل مصالح به ارث می‌رسد و باید یکسان بودن ضخامت اعضای گروه را کنترل کنید. مقادیر گروهی فقط زمانی قابل استفاده‌اند که برای همه اعضای آن گروه یکسان باشند.</div>'+
+ host.innerHTML='<div class="notice">این رجیستر پارامترهای عمومی و مشترک هر گروه را ثبت می‌کند؛ گرید از پنل مصالح به ارث می‌رسد و ضخامت و خواص مصالح باید با مدارک واقعی تطبیق داده شوند. برای تیر و ستون، این داده‌ها ورودی مقدماتی مسیر طراحی‌اند. برای لاپه و قید، این جدول جایگزین شناسه و هندسه دقیق تک‌تک پروفیل‌ها، خواص مقطع، کمانش موضعی/اعوجاجی، مهار و اتصال در قرارداد اختصاصی مقاطع سردنورد نیست. اعمال گروهی فقط وقتی مجاز است که شرایط تمام اعضای گروه واقعاً یکسان باشد.</div>'+
  '<div style="overflow-x:auto"><table class="data-table" style="min-width:1150px;width:100%"><thead><tr><th>گروه عضو</th>'+fields.map(x=>'<th>'+x[1]+'</th>').join("")+'<th>اعمال به همه اعضای گروه</th><th>شرح مهاربندی/منبع</th></tr></thead><tbody>'+
  groups.map(g=>{const x=data.groups[g.key]||{};return '<tr><td>'+g.label+'</td>'+
  fields.map(([k])=>'<td><input type="number" step="any" min="0" id="mdi_'+g.key+'_'+k+'" value="'+(x[k]??"")+'" style="width:90px"></td>').join("")+
  '<td><input type="checkbox" id="mdi_'+g.key+'_apply" '+(x.applyToAll?"checked":"")+'></td>'+
  '<td><input type="text" id="mdi_'+g.key+'_note" value="'+esc(x.bracingNote||"")+'" placeholder="مثلاً مهار جانبی در هر لاپه" style="min-width:180px"></td></tr>';}).join("")+
  '</tbody></table></div>'+
- '<div class="notice">پرلین‌های سقف و قیدهای سردنورد دیوار از این جدول مستثنا هستند و باید با روش اختصاصی مقاطع سردنورد، از جمله کمانش موضعی و اعوجاجی، بررسی شوند. شناژهای بتنی نیز در این رجیستر فولادی قرار نمی‌گیرند. این پارامترها هنوز به روابط مقاومت متصل نشده‌اند و ثبت آن‌ها به معنی تأیید یا طراحی عضو نیست.</div>'+
+ '<div class="notice">برای لاپه و قید، مسیر اختصاصی SteelColdFormedMemberContract باید برای هر عضو به‌صورت مستقل تکمیل شود؛ این جدول فقط داده‌های مشترک گروه را نگه می‌دارد. شناژهای بتنی در این رجیستر فولادی قرار نمی‌گیرند. این پارامترها هنوز به روابط مقاومت نهایی متصل نشده‌اند و ثبت آن‌ها به معنی تأیید یا طراحی عضو نیست.</div>'+
  '<div class="button-grid"><button type="button" class="btn secondary" id="btnMemberDesignInputCheck">بررسی کامل بودن داده‌های گروهی</button><button type="button" class="btn secondary" id="btnMemberDesignInputExport">خروجی پارامترها JSON</button></div>'+
  '<div class="notice" id="memberDesignInputStatus">پارامترها در فایل پروژه ذخیره می‌شوند.</div>';
  groups.forEach(g=>[...fields.map(x=>"mdi_"+g.key+"_"+x[0]),"mdi_"+g.key+"_apply","mdi_"+g.key+"_note"].forEach(id=>$(id)?.addEventListener("input",readUI)));
@@ -84,6 +90,20 @@ function init(){
  p.innerHTML='<div class="panel-title"><h3>پارامترهای طراحی اعضا — مبنای کنترل مبحث دهم</h3><span class="status">ورودی‌های مهندسی</span></div><div id="memberDesignInputsContent"></div>';
  const footer=main.querySelector("footer");if(footer)footer.insertAdjacentElement("beforebegin",p);else main.appendChild(p);render();
 }
-root.SteelMemberDesignInputs={getData,readUI,setData,getForGroup,validate,groups:groups.map(x=>({...x}))};
+function selfTest(){
+ const prior=JSON.parse(JSON.stringify(data)),tests=[];
+ const keys=groups.map(g=>g.key);
+ tests.push({name:"all requested steel member groups have input rows",pass:["column","rafter","roofPurlin","wallGirt"].every(k=>keys.includes(k))});
+ const fixture={schemaVersion:1,groups:{roofPurlin:{Fy:240,Fu:360,t_mm:2.5,applyToAll:true,bracingNote:"مهار طبق نقشه P-01"},wallGirt:{Fy:235,Fu:360,t_mm:2,applyToAll:false}}};
+ setData(fixture);
+ const round=getData();
+ tests.push({name:"purlin and wall-girt group values survive save/load",pass:round.groups.roofPurlin.Fy===240&&round.groups.roofPurlin.t_mm===2.5&&round.groups.wallGirt.Fu===360});
+ tests.push({name:"cold-formed groups remain identified as section-specific families",pass:groups.filter(g=>["roofPurlin","wallGirt"].includes(g.key)).every(g=>g.family==="cold-formed-or-hot-rolled")});
+ setData({schemaVersion:1,groups:{}});
+ tests.push({name:"missing member-group inputs are not silently populated with fabricated capacities",pass:getData().groups.roofPurlin.Fy===null&&getData().groups.wallGirt.Fy===null});
+ data=prior;render();
+ return{passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests,scope:"group input registration and persistence only; no member resistance or approval"};
+}
+root.SteelMemberDesignInputs={getData,readUI,setData,getForGroup,validate,selfTest,groups:groups.map(x=>({...x}))};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
