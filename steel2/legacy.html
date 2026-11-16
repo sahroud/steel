@@ -24,6 +24,65 @@
 
 <main class="container">
 
+<style id="focus-workspace-style">
+.focus-workspace-nav{position:sticky;top:0;z-index:50;margin:10px auto;padding:10px;background:#f7fafc;border:1px solid #cbd5e1;border-radius:12px;box-shadow:0 3px 12px #0f172a12}
+.focus-workspace-nav .focus-links{display:flex;gap:7px;flex-wrap:wrap}
+.focus-workspace-nav a{display:inline-flex;align-items:center;padding:8px 11px;border-radius:9px;background:#e2e8f0;color:#123b52;text-decoration:none;font-size:13px;font-weight:700}
+.focus-workspace-nav a[aria-current="page"]{background:#123b52;color:white}
+.focus-workspace-nav .focus-caption{font-size:12px;color:#475569;margin:0 0 8px}
+body.focus-mode .container>.welcome,body.focus-mode .container>.quick-actions{display:none!important}
+body.focus-mode .container>[data-focus-group]{display:none!important}
+body.focus-mode .container>[data-focus-group].focus-visible{display:block!important}
+body.focus-mode .container{padding-top:8px}
+body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
+@media(max-width:600px){.focus-workspace-nav{margin:6px 0;padding:8px}.focus-workspace-nav .focus-links{gap:5px}.focus-workspace-nav a{font-size:12px;padding:7px 9px}}
+</style>
+<nav class="focus-workspace-nav" id="focusWorkspaceNav" aria-label="میانبر بخش‌های نرم‌افزار">
+  <p class="focus-caption" id="focusWorkspaceCaption">ورود مستقیم به بخش موردنیاز؛ با انتخاب «همه بخش‌ها» صفحه کامل نمایش داده می‌شود.</p>
+  <div class="focus-links">
+    <a href="legacy.html?focus=project#projectSetupPanel" data-focus-link="project">مشخصات پروژه</a>
+    <a href="legacy.html?focus=loads#loadsPanel" data-focus-link="loads">بارگذاری</a>
+    <a href="legacy.html?focus=drawings#framePanel" data-focus-link="drawings">ترسیم و نماها</a>
+    <a href="legacy.html?focus=analysis#operationsPanel" data-focus-link="analysis">تحلیل و نتایج</a>
+    <a href="legacy.html?focus=crane#craneReadinessPanel" data-focus-link="crane">جرثقیل</a>
+    <a href="legacy.html?focus=member-check#cantileverCheckPanel" data-focus-link="member-check">کنترل اعضا</a>
+    <a href="legacy.html" data-focus-link="all">نمایش همه بخش‌ها</a>
+  </div>
+</nav>
+<script>
+(function(){
+  "use strict";
+  function initFocusWorkspace(){
+    var params=new URLSearchParams(window.location.search);
+    var focus=params.get("focus");
+    var valid=["project","loads","drawings","analysis","crane","member-check"];
+    var nav=document.getElementById("focusWorkspaceNav");
+    if(!nav)return;
+    if(!focus||!valid.includes(focus)){
+      document.body.classList.remove("focus-mode");
+      return;
+    }
+    document.body.classList.add("focus-mode");
+    document.querySelectorAll("[data-focus-group]").forEach(function(panel){
+      var groups=(panel.getAttribute("data-focus-group")||"").split(/\\s+/);
+      if(groups.includes(focus))panel.classList.add("focus-visible");
+    });
+    var active=nav.querySelector('[data-focus-link="'+focus+'"]');
+    if(active)active.setAttribute("aria-current","page");
+    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا"};
+    var caption=document.getElementById("focusWorkspaceCaption");
+    if(caption)caption.textContent="حالت نمایش متمرکز: "+labels[focus]+"؛ برای بازگشت، «نمایش همه بخش‌ها» را انتخاب کنید.";
+    var targetId=(window.location.hash||"").slice(1);
+    var target=targetId&&document.getElementById(targetId);
+    if(!target)target=document.querySelector('[data-focus-group].focus-visible');
+    if(target)window.setTimeout(function(){target.scrollIntoView({behavior:"instant",block:"start"});},80);
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initFocusWorkspace);
+  else initFocusWorkspace();
+})();
+</script>
+
+
     <section class="welcome">
         <h2>طراحی و تحلیل مقدماتی سوله</h2>
         <p>ورود مشخصات هندسی، بارگذاری اولیه، ترسیم قاب و بررسی نتایج تحلیل</p>
@@ -39,7 +98,7 @@
         <input id="projectFile" type="file" accept=".json" hidden>
     </div>
 
-    <section class="panel project-setup" id="projectSetupPanel">
+    <section class="panel project-setup" id="projectSetupPanel" data-focus-group="project">
         <div class="panel-title">
             <div><span class="setup-eyebrow">ENGINEERING PROJECT INTAKE</span><h3>تعریف پروژه و مشخصات پایه سازه</h3></div>
             <span class="status">گام ۱ ـ تشکیل پرونده مهندسی</span>
@@ -88,7 +147,7 @@
             <span id="homeWorkflowStatus" role="status" aria-live="polite">آماده ورود اطلاعات</span>
         </div>
     </section>
-    <section class="panel">
+    <section class="panel" id="loadsPanel" data-focus-group="loads analysis">
         <div class="panel-title">
             <h3>۴ ـ بارگذاری مقدماتی</h3>
         </div>
@@ -116,7 +175,7 @@
         </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="framePanel" data-focus-group="drawings">
         <div class="panel-title">
             <h3>۵ ـ نمایش قاب</h3>
         </div>
@@ -139,14 +198,14 @@
         </div>
     </section>
 
-    <section class="panel structure-views-panel" id="structureViewsPanel">
+    <section class="panel structure-views-panel" id="structureViewsPanel" data-focus-group="drawings">
         <div class="panel-title"><div><h3>گالری نماهای سازه</h3><span class="status">برای جابه‌جایی، صفحه را افقی بکشید</span></div><span id="structureViewCounter" class="status">نمای ۱ از ۴</span></div>
         <div class="structure-view-controls"><button id="structureViewPrev" class="btn secondary" type="button" disabled>نمای قبلی</button><button id="structureViewNext" class="btn primary" type="button">نمای بعدی</button></div>
         <div id="structureViewTrack" class="structure-view-track" aria-label="نماهای افقی سازه"></div>
         <p class="structure-view-note">این نماها برای مشاهده هندسه و جانمایی اولیه هستند. نمایش بادبند و جرثقیل شماتیک است و جایگزین مدل تحلیل، کنترل اتصالات یا نقشه ساخت نیست.</p>
     </section>
 
-<section class="panel">
+<section class="panel" id="operationsPanel" data-focus-group="analysis drawings">
         <div class="panel-title">
             <h3>۶ ـ عملیات پروژه</h3>
         </div>
@@ -172,7 +231,7 @@
         </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="resultsPanel" data-focus-group="analysis">
         <div class="panel-title">
             <h3>۷ ـ نتایج تحلیل</h3>
         </div>
@@ -196,7 +255,7 @@
     </section>
 
 
-    <section class="panel" id="craneReadinessPanel">
+    <section class="panel" id="craneReadinessPanel" data-focus-group="crane">
         <div class="panel-title"><h3>اطلاعات جرثقیل و تیر حمال</h3></div>
         <div class="notice">
             الگوی تکمیلی برگرفته از گزارش سوله‌پرداز: ظرفیت جرثقیل، وزن ارابه و پل، فاصله چرخ‌ها،
@@ -242,7 +301,7 @@
     </section>
 
 
-    <section class="panel" id="craneTrainAnalysisPanel">
+    <section class="panel" id="craneTrainAnalysisPanel" data-focus-group="crane">
         <div class="panel-title"><h3>تحلیل استاتیکی قطار چرخ جرثقیل روی تیر حمال</h3></div>
         <div class="notice">
             این ابزار تحلیل موقعیت ثابت، پوش متحرک لنگر و پوش برش/واکنش یک قطار چرخ مستند را روی تیر ساده دو سر مفصل انجام می‌دهد.
@@ -261,7 +320,7 @@
         <div class="notice">واحد بار ورودی تن‌نیرو فرض شده و با ضریب تبدیل استاندارد 9.80665 به kN تبدیل می‌شود. خروجی صرفاً تحلیل استاتیکی مقدماتی است؛ برای طراحی اجرایی باید مدل واقعی تیر، تکیه‌گاه، پیچش، بارهای افقی، ضربه، خستگی و ضوابط مربوط جداگانه کنترل شوند.</div>
     </section>
 
-    <section class="panel" id="cantileverCheckPanel">
+    <section class="panel" id="cantileverCheckPanel" data-focus-group="member-check">
         <div class="panel-title">
             <h3>کنترل کنسول‌های رفتر</h3>
         </div>
