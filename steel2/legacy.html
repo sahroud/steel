@@ -44,6 +44,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     <a href="legacy.html?focus=loads#loadsPanel" data-focus-link="loads">بارگذاری</a>
     <a href="legacy.html?focus=drawings#framePanel" data-focus-link="drawings">ترسیم و نماها</a>
     <a href="legacy.html?focus=analysis#operationsPanel" data-focus-link="analysis">تحلیل و نتایج</a>
+    <a href="legacy.html?focus=member-design#memberDesignScopeGatePanel" data-focus-link="member-design">دامنه طراحی اعضا</a>
     <a href="legacy.html?focus=crane#craneReadinessPanel" data-focus-link="crane">جرثقیل</a>
     <a href="legacy.html?focus=member-check#cantileverCheckPanel" data-focus-link="member-check">کنترل کنسول رفتر</a>
     <a href="legacy.html?focus=tapered#taperedSectionsPanel" data-focus-link="tapered">مقاطع متغیر و ضخامت‌ها</a>
@@ -58,7 +59,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
   function initFocusWorkspace(){
     var params=new URLSearchParams(window.location.search);
     var focus=params.get("focus");
-    var valid=["project","loads","drawings","analysis","crane","member-check","tapered","connections","foundation"];
+    var valid=["project","loads","drawings","analysis","member-design","crane","member-check","tapered","connections","foundation"];
     var nav=document.getElementById("focusWorkspaceNav");
     if(!nav)return;
     if(!focus||!valid.includes(focus)){
@@ -474,7 +475,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 <script defer src="js/brace-force-demand-audit.js?v=20261114-governing-end-demands2"></script>
 <script defer src="js/member-section-force-diagram.js?v=20261113-section-equilibrium1"></script>
 <script defer src="js/tapered-section-force-diagram.js?v=20261114-tapered-segment-diagram1"></script>
-<script defer src="js/member-design-scope-gate.js?v=20261116-combination-status2"></script>
+<script defer src="js/member-design-scope-gate.js?v=20261116-combination-status3"></script>
 <script defer src="js/prismatic-nonprismatic-section.js?v=20261114-prismatic-nonprismatic1"></script>
 <script defer src="js/design-code-registry.js?v=20261114-iran-code-transition1"></script>
 <script defer src="js/crane-girder-design-basis.js?v=20261113-basis1"></script>
