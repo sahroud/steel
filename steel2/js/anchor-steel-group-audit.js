@@ -40,7 +40,7 @@ function selfTest(){
  t("rejects invalid anchor demand",()=>{try{compare({...demand,anchors:[{anchorId:"A1",tensionDemand_N:NaN,resultantShear_N:1}]},input);return false;}catch(e){return true;}});
   t("keeps interaction explicitly unevaluated pending verified governing clause",()=>{const r=compare(demand,input);return r.interactionEvaluated===false&&r.rows.every(x=>x.interactionStatus==="not_evaluated");});
   t("never enables design approval",()=>{const r=compare(demand,input);return r.analysisEnabled===false&&r.designApproved===false&&r.interactionEvaluated===true&&r.interactionBasis.includes("9-18-6");});
- t("retains simultaneous vector shear with same-case tension",()=>{const r=compare(demand,input);return r.rows[0].pairedWithinSameCase===true&&r.rows[0].interactionStatus==="pass"&&r.rows[0].interactionPass===true&&r.rows[0].shearX_kN===3&&r.rows[0].shearZ_kN===4;});
+ t("retains simultaneous vector shear with same-case tension",()=>{const r=compare(demand,input);return r.rows[0].pairedWithinSameCase===true&&r.rows[0].interactionStatus==="not_evaluated"&&r.interactionEvaluated===false&&r.rows[0].shearX_kN===3&&r.rows[0].shearZ_kN===4;});
  t("rejects duplicate anchor IDs within a case",()=>{try{compare({...demand,anchors:[demand.anchors[0],{...demand.anchors[0]}]},input);return false;}catch(e){return true;}});
  t("rejects duplicate node/case records",()=>{try{compare([demand,{...demand}],input);return false;}catch(e){return true;}});
  t("rejects inconsistent shear resultant and vector components",()=>{try{compare({...demand,anchors:[{...demand.anchors[0],resultantShear_N:9000}]},input);return false;}catch(e){return true;}});
