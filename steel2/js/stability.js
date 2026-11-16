@@ -363,7 +363,7 @@
                 return `
                     <tr>
                         <td>${name}</td>
-                        <td>${fmt(d.value)}</td>
+                        <td>${hasDemand?fmt(d.value):"—"}</td>
                         <td>${fmt(result.x.slenderness, 1)}</td>
                         <td>${fmt(result.y.slenderness, 1)}</td>
                         <td>${result.controllingAxis}</td>
