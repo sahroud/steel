@@ -86,7 +86,7 @@ function render(){
 function init(){
  if($("memberDesignInputsPanel"))return;
  const main=document.querySelector("main");if(!main)return;
- const p=document.createElement("section");p.className="panel";p.id="memberDesignInputsPanel";
+ const p=document.createElement("section");p.className="panel";p.id="memberDesignInputsPanel";p.setAttribute("data-focus-group","member-design");
  p.innerHTML='<div class="panel-title"><h3>پارامترهای طراحی اعضا — مبنای کنترل مبحث دهم</h3><span class="status">ورودی‌های مهندسی</span></div><div id="memberDesignInputsContent"></div>';
  const footer=main.querySelector("footer");if(footer)footer.insertAdjacentElement("beforebegin",p);else main.appendChild(p);render();
 }
