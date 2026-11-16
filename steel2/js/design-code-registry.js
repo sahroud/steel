@@ -8,7 +8,7 @@ const codes=[
  {id:"m5",name:"مبحث پنجم مقررات ملی ساختمان",edition:"ویرایش پنجم، ۱۳۹۶",scope:"مصالح و فرآورده‌ها؛ انطباق محصول، مشخصات و مدارک مصالح",status:"primary",modules:["materials","steel-products","concrete-materials"],source:"https://qsce.ir/uploads/مبحث%20پنجم%20مقررات%20ملی.pdf"},
  {id:"m6",name:"مبحث ششم مقررات ملی ساختمان",edition:"ویرایش چهارم، ۱۳۹۸",scope:"بارهای مرده، زنده، برف، باد، باران و ترکیبات بار",status:"primary",modules:["loads","roof","frame","serviceability"],source:"https://archweb.ir/2024/09/26/"},
  {id:"m7",name:"مبحث هفتم مقررات ملی ساختمان",edition:"ویرایش چهارم، ۱۴۰۰",scope:"ژئوتکنیک، ظرفیت باربری، نشست، گودبرداری و پی‌سازی",status:"primary",modules:["geotechnical","foundations","settlement"],source:"https://archweb.ir/2024/09/26/"},
- {id:"m9",name:"مبحث نهم مقررات ملی ساختمان",edition:"ویرایش پنجم، ۱۳۹۹",scope:"طراحی و اجرای بتن‌آرمه؛ پی، شناژ و جزئیات آرماتور",status:"primary",modules:["footings","tie-beams","reinforced-concrete"],source:"https://archweb.ir/2024/09/26/"},
+ {id:"m9",name:"مبحث نهم مقررات ملی ساختمان",edition:"ویرایش پنجم، ۱۳۹۹",scope:"طراحی و اجرای بتن‌آرمه؛ پی، شناژ، جزئیات آرماتور و مهار به بتن (فصل هجدهم)",status:"primary",modules:["footings","tie-beams","reinforced-concrete","concrete-anchors"],source:"https://inbr.ir/upload/mabhas/1402-08/mabhas9-1402-08.pdf"},
  {id:"m10",name:"مبحث دهم مقررات ملی ساختمان",edition:"ویرایش پنجم، ۱۴۰۱",scope:"طراحی و اجرای فولاد؛ اعضا، پایداری، اتصالات، الزامات لرزه‌ای و ساخت",status:"primary",modules:["steel-members","columns","rafters","bracing","connections","fabrication"],source:"https://technobetar.ir/code/nbri/mabhas-10"},
  {id:"m11",name:"مبحث یازدهم مقررات ملی ساختمان",edition:"ویرایش سوم، ۱۴۰۰",scope:"الزامات مرتبط با طرح و اجرای صنعتی ساختمان‌ها؛ در بخش‌های واقعاً مشمول پروژه",status:"primary",modules:["industrial-building","fabrication","erection"],source:"https://archweb.ir/2024/09/26/"},
  {id:"std2800",name:"استاندارد ۲۸۰۰ ایران",edition:"ویرایش چهارم و پنجم؛ اجرای همزمان تا پایان اردیبهشت ۱۴۰۶ تمدید شده است",scope:"خطر لرزه‌ای، سیستم سازه‌ای، تحلیل و طراحی لرزه‌ای و اجزای غیرسازه‌ای",status:"primary-transition",modules:["seismic","global-stability","nonstructural"],source:"https://irceo.ir/fa/news/36432/"},
@@ -54,6 +54,7 @@ function selfTest(){
  const ids=new Set(codes.map(c=>c.id));
  const tests=[
   {name:"Iranian core references include loads, steel, geotechnics and reinforced concrete",ok:["m6","m10","m7","m9"].every(x=>ids.has(x))},
+  {name:"M9 chapter 18 concrete anchorage is registered without inventing clause formulas",ok:codes.find(c=>c.id==="m9")?.modules.includes("concrete-anchors")&&codes.find(c=>c.id==="m9")?.scope.includes("فصل هجدهم")},
   {name:"industrial building requirements are represented",ok:ids.has("m11")},
   {name:"material conformity basis is represented",ok:ids.has("m5")},
   {name:"2800 transition is explicit through end of Ordibehesht 1406",ok:transition.notice.includes("اردیبهشت ۱۴۰۶")&&transition.projectRule.includes("صریحاً")},
