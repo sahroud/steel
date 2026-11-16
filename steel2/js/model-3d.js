@@ -1662,12 +1662,12 @@
     result.warning="وزن خود فولاد با وزن مخصوص 78.5 kN/m³ و وزن خود شناژ بتنی با وزن مخصوص تعریف‌شده برای هر مسیر، در حالت مرده و ترکیبات دارای ضریب D محاسبه می‌شود؛ وزن شناژ فقط یک‌بار و با سطح مقطع ناخالص اضافه می‌شود. حالت باد فقط فشار خالص دستی واردشده را به‌صورت برداری به پرلین‌های سقف و قیدهای طولی دو دیوار جانبی منتقل می‌کند؛ فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، ناحیه مثلثی دیوار انتهایی بالای آخرین قید، بازشوهای غالب و پیچش کلی هنوز منظور نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
-  async function analyzeAll3DCombinations(options){
-    options=options||{};
-    if(!model)build();
-    const source=window.SteelLoads?.getData?.().combinations;
+  function build3DCombinationCases(source,modelForLoads){
     if(!Array.isArray(source)||!source.length)throw new Error("فهرست ترکیبات بار در دسترس نیست.");
-    const seen=new Set(),gravityCases=source.map((combo,index)=>{
+    const members=Array.isArray(modelForLoads?.members)?modelForLoads.members:[];
+    const hasWind=members.some(m=>["windLeft","windRight","wind","windEnd"].some(k=>Math.abs(Number(m.lineLoads?.[k])||0)>1e-12));
+    const seen=new Set();
+    const gravityCases=source.map((combo,index)=>{
       if(!combo||typeof combo!=="object")throw new Error("تعریف ترکیب بار شماره "+(index+1)+" معتبر نیست.");
       const factors={};
       ["dead","live","snow"].forEach(key=>{
@@ -1676,19 +1676,40 @@
           throw new Error("ضریب "+key+" در ترکیب "+(combo.name||index+1)+" ناقص یا نامعتبر است.");
         factors[key]=value;
       });
-      const wind=combo.wind===undefined?0:Number(combo.wind);
-      if(combo.wind===null||combo.wind===""||!Number.isFinite(wind)||wind<0)
-        throw new Error("ضریب باد در ترکیب "+(combo.name||index+1)+" ناقص یا نامعتبر است.");
+      const hasExplicitWind=Object.prototype.hasOwnProperty.call(combo,"wind")&&combo.wind!==undefined&&combo.wind!==null&&combo.wind!=="";
+      if(hasWind&&!hasExplicitWind)
+        throw new Error("بار باد در مدل وجود دارد، اما ضریب باد در ترکیب "+(combo.name||index+1)+" صریح نیست؛ تحلیل بدون ضریب مستند باد متوقف شد.");
+      const wind=hasExplicitWind?Number(combo.wind):0;
+      if(!Number.isFinite(wind)||wind<0)throw new Error("ضریب باد در ترکیب "+(combo.name||index+1)+" ناقص یا نامعتبر است.");
+      if(wind>0&&!hasWind)throw new Error("ترکیب "+(combo.name||index+1)+" ضریب باد غیرصفر دارد، اما بار باد معتبر در مدل پیدا نشد.");
       const rawLabel=String(combo.name||("ترکیب "+(index+1)));
       const label=seen.has(rawLabel)?rawLabel+" ["+(index+1)+"]":rawLabel;
-      seen.add(label);
+      seen.add(rawLabel);
       return {index,id:String(combo.id||combo.key||("combo-"+(index+1))),label,factors:{...factors,wind},windSign:1};
     });
-    const hasWind=(model?.members||[]).some(m=>["windLeft","windRight","wind","windEnd"].some(k=>Math.abs(Number(m.lineLoads?.[k])||0)>1e-12));
-    const cases=gravityCases.flatMap(item=>hasWind?[
-      {...item,label:item.label+" + باد مثبت",factors:{...item.factors,wind:1},windSign:1},
-      {...item,label:item.label+" + باد منفی",factors:{...item.factors,wind:1},windSign:-1}
+    return gravityCases.flatMap(item=>item.factors.wind>0?[
+      {...item,label:item.label+" + باد مثبت",windSign:1},
+      {...item,label:item.label+" + باد منفی",windSign:-1}
     ]:[item]);
+  }
+  function combinationCasesSelfTest(){
+    const base=[{name:"C1",dead:1.2,live:0,snow:1.6,wind:1.4}];
+    const windModel={members:[{lineLoads:{windLeft:2,windRight:0,wind:0,windEnd:0}}]};
+    const noWindModel={members:[{lineLoads:{windLeft:0,windRight:0,wind:0,windEnd:0}}]};
+    const checks=[];
+    const test=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
+    test("explicit wind factor creates signed alternatives with exact coefficient",()=>{const r=build3DCombinationCases(base,windModel);return r.length===2&&r[0].factors.wind===1.4&&r[1].factors.wind===1.4&&r[0].windSign===1&&r[1].windSign===-1;});
+    test("missing wind factor is blocked when wind load exists",()=>{try{build3DCombinationCases([{name:"C1",dead:1,live:0,snow:0}],windModel);return false;}catch(e){return true;}});
+    test("zero wind factor does not silently add wind",()=>{const r=build3DCombinationCases([{...base[0],wind:0}],windModel);return r.length===1&&r[0].factors.wind===0;});
+    test("nonzero wind factor without wind actions is blocked",()=>{try{build3DCombinationCases(base,noWindModel);return false;}catch(e){return true;}});
+    test("invalid negative wind factor is blocked",()=>{try{build3DCombinationCases([{...base[0],wind:-1}],windModel);return false;}catch(e){return true;}});
+    return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,tests:checks};
+  }
+  async function analyzeAll3DCombinations(options){
+    options=options||{};
+    if(!model)build();
+    const source=window.SteelLoads?.getData?.().combinations;
+    const cases=build3DCombinationCases(source,model);
     const results=[];
     for(let i=0;i<cases.length;i++){
       const item=cases[i];
@@ -1792,6 +1813,6 @@
     const summary=$("fullModelSummary");
     if(summary)summary.textContent="مدل سه‌بعدی هنوز ساخته نشده است. پس از تکمیل ورودی‌ها، «ساخت مدل هندسی کامل» را بزنید.";
   }
-  window.SteelStructuralModel={build,draw,setCameraView,getCameraView:()=>({...cameraView}),getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,setCameraView,getCameraView:()=>({...cameraView}),getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,build3DCombinationCases,combinationCasesSelfTest,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
