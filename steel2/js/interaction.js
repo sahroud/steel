@@ -176,7 +176,8 @@
                     axialRatio: 0,
                     momentRatio: 0,
                     combination: "—",
-                    position: 0
+                    position: 0,
+                    samples: 0
                 };
             });
 
@@ -199,6 +200,7 @@
                     }
 
                     const target = results[name];
+                    target.samples++;
                     const cap = target.capacity;
 
                     getStations(member).forEach(x => {
@@ -242,7 +244,8 @@
                 const c = r.capacity;
 
                 // نسبت فعلی فقط کنترل دوبعدی N-Mx است.
-                const pass = r.ratio <= 1;
+                const hasDemand = r.samples > 0;
+                const pass = hasDemand && r.ratio <= 1;
 
                 return `
                     <tr>
