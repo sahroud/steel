@@ -100,7 +100,7 @@ function mount(){
  p.innerHTML=`<div class="panel-title"><h3>بانک نیروهای انتهایی اتصالات</h3></div>
  <div class="notice">نیروهای هم‌زمان هر ترکیب بار با علامت اصلی و برای دو انتهای هر عضو ثبت می‌شوند. بیشینه‌های مستقل با یکدیگر ترکیب نمی‌شوند؛ مؤلفه‌های ناموجود خالی می‌مانند.</div>
  <div class="form-grid"><div class="field"><label for="connDemandMember">عضو</label><select id="connDemandMember"><option value="">همه اعضا</option></select></div><div class="field"><label for="connDemandEnd">انتها</label><select id="connDemandEnd"><option value="">هر دو انتها</option><option value="i">ابتدا (i)</option><option value="j">انتها (j)</option></select></div></div>
- <div class="button-grid"><button id="btnBuildConnectionDemand" class="btn primary">استخراج نیروهای اتصال از تحلیل</button><button id="btnAuditConnectionJoints" class="btn secondary">ممیزی محل اتصال همه اجزا</button><button id="btnExportConnectionDemand" class="btn secondary" disabled>خروجی CSV</button></div>
+ <div class="button-grid"><button id="btnBuildConnectionDemand" class="btn primary">استخراج نیروهای اتصال از تحلیل</button><button id="btnAuditConnectionJoints" class="btn secondary">ممیزی محل اتصال همه اجزا</button><button id="btnRunAllConnectionScreens" class="btn primary">اجرای کنترل‌های اتصال موجود</button><button id="btnExportConnectionDemand" class="btn secondary" disabled>خروجی CSV</button></div><div id="connectionScreenRunSummary" class="notice">این دکمه فقط کنترل‌های موجود و محدود را اجرا می‌کند؛ اتصال فاقد موتور طراحی همچنان طراحی‌نشده می‌ماند.</div>
  <div id="connectionJointSummary" class="notice">برای فهرست‌برداری محل اتصال اعضا، ابتدا مدل سه‌بعدی را تولید کنید.</div><div id="connectionJointTable" style="overflow-x:auto"></div>
  <div class="drawing-area"><svg viewBox="0 0 600 130" style="width:100%;height:auto"><rect x="55" y="25" width="12" height="75" fill="#64748b"/><rect x="533" y="25" width="12" height="75" fill="#64748b"/><line x1="67" y1="62" x2="533" y2="62" stroke="#31566a" stroke-width="10"/><path d="M95 15 L75 15 L84 8 M75 15 L84 22 M505 15 L525 15 L516 8 M525 15 L516 22" fill="none" stroke="#0b7285" stroke-width="2.5"/><text x="60" y="120" text-anchor="middle" fill="currentColor">i</text><text x="539" y="120" text-anchor="middle" fill="currentColor">j</text></svg></div>
  <div id="connectionDemandSummary" class="notice">پس از اجرای تحلیل ترکیبات بار، استخراج را اجرا کنید.</div><div id="connectionDemandTable" style="overflow-x:auto"></div>
@@ -124,6 +124,19 @@ function mount(){
   $("connectionDemandSummary").textContent="رکوردهای قابل نمایش: "+rows.length+"؛ هر ردیف = یک عضو، یک انتها و یک ترکیب بار.";
   $("connectionDemandTable").innerHTML=rows.length?`<table style="width:100%;min-width:850px;border-collapse:collapse"><thead><tr><th>ترکیب</th><th>عضو</th><th>انتها</th><th>N</th><th>Vy</th><th>Vz</th><th>T</th><th>My</th><th>Mz</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.combination)}</td><td>${esc(r.memberName)}</td><td>${esc(r.end)}</td>${["N","Vy","Vz","T","My","Mz"].map(k=>"<td>"+fmt(r.actions[k])+"</td>").join("")}</tr>`).join("")}</tbody></table>`:"<p>رکوردی یافت نشد.</p>";
  }
+ $("btnRunAllConnectionScreens").addEventListener("click",()=>{
+  const tasks=[
+   ["btnKneeExtract","استخراج هندسه اتصال زانویی"],
+   ["btnBraceConnectionRefresh","به‌روزرسانی داده اتصالات مهاربند"],
+   ["btnBraceGussetStrengthRun","غربال گاست‌پلیت مهاربند"],
+   ["btnBraceBoltStrengthRun","غربال پیچ مهاربند"],
+   ["btnBraceWeldStrengthRun","غربال جوش مهاربند"],
+   ["btnConnectionCheck","غربال محدود گروه جوش کنسول"]
+  ];
+  const done=[],missing=[];
+  tasks.forEach(([id,label])=>{const button=$(id);if(button&&!button.disabled){button.click();done.push(label);}else missing.push(label);});
+  $("connectionScreenRunSummary").textContent="کنترل‌های موجود اجرا/درخواست شدند: "+done.join("؛ ")+"."+(missing.length?" کنترل/بخش در دسترس نیست یا هنوز بارگذاری نشده: "+missing.join("؛ "):"")+" توجه: اجرای غربال محدود به معنی طراحی کامل یا تأیید اتصال نیست.";
+ });
  $("btnAuditConnectionJoints").addEventListener("click",()=>{
   const host=$("connectionJointSummary"),table=$("connectionJointTable");
   try{
