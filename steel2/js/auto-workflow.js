@@ -106,6 +106,18 @@
     });
     return {success:issues.length===0&&rows.length===cases.length&&rows.every(x=>x.success),expectedMemberCount:expected.length,caseCount:cases.length,rows,issues,scope:"3D model-member result coverage, simultaneous 12-component end-force vector presence, unique IDs and per-case solver equilibrium; not member capacity or code approval."};
   }
+  function auditCraneReadiness(model) {
+    const runway=model?.geometry?.craneRunway;
+    if(!runway?.enabled)return {enabled:false,ready:true,issues:[],detail:"جرثقیل در این پروژه فعال نیست."};
+    const audit=window.SteelCraneLoadPathAudit?.auditGeometry?.(model);
+    if(!audit)return {enabled:true,ready:false,issues:["ماژول ممیزی مسیر هندسی جرثقیل بارگذاری نشده است."],detail:"آمادگی مسیر انتقال بار جرثقیل قابل بررسی نیست."};
+    const issues=[...(audit.issues||[])];
+    const integration=runway.integrationAudit,mesh=runway.meshProposal;
+    if(integration&&integration.ready!==true)issues.push(...(integration.issues||["ممیزی اتصال هندسی جرثقیل به شبکه مدل کامل نیست."]));
+    if(mesh&&mesh.ready!==true)issues.push(...(mesh.issues||["پیشنهاد شبکه‌سازی تیر حمال هنوز آماده نیست."]));
+    return {enabled:true,ready:issues.length===0,issues,geometry:audit,integration,mesh,
+      detail:issues.length?issues.join("؛ "):"گره‌ها و اعضای هندسی مسیر تیر حمال ممیزی شدند؛ این نتیجه به‌تنهایی مجوز تزریق بار چرخ یا تأیید طراحی نیست."};
+  }
   function selfTest() {
     const model={members:[{id:"M1"},{id:"M2"}]};
     const solved=(id)=>({id,localEndForces:Array(12).fill(1)});
@@ -122,6 +134,8 @@
     check("tapered analysis segments cover their physical parent member",()=>audit3DCombinationCoverage({members:[{id:"PARENT"}]},[{label:"TAPER",equilibrium:{ok:true},members:[{...solved("PARENT-S1"),parentMemberId:"PARENT"},{...solved("PARENT-S2"),parentMemberId:"PARENT"}]}]).success);
     check("orphan tapered segment parent is rejected",()=>!audit3DCombinationCoverage({members:[{id:"PARENT"}]},[{label:"TAPER",equilibrium:{ok:true},members:[{...solved("SEG-1"),parentMemberId:"UNKNOWN"}]}]).success);
     check("empty reference model rejected",()=>!audit3DCombinationCoverage({members:[]},good).success);
+    check("disabled crane does not block automatic workflow",()=>{const r=auditCraneReadiness({geometry:{craneRunway:{enabled:false}}});return r.ready&&!r.enabled;});
+    check("enabled crane blocks if geometry audit module is unavailable",()=>!auditCraneReadiness({geometry:{craneRunway:{enabled:true}}}).ready);
     return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software result-coverage audit only"};
   }
   async function run() {
@@ -174,6 +188,12 @@
         } else addLine(rows,"تولید و ترسیم مدل هندسی کامل سوله",false,"مدل هندسی کامل تولید نشد.");
       } catch(e) { addLine(rows,"تولید و ترسیم مدل هندسی کامل سوله",false,e?.message||String(e)); }
       if(!fullModelOK) window.SteelDrawing?.drawFrame?.();
+      if(fullModelOK) {
+        const crane=auditCraneReadiness(window.SteelStructuralModel?.getData?.()||window.SteelStructuralModel?.model||null);
+        if(crane.enabled)addLine(rows,"ممیزی مسیر هندسی جرثقیل تا شبکه حل‌گر",crane.ready,
+          crane.detail+" اعمال بار چرخ به حل‌گر تا تکمیل مسیر واقعی تیر حمال، براکت و ستون مسدود می‌ماند.");
+        else addLine(rows,"وضعیت جرثقیل پروژه",true,crane.detail);
+      }
       // اجرای مستقیم و هم‌زمان محاسبه؛ کلیک دکمه با setTimeout اجرا می‌شود
       // و بررسی فوری نتیجه پس از click باعث گزارش کاذب شکست می‌شد.
       let comboRun=null;
@@ -304,6 +324,6 @@
     if(first)main.insertBefore(panel,first);else main.appendChild(panel);
     $("btnSteelAutoWorkflow").addEventListener("click",run);
   }
-  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,selfTest};
+  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,selfTest};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
