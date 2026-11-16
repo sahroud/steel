@@ -45,7 +45,7 @@ function audit(input){
  demands.forEach(c=>{
   if(!text(c.label))issues.push("نام ترکیب بار "+c.caseId+" ناقص است.");
   const missing=SOURCE.filter(k=>!text(c.source?.[k]));
-  if(missing.length)issues.push("مدرک منبع ترکیب "+c.caseId+" ناقص است: "+missing.join("، ")+");
+  if(missing.length)issues.push("مدرک منبع ترکیب "+c.caseId+" ناقص است: "+missing.join("، ")+".");
   if(!Array.isArray(c.stations)||c.stations.length<2)issues.push("ترکیب "+c.caseId+" حداقل دو ایستگاه ابتدا/انتها لازم دارد.");
   (c.stations||[]).forEach((st,i)=>{
    if(!positive(st.station_mm)&&st.station_mm!==0)issues.push("مختصات ایستگاه "+c.caseId+"/"+i+" معتبر نیست.");
