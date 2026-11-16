@@ -64,7 +64,7 @@ function csvBatch(){
  const current=JSON.stringify({nodeId,caseReactions:foundation?.rows?.find(x=>String(x.nodeId)===nodeId)?.caseReactions,cases:foundation?.cases,layout:layouts[nodeId],input});
  if(current!==batchSnapshot){$("asBatchResult").textContent="واکنش‌ها، هندسه یا پارامترهای ظرفیت تغییر کرده‌اند؛ کنترل دسته‌جمعی را دوباره اجرا کنید.";return;}
  const rows=[["node_id",lastBatch.nodeId],["case_id","anchor_id","tension_kN","shear_kN","tension_ratio","shear_ratio","tension_pass","shear_pass"],...lastBatch.rows.map(x=>[x.caseId,x.anchorId,x.tensionDemand_kN,x.shearDemand_kN,x.tensionRatio,x.shearRatio,x.tensionPass,x.shearPass]),...lastBatch.limitations.map(x=>["limitation",x])];
- const data="\\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\\r\\n"),url=URL.createObjectURL(new Blob([data],{type:"text/csv;charset=utf-8"})),a=root.document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Anchor-Steel-Cases-"+nodeId+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const data="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n"),url=URL.createObjectURL(new Blob([data],{type:"text/csv;charset=utf-8"})),a=root.document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Anchor-Steel-Cases-"+nodeId+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function run(){
  try{
