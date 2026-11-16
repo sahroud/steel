@@ -1360,6 +1360,15 @@
         if(warnings.length)tieBeamIntegration.reinforcementWarnings.push({id,warnings});
       });
     }
+    const wallDeadLoadAudit=loadPathAudit.wallDeadLoadTransfer;
+    if(!wallDeadLoadAudit?.success||wallDeadLoadAudit.loadTransferEnabled!==true)throw new Error("انتقال وزن مرده دیوار به شناژ/تکیه‌گاه‌های فونداسیون کامل نیست: "+(wallDeadLoadAudit?.issues||["ممیزی مسیر بار، انتقال معتبر وزن دیوار را تأیید نکرد."]).join("؛ "));
+    const wallDeadMemberLoads=window.SteelWallDeadLoadTransfer.prepareMemberLineLoads(model,selected.deadFactor,wallDeadLoadAudit);
+    wallDeadMemberLoads.forEach(load=>{
+      const member=analysisModel.members.find(x=>String(x.id)===load.memberId);
+      if(!member)throw new Error("عضو شناژ متناظر با بار دیوار پیدا نشد: "+load.memberId);
+      member.lineLoads.dead=Number(member.lineLoads.dead||0)+load.lineLoadKNm;
+      member.lineLoads.wallMasonryDead=load.lineLoadKNm;
+    });
     // Build an indexed node registry and validate connectivity before creating element loads.
     const nodeById=new Map();
     const duplicateNodeIds=[];
@@ -1493,11 +1502,7 @@
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
-    const wallDeadLoadAudit=loadPathAudit.wallDeadLoadTransfer;
-    if(!wallDeadLoadAudit?.success||wallDeadLoadAudit.loadTransferEnabled!==true)throw new Error("انتقال وزن مرده دیوار به تکیه‌گاه‌های فونداسیون کامل نیست: "+(wallDeadLoadAudit?.issues||["ممیزی مسیر بار، انتقال معتبر وزن دیوار را تأیید نکرد."]).join("؛ "));
     const wallDeadNodalLoads=window.SteelWallDeadLoadTransfer.prepareNodalLoads(model,selected.deadFactor,wallDeadLoadAudit);
-    const wallDeadMemberLoads=window.SteelWallDeadLoadTransfer.prepareMemberLineLoads(model,selected.deadFactor,wallDeadLoadAudit);
-    wallDeadMemberLoads.forEach(load=>{const member=analysisModel.members.find(x=>String(x.id)===load.memberId);if(!member)throw new Error("عضو شناژ متناظر با بار دیوار پیدا نشد: "+load.memberId);member.lineLoads.dead=Number(member.lineLoads.dead||0)+load.lineLoadKNm;member.lineLoads.wallMasonryDead=load.lineLoadKNm;});
     let gableWindEccentricTransfer={success:true,loads:[],rows:[],issues:[],analysisEnabled:false,designApproved:false};
     if(selected.directionalWindPressures){
       if(!window.SteelGableEccentricLoadTransfer?.prepareNodalLoads)throw new Error("ماژول انتقال خروج از مرکزیت باد گابل بارگذاری نشده است.");
