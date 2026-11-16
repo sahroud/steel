@@ -48,6 +48,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     <a href="legacy.html?focus=member-check#cantileverCheckPanel" data-focus-link="member-check">کنترل کنسول رفتر</a>
     <a href="legacy.html?focus=tapered#taperedSectionsPanel" data-focus-link="tapered">مقاطع متغیر و ضخامت‌ها</a>
     <a href="legacy.html?focus=connections#connectionDemandRegistryPanel" data-focus-link="connections">اتصالات و محل اتصال اجزا</a>
+    <a href="legacy.html?focus=foundation#baseReactionTransferPanel" data-focus-link="foundation">فونداسیون و انکرها</a>
     <a href="legacy.html" data-focus-link="all">نمایش همه بخش‌ها</a>
   </div>
 </nav>
@@ -57,7 +58,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
   function initFocusWorkspace(){
     var params=new URLSearchParams(window.location.search);
     var focus=params.get("focus");
-    var valid=["project","loads","drawings","analysis","crane","member-check","tapered","connections"];
+    var valid=["project","loads","drawings","analysis","crane","member-check","tapered","connections","foundation"];
     var nav=document.getElementById("focusWorkspaceNav");
     if(!nav)return;
     if(!focus||!valid.includes(focus)){
@@ -71,7 +72,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     });
     var active=nav.querySelector('[data-focus-link="'+focus+'"]');
     if(active)active.setAttribute("aria-current","page");
-    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا",tapered:"مقاطع متغیر و غربال ضخامت",connections:"اتصالات و محل اتصال اجزا"};
+    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا",tapered:"مقاطع متغیر و غربال ضخامت",connections:"اتصالات و محل اتصال اجزا",foundation:"فونداسیون و انکرها"};
     var caption=document.getElementById("focusWorkspaceCaption");
     if(caption)caption.textContent="حالت نمایش متمرکز: "+labels[focus]+"؛ برای بازگشت، «نمایش همه بخش‌ها» را انتخاب کنید.";
     var targetId=(window.location.hash||"").slice(1);
@@ -396,7 +397,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 <script defer src="js/foundation-takeoff.js?v=20261113-continuous-tie-rebar2"></script>
 <script defer src="js/geotechnical-data-panel.js?v=20261112geotech1"></script>
 <script defer src="js/tie-beam-layout.js?v=20261113-schematic1"></script>\n<script defer src="js/site-work-takeoff.js?v=20261113-sitework-blinding1"></script>
-<script defer src="js/tie-beam-integration-test.js?v=20261112tie-test1"></script>
+
 <script defer src="js/tie-beam-reinforcement.js?v=20261113-continuous-footing-bars1"></script>
 <script defer src="js/anchor-baseplate-takeoff.js?v=20261113-project-boq-refresh1"></script>
 <script defer src="js/project-boq-registry.js?v=20261113-project-boq-blinding2"></script>
@@ -410,8 +411,8 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 <script defer src="js/crane-runway-girder.js?v=20261113-girder-sync-audit2"></script>
 <script defer src="js/crane-load-path-audit.js?v=20261116-crane-solver-contract1"></script>
 <script defer src="js/analysis-3d.js?v=20261116-zero-support-reactions1"></script>
-<script defer src="tests/analysis-3d-analytical-benchmarks.js?v=20261114-analytical-benchmarks1"></script>
-<script defer src="tests/tapered-member-mesh-convergence.js?v=20261114-tapered-mesh-convergence1"></script>
+
+
 <script defer src="js/analysis.js?v=20261111b"></script>
 <script defer src="js/sections.js?v=20261115-no-silent-thickness1"></script>
 <script defer src="js/section-geometry-audit.js?v=20261113-geometry-audit2"></script>
@@ -506,7 +507,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 <script defer src="js/load-case-workbench.js?v=20261114-load-workbench1"></script>
 <script defer src="js/nodal-load-case-runner.js?v=20261114-nodal-runner1"></script>
 <script defer src="js/solver-action-demand-bridge.js?v=20261114-action-bridge1"></script>
-<script defer src="js/solver-end-action-sign-benchmarks.js?v=20261114-sign-benchmarks1"></script>
+
 <script defer src="js/solver-section-force-diagram-bridge.js?v=20261114-section-diagram-bridge2"></script>
 <script defer src="js/station-demand-adapter.js?v=20261114-station-demand1"></script>
 <script defer src="js/member-design-demand-package.js?v=20261115-demand-package1"></script>
@@ -529,7 +530,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 <script defer src="js/reference-model-viewer.js?v=20261114-viewer1"></script>
 <script defer src="js/engineering-workstream-dashboard.js?v=20261114-roadmap1"></script>
 <script defer src="js/design-basis-intake.js?v=20261114-basis1"></script>
-<script defer src="js/engineering-regression-tests.js?v=20261114-loadpath-fem-regression1"></script>
+
 <script defer src="js/displacement-envelope.js?v=20261114-strict-load-factors1"></script>
 <script defer src="js/member-detail-drawings.js?v=20261113-member-detail1"></script>
 
@@ -541,7 +542,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 <script defer src="js/foundation-reaction-bridge.js?v=20261116-crane-foundation-demand-adapter1"></script>
 <script defer src="js/anchor-steel-group-audit.js?v=20261114-anchor-group-steel1"></script>
 <script defer src="js/anchor-case-demand-bridge.js?v=20261114-anchor-case-demand1"></script>
-<script defer src="js/anchor-case-demand-ui.js?v=20261116-crane-anchor-demand-ui1"></script>
+<script defer src="js/anchor-case-demand-ui.js?v=20261116-foundation-focus-production-testtrim1"></script>
 <script defer src="js/structure-view-gallery.js?v=20261115-no-auto-build-fit2"></script>
 <script defer src="js/project-workspace.js?v=20261114-workspace-snapshot-guards5"></script>
 <script defer src="js/home-workflow.js?v=20261115-compact-start2"></script>
