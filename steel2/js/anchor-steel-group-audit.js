@@ -29,7 +29,7 @@ function compare(demandResults,input){
 }
 function selfTest(){
  const checks=[],t=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
- const input={Ase_mm2:100,Fnt_MPa:400,Fnv_MPa:240,phiT:.75,phiV:.75},demand={ok:true,nodeId:"B1",caseId:"ULS-1",anchors:[{anchorId:"A1",tensionDemand_N:10000,resultantShear_N:5000},{anchorId:"A2",tensionDemand_N:20000,resultantShear_N:10000}]};
+ const input={Ase_mm2:100,Fnt_MPa:400,Fnv_MPa:240,phiT:.75,phiV:.75},demand={ok:true,nodeId:"B1",caseId:"ULS-1",anchors:[{anchorId:"A1",tensionDemand_N:10000,resultantShear_N:5000,totalShearX_N:3000,totalShearZ_N:4000},{anchorId:"A2",tensionDemand_N:20000,resultantShear_N:10000,totalShearX_N:6000,totalShearZ_N:8000}]};
  t("calculates tension design capacity",()=>compare(demand,input).rows[0].tensionDesignCapacity_kN===30);
  t("calculates shear design capacity",()=>compare(demand,input).rows[0].shearDesignCapacity_kN===18);
  t("preserves per-anchor demand and case identity",()=>{const r=compare(demand,input);return r.rows[1].anchorId==="A2"&&r.rows[1].caseId==="ULS-1"&&r.rows[1].tensionDemand_kN===20;});
