@@ -49,6 +49,12 @@ function build(demandPackage,combinationSet,assumptions){
   (m.cases||[]).forEach(c=>{const cid=txt(c?.caseId);if(!cid||byCase.has(cid)){issues.push("حالت تکراری/بی‌نام برای عضو "+id+": "+cid);return;}byCase.set(cid,c);});
   memberMaps.set(id,byCase);
  });
+ const sourceByCase=new Map();
+ members.forEach(m=>(m.cases||[]).forEach(c=>{
+  const cid=txt(c?.caseId),signature=stable(c?.source||null);
+  if(!sourceByCase.has(cid))sourceByCase.set(cid,signature);
+  else if(sourceByCase.get(cid)!==signature)issues.push("منبع حالت بار "+cid+" بین اعضای مختلف یکسان نیست؛ منشأ تحلیل باید یکپارچه باشد.");
+ }));
  const proposals=[];
  if(!issues.length){
   combinations.forEach(combo=>{
@@ -87,7 +93,7 @@ function build(demandPackage,combinationSet,assumptions){
     });
     memberResults.push({memberId:id,stations,complete:stations.length===ref.flat.length});
    });
-   proposals.push({combinationId:comboId,source:{...combo.source},factors:{...factors},members:memberResults,linearSuperpositionProposal:true,designApproved:false});
+   proposals.push({combinationId:comboId,source:{...combo.source},sourceCases:factorIds.map(caseId=>({caseId,source:members[0]?.cases?.find(c=>txt(c.caseId)===caseId)?.source||null})),factors:{...factors},members:memberResults,linearSuperpositionProposal:true,designApproved:false});
   });
  }
  const success=issues.length===0&&proposals.length===combinations.length;
@@ -104,6 +110,8 @@ function selfTest(){
  const t=[
   ["valid matching station vectors combined",()=>ok.success&&ok.proposals[0].members[0].stations[0].actions.N===32&&ok.proposals[0].members[0].stations[0].actions.Mz===19.2],
   ["source case IDs and explicit factors retained",()=>ok.proposals[0].factors.D===1.2&&ok.proposals[0].members[0].stations[0].sourceCaseIds.length===2],
+  ["underlying analysis case provenance retained in combination",()=>ok.proposals[0].sourceCases?.length===2&&ok.proposals[0].sourceCases[0].source.document==="fixture"],
+  ["inconsistent case provenance across members rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members.push({memberId:"M2",complete:true,cases:[{...mk("D",1).cases[0],source:{document:"other",revision:"1",locator:"p.1",authority:"reviewed"}},mk("W",2).cases[0]]});return !build(x,combos,assumptions).success;}],
   ["missing assumptions fail closed",()=>!build(pkg,combos,{}).success],
   ["missing code source rejected",()=>{const x=JSON.parse(JSON.stringify(combos));delete x.combinations[0].source.clause;return !build(pkg,x,assumptions).success;}],
   ["missing load-case category is not defaulted",()=>{const x=JSON.parse(JSON.stringify(combos));x.loadCases[0].category="";return !build(pkg,x,assumptions).success;}],
