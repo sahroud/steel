@@ -15,6 +15,10 @@ function validate(d){
  ["diameterMm","fyaMPa","futaMPa","hefMm","fcMPa","memberThicknessMm","memberWidthMm","memberLengthMm","headDiameterMm","headThicknessMm","threadPitchMm","edgeXmm","edgeZmm","edgeXFarMm","edgeZFarMm"].forEach(k=>{if(!pos(n[k]))issues.push(k+" باید با مقدار واقعی و مثبت وارد شود.");});
  if(cols>1&&!pos(n.pitchXmm))issues.push("گام انکرها در راستای X باید مثبت باشد.");
  if(rows>1&&!pos(n.pitchZmm))issues.push("گام انکرها در راستای Z باید مثبت باشد.");
+ const minAnchorSpacing=6*n.diameterMm,minEdgeDistance=6*n.diameterMm;
+ if(pos(n.diameterMm)&&cols>1&&pos(n.pitchXmm)&&n.pitchXmm<minAnchorSpacing)issues.push("فاصله مرکز تا مرکز انکرها در X از حداقل ۶dₐ طبق جدول ۹-۱۸-۶ کمتر است؛ استثنای بند ۹-۱۸-۷-۲ هنوز پیاده‌سازی نشده است.");
+ if(pos(n.diameterMm)&&rows>1&&pos(n.pitchZmm)&&n.pitchZmm<minAnchorSpacing)issues.push("فاصله مرکز تا مرکز انکرها در Z از حداقل ۶dₐ طبق جدول ۹-۱۸-۶ کمتر است؛ استثنای بند ۹-۱۸-۷-۲ هنوز پیاده‌سازی نشده است.");
+ [["لبه نزدیک X",n.edgeXmm],["لبه دور X",n.edgeXFarMm],["لبه نزدیک Z",n.edgeZmm],["لبه دور Z",n.edgeZFarMm]].forEach(([label,v])=>{if(pos(n.diameterMm)&&pos(v)&&v<minEdgeDistance)issues.push("فاصله تا "+label+" از حداقل ۶dₐ برای مهار سر‌دار طبق جدول ۹-۱۸-۷ کمتر است.");});
  if(cols===1&&n.pitchXmm!==0)warnings.push("برای یک ستون، گام X باید صفر یا بدون کاربرد باشد.");
  if(rows===1&&n.pitchZmm!==0)warnings.push("برای یک ردیف، گام Z باید صفر یا بدون کاربرد باشد.");
  if(pos(n.hefMm)&&pos(n.memberThicknessMm)&&n.hefMm>=n.memberThicknessMm)issues.push("عمق مؤثر کاشت از ضخامت عضو کمتر نیست؛ هندسه و تعریف hef را اصلاح کنید.");
@@ -32,7 +36,7 @@ function validate(d){
  warnings.push("مقاومت فولاد، گسیختگی مخروطی بتن، بیرون‌کشیدگی، بیرون‌زدگی جانبی، شکست لبه در برش، pryout و الزامات لرزه‌ای هنوز محاسبه نشده‌اند.");
  warnings.push("مقادیر fya، Futa، سطح مؤثر رزوه و ابعاد سر باید از گواهی مصالح و نقشه/کاتالوگ معتبر برداشت شوند؛ مقدار پیش‌فرض یا حدس مجاز نیست.");
  const ok=issues.length===0&&type==="cast_in_headed";
- return{ok,inputStructurallyComplete:ok,readyForFutureCalculation:false,minimumGeometryStatus:"blocked_source_verification",minimumGeometryClause:"9-18-7",anchorType:type,issues,warnings,capacityCalculated:false,analysisEnabled:false,designApproved:false,codeComplianceStatus:"not_evaluated"};
+ return{ok,inputStructurallyComplete:ok,readyForFutureCalculation:false,minimumSpacingMm:pos(n.diameterMm)?minAnchorSpacing:null,minimumEdgeDistanceMm:pos(n.diameterMm)?minEdgeDistance:null,minimumGeometryStatus:issues.some(x=>x.includes("حداقل ۶dₐ"))?"failed_spacing_or_edge":"partial_pass_thickness_and_splitting_pending",minimumGeometryClause:"9-18-7-1 / Tables 9-18-6 and 9-18-7; thickness/splitting check pending",anchorType:type,issues,warnings,capacityCalculated:false,analysisEnabled:false,designApproved:false,codeComplianceStatus:"not_evaluated"};
 }
 function mount(){
  if(!root.document||document.getElementById("anchorDesignInputContract"))return;
@@ -61,8 +65,8 @@ function mount(){
 }
 function selfTest(){
  const base={anchorType:"cast_in_headed",rows:2,cols:2,diameterMm:20,fyaMPa:400,futaMPa:700,hefMm:160,fcMPa:30,memberThicknessMm:300,memberWidthMm:500,memberLengthMm:500,headDiameterMm:40,headThicknessMm:12,threadPitchMm:2.5,edgeXmm:150,edgeZmm:150,edgeXFarMm:150,edgeZFarMm:150,pitchXmm:160,pitchZmm:160,concreteCondition:"cracked",concreteType:"normal",installation:"cast_before_concrete",edgeReinforcement:true,seismicDemand:true,manufacturerDataVerified:true,anchorDetailVerified:true,reinforcementLayoutVerified:true,edgeDistanceVerified:true,inspectionPlan:true,installationRecord:true};
- const a=validate(base),b=validate({...base,anchorType:"adhesive"}),c=validate({...base,hefMm:350}),d=validate({...base,pitchXmm:null}),e=validate({...base,concreteCondition:""}),g=validate({...base,memberWidthMm:400}),h=validate({...base,inspectionPlan:false}),j=validate({...base,headDiameterMm:15});
- const checks=[a.ok&&!a.readyForFutureCalculation&&a.minimumGeometryStatus==="blocked_source_verification"&&!a.capacityCalculated&&!a.designApproved,!b.ok,!c.ok,!d.ok,!e.ok,!g.ok,!h.ok,!j.ok];
+ const a=validate(base),b=validate({...base,anchorType:"adhesive"}),c=validate({...base,hefMm:350}),d=validate({...base,pitchXmm:null}),e=validate({...base,concreteCondition:""}),g=validate({...base,memberWidthMm:400}),h=validate({...base,inspectionPlan:false}),j=validate({...base,headDiameterMm:15}),sp=validate({...base,pitchXmm:119}),ed=validate({...base,edgeXmm:119}),edgePass=validate({...base,pitchXmm:120,edgeXmm:120});
+ const checks=[a.ok&&!a.readyForFutureCalculation&&a.minimumGeometryStatus==="partial_pass_thickness_and_splitting_pending"&&!a.capacityCalculated&&!a.designApproved,!b.ok,!c.ok,!d.ok,!e.ok,!g.ok,!h.ok,!j.ok,!sp.ok&&!ed.ok,edgePass.ok&&edgePass.minimumSpacingMm===120&&edgePass.minimumEdgeDistanceMm===120];
  return{passed:checks.filter(Boolean).length,failed:checks.filter(x=>!x).length,total:checks.length,checks};
 }
 root.SteelAnchorDesignInputContract={validate,selfTest};
