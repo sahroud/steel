@@ -102,7 +102,7 @@ function build(demandPackage,combinationSet,assumptions){
 }
 function selfTest(){
  const src={code:"M6",edition:"1401",clause:"user-verified",document:"project-approved-basis"};
- const mk=(id,scale)=>({memberId:"M1",complete:true,cases:[{caseId:id,kind:"prismatic",complete:true,stations:[{xLocal_m:0,xMember_m:0,localAxes:{x:[1,0,0]},actions:{N:10*scale,Vy:2*scale,Vz:3*scale,T:4*scale,My:5*scale,Mz:6*scale}},{xLocal_m:2,xMember_m:2,localAxes:{x:[1,0,0]},actions:{N:20*scale,Vy:4*scale,Vz:6*scale,T:8*scale,My:10*scale,Mz:12*scale}}]}]});
+ const mk=(id,scale)=>({memberId:"M1",complete:true,cases:[{caseId:id,source:{document:"fixture",revision:"R1",locator:"Sheet1!A1",authority:"solver"},kind:"prismatic",complete:true,stations:[{xLocal_m:0,xMember_m:0,localAxes:{x:[1,0,0]},actions:{N:10*scale,Vy:2*scale,Vz:3*scale,T:4*scale,My:5*scale,Mz:6*scale}},{xLocal_m:2,xMember_m:2,localAxes:{x:[1,0,0]},actions:{N:20*scale,Vy:4*scale,Vz:6*scale,T:8*scale,My:10*scale,Mz:12*scale}}]}]});
  const pkg={success:true,designApproved:false,concurrencyPreserved:true,caseSeparationPreserved:true,caseIds:["D","W"],members:[{memberId:"M1",complete:true,cases:[mk("D",1).cases[0],mk("W",2).cases[0]]}],designGate:{designApproved:false}};
  const combos={loadCases:[{id:"D",category:"dead"},{id:"W",category:"wind"}],combinations:[{id:"C1",factors:{D:1.2,W:1},source:src}]};
  const assumptions={sameModelRevision:true,sameGeometry:true,sameSupports:true,sameStiffnessModel:true,linearElasticFirstOrder:true};
