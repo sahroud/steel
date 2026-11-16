@@ -134,7 +134,8 @@
                     ratio: 0,
                     combination: "—",
                     position: "—",
-                    momentSign: "—"
+                    momentSign: "—",
+                    samples: 0
                 };
             });
 
@@ -164,6 +165,7 @@
                         );
                     }
 
+                    results[name].samples++;
                     stations(member).forEach(x => {
                         const M = forceAt(member, "M", x);
                         const demand = Math.abs(M);
@@ -195,7 +197,8 @@
             const rows = MEMBERS.map(name => {
                 const r = results[name];
                 const c = r.capacity;
-                const pass = r.ratio <= 1;
+                const hasDemand = r.samples > 0;
+                const pass = hasDemand && r.ratio <= 1;
 
                 return `
                     <tr>
@@ -206,8 +209,8 @@
                         <td>${fmt(c.nominalKNm)}</td>
                         <td>${fmt(c.designKNm)}</td>
                         <td>${fmt(r.demand)}</td>
-                        <td>${fmt(r.ratio)}</td>
-                        <td>${pass ? "قبول مقدماتی" : "نیاز به بررسی"}</td>
+                        <td>${hasDemand?fmt(r.ratio):"—"}</td>
+                        <td>${!hasDemand?"فاقد داده ـ کنترل نشد":pass ? "قبول مقدماتی" : "نیاز به بررسی"}</td>
                         <td>${esc(r.combination)}</td>
                         <td>${fmt(r.position)} m</td>
                         <td>${r.momentSign}</td>
