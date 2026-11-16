@@ -1368,6 +1368,9 @@
       if(!member)throw new Error("عضو شناژ متناظر با بار دیوار پیدا نشد: "+load.memberId);
       member.lineLoads.dead=Number(member.lineLoads.dead||0)+load.lineLoadKNm;
       member.lineLoads.wallMasonryDead=load.lineLoadKNm;
+      if(load.globalStartKNm&&load.globalEndKNm){
+        member.lineLoads.wallMasonryLinearGlobalKNm={start:load.globalStartKNm.slice(),end:load.globalEndKNm.slice(),average:load.lineLoadKNm,distribution:load.distribution||"linear-global-vertical"};
+      }
     });
     // Build an indexed node registry and validate connectivity before creating element loads.
     const nodeById=new Map();
@@ -1487,6 +1490,16 @@
       const axes=[tr.axes.x,tr.axes.y,tr.axes.z];
       const local=axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*global[i],0));
       m.analysisLoad={uniformLocal:local,globalUniform:global};
+      const wallLinear=m.lineLoads?.wallMasonryLinearGlobalKNm;
+      if(wallLinear&&selected.deadFactor>0){
+        const averageGlobal=[0,-Number(wallLinear.average)*1000,0];
+        const startGlobal=wallLinear.start.map((v,i)=>(Number(v)*1000-averageGlobal[i])*selected.deadFactor);
+        const endGlobal=wallLinear.end.map((v,i)=>(Number(v)*1000-averageGlobal[i])*selected.deadFactor);
+        m.analysisLoad.linearLocal={
+          start:axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*startGlobal[i],0)),
+          end:axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*endGlobal[i],0))
+        };
+      }
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
     if(!window.SteelMemberLoadPreflight?.audit)throw new Error("ماژول ممیزی نهایی بار تک‌تک اعضا بارگذاری نشده است.");
