@@ -177,8 +177,10 @@
       addLine(rows,"اعتبارسنجی هندسه و مشخصات پروژه",true,"ابعاد اصلی و ورودی‌های اجباری معتبرند.");
 
       let fullModelOK=false;
+      let fullModelForAnalysis=null;
       try {
         const fullModel=window.SteelStructuralModel?.build?.();
+        fullModelForAnalysis=fullModel||null;
         fullModelOK=!!fullModel&&Array.isArray(fullModel.members)&&fullModel.members.length>0;
         if(fullModelOK) {
           addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",true,
@@ -238,6 +240,41 @@
           coverage.success
             ? coverage.expectedMemberCount+" عضو مدل در هر "+coverage.caseCount+" ترکیب، با شناسه یکتا، بردار کامل ۱۲ مؤلفه‌ای نیرو و تعادل عددی ثبت شده‌اند. این ممیزی پوشش نتایج است؛ نه تأیید مقاومت یا طراحی آیین‌نامه‌ای."
             : coverage.issues.slice(0,12).join("؛ "));
+
+        // Reuse the actual 3D combination solver vectors to build per-case
+        // section-demand evidence. No factors or code combinations are inferred.
+        let memberDemandPackage=null;
+        try {
+          const demandApi=window.SteelMemberDesignDemandPackage;
+          const modelMembers=Array.isArray(fullModelForAnalysis?.members)?fullModelForAnalysis.members:[];
+          const sourceCases=window.SteelAnalysis.combinationResults;
+          if(!demandApi?.buildFromSolverCases) throw new Error("بسته تقاضای ایستگاهی یا پل نمودار نیرو بارگذاری نشده است.");
+          if(!modelMembers.length) throw new Error("مدل فیزیکی اعضا برای استخراج تقاضای ایستگاهی موجود نیست.");
+          const runnerCases=sourceCases.map(item=>({
+            success:true,status:"isolated_analysis_proposal",
+            solverResult:{
+              success:true,equilibrium:item.equilibrium||null,
+              members:Array.isArray(item.members)?item.members.map(member=>({
+                id:String(member.id),
+                localEndForces:Array.isArray(member.localEndForces)?member.localEndForces.slice():[]
+              })):[],
+            },
+            simultaneousActionCase:{
+              caseId:String(item.id||""),source:item.source||null,
+              equilibriumOk:item.equilibrium?.ok===true,
+            },
+          }));
+          memberDemandPackage=demandApi.buildFromSolverCases(
+            fullModelForAnalysis,runnerCases,
+            {expectedMemberIds:modelMembers.map(member=>String(member.id))}
+          );
+        } catch(error) {
+          memberDemandPackage={success:false,status:"insufficient_data",issues:[String(error?.message||error)],designApproved:false};
+        }
+        addLine(rows,"استخراج تقاضای ایستگاهی از خروجی واقعی حل‌گر",memberDemandPackage?.success===true,
+          memberDemandPackage?.success===true
+            ? "تقاضای شش‌مؤلفه‌ای در ایستگاه‌های اعضا برای "+memberDemandPackage.caseIds.length+" حالت تحلیل مستقل ثبت شد؛ هنوز ترکیب آیین‌نامه‌ای یا ظرفیت عضو محاسبه نشده است."
+            : (memberDemandPackage?.issues||["بسته تقاضای ایستگاهی ساخته نشد."]).slice(0,10).join("؛ "));
 
         const bucklingMessage=$("bucklingMessage");
         if($("combinationBucklingResults"))$("combinationBucklingResults").innerHTML="";
