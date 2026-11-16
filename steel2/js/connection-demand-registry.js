@@ -136,7 +136,7 @@ function mount(){
  const main=document.querySelector("main");if(!main)return;
  const p=document.createElement("section");p.className="panel";p.id="connectionDemandRegistryPanel";p.setAttribute("data-focus-group","connections");
  p.innerHTML=`<div class="panel-title"><h3>بانک نیروهای انتهایی اتصالات</h3></div>
- <div class="notice">نیروهای هم‌زمان هر ترکیب بار با علامت اصلی و برای دو انتهای هر عضو ثبت می‌شوند. بیشینه‌های مستقل با یکدیگر ترکیب نمی‌شوند؛ مؤلفه‌های ناموجود خالی می‌مانند.</div>
+ <div class="notice">نیروهای انتهایی مستقیماً از پوش تحلیل سه‌بعدی همه ترکیبات استخراج می‌شوند. هر ردیف به گره واقعی اتصال و انتهای عضو وصل است؛ مؤلفه‌ها در محور محلی عضو و با علامت حل‌گر حفظ می‌شوند و برآیند گره فرض نمی‌شود.</div>
  <div class="form-grid"><div class="field"><label for="connDemandMember">عضو</label><select id="connDemandMember"><option value="">همه اعضا</option></select></div><div class="field"><label for="connDemandEnd">انتها</label><select id="connDemandEnd"><option value="">هر دو انتها</option><option value="i">ابتدا (i)</option><option value="j">انتها (j)</option></select></div></div>
  <div class="button-grid"><button id="btnBuildConnectionDemand" class="btn primary">استخراج نیروهای اتصال از تحلیل</button><button id="btnAuditConnectionJoints" class="btn secondary">ممیزی محل اتصال همه اجزا</button><button id="btnRunAllConnectionScreens" class="btn primary">اجرای کنترل‌های اتصال موجود</button><button id="btnExportConnectionDemand" class="btn secondary" disabled>خروجی CSV</button></div><div id="connectionScreenRunSummary" class="notice">این دکمه فقط کنترل‌های موجود و محدود را اجرا می‌کند؛ اتصال فاقد موتور طراحی همچنان طراحی‌نشده می‌ماند.</div>
  <div id="connectionJointSummary" class="notice">برای فهرست‌برداری محل اتصال اعضا، ابتدا مدل سه‌بعدی را تولید کنید.</div><div id="connectionJointTable" style="overflow-x:auto"></div>
@@ -185,10 +185,15 @@ function mount(){
   }catch(e){host.textContent="ممیزی اتصال انجام نشد: "+String(e.message||e);table.innerHTML="";}
  });
  $("btnBuildConnectionDemand").addEventListener("click",()=>{
-  try{records=collect(root.SteelAnalysis?.combinationResults);const s=$("connDemandMember"),old=s.value,names=[...new Set(records.map(r=>r.memberName))];s.innerHTML='<option value="">همه اعضا</option>'+names.map(n=>'<option>'+n.replace(/[&<>]/g,"")+'</option>').join("");s.value=old;$("btnExportConnectionDemand").disabled=false;render();}
-  catch(e){$("connectionDemandSummary").textContent=e.message;$("connectionDemandTable").innerHTML="";}
+  try{
+   records=collectFromEnvelope(root.SteelMemberForceEnvelope?.getLast?.(),root.SteelStructuralModel?.getData?.());
+   const s=$("connDemandMember"),old=s.value,names=[...new Set(records.map(r=>r.memberName))];
+   s.innerHTML='<option value="">همه اعضا</option>'+names.map(n=>'<option>'+n.replace(/[&<>]/g,"")+'</option>').join("");
+   s.value=names.includes(old)?old:"";$("btnExportConnectionDemand").disabled=false;render();
+   $("connectionDemandSummary").textContent="تقاضا از تحلیل سه‌بعدی همه ترکیبات استخراج شد: "+records.length+" انتهای عضو در گره‌های اتصال؛ نیرو kN و لنگر kN.m. علامت و محور محلی حفظ شده است؛ این داده‌ها برآیند گره نیستند.";
+  }catch(e){records=[];$("btnExportConnectionDemand").disabled=true;$("connectionDemandSummary").textContent=e.message;$("connectionDemandTable").innerHTML="";}
  });
- $("connDemandMember").addEventListener("change",render);$("connDemandEnd").addEventListener("change",render);
+$("connDemandMember").addEventListener("change",render);$("connDemandEnd").addEventListener("change",render);
  $("btnExportConnectionDemand").addEventListener("click",()=>{if(!records.length)return;const u=URL.createObjectURL(new Blob([toCsv(records)],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=u;a.download="sahroud-steel-connection-demands.csv";a.click();URL.revokeObjectURL(u);});
 }
 root.SteelConnectionDemandRegistry={collect,collectFromEnvelope,toCsv,test,endActions,collectJoints};
