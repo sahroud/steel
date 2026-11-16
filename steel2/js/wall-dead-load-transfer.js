@@ -51,7 +51,7 @@ function inspectGradeBeamSupportPath(model,face,unitWeightKNm2){
   const startLoad=unitWeightKNm2*(longitudinal?Number(g.height):roofY(Number(a[axis]),g));
   const endLoad=unitWeightKNm2*(longitudinal?Number(g.height):roofY(Number(b[axis]),g));
   segments.push({routeId:String(r.id),start:s,end:e,startNodeId:String(r.start),endNodeId:String(r.end),lengthM:e-s,wallAreaM2:area,
-   uniformEquivalentLineLoadKNm:unitWeightKNm2*area/(e-s),startLineLoadKNm:startLoad,endLineLoadKNm:endLoad,
+   uniformEquivalentLineLoadKNm:unitWeightKNm2*area/(e-s),startLineLoadKNm:startLoad,endLineLoadKNm:endLoad,unitWeightKNm2,
    weightKN:unitWeightKNm2*area,startJoint:r.startJoint||"unknown",endJoint:r.endJoint||"unknown",crossesRidge,ridgeNodeRequired:crossesRidge});
  });
  segments.sort((a,b)=>a.start-b.start);let cursor=0;
@@ -183,9 +183,8 @@ function prepareMemberLineLoads(model,deadFactor,precomputedAudit){
    const coordinate=row.face==="left"||row.face==="right"?"z":"x";
    for(let i=0;i<routeNodes.length-1;i++){
     const ni=routeNodes[i],nj=routeNodes[i+1],memberId=beamPrefix+(i+1),length=Math.hypot(nj.x-ni.x,nj.y-ni.y,nj.z-ni.z);
-    const intensity=node=>segment.startLineLoadKNm===segment.endLineLoadKNm?segment.startLineLoadKNm:
-     num(segment.startLineLoadKNm)+(num(segment.endLineLoadKNm)-num(segment.startLineLoadKNm))*
-     ((Number(node[coordinate])-Number(start[coordinate]))/(Number(end[coordinate])-Number(start[coordinate])));
+    const intensity=node=>Number(segment.unitWeightKNm2)*
+     (row.face==="left"||row.face==="right"?Number(model.geometry.height):roofY(Number(node[coordinate]),model.geometry));
     const q0=intensity(ni),q1=intensity(nj),average=(q0+q1)/2;
     out.push({memberId,routeId,face:row.face,uniformGlobalKNm:[0,-average,0],globalStartKNm:[0,-q0,0],globalEndKNm:[0,-q1,0],
      lineLoadKNm:average,sourceWeightKN:average*length,segmentLengthM:length,deadFactor:factor,loadFactorAppliedInSolver:true,distribution:"linear-global-vertical"});
@@ -229,6 +228,7 @@ function selfTest(){
   t("gable route crossing ridge requires an actual ridge base node",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T2",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:10,y:0,z:0}]}, "front",3.6);return !x.success&&x.segments[0].crossesRidge===true&&x.issues.some(v=>v.includes("گره پایه در محور تاج"));});
  t("gable variable wall load uses exact end intensities on both roof slopes",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T3L",start:"A",end:"C",startJoint:"rigid",endJoint:"rigid"},{id:"T3R",start:"C",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"endwall-base"},{id:"C",x:5,y:0,z:0,kind:"endwall-base"},{id:"B",x:10,y:0,z:0,kind:"endwall-base"}]},"front",3.6);return x.success&&Math.abs(x.segments[0].startLineLoadKNm-18)<1e-8&&Math.abs(x.segments[0].endLineLoadKNm-25.2)<1e-8&&Math.abs(x.segments[1].startLineLoadKNm-25.2)<1e-8&&Math.abs(x.segments[1].endLineLoadKNm-18)<1e-8&&Math.abs(x.weightKN-216)<1e-8;});
  t("grade-beam wall transfer creates line loads, not base-node loads",()=>{const old= root.SteelTieBeamLayout;root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const model={geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"base"},{id:"M1",x:0,y:0,z:5,kind:"base"},{id:"M2",x:0,y:0,z:15,kind:"base"},{id:"B",x:0,y:0,z:20,kind:"base"}]};const auditResult={success:true,loadTransferEnabled:true,rows:[{face:"left",status:"grade-beam-line-load-ready",gradeBeamSupportAudit:{segments:[{routeId:"T1",startNodeId:"A",endNodeId:"B",uniformEquivalentLineLoadKNm:3.6,startLineLoadKNm:3.6,endLineLoadKNm:3.6,weightKN:72}]}}]};const x=prepareMemberLineLoads(model,1.5,auditResult);root.SteelTieBeamLayout=old;return x.length===3&&x.every(v=>Math.abs(v.lineLoadKNm-3.6)<1e-8)&&Math.abs(x.reduce((s,v)=>s+v.sourceWeightKN,0)-72)<1e-8;});
+ t("gable split شناژ segments carry peak ridge intensity and exact total weight",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"GL",start:"A",end:"C",startJoint:"rigid",endJoint:"rigid"},{id:"GR",start:"C",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const gm={geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"endwall-base"},{id:"C",x:5,y:0,z:0,kind:"endwall-base"},{id:"B",x:10,y:0,z:0,kind:"endwall-base"}]};const ar={success:true,loadTransferEnabled:true,rows:[{face:"front",status:"grade-beam-line-load-ready",gradeBeamSupportAudit:{segments:[{routeId:"GL",startNodeId:"A",endNodeId:"C",unitWeightKNm2:3.6},{routeId:"GR",startNodeId:"C",endNodeId:"B",unitWeightKNm2:3.6}]}}]};const loads=prepareMemberLineLoads(gm,1,ar);return loads.length===2&&Math.abs(loads[0].globalStartKNm[1]+18)<1e-8&&Math.abs(loads[0].globalEndKNm[1]+25.2)<1e-8&&Math.abs(loads[1].globalStartKNm[1]+25.2)<1e-8&&Math.abs(loads[1].globalEndKNm[1]+18)<1e-8&&Math.abs(loads.reduce((sum,x)=>sum+x.sourceWeightKN,0)-216)<1e-8;});
  t("analysis approval remains disabled",()=>a.analysisEnabled===false&&a.designApproved===false);
  root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;root.SteelTieBeamLayout=oldTieBeam;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
