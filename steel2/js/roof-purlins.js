@@ -258,10 +258,14 @@
         const gravity = dead + live + snow;
 
         const L = g.spacing * 1000;
-        const tributary = pitch * g.cos * g.cos;
+        // Gravity loads are vertical pressure per horizontal projected area.
+        // Wind inputs are net pressure normal to the roof surface (loads.js:
+        // inward positive, suction negative), so wind uses full roof tributary width.
         function evaluateCase(type, pressure) {
-            const qLine = pressure * pitch * g.cos;
-            const qNormal = pressure * tributary;
+            const isWind = type === "wind" || type === "wind-reverse";
+            const tributaryFactor = isWind ? 1 : g.cos * g.cos;
+            const qLine = pressure * pitch * (isWind ? 1 : g.cos);
+            const qNormal = pressure * pitch * tributaryFactor;
             const M = qNormal * L * L / 8;
             const V = qNormal * L / 2;
             const stress = Math.abs(M) / Math.max(section.wx, 0.001);
@@ -1017,8 +1021,16 @@
         const check = (name, pass) => checks.push({ name, pass: !!pass });
         check("missing numeric input remains missing", num("__missing_purlin_input__", null) === null);
         check("blank numeric input remains missing", (() => { const el = document.createElement("input"); el.id = "__blank_purlin_input__"; el.value = ""; document.body.appendChild(el); try { return num(el.id, null) === null; } finally { el.remove(); } })());
-        check("project overhangs are not hard-coded", !/const\s+(?:sideOverhang|endOverhang)\s*=\s*0\.8/.test(getGeometry.toString()));
-        return { passed: checks.filter(x => x.pass).length, failed: checks.filter(x => !x.pass).length, checks };
+        check("project overhangs are not hard-coded", !/const\\s+(?:sideOverhang|endOverhang)\\s*=\\s*0\\.8/.test(getGeometry.toString()));
+        const sampleSection={area:1200,wx:50000,ix:8e6,weight:9};
+        const sampleGeometry={spacing:6,roofLength:36,slopeLength:12,cos:0.5};
+        const sampleSettings={e:200000,deflectionLimit:180,fy:240};
+        const sampleLoads={deadLeft:1,liveLeft:0,snowLeft:0,windLeft:1,deadRight:1,liveRight:0,snowRight:0,windRight:1,windDirection:"left-to-right"};
+        const projected=calculateOne(sampleSection,1.2,"left",sampleGeometry,sampleLoads,sampleSettings);
+        check("vertical gravity load uses plan-area and member-normal projections",Math.abs(projected.gravityCase.qNormal-0.3)<1e-12);
+        check("roof-normal wind pressure uses full roof-surface tributary width",Math.abs(projected.windCase.qNormal-1.2)<1e-12);
+        check("reverse wind preserves equal absolute demand and opposite sign",Math.abs(projected.windCase.M+projected.reverseWindCase.M)<1e-9&&Math.abs(projected.windCase.V+projected.reverseWindCase.V)<1e-9);
+        return { passed: checks.filter(x => x.pass).length, failed: checks.filter(x => !x.pass).length, checks, scope:"load projection regression only; purlin resistance remains preliminary and not code-complete" };
     }
 
     window.SteelRoofPurlins = {
@@ -1027,6 +1039,7 @@
         getData,
         setData,
         selfTest,
+        calculateOne,
         lastResult: null
     };
 
