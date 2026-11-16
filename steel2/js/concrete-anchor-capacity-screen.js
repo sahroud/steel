@@ -4,14 +4,23 @@ const $=id=>document.getElementById(id),n=id=>{const v=$(id)?.value;if(v===undef
 function mapDemand(d){if(!d||!d.input||d.input.geometryConfirmed!==true||d.input.signConfirmed!==true)throw Error("ابتدا تقاضای گروه بولت را با هندسه و قرارداد علامت تأییدشده محاسبه کنید.");if(!Number.isFinite(d.sumTensionOnlyKN)||!Number.isFinite(d.expectedShearXKN)||!Number.isFinite(d.expectedShearZKN))throw Error("خروجی تقاضای گروه بولت ناقص است.");return{tensionDemand:d.sumTensionOnlyKN,shearDemand:Math.hypot(d.expectedShearXKN,d.expectedShearZKN)};}
 function demandSignature(d){const m=mapDemand(d);return JSON.stringify(m);}
 function mapCaseDemand(result){
- if(!result||result.ok!==true||!String(result.nodeId??"")||!String(result.caseId??"")||!Array.isArray(result.anchors)||!result.anchors.length)throw Error("رکورد معتبر گره/ترکیب بار و تقاضای انکر لازم است.");
- let tensionN=0,shearX=0,shearZ=0;
- result.anchors.forEach(a=>{if(!Number.isFinite(a.tensionDemand_N)||a.tensionDemand_N<0||!Number.isFinite(a.totalShearX_N)||!Number.isFinite(a.totalShearZ_N))throw Error("تقاضای یکی از انکرها در حالت "+result.caseId+" ناقص یا نامعتبر است.");tensionN+=a.tensionDemand_N;shearX+=a.totalShearX_N;shearZ+=a.totalShearZ_N;});
- return{nodeId:String(result.nodeId),caseId:String(result.caseId),tensionDemand:tensionN/1000,shearDemand:Math.hypot(shearX,shearZ)/1000,shearX_kN:shearX/1000,shearZ_kN:shearZ/1000,anchorCount:result.anchors.length};
+ if(!result||result.ok!==true||!String(result.nodeId??"").trim()||!String(result.caseId??"").trim()||!Array.isArray(result.anchors)||result.anchors.length<2)throw Error("رکورد معتبر گره/ترکیب و گروه کامل انکر لازم است.");
+ let tensionN=0,shearX=0,shearZ=0;const ids=new Set();
+ result.anchors.forEach(a=>{
+  const id=String(a?.anchorId??"").trim();
+  if(!id||ids.has(id))throw Error("شناسه انکر خالی یا تکراری در ترکیب "+result.caseId+" وجود دارد.");
+  ids.add(id);
+  if(!Number.isFinite(a.tensionDemand_N)||a.tensionDemand_N<0||![a.totalShearX_N,a.totalShearZ_N,a.resultantShear_N].every(Number.isFinite)||a.resultantShear_N<0)throw Error("تقاضای یکی از انکرها در حالت "+result.caseId+" ناقص یا نامعتبر است.");
+  const recovered=Math.hypot(a.totalShearX_N,a.totalShearZ_N),tol=Math.max(1e-6,recovered*1e-8);
+  if(Math.abs(a.resultantShear_N-recovered)>tol)throw Error("برآیند برش انکر "+id+" با مؤلفه‌های X/Z در ترکیب "+result.caseId+" سازگار نیست.");
+  tensionN+=a.tensionDemand_N;shearX+=a.totalShearX_N;shearZ+=a.totalShearZ_N;
+ });
+ return{nodeId:String(result.nodeId),caseId:String(result.caseId),tensionDemand:tensionN/1000,shearDemand:Math.hypot(shearX,shearZ)/1000,shearX_kN:shearX/1000,shearZ_kN:shearZ/1000,anchorCount:result.anchors.length,anchorIds:[...ids].sort()};
 }
 function buildCaseDemandBatch(nodeId,foundationResult,geometryGroups){
- const id=String(nodeId??""),row=foundationResult?.rows?.find(x=>String(x.nodeId)===id),cases=foundationResult?.cases,layout=geometryGroups?.[id];
- if(!id||!row||!Array.isArray(cases)||!cases.length)throw Error("گره پایه یا فهرست ترکیبات بار استخراج‌شده معتبر نیست.");
+ const id=String(nodeId??""),matches=foundationResult?.rows?.filter(x=>String(x.nodeId)===id)||[],row=matches[0],cases=foundationResult?.cases,layout=geometryGroups?.[id];
+ if(!id||matches.length!==1||!Array.isArray(cases)||!cases.length)throw Error("گره پایه باید دقیقاً یک رکورد یکتا و فهرست ترکیبات بار معتبر داشته باشد.");
+ if(cases.some(x=>!x?.equilibrium||x.equilibrium.ok!==true))throw Error("حداقل یک ترکیب بار فاقد تأیید تعادل حل‌گر است؛ کنترل مهار متوقف شد.");
  if(!layout||layout.signConfirmed!==true||layout.geometryConfirmed!==true)throw Error("هندسه واقعی و قرارداد علامت برای این پایه باید جداگانه ثبت و تأیید شده باشد.");
  const api=root.SteelAnchorCaseDemandBridge,ui=root.SteelAnchorCaseDemandUI;if(!api?.distributeCase||!ui?.calculateSelected)throw Error("ماژول‌های توزیع تقاضا و رابط انکر بارگذاری نشده‌اند.");
  const reactions=Array.isArray(row.caseReactions)?row.caseReactions:[],byLabel=new Map();
@@ -26,6 +35,8 @@ function compareCases(caseResults,capacities){
  const mapped=caseResults.map(mapCaseDemand),nodeIds=new Set(mapped.map(x=>x.nodeId)),caseIds=new Set(mapped.map(x=>x.caseId));
  if(nodeIds.size!==1)throw Error("برای جلوگیری از اختلاط ظرفیت هندسی پایه‌ها، مقایسه هر بار فقط برای یک گره پایه انجام می‌شود.");
  if(caseIds.size!==mapped.length)throw Error("شناسه ترکیب بار تکراری است؛ رکوردها باید یکتا باشند.");
+ const anchorSet=mapped[0].anchorIds.join("|");
+ if(mapped.some(x=>x.anchorIds.join("|")!==anchorSet))throw Error("مجموعه انکرهای فعال بین ترکیبات بار تغییر کرده است؛ مقایسه گروهی متوقف شد.");
  const c=capacities||{},rows=mapped.map(m=>({...m,...calculate({...c,tensionDemand:m.tensionDemand,shearDemand:m.shearDemand})}));
  const govT=rows.reduce((a,b)=>b.tensionRatio>a.tensionRatio?b:a),govV=rows.reduce((a,b)=>b.shearRatio>a.shearRatio?b:a);
  return{ok:true,nodeId:mapped[0].nodeId,caseCount:rows.length,rows,governingTension:{caseId:govT.caseId,ratio:govT.tensionRatio,demandKN:govT.tensionDemand,capacityKN:govT.governingTensionCapacityKN},governingShear:{caseId:govV.caseId,ratio:govV.shearRatio,demandKN:govV.shearDemand,capacityKN:govV.governingShearCapacityKN},allSeparateChecksPass:rows.every(x=>x.tensionPass&&x.shearPass),combinesEnvelopeExtrema:false,limitations:["هر ترکیب بار مستقل محاسبه شده و شناسه آن حفظ می‌شود؛ بیشینه کشش و برش از دو ترکیب متفاوت با هم جمع نشده‌اند.","ظرفیت‌ها باید برای همین گره پایه، گروه انکر و هندسه واقعی معتبر باشند؛ این تابع ظرفیت آیین‌نامه‌ای تولید نمی‌کند.","اندرکنش کشش-برش، شکست‌های بتن با توزیع تنش واقعی، اثر گروه/لبه و الزامات لرزه‌ای همچنان نیازمند کنترل معتبر مستقل هستند."]};
@@ -48,7 +59,7 @@ function selfTest(){
  const r=calculate({tensionDemand:80,tensionBreakout:120,pullout:90,sideFace:150,shearDemand:30,shearBreakout:50,pryout:40}),mapped=mapDemand({input:{geometryConfirmed:true,signConfirmed:true},sumTensionOnlyKN:72,expectedShearXKN:30,expectedShearZKN:40});
  const fixture=(caseId,T,Vx,Vz)=>({ok:true,nodeId:"B1",caseId,anchors:[{anchorId:"A1",tensionDemand_N:T,resultantShear_N:Math.hypot(Vx,Vz),totalShearX_N:Vx,totalShearZ_N:Vz},{anchorId:"A2",tensionDemand_N:0,resultantShear_N:0,totalShearX_N:0,totalShearZ_N:0}]});
  const batch=compareCases([fixture("ULS-1",60000,30000,40000),fixture("ULS-2",90000,0,10000)],{tensionBreakout:120,pullout:100,sideFace:150,shearBreakout:80,pryout:60});
- const geometry={B1:{rows:2,cols:2,pitchX:160,pitchZ:160,plateWidthMm:500,plateLengthMm:500,columnWidthMm:200,columnDepthMm:200,footingWidthMm:700,footingDepthMm:700,anchorEdgeDistanceMm:40,signConfirmed:true,geometryConfirmed:true}},foundation={cases:[{label:"ULS-1"},{label:"ULS-2"}],rows:[{nodeId:"B1",caseReactions:[{label:"ULS-1",values:[10000,20000,30000,40000,5000,60000]},{label:"ULS-2",values:[20000,40000,60000,80000,10000,120000]}]}]};
+ const geometry={B1:{rows:2,cols:2,pitchX:160,pitchZ:160,plateWidthMm:500,plateLengthMm:500,columnWidthMm:200,columnDepthMm:200,footingWidthMm:700,footingDepthMm:700,anchorEdgeDistanceMm:40,signConfirmed:true,geometryConfirmed:true}},foundation={cases:[{label:"ULS-1",equilibrium:{ok:true}},{label:"ULS-2",equilibrium:{ok:true}}],rows:[{nodeId:"B1",caseReactions:[{label:"ULS-1",values:[10000,20000,30000,40000,5000,60000]},{label:"ULS-2",values:[20000,40000,60000,80000,10000,120000]}]}]};
  const built=buildCaseDemandBatch("B1",foundation,geometry);
  const checks=[mapped.tensionDemand===72&&mapped.shearDemand===50,r.governingTensionCapacityKN===90,r.governingShearCapacityKN===40,r.tensionPass,r.shearPass,
  built.caseCount===2&&built.results[0].caseId==="ULS-1"&&built.results[1].caseId==="ULS-2",
@@ -57,6 +68,8 @@ function selfTest(){
  (()=>{try{buildCaseDemandBatch("B1",foundation,{B1:{...geometry.B1,geometryConfirmed:false}});return false;}catch(e){return true;}})(),
  mapCaseDemand(fixture("ULS-1",60000,30000,40000)).tensionDemand===60,
  mapCaseDemand(fixture("ULS-1",60000,30000,40000)).shearDemand===50,
+ (()=>{try{mapCaseDemand({...fixture("ULS-1",60000,30000,40000),anchors:[{anchorId:"A1",tensionDemand_N:1,totalShearX_N:3,totalShearZ_N:4,resultantShear_N:5},{anchorId:"A1",tensionDemand_N:0,totalShearX_N:0,totalShearZ_N:0,resultantShear_N:0}]});return false;}catch(e){return true;}})(),
+ (()=>{try{mapCaseDemand({...fixture("ULS-1",60000,30000,40000),anchors:[{anchorId:"A1",tensionDemand_N:1,totalShearX_N:3,totalShearZ_N:4,resultantShear_N:99}]});return false;}catch(e){return true;}})(),
  batch.caseCount===2&&batch.rows[0].caseId==="ULS-1"&&batch.rows[1].caseId==="ULS-2"&&batch.combinesEnvelopeExtrema===false,
  batch.governingTension.caseId==="ULS-2"&&batch.governingShear.caseId==="ULS-1",
  (()=>{try{compareCases([fixture("ULS-1",1,0,0),{...fixture("ULS-1",2,0,0)}],{tensionBreakout:1,pullout:1,sideFace:1,shearBreakout:1,pryout:1});return false;}catch(e){return true;}})(),
