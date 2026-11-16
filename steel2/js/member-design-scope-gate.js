@@ -88,7 +88,7 @@ function selfTest(){
  {name:"reinforced concrete tie remains outside steel capacity engine",ok:r.rows.find(x=>x.group==="tieBeam")?.missing.some(x=>x.includes("بتن"))},
  {name:"no group receives design approval",ok:r.rows.every(x=>x.designApproved===false)&&r.designApproved===false},
   {name:"demand package status is exposed without design approval",ok:r.demandPackage&&r.demandPackage.designApproved===false&&r.designApproved===false},
-  {name:"combination audit is not treated as solver demand linkage",ok:r.combinationStatus&&r.combinationStatus.linkedToDemandPackage===false&&r.combinationStatus.solverEffectsAvailable===false},
+  {name:"combination audit is not treated as solver demand linkage",ok:r.combinationStatus&&r.combinationStatus.linkedToDemandPackage===false&&r.combinationStatus.solverDemandCasesAvailable===false},
   {name:"combination demand bridge is surfaced as unexecuted and non-approving",ok:r.combinationBridge&&r.combinationBridge.designApproved===false&&r.combinationBridge.proposalExecuted===false}
  ];
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,tests};
