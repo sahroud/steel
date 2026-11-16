@@ -40,6 +40,44 @@ function audit(envelope,model,options){
   limitation:"این پل فقط واکنش‌های هم‌زمان هر گره/حالت بار را نگاشت می‌کند. پیچش My/Ty حفظ شده ولی غربال فعلی گروه انکربولت آن را طراحی نمی‌کند؛ ظرفیت صفحه‌ستون، انکر، بتن، پی و خاک محاسبه یا تأیید نمی‌شود."};
 }
 
+function auditCraneDemandTrace(trace,model){
+ const issues=[],nodes=Array.isArray(model?.nodes)?model.nodes:[],bases=nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base");
+ if(trace?.success!==true||trace?.simultaneousCasesPreserved!==true)issues.push("بسته ردیابی جرثقیل باید موفق و حافظ حالات هم‌زمان باشد.");
+ if(!Array.isArray(trace?.cases)||!trace.cases.length)issues.push("فهرست موقعیت‌های جرثقیل خالی است.");
+ if(!bases.length)issues.push("گره پایه‌ای در مدل فیزیکی یافت نشد.");
+ const nodeMap=new Map(bases.map(n=>[String(n.id),n]));
+ const expected=new Set((trace?.cases||[]).map(c=>String(c.caseIndex)+"|"+String(c.referencePosition_m)));
+ if(expected.size!==(trace?.cases||[]).length)issues.push("شناسه موقعیت/حالت جرثقیل تکراری است.");
+ const demands=[],seen=new Set(),coverage=new Map();
+ (trace?.supports||[]).forEach(row=>{
+  const nodeId=String(row?.nodeId??""),node=nodeMap.get(nodeId);
+  if(!node){issues.push("گره واکنش جرثقیل در مدل پایه واقعی وجود ندارد: "+nodeId);return;}
+  if(![node.x,node.y,node.z].every(finite)){issues.push("مختصات گره پایه جرثقیل نامعتبر است: "+nodeId);return;}
+  const entries=Array.isArray(row.cases)?row.cases:[];
+  if(entries.length!==expected.size)issues.push("پوش موقعیت‌های جرثقیل برای پایه "+nodeId+" ناقص است.");
+  entries.forEach(c=>{
+   const key=String(c?.caseIndex)+"|"+String(c?.referencePosition_m);
+   if(!expected.has(key))issues.push("حالت/موقعیت ناشناخته برای پایه "+nodeId+": "+key);
+   const unique=nodeId+"|"+key;if(seen.has(unique))issues.push("تقاضای تکراری پایه/موقعیت جرثقیل: "+unique);seen.add(unique);
+   const a=c?.columnAction,r=c?.solverReaction,keys=["Fx","Fy","Fz","Mx","My","Mz"];
+   if(!a||!r||![...keys.map(k=>a[k]),...keys.map(k=>r[k])].every(finite)){issues.push("بردار واکنش/کنش ستون شش‌مؤلفه‌ای نامعتبر: "+unique);return;}
+   const caseId="CRANE-"+(Number(c.caseIndex)+1)+"@"+Number(c.referencePosition_m).toFixed(4)+"m";
+   demands.push({nodeId,caseId,caseIndex:c.caseIndex,referencePosition_m:c.referencePosition_m,
+    coordinatesM:{x:Number(node.x),y:Number(node.y),z:Number(node.z)},kind:node.kind,
+    solverReactionN_Nm:keys.map(k=>r[k]),columnActionN_Nm:keys.map(k=>a[k]),
+    units:{force:"N",moment:"N.m"},source:"crane-demand-trace",status:"demand_only_not_designed",
+    independentPositionDemand:true,signsPreserved:true,torsionRetained:true});
+   coverage.set(nodeId,(coverage.get(nodeId)||0)+1);
+  });
+ });
+ bases.forEach(n=>{if((coverage.get(String(n.id))||0)!==expected.size)issues.push("پوش کامل موقعیت‌های جرثقیل برای گره پایه "+n.id+" برقرار نیست.");});
+ if(demands.length!==bases.length*expected.size)issues.push("تعداد تقاضاهای جرثقیل با تعداد پایه‌ها × موقعیت‌ها برابر نیست.");
+ return {ok:issues.length===0,ready:issues.length===0,demands:issues.length?[]:demands,
+  cases:(trace?.cases||[]).map(c=>({caseIndex:c.caseIndex,referencePosition_m:c.referencePosition_m,label:"CRANE-"+(Number(c.caseIndex)+1)+"@"+Number(c.referencePosition_m).toFixed(4)+"m"})),
+  caseCount:expected.size,supportCount:bases.length,independentCaseDemands:true,combinesEnvelopeExtrema:false,
+  source:"SteelCrane3DLoadTransfer.demandTraceAudit",analysisEnabled:false,designApproved:false,
+  limitation:"این مبدل فقط کنش‌های ستون در پایه را برای هر موقعیت مستقل جرثقیل به قالب تقاضای فونداسیون می‌آورد؛ ترکیب بار نهایی، ظرفیت انکر/صفحه‌ستون، بتن، پی و خاک محاسبه یا تأیید نمی‌شود."};
+}
 function auditStructuralRun(runResult,model,options){
  const issues=[];
  if(runResult?.success!==true||!Array.isArray(runResult.results)||!runResult.results.length)
@@ -113,10 +151,13 @@ function selfTest(){
   ck("blocks selection from failed audit",()=>{try{getDemand({ok:false,demands:[]},"B1","ULS-1");return false;}catch(e){return true;}});
   ck("never enables analysis or design approval",()=>{const r=audit(env,model);return !r.analysisEnabled&&!r.designApproved&&r.demands.every(d=>d.torsionDesignRequired);});
   ck("adapts structural load-chain output without mixing cases",()=>{const run={success:true,results:env.cases.map((c,i)=>({id:c.label,label:c.label,equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:values[0]*(i+1),Fy:values[1],Fz:values[2],Mx:values[3],My:values[4],Mz:values[5]}}]}))};const r=auditStructuralRun(run,model);return r.ok&&r.demands.length===2&&r.demands[0].caseId!==r.demands[1].caseId;});
+  ck("adapts crane support actions per physical base and position",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2},{caseIndex:1,referencePosition_m:4}],supports:[{nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}},{caseIndex:1,referencePosition_m:4,solverReaction:{Fx:2,Fy:3,Fz:4,Mx:5,My:6,Mz:7},columnAction:{Fx:-2,Fy:-3,Fz:-4,Mx:-5,My:-6,Mz:-7}}]}]};const r=auditCraneDemandTrace(trace,model);return r.ok&&r.demands.length===2&&r.demands[1].caseId.includes("@4.0000m")&&r.demands[0].columnActionN_Nm[4]===-5;});
+  ck("rejects incomplete crane position coverage",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2},{caseIndex:1,referencePosition_m:4}],supports:[{nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}]};return !auditCraneDemandTrace(trace,model).ok;});
+  ck("blocks crane support IDs absent from physical base nodes",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2}],supports:[{nodeId:"GHOST",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}]};return !auditCraneDemandTrace(trace,model).ok;});
   ck("rejects structural run with failed equilibrium",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:false},reactions:[]}]};return !auditStructuralRun(run,model).ok;});
   ck("rejects incomplete structural reaction vector",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},solverReaction:{Fx:1}}]}]};return !auditStructuralRun(run,model).ok;});
  }finally{root.SteelFoundationReactionAudit=old;}
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks,analysisEnabled:false,designApproved:false};
 }
-root.SteelFoundationReactionBridge={audit,auditStructuralRun,getDemand,mapSix,selfTest};
+root.SteelFoundationReactionBridge={audit,auditStructuralRun,auditCraneDemandTrace,getDemand,mapSix,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
