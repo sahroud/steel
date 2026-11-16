@@ -68,14 +68,23 @@ function mount(){
   try{
    if(!selected)throw Error("ابتدا زانویی موردنظر را انتخاب کنید.");
    if(!w.SteelConnectionDemandRegistry?.collectFromEnvelope)throw Error("ماژول بانک تقاضای اتصال بارگذاری نشده است.");
-   const rows=w.SteelConnectionDemandRegistry.collectFromEnvelope(w.SteelMemberForceEnvelope?.getLast?.(),w.SteelStructuralModel?.getData?.());
-   const relevant=rows.filter(r=>String(r.nodeId)===String(selected.node.id)&&
+   const model=w.SteelStructuralModel?.getData?.();
+   const rows=w.SteelConnectionDemandRegistry.collectFromEnvelope(w.SteelMemberForceEnvelope?.getLast?.(),model);
+   const craneEnvelope=w.SteelCrane3DLoadTransfer?.getLastAutomaticEnvelope?.();
+   let craneRows=[];
+   if(craneEnvelope?.success===true){
+    if(!craneEnvelope.demandTraceAudit?.success)throw Error("جاروب جرثقیل موجود است اما بسته ردیابی تقاضای آن کامل نیست؛ داده ناقص به زانویی افزوده نشد.");
+    craneRows=w.SteelConnectionDemandRegistry.collectFromCraneDemandTrace(craneEnvelope.demandTraceAudit,model);
+   }
+   const combined=[...rows,...craneRows];
+   const relevant=combined.filter(r=>String(r.nodeId)===String(selected.node.id)&&
     ((String(r.memberId)===String(selected.column.id)||String(r.parentMemberId)===String(selected.column.id))||
      (String(r.memberId)===String(selected.rafter.id)||String(r.parentMemberId)===String(selected.rafter.id))));
    if(!relevant.length)throw Error("برای دو عضو زانویی انتخاب‌شده در گره "+selected.node.id+" تقاضای قابل تطبیق پیدا نشد.");
    const fmt=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:3});
    const keys=["N","Vy","Vz","T","My","Mz"];
-   host.textContent="تقاضای واقعی انتهای اعضای زانویی: "+relevant.length+" رکورد (هر عضو و هر ترکیب جداگانه). واحد نیرو kN و لنگر kN.m؛ محورها محلی هر عضو هستند و این مقادیر هنوز برآیند مشترک گره یا طراحی ظرفیت نیستند.";
+   const craneCount=relevant.filter(r=>r.referencePosition_m!==undefined).length;
+   host.textContent="تقاضای انتهای اعضای زانویی: "+relevant.length+" رکورد؛ از این تعداد "+craneCount+" رکورد مربوط به موقعیت‌های مستقل جرثقیل است. "+(craneEnvelope?.success===true?"ردیابی جرثقیل به‌صورت جداگانه و با موقعیت واقعی حفظ شد.":"برای افزودن اثر جرثقیل، جاروب کامل موقعیت‌های جرثقیل را اجرا کنید.")+" واحد نیرو kN و لنگر kN.m؛ محورهای محلی هر عضو حفظ شده‌اند و این داده‌ها برآیند مشترک گره یا طراحی ظرفیت نیستند.";
    table.innerHTML='<table class="data-table" style="min-width:1050px;width:100%"><thead><tr><th>ترکیب</th><th>عضو</th><th>قطعه تحلیل</th><th>انتها</th><th>گره</th>'+keys.map(k=>'<th>'+k+'</th>').join("")+'</tr></thead><tbody>'+relevant.map(r=>'<tr><td>'+r.combination+'</td><td>'+r.parentMemberId+'</td><td>'+r.memberId+'</td><td>'+r.end+'</td><td>'+r.nodeId+'</td>'+keys.map(k=>'<td>'+fmt(r.actions[k])+'</td>').join("")+'</tr>').join("")+'</tbody></table>';
   }catch(e){host.textContent="دریافت تقاضای زانویی انجام نشد: "+String(e.message||e);table.innerHTML="";}
  }
