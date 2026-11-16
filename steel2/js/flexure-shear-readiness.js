@@ -6,7 +6,7 @@
 const $=id=>document.getElementById(id);
 const GROUPS=[["column","ستون","flexure"],["rafter","رفتر","flexure"],["endPost","ستونک انتهایی","flexure"],["endGirt","تیر انتهایی","flexure"],["roofEdge","عضو لبه سقف","flexure"],["roofPurlin","لاپه سقف","section-specific"],["wallGirt","قید دیوار","section-specific"],["roofBrace","مهاربند سقف","axial"],["wallBrace","مهاربند دیوار","axial"]];
 const ACTIONS=["N","Vy","Vz","T","My","Mz"];
-function completeEndActions(end){return !!end&&ACTIONS.every(k=>end[k]!==null&&end[k]!==undefined&&Number.isFinite(Number(end[k])));}
+function completeEndActions(end){return !!end&&ACTIONS.every(k=>{const v=end[k];return v!==null&&v!==undefined&&typeof v!=="boolean"&&!(typeof v==="string"&&!v.trim())&&Number.isFinite(Number(v));});}
 function audit(envelope){
  const issues=[],warnings=[],rows=[];
  const env=envelope||root.SteelMemberForceEnvelope?.getLast?.();
@@ -88,7 +88,8 @@ function selfTest(){
   {name:"exact combination labels are required for each member",pass:audit({...env,members:members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],label:"OTHER"}]}:m)}).issues.some(x=>x.includes("برچسب دقیق"))},
   {name:"governing moment and shear retain member, case, end and component",pass:(()=>{const x=r.rows.find(x=>x.group==="column");return x.maximumMoment_Nm===900&&x.governingMoment.caseLabel==="ULS"&&x.governingMoment.end==="J"&&x.governingMoment.component==="My"&&x.maximumShear_N===600&&x.governingShear.end==="J"&&x.governingShear.component==="Vy";})()},
   {name:"missing axial or torsional component blocks flexure/shear readiness",pass:(()=>{const bad=members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],endI:{...m.simultaneousCases[0].endI,T:null}}]}:m);return audit({...env,members:bad}).issues.some(x=>x.includes("بردار شش‌مؤلفه‌ای I عضو M0"));})()},
-  {name:"non-finite end action blocks readiness even when moment and shear exist",pass:(()=>{const bad=members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],endJ:{...m.simultaneousCases[0].endJ,N:NaN}}]}:m);return audit({...env,members:bad}).issues.some(x=>x.includes("بردار شش‌مؤلفه‌ای J عضو M0"));})()}
+  {name:"non-finite end action blocks readiness even when moment and shear exist",pass:(()=>{const bad=members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],endJ:{...m.simultaneousCases[0].endJ,N:NaN}}]}:m);return audit({...env,members:bad}).issues.some(x=>x.includes("بردار شش‌مؤلفه‌ای J عضو M0"));})()},
+  {name:"blank string and boolean end actions are not silently coerced to zero",pass:(()=>{const blank=members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],endI:{...m.simultaneousCases[0].endI,T:""}}]}:m);const bool=members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],endJ:{...m.simultaneousCases[0].endJ,N:false}}]}:m);return audit({...env,members:blank}).issues.some(x=>x.includes("بردار شش‌مؤلفه‌ای I عضو M0"))&&audit({...env,members:bool}).issues.some(x=>x.includes("بردار شش‌مؤلفه‌ای J عضو M0"));})()}
  ];
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests,scope:"group coverage and readiness routing only"};
 }
