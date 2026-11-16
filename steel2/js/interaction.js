@@ -192,7 +192,9 @@
                         !(Number(member.length) > 0) ||
                         !Number.isFinite(Number(member.axialStart)) ||
                         !Number.isFinite(Number(member.shearStart)) ||
-                        !Number.isFinite(Number(member.momentStart))
+                        !Number.isFinite(Number(member.momentStart)) ||
+                        !Number.isFinite(Number(member.localLoadX)) ||
+                        !Number.isFinite(Number(member.localLoadY))
                     ) {
                         throw new Error(
                             "اطلاعات نیروهای عضو «" + name + "» ناقص است."
@@ -253,13 +255,13 @@
                         <td>${fmt(c.phiPn)}</td>
                         <td>${fmt(c.phiMnx)}</td>
                         <td>${fmt(c.phiMny)}</td>
-                        <td>${fmt(r.Pu)}</td>
-                        <td>${fmt(r.Mux)}</td>
+                        <td>${hasDemand?fmt(r.Pu):"—"}</td>
+                        <td>${hasDemand?fmt(r.Mux):"—"}</td>
                         <td>محاسبه نشده</td>
-                        <td>${fmt(r.axialRatio)}</td>
-                        <td>${fmt(r.momentRatio)}</td>
-                        <td><b>${fmt(r.ratio)}</b></td>
-                        <td>${pass ? "قبول مقدماتی دوبعدی" : "نیاز به بررسی"}</td>
+                        <td>${hasDemand?fmt(r.axialRatio):"—"}</td>
+                        <td>${hasDemand?fmt(r.momentRatio):"—"}</td>
+                        <td><b>${hasDemand?fmt(r.ratio):"—"}</b></td>
+                        <td>${!hasDemand?"فاقد داده ـ کنترل نشد":pass ? "قبول مقدماتی دوبعدی" : "نیاز به بررسی"}</td>
                         <td>${esc(r.combination)}</td>
                         <td>${fmt(r.position)} m</td>
                         <td>${esc(c.axis)}</td>
