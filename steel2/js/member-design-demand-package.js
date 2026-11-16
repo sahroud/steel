@@ -44,6 +44,27 @@ function buildFromSolverCases(model,runnerCases,options){
  if(issues.length){result.success=false;result.status="insufficient_data";result.issues.push(...issues);}
  last=result;return result;
 }
+function buildCombinedFromSolverCases(model,runnerCases,options){
+ options=options||{};
+ const result=buildFromSolverCases(model,runnerCases,options);
+ if(result.success!==true){
+  result.combinationProposal={success:false,status:"blocked-demand-package-incomplete",issues:["بسته تقاضای ایستگاهی کامل نیست؛ ترکیب نیرو اجرا نشد."],designApproved:false,capacityCalculated:false};
+  last=result;return result;
+ }
+ if(!options.combinationSet||!options.assumptions){
+  result.combinationProposal={success:false,status:"missing-explicit-combination-input",issues:["مجموعه ترکیب‌های دارای اثرات واقعی حل‌گر و فرض‌های صریح تحلیل باید جداگانه ارائه شوند."],designApproved:false,capacityCalculated:false};
+  last=result;return result;
+ }
+ if(!root.SteelMemberDemandCombinationBridge?.build){
+  result.combinationProposal={success:false,status:"missing_dependency",issues:["پل ترکیب تقاضای اعضا بارگذاری نشده است."],designApproved:false,capacityCalculated:false};
+  last=result;return result;
+ }
+ const proposal=root.SteelMemberDemandCombinationBridge.build(result,options.combinationSet,options.assumptions);
+ result.combinationProposal=proposal;
+ result.combinationStatus=proposal.success?"linear-combination-demand-proposal":"blocked";
+ result.designGate={...(result.designGate||{}),capacityCalculated:false,codeInteractionCalculated:false,designApproved:false,readyForCodeDesign:false};
+ last=result;return result;
+}
 function getLast(){return last?JSON.parse(JSON.stringify(last)):null;}
 function selfTest(){
  const row=(x,extra={})=>({x_m:x,N_N:1,Vy_N:2,Vz_N:3,T_Nm:4,My_Nm:5,Mz_Nm:6,...extra});
@@ -58,5 +79,5 @@ function selfTest(){
  const prior=root.SteelSolverSectionForceDiagramBridge;root.SteelSolverSectionForceDiagramBridge={build:(_m,r)=>({...c,loadCaseId:r.simultaneousActionCase.caseId})};const pipeline=buildFromSolverCases({},[{simultaneousActionCase:{caseId:"LC1"}},{simultaneousActionCase:{caseId:"LC2"}}],{expectedMemberIds:["M1"]});root.SteelSolverSectionForceDiagramBridge=prior;const t=[good.success&&good.designGate.designApproved===false,noSource.success===false,noMember.success===false,duplicate.success===false,mixed.success&&mixed.members[0].cases.length===2&&mixed.members[0].cases[0].stations[0].actions.My===5&&mixed.members[0].cases[1].stations[0].actions.My===99,tapered.success&&tapered.members[0].cases[0].segments.length===1,pipeline.success&&pipeline.solverPipeline.isolatedPerCase&&pipeline.caseIds.length===2];
  return {passed:t.filter(Boolean).length,failed:t.filter(x=>!x).length,total:t.length,tests:t};
 }
-root.SteelMemberDesignDemandPackage={build,buildFromSolverCases,getLast,selfTest};
+root.SteelMemberDesignDemandPackage={build,buildFromSolverCases,buildCombinedFromSolverCases,getLast,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
