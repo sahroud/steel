@@ -58,7 +58,7 @@ function auditGeometry(model){
   note:"آمادگی هندسی مسیر تا گره ستون ممیزی شده است؛ تحلیل تیر حمال، اعمال بار چرخ، کنترل اتصال و تأیید طراحی همچنان غیرفعال است."};
 }
 function horizontalLedger(horizontal,train){
- const d=horizontal||{},issues=[],positions=String(train?.positions_m??"").split(/[,،;；\\s]+/).filter(Boolean).map(Number);
+ const d=horizontal||{},issues=[],positions=String(train?.positions_m??"").split(/[,،;；\s]+/).filter(Boolean).map(Number);
  const parse=s=>String(s??"").trim()===""?[]:String(s).split(",").map(x=>x.trim()).map(Number);
  const transverse=parse(d.transverseLoads_kN),longitudinal=parse(d.longitudinalLoads_kN);
  if(!d.enabled)return {ready:false,issues:["ثبت نیروهای افقی غیرفعال است."],loads:[]};
