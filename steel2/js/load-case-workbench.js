@@ -8,9 +8,22 @@ let state={loadCases:[],combinations:[],status:"evidence_collection_only",design
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function audit(data){
- const p=data||{},caseAudit=root.SteelLoadCaseEvidenceContract?.audit?.({loadCases:p.loadCases||[]})||{success:false,issues:["قرارداد ممیزی حالت بار بارگذاری نشده است."]};
- const registry=root.SteelLoadCombinationRegistry?.audit?.({loadCases:(p.loadCases||[]).map(c=>({id:c.id,category:c.category,effects:c.values})),combinations:p.combinations||[]})||{success:false,issues:["رجیستری ترکیب بار بارگذاری نشده است."]};
- return {success:caseAudit.success&&registry.success,caseAudit,registry,issues:[...caseAudit.issues,...registry.issues],designApproved:false,solverEnabled:false};
+ const p=data||{},cases=Array.isArray(p.loadCases)?p.loadCases:[],combinations=Array.isArray(p.combinations)?p.combinations:[];
+ const caseAudit=root.SteelLoadCaseEvidenceContract?.audit?.({loadCases:cases})||{success:false,issues:["قرارداد ممیزی حالت بار بارگذاری نشده است."]};
+ const registry=root.SteelLoadCombinationRegistry?.audit?.({loadCases:cases.map(c=>({id:c.id,category:c.category,effects:c.values})),combinations})||{success:false,issues:["رجیستری ترکیب بار بارگذاری نشده است."]};
+ const compatibilityIssues=[];
+ const byId=new Map(cases.map(c=>[String(c?.id??""),c]));
+ combinations.forEach(combo=>{
+  const factors=combo?.factors&&typeof combo.factors==="object"&&!Array.isArray(combo.factors)?combo.factors:{};
+  const selected=Object.keys(factors).map(id=>byId.get(id)).filter(Boolean);
+  if(selected.length!==Object.keys(factors).length)return;
+  const first=selected[0];if(!first)return;
+  ["unit","coordinateSystem","signConvention"].forEach(key=>{
+   if(selected.some(c=>String(c?.[key]??"").trim()!==String(first?.[key]??"").trim()))
+    compatibilityIssues.push("ترکیب "+String(combo?.id??"?")+" حالت‌های بار با "+key+" متفاوت دارد؛ تبدیل/یکسان‌سازی این مشخصه در این مسیر انجام نمی‌شود.");
+  });
+ });
+ return {success:caseAudit.success&&registry.success&&compatibilityIssues.length===0,caseAudit,registry,compatibilityIssues,issues:[...caseAudit.issues,...registry.issues,...compatibilityIssues],designApproved:false,solverEnabled:false};
 }
 function panelHTML(){return `
 <section class="panel" id="loadCaseWorkbench">
@@ -93,7 +106,7 @@ function selfTest(){
  const src={document:"Calc.pdf",revision:"R1",locator:"Sheet L-2",authority:"Designer"};
  const lc={id:"D1",type:"nodal",category:"dead",unit:"kN",coordinateSystem:"global",signConvention:"+Z upward",target:"node:N1",source:src,values:{Fz:-10}};
  const combo={id:"C1",factors:{D1:1.2},source:{code:"مبحث ششم",edition:"۱۳۹۸",clause:"6-2",document:"Project design basis"}};
- const tests=[["round-trip state retains evidence",()=>{setData({loadCases:[lc],combinations:[combo]});return read().loadCases[0].source.locator==="Sheet L-2"&&read().combinations[0].factors.D1===1.2;}],["evidence and combination audits pass",()=>audit({loadCases:[lc],combinations:[combo]}).success],["missing combination source rejected",()=>{const x=clone(combo);delete x.source.clause;return !audit({loadCases:[lc],combinations:[x]}).success;}],["unknown combination case rejected",()=>{const x=clone(combo);x.factors.MISSING=1;return !audit({loadCases:[lc],combinations:[x]}).success;}],["no implicit design approval",()=>{const r=read();return r.designApproved===false&&r.solverEnabled===false;}]];
+ const tests=[["round-trip state retains evidence",()=>{setData({loadCases:[lc],combinations:[combo]});return read().loadCases[0].source.locator==="Sheet L-2"&&read().combinations[0].factors.D1===1.2;}],["evidence and combination audits pass",()=>audit({loadCases:[lc],combinations:[combo]}).success],["missing combination source rejected",()=>{const x=clone(combo);delete x.source.clause;return !audit({loadCases:[lc],combinations:[x]}).success;}],["unknown combination case rejected",()=>{const x=clone(combo);x.factors.MISSING=1;return !audit({loadCases:[lc],combinations:[x]}).success;}],["mixed units rejected in one combination",()=>{const x=clone(lc);x.id="W1";x.unit="N";return !audit({loadCases:[lc,x],combinations:[{...combo,factors:{D1:1,W1:1}}]}).success;}],["mixed coordinate systems rejected",()=>{const x=clone(lc);x.id="W1";x.coordinateSystem="member-local";return !audit({loadCases:[lc,x],combinations:[{...combo,factors:{D1:1,W1:1}}]}).success;}],["mixed sign conventions rejected",()=>{const x=clone(lc);x.id="W1";x.signConvention="local -Z";return !audit({loadCases:[lc,x],combinations:[{...combo,factors:{D1:1,W1:1}}]}).success;}],["no implicit design approval",()=>{const r=read();return r.designApproved===false&&r.solverEnabled===false;}]];
  const results=tests.map(([name,fn])=>({name,ok:!!fn()}));return {passed:results.filter(x=>x.ok).length,failed:results.filter(x=>!x.ok).length,total:results.length,tests:results};
  }finally{state=prior;render();}
 }
