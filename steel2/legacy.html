@@ -81,7 +81,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     // Re-apply the selected focus group and resolve the hash after their DOMContentLoaded handlers.
     window.setTimeout(function(){
       document.querySelectorAll("[data-focus-group]").forEach(function(panel){
-        var groups=(panel.getAttribute("data-focus-group")||"").split(/\\s+/);
+        var groups=(panel.getAttribute("data-focus-group")||"").split(/\s+/);
         if(groups.includes(focus))panel.classList.add("focus-visible");
         else panel.classList.remove("focus-visible");
       });
