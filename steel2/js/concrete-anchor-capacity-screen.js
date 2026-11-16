@@ -13,15 +13,13 @@ function buildCaseDemandBatch(nodeId,foundationResult,geometryGroups){
  const id=String(nodeId??""),row=foundationResult?.rows?.find(x=>String(x.nodeId)===id),cases=foundationResult?.cases,layout=geometryGroups?.[id];
  if(!id||!row||!Array.isArray(cases)||!cases.length)throw Error("گره پایه یا فهرست ترکیبات بار استخراج‌شده معتبر نیست.");
  if(!layout||layout.signConfirmed!==true||layout.geometryConfirmed!==true)throw Error("هندسه واقعی و قرارداد علامت برای این پایه باید جداگانه ثبت و تأیید شده باشد.");
- const api=root.SteelAnchorCaseDemandBridge,ui=root.SteelAnchorCaseDemandUI;if(!api?.fromFoundationBridgeResult||!ui?.buildAnchors||!ui?.auditBasePlateGeometry)throw Error("ماژول‌های توزیع تقاضا و ممیزی هندسه انکر بارگذاری نشده‌اند.");
+ const api=root.SteelAnchorCaseDemandBridge,ui=root.SteelAnchorCaseDemandUI;if(!api?.distributeCase||!ui?.calculateSelected)throw Error("ماژول‌های توزیع تقاضا و رابط انکر بارگذاری نشده‌اند.");
  const reactions=Array.isArray(row.caseReactions)?row.caseReactions:[],byLabel=new Map();
  reactions.forEach(x=>{const label=String(x?.label??"");if(!label||byLabel.has(label))throw Error("رکورد واکنش ترکیب بار خالی یا تکراری در پایه "+id+" وجود دارد.");byLabel.set(label,x);});
  const labels=cases.map(x=>String(x?.label??""));if(labels.some(x=>!x)||new Set(labels).size!==labels.length||labels.length!==byLabel.size||labels.some(x=>!byLabel.has(x)))throw Error("واکنش این پایه برای تمام ترکیبات استخراج‌شده موجود نیست؛ پردازش ناقص متوقف شد.");
  const demands=cases.map(c=>{const entry=byLabel.get(String(c.label)),v=entry?.values;if(!Array.isArray(v)||v.length<6||v.slice(0,6).some(x=>!Number.isFinite(Number(x))))throw Error("بردار واکنش شش‌مؤلفه‌ای ترکیب "+c.label+" معتبر نیست.");return{nodeId:id,caseId:String(c.label),columnActionN_Nm:v.slice(0,6).map(x=>-Number(x))};});
- const anchors=ui.buildAnchors(layout),geometry=ui.auditBasePlateGeometry(layout,anchors);if(!geometry.ok)throw Error(geometry.issues.join("؛ "));
- const bridge=api.fromFoundationBridgeResult({ok:true,demands},{[id]:anchors});if(!bridge.ok)throw Error(bridge.issues.join("؛ "));
- bridge.results.forEach(x=>x.basePlateGeometryAudit=geometry);
- return{nodeId:id,results:bridge.results,caseCount:bridge.results.length,caseLabels:labels,source:"SteelBaseReactionTransfer.getLast",combinesEnvelopeExtrema:false,geometryAudit:geometry};
+ const results=demands.map(d=>{const v=d.columnActionN_Nm;const selection={row:{nodeId:id},case:{label:d.caseId},mapped:{Vx_kN:v[0]/1000,N_tensionPositive_kN:v[1]/1000,Vz_kN:v[2]/1000,Mx_kNm:v[3]/1000,Ty_kNm:v[4]/1000,Mz_kNm:v[5]/1000}};const r=ui.calculateSelected(selection,layout);if(!r?.ok)throw Error("گره "+id+" / ترکیب "+d.caseId+": "+(r?.issues?.join("؛ ")||"توزیع تقاضا ناموفق است."));return r;});
+ return{nodeId:id,results,caseCount:results.length,caseLabels:labels,source:"SteelBaseReactionTransfer.getLast",combinesEnvelopeExtrema:false,geometryAudit:results[0].basePlateGeometryAudit};
 }
 function compareCases(caseResults,capacities){
  if(!Array.isArray(caseResults)||!caseResults.length)throw Error("فهرست تقاضای مستقل هر ترکیب بار خالی است.");
