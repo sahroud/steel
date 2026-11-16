@@ -10,6 +10,29 @@
   function addLine(rows, label, ok, detail) {
     rows.push({label,ok:!!ok,detail:detail||""});
   }
+  function summarizeSourceAudit(audit) {
+    const rows=Array.isArray(audit?.rows)?audit.rows:[];
+    const incomplete=rows.filter(row=>row?.complete!==true);
+    const fieldCounts={};
+    incomplete.forEach(row=>(Array.isArray(row?.missing)?row.missing:[]).forEach(field=>{
+      fieldCounts[field]=(fieldCounts[field]||0)+1;
+    }));
+    return {
+      caseCount:rows.length,
+      completeCaseCount:rows.length-incomplete.length,
+      incompleteCaseCount:incomplete.length,
+      fieldCounts,
+      incompleteCaseIds:incomplete.map(row=>String(row.caseId||"نامشخص")),
+      success:rows.length>0&&incomplete.length===0
+    };
+  }
+  function sourceAuditDetail(audit) {
+    const summary=summarizeSourceAudit(audit);
+    if(!summary.caseCount)return "ممیزی منبع برای هیچ حالت باری دریافت نشد.";
+    const fields=Object.entries(summary.fieldCounts).map(([key,count])=>key+" ("+count+" حالت)").join("، ")||"—";
+    const ids=summary.incompleteCaseIds.slice(0,12).join("، ")+(summary.incompleteCaseIds.length>12?" و "+(summary.incompleteCaseIds.length-12)+" حالت دیگر":"");
+    return "ردیابی منبع: "+summary.completeCaseCount+" از "+summary.caseCount+" حالت کامل؛ "+summary.incompleteCaseCount+" حالت ناقص. فیلدهای مفقود: "+fields+". شناسه حالت‌های ناقص: "+ids+". تا تکمیل مدرک، بازسازی نمودار نیروهای داخلی برای این بسته عمداً اجرا نشده است.";
+  }
   function setReport(rows, heading) {
     const out=$("steelAutoWorkflowResults"); if(!out)return;
     const pass=rows.filter(x=>x.ok).length;
@@ -136,7 +159,9 @@
     check("empty reference model rejected",()=>!audit3DCombinationCoverage({members:[]},good).success);
     check("disabled crane does not block automatic workflow",()=>{const r=auditCraneReadiness({geometry:{craneRunway:{enabled:false}}});return r.ready&&!r.enabled;});
     check("enabled crane blocks if geometry audit module is unavailable",()=>!auditCraneReadiness({geometry:{craneRunway:{enabled:true}}}).ready);
-    return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software result-coverage audit only"};
+    check("source audit summary counts incomplete cases and required fields",()=>{const r=summarizeSourceAudit({rows:[{caseId:"C1",complete:false,missing:["document","revision"]},{caseId:"C2",complete:false,missing:["document"]},{caseId:"C3",complete:true,missing:[]}]});return r.caseCount===3&&r.completeCaseCount===1&&r.incompleteCaseCount===2&&r.fieldCounts.document===2&&r.fieldCounts.revision===1&&r.incompleteCaseIds.join(",")==="C1,C2";});
+    check("source audit detail states that force diagrams were skipped",()=>sourceAuditDetail({rows:[{caseId:"C1",complete:false,missing:["locator"]}]}).includes("عمداً اجرا نشده است"));
+    return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"software result-coverage and source-provenance reporting only"};
   }
   async function run() {
     if(busy)return;
@@ -271,10 +296,13 @@
         } catch(error) {
           memberDemandPackage={success:false,status:"insufficient_data",issues:[String(error?.message||error)],designApproved:false};
         }
+        const sourceDetail=memberDemandPackage?.sourceAudit
+          ? sourceAuditDetail(memberDemandPackage.sourceAudit)
+          : "";
         addLine(rows,"استخراج تقاضای ایستگاهی از خروجی واقعی حل‌گر",memberDemandPackage?.success===true,
           memberDemandPackage?.success===true
             ? "تقاضای شش‌مؤلفه‌ای در ایستگاه‌های اعضا برای "+memberDemandPackage.caseIds.length+" حالت تحلیل مستقل ثبت شد؛ هنوز ترکیب آیین‌نامه‌ای یا ظرفیت عضو محاسبه نشده است."
-            : (memberDemandPackage?.issues||["بسته تقاضای ایستگاهی ساخته نشد."]).slice(0,10).join("؛ "));
+            : [sourceDetail,(memberDemandPackage?.issues||["بسته تقاضای ایستگاهی ساخته نشد."]).slice(0,10).join("؛ ")].filter(Boolean).join(" "));
 
         const bucklingMessage=$("bucklingMessage");
         if($("combinationBucklingResults"))$("combinationBucklingResults").innerHTML="";
@@ -340,6 +368,6 @@
     if(first)main.insertBefore(panel,first);else main.appendChild(panel);
     $("btnSteelAutoWorkflow").addEventListener("click",run);
   }
-  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,selfTest};
+  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,summarizeSourceAudit,sourceAuditDetail,selfTest};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
