@@ -3,7 +3,7 @@
  */
 (function(root){"use strict";
 const $=id=>root.document?.getElementById(id);
-let craneAnchorGroups={};
+let craneAnchorGroups={},refreshCraneChoicesApi=()=>false;
 function buildAnchors(layout){
  const rows=Number(layout?.rows),cols=Number(layout?.cols),px=Number(layout?.pitchX),pz=Number(layout?.pitchZ);
  if(!Number.isInteger(rows)||!Number.isInteger(cols)||rows<1||cols<1||rows*cols>64)throw Error("تعداد ردیف/ستون انکر باید عدد صحیح بین ۱ تا ۶۴ باشد.");
@@ -75,6 +75,7 @@ function mount(){
   loadCraneLayout();
   return true;
  }
+ refreshCraneChoicesApi=refreshCraneChoices;
  craneRun.addEventListener("click",()=>{
   try{
    const envelope=root.SteelCrane3DLoadTransfer?.getLastAutomaticEnvelope?.(),trace=envelope?.demandTraceAudit;
@@ -143,6 +144,6 @@ function selfTest(){
 function normalizeCraneAnchorGroups(data){const clean={};if(data&&typeof data==="object"&&!Array.isArray(data))Object.entries(data).forEach(([id,d])=>{const rows=Number(d?.rows),cols=Number(d?.cols),pitchX=Number(d?.pitchX),pitchZ=Number(d?.pitchZ);if(id&&Number.isInteger(rows)&&Number.isInteger(cols)&&rows>=1&&cols>=1&&rows<=8&&cols<=8&&rows*cols>=2&&Number.isFinite(pitchX)&&Number.isFinite(pitchZ)&&(cols===1||pitchX>0)&&(rows===1||pitchZ>0)&&d.signConfirmed===true&&d.geometryConfirmed===true){const candidate={...d,rows,cols,pitchX,pitchZ};try{const geometry=auditBasePlateGeometry(candidate,buildAnchors(candidate));if(geometry.ok)clean[id]={...candidate,signConfirmed:true,geometryConfirmed:true};}catch(e){}}});return clean;}
 function getData(){return JSON.parse(JSON.stringify(craneAnchorGroups));}
 function setData(data){craneAnchorGroups=normalizeCraneAnchorGroups(data);}
-root.SteelAnchorCaseDemandUI={buildAnchors,calculateSelected,refreshCraneChoices,getData,setData,selfTest,mount};
+root.SteelAnchorCaseDemandUI={buildAnchors,calculateSelected,refreshCraneChoices:(...args)=>refreshCraneChoicesApi(...args),getData,setData,selfTest,mount};
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
