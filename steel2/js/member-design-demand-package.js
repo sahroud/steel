@@ -5,6 +5,14 @@
 (function(root){"use strict";
 let last=null;
 const REQUIRED_SOURCE=["document","revision","locator","authority"];
+function auditSources(cases){
+ const rows=(Array.isArray(cases)?cases:[]).map((c,index)=>{
+  const source=c?.simultaneousActionCase?.source||c?.source||{};
+  const missing=REQUIRED_SOURCE.filter(k=>!(typeof source[k]==="string"&&source[k].trim()));
+  return {caseId:String(c?.simultaneousActionCase?.caseId||c?.loadCaseId||c?.caseId||"CASE-"+(index+1)),source:{...source},missing,complete:missing.length===0};
+ });
+ return {success:rows.length>0&&rows.every(x=>x.complete),requiredFields:REQUIRED_SOURCE.slice(),caseCount:rows.length,completeCaseCount:rows.filter(x=>x.complete).length,rows};
+}
 function build(diagramCases,options){
  options=options||{};const issues=[];
  const expected=Array.isArray(options.expectedMemberIds)?options.expectedMemberIds.map(String):[];
@@ -35,12 +43,19 @@ function buildFromSolverCases(model,runnerCases,options){
  options=options||{};const issues=[],inputs=Array.isArray(runnerCases)?runnerCases:[];
  if(!root.SteelSolverSectionForceDiagramBridge?.build)return {success:false,status:"missing_dependency",issues:["پل حل‌گر به نمودار نیروهای داخلی بارگذاری نشده است."],designApproved:false};
  if(!inputs.length)return {success:false,status:"insufficient_data",issues:["هیچ خروجی تحلیل حالت بار ارائه نشده است."],designApproved:false};
+ const sourceAudit=auditSources(inputs);
+ if(!sourceAudit.success){
+  const sourceIssues=sourceAudit.rows.filter(x=>!x.complete).map(x=>"مدرک منبع حالت "+x.caseId+" ناقص است؛ فیلدهای لازم: "+x.missing.join("، ")+".");
+  const blocked={success:false,status:"source-provenance-incomplete",issues:sourceIssues,sourceAudit,solverPipeline:{inputCaseCount:inputs.length,diagramCaseCount:0,diagramSuccessCount:0,skippedForSourceAudit:true,issues:[]},designApproved:false,capacityCalculated:false,readyForCodeDesign:false};
+  last=blocked;return blocked;
+ }
  const diagrams=inputs.map((runnerOutput,index)=>{
   try{return root.SteelSolverSectionForceDiagramBridge.build(model,runnerOutput,options.diagramOptions||{});}
   catch(e){issues.push("ساخت نمودار حالت "+index+" با خطا مواجه شد: "+String(e.message||e));return {success:false,loadCaseId:runnerOutput?.simultaneousActionCase?.caseId||null,source:runnerOutput?.simultaneousActionCase?.source||null,issues:[String(e.message||e)],designApproved:false};}
  });
  const result=build(diagrams,{expectedMemberIds:options.expectedMemberIds});
- result.solverPipeline={inputCaseCount:inputs.length,diagramCaseCount:diagrams.length,diagramSuccessCount:diagrams.filter(x=>x.success===true).length,issues,isolatedPerCase:true};
+ result.sourceAudit=sourceAudit;
+ result.solverPipeline={inputCaseCount:inputs.length,diagramCaseCount:diagrams.length,diagramSuccessCount:diagrams.filter(x=>x.success===true).length,issues,isolatedPerCase:true,skippedForSourceAudit:false};
  if(issues.length){result.success=false;result.status="insufficient_data";result.issues.push(...issues);}
  last=result;return result;
 }
@@ -76,7 +91,7 @@ function selfTest(){
  const duplicate=build([c,c],{expectedMemberIds:["M1"]});
  const mixed=build([c,{...c,loadCaseId:"LC2",prismaticDiagrams:[{...c.prismaticDiagrams[0],stations:[row(0,{My_Nm:99}),row(2,{My_Nm:99})]}]}],{expectedMemberIds:["M1"]});
  const tapered=build([{success:true,loadCaseId:"T1",source:src,units:"N,N.m,m",prismaticDiagrams:[],taperedReport:{success:true,loadCases:[{label:"T1",members:[{parentMemberId:"R",totalLength_m:3,segmentCount:1,complete:true,segments:[{segmentId:"R1",segmentIndex:1,startStation_m:0,endStation_m:3,length_m:3,stations:[{...row(0),memberStation_m:0},{...row(3),memberStation_m:3}]}]}]}]}}],{expectedMemberIds:["R"]});
- const prior=root.SteelSolverSectionForceDiagramBridge,priorCombo=root.SteelMemberDemandCombinationBridge;root.SteelSolverSectionForceDiagramBridge={build:(_m,r)=>({...c,loadCaseId:r.simultaneousActionCase.caseId})};const runner=[{simultaneousActionCase:{caseId:"LC1"}}];const pipeline=buildFromSolverCases({},runner,{expectedMemberIds:["M1"]});const blockedCombo=buildCombinedFromSolverCases({},runner,{expectedMemberIds:["M1"]});let bridgeCalled=false;root.SteelMemberDemandCombinationBridge={build:()=>{bridgeCalled=true;return {success:true,designApproved:false,proposals:[]};}};const combined=buildCombinedFromSolverCases({},runner,{expectedMemberIds:["M1"],combinationSet:{loadCases:[],combinations:[]},assumptions:{}});root.SteelSolverSectionForceDiagramBridge=prior;root.SteelMemberDemandCombinationBridge=priorCombo;const t=[good.success&&good.designGate.designApproved===false,noSource.success===false,noMember.success===false,duplicate.success===false,mixed.success&&mixed.members[0].cases.length===2&&mixed.members[0].cases[0].stations[0].actions.My===5&&mixed.members[0].cases[1].stations[0].actions.My===99,tapered.success&&tapered.members[0].cases[0].segments.length===1,pipeline.success&&pipeline.solverPipeline.isolatedPerCase&&pipeline.caseIds.length===1,blockedCombo.combinationProposal?.status==="missing-explicit-combination-input",bridgeCalled&&combined.combinationProposal?.success===true&&combined.designGate.designApproved===false];
+ const prior=root.SteelSolverSectionForceDiagramBridge,priorCombo=root.SteelMemberDemandCombinationBridge,priorAdapter=root.SteelStationDemandAdapter;let diagramCalled=false;root.SteelSolverSectionForceDiagramBridge={build:(_m,r)=>{diagramCalled=true;return {...c,loadCaseId:r.simultaneousActionCase.caseId,source:r.simultaneousActionCase.source};}};root.SteelStationDemandAdapter={build:diagrams=>({success:true,issues:[],cases:diagrams.map(d=>({caseId:d.loadCaseId,source:d.source,members:[{memberId:"M1",kind:"prismatic",length_m:2,complete:true,stations:[row(0),row(2)]}]}))})};const source={document:"calc.pdf",revision:"R1",locator:"p.2",authority:"designer"};const runner=[{simultaneousActionCase:{caseId:"LC1",source}}];const incomplete=buildFromSolverCases({},[{simultaneousActionCase:{caseId:"LC-MISSING"}}],{expectedMemberIds:["M1"]});const pipeline=buildFromSolverCases({},runner,{expectedMemberIds:["M1"]});const blockedCombo=buildCombinedFromSolverCases({},[{simultaneousActionCase:{caseId:"LC-MISSING"}}],{expectedMemberIds:["M1"]});let bridgeCalled=false;root.SteelMemberDemandCombinationBridge={build:()=>{bridgeCalled=true;return {success:true,designApproved:false,proposals:[]};}};const combined=buildCombinedFromSolverCases({},runner,{expectedMemberIds:["M1"],combinationSet:{loadCases:[],combinations:[]},assumptions:{}});root.SteelSolverSectionForceDiagramBridge=prior;root.SteelMemberDemandCombinationBridge=priorCombo;root.SteelStationDemandAdapter=priorAdapter;const t=[good.success&&good.designGate.designApproved===false,noSource.success===false,noMember.success===false,duplicate.success===false,mixed.success&&mixed.members[0].cases.length===2&&mixed.members[0].cases[0].stations[0].actions.My===5&&mixed.members[0].cases[1].stations[0].actions.My===99,tapered.success&&tapered.members[0].cases[0].segments.length===1,incomplete.status==="source-provenance-incomplete"&&incomplete.solverPipeline.diagramCaseCount===0&&!diagramCalled,pipeline.success&&pipeline.solverPipeline.isolatedPerCase&&pipeline.caseIds.length===1&&pipeline.sourceAudit?.success===true,blockedCombo.combinationProposal?.status==="blocked-demand-package-incomplete",bridgeCalled&&combined.combinationProposal?.success===true&&combined.designGate.designApproved===false];
  return {passed:t.filter(Boolean).length,failed:t.filter(x=>!x).length,total:t.length,tests:t};
 }
 root.SteelMemberDesignDemandPackage={build,buildFromSolverCases,buildCombinedFromSolverCases,getLast,selfTest};
