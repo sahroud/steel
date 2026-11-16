@@ -29,12 +29,41 @@ function prepare(model,input){
  if(!p||!Array.isArray(p.beamNodes)||!Array.isArray(p.beamMembers)||!Array.isArray(p.brackets))issues.push("توپولوژی پیشنهادی سه‌بعدی در دسترس نیست.");
  if(issues.length)return {success:false,ready:false,analysisEnabled:false,issues,model:null};
  const nodes=model.nodes.map(n=>({...n})),members=model.members.map(m=>({...m}));
- const ids=new Set(nodes.map(n=>String(n.id)));
- p.beamNodes.forEach(n=>{if(ids.has(String(n.id)))throw Error("شناسه گره تیر حمال تکراری است: "+n.id);ids.add(String(n.id));nodes.push({...n,kind:"crane-runway-girder",proposalOnly:false});});
- const add=(id,start,end,type,section,rel,extra)=>members.push({id,start,end,type,sectionKey:type,analysisSection:{...section},lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,unit:"kN/m",loadRole:"crane-nodal-actions-and-member-self-weight"},endReleases:{i:rel.i.slice(),j:rel.j.slice()},craneIntegration:true,reference:extra.reference,connectionType:extra.connectionType,frameIndex:extra.frameIndex,side:extra.side,length:Math.hypot(nodes.find(n=>n.id===start).x-nodes.find(n=>n.id===end).x,nodes.find(n=>n.id===start).y-nodes.find(n=>n.id===end).y,nodes.find(n=>n.id===start).z-nodes.find(n=>n.id===end).z)});
- p.beamMembers.forEach(m=>add(m.id,m.start,m.end,"craneRunwayGirder",d.girderSection,girderRelease,{reference:d.geometrySource,connectionType:"girder-segment",frameIndex:null,side:m.side}));
+ const nodeIds=new Set(nodes.map(n=>String(n.id))),memberIds=new Set(members.map(m=>String(m.id)));
+ if(nodeIds.size!==nodes.length)issues.push("شناسه گره تکراری در مدل پایه وجود دارد.");
+ if(memberIds.size!==members.length)issues.push("شناسه عضو تکراری در مدل پایه وجود دارد.");
+ const proposalNodeIds=new Set(),proposalMemberIds=new Set();
+ p.beamNodes.forEach(n=>{
+  const id=String(n?.id||"");
+  if(!id||nodeIds.has(id)||proposalNodeIds.has(id))issues.push("شناسه گره پیشنهادی تیر حمال خالی یا تکراری است: "+id);
+  proposalNodeIds.add(id);
+  if(![n.x,n.y,n.z].every(v=>Number.isFinite(Number(v))))issues.push("مختصات گره پیشنهادی "+id+" معتبر نیست.");
+ });
+ p.beamMembers.forEach(m=>{
+  const id=String(m?.id||"");
+  if(!id||memberIds.has(id)||proposalMemberIds.has(id))issues.push("شناسه عضو پیشنهادی تیر حمال خالی یا تکراری است: "+id);
+  proposalMemberIds.add(id);
+  if(!proposalNodeIds.has(String(m.start))||!proposalNodeIds.has(String(m.end))||String(m.start)===String(m.end))issues.push("دو سر عضو تیر حمال "+id+" به گره‌های پیشنهادی معتبر ارجاع نمی‌دهد.");
+  if(m.continuity!=="separate_span_segment_between_adjacent_frames")issues.push("قطعه "+id+" باید دهانه مستقل بین دو قاب مجاور باشد.");
+ });
+ p.brackets.forEach(b=>{
+  const id=String(b?.id||"");
+  if(!id||memberIds.has(id)||proposalMemberIds.has(id))issues.push("شناسه براکت خالی یا تکراری است: "+id);
+  proposalMemberIds.add(id);
+  if(!nodeIds.has(String(b.columnNodeId))||!proposalNodeIds.has(String(b.beamNodeId)))issues.push("براکت "+id+" باید گره واقعی ستون را به گره پیشنهادی تیر حمال متصل کند.");
+ });
+ if(issues.length)return {success:false,ready:false,analysisEnabled:false,issues,model:null};
+ p.beamNodes.forEach(n=>nodes.push({...n,kind:"crane-runway-girder",proposalOnly:false}));
+ const nodeMap=new Map(nodes.map(n=>[String(n.id),n]));
+ const add=(id,start,end,type,section,rel,extra)=>{
+  const a=nodeMap.get(String(start)),b=nodeMap.get(String(end));
+  if(!a||!b)throw Error("گره ابتدا یا انتهای عضو جرثقیل یافت نشد: "+id);
+  members.push({id,start,end,type,sectionKey:type,analysisSection:{...section},lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,unit:"kN/m",loadRole:"crane-nodal-actions-and-member-self-weight"},endReleases:{i:rel.i.slice(),j:rel.j.slice()},craneIntegration:true,reference:extra.reference,connectionType:extra.connectionType,frameIndex:extra.frameIndex,side:extra.side,continuity:extra.continuity||null,length:Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z)});
+ };
+ p.beamMembers.forEach(m=>add(m.id,m.start,m.end,"craneRunwayGirder",d.girderSection,girderRelease,{reference:d.geometrySource,connectionType:"girder-segment",frameIndex:null,side:m.side,continuity:m.continuity}));
  p.brackets.forEach(b=>add(b.id,b.columnNodeId,b.beamNodeId,"craneRunwayBracket",d.bracketSection,bracketRelease,{reference:d.connectionSource,connectionType:d.connectionType,frameIndex:b.frameIndex,side:b.side}));
- const out={...model,nodes,members,geometry:{...model.geometry,craneRunway:{...model.geometry.craneRunway,meshProposal:p,integrated3D:{ready:true,analysisEnabled:false,proposalOnly:false,addedNodeCount:p.beamNodes.length,addedGirderMemberCount:p.beamMembers.length,addedBracketMemberCount:p.brackets.length,connectionType:d.connectionType,geometrySource:d.geometrySource,connectionSource:d.connectionSource}}}};
+ const integrationCounts={addedNodeCount:p.beamNodes.length,addedGirderMemberCount:p.beamMembers.length,addedBracketMemberCount:p.brackets.length};
+ const out={...model,nodes,members,geometry:{...model.geometry,craneRunway:{...model.geometry.craneRunway,meshProposal:p,integrated3D:{ready:true,analysisEnabled:false,proposalOnly:false,...integrationCounts,connectionType:d.connectionType,geometrySource:d.geometrySource,connectionSource:d.connectionSource},integrationAudit:{success:true,ready:true,analysisEnabled:false,issues:[],counts:{addedNodes:p.beamNodes.length,addedGirderMembers:p.beamMembers.length,addedBracketMembers:p.brackets.length}}}}};
  return {success:true,ready:true,analysisEnabled:false,issues:[],model:out,counts:{addedNodes:p.beamNodes.length,addedGirderMembers:p.beamMembers.length,addedBracketMembers:p.brackets.length}};
 }
 function readUI(){
