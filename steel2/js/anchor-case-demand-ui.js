@@ -34,12 +34,16 @@ function calculateSelected(selection,layout){
  if(!selection?.row||!selection?.case||!selection?.mapped)throw Error("ابتدا یک گره پایه و حالت بار معتبر انتخاب کنید.");
  if(layout?.signConfirmed!==true)throw Error("ابتدا قرارداد علامت نیروها را پس از کنترل با مدل تأیید کنید.");
  if(layout?.geometryConfirmed!==true)throw Error("تطبیق هندسه و آرایش انکرها با نقشه اجرایی/وضعیت واقعی پایه باید صریحاً تأیید شود.");
- const anchors=buildAnchors(layout),geometryAudit=auditBasePlateGeometry(layout,anchors);\n if(!geometryAudit.ok)throw Error(geometryAudit.issues.join("؛ "));\n const m=selection.mapped;
+ const anchors=buildAnchors(layout),geometryAudit=auditBasePlateGeometry(layout,anchors);
+ if(!geometryAudit.ok)throw Error(geometryAudit.issues.join("؛ "));
+ const m=selection.mapped;
  const action=[m.Vx_kN*1000,m.N_tensionPositive_kN*1000,m.Vz_kN*1000,m.Mx_kNm*1000,m.Ty_kNm*1000,m.Mz_kNm*1000];
  if(!action.every(Number.isFinite))throw Error("کنش شش‌مؤلفه‌ای انتخاب‌شده کامل و معتبر نیست.");
  const api=root.SteelAnchorCaseDemandBridge;
  if(typeof api?.distributeCase!=="function")throw Error("ماژول توزیع تقاضای انکر بارگذاری نشده است.");
- const result=api.distributeCase({nodeId:String(selection.row.nodeId),caseId:String(selection.case.label),columnActionN_Nm:action},anchors);\n if(result&&typeof result==="object")result.basePlateGeometryAudit=geometryAudit;\n return result;
+ const result=api.distributeCase({nodeId:String(selection.row.nodeId),caseId:String(selection.case.label),columnActionN_Nm:action},anchors);
+ if(result&&typeof result==="object")result.basePlateGeometryAudit=geometryAudit;
+ return result;
 }
 function mount(){
  const panel=$("baseReactionTransferPanel");if(!panel||$("brtAnchorDemandRun"))return;
@@ -128,7 +132,11 @@ function selfTest(){
  const selection={row:{nodeId:"B1"},case:{label:"ULS-1"},mapped:{N_tensionPositive_kN:4,Vx_kN:1,Vz_kN:2,Mx_kNm:0,Ty_kNm:0,Mz_kNm:0}};
  ck("requires sign confirmation",()=>{try{calculateSelected(selection,{rows:2,cols:2,pitchX:100,pitchZ:100,geometryConfirmed:true});return false;}catch(e){return e.message.includes("علامت");}});
  ck("requires as-built geometry confirmation",()=>{try{calculateSelected(selection,{rows:2,cols:2,pitchX:100,pitchZ:100,signConfirmed:true});return false;}catch(e){return e.message.includes("هندسه");}});
- ck("checks column footprint within base plate",()=>{const a=buildAnchors({rows:2,cols:2,pitchX:100,pitchZ:100});return auditBasePlateGeometry({plateWidthMm:400,plateLengthMm:400,columnWidthMm:200,columnDepthMm:200,footingWidthMm:600,footingDepthMm:600,anchorEdgeDistanceMm:40},a).checks[0].ok;});\n ck("rejects anchors outside plate edge clearance",()=>{const a=buildAnchors({rows:2,cols:2,pitchX:300,pitchZ:300});return !auditBasePlateGeometry({plateWidthMm:320,plateLengthMm:320,columnWidthMm:200,columnDepthMm:200,footingWidthMm:600,footingDepthMm:600,anchorEdgeDistanceMm:30},a).ok;});\n ck("rejects plate larger than footing footprint",()=>{const a=buildAnchors({rows:2,cols:2,pitchX:100,pitchZ:100});return !auditBasePlateGeometry({plateWidthMm:500,plateLengthMm:500,columnWidthMm:200,columnDepthMm:200,footingWidthMm:400,footingDepthMm:400,anchorEdgeDistanceMm:40},a).ok;});\n ck("normalizes and retains full measured geometry for project save/load",()=>{const d={B1:{rows:2,cols:2,pitchX:160,pitchZ:160,plateWidthMm:400,plateLengthMm:400,columnWidthMm:200,columnDepthMm:200,footingWidthMm:600,footingDepthMm:600,anchorEdgeDistanceMm:40,signConfirmed:true,geometryConfirmed:true}};const x=normalizeCraneAnchorGroups(d);return !!x.B1&&x.B1.plateWidthMm===400&&x.B1.footingDepthMm===600;});\n ck("keeps independent anchor layouts for different physical base nodes",()=>{const x=normalizeCraneAnchorGroups({B1:{rows:2,cols:2,pitchX:160,pitchZ:160,signConfirmed:true,geometryConfirmed:true},B2:{rows:3,cols:2,pitchX:220,pitchZ:180,signConfirmed:true,geometryConfirmed:true}});return x.B1.pitchX===160&&x.B2.rows===3&&Object.keys(x).length===2;});
+ ck("checks column footprint within base plate",()=>{const a=buildAnchors({rows:2,cols:2,pitchX:100,pitchZ:100});return auditBasePlateGeometry({plateWidthMm:400,plateLengthMm:400,columnWidthMm:200,columnDepthMm:200,footingWidthMm:600,footingDepthMm:600,anchorEdgeDistanceMm:40},a).checks[0].ok;});
+ ck("rejects anchors outside plate edge clearance",()=>{const a=buildAnchors({rows:2,cols:2,pitchX:300,pitchZ:300});return !auditBasePlateGeometry({plateWidthMm:320,plateLengthMm:320,columnWidthMm:200,columnDepthMm:200,footingWidthMm:600,footingDepthMm:600,anchorEdgeDistanceMm:30},a).ok;});
+ ck("rejects plate larger than footing footprint",()=>{const a=buildAnchors({rows:2,cols:2,pitchX:100,pitchZ:100});return !auditBasePlateGeometry({plateWidthMm:500,plateLengthMm:500,columnWidthMm:200,columnDepthMm:200,footingWidthMm:400,footingDepthMm:400,anchorEdgeDistanceMm:40},a).ok;});
+ ck("normalizes and retains full measured geometry for project save/load",()=>{const d={B1:{rows:2,cols:2,pitchX:160,pitchZ:160,plateWidthMm:400,plateLengthMm:400,columnWidthMm:200,columnDepthMm:200,footingWidthMm:600,footingDepthMm:600,anchorEdgeDistanceMm:40,signConfirmed:true,geometryConfirmed:true}};const x=normalizeCraneAnchorGroups(d);return !!x.B1&&x.B1.plateWidthMm===400&&x.B1.footingDepthMm===600;});
+ ck("keeps independent anchor layouts for different physical base nodes",()=>{const x=normalizeCraneAnchorGroups({B1:{rows:2,cols:2,pitchX:160,pitchZ:160,signConfirmed:true,geometryConfirmed:true},B2:{rows:3,cols:2,pitchX:220,pitchZ:180,signConfirmed:true,geometryConfirmed:true}});return x.B1.pitchX===160&&x.B2.rows===3&&Object.keys(x).length===2;});
  ck("rejects unconfirmed or invalid persisted anchor geometry",()=>{const x=normalizeCraneAnchorGroups({B1:{rows:2,cols:2,pitchX:160,pitchZ:160,signConfirmed:true,geometryConfirmed:false},B2:{rows:1,cols:1,pitchX:0,pitchZ:0,signConfirmed:true,geometryConfirmed:true}});return Object.keys(x).length===0;});
  return{passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
