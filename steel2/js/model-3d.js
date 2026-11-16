@@ -1844,6 +1844,8 @@
       const spec=cases[i];
       const result=await analyze3D({label:spec.label,factors:{...spec.factors,wind:spec.wind||0},windSign:spec.windSign||1});
       if(!result||!Array.isArray(result.reactions)||!result.foundationModelFingerprint)throw new Error("نتیجه واکنش معتبر برای "+spec.label+" دریافت نشد.");
+       if(!result.tieBeamIntegration||!Array.isArray(result.tieBeamIntegration.included)||!Array.isArray(result.tieBeamIntegration.skipped))throw new Error("گزارش ورود/حذف شناژها در تحلیل "+spec.label+" موجود نیست؛ زنجیره انتقال به فونداسیون قابل تأیید نیست.");
+       if(samples.length&&JSON.stringify(samples[0].tieBeamIntegration)!==JSON.stringify(result.tieBeamIntegration))throw new Error("آرایش شناژهای واردشده بین ترکیبات بار یکسان نیست؛ پوش واکنش فونداسیون متوقف شد.");
       if(!result.equilibrium||result.equilibrium.ok!==true)throw new Error("کنترل تعادل حل‌گر برای ترکیب «"+spec.label+"» موفق نیست؛ پوش فونداسیون متوقف شد.");
       const map=new Map();
       for(const reaction of result.reactions){
