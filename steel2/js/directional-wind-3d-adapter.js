@@ -16,6 +16,16 @@ function auditTributaryAreaCoverage(model){
  return{success:issues.length===0,issues,rows,method:"sum(member longitudinal segment length × explicit tributary width/height), compared with geometric surface area over the actual member Z extent",analysisEnabled:false,designApproved:false};
 }
 function audit(){const w=root.SteelDirectionalWind?.getData?.(),issues=[];if(!w)issues.push("دفتر باد جهت‌دار در دسترس نیست.");if(w&&!w.ready)issues.push("ضرایب جهت‌دار کامل یا معتبر نیستند: "+String(w.status||"نامشخص"));const m=root.SteelStructuralModel?.getData?.();if(!m?.members?.length)issues.push("مدل سه‌بعدی اعضا در دسترس نیست.");const counts={roofPurlin:(m?.members||[]).filter(x=>x.sectionKey==="roofPurlin").length,wallGirt:(m?.members||[]).filter(x=>x.sectionKey==="wallGirt").length,endGirt:(m?.members||[]).filter(x=>x.sectionKey==="endGirt").length};if(m&&Object.values(counts).some(v=>!v))issues.push("هر سه گروه پرلین سقف، قید دیوار طولی و قید دیوار انتهایی لازم‌اند.");if(m){const badRoof=m.members.filter(x=>x.sectionKey==="roofPurlin").some(x=>!(Number(x.tributaryWidth)>0)&&!(Number(x.tributaryWidthLeft)>0||Number(x.tributaryWidthRight)>0));const badWall=m.members.filter(x=>x.sectionKey==="wallGirt"||x.sectionKey==="endGirt").some(x=>!(Number(x.tributaryHeight)>0));if(badRoof)issues.push("عرض بارگیر معتبر برای بخشی از پرلین‌ها موجود نیست.");if(badWall)issues.push("ارتفاع بارگیر معتبر برای بخشی از قیدهای دیوار موجود نیست.");}let tributaryAreaCoverage=null;if(m){if(!m.geometry||!Array.isArray(m.nodes))issues.push("هندسه و گره‌های مدل برای ممیزی مساحت بارگیر باد در دسترس نیستند.");else{tributaryAreaCoverage=auditTributaryAreaCoverage(m);if(!tributaryAreaCoverage.success)issues.push(...tributaryAreaCoverage.issues);}}if(w)DIRS.forEach(d=>SURFACES.forEach(s=>{const p=w.directions?.[d]?.surfaces?.[s];if(!p||!finite(p.netWithPositiveInternal)||!finite(p.netWithNegativeInternal))issues.push("فشار خالص ناقص: "+d+"/"+s);}));return{ready:issues.length===0,issues,counts,tributaryAreaCoverage,analysisEnabled:false,designApproved:false,codeDesignEligible:false};}
+const REQUIRED_SOURCE_FIELDS=["document","revision","locator","authority"];
+function auditCaseSourceProvenance(cases){
+ const list=Array.isArray(cases)?cases:[],rows=list.map(item=>{
+  const src=item?.source||{},missing=REQUIRED_SOURCE_FIELDS.filter(key=>!String(src[key]??"").trim());
+  return{caseId:String(item?.id||"نامشخص"),complete:missing.length===0,missing,code:String(src.code||""),clause:String(src.clause||"")};
+ });
+ const missingCounts={};
+ rows.filter(row=>!row.complete).forEach(row=>row.missing.forEach(key=>{missingCounts[key]=(missingCounts[key]||0)+1;}));
+ return{success:rows.length>0&&rows.every(row=>row.complete),caseCount:rows.length,completeCaseCount:rows.filter(row=>row.complete).length,incompleteCaseCount:rows.filter(row=>!row.complete).length,missingCounts,rows,analysisEnabled:false,designApproved:false,scope:"metadata completeness only; no code clause or document is inferred"};
+}
 function combineGlobalLoads(base,wind,factor){
  if(!Array.isArray(base)||!Array.isArray(wind)||base.length!==3||wind.length!==3||!base.concat(wind).every(finite)||!finite(factor))throw Error("بردارهای بار جهانی یا ضریب باد نامعتبرند.");
  return base.map((v,i)=>v+wind[i]*factor);
@@ -156,11 +166,13 @@ function createCases(){
     directionalWindPressures:{direction:d,internalPressureSign:s,surfaces:pressures,unit:"kN/m2"},
     source:{code:"مبحث ششم ۱۳۹۸",clause:pattern.id==="ULS-06"?"۶-۲-۳-۲، ترکیب ۶":"۶-۲-۳-۲، ترکیب ۳",
       note:"قالب محدود به D/Lr/S/W موجود؛ نیازمند تطبیق مهندس مسئول با متن رسمی و شرایط پروژه"},
+    sourceEvidence:auditCaseSourceProvenance([{id:"WIND-"+d.toUpperCase()+"-INT-"+s.toUpperCase()+"-"+pattern.id,source:{code:"مبحث ششم ۱۳۹۸",clause:pattern.id==="ULS-06"?"۶-۲-۳-۲، ترکیب ۶":"۶-۲-۳-۲، ترکیب ۳"}}]).rows[0],
     analysisEnabled:false,designApproved:false
    });
   });
  }));
- return{cases,caseCount:cases.length,patternCount:patterns.length,directionCount:DIRS.length,internalPressurePatternCount:2,
+ const sourceAudit=auditCaseSourceProvenance(cases);
+ return{cases,caseCount:cases.length,patternCount:patterns.length,directionCount:DIRS.length,internalPressurePatternCount:2,sourceAudit,
   patterns:patterns.map(x=>({id:x.id,label:x.label,factors:{...x.factors}})),
   analysisEnabled:false,designApproved:false,
   limitations:[
@@ -239,6 +251,14 @@ function selfTest(){const t=[];const ck=(n,f)=>{try{t.push({name:n,pass:!!f()});
     try{const result=createCases(),transfer=root.SteelGableEccentricLoadTransfer.prepareNodalLoads(root.SteelStructuralModel.getData(),result.cases[0].directionalWindPressures.surfaces,1,1);return result.cases.length===24&&result.cases[0].factors.wind===0.7&&transfer.success&&transfer.loads.length>0;}catch(e){return false;}
    }finally{root.SteelDirectionalWind=oldWind;root.SteelLoads=oldLoads;root.SteelStructuralModel=oldModel;}
   });
+ ck("generated wind combinations expose missing provenance without inventing fields",()=>{
+  const r=auditCaseSourceProvenance([{id:"C1",source:{code:"مبحث ششم ۱۳۹۸",clause:"۶-۲-۳-۲"}}]);
+  return !r.success&&r.caseCount===1&&r.incompleteCaseCount===1&&r.missingCounts.document===1&&r.missingCounts.revision===1&&r.missingCounts.locator===1&&r.missingCounts.authority===1;
+ });
+ ck("complete explicit source metadata passes provenance audit",()=>{
+  const r=auditCaseSourceProvenance([{id:"C1",source:{document:"official.pdf",revision:"1398",locator:"section 6",authority:"issuer"}}]);
+  return r.success&&r.completeCaseCount===1&&r.incompleteCaseCount===0;
+ });
  ck("tributary surface areas close exactly",()=>{const nodes=[{id:"a",x:0,y:0,z:0},{id:"b",x:0,y:0,z:5},{id:"c",x:10,y:0,z:0},{id:"d",x:10,y:0,z:5}];const members=[{id:"pl",sectionKey:"roofPurlin",side:"left",start:"a",end:"b",tributaryWidth:Math.hypot(5,5)},{id:"pr",sectionKey:"roofPurlin",side:"right",start:"c",end:"d",tributaryWidth:Math.hypot(5,5)},{id:"wl",sectionKey:"wallGirt",side:"left",start:"a",end:"b",tributaryHeight:5},{id:"wr",sectionKey:"wallGirt",side:"right",start:"c",end:"d",tributaryHeight:5}];const q=auditTributaryAreaCoverage({geometry:{span:10,rise:5,length:5,height:5},nodes,members});return q.success&&q.rows.length===4;});
  ck("tributary surface gaps are blocked",()=>{const nodes=[{id:"a",x:0,y:0,z:0},{id:"b",x:0,y:0,z:5},{id:"c",x:10,y:0,z:0},{id:"d",x:10,y:0,z:5}];const members=[{id:"pl",sectionKey:"roofPurlin",side:"left",start:"a",end:"b",tributaryWidth:1},{id:"pr",sectionKey:"roofPurlin",side:"right",start:"c",end:"d",tributaryWidth:1},{id:"wl",sectionKey:"wallGirt",side:"left",start:"a",end:"b",tributaryHeight:5},{id:"wr",sectionKey:"wallGirt",side:"right",start:"c",end:"d",tributaryHeight:5}];const q=auditTributaryAreaCoverage({geometry:{span:10,rise:5,length:5,height:5},nodes,members});return !q.success&&q.issues.some(x=>x.includes("بارگیر شیب چپ"));});
  const p={ "roof-left":2,"roof-right":3,"long-wall-left":4,"long-wall-right":5,"end-wall-front":6,"end-wall-back":7 };
@@ -269,5 +289,5 @@ function mountRunControl(){
  button.addEventListener("click",async()=>{button.disabled=true;out.textContent="در حال تحلیل جهت‌ها و فشارهای داخلی...";try{const r=await run();out.textContent="حل "+r.caseCount+" حالت باد با تعادل برقرار انجام شد. اعضای دارای پوش نیرو: "+r.memberForceEnvelope.rows.length+"؛ پوش نیرو برای همه اعضا و حالات ثبت شد. ضرایب دستی و مقدماتی‌اند؛ این نتیجه تأیید طراحی نیست.";}catch(e){out.textContent="تحلیل باد متوقف شد: "+String(e.message||e);}finally{button.disabled=false;}});
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mountRunControl);else mountRunControl();}
-root.SteelDirectionalWind3D={audit,auditGablePressure,auditGableTributaryAreaCoverage,auditGableLoadResultants,auditTributaryAreaCoverage,createCases,run,selfTest,mapMemberLoad,combineGlobalLoads,auditWindSampleIntegrity,buildWindForceEnvelope,getLastRun:()=>lastRun};
+root.SteelDirectionalWind3D={audit,auditCaseSourceProvenance,auditGablePressure,auditGableTributaryAreaCoverage,auditGableLoadResultants,auditTributaryAreaCoverage,createCases,run,selfTest,mapMemberLoad,combineGlobalLoads,auditWindSampleIntegrity,buildWindForceEnvelope,getLastRun:()=>lastRun};
 })(typeof window!=="undefined"?window:globalThis);
