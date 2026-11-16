@@ -172,13 +172,12 @@ function prepareMemberLineLoads(model,deadFactor,precomputedAudit){
    if(!start||!end)throw Error("گره ابتدا/انتهای شناژ "+routeId+" در مدل موجود نیست.");
    const axis=row.face==="left"||row.face==="right"?"z":"x",cross=axis==="z"?"x":"z";
    const direction=Math.sign(Number(end[axis])-Number(start[axis]));
-   const intermediate=model.nodes.filter(n=>(n.kind==="base"||n.kind==="endwall-base")&&Math.abs(Number(n.y)-Number(start.y))<=0.01&&Math.abs(Number(n[cross])-Number(start[cross]))<=1e-4&&direction*(Number(n[axis])-Number(start[axis]))>0.01&&direction*(Number(end[axis])-Number(n[axis]))>0.01);
-   const memberIds=[routeId,...intermediate.map(n=>n.id)];
+   const intermediate=model.nodes.filter(n=>(n.kind==="base"||n.kind==="endwall-base")&&Math.abs(Number(n.y)-Number(start.y))<=0.01&&Math.abs(Number(n[cross])-Number(start[cross]))<=1e-4&&direction*(Number(n[axis])-Number(start[axis]))>0.01&&direction*(Number(end[axis])-Number(n[axis]))>0.01).sort((a,b)=>direction*(Number(a[axis])-Number(b[axis])));
+   const routeNodes=[start,...intermediate,end];
    const beamPrefix="TIE_BEAM_"+routeId.replace(/[^A-Za-z0-9_-]/g,"_")+"_S";
-   const expected=intermediate.length+1;
-   for(let i=1;i<=expected;i++){
-    const memberId=beamPrefix+i;
-    out.push({memberId,routeId,face:row.face,uniformGlobalKNm:[0,-segment.uniformEquivalentLineLoadKNm*factor,0],lineLoadKNm:segment.uniformEquivalentLineLoadKNm*factor,sourceWeightKN:segment.weightKN*factor/expected,deadFactor:factor});
+   for(let i=0;i<routeNodes.length-1;i++){
+    const memberId=beamPrefix+(i+1),length=Math.hypot(routeNodes[i+1].x-routeNodes[i].x,routeNodes[i+1].y-routeNodes[i].y,routeNodes[i+1].z-routeNodes[i].z);
+    out.push({memberId,routeId,face:row.face,uniformGlobalKNm:[0,-segment.uniformEquivalentLineLoadKNm,0],lineLoadKNm:segment.uniformEquivalentLineLoadKNm,sourceWeightKN:segment.uniformEquivalentLineLoadKNm*length,segmentLengthM:length,deadFactor:factor,loadFactorAppliedInSolver:true});
    }
   });
  });
@@ -216,7 +215,7 @@ function selfTest(){
  t("precomputed audit is reused without recalculating wall weights",()=>{const old=root.SteelMasonryWallAudit;root.SteelMasonryWallAudit={audit(){throw new Error("should not recalculate");}};const x=prepareNodalLoads(model,1.2,a);root.SteelMasonryWallAudit=old;return x.length>0;});
  t("grade-beam route audit accepts a continuous wall-side route",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:20}]},"left",3.6);return x.success&&Math.abs(x.weightKN-360)<1e-8&&x.solverLoadsGenerated===false;});
  t("grade-beam route audit blocks incomplete coverage",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:10}]},"left",3.6);return !x.success&&x.issues.some(v=>v.includes("پیوسته"));});
- t("grade-beam wall transfer creates line loads, not base-node loads",()=>{const old= root.SteelTieBeamLayout;root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const model={geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:20}]};const auditResult={success:true,loadTransferEnabled:true,rows:[{face:"left",status:"grade-beam-line-load-ready",gradeBeamSupportAudit:{segments:[{routeId:"T1",startNodeId:"A",endNodeId:"B",uniformEquivalentLineLoadKNm:3.6,weightKN:72}]}}]};const x=prepareMemberLineLoads(model,1.5,auditResult);root.SteelTieBeamLayout=old;return x.length===1&&x[0].memberId==="TIE_BEAM_T1_S1"&&Math.abs(x[0].lineLoadKNm-5.4)<1e-8;});
+ t("grade-beam wall transfer creates line loads, not base-node loads",()=>{const old= root.SteelTieBeamLayout;root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const model={geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"base"},{id:"M1",x:0,y:0,z:5,kind:"base"},{id:"M2",x:0,y:0,z:15,kind:"base"},{id:"B",x:0,y:0,z:20,kind:"base"}]};const auditResult={success:true,loadTransferEnabled:true,rows:[{face:"left",status:"grade-beam-line-load-ready",gradeBeamSupportAudit:{segments:[{routeId:"T1",startNodeId:"A",endNodeId:"B",uniformEquivalentLineLoadKNm:3.6,weightKN:72}]}}]};const x=prepareMemberLineLoads(model,1.5,auditResult);root.SteelTieBeamLayout=old;return x.length===3&&x.every(v=>Math.abs(v.lineLoadKNm-3.6)<1e-8)&&Math.abs(x.reduce((s,v)=>s+v.sourceWeightKN,0)-72)<1e-8;});
  t("analysis approval remains disabled",()=>a.analysisEnabled===false&&a.designApproved===false);
  root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
