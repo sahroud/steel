@@ -97,15 +97,18 @@ function selfTest(){
   const fixture={nodes,members,geometry:{craneRunway:{enabled:true,supportNodes:[{id:"S1",z:0},{id:"S2",z:5}],beamSegments:[{id:"B1",continuity:"separate_span_segment_between_adjacent_frames"}],brackets:[{connectionType:"simple"},{connectionType:"simple"}],meshProposal:p,integrated3D:{ready:true},integrationAudit:{success:true}}}};
   const result=auditGeometry(fixture); return result.ready&&result.counts.integratedBeamMembers===1&&result.spanModel.includes("مستقل");
  });
- const integrated=(()=>{const sec={E_Pa:2e11,G_Pa:7.7e10,A_m2:.01,Iy_m4:1e-4,Iz_m4:2e-4,J_m4:1e-5,source:"drawing"};
+ const makeIntegratedFixture=()=>{
+  const sec={E_Pa:2e11,G_Pa:7.7e10,A_m2:.01,Iy_m4:1e-4,Iz_m4:2e-4,J_m4:1e-5,source:"drawing"};
   const nodes=[{id:"C1",x:0,y:5,z:0},{id:"C2",x:0,y:5,z:5},{id:"B1",x:-.5,y:5,z:0},{id:"B2",x:-.5,y:5,z:5}];
   const members=[{id:"BC1",start:"C1",end:"B1",analysisSection:sec,endReleases:{i:[],j:[]}},{id:"BC2",start:"C2",end:"B2",analysisSection:sec,endReleases:{i:[],j:[]}},{id:"G1",start:"B1",end:"B2",analysisSection:sec,endReleases:{i:[],j:[]}}];
-  const p={geometryReady:true,beamNodes:[nodes[2],nodes[3]],beamMembers:[{id:"G1",start:"B1",end:"B2",continuity:"separate_span_segment_between_adjacent_frames"}],brackets:[{id:"BC1",columnNodeId:"C1",beamNodeId:"B1",connectionType:"simple"},{id:"BC2",columnNodeId:"C2",beamNodeId:"B2",connectionType:"simple"}]};
-  return auditGeometry({nodes,members,geometry:{craneRunway:{enabled:true,supportNodes:[{id:"S1",z:0},{id:"S2",z:5}],beamSegments:[{id:"S1-B1"},{id:"B1-S2"}],brackets:[{connectionType:"simple"},{connectionType:"simple"}],meshProposal:p,integrated3D:{ready:true},integrationAudit:{success:true}}}});
- })();
+  const meshProposal={geometryReady:true,beamNodes:[nodes[2],nodes[3]],beamMembers:[{id:"G1",start:"B1",end:"B2",continuity:"separate_span_segment_between_adjacent_frames"}],brackets:[{id:"BC1",columnNodeId:"C1",beamNodeId:"B1",connectionType:"simple"},{id:"BC2",columnNodeId:"C2",beamNodeId:"B2",connectionType:"simple"}]};
+  return {nodes,members,geometry:{craneRunway:{enabled:true,supportNodes:[{id:"S1",z:0},{id:"S2",z:5}],beamSegments:[{id:"S1-B1",continuity:"separate_span_segment_between_adjacent_frames"},{id:"B1-S2",continuity:"separate_span_segment_between_adjacent_frames"}],brackets:[{connectionType:"simple"},{connectionType:"simple"}],meshProposal,integrated3D:{ready:true},integrationAudit:{success:true}}}};
+ };
+ const integratedFixture=makeIntegratedFixture(),integrated=auditGeometry(integratedFixture);
  t("integrated member topology and SI section data pass geometry audit",()=>integrated.ready&&integrated.counts.integratedBeamMembers===1&&integrated.counts.integratedBracketMembers===2);
- const bad=JSON.parse(JSON.stringify(integrated));bad.members=bad.members.filter(m=>m.id!=="BC1");
- t("missing bracket-to-column FEM member is rejected",()=>!auditGeometry(bad).ready&&auditGeometry(bad).counts.missingBrackets===1);
+ const brokenFixture=makeIntegratedFixture();brokenFixture.members=brokenFixture.members.filter(m=>m.id!=="BC1");
+ const brokenAudit=auditGeometry(brokenFixture);
+ t("missing bracket-to-column FEM member is rejected",()=>!brokenAudit.ready&&brokenAudit.counts.missingBrackets===1);
  t("horizontal wheel force count aligned with wheel train",()=>ledger.ready&&ledger.loads.length===2);
  t("kN converted to N",()=>ledger.loads[0].globalForce_N[0]===-10000&&ledger.loads[1].globalForce_N[2]===3000);
  t("global force signs preserved",()=>ledger.loads[0].globalForce_N[0]<0&&ledger.loads[0].globalForce_N[2]>0);
