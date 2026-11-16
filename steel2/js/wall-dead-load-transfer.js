@@ -94,6 +94,11 @@ function audit(model){
     issues.push(face+": برای شناژ زیر دیوار، نوع مصالح آجری، ضخامت، وزن مخصوص و وزن اندود معتبر لازم است.");
     rows.push({face,status:"grade-beam-missing-wall-weight",weightKN:null,nodeCount:0});return;
    }
+   const faceData=masonry?.faces?.find(x=>x.face===face),expectedArea=face==="front"||face==="rear"?Number(g.span)*Number(g.height)+Number(g.span)*Number(g.rise)/2:Number(g.length)*Number(g.height);
+   if(!faceData||faceData.openingAreaM2>1e-8||Math.abs(Number(faceData.netAreaM2)-expectedArea)>Math.max(1e-5,expectedArea*1e-6)){
+    issues.push(face+": بازشو یا اختلاف مساحت دیوار وجود دارد؛ تا توزیع موضعی بار دیوار روی شناژ، انتقال متوقف است.");
+    rows.push({face,status:"grade-beam-opening-or-area-unresolved",weightKN:null,nodeCount:0});return;
+   }
    const q=thickness/1000*gamma+(extra||0),path=inspectGradeBeamSupportPath(model,face,q);
    if(!path.success)issues.push(face+": مسیر شناژ زیر دیوار کامل/بدون هم‌پوشانی نیست: "+path.issues.join("؛ "));
    else issues.push(face+": مسیر شناژ پیوسته شناسایی شد؛ بار خطی معادل محاسبه شد اما هنوز به اعضای شناژ در حل‌گر منتقل نشده است.");
@@ -159,12 +164,13 @@ function selfTest(){
   {id:"F1",x:5,y:0,z:0,kind:"endwall-base"},{id:"B1",x:5,y:0,z:20,kind:"endwall-base"}
  ];
  const model={geometry:g,nodes,members:[]};
- const wallEnvelope={front:{material:"brick",supportMode:"grade-beam"},rear:{material:"brick",supportMode:"grade-beam"},left:{material:"brick",supportMode:"grade-beam"},right:{material:"brick",supportMode:"grade-beam"}};
+ const wallEnvelope={front:{material:"brick",supportMode:"foundation-bearing"},rear:{material:"brick",supportMode:"foundation-bearing"},left:{material:"brick",supportMode:"foundation-bearing"},right:{material:"brick",supportMode:"foundation-bearing"}};
  const brief={wallEnvelope,masonry:{thicknessMm:200,unitWeightKNm3:18,plasterThicknessMm:0}};
  root.SteelDesignCore={getData:()=>brief};
  root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:(face==="front"||face==="rear")?60:100,openingAreaM2:0,weightKN:(face==="front"||face==="rear")?216:360}))})};
  const a=audit(model);
- t("grade-beam support is never converted to frame-base nodal loads",()=>!a.success&&a.nodalLoads.length===0&&a.rows.every(r=>r.status==="grade-beam-path-incomplete"||r.status==="grade-beam-line-load-proposal-only"));
+ t("foundation-bearing brick walls produce four face transfers",()=>a.success&&a.rows.length===4&&a.nodalLoads.length===12);
+ t("grade-beam support is never converted to frame-base nodal loads",()=>{brief.wallEnvelope.left.supportMode="grade-beam";const x=audit(model);brief.wallEnvelope.left.supportMode="foundation-bearing";return !x.success&&x.nodalLoads.length===9&&x.rows.find(r=>r.face==="left").status==="grade-beam-path-incomplete";});
  t("tributary nodal forces equal total wall dead weight",()=>Math.abs(a.nodalLoads.reduce((s,x)=>s-x.values[1]/1000,0)-a.totalWeightKN)<1e-8);
  t("front gable tributary areas integrate exact roof slope",()=>{const f=a.rows.find(x=>x.face==="front");return Math.abs(f.areaM2-(10*5+10*2/2))<1e-8;});
  t("dead factor scales only the wall dead nodal actions",()=>{const x=prepareNodalLoads(model,1.4);return Math.abs(x.reduce((s,n)=>s-n.values[1]/1000,0)-a.totalWeightKN*1.4)<1e-8;});
