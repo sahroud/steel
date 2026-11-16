@@ -428,7 +428,7 @@ function selfTest(){
  }catch(e){tests.push({name:"local-torsion-end-force-signs",ok:false,error:String(e.message||e)});}
  try{
   const model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"LINEAR",start:"A",end:"B",type:"validation",analysisLoad:{uniformLocal:[0,0,0],linearLocal:{start:[0,-100,0],end:[0,-300,0]}}}]};
-  const result=analyze(model,{...base,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]});
+  const result=analyze(model,{...base,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2]}]});
   const fy=result.equilibrium.appliedForceN[1],mz=result.equilibrium.appliedMomentNm[2];
   const ok=close(fy,-600,1e-8)&&close(mz,-1050,1e-8)&&result.equilibrium.ok;
   tests.push({name:"linearly-varying-member-load-preserves-resultant-and-first-moment",ok,appliedVerticalN:fy,expectedVerticalN:-600,appliedMomentZNm:mz,expectedMomentZNm:-1050,equilibrium:result.equilibrium.ok});
