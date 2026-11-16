@@ -193,6 +193,46 @@ function prepareMemberLineLoads(model,deadFactor,precomputedAudit){
  });
  return out;
 }
+function auditAppliedMemberLoadResultant(model,loads,expectedWeightKN,deadFactor){
+ const issues=[],nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n])),members=new Map((model?.members||[]).map(m=>[String(m.id),m]));
+ const factor=num(deadFactor),expected=num(expectedWeightKN);
+ if(factor===null||factor<0||expected===null||expected<0)issues.push("ضریب یا وزن مورد انتظار برای ممیزی بار شناژ معتبر نیست.");
+ const seen=new Set();let weight=0;const force=[0,0,0],moment=[0,0,0],rows=[];
+ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+ (loads||[]).forEach(load=>{
+  const id=String(load.memberId),member=members.get(id),ni=member&&nodes.get(String(member.start)),nj=member&&nodes.get(String(member.end));
+  if(seen.has(id)){issues.push("بار دیوار بیش از یک‌بار به عضو شناژ "+id+" تخصیص یافته است.");return;}seen.add(id);
+  if(!member||!ni||!nj){issues.push("عضو یا گره‌های شناژ برای بار دیوار "+id+" موجود نیست.");return;}
+  const q0=load.globalStartKNm,q1=load.globalEndKNm;
+  if(!Array.isArray(q0)||!Array.isArray(q1)||q0.length!==3||q1.length!==3||[...q0,...q1].some(v=>!Number.isFinite(Number(v)))){
+   issues.push("بردار ابتدا/انتهای بار دیوار روی "+id+" نامعتبر است.");return;
+  }
+  if(Math.abs(Number(q0[0]))>1e-8||Math.abs(Number(q0[2]))>1e-8||Math.abs(Number(q1[0]))>1e-8||Math.abs(Number(q1[2]))>1e-8||Number(q0[1])>1e-8||Number(q1[1])>1e-8){
+   issues.push("بار دیوار روی "+id+" باید قائم و رو به پایین باشد.");return;
+  }
+  const r0=[Number(ni.x)||0,Number(ni.y)||0,Number(ni.z)||0],r1=[Number(nj.x)||0,Number(nj.y)||0,Number(nj.z)||0];
+  const L=Math.hypot(r1[0]-r0[0],r1[1]-r0[1],r1[2]-r0[2]);
+  if(!(L>1e-8)){issues.push("طول عضو شناژ "+id+" صفر یا نامعتبر است.");return;}
+  const f0=q0.map(v=>Number(v)*L*factor),f1=q1.map(v=>Number(v)*L*factor);
+  const resultant=f0.map((v,i)=>(v+f1[i])/2);
+  const m0=cross(r0,f0),m1=cross(r0,f1),m2=cross(r1,f0),m3=cross(r1,f1);
+  const mres=m0.map((v,i)=>L>0?factor*(m0[i]+m1[i]+m2[i]+2*m3[i])/6:0);
+  // The expression above is corrected below using the exact linear-product integral.
+  const dr=r1.map((v,i)=>v-r0[i]),dq=q1.map((v,i)=>Number(v)-Number(q0[i]));
+  const exactMoment=cross(r0,q0.map(Number)).map((v,i)=>L*factor*(v+0.5*(cross(r0,dq)[i]+cross(dr,q0.map(Number))[i])+(1/3)*cross(dr,dq)[i]));
+  resultant.forEach((v,i)=>force[i]+=v);
+  exactMoment.forEach((v,i)=>moment[i]+=v);
+  const w=-resultant[1],source=Number(load.sourceWeightKN)*factor;
+  if(!Number.isFinite(source)||Math.abs(source-w)>Math.max(1e-6,Math.abs(w)*1e-7))issues.push("وزن دفتر بار و برآیند بار خطی عضو "+id+" یکسان نیست.");
+  if(Math.abs(Number(member.lineLoads?.wallMasonryDead)-Number(load.lineLoadKNm))>1e-7)issues.push("بار دیوار در دفتر عضو "+id+" ثبت نشده یا مقدار آن متفاوت است.");
+  const stored=member.lineLoads?.wallMasonryLinearGlobalKNm;
+  if(!stored||stored.start?.some((v,i)=>Math.abs(Number(v)-Number(q0[i]))>1e-8)||stored.end?.some((v,i)=>Math.abs(Number(v)-Number(q1[i]))>1e-8))issues.push("بردار خطی بار دیوار در عضو "+id+" با بار ممیزی‌شده تطابق ندارد.");
+  weight+=w;rows.push({memberId:id,lengthM:L,weightKN:w,momentAboutOriginKNm:exactMoment});
+ });
+ const target=expected*factor,difference=weight-target;
+ if(Math.abs(difference)>Math.max(1e-6,Math.abs(target)*1e-7))issues.push("جمع برآیند بار شناژها با وزن مورد انتظار دیوار برابر نیست.");
+ return {success:issues.length===0,expectedWeightKN:target,integratedWeightKN:weight,weightDifferenceKN:difference,globalForceKN:force,globalMomentAboutOriginKNm:moment,memberCount:rows.length,rows,issues,note:"این ممیزی برآیند و لنگر بارهای گسترده دیوار روی اعضای شناژ را کنترل می‌کند؛ کنترل واکنش کلی مدل جداگانه از گزارش تعادل حل‌گر خوانده می‌شود."};
+}
 function selfTest(){
  const tests=[],t=(name,fn)=>{try{tests.push({name,ok:fn()!==false});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
  const oldBrief=root.SteelDesignCore,oldMasonry=root.SteelMasonryWallAudit,oldTransfer=root.SteelWallDeadLoadTransfer,oldTieBeam=root.SteelTieBeamLayout;
@@ -230,9 +270,11 @@ function selfTest(){
  t("gable variable wall load uses exact end intensities on both roof slopes",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T3L",start:"A",end:"C",startJoint:"rigid",endJoint:"rigid"},{id:"T3R",start:"C",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"endwall-base"},{id:"C",x:5,y:0,z:0,kind:"endwall-base"},{id:"B",x:10,y:0,z:0,kind:"endwall-base"}]},"front",3.6);return x.success&&Math.abs(x.segments[0].startLineLoadKNm-18)<1e-8&&Math.abs(x.segments[0].endLineLoadKNm-25.2)<1e-8&&Math.abs(x.segments[1].startLineLoadKNm-25.2)<1e-8&&Math.abs(x.segments[1].endLineLoadKNm-18)<1e-8&&Math.abs(x.weightKN-216)<1e-8;});
  t("grade-beam wall transfer creates line loads, not base-node loads",()=>{const old= root.SteelTieBeamLayout;root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const model={geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"base"},{id:"M1",x:0,y:0,z:5,kind:"base"},{id:"M2",x:0,y:0,z:15,kind:"base"},{id:"B",x:0,y:0,z:20,kind:"base"}]};const auditResult={success:true,loadTransferEnabled:true,rows:[{face:"left",status:"grade-beam-line-load-ready",gradeBeamSupportAudit:{segments:[{routeId:"T1",startNodeId:"A",endNodeId:"B",uniformEquivalentLineLoadKNm:3.6,startLineLoadKNm:3.6,endLineLoadKNm:3.6,unitWeightKNm2:0.72,weightKN:72}]}}]};const x=prepareMemberLineLoads(model,1.5,auditResult);root.SteelTieBeamLayout=old;return x.length===3&&x.every(v=>Math.abs(v.lineLoadKNm-3.6)<1e-8)&&Math.abs(x.reduce((s,v)=>s+v.sourceWeightKN,0)-72)<1e-8;});
  t("gable split شناژ segments carry peak ridge intensity and exact total weight",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"GL",start:"A",end:"C",startJoint:"rigid",endJoint:"rigid"},{id:"GR",start:"C",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const gm={geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"endwall-base"},{id:"C",x:5,y:0,z:0,kind:"endwall-base"},{id:"B",x:10,y:0,z:0,kind:"endwall-base"}]};const ar={success:true,loadTransferEnabled:true,rows:[{face:"front",status:"grade-beam-line-load-ready",gradeBeamSupportAudit:{segments:[{routeId:"GL",startNodeId:"A",endNodeId:"C",unitWeightKNm2:3.6},{routeId:"GR",startNodeId:"C",endNodeId:"B",unitWeightKNm2:3.6}]}}]};const loads=prepareMemberLineLoads(gm,1,ar);return loads.length===2&&Math.abs(loads[0].globalStartKNm[1]+18)<1e-8&&Math.abs(loads[0].globalEndKNm[1]+25.2)<1e-8&&Math.abs(loads[1].globalStartKNm[1]+25.2)<1e-8&&Math.abs(loads[1].globalEndKNm[1]+18)<1e-8&&Math.abs(loads.reduce((sum,x)=>sum+x.sourceWeightKN,0)-216)<1e-8;});
+ t("applied grade-beam wall loads preserve exact force and global moment resultants",()=>{const mm={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:5,y:0,z:0}],members:[{id:"TIE_BEAM_R_S1",start:"A",end:"B",lineLoads:{wallMasonryDead:21.6,wallMasonryLinearGlobalKNm:{start:[0,-18,0],end:[0,-25.2,0]}}}]};const ll=[{memberId:"TIE_BEAM_R_S1",globalStartKNm:[0,-18,0],globalEndKNm:[0,-25.2,0],lineLoadKNm:21.6,sourceWeightKN:108}];const x=auditAppliedMemberLoadResultant(mm,ll,108,1);return x.success&&Math.abs(x.integratedWeightKN-108)<1e-8&&Math.abs(x.globalForceKN[1]+108)<1e-8&&Math.abs(x.globalMomentAboutOriginKNm[2]+285)<1e-8;});
+ t("applied grade-beam wall load audit rejects missing member ledger entry",()=>{const mm={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:5,y:0,z:0}],members:[{id:"TIE_BEAM_R_S1",start:"A",end:"B",lineLoads:{}}]};const ll=[{memberId:"TIE_BEAM_R_S1",globalStartKNm:[0,-18,0],globalEndKNm:[0,-25.2,0],lineLoadKNm:21.6,sourceWeightKN:108}];return !auditAppliedMemberLoadResultant(mm,ll,108,1).success;});
  t("analysis approval remains disabled",()=>a.analysisEnabled===false&&a.designApproved===false);
  root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;root.SteelTieBeamLayout=oldTieBeam;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
 }
-root.SteelWallDeadLoadTransfer={audit,prepareNodalLoads,prepareMemberLineLoads,inspectSecondarySupportPath,inspectGradeBeamSupportPath,selfTest};
+root.SteelWallDeadLoadTransfer={audit,prepareNodalLoads,prepareMemberLineLoads,auditAppliedMemberLoadResultant,inspectSecondarySupportPath,inspectGradeBeamSupportPath,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
