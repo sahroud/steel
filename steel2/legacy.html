@@ -77,9 +77,18 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     var caption=document.getElementById("focusWorkspaceCaption");
     if(caption)caption.textContent="حالت نمایش متمرکز: "+labels[focus]+"؛ برای بازگشت، «نمایش همه بخش‌ها» را انتخاب کنید.";
     var targetId=(window.location.hash||"").slice(1);
-    var target=targetId&&document.getElementById(targetId);
-    if(!target)target=document.querySelector('[data-focus-group].focus-visible');
-    if(target)window.setTimeout(function(){target.scrollIntoView({behavior:"auto",block:"start"});},80);
+    // Panels created by deferred modules may not exist when this handler first runs.
+    // Re-apply the selected focus group and resolve the hash after their DOMContentLoaded handlers.
+    window.setTimeout(function(){
+      document.querySelectorAll("[data-focus-group]").forEach(function(panel){
+        var groups=(panel.getAttribute("data-focus-group")||"").split(/\\s+/);
+        if(groups.includes(focus))panel.classList.add("focus-visible");
+        else panel.classList.remove("focus-visible");
+      });
+      var lateTarget=targetId&&document.getElementById(targetId);
+      if(!lateTarget)lateTarget=document.querySelector('[data-focus-group].focus-visible');
+      if(lateTarget)lateTarget.scrollIntoView({behavior:"auto",block:"start"});
+    },140);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initFocusWorkspace);
   else initFocusWorkspace();
