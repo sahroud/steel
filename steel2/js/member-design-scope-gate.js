@@ -106,7 +106,7 @@ function render(){
 function init(){
  if(document.getElementById("memberDesignScopeGatePanel"))return;
  const main=document.querySelector("main");if(!main)return;
- const p=document.createElement("section");p.className="panel";p.id="memberDesignScopeGatePanel";
+ const p=document.createElement("section");p.className="panel";p.id="memberDesignScopeGatePanel";p.setAttribute("data-focus-group","member-design");
  p.innerHTML="<div class='panel-title'><h3>دروازه کنترل دامنه طراحی تمام اعضای سوله</h3><span class='status'>کنترل عدم تأیید کاذب</span></div><div class='notice'>این بخش مشخص می‌کند کدام کنترل‌های واقعی هنوز برای هر گروه عضو لازم‌اند؛ از نمایش قبولی بر اساس موتورهای مقدماتی جلوگیری می‌کند.</div><div class='button-grid'><button class='btn secondary' id='btnMemberDesignScopeGate' type='button'>بازبینی دامنه طراحی اعضا</button></div><div id='memberDesignScopeGateResults'></div>";
  const footer=main.querySelector("footer");if(footer)footer.insertAdjacentElement("beforebegin",p);else main.appendChild(p);
  document.getElementById("btnMemberDesignScopeGate").addEventListener("click",render);
