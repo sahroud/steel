@@ -34,6 +34,28 @@ function faceAreaWeights(model,face,nodes){
  return strips.map((s,i)=>({nodeId:nodes.find(n=>near(n.coordinate,s.coordinate))?.id,start:s.start,end:s.end,
   areaM2:face==="left"||face==="right"?(s.end-s.start)*Number(g.height):integralRoofHeight(s.start,s.end,g)}));
 }
+function inspectSecondarySupportPath(model,face){
+ const nodes=Array.isArray(model?.nodes)?model.nodes:[],members=Array.isArray(model?.members)?model.members:[];
+ const nodeMap=new Map(nodes.map(n=>[String(n.id),n]));
+ const longitudinal=face==="left"||face==="right",sectionKey=longitudinal?"wallGirt":"endGirt";
+ const candidates=members.filter(m=>m.sectionKey===sectionKey&&(longitudinal?m.side===face:m.endFace===face));
+ const issues=[],rows=[];
+ if(!candidates.length)return {success:false,face,sectionKey,candidateMemberCount:0,connectedMemberCount:0,issues:["عضو زیرسازی متناظر در مدل هندسی پیدا نشد."],rows};
+ const byNode=new Map();
+ members.forEach(m=>[m.start,m.end].forEach(id=>{const key=String(id);if(!byNode.has(key))byNode.set(key,[]);byNode.get(key).push(m);}));
+ const allowed=longitudinal?new Set(["column"]):new Set(["column","endPost","rafter"]);
+ candidates.forEach(m=>{
+  const ends=[String(m.start),String(m.end)].map(nodeId=>{
+   const node=nodeMap.get(nodeId),adjacent=(byNode.get(nodeId)||[]).filter(x=>x.id!==m.id),supports=adjacent.filter(x=>allowed.has(String(x.sectionKey||"")));
+   const connected=!!node&&supports.length>0;
+   if(!connected)issues.push("عضو "+m.id+" در گره "+nodeId+" به عضو قائم/اصلی مجاورِ قابل‌شناسایی متصل نیست.");
+   return {nodeId,nodeKind:node?.kind||null,adjacentMemberIds:adjacent.map(x=>String(x.id)),supportMemberIds:supports.map(x=>String(x.id)),connected};
+  });
+  rows.push({memberId:String(m.id),start:ends[0],end:ends[1]});
+ });
+ return {success:issues.length===0,face,sectionKey,candidateMemberCount:candidates.length,connectedMemberCount:rows.filter(r=>r.start.connected&&r.end.connected).length,issues,rows,
+ limitation:"فقط پیوستگی توپولوژیک بررسی می‌شود؛ اتصال اجرایی، سختی، ظرفیت و تبدیل بار سطحی به بارهای گره‌ای اثبات نمی‌شود."};
+}
 function audit(model){
  const issues=[],rows=[],nodalLoads=[];
  if(!model?.geometry||!Array.isArray(model.nodes)||!Array.isArray(model.members))return {success:false,loadTransferEnabled:false,issues:["مدل سه‌بعدی معتبر برای انتقال وزن دیوار موجود نیست."],rows,nodalLoads};
@@ -47,8 +69,15 @@ function audit(model){
  FACES.forEach(face=>{
   const cfg=walls[face];if(!cfg?.material)return;
   const mode=cfg.supportMode||"unknown";
+  if(mode==="steel-secondary"){
+   const topology=inspectSecondarySupportPath(model,face);
+   issues.push(face+": "+(topology.success
+    ?"اتصال توپولوژیک گرت به اعضای اصلی شناسایی شد؛ اما تبدیل وزن سطحی دیوار به بارهای گرت و واکنش‌های گره‌ای هنوز پیاده‌سازی و اعتبارسنجی نشده است."
+    :"مسیر توپولوژیک زیرسازی فولادی ناقص است: "+topology.issues.join("؛ ")));
+   rows.push({face,status:topology.success?"secondary-topology-only":"secondary-topology-incomplete",weightKN:null,nodeCount:0,secondarySupportAudit:topology});return;
+  }
   if(mode!=="foundation-bearing"){
-   issues.push(face+": مسیر تحمل وزن دیوار باید صریحاً «اتکای مستقیم به فونداسیون» باشد؛ انتقال به زیرسازی فولادی یا قاب مستقل هنوز مدل نشده است.");
+   issues.push(face+": مسیر تحمل وزن دیوار باید صریحاً «اتکای مستقیم به تکیه‌گاه‌های پایه مدل‌شده» باشد؛ قاب مستقل یا مسیر نامشخص هنوز مدل نشده است.");
    rows.push({face,status:"unsupported-support-mode",weightKN:null,nodeCount:0});return;
   }
   const faceData=masonry?.faces?.find(x=>x.face===face);
@@ -111,6 +140,9 @@ function selfTest(){
  t("dead factor scales only the wall dead nodal actions",()=>{const x=prepareNodalLoads(model,1.4);return Math.abs(x.reduce((s,n)=>s-n.values[1]/1000,0)-a.totalWeightKN*1.4)<1e-8;});
  t("unknown support mode is blocked",()=>{brief.wallEnvelope.left.supportMode="unknown";const x=audit(model);brief.wallEnvelope.left.supportMode="foundation-bearing";return !x.success&&x.issues.some(v=>v.includes("اتکای مستقیم"));});
  t("steel-secondary support remains explicitly unsupported",()=>{brief.wallEnvelope.left.supportMode="steel-secondary";const x=audit(model);brief.wallEnvelope.left.supportMode="foundation-bearing";return !x.success;});
+ t("complete longitudinal girt-to-column topology is recognized",()=>{const x=inspectSecondarySupportPath({nodes:[{id:"A"},{id:"B"},{id:"C"},{id:"D"}],members:[{id:"G",sectionKey:"wallGirt",side:"left",start:"A",end:"B"},{id:"C1",sectionKey:"column",start:"A",end:"C"},{id:"C2",sectionKey:"column",start:"B",end:"D"}]},"left");return x.success&&x.candidateMemberCount===1&&x.connectedMemberCount===1;});
+ t("missing longitudinal girt support at one end is blocked",()=>{const x=inspectSecondarySupportPath({nodes:[{id:"A"},{id:"B"},{id:"C"}],members:[{id:"G",sectionKey:"wallGirt",side:"left",start:"A",end:"B"},{id:"C1",sectionKey:"column",start:"A",end:"C"}]},"left");return !x.success&&x.issues.length===1;});
+ t("complete end-wall girt-to-post topology is recognized",()=>{const x=inspectSecondarySupportPath({nodes:[{id:"A"},{id:"B"},{id:"C"},{id:"D"}],members:[{id:"G",sectionKey:"endGirt",endFace:"front",start:"A",end:"B"},{id:"P1",sectionKey:"endPost",start:"A",end:"C"},{id:"P2",sectionKey:"endPost",start:"B",end:"D"}]},"front");return x.success&&x.connectedMemberCount===1;});
  t("non-brick wall requires entered surface weight",()=>{brief.wallEnvelope.left.material="sandwich-panel";const x=audit(model);brief.wallEnvelope.left.material="brick";return !x.success&&x.issues.some(v=>v.includes("وزن سطحی"));});
  t("wall openings block uniform tributary distribution",()=>{root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:59,openingAreaM2:1,weightKN:2124}))})};const x=audit(model);root.SteelMasonryWallAudit={audit:()=>({faces:["front","rear","left","right"].map(face=>({face,netAreaM2:(face==="front"||face==="rear")?60:100,openingAreaM2:0,weightKN:(face==="front"||face==="rear")?216:360}))})};return !x.success&&x.issues.some(v=>v.includes("بازشو"));});
  t("missing base support coverage is blocked",()=>{const x=audit({...model,nodes:nodes.filter(n=>n.id!=="L0")});return !x.success;});
@@ -120,5 +152,5 @@ function selfTest(){
  root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
 }
-root.SteelWallDeadLoadTransfer={audit,prepareNodalLoads,selfTest};
+root.SteelWallDeadLoadTransfer={audit,prepareNodalLoads,inspectSecondarySupportPath,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
