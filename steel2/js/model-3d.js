@@ -1538,6 +1538,18 @@
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
     result.additionalNodalLoadCount=customNodalLoads.length;
     result.wallDeadLoadTransfer={totalWeightKN:wallDeadLoadAudit.totalWeightKN,deadFactor:selected.deadFactor,appliedWeightKN:wallDeadLoadAudit.totalWeightKN*selected.deadFactor,faces:wallDeadLoadAudit.rows,nodalLoads:wallDeadNodalLoads,memberLineLoads:wallDeadMemberLoads,appliedToTieBeamMembers:wallDeadMemberLoads.length>0,memberLoadAudit:wallDeadMemberLoadAudit};
+    result.wallDeadLoadTransfer.globalReactionEquilibrium=result.equilibrium?{
+      success:result.equilibrium.ok===true,
+      relativeForceResidual:result.equilibrium.relativeForceResidual,
+      relativeMomentResidual:result.equilibrium.relativeMomentResidual,
+      appliedForceN:result.equilibrium.appliedForceN,
+      supportReactionN:result.equilibrium.supportReactionN,
+      forceResidualN:result.equilibrium.forceResidualN,
+      appliedMomentNm:result.equilibrium.appliedMomentNm,
+      supportMomentNm:result.equilibrium.supportMomentNm,
+      momentResidualNm:result.equilibrium.momentResidualNm,
+      scope:"تعادل کلی همه بارهای مدل؛ واکنش مستقل سهم دیوار در این مرحله تفکیک نشده است."
+    }:{success:false,scope:"گزارش تعادل حل‌گر در دسترس نیست."};
     result.gableWindEccentricTransfer={success:gableWindEccentricTransfer.success,windFactor:gableWindEccentricTransfer.windFactor??0,windSign:gableWindEccentricTransfer.windSign??1,memberCount:gableWindEccentricTransfer.rows.length,nodalLoadCount:gableWindEccentricTransfer.loads.length,rows:gableWindEccentricTransfer.rows,method:gableWindEccentricTransfer.method,analysisEnabled:!!selected.directionalWindPressures,designApproved:false};
     result.loadPathAudit=loadPathAudit;
      result.preparedMemberLoadAudit=preparedMemberLoadAudit;
