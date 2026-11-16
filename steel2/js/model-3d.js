@@ -1372,6 +1372,9 @@
         member.lineLoads.wallMasonryLinearGlobalKNm={start:load.globalStartKNm.slice(),end:load.globalEndKNm.slice(),average:load.lineLoadKNm,distribution:load.distribution||"linear-global-vertical"};
       }
     });
+    const gradeBeamWallWeightKN=wallDeadLoadAudit.rows.filter(r=>r.status==="grade-beam-line-load-ready").reduce((sum,r)=>sum+Number(r.weightKN||0),0);
+    const wallDeadMemberLoadAudit=window.SteelWallDeadLoadTransfer.auditAppliedMemberLoadResultant(analysisModel,wallDeadMemberLoads,gradeBeamWallWeightKN,selected.deadFactor);
+    if(!wallDeadMemberLoadAudit.success)throw new Error("ممیزی برآیند بار دیوار روی شناژ ناموفق است: "+wallDeadMemberLoadAudit.issues.join("؛ "));
     // Build an indexed node registry and validate connectivity before creating element loads.
     const nodeById=new Map();
     const duplicateNodeIds=[];
@@ -1534,7 +1537,7 @@
     const customNodalLoads=[...nodalMap.values()];
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
     result.additionalNodalLoadCount=customNodalLoads.length;
-    result.wallDeadLoadTransfer={totalWeightKN:wallDeadLoadAudit.totalWeightKN,deadFactor:selected.deadFactor,appliedWeightKN:wallDeadLoadAudit.totalWeightKN*selected.deadFactor,faces:wallDeadLoadAudit.rows,nodalLoads:wallDeadNodalLoads,memberLineLoads:wallDeadMemberLoads,appliedToTieBeamMembers:wallDeadMemberLoads.length>0};
+    result.wallDeadLoadTransfer={totalWeightKN:wallDeadLoadAudit.totalWeightKN,deadFactor:selected.deadFactor,appliedWeightKN:wallDeadLoadAudit.totalWeightKN*selected.deadFactor,faces:wallDeadLoadAudit.rows,nodalLoads:wallDeadNodalLoads,memberLineLoads:wallDeadMemberLoads,appliedToTieBeamMembers:wallDeadMemberLoads.length>0,memberLoadAudit:wallDeadMemberLoadAudit};
     result.gableWindEccentricTransfer={success:gableWindEccentricTransfer.success,windFactor:gableWindEccentricTransfer.windFactor??0,windSign:gableWindEccentricTransfer.windSign??1,memberCount:gableWindEccentricTransfer.rows.length,nodalLoadCount:gableWindEccentricTransfer.loads.length,rows:gableWindEccentricTransfer.rows,method:gableWindEccentricTransfer.method,analysisEnabled:!!selected.directionalWindPressures,designApproved:false};
     result.loadPathAudit=loadPathAudit;
      result.preparedMemberLoadAudit=preparedMemberLoadAudit;
