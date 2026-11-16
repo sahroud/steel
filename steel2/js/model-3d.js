@@ -1009,8 +1009,13 @@
     }
     if(window.SteelCrane3DIntegration&&model.geometry.craneRunway.enabled){
       const integration=window.SteelCrane3DIntegration.integrate(model);
-      model.geometry.craneRunway.integrationAudit={success:integration.success,ready:integration.ready,analysisEnabled:false,issues:integration.issues||[],counts:integration.counts||null};
-      if(integration.success)model=integration.model;
+      const integrationAudit={success:integration.success,ready:integration.ready,analysisEnabled:false,issues:integration.issues||[],counts:integration.counts||null};
+      if(integration.success){
+        model=integration.model;
+        model.geometry.craneRunway.integrationAudit=integrationAudit;
+      }else{
+        model.geometry.craneRunway.integrationAudit=integrationAudit;
+      }
     }
     return model;
   }
