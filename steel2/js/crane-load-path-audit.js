@@ -48,6 +48,11 @@ function auditGeometry(model){
   return !r||!Array.isArray(r.i)||!Array.isArray(r.j);
  });
  if(invalidReleases.length)issues.push("آزادسازی انتهایی تیر حمال/براکت صریح نیست: "+invalidReleases.slice(0,6).join("، "));
+ const nonzeroOrUndeclaredLoads=integratedMembers.filter(id=>{
+  const load=memberMap.get(id)?.analysisLoad?.uniformLocal;
+  return !Array.isArray(load)||load.length!==3||load.some(v=>!Number.isFinite(Number(v))||Number(v)!==0);
+ });
+ if(nonzeroOrUndeclaredLoads.length)issues.push("تا تکمیل مسیر بار چرخ، بار گسترده اعضای جرثقیل باید صریحاً صفر و سه‌مولفه‌ای بماند: "+nonzeroOrUndeclaredLoads.slice(0,6).join("، "));
  const unsupported=brackets.filter(x=>!["simple","moment"].includes(x.connectionType));
  if(unsupported.length)issues.push("نوع اتصال براکت باید ساده یا گیردار و مطابق نقشه باشد.");
  const spanTypes=[...new Set(segments.map(s=>s.continuity))];
@@ -109,6 +114,8 @@ function selfTest(){
  const brokenFixture=makeIntegratedFixture();brokenFixture.members=brokenFixture.members.filter(m=>m.id!=="BC1");
  const brokenAudit=auditGeometry(brokenFixture);
  t("missing bracket-to-column FEM member is rejected",()=>!brokenAudit.ready&&brokenAudit.counts.missingBrackets===1);
+ const noLoadModel=makeIntegratedFixture();noLoadModel.members.find(m=>m.id==="G1").analysisLoad={uniformLocal:[1,0,0]};
+ t("blocks premature nonzero member loads before crane load-path approval",()=>!auditGeometry(noLoadModel).ready&&auditGeometry(noLoadModel).issues.some(x=>x.includes("بار گسترده اعضای جرثقیل")));
  t("horizontal wheel force count aligned with wheel train",()=>ledger.ready&&ledger.loads.length===2);
  t("kN converted to N",()=>ledger.loads[0].globalForce_N[0]===-10000&&ledger.loads[1].globalForce_N[2]===3000);
  t("global force signs preserved",()=>ledger.loads[0].globalForce_N[0]<0&&ledger.loads[0].globalForce_N[2]>0);
