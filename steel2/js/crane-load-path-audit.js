@@ -48,6 +48,19 @@ function auditGeometry(model){
   return !r||!Array.isArray(r.i)||!Array.isArray(r.j);
  });
  if(invalidReleases.length)issues.push("آزادسازی انتهایی تیر حمال/براکت صریح نیست: "+invalidReleases.slice(0,6).join("، "));
+ const solverIncompatible=integratedMembers.filter(id=>{
+  const m=memberMap.get(id),p=m?.analysisSection,r=m?.endReleases;
+  return !m?.craneIntegration||!["craneRunwayGirder","craneRunwayBracket"].includes(m?.sectionKey)||
+   !p||!["E_Pa","G_Pa","A_m2","Iy_m4","Iz_m4","J_m4"].every(k=>Number.isFinite(Number(p[k]))&&Number(p[k])>0)||
+   !String(p?.source||"").trim()||
+   !r||!["i","j"].every(end=>Array.isArray(r[end])&&r[end].every(d=>[4,5].includes(Number(d))));
+ });
+ if(solverIncompatible.length)issues.push("اعضای جرثقیل با قرارداد ورودی حل‌گر قاب سه‌بعدی سازگار نیستند (craneIntegration/sectionKey/خواص SI/آزادسازی محلی ۴ و ۵): "+solverIncompatible.slice(0,6).join("، "));
+ const invalidMemberGeometry=integratedMembers.filter(id=>{
+  const m=memberMap.get(id),a=nodeMap.get(String(m?.start)),b=nodeMap.get(String(m?.end));
+  return !a||!b||!(Math.hypot(Number(a.x)-Number(b.x),Number(a.y)-Number(b.y),Number(a.z)-Number(b.z))>1e-8);
+ });
+ if(invalidMemberGeometry.length)issues.push("هندسه عضو جرثقیل برای تشکیل ماتریس سختی معتبر نیست یا طول صفر دارد: "+invalidMemberGeometry.slice(0,6).join("، "));
  const nonzeroOrUndeclaredLoads=integratedMembers.filter(id=>{
   const load=memberMap.get(id)?.analysisLoad?.uniformLocal;
   return !Array.isArray(load)||load.length!==3||load.some(v=>!Number.isFinite(Number(v))||Number(v)!==0);
@@ -110,6 +123,12 @@ function selfTest(){
   return {nodes,members,geometry:{craneRunway:{enabled:true,supportNodes:[{id:"S1",z:0},{id:"S2",z:5}],beamSegments:[{id:"S1-B1",continuity:"separate_span_segment_between_adjacent_frames"},{id:"B1-S2",continuity:"separate_span_segment_between_adjacent_frames"}],brackets:[{connectionType:"simple"},{connectionType:"simple"}],meshProposal,integrated3D:{ready:true},integrationAudit:{success:true}}}};
  };
  const integratedFixture=makeIntegratedFixture(),integrated=auditGeometry(integratedFixture);
+ t("crane integration members satisfy the 3D solver member contract",()=>integrated.ready&&integratedFixture.members.every(m=>m.craneIntegration===true&&["craneRunwayGirder","craneRunwayBracket"].includes(m.sectionKey)));
+ const badRelease=makeIntegratedFixture();badRelease.members.find(m=>m.id==="G1").endReleases.i=[3];
+ t("rejects local axial or torsional releases outside solver-supported bending rotations",()=>!auditGeometry(badRelease).ready&&auditGeometry(badRelease).issues.some(x=>x.includes("قرارداد ورودی حل‌گر")));
+ const zeroLength=makeIntegratedFixture();zeroLength.nodes.find(n=>n.id==="B2").z=zeroLength.nodes.find(n=>n.id==="B1").z;
+ t("rejects zero-length integrated runway member",()=>!auditGeometry(zeroLength).ready&&auditGeometry(zeroLength).issues.some(x=>x.includes("طول صفر")));
+
  t("integrated member topology and SI section data pass geometry audit",()=>integrated.ready&&integrated.counts.integratedBeamMembers===1&&integrated.counts.integratedBracketMembers===2);
  const brokenFixture=makeIntegratedFixture();brokenFixture.members=brokenFixture.members.filter(m=>m.id!=="BC1");
  const brokenAudit=auditGeometry(brokenFixture);
