@@ -226,6 +226,21 @@ function buildMovingForceEnvelope(model,results){
  if(!mainFrameCoverage.success)throw Error("ردیابی اثر جرثقیل تا اعضای اصلی ستون و رفتر کامل نیست: "+mainFrameCoverage.issues.join("؛ "));
  return {rows,coverage,mainFrameCoverage,cases:samples.map(x=>({label:x.label,caseIndex:x.caseIndex,referencePosition_m:x.referencePosition_m,equilibrium:x.equilibrium})),units:"N,N.m",simultaneousEndForcesPreserved:true,scope:"پوش مؤلفه‌ای نیروهای انتهایی؛ کنترل ظرفیت و اندرکنش آیین‌نامه‌ای نیست."};
 }
+function buildCraneBaseReactionCsv(envelope){
+ if(!envelope||envelope.success!==true||!Array.isArray(envelope.rows)||!envelope.rows.length)throw Error("پوش واکنش پایه جرثقیل معتبر یا کامل نیست.");
+ const headers=["گره پایه","حالت جرثقیل","موقعیت جرثقیل m","Fx واکنش kN","Fy واکنش kN","Fz واکنش kN","Mx واکنش kN.m","My واکنش kN.m","Mz واکنش kN.m","Fx کنش ستون kN","Fy کنش ستون kN","Fz کنش ستون kN","Mx کنش ستون kN.m","My کنش ستون kN.m","Mz کنش ستون kN.m"];
+ const rows=[];
+ envelope.rows.forEach(support=>{
+  if(!Array.isArray(support.cases)||!support.cases.length)throw Error("گره پایه "+support.nodeId+" فاقد حالت‌های واکنش است.");
+  support.cases.forEach(c=>{
+   const r=c.solverReaction,a=c.columnAction,keys=["Fx","Fy","Fz","Mx","My","Mz"];
+   if(!r||!a||keys.some(k=>!Number.isFinite(r[k])||!Number.isFinite(a[k])))throw Error("بردار شش‌مؤلفه‌ای واکنش/کنش ستون "+support.nodeId+" ناقص است.");
+   rows.push([support.nodeId,"CRANE-"+(Number(c.caseIndex)+1),c.referencePosition_m,...keys.map(k=>r[k]/1000),...keys.map(k=>a[k]/1000)]);
+  });
+ });
+ const cell=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+ return "\uFEFF"+[headers,...rows].map(r=>r.map(cell).join(",")).join("\r\n");
+}
 function buildCraneDemandTraceAudit(model,results,memberForceEnvelope,supportReactionEnvelope){
  const issues=[],nodeMap=new Map((model?.nodes||[]).map(n=>[String(n.id),n]));
  const memberMap=new Map((model?.members||[]).map(m=>[String(m.id),m]));
@@ -367,6 +382,7 @@ function selfTest(){
  t("crane base reaction envelope preserves column action signs per position",()=>{const m={nodes:[{id:"B1",kind:"base"}]},r=[{caseIndex:0,referencePosition_m:1,analysis:{supportReactionActions:{rows:[{nodeId:"B1",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}}}],a=buildCraneSupportReactionEnvelope(m,r);return a.success&&a.rows[0].cases[0].columnAction.Fy===-2&&a.rows[0].cases[0].solverReaction.Fy===2;});
  t("main-frame coverage rejects a missing column action row",()=>{const m={members:[{id:"C1",sectionKey:"column"},{id:"R1",sectionKey:"rafter"}]},samples=[{label:"A"},{label:"B"}],rows=[{id:"C1",caseCount:2,simultaneousCases:[{},{}]},{id:"R1",caseCount:1,simultaneousCases:[{}]}],a=auditMainFrameMemberCoverage(m,samples,rows);return !a.success&&a.issues.some(x=>x.includes("رفتر قاب اصلی"));});
  t("main-frame coverage accepts complete column and rafter force traces",()=>{const m={members:[{id:"C1",sectionKey:"column"},{id:"R1",sectionKey:"rafter"}]},samples=[{label:"A"},{label:"B"}],rows=[{id:"C1",caseCount:2,simultaneousCases:[{},{}]},{id:"R1",caseCount:2,simultaneousCases:[{},{}]}],a=auditMainFrameMemberCoverage(m,samples,rows);return a.success&&a.families.column.coveredCount===1&&a.families.rafter.coveredCount===1;}); 
+ t("crane base reaction CSV preserves signed six-component reactions and column actions per position",()=>{const csv=buildCraneBaseReactionCsv({success:true,rows:[{nodeId:"B1",cases:[{caseIndex:1,referencePosition_m:4.5,solverReaction:{Fx:1000,Fy:-2000,Fz:3000,Mx:-4000,My:5000,Mz:-6000},columnAction:{Fx:-1000,Fy:2000,Fz:-3000,Mx:4000,My:-5000,Mz:6000}}]}]});return csv.includes("B1")&&csv.includes("CRANE-2")&&csv.includes("-2")&&csv.includes("6");});
  t("crane demand trace preserves simultaneous member end forces and support actions",()=>{const m={nodes:[{id:"B",kind:"base",x:0,y:0,z:0},{id:"T",kind:"joint",x:0,y:5,z:0}],members:[{id:"C",start:"B",end:"T",sectionKey:"column"}]},r=[{caseIndex:0,referencePosition_m:2}],mf={rows:[{id:"C",sectionKey:"column",start:"B",end:"T",localAxes:{x:[1,0,0]},localEndForceConventionVersion:1,simultaneousCases:[{label:"CRANE-1 @ 2.0000 m",endI:{N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},endJ:{N:7,Vy:8,Vz:9,T:10,My:11,Mz:12},sourceVector:Array(12).fill(1)}]}]},sr={rows:[{nodeId:"B",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}]},a=buildCraneDemandTraceAudit(m,r,mf,sr);return a.success&&a.members[0].cases[0].endJ.Mz===12&&a.supports[0].cases[0].columnAction.Fy===-2;});
  t("crane demand trace blocks unmapped physical member ends",()=>{const m={nodes:[{id:"B",kind:"base",x:0,y:0,z:0}],members:[{id:"C",start:"B",end:"MISSING",sectionKey:"column"}]},r=[{caseIndex:0,referencePosition_m:2}],mf={rows:[{id:"C",start:"B",end:"MISSING",sectionKey:"column",simultaneousCases:[{label:"CRANE-1 @ 2.0000 m",endI:{N:0,Vy:0,Vz:0,T:0,My:0,Mz:0},endJ:{N:0,Vy:0,Vz:0,T:0,My:0,Mz:0}}]}]},sr={rows:[{nodeId:"B",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0},columnAction:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0}}]}]},a=buildCraneDemandTraceAudit(m,r,mf,sr);return !a.success&&a.issues.some(x=>x.includes("گره‌های واقعی"));});
 
@@ -380,7 +396,7 @@ function ensurePanel(){
  panel.innerHTML='<div class="panel-title"><h3>انتقال بار جرثقیل به قاب سه‌بعدی</h3><span class="status">حالت‌های هم‌زمان</span></div>'+
  '<div class="notice">ابتدا تحلیل دو ریل و مشخصات اتصال/مقاطع را تکمیل کنید. در JSON یکپارچه‌سازی، خروج از مرکزیت واکنش قائم و بار افقی را از نقشه وارد کنید. این بخش هر حالت را جداگانه آماده می‌کند؛ بیشینه‌های غیرهم‌زمان با هم جمع نمی‌شوند.</div>'+
  '<div class="form-grid"><div class="field"><label for="crane3DLoadCaseSelect">حالت بار هم‌زمان</label><select id="crane3DLoadCaseSelect"><option value="">ابتدا آماده‌سازی حالات</option></select></div></div>'+
- '<div class="button-grid"><button type="button" class="btn secondary" id="crane3DPrepareCases">آماده‌سازی حالات بار</button><button type="button" class="btn" id="crane3DAnalyzeCase">تحلیل حالت انتخابی در قاب سه‌بعدی</button><button type="button" class="btn primary" id="crane3DAutomaticSweep">جاروب کامل موقعیت‌های جرثقیل و استخراج تقاضا</button><button type="button" class="btn secondary" id="crane3DDemandExport" disabled>دریافت بسته مهندسی تقاضا (JSON)</button><button type="button" class="btn secondary" id="crane3DConnectionExport" disabled>خروجی تقاضای اتصالات جرثقیل (CSV)</button></div>'+
+ '<div class="button-grid"><button type="button" class="btn secondary" id="crane3DPrepareCases">آماده‌سازی حالات بار</button><button type="button" class="btn" id="crane3DAnalyzeCase">تحلیل حالت انتخابی در قاب سه‌بعدی</button><button type="button" class="btn primary" id="crane3DAutomaticSweep">جاروب کامل موقعیت‌های جرثقیل و استخراج تقاضا</button><button type="button" class="btn secondary" id="crane3DDemandExport" disabled>دریافت بسته مهندسی تقاضا (JSON)</button><button type="button" class="btn secondary" id="crane3DConnectionExport" disabled>خروجی تقاضای اتصالات جرثقیل (CSV)</button><button type="button" class="btn secondary" id="crane3DBaseReactionExport" disabled>خروجی واکنش پایه و کنش ستون (CSV)</button></div>'+
  '<div id="crane3DLoadTransferResult" class="notice">هنوز حالتی آماده نشده است.</div>';
  const anchor=root.document.getElementById("shedLayoutPanel");
  if(anchor)anchor.insertAdjacentElement("afterend",panel);else main.appendChild(panel);
@@ -405,12 +421,20 @@ function ensurePanel(){
    sweepButton.disabled=true;exportButton.disabled=true;
    const result=await analyzeAllFromUI({onProgress:message=>{status().textContent=message;}});
    if(!result?.success)throw Error((result?.issues||["جاروب خودکار جرثقیل کامل نشد."]).join("؛ "));
-   exportButton.disabled=false;root.document.getElementById("crane3DConnectionExport").disabled=false;
+   exportButton.disabled=false;root.document.getElementById("crane3DConnectionExport").disabled=false;root.document.getElementById("crane3DBaseReactionExport").disabled=false;
    status().textContent="جاروب کامل شد: "+result.total+" موقعیت؛ "+result.demandTraceAudit.memberCount+" عضو و "+result.demandTraceAudit.supportCount+" پایه در بسته تقاضا ثبت شد. کنترل ظرفیت و طراحی اتصال/پی هنوز انجام نشده است.";
   }catch(e){status().textContent="جاروب متوقف شد: "+String(e.message||e);}
   finally{sweepButton.disabled=false;}
  });
  root.document.getElementById("crane3DAutomaticSweep").addEventListener("click",()=>{root.document.getElementById("crane3DConnectionExport").disabled=true;});
+ root.document.getElementById("crane3DBaseReactionExport").addEventListener("click",()=>{
+  try{
+   if(!lastAutomaticEnvelope?.success||!lastAutomaticEnvelope.supportReactionEnvelope?.success)throw Error("ابتدا جاروب کامل و موفق موقعیت‌های جرثقیل را اجرا کنید.");
+   const csv=buildCraneBaseReactionCsv(lastAutomaticEnvelope.supportReactionEnvelope),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=root.document.createElement("a");
+   a.href=url;a.download="SAHROUD-STEEL-crane-base-reactions.csv";root.document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+   status().textContent="خروجی واکنش پایه و کنش ستون ساخته شد؛ هر پایه و هر موقعیت جرثقیل یک ردیف مستقل دارد. علامت‌ها حفظ شده‌اند؛ این خروجی طراحی صفحه‌ستون/بولت/پی نیست.";
+  }catch(e){status().textContent="خروجی واکنش پایه ساخته نشد: "+String(e.message||e);}
+ });
  root.document.getElementById("crane3DConnectionExport").addEventListener("click",()=>{
   try{
    const registry=root.SteelConnectionDemandRegistry;
@@ -448,6 +472,6 @@ function ensurePanel(){
  });
 }
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();}
-root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,selfTest,buildMovingForceEnvelope,buildCraneSupportReactionEnvelope,buildCraneDemandTraceAudit,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
+root.SteelCrane3DLoadTransfer={prepareCase,prepareAll,analyzeCase,analyzeAllFromUI,auditCraneType,selfTest,buildMovingForceEnvelope,buildCraneSupportReactionEnvelope,buildCraneDemandTraceAudit,buildCraneBaseReactionCsv,getLastAnalysis:()=>lastAnalysis,getLastAutomaticEnvelope:()=>lastAutomaticEnvelope};
 })(typeof window!=="undefined"?window:globalThis);
 
