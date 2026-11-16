@@ -5,6 +5,8 @@
 "use strict";
 const $=id=>document.getElementById(id);
 const GROUPS=[["column","ستون","flexure"],["rafter","رفتر","flexure"],["endPost","ستونک انتهایی","flexure"],["endGirt","تیر انتهایی","flexure"],["roofEdge","عضو لبه سقف","flexure"],["roofPurlin","لاپه سقف","section-specific"],["wallGirt","قید دیوار","section-specific"],["roofBrace","مهاربند سقف","axial"],["wallBrace","مهاربند دیوار","axial"]];
+const ACTIONS=["N","Vy","Vz","T","My","Mz"];
+function completeEndActions(end){return !!end&&ACTIONS.every(k=>end[k]!==null&&end[k]!==undefined&&Number.isFinite(Number(end[k])));}
 function audit(envelope){
  const issues=[],warnings=[],rows=[];
  const env=envelope||root.SteelMemberForceEnvelope?.getLast?.();
@@ -46,9 +48,11 @@ function audit(envelope){
    if(memberCases.length!==expectedLabels.length||duplicateLabels.length||expectedLabels.some(x=>!actualLabels.includes(x)))missing.push("پوش هم‌زمان عضو "+m.id+" با برچسب دقیق تمام ترکیبات بار تطبیق ندارد.");
    let peakM={value:0,caseLabel:null,end:null,component:null},peakV={value:0,caseLabel:null,end:null,component:null};
    memberCases.forEach(c=>{
+    if(!String(c?.label||"").trim())missing.push("برچسب ترکیب بار برای عضو "+m.id+" خالی است.");
     [["I",c.endI],["J",c.endJ]].forEach(([end,e])=>{
-     [["My",e?.My],["Mz",e?.Mz]].forEach(([component,value])=>{const n=Number(value);if(Number.isFinite(n)&&Math.abs(n)>peakM.value)peakM={value:Math.abs(n),caseLabel:c.label,end,component};});
-     [["Vy",e?.Vy],["Vz",e?.Vz]].forEach(([component,value])=>{const n=Number(value);if(Number.isFinite(n)&&Math.abs(n)>peakV.value)peakV={value:Math.abs(n),caseLabel:c.label,end,component};});
+     if(!completeEndActions(e)){missing.push("بردار شش‌مؤلفه‌ای "+end+" عضو "+m.id+" در ترکیب "+String(c?.label||"—")+" ناقص یا نامعتبر است.");return;}
+     [["My",e.My],["Mz",e.Mz]].forEach(([component,value])=>{const n=Number(value);if(Math.abs(n)>peakM.value)peakM={value:Math.abs(n),caseLabel:c.label,end,component};});
+     [["Vy",e.Vy],["Vz",e.Vz]].forEach(([component,value])=>{const n=Number(value);if(Math.abs(n)>peakV.value)peakV={value:Math.abs(n),caseLabel:c.label,end,component};});
     });
    });
    demand.push({id:m.id,M:peakM.value,V:peakV.value,governingMoment:peakM,governingShear:peakV});
@@ -70,7 +74,7 @@ function selfTest(){
  const prior=root.SteelMemberDesignInputs;
  root.SteelMemberDesignInputs={getForGroup:()=>({t_mm:10,Fy:235,Fu:340,Lb:3000,Cb:1,bracingNote:"نقشه مهاربندی آزمایشی"})};
  const keys=["column","rafter","endPost","endGirt","roofEdge","roofPurlin","wallGirt","roofBrace","wallBrace"];
- const members=keys.map((sectionKey,i)=>({id:"M"+i,sectionKey,caseCount:1,section:{A:0.01,Iy:1e-5,Iz:1e-4,J:1e-6},peak:{My:0,Mz:0,Vy:0,Vz:0},simultaneousCases:[{label:"ULS",endI:{My:500,Mz:-700,Vy:200,Vz:-300},endJ:{My:-900,Mz:400,Vy:-600,Vz:100}}]}));
+ const members=keys.map((sectionKey,i)=>({id:"M"+i,sectionKey,caseCount:1,section:{A:0.01,Iy:1e-5,Iz:1e-4,J:1e-6},peak:{My:0,Mz:0,Vy:0,Vz:0},simultaneousCases:[{label:"ULS",endI:{N:1000,My:500,Mz:-700,Vy:200,Vz:-300,T:0},endJ:{N:-1000,My:-900,Mz:400,Vy:-600,Vz:100,T:0}}]}));
  const env={members,cases:[{label:"ULS",equilibrium:{ok:true}}],allCasesEquilibriumOK:true,modelMemberCount:members.length};
  const r=audit(env);
  if(prior===undefined)delete root.SteelMemberDesignInputs;else root.SteelMemberDesignInputs=prior;
@@ -82,7 +86,9 @@ function selfTest(){
   {name:"duplicate member IDs block readiness",pass:audit({...env,duplicateMemberIdsByCase:[{caseLabel:"ULS",memberId:"M1"}]}).issues.some(x=>x.includes("تکراری"))},
   {name:"invalid 12-DOF vectors block readiness",pass:audit({...env,invalidForceVectors:[{caseLabel:"ULS",memberId:"M1"}]}).issues.some(x=>x.includes("۱۲ مؤلفه‌ای"))},
   {name:"exact combination labels are required for each member",pass:audit({...env,members:members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],label:"OTHER"}]}:m)}).issues.some(x=>x.includes("برچسب دقیق"))},
-  {name:"governing moment and shear retain member, case, end and component",pass:(()=>{const x=r.rows.find(x=>x.group==="column");return x.maximumMoment_Nm===900&&x.governingMoment.caseLabel==="ULS"&&x.governingMoment.end==="J"&&x.governingMoment.component==="My"&&x.maximumShear_N===600&&x.governingShear.end==="J"&&x.governingShear.component==="Vy";})()}
+  {name:"governing moment and shear retain member, case, end and component",pass:(()=>{const x=r.rows.find(x=>x.group==="column");return x.maximumMoment_Nm===900&&x.governingMoment.caseLabel==="ULS"&&x.governingMoment.end==="J"&&x.governingMoment.component==="My"&&x.maximumShear_N===600&&x.governingShear.end==="J"&&x.governingShear.component==="Vy";})()},
+  {name:"missing axial or torsional component blocks flexure/shear readiness",pass:(()=>{const bad=members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],endI:{...m.simultaneousCases[0].endI,T:null}}]}:m);return audit({...env,members:bad}).issues.some(x=>x.includes("بردار شش‌مؤلفه‌ای I عضو M0"));})()},
+  {name:"non-finite end action blocks readiness even when moment and shear exist",pass:(()=>{const bad=members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],endJ:{...m.simultaneousCases[0].endJ,N:NaN}}]}:m);return audit({...env,members:bad}).issues.some(x=>x.includes("بردار شش‌مؤلفه‌ای J عضو M0"));})()}
  ];
  return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests,scope:"group coverage and readiness routing only"};
 }
