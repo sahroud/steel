@@ -185,7 +185,7 @@ function prepareMemberLineLoads(model,deadFactor,precomputedAudit){
 }
 function selfTest(){
  const tests=[],t=(name,fn)=>{try{tests.push({name,ok:fn()!==false});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
- const oldBrief=root.SteelDesignCore,oldMasonry=root.SteelMasonryWallAudit,oldTransfer=root.SteelWallDeadLoadTransfer;
+ const oldBrief=root.SteelDesignCore,oldMasonry=root.SteelMasonryWallAudit,oldTransfer=root.SteelWallDeadLoadTransfer,oldTieBeam=root.SteelTieBeamLayout;
  const g={span:10,length:20,height:5,rise:2};
  const nodes=[
   {id:"L0",x:0,y:0,z:0,kind:"base"},{id:"L1",x:0,y:0,z:10,kind:"base"},{id:"L2",x:0,y:0,z:20,kind:"base"},
@@ -215,9 +215,10 @@ function selfTest(){
  t("precomputed audit is reused without recalculating wall weights",()=>{const old=root.SteelMasonryWallAudit;root.SteelMasonryWallAudit={audit(){throw new Error("should not recalculate");}};const x=prepareNodalLoads(model,1.2,a);root.SteelMasonryWallAudit=old;return x.length>0;});
  t("grade-beam route audit accepts a continuous wall-side route",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:20}]},"left",3.6);return x.success&&Math.abs(x.weightKN-360)<1e-8&&x.solverLoadsGenerated===false;});
  t("grade-beam route audit blocks incomplete coverage",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:10}]},"left",3.6);return !x.success&&x.issues.some(v=>v.includes("پیوسته"));});
+ t("gable route crossing ridge is blocked for uniform line-load transfer",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T2",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:10,y:0,z:0}]},"front",3.6);return !x.success&&x.segments[0].crossesRidge===true;});
  t("grade-beam wall transfer creates line loads, not base-node loads",()=>{const old= root.SteelTieBeamLayout;root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const model={geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"base"},{id:"M1",x:0,y:0,z:5,kind:"base"},{id:"M2",x:0,y:0,z:15,kind:"base"},{id:"B",x:0,y:0,z:20,kind:"base"}]};const auditResult={success:true,loadTransferEnabled:true,rows:[{face:"left",status:"grade-beam-line-load-ready",gradeBeamSupportAudit:{segments:[{routeId:"T1",startNodeId:"A",endNodeId:"B",uniformEquivalentLineLoadKNm:3.6,weightKN:72}]}}]};const x=prepareMemberLineLoads(model,1.5,auditResult);root.SteelTieBeamLayout=old;return x.length===3&&x.every(v=>Math.abs(v.lineLoadKNm-3.6)<1e-8)&&Math.abs(x.reduce((s,v)=>s+v.sourceWeightKN,0)-72)<1e-8;});
  t("analysis approval remains disabled",()=>a.analysisEnabled===false&&a.designApproved===false);
- root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;
+ root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;root.SteelTieBeamLayout=oldTieBeam;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,total:tests.length,tests};
 }
 root.SteelWallDeadLoadTransfer={audit,prepareNodalLoads,prepareMemberLineLoads,inspectSecondarySupportPath,inspectGradeBeamSupportPath,selfTest};
