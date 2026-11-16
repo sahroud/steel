@@ -215,9 +215,6 @@ function auditAppliedMemberLoadResultant(model,loads,expectedWeightKN,deadFactor
   if(!(L>1e-8)){issues.push("طول عضو شناژ "+id+" صفر یا نامعتبر است.");return;}
   const f0=q0.map(v=>Number(v)*L*factor),f1=q1.map(v=>Number(v)*L*factor);
   const resultant=f0.map((v,i)=>(v+f1[i])/2);
-  const m0=cross(r0,f0),m1=cross(r0,f1),m2=cross(r1,f0),m3=cross(r1,f1);
-  const mres=m0.map((v,i)=>L>0?factor*(m0[i]+m1[i]+m2[i]+2*m3[i])/6:0);
-  // The expression above is corrected below using the exact linear-product integral.
   const dr=r1.map((v,i)=>v-r0[i]),dq=q1.map((v,i)=>Number(v)-Number(q0[i]));
   const exactMoment=cross(r0,q0.map(Number)).map((v,i)=>L*factor*(v+0.5*(cross(r0,dq)[i]+cross(dr,q0.map(Number))[i])+(1/3)*cross(dr,dq)[i]));
   resultant.forEach((v,i)=>force[i]+=v);
