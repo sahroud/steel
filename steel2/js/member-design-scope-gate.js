@@ -77,9 +77,10 @@ function audit(){
  ]};
 }
 function selfTest(){
- const saved=root.SteelMemberForceEnvelope;
+ const saved=root.SteelMemberForceEnvelope,savedCold=root.SteelColdFormedMemberContract;
  root.SteelMemberForceEnvelope={getLast:()=>({members:[{sectionKey:"column",simultaneousCases:[{}]},{sectionKey:"rafter"},{sectionKey:"roofPurlin"},{sectionKey:"wallGirt"}]})};
- const r=audit();root.SteelMemberForceEnvelope=saved;
+ root.SteelColdFormedMemberContract={audit:()=>({success:false,designApproved:false})};
+ const r=audit();root.SteelMemberForceEnvelope=saved;root.SteelColdFormedMemberContract=savedCold;
  const tests=[
   {name:"four primary member families and longitudinal braces reported",ok:r.rows.length===10},
   {name:"column global compression engine remains limited",ok:r.rows[0].availableLimitedEngines.includes("compression-global-buckling-limited")&&r.rows[0].designApproved===false},
@@ -87,6 +88,7 @@ function selfTest(){
   {name:"rafter requires internal force diagram and LTB",ok:r.rows[1].missing.some(x=>x.includes("نمودار معتبر"))&&r.rows[1].missing.some(x=>x.includes("کمانش جانبی"))},
   {name:"purlin requires cold-formed local and distortional checks",ok:r.rows[2].missing.some(x=>x.includes("کمانش موضعی"))},
   {name:"girt follows a section-specific route",ok:r.rows[3].missing.length>0},
+  {name:"purlin and girt expose evidence-only cold-formed contract",ok:r.rows[2].availableLimitedEngines.some(x=>x.includes("قرارداد ممیزی"))&&r.rows[3].availableLimitedEngines.some(x=>x.includes("قرارداد ممیزی"))},
   {name:"brace group remains blocked pending capacity and collector checks",ok:r.rows[4].status==="blocked"&&r.rows[4].missing.some(x=>x.includes("کمانش کلی"))&&r.rows[4].missing.some(x=>x.includes("جمع‌کننده"))},
   {name:"crane girder requires wheel loads, fatigue and web crippling",ok:r.rows.find(x=>x.group==="craneRunwayGirder")?.missing.some(x=>x.includes("خستگی"))&&r.rows.find(x=>x.group==="craneRunwayGirder")?.status==="blocked"},
  {name:"reinforced concrete tie remains outside steel capacity engine",ok:r.rows.find(x=>x.group==="tieBeam")?.missing.some(x=>x.includes("بتن"))},
