@@ -3,6 +3,7 @@
  */
 (function(root){"use strict";
 const $=id=>root.document?.getElementById(id);
+let craneAnchorGroups={};
 function buildAnchors(layout){
  const rows=Number(layout?.rows),cols=Number(layout?.cols),px=Number(layout?.pitchX),pz=Number(layout?.pitchZ);
  if(!Number.isInteger(rows)||!Number.isInteger(cols)||rows<1||cols<1||rows*cols>64)throw Error("تعداد ردیف/ستون انکر باید عدد صحیح بین ۱ تا ۶۴ باشد.");
@@ -34,10 +35,9 @@ function mount(){
  let last=null,lastCrane=null;
  const craneNode=$("brtCraneNode"),craneCase=$("brtCraneCase"),craneSummary=$("brtCraneAnchorSummary"),craneRun=$("brtCraneAnchorRun"),craneJson=$("brtCraneAnchorJson");
  const craneRows=$("brtCraneRows"),craneCols=$("brtCraneCols"),cranePitchX=$("brtCranePitchX"),cranePitchZ=$("brtCranePitchZ"),craneSign=$("brtCraneSign"),craneGeometry=$("brtCraneGeometry"),craneGeometryStatus=$("brtCraneGeometryStatus");
- let craneAnchorGroups={};
  function loadCraneLayout(){const d=craneAnchorGroups[craneNode.value]||{};craneRows.value=d.rows??"";craneCols.value=d.cols??"";cranePitchX.value=d.pitchX??"";cranePitchZ.value=d.pitchZ??"";craneSign.checked=d.signConfirmed===true;craneGeometry.checked=d.geometryConfirmed===true;craneGeometryStatus.textContent=d.rows?"هندسه مستقل این پایه ثبت شده است؛ پیش از استفاده، نقشه و محورهای واقعی را دوباره کنترل کنید.":"برای این پایه هنوز هندسه مستقل ثبت نشده است.";
  }
- function saveCraneLayout(){const id=craneNode.value;if(!id)throw Error("ابتدا گره پایه را انتخاب کنید.");const d={rows:Number(craneRows.value),cols:Number(craneCols.value),pitchX:Number(cranePitchX.value),pitchZ:Number(cranePitchZ.value),signConfirmed:craneSign.checked,geometryConfirmed:craneGeometry.checked};if(!Number.isInteger(d.rows)||!Number.isInteger(d.cols)||d.rows<1||d.cols<1||d.rows>8||d.cols>8||d.rows*d.cols<2)throw Error("آرایش باید حداقل دو انکر و حداکثر ۸×۸ انکر داشته باشد.");if(!Number.isFinite(d.pitchX)||!Number.isFinite(d.pitchZ)||(d.cols>1&&d.pitchX<=0)||(d.rows>1&&d.pitchZ<=0))throw Error("فاصله محورهای فعال باید مثبت و عددی باشد.");if(!d.signConfirmed||!d.geometryConfirmed)throw Error("تأیید قرارداد علامت و تطبیق هندسه اجرایی همین پایه الزامی است.");craneAnchorGroups[id]=d;craneGeometryStatus.textContent="هندسه مستقل گره "+id+" ثبت شد و همراه پرونده پروژه ذخیره خودکار می‌شود.";return d;}
+ function saveCraneLayout(){const id=craneNode.value;if(!id)throw Error("ابتدا گره پایه را انتخاب کنید.");const d={rows:Number(craneRows.value),cols:Number(craneCols.value),pitchX:Number(cranePitchX.value),pitchZ:Number(cranePitchZ.value),signConfirmed:craneSign.checked,geometryConfirmed:craneGeometry.checked};if(!Number.isInteger(d.rows)||!Number.isInteger(d.cols)||d.rows<1||d.cols<1||d.rows>8||d.cols>8||d.rows*d.cols<2)throw Error("آرایش باید حداقل دو انکر و حداکثر ۸×۸ انکر داشته باشد.");if(!Number.isFinite(d.pitchX)||!Number.isFinite(d.pitchZ)||(d.cols>1&&d.pitchX<=0)||(d.rows>1&&d.pitchZ<=0))throw Error("فاصله محورهای فعال باید مثبت و عددی باشد.");if(!d.signConfirmed||!d.geometryConfirmed)throw Error("تأیید قرارداد علامت و تطبیق هندسه اجرایی همین پایه الزامی است.");craneAnchorGroups[id]=d;craneNode.dispatchEvent(new Event("change",{bubbles:true}));craneGeometryStatus.textContent="هندسه مستقل گره "+id+" ثبت شد و برای ذخیره خودکار به پرونده پروژه اعلام شد.";return d;}
  $("brtCraneSaveGeometry").addEventListener("click",()=>{try{saveCraneLayout();}catch(e){craneGeometryStatus.textContent="ثبت هندسه انجام نشد: "+String(e.message||e);}});
  craneNode.addEventListener("change",loadCraneLayout);
  $("brtCraneRefresh").addEventListener("click",()=>{const ok=refreshCraneChoices();craneSummary.textContent=ok?"موقعیت‌ها و پایه‌های واقعی از جاروب جرثقیل بارگذاری شدند.":"جاروب کامل موفق پیدا نشد؛ ابتدا جاروب جرثقیل را اجرا و دوباره بارگذاری کنید.";});
@@ -112,7 +112,7 @@ function selfTest(){
  return{passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
 function getData(){return JSON.parse(JSON.stringify(craneAnchorGroups));}
-function setData(data){const clean={};if(data&&typeof data==="object"&&!Array.isArray(data))Object.entries(data).forEach(([id,d])=>{const rows=Number(d?.rows),cols=Number(d?.cols),pitchX=Number(d?.pitchX),pitchZ=Number(d?.pitchZ);if(id&&Number.isInteger(rows)&&Number.isInteger(cols)&&rows>=1&&cols>=1&&rows<=8&&cols<=8&&rows*cols>=2&&Number.isFinite(pitchX)&&Number.isFinite(pitchZ)&&(cols===1||pitchX>0)&&(rows===1||pitchZ>0)&&d.signConfirmed===true&&d.geometryConfirmed===true)clean[id]={rows,cols,pitchX,pitchZ,signConfirmed:true,geometryConfirmed:true};});craneAnchorGroups=clean;if(craneNode?.value)loadCraneLayout();}
+function setData(data){const clean={};if(data&&typeof data==="object"&&!Array.isArray(data))Object.entries(data).forEach(([id,d])=>{const rows=Number(d?.rows),cols=Number(d?.cols),pitchX=Number(d?.pitchX),pitchZ=Number(d?.pitchZ);if(id&&Number.isInteger(rows)&&Number.isInteger(cols)&&rows>=1&&cols>=1&&rows<=8&&cols<=8&&rows*cols>=2&&Number.isFinite(pitchX)&&Number.isFinite(pitchZ)&&(cols===1||pitchX>0)&&(rows===1||pitchZ>0)&&d.signConfirmed===true&&d.geometryConfirmed===true)clean[id]={rows,cols,pitchX,pitchZ,signConfirmed:true,geometryConfirmed:true};});craneAnchorGroups=clean;}
 root.SteelAnchorCaseDemandUI={buildAnchors,calculateSelected,refreshCraneChoices,getData,setData,selfTest,mount};
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
