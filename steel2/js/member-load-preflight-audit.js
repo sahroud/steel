@@ -20,6 +20,8 @@ function audit(members){
   const a=m?.analysisLoad;
   if(!a||!validVector(a.uniformLocal))memberIssues.push("local-load-vector");
   if(!a||!validVector(a.globalUniform))memberIssues.push("global-load-vector");
+  const linear=a?.linearLocal;
+  if(linear!==undefined&&linear!==null&&(!linear||!validVector(linear.start)||!validVector(linear.end)))memberIssues.push("linear-local-load-vectors");
   if(!a||!finite(a.selfWeightKNm))memberIssues.push("self-weight-line-load");
   if(!m?.lineLoads||REQUIRED_LINE_LOADS.some(k=>!finite(m.lineLoads[k])))memberIssues.push("explicit-line-load-ledger");
   const row={memberId:id,sectionKey:String(m?.sectionKey||""),type:String(m?.type||""),loadRole:m?.lineLoads?.loadRole||null,
@@ -42,6 +44,8 @@ function selfTest(){
  test("missing global vector blocks",()=>!audit([{...good,analysisLoad:{...good.analysisLoad,globalUniform:undefined}}]).success);
  test("wrong vector dimension blocks",()=>!audit([{...good,analysisLoad:{...good.analysisLoad,uniformLocal:[0,0]}}]).success);
  test("nonfinite vector component blocks",()=>!audit([{...good,analysisLoad:{...good.analysisLoad,globalUniform:[0,NaN,0]}}]).success);
+ test("valid linear local load endpoints are accepted",()=>audit([{...good,analysisLoad:{...good.analysisLoad,linearLocal:{start:[0,-1,0],end:[0,-2,0]}}}]).success);
+ test("malformed linear local load endpoints block",()=>!audit([{...good,analysisLoad:{...good.analysisLoad,linearLocal:{start:[0,-1],end:[0,-2,0]}}}]).success);
  test("missing explicit line load declaration blocks",()=>!audit([{...good,lineLoads:{dead:0}}]).success);
  test("missing self weight declaration blocks",()=>!audit([{...good,analysisLoad:{...good.analysisLoad,selfWeightKNm:undefined}}]).success);
  test("duplicate member IDs block",()=>!audit([good,{...good}]).success);
