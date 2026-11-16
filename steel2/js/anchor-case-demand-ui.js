@@ -109,10 +109,13 @@ function selfTest(){
  const selection={row:{nodeId:"B1"},case:{label:"ULS-1"},mapped:{N_tensionPositive_kN:4,Vx_kN:1,Vz_kN:2,Mx_kNm:0,Ty_kNm:0,Mz_kNm:0}};
  ck("requires sign confirmation",()=>{try{calculateSelected(selection,{rows:2,cols:2,pitchX:100,pitchZ:100,geometryConfirmed:true});return false;}catch(e){return e.message.includes("علامت");}});
  ck("requires as-built geometry confirmation",()=>{try{calculateSelected(selection,{rows:2,cols:2,pitchX:100,pitchZ:100,signConfirmed:true});return false;}catch(e){return e.message.includes("هندسه");}});
+ ck("keeps independent anchor layouts for different physical base nodes",()=>{const x=normalizeCraneAnchorGroups({B1:{rows:2,cols:2,pitchX:160,pitchZ:160,signConfirmed:true,geometryConfirmed:true},B2:{rows:3,cols:2,pitchX:220,pitchZ:180,signConfirmed:true,geometryConfirmed:true}});return x.B1.pitchX===160&&x.B2.rows===3&&Object.keys(x).length===2;});
+ ck("rejects unconfirmed or invalid persisted anchor geometry",()=>{const x=normalizeCraneAnchorGroups({B1:{rows:2,cols:2,pitchX:160,pitchZ:160,signConfirmed:true,geometryConfirmed:false},B2:{rows:1,cols:1,pitchX:0,pitchZ:0,signConfirmed:true,geometryConfirmed:true}});return Object.keys(x).length===0;});
  return{passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks};
 }
+function normalizeCraneAnchorGroups(data){const clean={};if(data&&typeof data==="object"&&!Array.isArray(data))Object.entries(data).forEach(([id,d])=>{const rows=Number(d?.rows),cols=Number(d?.cols),pitchX=Number(d?.pitchX),pitchZ=Number(d?.pitchZ);if(id&&Number.isInteger(rows)&&Number.isInteger(cols)&&rows>=1&&cols>=1&&rows<=8&&cols<=8&&rows*cols>=2&&Number.isFinite(pitchX)&&Number.isFinite(pitchZ)&&(cols===1||pitchX>0)&&(rows===1||pitchZ>0)&&d.signConfirmed===true&&d.geometryConfirmed===true)clean[id]={rows,cols,pitchX,pitchZ,signConfirmed:true,geometryConfirmed:true};});return clean;}
 function getData(){return JSON.parse(JSON.stringify(craneAnchorGroups));}
-function setData(data){const clean={};if(data&&typeof data==="object"&&!Array.isArray(data))Object.entries(data).forEach(([id,d])=>{const rows=Number(d?.rows),cols=Number(d?.cols),pitchX=Number(d?.pitchX),pitchZ=Number(d?.pitchZ);if(id&&Number.isInteger(rows)&&Number.isInteger(cols)&&rows>=1&&cols>=1&&rows<=8&&cols<=8&&rows*cols>=2&&Number.isFinite(pitchX)&&Number.isFinite(pitchZ)&&(cols===1||pitchX>0)&&(rows===1||pitchZ>0)&&d.signConfirmed===true&&d.geometryConfirmed===true)clean[id]={rows,cols,pitchX,pitchZ,signConfirmed:true,geometryConfirmed:true};});craneAnchorGroups=clean;}
+function setData(data){craneAnchorGroups=normalizeCraneAnchorGroups(data);}
 root.SteelAnchorCaseDemandUI={buildAnchors,calculateSelected,refreshCraneChoices,getData,setData,selfTest,mount};
 if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
