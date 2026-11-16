@@ -99,6 +99,16 @@ function equivalentUniformLoad(q,L){
  f[2]=qz*L/2;f[8]=qz*L/2;f[4]=-qz*L*L/12;f[10]=qz*L*L/12;
  return f;
 }
+function equivalentLinearLoad(qi,qj,L){
+ if(!Array.isArray(qi)||!Array.isArray(qj)||qi.length!==3||qj.length!==3||
+    [...qi,...qj].some(v=>!Number.isFinite(Number(v))))
+  throw Error("بار گسترده خطی عضو باید دو بردار محلی سه‌مؤلفه‌ای معتبر داشته باشد.");
+ const f=Array(12).fill(0),a=qi.map(Number),b=qj.map(Number);
+ for(let k=0;k<3;k++){f[k]=L*(2*a[k]+b[k])/6;f[k+6]=L*(a[k]+2*b[k])/6;}
+ f[5]=L*L*(3*a[1]+2*b[1])/60;f[11]=-L*L*(2*a[1]+3*b[1])/60;
+ f[4]=-L*L*(3*a[2]+2*b[2])/60;f[10]=L*L*(2*a[2]+3*b[2])/60;
+ return f;
+}
 
 function solveSmall(A,b){
  const n=b.length,M=A.map((r,i)=>r.slice().concat([b[i]]));
@@ -210,7 +220,15 @@ function analyze(model,options){
    throw Error("بار عضو "+m.id+" در مدل تحلیل صریحاً تعریف نشده است؛ حتی بار صفر نیز باید به‌صورت [0,0,0] ثبت شود.");
   const q=Array.isArray(declaredLoad)?declaredLoad.map(Number):[0,0,0];
   if(q.length!==3||q.some(v=>!Number.isFinite(v)))throw Error("بار گسترده محلی عضو "+m.id+" معتبر نیست.");
-  const fl=equivalentUniformLoad(q,tr.L);
+  const linear=m.analysisLoad&&m.analysisLoad.linearLocal;
+  let fl;
+  if(linear!==undefined&&linear!==null){
+   if(!linear||!Array.isArray(linear.start)||!Array.isArray(linear.end))
+    throw Error("بار خطی متغیر عضو "+m.id+" باید ابتدا و انتهای محلی داشته باشد.");
+   const varying=equivalentLinearLoad(linear.start,linear.end,tr.L);
+   const uniform=equivalentUniformLoad(q,tr.L);
+   fl=varying.map((v,i)=>v+uniform[i]);
+  }else fl=equivalentUniformLoad(q,tr.L);
   const releasedLoad=condenseMemberEndReleases(kl,fl,endReleases);
   if(releaseData.released.length)releaseData.Fs=releasedLoad.Fs;
   const fg=mul(transpose(Tjoint),releasedLoad.F.map(v=>[v])).map(r=>r[0]);
@@ -406,6 +424,13 @@ function selfTest(){
   const v=result.members[0].localEndForces,ok=close(v[3],-1000,1e-7)&&close(v[9],1000,1e-7)&&result.equilibrium.ok;
   tests.push({name:"local-torsion-end-force-signs",ok,endIMx:v[3],endJMx:v[9],equilibrium:result.equilibrium.ok});
  }catch(e){tests.push({name:"local-torsion-end-force-signs",ok:false,error:String(e.message||e)});}
+ try{
+  const model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"LINEAR",start:"A",end:"B",type:"validation",analysisLoad:{uniformLocal:[0,0,0],linearLocal:{start:[0,-100,0],end:[0,-300,0]}}}]};
+  const result=analyze(model,{...base,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]});
+  const fy=result.equilibrium.appliedForceN[1],mz=result.equilibrium.appliedMomentNm[2];
+  const ok=close(fy,-600,1e-8)&&close(mz,-1050,1e-8)&&result.equilibrium.ok;
+  tests.push({name:"linearly-varying-member-load-preserves-resultant-and-first-moment",ok,appliedVerticalN:fy,expectedVerticalN:-600,appliedMomentZNm:mz,expectedMomentZNm:-1050,equilibrium:result.equilibrium.ok});
+ }catch(e){tests.push({name:"linearly-varying-member-load-preserves-resultant-and-first-moment",ok:false,error:String(e.message||e)});}
  run("cantilever-y-deflection",[0,-1000,0,0,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[1]),1000*Math.pow(L,3)/(3*E*Iz));
  run("torsional-rotation",[0,0,0,1000,0,0],r=>Math.abs(r.displacements.find(n=>n.nodeId==="TIP").values[3]),1000*L/(G*J));
 
