@@ -14,6 +14,18 @@ const norm=a=>Math.sqrt(dot(a,a));
 const scale=(a,s)=>a.map(v=>v*s);
 const LOCAL_END_FORCE_CONVENTION={version:1,components:["Fx_i","Fy_i","Fz_i","Mx_i","My_i","Mz_i","Fx_j","Fy_j","Fz_j","Mx_j","My_j","Mz_j"],units:{force:"N",moment:"N.m"},basis:"member-local",axes:{x:"unit vector from physical end i toward physical end j",referenceAxis:"options.referenceAxis when supplied, otherwise [0,0,1]; replaced by [0,1,0] when abs(dot(ex,reference)/norm(reference)) > 0.95",y:"normalize(referenceAxis cross x)",z:"x cross y"},definition:"localEndForces = k_local * d_local - equivalentLocalLoad after declared end-release condensation; these are solver element end actions, not automatically code section-force signs",verifiedSignCases:{axialTension:{endI:"negative Fx_i",endJ:"positive Fx_j"},axialCompression:{endI:"positive Fx_i",endJ:"negative Fx_j"},cantileverTipNegativeLocalY:{endI:"positive Fy_i and positive Mz_i",endJ:"negative Fy_j and zero Mz_j"},cantileverTipPositiveLocalZ:{endI:"negative Fz_i and positive My_i",endJ:"positive Fz_j and zero My_j"},cantileverTipPositiveLocalXTorque:{endI:"negative Mx_i",endJ:"positive Mx_j"}},unverifiedSignCases:[]};
 const sub=(a,b)=>a.map((v,i)=>v-b[i]);
+function buildReactionRows(nodes,reactionVector,fixedDofs,springReactionByDof){
+ const rows=[];
+ (nodes||[]).forEach((node,index)=>{
+  const values=Array.from({length:6},(_,d)=>{
+   const dof=index*6+d;
+   return (fixedDofs?.has(dof)?Number(reactionVector[dof])||0:0)+(Number(springReactionByDof?.[dof])||0);
+  });
+  const isSupport=Array.from({length:6},(_,d)=>fixedDofs?.has(index*6+d)).some(Boolean)||values.some(v=>Math.abs(v)>1e-8);
+  if(isSupport)rows.push({nodeId:String(node.id),values});
+ });
+ return rows;
+}
 function solve(A,b){
  const n=b.length;
  // Symmetric diagonal equilibration reduces false singularity caused by
@@ -347,11 +359,13 @@ function analyze(model,options){
    maxDisplacement={nodeId:n.id,components,rotation:D.slice(i*6+3,i*6+6),magnitude};
   }
  });
- const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>(fixed.has(i*6+d)?v:0)+springReactionByDof[i*6+d])})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
+ const reactions=buildReactionRows(nodes,R,fixed,springReactionByDof);
  return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",localEndForceConvention:LOCAL_END_FORCE_CONVENTION,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,nodalSpringCount:nodalSprings.length,nodalSprings:nodalSprings.map(s=>({nodeId:s.nodeId,dof:s.dof,stiffness:s.stiffness,kind:s.kind,reaction:springReactionByDof[s.globalDof]})),connectorSpringCount:connectorSprings.length,connectorSprings:connectorSprings.map(s=>{const ui=D[s.globalDofI],uj=D[s.globalDofJ],relativeDisplacement=uj-ui;return {id:s.id,nodeI:s.nodeI,nodeJ:s.nodeJ,dof:s.dof,stiffness:s.stiffness,kind:s.kind,relativeDisplacement,springForceOnNodeI:s.stiffness*relativeDisplacement,springForceOnNodeJ:-s.stiffness*relativeDisplacement};}),displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,equivalentReleasedRotationLoads:releasedRotationLoads,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","فنرهای گره‌ای خطی مستقل به زمین و فنرهای رابط دوگرهی بین گره‌های هم‌مکان؛ سختی ثابت، بدون تماس، لغزش، لقی یا هیسترزیس","آزادسازی انتهایی دوران فقط با چگالش استاتیکی و برای درجات آزادی محلی مشخص‌شده؛ بدون آزادسازی انتقالی","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 
 function selfTest(){
+ const reactionRows=buildReactionRows([{id:"BASE_A"},{id:"BASE_B"},{id:"FREE"}],[0,0,0,0,0,0,12,-34,0,0,0,0],new Set([0,1,2,3,4,5,6,7,8,9,10,11]),Array(18).fill(0));
+ const reactionRowsIncludeZeroSupport=reactionRows.length===2&&reactionRows.some(x=>x.nodeId==="BASE_A"&&x.values.every(v=>v===0))&&reactionRows.some(x=>x.nodeId==="BASE_B"&&x.values[0]===12&&x.values[1]===-34);
  const E=200e9,G=77e9,A=0.01,Iy=8e-5,Iz=2e-5,J=1e-5,L=3;
  const section={E,G,A,Iy,Iz,J};
  const makeModel=()=>({nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:L,y:0,z:0}],members:[{id:"TEST",start:"FIX",end:"TIP",type:"validation"}]});
@@ -474,7 +488,8 @@ function selfTest(){
   const explicit=analyze({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{uniformLocal:[0,0,0]}}]},{sectionResolver:()=>section,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]}],requireExplicitMemberLoads:true});
   tests.push({name:"strict-mode-rejects-undeclared-member-load-and-accepts-explicit-zero",ok:rejected&&explicit.members.length===1&&explicit.equilibrium.ok,missingLoadRejected:rejected,explicitZeroAccepted:explicit.members.length===1,equilibrium:explicit.equilibrium.ok});
  }catch(e){tests.push({name:"strict-mode-rejects-undeclared-member-load-and-accepts-explicit-zero",ok:false,error:String(e.message||e)});}
+ tests.push({name:"all restrained support nodes are reported including zero-reaction supports",ok:reactionRowsIncludeZeroSupport,reported:reactionRows.map(x=>x.nodeId)});
  return{schemaVersion:1,passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"آزمون‌های تحلیلی عضو منفرد برای کنترل واحدها و قرارداد علامت؛ جایگزین اعتبارسنجی مستقل، آزمون همگرایی یا کنترل آیین‌نامه‌ای نیست."};
 }
-root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,rigidArmTransform,memberArmTransform,equivalentUniformLoad,solve};
+root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,rigidArmTransform,memberArmTransform,equivalentUniformLoad,buildReactionRows,solve};
 })(typeof window!=="undefined"?window:globalThis);
