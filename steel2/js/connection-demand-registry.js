@@ -67,6 +67,40 @@ function collectFromEnvelope(envelope,model){
  if(!rows.length)throw Error("هیچ انتهای عضوی در گره‌های اتصال مشترک، نیروی معتبر ندارد.");
  return rows;
 }
+function collectFromCraneDemandTrace(trace,model){
+ if(!trace||trace.success!==true||trace.simultaneousCasesPreserved!==true)throw Error("بسته ردیابی تقاضای جرثقیل معتبر یا کامل نیست.");
+ if(!Array.isArray(trace.members)||!Array.isArray(trace.cases)||!trace.cases.length)throw Error("فهرست اعضا/حالات جرثقیل در بسته تقاضا ناقص است.");
+ const joints=collectJoints(model);if(!joints.success)throw Error("ممیزی توپولوژی برای اتصال جرثقیل ناموفق است: "+joints.issues.slice(0,5).join("؛ "));
+ const jointByNode=new Map(joints.joints.map(j=>[String(j.nodeId),j]));
+ const memberById=new Map((model?.members||[]).map(m=>[String(m.id),m]));
+ if(memberById.size!==(model?.members||[]).length)throw Error("شناسه اعضای مدل تکراری است.");
+ const expected=trace.cases.map(x=>({caseIndex:x.caseIndex,referencePosition_m:Number(x.referencePosition_m),label:String(x.label||"")}));
+ if(expected.some(x=>!Number.isInteger(x.caseIndex)||!Number.isFinite(x.referencePosition_m)||!x.label)||new Set(expected.map(x=>x.caseIndex)).size!==expected.length)throw Error("شناسه/موقعیت حالات جرثقیل نامعتبر یا تکراری است.");
+ const rows=[],seen=new Set();
+ trace.members.forEach(member=>{
+  const id=String(member.memberId),physical=memberById.get(id);
+  if(!physical)throw Error("عضو "+id+" در مدل فیزیکی فعلی وجود ندارد.");
+  if(!member.startNodeId||!member.endNodeId||String(physical.start)!==String(member.startNodeId)||String(physical.end)!==String(member.endNodeId))throw Error("نگاشت ابتدا/انتهای عضو "+id+" با توپولوژی مدل یکسان نیست.");
+  if(member.caseCount!==expected.length||!Array.isArray(member.cases)||member.cases.length!==expected.length)throw Error("پوش حالات عضو "+id+" کامل نیست.");
+  member.cases.forEach(c=>{
+   const exp=expected.find(x=>x.caseIndex===c.caseIndex);
+   if(!exp||exp.referencePosition_m!==Number(c.referencePosition_m)||exp.label!==String(c.label))throw Error("شناسه/موقعیت حالت عضو "+id+" با فهرست حالات تحلیل تطبیق ندارد.");
+   [["i",member.startNodeId,c.endI],["j",member.endNodeId,c.endJ]].forEach(([end,nodeId,action])=>{
+    const joint=jointByNode.get(String(nodeId));if(!joint)return;
+    if(!action||["N","Vy","Vz","T","My","Mz"].some(k=>!Number.isFinite(action[k])))throw Error("بردار نیرو/لنگر انتهای "+end+" عضو "+id+" ناقص است.");
+    const key=[c.caseIndex,id,end].join("|");if(seen.has(key))throw Error("رکورد تکراری تقاضای جرثقیل: "+key);seen.add(key);
+    const actions={N:action.N/1000,Vy:action.Vy/1000,Vz:action.Vz/1000,T:action.T/1000,My:action.My/1000,Mz:action.Mz/1000};
+    rows.push({combination:exp.label,caseId:exp.caseIndex,referencePosition_m:exp.referencePosition_m,memberName:String(physical.name||physical.label||id),memberId:id,parentMemberId:id,sectionKey:String(physical.sectionKey||member.sectionKey||""),end,nodeId:String(nodeId),jointType:joint.type,jointLabel:joint.label,length:null,actions,rawActionsSI:{...action},localAxes:member.localAxes||null,actionBasis:"member-local crane position case; signed end action; not joint resultant"});
+   });
+  });
+ });
+ if(!rows.length)throw Error("هیچ انتهای عضو جرثقیل در گره اتصال مشترک مدل یافت نشد.");
+ return rows;
+}
+function toCraneCsv(rows){
+ const h=["حالت مستقل جرثقیل","شماره حالت","موقعیت جرثقیل m","عضو","شناسه","مقطع","انتها","گره اتصال","نوع اتصال","N kN","Vy kN","Vz kN","T kN.m","My kN.m","Mz kN.m"];
+ return "\uFEFF"+[h,...rows.map(r=>[r.combination,r.caseId,r.referencePosition_m,r.memberName,r.memberId,r.sectionKey,r.end,r.nodeId,r.jointLabel,...["N","Vy","Vz","T","My","Mz"].map(k=>r.actions[k])])].map(a=>a.map(csvCell).join(",")).join("\r\n");
+}
 function memberLabel(key){
  const labels={column:"ستون",rafter:"رفتر",roofPurlin:"لاپه سقف",purlin:"لاپه",wallGirt:"وال‌پست/گیرت دیوار",roofBrace:"مهاربند سقف",wallBrace:"مهاربند دیوار",endPost:"ستونک انتهایی",endGirt:"تیر انتهایی",roofEdge:"عضو لبه سقف",craneRunwayGirder:"تیر حمال جرثقیل",tieBeam:"تیر رابط/شناژ",craneBracket:"کنسول جرثقیل"};
  return labels[key]||String(key||"عضو نامشخص");
@@ -131,6 +165,8 @@ function test(){
  ["فهرست اتصال، زانویی و پای ستون را از توپولوژی می‌سازد",joint.success&&joint.joints.some(x=>x.type==="knee")&&joint.joints.some(x=>x.type==="base")],
  ["تقاضای اتصال از بردار هم‌زمان حل‌گر و گره صحیح استخراج می‌شود",(()=>{const model={nodes:[{id:"A",x:0,y:0,z:0,kind:"base"},{id:"B",x:0,y:5,z:0,kind:"eave"},{id:"C",x:5,y:6,z:0}],members:[{id:"COL",start:"A",end:"B",sectionKey:"column"},{id:"RAF",start:"B",end:"C",sectionKey:"rafter"}]};const v=[1000,2000,3000,4000,5000,6000,-1000,-2000,-3000,-4000,-5000,-6000];const env={allCasesEquilibriumOK:true,caseLabelCoverageOK:true,unreportedMemberIds:[],invalidForceVectors:[],analysisMemberSetMismatchCases:[],localEndForceConvention:{version:1,basis:"member-local"},cases:[{label:"U1"}],members:[{id:"COL",simultaneousCases:[{label:"U1",sourceVector:v}]},{id:"RAF",simultaneousCases:[{label:"U1",sourceVector:v}]}]};const x=collectFromEnvelope(env,model);const row=x.find(z=>z.memberId==="COL"&&z.end==="j");return row?.nodeId==="B"&&row.jointType==="knee"&&row.actions.N===-1&&row.rawActionsSI.Mz===-6000; })()],
  ["قطعات تحلیل‌شده تیرورق به عضو مادر و گره‌های فیزیکی وصل می‌شوند",(()=>{const model={nodes:[{id:"A",x:0,y:0,z:0,kind:"base"},{id:"B",x:0,y:5,z:0,kind:"eave"},{id:"C",x:2.5,y:5.5,z:0},{id:"D",x:5,y:6,z:0}],members:[{id:"COL",start:"A",end:"B",sectionKey:"column"},{id:"RAF",start:"B",end:"D",sectionKey:"rafter"}]};const v=[1,2,3,4,5,6,-1,-2,-3,-4,-5,-6];const env={allCasesEquilibriumOK:true,caseLabelCoverageOK:true,unreportedMemberIds:[],extraMemberIds:[],invalidForceVectors:[],analysisMemberSetMismatchCases:[],duplicateMemberIdsByCase:[],localEndForceConvention:{version:1,basis:"member-local"},cases:[{label:"U1"}],members:[{id:"COL",start:"A",end:"B",simultaneousCases:[{label:"U1",sourceVector:v}]},{id:"RAF-S1",parentMemberId:"RAF",start:"B",end:"C",simultaneousCases:[{label:"U1",sourceVector:v}]},{id:"RAF-S2",parentMemberId:"RAF",start:"C",end:"D",simultaneousCases:[{label:"U1",sourceVector:v}]}]};const x=collectFromEnvelope(env,model);return x.some(z=>z.memberId==="RAF-S1"&&z.nodeId==="B"&&z.jointType==="knee"&&z.parentMemberId==="RAF")&&!x.some(z=>z.memberId==="RAF-S2"&&z.nodeId==="C");})()],
+ ["ردیابی جرثقیل در محل اتصال واقعی با حفظ حالت و موقعیت نگاشت می‌شود",(()=>{const model={nodes:[{id:"B",x:0,y:0,z:0,kind:"base"},{id:"T",x:0,y:5,z:0,kind:"eave"},{id:"R",x:2,y:5,z:0}],members:[{id:"C",start:"B",end:"T",sectionKey:"column"},{id:"G",start:"T",end:"R",sectionKey:"craneRunwayGirder"}]};const action={N:1000,Vy:2000,Vz:3000,T:4000,My:5000,Mz:6000};const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:3,label:"CRANE-1 @ 3.0000 m"}],members:[{memberId:"C",sectionKey:"column",startNodeId:"B",endNodeId:"T",caseCount:1,cases:[{caseIndex:0,referencePosition_m:3,label:"CRANE-1 @ 3.0000 m",endI:action,endJ:action}]},{memberId:"G",sectionKey:"craneRunwayGirder",startNodeId:"T",endNodeId:"R",caseCount:1,cases:[{caseIndex:0,referencePosition_m:3,label:"CRANE-1 @ 3.0000 m",endI:action,endJ:action}]}]};const x=collectFromCraneDemandTrace(trace,model);const row=x.find(r=>r.memberId==="C"&&r.end==="j");return row?.nodeId==="T"&&row.jointType==="crane"&&row.actions.N===1&&row.rawActionsSI.Mz===6000&&row.referencePosition_m===3;})()],
+ ["ردیابی جرثقیل با توپولوژی یا موقعیت نامنطبق رد می‌شود",(()=>{const model={nodes:[{id:"B",x:0,y:0,z:0,kind:"base"},{id:"T",x:0,y:5,z:0}],members:[{id:"C",start:"B",end:"T",sectionKey:"column"}]};const action={N:0,Vy:0,Vz:0,T:0,My:0,Mz:0};const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:3,label:"CASE-1"}],members:[{memberId:"C",startNodeId:"B",endNodeId:"WRONG",caseCount:1,cases:[{caseIndex:0,referencePosition_m:3,label:"CASE-1",endI:action,endJ:action}]}]};try{collectFromCraneDemandTrace(trace,model);return false;}catch(e){return true;}})()],
  ["تقاضای اتصال با پوش ترکیبات ناقص مسدود می‌شود",(()=>{const env={allCasesEquilibriumOK:true,caseLabelCoverageOK:true,unreportedMemberIds:[],invalidForceVectors:[],analysisMemberSetMismatchCases:[],localEndForceConvention:{version:1,basis:"member-local"},cases:[{label:"U1"},{label:"U2"}],members:[]};try{collectFromEnvelope(env,{nodes:[],members:[]});return false;}catch(e){return true;}})()]
  ];
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
@@ -200,7 +236,7 @@ function mount(){
 $("connDemandMember").addEventListener("change",render);$("connDemandEnd").addEventListener("change",render);
  $("btnExportConnectionDemand").addEventListener("click",()=>{if(!records.length)return;const u=URL.createObjectURL(new Blob([toCsv(records)],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=u;a.download="sahroud-steel-connection-demands.csv";a.click();URL.revokeObjectURL(u);});
 }
-root.SteelConnectionDemandRegistry={collect,collectFromEnvelope,toCsv,test,endActions,collectJoints};
+root.SteelConnectionDemandRegistry={collect,collectFromEnvelope,collectFromCraneDemandTrace,toCsv,toCraneCsv,test,endActions,collectJoints};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.SteelConnectionDemandRegistry;
 if(root.document){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
