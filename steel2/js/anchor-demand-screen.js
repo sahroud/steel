@@ -18,20 +18,28 @@ function distribute(input){
  if([tension,momentX,momentZ,shearX,shearZ,torsionY].some(v=>v===null))throw Error("تمام شش مؤلفه نیروی هم‌زمان را وارد کنید؛ برای مؤلفه صفر عدد صفر بنویسید.");
  const bolts=coordinates(rows,cols,pitchX,pitchZ),n=bolts.length;
  const sx2=bolts.reduce((s,b)=>s+b.x*b.x,0),sz2=bolts.reduce((s,b)=>s+b.z*b.z,0);
+ const polarJ=bolts.reduce((s,b)=>s+b.x*b.x+b.z*b.z,0);
+ if(Math.abs(torsionY)>1e-12&&polarJ<=1e-14)throw Error("گروه بولت با یک نقطه هم‌مرکز نمی‌تواند پیچش حول Y را در این روش الاستیک تحمل کند؛ آرایش واقعی چندنقطه‌ای لازم است.");
  const results=bolts.map(b=>{
   const fromMx=sz2>0?momentX*b.z/sz2:0;
   const fromMz=sx2>0?momentZ*b.x/sx2:0;
   const axial=tension/n+fromMx+fromMz;
-  return {...b,tensionKN:Math.max(0,axial),signedAxialKN:axial,shearXKN:shearX/n,shearZKN:shearZ/n,shearResultKN:Math.hypot(shearX,shearZ)/n};
+  const torsionShearX=polarJ>1e-14?torsionY*b.z/polarJ:0;
+  const torsionShearZ=polarJ>1e-14?-torsionY*b.x/polarJ:0;
+  const directShearX=shearX/n,directShearZ=shearZ/n;
+  const boltShearX=directShearX+torsionShearX,boltShearZ=directShearZ+torsionShearZ;
+  return {...b,tensionKN:Math.max(0,axial),signedAxialKN:axial,directShearXKN:directShearX,directShearZKN:directShearZ,torsionShearXKN:torsionShearX,torsionShearZKN:torsionShearZ,shearXKN:boltShearX,shearZKN:boltShearZ,shearResultKN:Math.hypot(boltShearX,boltShearZ)};
  });
- return {bolts:results,maxTensionKN:Math.max(...results.map(x=>x.tensionKN)),maxShearKN:Math.max(...results.map(x=>x.shearResultKN)),torsionYKNm:torsionY,torsionDistributionStatus:"not_distributed_requires_separate_3D_anchor_group_check",sumTensionOnlyKN:results.reduce((s,x)=>s+x.tensionKN,0),sumShearXKN:shearX,sumShearZKN:shearZ,geometry:{rows,cols,pitchX,pitchZ},method:"linear_elastic_rigid_plate_no_prying"};
+ const sumShearXKN=results.reduce((s,b)=>s+b.shearXKN,0),sumShearZKN=results.reduce((s,b)=>s+b.shearZKN,0);
+ const recoveredTorsionYKNm=results.reduce((s,b)=>s+b.z*b.torsionShearXKN-b.x*b.torsionShearZKN,0);
+ return {bolts:results,maxTensionKN:Math.max(...results.map(x=>x.tensionKN)),maxShearKN:Math.max(...results.map(x=>x.shearResultKN)),torsionYKNm:torsionY,torsionDistributionStatus:"distributed_elastic_rigid_group",polarMomentM2:polarJ,recoveredTorsionYKNm,sumTensionOnlyKN:results.reduce((s,x)=>s+x.tensionKN,0),sumShearXKN,sumShearZKN,expectedShearXKN:shearX,expectedShearZKN:shearZ,shearForceResidualXKN:sumShearXKN-shearX,shearForceResidualZKN:sumShearZKN-shearZ,torsionResidualKNm:recoveredTorsionYKNm-torsionY,geometry:{rows,cols,pitchX,pitchZ},method:"linear_elastic_rigid_plate_anchor_group_with_direct_and_torsional_shear_no_prying"};
 }
 function panel(){
  if($("anchorDemandScreenPanel"))return;
  const rootPanel=$("anchorBaseplatePanel")||$("foundationTakeoffPanel");if(!rootPanel)return;
  const p=document.createElement("section");p.className="panel";p.id="anchorDemandScreenPanel";
  p.innerHTML='<div class="panel-title"><h3>غربال توزیع نیرو در گروه بولت مهاری</h3><span class="status">تقاضای نیرو؛ نه طراحی ظرفیت</span></div>'+
- '<div class="notice">نیروها و لنگرهای هم‌زمان یک ترکیب بار را وارد کنید. توزیع کشش با فرض صفحه صلب و رفتار الاستیک گروه بولت انجام می‌شود؛ برش به‌طور مساوی تقسیم می‌شود. این روش اثر اهرمی صفحه (prying)، انعطاف صفحه‌ستون، تماس فشاری زیر صفحه، کشش/فشار بتن، اندرکنش دقیق گروه، شکست بتن و ضوابط لرزه‌ای را مدل نمی‌کند. نیروها را با قرارداد علامت مدل کنترل کنید.</div>'+
+ '<div class="notice">نیروها و لنگرهای هم‌زمان یک ترکیب بار را وارد کنید. توزیع کشش با فرض صفحه صلب و رفتار الاستیک گروه بولت انجام می‌شود؛ برش مستقیم به‌طور مساوی و برش ناشی از پیچش با مدل الاستیک گروه صلب بر اساس فاصله هر بولت از مرکز گروه توزیع می‌شود. این روش اثر اهرمی صفحه (prying)، انعطاف صفحه‌ستون، تماس فشاری زیر صفحه، کشش/فشار بتن، اندرکنش دقیق گروه، شکست بتن و ضوابط لرزه‌ای را مدل نمی‌کند. نیروها را با قرارداد علامت مدل کنترل کنید.</div>'+
  '<h4>آرایش هندسی بولت‌ها</h4><div class="form-grid">'+
  '<div class="field"><label for="adRows">تعداد ردیف در راستای Z</label><input id="adRows" type="number" min="1" max="8" step="1"></div>'+
  '<div class="field"><label for="adCols">تعداد ستون در راستای X</label><input id="adCols" type="number" min="1" max="8" step="1"></div>'+
@@ -50,7 +58,7 @@ function panel(){
  '<label class="check-row" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0"><input id="adGeometryConfirm" type="checkbox"><span>تعداد، فاصله محورها و مختصات گروه بولت با نقشه اجرایی/وضعیت واقعی همین پایه تطبیق داده شده است.</span></label>'+
  '<div class="button-grid"><button id="btnAnchorDemandRun" class="btn primary" type="button">محاسبه نیروی هر بولت</button><button id="btnAnchorDemandCSV" class="btn secondary" type="button" disabled>دریافت CSV</button></div>'+
  '<div id="anchorDemandSummary" class="notice">ابتدا آرایش بولت و شش مؤلفه هم‌زمان یک ترکیب بار را وارد کنید.</div>'+
- '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:760px"><thead><tr><th>بولت</th><th>X (m)</th><th>Z (m)</th><th>کشش محاسباتی (kN)</th><th>برش X (kN)</th><th>برش Z (kN)</th><th>برش برآیند (kN)</th><th>وضعیت ظرفیت واردشده</th></tr></thead><tbody id="anchorDemandRows"></tbody></table></div>'+
+ '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:760px"><thead><tr><th>بولت</th><th>X (m)</th><th>Z (m)</th><th>کشش محاسباتی (kN)</th><th>برش نهایی X (kN)</th><th>برش نهایی Z (kN)</th><th>برش برآیند (kN)</th><th>وضعیت ظرفیت واردشده</th></tr></thead><tbody id="anchorDemandRows"></tbody></table></div>'+
  '<div class="notice">اگر ظرفیت‌های طراحی وارد شوند، نسبت تقاضا به ظرفیت هر مؤلفه فقط به‌صورت مقایسه جداگانه نشان داده می‌شود؛ این مقایسه جای کنترل اندرکنش کشش و برش، شکست بتن، فاصله لبه، گروه بولت و طراحی صفحه‌ستون را نمی‌گیرد.</div>';
  rootPanel.parentNode.insertBefore(p,rootPanel.nextSibling);
  const map={rows:"adRows",cols:"adCols",pitchX:"adPitchX",pitchZ:"adPitchZ",tension:"adTension",momentX:"adMx",momentZ:"adMz",shearX:"adVx",shearZ:"adVz",torsionY:"adTy",tensionCapacity:"adTcap",shearCapacity:"adVcap"};
@@ -90,7 +98,11 @@ function selfTest(){
  const m=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:20,momentZ:0,shearX:0,shearZ:0,torsionY:0});
  checks.push(["لنگر حول X کشش ردیف‌ها را تفکیک می‌کند",m.bolts.some(b=>b.tensionKN>0)&&m.bolts.some(b=>b.tensionKN===0)]);
  const t=distribute({rows:2,cols:2,pitchX:200,pitchZ:200,tension:0,momentX:0,momentZ:0,shearX:0,shearZ:0,torsionY:12});
- checks.push(["پیچش حفظ می‌شود ولی بدون محاسبه صریح توزیع، طراحی‌نشده می‌ماند",t.torsionYKNm===12&&t.torsionDistributionStatus==="not_distributed_requires_separate_3D_anchor_group_check"]);
+ checks.push(["پیچش در گروه بولت توزیع می‌شود",t.torsionYKNm===12&&t.torsionDistributionStatus==="distributed_elastic_rigid_group"]);
+ checks.push(["جمع بردارهای برش ناشی از پیچش صفر است",Math.abs(t.bolts.reduce((s,b)=>s+b.torsionShearXKN,0))<1e-9&&Math.abs(t.bolts.reduce((s,b)=>s+b.torsionShearZKN,0))<1e-9]);
+ checks.push(["لنگر بازیابی‌شده از برش پیچشی برابر ورودی است",Math.abs(t.recoveredTorsionYKNm-12)<1e-9]);
+ checks.push(["برش ترکیبی، برش مستقیم و پیچشی را جمع می‌کند",t.bolts.some(b=>Math.abs(b.shearXKN-b.directShearXKN-b.torsionShearXKN)<1e-9)]);
+ checks.push(["پیچش روی تک‌بولت هم‌مرکز رد می‌شود",(()=>{try{distribute({rows:1,cols:1,pitchX:0,pitchZ:0,tension:0,momentX:0,momentZ:0,shearX:0,shearZ:0,torsionY:1});return false;}catch(e){return e.message.includes("پیچش");}})()]);
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
 root.SteelAnchorDemandScreen={distribute,run,getData,setData,getLast:()=>last?JSON.parse(JSON.stringify(last)):null,selfTest};
