@@ -179,15 +179,12 @@
       let fullModelOK=false;
       try {
         const fullModel=window.SteelStructuralModel?.build?.();
-        fullModelOK=!!fullModel&&Array.isArray(fullModel.members)&&fullModel.members.length>0&&window.SteelStructuralModel.draw()===true;
+        fullModelOK=!!fullModel&&Array.isArray(fullModel.members)&&fullModel.members.length>0;
         if(fullModelOK) {
-          const types={};
-          fullModel.members.forEach(m=>types[m.type]=(types[m.type]||0)+1);
-          addLine(rows,"تولید و ترسیم مدل هندسی کامل سوله",true,
-            fullModel.geometry.frames.length+" قاب، "+fullModel.nodes.length+" گره و "+fullModel.members.length+" عضو هندسی؛ شامل پرلین، قید دیوار، ستونک انتهایی و مهاربندهای پیشنهادی.");
-        } else addLine(rows,"تولید و ترسیم مدل هندسی کامل سوله",false,"مدل هندسی کامل تولید نشد.");
-      } catch(e) { addLine(rows,"تولید و ترسیم مدل هندسی کامل سوله",false,e?.message||String(e)); }
-      if(!fullModelOK) window.SteelDrawing?.drawFrame?.();
+          addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",true,
+            fullModel.geometry.frames.length+" قاب، "+fullModel.nodes.length+" گره و "+fullModel.members.length+" عضو هندسی؛ مدل بدون اجرای ترسیم غیرضروری برای تحلیل آماده شد.");
+        } else addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,"مدل هندسی کامل تولید نشد.");
+      } catch(e) { addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,e?.message||String(e)); }
       if(fullModelOK) {
         const crane=auditCraneReadiness(window.SteelStructuralModel?.getData?.()||window.SteelStructuralModel?.model||null);
         if(crane.enabled)addLine(rows,"ممیزی مسیر هندسی جرثقیل تا شبکه حل‌گر",crane.ready,
@@ -257,13 +254,7 @@
           ()=>!!window.SteelCantileverCheck?.lastResult);
       }
 
-      const purlin=window.SteelRoofPurlins;
-      if(purlin?.optimize) {
-        purlin.optimize();
-        const pr=purlin.lastResult;
-        addLine(rows,"بهینه‌سازی پرلین‌های سقف",!!pr?.best,
-          pr?.best?"مقطع و فاصله پیشنهادی از بارهای فعلی استخراج شد؛ این کنترل مقدماتی است.":"هیچ گزینه‌ای از کنترل‌های مقدماتی عبور نکرد یا ورودی بار/هندسه ناقص است.");
-      } else addLine(rows,"بهینه‌سازی پرلین‌های سقف",false,"ماژول پرلین در دسترس نیست.");
+      // بهینه‌سازی اقتصادی پرلین عمداً از زنجیره کنترل آیین‌نامه‌ای جداست؛ انتخاب مقطع کاربر را تغییر نمی‌دهیم.
 
       const cant=window.SteelLongitudinalCantilever;
       if(cant?.run) {
@@ -288,19 +279,9 @@
           purlinConn.lastResult?"خروجی اتصال محاسبه شد؛ فرضیات پیچ و ورق باید بازبینی شوند.":"مشخصات اتصال یا نتایج پرلین/کنسول ناقص است.");
       }
 
-      const connection=window.SteelConnectionDesign;
-      if(connection?.calculate && window.SteelCantileverCheck?.lastResult) {
-        const connectionOut=$("connectionCheckResults");
-        if(connectionOut)connectionOut.innerHTML="";
-        connection.calculate();
-        const connectionText=connectionOut?.innerText||connectionOut?.textContent||"";
-        const connectionOK=!!connectionText.trim()&&!/ابتدا|خطا|نیاز دارد/.test(connectionText);
-        addLine(rows,"تحلیل مقدماتی گروه جوش",connectionOK,connectionOK?"خروجی تحلیل گروه جوش تولید شد؛ فرضیات اتصال باید بازبینی شوند.":connectionText||"ورودی‌های جوش یا نیروهای اتصال کامل نیستند.");
-      } else addLine(rows,"تحلیل گروه جوش",false,"به نتیجه کنترل کنسول و مشخصات هندسی/جوش معتبر نیاز دارد.");
+      addLine(rows,"کنترل اختصاصی اتصال جوشی",true,"از اجرای خودکار عمومی جدا شد؛ فقط در پنل اتصال و پس از تعیین هندسه، مصالح، جوش و تقاضای همان اتصال اجرا شود.");
 
-      window.SteelBracing?.drawAll?.();
-      window.SteelTies?.drawAll?.();
-      addLine(rows,"بازسازی ترسیم قیدها و مهاربندها",true,"ترسیم اجزای تعریف‌شده به‌روزرسانی شد.");
+      // ترسیم و بازآرایی نماها از زنجیره تحلیل جداست و فقط هنگام درخواست نمایش اجرا می‌شود.
 
       addLine(rows,"تعیین خودکار خواص هندسی مقاطع",true,
         "خواص هندسی ستون و رفتر در صورت وجود ابعاد معتبر از تیرورق محاسبه می‌شود؛ این کار جایگزین تأیید گرید و خواص مکانیکی فولاد نیست.");
