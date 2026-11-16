@@ -1276,6 +1276,8 @@
         deadFactor:f.dead};
     }
     if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود." );
+    const craneSeparation=auditCraneLoadCaseSeparation(selected);
+    if(!craneSeparation.valid)throw new Error("ممیزی جداسازی بار جرثقیل ناموفق است: "+craneSeparation.issues.join("؛ "));
      if(!window.SteelWholeBuildingLoadPathAudit?.audit)throw new Error("ماژول ممیزی مسیر بار کل ساختمان بارگذاری نشده است؛ تحلیل متوقف شد." );
      const loadPathAudit=window.SteelWholeBuildingLoadPathAudit.audit(model,window.SteelLoads?.getData?.()||{});
      window.SteelStructuralModel.lastLoadPathAudit=loadPathAudit;
@@ -1662,6 +1664,48 @@
     result.warning="وزن خود فولاد با وزن مخصوص 78.5 kN/m³ و وزن خود شناژ بتنی با وزن مخصوص تعریف‌شده برای هر مسیر، در حالت مرده و ترکیبات دارای ضریب D محاسبه می‌شود؛ وزن شناژ فقط یک‌بار و با سطح مقطع ناخالص اضافه می‌شود. حالت باد فقط فشار خالص دستی واردشده را به‌صورت برداری به پرلین‌های سقف و قیدهای طولی دو دیوار جانبی منتقل می‌کند؛ فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، ناحیه مثلثی دیوار انتهایی بالای آخرین قید، بازشوهای غالب و پیچش کلی هنوز منظور نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
+  function auditCraneLoadCaseSeparation(loadCase){
+    const x=loadCase||{};
+    if(x.craneLoadCaseId===undefined||x.craneLoadCaseId===null)
+      return {valid:true,isCraneCase:false,issues:[]};
+    const issues=[];
+    const id=Number(x.craneLoadCaseId);
+    if(!Number.isInteger(id)||id<0)issues.push("شناسه موقعیت جرثقیل نامعتبر است.");
+    const f=x.factors||{};
+    if(Number(f.dead)!==1||Number(f.live)!==0||Number(f.snow)!==0||Number(f.wind)!==0)
+      issues.push("حالت جرثقیل فعلاً فقط با وزن مرده ضریب ۱ و بدون اختلاط زنده/برف/باد قابل تحلیل جداگانه است؛ ترکیب کامل آیین‌نامه‌ای هنوز پیاده‌سازی نشده است.");
+    if(!Array.isArray(x.nodalLoads)||!x.nodalLoads.length)
+      issues.push("بارهای گره‌ای قطار چرخ برای حالت جرثقیل موجود نیست.");
+    else{
+      const seen=new Set();
+      x.nodalLoads.forEach((load,index)=>{
+        const node=String(load?.nodeId??"");
+        if(!node||seen.has(node))issues.push("شناسه گره بار جرثقیل در ردیف "+(index+1)+" خالی یا تکراری است.");
+        seen.add(node);
+        if(!Array.isArray(load?.values)||load.values.length!==6||load.values.some(v=>!Number.isFinite(v)))
+          issues.push("بردار شش‌مؤلفه‌ای بار جرثقیل در ردیف "+(index+1)+" نامعتبر است.");
+      });
+    }
+    const transfer=x.craneLoadTransfer;
+    if(!transfer||!Number.isFinite(Number(transfer.referencePosition_m))||!transfer.sourceDocuments||typeof transfer.sourceDocuments!=="object")
+      issues.push("موقعیت مرجع یا مدارک منبع انتقال بار جرثقیل ثبت نشده است.");
+    return {valid:issues.length===0,isCraneCase:true,caseId:id,issues,
+      scope:"حالت مستقل بار مرده + موقعیت مشخص جرثقیل؛ بدون ترکیب برف/باد/زنده و بدون تأیید ترکیبات آیین‌نامه‌ای یا طراحی نهایی."};
+  }
+  function craneLoadSeparationSelfTest(){
+    const docs={geometrySource:"GA-1"};
+    const base={craneLoadCaseId:0,factors:{dead:1,live:0,snow:0,wind:0},
+      nodalLoads:[{nodeId:"N1",values:[0,-1000,0,0,0,0]}],
+      craneLoadTransfer:{referencePosition_m:2,sourceDocuments:docs}};
+    const checks=[];
+    const test=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,error:String(e.message||e)});}};
+    test("valid isolated crane position is accepted",()=>auditCraneLoadCaseSeparation(base).valid);
+    test("crane case mixed with wind or snow is blocked",()=>!auditCraneLoadCaseSeparation({...base,factors:{...base.factors,wind:1}}).valid&&!auditCraneLoadCaseSeparation({...base,factors:{...base.factors,snow:1}}).valid);
+    test("crane case without wheel nodal loads is blocked",()=>!auditCraneLoadCaseSeparation({...base,nodalLoads:[]}).valid);
+    test("crane case without traceable source metadata is blocked",()=>!auditCraneLoadCaseSeparation({...base,craneLoadTransfer:null}).valid);
+    test("ordinary non-crane combination is unaffected",()=>auditCraneLoadCaseSeparation({factors:{dead:1,live:0,snow:0,wind:0}}).valid&&!auditCraneLoadCaseSeparation({}).isCraneCase);
+    return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,tests:checks};
+  }
   function build3DCombinationCases(source,modelForLoads){
     if(!Array.isArray(source)||!source.length)throw new Error("فهرست ترکیبات بار در دسترس نیست.");
     const members=Array.isArray(modelForLoads?.members)?modelForLoads.members:[];
@@ -1813,6 +1857,6 @@
     const summary=$("fullModelSummary");
     if(summary)summary.textContent="مدل سه‌بعدی هنوز ساخته نشده است. پس از تکمیل ورودی‌ها، «ساخت مدل هندسی کامل» را بزنید.";
   }
-  window.SteelStructuralModel={build,draw,setCameraView,getCameraView:()=>({...cameraView}),getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,build3DCombinationCases,combinationCasesSelfTest,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,setCameraView,getCameraView:()=>({...cameraView}),getData,setData,validate,validate3DSections,analyze3D,analyzeAll3DCombinations,build3DCombinationCases,combinationCasesSelfTest,auditCraneLoadCaseSeparation,craneLoadSeparationSelfTest,analyzeFoundationEnvelope,analyzeCraneRail,analyzeCraneRailMovingEnvelope,parseRunwayRailSupportInputs,parseRunwayRailFEMInputs,getProposedUnbracedLengths,runwayGeometrySelfTest,auditPurlinRafterConnectivity,countRafterPaths,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
