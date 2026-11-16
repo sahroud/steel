@@ -24,11 +24,13 @@ function validate(d){
  if(pos(n.hefMm)&&pos(n.memberThicknessMm)&&n.hefMm>=n.memberThicknessMm)issues.push("عمق مؤثر کاشت از ضخامت عضو کمتر نیست؛ هندسه و تعریف hef را اصلاح کنید.");
  if(pos(n.headDiameterMm)&&pos(n.diameterMm)&&n.headDiameterMm<=n.diameterMm)issues.push("قطر سر انکر باید از قطر ساق بیشتر باشد.");
  if(pos(n.headThicknessMm)&&pos(n.headDiameterMm)&&n.headThicknessMm>=n.headDiameterMm)warnings.push("ضخامت سر انکر نسبت به قطر سر غیرمتعارف است؛ جزئیات سازنده کنترل شود.");
- if(pos(n.fyaMPa)&&pos(n.futaMPa)&&n.futaMPa>1.9*n.fyaMPa)issues.push("طبق بند ۹-۱۸-۴-۱-۲، مقدار Futa نباید از ۱٫۹ برابر fya بیشتر منظور شود.");
  if(pos(n.fcMPa)&&n.fcMPa>70)issues.push("طبق فصل ۱۸ مبحث نهم، f'c برای مهار تعبیه‌شده نباید بیش از ۷۰ مگاپاسکال منظور شود.");
  const threadCoreDia=pos(n.diameterMm)&&pos(n.threadPitchMm)?n.diameterMm-0.9743*n.threadPitchMm:null;
  const effectiveTensionArea=Number.isFinite(threadCoreDia)&&threadCoreDia>0?Math.PI/4*threadCoreDia*threadCoreDia:null;
- const steelTensionNominalPerAnchorKN=effectiveTensionArea&&pos(n.futaMPa)&&pos(n.fyaMPa)&&n.futaMPa<=1.9*n.fyaMPa?effectiveTensionArea*n.futaMPa/1000:null;
+ const futaLimitMPa=pos(n.fyaMPa)?Math.min(1.9*n.fyaMPa,860):null;
+ const futaUsedMPa=pos(n.futaMPa)&&pos(futaLimitMPa)?Math.min(n.futaMPa,futaLimitMPa):null;
+ const steelTensionNominalPerAnchorKN=effectiveTensionArea&&pos(futaUsedMPa)?effectiveTensionArea*futaUsedMPa/1000:null;
+ if(pos(n.futaMPa)&&pos(futaLimitMPa)&&n.futaMPa>futaLimitMPa)warnings.push("Futa واقعی ورودی از سقف مجاز بند ۹-۱۸-۴-۱-۲ بیشتر است؛ در مقاومت اسمی فولاد، مقدار محدودشده "+futaUsedMPa.toFixed(1)+" MPa استفاده شده است.");
  if(pos(n.memberWidthMm)&&pos(n.edgeXmm)&&pos(n.edgeXFarMm)&&Number.isInteger(cols)&&cols>0&&n.pitchXmm>=0&&(n.edgeXmm+(cols-1)*n.pitchXmm+n.edgeXFarMm>n.memberWidthMm))issues.push("آرایش انکرها با عرض عضو و فاصله‌های لبه نزدیک و دور X سازگار نیست.");
  if(pos(n.memberLengthMm)&&pos(n.edgeZmm)&&pos(n.edgeZFarMm)&&Number.isInteger(rows)&&rows>0&&n.pitchZmm>=0&&(n.edgeZmm+(rows-1)*n.pitchZmm+n.edgeZFarMm>n.memberLengthMm))issues.push("آرایش انکرها با طول عضو و فاصله‌های لبه نزدیک و دور Z سازگار نیست.");
  if(!["cracked","uncracked"].includes(d.concreteCondition))issues.push("وضعیت ترک‌خوردگی بتن باید مشخص شود.");
@@ -41,7 +43,7 @@ function validate(d){
  warnings.push("فقط مقاومت اسمی کششی فولاد هر انکر محاسبه می‌شود؛ ضریب کاهش مقاومت φ، مقاومت طراحی، توزیع گروهی، مقاومت برشی فولاد و تمام حالات شکست بتن و الزامات لرزه‌ای هنوز محاسبه نشده‌اند.");
  warnings.push("مقادیر fya، Futa، سطح مؤثر رزوه و ابعاد سر باید از گواهی مصالح و نقشه/کاتالوگ معتبر برداشت شوند؛ مقدار پیش‌فرض یا حدس مجاز نیست.");
  const ok=issues.length===0&&type==="cast_in_headed";
- return{ok,inputStructurallyComplete:ok,readyForFutureCalculation:false,minimumSpacingMm:pos(n.diameterMm)?minAnchorSpacing:null,minimumEdgeDistanceMm:pos(n.diameterMm)?minEdgeDistance:null,minimumGeometryStatus:issues.some(x=>x.includes("حداقل ۶dₐ"))?"failed_spacing_or_edge":"partial_pass_thickness_and_splitting_pending",minimumGeometryClause:"9-18-7-1 / Tables 9-18-6 and 9-18-7; thickness/splitting check pending",effectiveTensionAreaMm2:effectiveTensionArea,steelTensionNominalPerAnchorKN,steelTensionBasis:"9-18-4-1-2; nominal per-anchor only; no phi factor or group distribution",anchorType:type,issues,warnings,capacityCalculated:false,analysisEnabled:false,designApproved:false,codeComplianceStatus:"not_evaluated"};
+ return{ok,inputStructurallyComplete:ok,readyForFutureCalculation:false,minimumSpacingMm:pos(n.diameterMm)?minAnchorSpacing:null,minimumEdgeDistanceMm:pos(n.diameterMm)?minEdgeDistance:null,minimumGeometryStatus:issues.some(x=>x.includes("حداقل ۶dₐ"))?"failed_spacing_or_edge":"partial_pass_thickness_and_splitting_pending",minimumGeometryClause:"9-18-7-1 / Tables 9-18-6 and 9-18-7; thickness/splitting check pending",effectiveTensionAreaMm2:effectiveTensionArea,futaLimitMPa,futaUsedMPa,steelTensionNominalPerAnchorKN,steelTensionBasis:"9-18-4-1-2; nominal per-anchor only; no phi factor or group distribution",anchorType:type,issues,warnings,capacityCalculated:false,analysisEnabled:false,designApproved:false,codeComplianceStatus:"not_evaluated"};
 }
 function mount(){
  if(!root.document||document.getElementById("anchorDesignInputContract"))return;
@@ -71,9 +73,9 @@ function mount(){
 function selfTest(){
  const base={anchorType:"cast_in_headed",rows:2,cols:2,diameterMm:20,fyaMPa:400,futaMPa:700,hefMm:160,fcMPa:30,memberThicknessMm:300,memberWidthMm:500,memberLengthMm:500,headDiameterMm:40,headThicknessMm:12,threadPitchMm:2.5,edgeXmm:150,edgeZmm:150,edgeXFarMm:150,edgeZFarMm:150,pitchXmm:160,pitchZmm:160,concreteCondition:"cracked",concreteType:"normal",installation:"cast_before_concrete",edgeReinforcement:true,seismicDemand:true,manufacturerDataVerified:true,anchorDetailVerified:true,reinforcementLayoutVerified:true,edgeDistanceVerified:true,inspectionPlan:true,installationRecord:true};
  const a=validate(base),b=validate({...base,anchorType:"adhesive"}),c=validate({...base,hefMm:350}),d=validate({...base,pitchXmm:null}),e=validate({...base,concreteCondition:""}),g=validate({...base,memberWidthMm:400}),h=validate({...base,inspectionPlan:false}),j=validate({...base,headDiameterMm:15}),sp=validate({...base,pitchXmm:119}),ed=validate({...base,edgeXmm:119}),edgePass=validate({...base,pitchXmm:120,edgeXmm:120});
- const futaLimit=validate({...base,futaMPa:760}),futaOver=validate({...base,futaMPa:761}),fcLimit=validate({...base,fcMPa:70}),fcOver=validate({...base,fcMPa:70.1});
- const expectedAse=Math.PI/4*Math.pow(20-0.9743*2.5,2),steelAreaOK=Math.abs(a.effectiveTensionAreaMm2-expectedAse)<1e-9,steelKNOK=Math.abs(a.steelTensionNominalPerAnchorKN-expectedAse*700/1000)<1e-9;
- const checks=[a.ok&&!a.readyForFutureCalculation&&a.minimumGeometryStatus==="partial_pass_thickness_and_splitting_pending"&&!a.capacityCalculated&&!a.designApproved,!b.ok,!c.ok,!d.ok,!e.ok,!g.ok,!h.ok,!j.ok,!sp.ok&&!ed.ok,edgePass.ok&&edgePass.minimumSpacingMm===120&&edgePass.minimumEdgeDistanceMm===120,futaLimit.ok&&!futaOver.ok,fcLimit.ok&&!fcOver.ok,steelAreaOK&&steelKNOK];
+ const futaAtCap=validate({...base,futaMPa:760}),futaAboveCap=validate({...base,futaMPa:900}),fyaLow=validate({...base,fyaMPa:300,futaMPa:900}),fcLimit=validate({...base,fcMPa:70}),fcOver=validate({...base,fcMPa:70.1});
+ const expectedAse=Math.PI/4*Math.pow(20-0.9743*2.5,2),steelAreaOK=Math.abs(a.effectiveTensionAreaMm2-expectedAse)<1e-9,steelKNOK=Math.abs(a.steelTensionNominalPerAnchorKN-expectedAse*700/1000)<1e-9,cap860OK=futaAboveCap.ok&&futaAboveCap.futaUsedMPa===760&&futaAboveCap.steelTensionNominalPerAnchorKN===futaAtCap.steelTensionNominalPerAnchorKN,capFyaOK=fyaLow.ok&&fyaLow.futaLimitMPa===570&&fyaLow.futaUsedMPa===570;
+ const checks=[a.ok&&!a.readyForFutureCalculation&&a.minimumGeometryStatus==="partial_pass_thickness_and_splitting_pending"&&!a.capacityCalculated&&!a.designApproved,!b.ok,!c.ok,!d.ok,!e.ok,!g.ok,!h.ok,!j.ok,!sp.ok&&!ed.ok,edgePass.ok&&edgePass.minimumSpacingMm===120&&edgePass.minimumEdgeDistanceMm===120,futaAtCap.ok&&futaAtCap.futaUsedMPa===760,cap860OK,capFyaOK,fcLimit.ok&&!fcOver.ok,steelAreaOK&&steelKNOK];
  return{passed:checks.filter(Boolean).length,failed:checks.filter(x=>!x).length,total:checks.length,checks};
 }
 root.SteelAnchorDesignInputContract={validate,selfTest};
