@@ -83,7 +83,6 @@
         if ($("roofSlopeDisplay")) $("roofSlopeDisplay").textContent = slope.toFixed(1).replace(".", "٫") + "٪";
         if ($("roofRiseDisplay")) $("roofRiseDisplay").textContent = rise.toFixed(2).replace(".", "٫") + " متر";
         if ($("roofTotalHeightDisplay")) $("roofTotalHeightDisplay").textContent = (height + rise).toFixed(2).replace(".", "٫") + " متر";
-        if (window.SteelDrawing && typeof window.SteelDrawing.drawFrame === "function") window.SteelDrawing.drawFrame();
     }
 
     function getNumber(id) {
@@ -790,7 +789,14 @@
 
         ["span", "rise", "height", "structuralSystem"].forEach(function (id) {
             const el = $(id);
-            if (el) { el.addEventListener("input", updateRoofGeometry); el.addEventListener("change", updateRoofGeometry); }
+            if (el) {
+                // ورودی لحظه‌ای فقط اعداد/برچسب‌های هندسی را به‌روز می‌کند؛ ترسیم سنگین فقط پس از تثبیت مقدار اجرا می‌شود.
+                el.addEventListener("input", updateRoofGeometry);
+                el.addEventListener("change", function () {
+                    updateRoofGeometry();
+                    if (window.SteelDrawing && typeof window.SteelDrawing.drawFrame === "function") window.SteelDrawing.drawFrame();
+                });
+            }
         });
         ["span","length","spacing","height","rise","city","cityName","projectCategory","structuralSystem","crane_enabled"].forEach(function(id){
             const el=$(id); if(el){el.addEventListener("input",updateProjectSetupSummary);el.addEventListener("change",function(){
