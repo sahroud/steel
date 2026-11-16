@@ -38,7 +38,6 @@ function inspectGradeBeamSupportPath(model,face,unitWeightKNm2){
  const g=model.geometry||{},routes=root.SteelTieBeamLayout?.getData?.()?.routes||[],nodes=new Map((model.nodes||[]).map(n=>[String(n.id),n]));
  const longitudinal=face==="left"||face==="right",axis=longitudinal?"z":"x",fixed=longitudinal?(face==="left"?0:Number(g.span)):(face==="front"?0:Number(g.length)),total=longitudinal?Number(g.length):Number(g.span),tol=1e-4;
  const segments=[],issues=[];
- if(!longitudinal)issues.push("ارتفاع دیوار انتهایی تابع شیب بام است؛ حل‌گر فعلی بار گسترده متغیر را پشتیبانی نمی‌کند، بنابراین انتقال بار آن به شناژ انتهایی مسدود است.");
  routes.forEach(r=>{
   const a=nodes.get(String(r.start)),b=nodes.get(String(r.end));if(!a||!b)return;
   const onLine=longitudinal?near(a.x,fixed,tol)&&near(b.x,fixed,tol):near(a.z,fixed,tol)&&near(b.z,fixed,tol);
@@ -47,8 +46,13 @@ function inspectGradeBeamSupportPath(model,face,unitWeightKNm2){
   if(!(e-s>tol))return;
   const area=longitudinal?(e-s)*Number(g.height):integralRoofHeight(s,e,g);
   const crossesRidge=!longitudinal&&s<Number(g.span)/2-tol&&e>Number(g.span)/2+tol;
-  if(crossesRidge)issues.push("مسیر "+String(r.id)+" از تاج بام عبور می‌کند؛ برای بار خطی یکنواخت باید در محل تاج به دو مسیر تقسیم شود.");
-  segments.push({routeId:String(r.id),start:s,end:e,startNodeId:String(r.start),endNodeId:String(r.end),lengthM:e-s,wallAreaM2:area,uniformEquivalentLineLoadKNm:unitWeightKNm2*area/(e-s),weightKN:unitWeightKNm2*area,startJoint:r.startJoint||"unknown",endJoint:r.endJoint||"unknown",crossesRidge});
+  const ridgeNode=[...nodes.values()].some(n=>(n.kind==="base"||n.kind==="endwall-base")&&near(n.x,Number(g.span)/2,tol)&&near(n.y,0,tol)&&near(n.z,fixed,tol));
+  if(crossesRidge&&!ridgeNode)issues.push("مسیر "+String(r.id)+" از تاج بام عبور می‌کند اما گره پایه در محور تاج برای تقسیم واقعی شناژ وجود ندارد.");
+  const startLoad=unitWeightKNm2*(longitudinal?Number(g.height):roofY(Number(a[axis]),g));
+  const endLoad=unitWeightKNm2*(longitudinal?Number(g.height):roofY(Number(b[axis]),g));
+  segments.push({routeId:String(r.id),start:s,end:e,startNodeId:String(r.start),endNodeId:String(r.end),lengthM:e-s,wallAreaM2:area,
+   uniformEquivalentLineLoadKNm:unitWeightKNm2*area/(e-s),startLineLoadKNm:startLoad,endLineLoadKNm:endLoad,
+   weightKN:unitWeightKNm2*area,startJoint:r.startJoint||"unknown",endJoint:r.endJoint||"unknown",crossesRidge,ridgeNodeRequired:crossesRidge});
  });
  segments.sort((a,b)=>a.start-b.start);let cursor=0;
  segments.forEach(s=>{if(s.start>cursor+tol)issues.push("فاصله بدون شناژ از "+cursor.toFixed(3)+" تا "+s.start.toFixed(3)+" متر وجود دارد.");if(s.start<cursor-tol)issues.push("مسیرهای شناژ هم‌پوشانی دارند و ممکن است وزن دیوار دوبار منظور شود.");if(s.startJoint!=="rigid"||s.endJoint!=="rigid")issues.push("اتصال ابتدا/انتهای مسیر "+s.routeId+" یکپارچه و مستند نشده است.");cursor=Math.max(cursor,s.end);});
@@ -176,9 +180,15 @@ function prepareMemberLineLoads(model,deadFactor,precomputedAudit){
    const intermediate=model.nodes.filter(n=>(n.kind==="base"||n.kind==="endwall-base")&&Math.abs(Number(n.y)-Number(start.y))<=0.01&&Math.abs(Number(n[cross])-Number(start[cross]))<=1e-4&&direction*(Number(n[axis])-Number(start[axis]))>0.01&&direction*(Number(end[axis])-Number(n[axis]))>0.01).sort((a,b)=>direction*(Number(a[axis])-Number(b[axis])));
    const routeNodes=[start,...intermediate,end];
    const beamPrefix="TIE_BEAM_"+routeId.replace(/[^A-Za-z0-9_-]/g,"_")+"_S";
+   const coordinate=row.face==="left"||row.face==="right"?"z":"x";
    for(let i=0;i<routeNodes.length-1;i++){
-    const memberId=beamPrefix+(i+1),length=Math.hypot(routeNodes[i+1].x-routeNodes[i].x,routeNodes[i+1].y-routeNodes[i].y,routeNodes[i+1].z-routeNodes[i].z);
-    out.push({memberId,routeId,face:row.face,uniformGlobalKNm:[0,-segment.uniformEquivalentLineLoadKNm,0],lineLoadKNm:segment.uniformEquivalentLineLoadKNm,sourceWeightKN:segment.uniformEquivalentLineLoadKNm*length,segmentLengthM:length,deadFactor:factor,loadFactorAppliedInSolver:true});
+    const ni=routeNodes[i],nj=routeNodes[i+1],memberId=beamPrefix+(i+1),length=Math.hypot(nj.x-ni.x,nj.y-ni.y,nj.z-ni.z);
+    const intensity=node=>segment.startLineLoadKNm===segment.endLineLoadKNm?segment.startLineLoadKNm:
+     num(segment.startLineLoadKNm)+(num(segment.endLineLoadKNm)-num(segment.startLineLoadKNm))*
+     ((Number(node[coordinate])-Number(start[coordinate]))/(Number(end[coordinate])-Number(start[coordinate])));
+    const q0=intensity(ni),q1=intensity(nj),average=(q0+q1)/2;
+    out.push({memberId,routeId,face:row.face,uniformGlobalKNm:[0,-average,0],globalStartKNm:[0,-q0,0],globalEndKNm:[0,-q1,0],
+     lineLoadKNm:average,sourceWeightKN:average*length,segmentLengthM:length,deadFactor:factor,loadFactorAppliedInSolver:true,distribution:"linear-global-vertical"});
    }
   });
  });
@@ -216,8 +226,8 @@ function selfTest(){
  t("precomputed audit is reused without recalculating wall weights",()=>{const old=root.SteelMasonryWallAudit;root.SteelMasonryWallAudit={audit(){throw new Error("should not recalculate");}};const x=prepareNodalLoads(model,1.2,a);root.SteelMasonryWallAudit=old;return x.length>0;});
  t("grade-beam route audit accepts a continuous wall-side route",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:20}]},"left",3.6);return x.success&&Math.abs(x.weightKN-360)<1e-8&&x.solverLoadsGenerated===false;});
  t("grade-beam route audit blocks incomplete coverage",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:10}]},"left",3.6);return !x.success&&x.issues.some(v=>v.includes("پیوسته"));});
- t("gable route crossing ridge is blocked for uniform line-load transfer",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T2",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:10,y:0,z:0}]},"front",3.6);return !x.success&&x.segments[0].crossesRidge===true;});
- t("gable wall variable-height load is blocked even without a ridge crossing",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T3",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}]},"front",3.6);return !x.success&&x.issues.some(v=>v.includes("بار گسترده متغیر"));});
+  t("gable route crossing ridge requires an actual ridge base node",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T2",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:10,y:0,z:0}]}, "front",3.6);return !x.success&&x.segments[0].crossesRidge===true&&x.issues.some(v=>v.includes("گره پایه در محور تاج"));});
+ t("gable variable wall load uses exact end intensities",()=>{root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T3",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const x=inspectGradeBeamSupportPath({geometry:g,nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}]}, "front",3.6);return x.success&&x.segments[0].startLineLoadKNm===18&&x.segments[0].endLineLoadKNm===32.4;});
  t("grade-beam wall transfer creates line loads, not base-node loads",()=>{const old= root.SteelTieBeamLayout;root.SteelTieBeamLayout={getData:()=>({routes:[{id:"T1",start:"A",end:"B",startJoint:"rigid",endJoint:"rigid"}]})};const model={geometry:g,nodes:[{id:"A",x:0,y:0,z:0,kind:"base"},{id:"M1",x:0,y:0,z:5,kind:"base"},{id:"M2",x:0,y:0,z:15,kind:"base"},{id:"B",x:0,y:0,z:20,kind:"base"}]};const auditResult={success:true,loadTransferEnabled:true,rows:[{face:"left",status:"grade-beam-line-load-ready",gradeBeamSupportAudit:{segments:[{routeId:"T1",startNodeId:"A",endNodeId:"B",uniformEquivalentLineLoadKNm:3.6,weightKN:72}]}}]};const x=prepareMemberLineLoads(model,1.5,auditResult);root.SteelTieBeamLayout=old;return x.length===3&&x.every(v=>Math.abs(v.lineLoadKNm-3.6)<1e-8)&&Math.abs(x.reduce((s,v)=>s+v.sourceWeightKN,0)-72)<1e-8;});
  t("analysis approval remains disabled",()=>a.analysisEnabled===false&&a.designApproved===false);
  root.SteelDesignCore=oldBrief;root.SteelMasonryWallAudit=oldMasonry;root.SteelWallDeadLoadTransfer=oldTransfer;root.SteelTieBeamLayout=oldTieBeam;
