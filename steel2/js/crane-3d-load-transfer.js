@@ -363,7 +363,7 @@ function ensurePanel(){
    const r=await analyzeCase(i,transfer,horizontal,train,config);
    if(!r.success)throw Error(r.transfer?.issues?.join(" | ")||"تحلیل حالت ناموفق بود.");
    const q=r.result;
-   status().textContent="حل نرم‌افزاری انجام شد؛ گره بارگذاری: "+r.transfer.loadCount+"؛ بیشینه جابه‌جایی انتقالی: "+(q.maxTranslation??0).toExponential(4)+" m؛ تعادل نیرو: "+(q.equilibrium?.ok?"برقرار":"نیازمند بررسی")+"؛ تعادل لنگر: "+(q.equilibrium?.momentResidualNm||[]).map(v=>Number(v).toExponential(2)).join(", ")+" N.m. این نتیجه تأیید طراحی نیست.";
+   status().textContent="حل نرم‌افزاری انجام شد؛ گره بارگذاری: "+r.transfer.loadCount+"؛ بیشینه جابه‌جایی انتقالی: "+(q.maxTranslation??0).toExponential(4)+" m؛ واکنش‌های پایه/نیروی متناظر ستون: "+(r.supportReactionActions?.rows?.length??0)+" گره؛ تعادل نیرو: "+(q.equilibrium?.ok?"برقرار":"نیازمند بررسی")+"؛ تعادل لنگر: "+(q.equilibrium?.momentResidualNm||[]).map(v=>Number(v).toExponential(2)).join(", ")+" N.m. نیروهای پایه فقط تقاضا هستند؛ طراحی صفحه‌ستون، مهار و فونداسیون انجام نشده است.";
   }catch(e){status().textContent="تحلیل متوقف شد: "+String(e.message||e);}
  });
 }
