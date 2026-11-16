@@ -60,7 +60,7 @@ function audit(input){
    if(!positive(st.station_mm)&&st.station_mm!==0)issues.push("مختصات ایستگاه "+c.caseId+"/"+i+" معتبر نیست.");
    ACTIONS.forEach(k=>{if(!finite(st[k]))issues.push("تقاضای هم‌زمان "+k+" در "+c.caseId+"/"+i+" ناقص است.");});
    if(st.localAxes!==undefined&&(!st.localAxes||typeof st.localAxes!=="object"))issues.push("محورهای محلی ایستگاه "+c.caseId+"/"+i+" نامعتبر است.");
-   if(st.segmentId!==undefined&&!text(st.segmentId))issues.push("شناسه قطعه ایستگاه "+c.caseId+"/"+i+" نامعتبر است.");
+   if(st.segmentId!=null&&!text(st.segmentId))issues.push("شناسه قطعه ایستگاه "+c.caseId+"/"+i+" نامعتبر است.");
   });
  });
  const connection=d.connection||{};
@@ -76,7 +76,7 @@ function audit(input){
   }));
   governing[k]=best;
  });
- return{success:issues.length===0,readyForResistanceReview:issues.length===0,designApproved:false,capacityCalculated:false,group,memberId:d.memberId,issues:[...new Set(issues)],warnings,caseCount:demands.length,governingSimultaneousActions:governing,contractVersion:1,scope:"Evidence completeness only. This contract does not calculate AISI/M10 resistance, DSM nominal strengths, local/distortional/global buckling capacity, combined-action utilization, screw/bolt/weld resistance, or code compliance."};
+ return{success:issues.length===0,readyForResistanceReview:issues.length===0,designApproved:false,capacityCalculated:false,group,memberId:d.memberId,issues:[...new Set(issues)],warnings,caseCount:demands.length,governingSimultaneousActions:governing,contractVersion:2,scope:"Evidence completeness only. This contract does not calculate AISI/M10 resistance, DSM nominal strengths, local/distortional/global buckling capacity, combined-action utilization, screw/bolt/weld resistance, or code compliance."};
 }
 function auditFromDemandPackage(baseInput,demandPackage,combinationProposal){
  const issues=[],base=baseInput||{},pkg=demandPackage||{},proposal=combinationProposal||{};
@@ -136,8 +136,8 @@ function selfTest(){
  t("missing case provenance blocks",()=>!audit({...good,loadCases:[{...good.loadCases[0],source:{document:"x"}}]}).success);
  t("unverified connection capacity blocks",()=>!audit({...good,connection:{...good.connection,capacityVerified:false}}).success);
  t("missing serviceability evidence blocks",()=>!audit({...good,serviceability:{checked:false}}).success);
- t("governing action preserves case and station",()=>{const x=audit(good);return x.governingSimultaneousActions.My_Nmm.caseId==="ULS-1"&&x.governingSimultaneousActions.Mx_Nmm.station_mm===0;});
- t("does not combine independent maxima into a synthetic case",()=>{const x=audit({...good,loadCases:[{...good.loadCases[0],caseId:"ULS-2",label:"ULS-2",stations:[{...good.loadCases[0].stations[0],Mx_Nmm:999,My_Nmm:0},{...good.loadCases[0].stations[1],Mx_Nmm:0,My_Nmm:999}]}]});return x.governingSimultaneousActions.Mx_Nmm.caseId==="ULS-2"&&x.governingSimultaneousActions.My_Nmm.caseId==="ULS-2"&&x.governingSimultaneousActions.Mx_Nmm.station_mm!==x.governingSimultaneousActions.My_Nmm.station_mm;});
+ t("governing action preserves case and station",()=>{const x=audit(good);return x.governingSimultaneousActions.My_Nmm.caseId==="ULS-1"&&x.governingSimultaneousActions.My_Nmm.station_mm===0;});
+ t("does not combine independent maxima into a synthetic case",()=>{const x=audit({...good,loadCases:[{...good.loadCases[0],caseId:"ULS-2",label:"ULS-2",stations:[{...good.loadCases[0].stations[0],My_Nmm:999,Mz_Nmm:0},{...good.loadCases[0].stations[1],My_Nmm:0,Mz_Nmm:999}]}]});return x.governingSimultaneousActions.My_Nmm.caseId==="ULS-2"&&x.governingSimultaneousActions.Mz_Nmm.caseId==="ULS-2"&&x.governingSimultaneousActions.My_Nmm.station_mm!==x.governingSimultaneousActions.Mz_Nmm.station_mm;});
  const source={document:"analysis.pdf",revision:"R1",locator:"p.4",authority:"reviewed-solver"};
  const comboSource={code:"M10",edition:"1401",clause:"verified-by-engineer",document:"approved-combination-basis"};
  const baseInput={...good,loadCases:undefined};
