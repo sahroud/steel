@@ -94,9 +94,11 @@ function prepareCase(model,transferResult,caseIndex,horizontalInput,trainInput,c
   const hOffset=offset(d.horizontalWheelOffset_m,"بار افقی چرخ",issues);
   if(horizontalAudit?.ready&&hOffset&&["left","right","both"].includes(sideMode)){
    const length=Number(model.geometry?.length);
+   if(!(Number.isFinite(length)&&length>0))issues.push("طول مؤثر مسیر ریل در مدل سه‌بعدی معتبر نیست؛ مختصات چرخ قابل ممیزی نیست.");
    horizontalAudit.loads.forEach(w=>{
     const z=Number(c.referencePosition_m)+Number(w.x_m);
-    if(z< -EPS||z>length+EPS)return;
+    if(!(Number.isFinite(z)&&Number.isFinite(length)&&length>0)){issues.push("مختصات طولی چرخ "+w.wheelIndex+" یا طول مسیر ریل نامعتبر است.");return;}
+    if(z< -EPS||z>length+EPS){issues.push("چرخ "+w.wheelIndex+" در موقعیت z="+z.toFixed(4)+" m خارج از طول واقعی تیر حمال [0، "+length+" m] قرار گرفته است؛ حذف خاموش این بار مجاز نیست و حالت تحلیل متوقف شد.");return;}
     const sides=sideMode==="both"?["left","right"]:[sideMode];
     sides.forEach(side=>{
      const pointSource={kind:"crane-wheel-horizontal",side,wheelIndex:w.wheelIndex,casePosition_m:c.referencePosition_m,source:w.source,document:w.document};
@@ -255,6 +257,8 @@ function selfTest(){
  t("rejects unmatched vertical support station",()=>{const bad=JSON.parse(JSON.stringify(transfer));bad.cases[0].girderPointLoads.left[0].x_m=4.8;return !prepareCase(model,bad,0,h,train,cfg).success;});
  t("rejects incomplete load source chain",()=>{const bad=JSON.parse(JSON.stringify(transfer));bad.cases[0].sourceDocuments.wheelSources[0].document="";return !prepareCase(model,bad,0,h,train,cfg).success;});
  t("maps horizontal force at an exact support node without duplicate member mapping",()=>{const exact=prepareCase(model,transfer,0,{...h,enabled:true}, {positions_m:"4"},cfg);return exact.success&&exact.nodalLoads.some(n=>n.nodeId==="L1"&&Math.abs(n.values[0])>0);});
+ t("rejects a moving wheel outside the physical runway instead of silently dropping its force",()=>{const outside=prepareCase(model,transfer,0,{...h,enabled:true},{positions_m:"20"},{...cfg,horizontalApplicationSides:"left"});return !outside.success&&outside.issues.some(x=>x.includes("خارج از طول واقعی تیر حمال"));});
+ t("rejects missing runway length when horizontal wheel positions are evaluated",()=>{const noLength={...model,geometry:{}};const bad=prepareCase(noLength,transfer,0,{...h,enabled:true},{positions_m:"4"},{...cfg,horizontalApplicationSides:"left"});return !bad.success&&bad.issues.some(x=>x.includes("طول مؤثر مسیر ریل"));});
  const beam={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:10}],members:[{id:"M",start:"A",end:"B",side:"left",sectionKey:"craneRunwayGirder",craneIntegration:true}]};
  const oneRail={success:true,cases:[{referencePosition_m:0,girderPointLoads:{left:[],right:[]},sourceDocuments}]};
  const point=prepareCase(beam,oneRail,0,{...h,transverseLoads_kN:"1",longitudinalLoads_kN:"0"}, {positions_m:"5"}, {...cfg,horizontalApplicationSides:"left",horizontalWheelOffset_m:[0,0,0]});
