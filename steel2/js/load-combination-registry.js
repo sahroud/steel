@@ -18,7 +18,7 @@ function audit(input){
   else if(caseMap.has(id))issues.push("شناسه حالت بار تکراری است: "+id);
   else caseMap.set(id,c);
   if(!cat)issues.push("دسته بار برای "+(id||i+1)+" ثبت نشده است.");
-  if(!c?.effects||typeof c.effects!=="object"||Array.isArray(c.effects))issues.push("بردار اثرات برای "+(id||i+1)+" معتبر نیست.");
+  if(!c?.effects||typeof c.effects!=="object"||Array.isArray(c.effects)||!Object.keys(c.effects).length)issues.push("بردار اثرات برای "+(id||i+1)+" معتبر و غیرخالی نیست.");
   else Object.entries(c.effects).forEach(([k,v])=>{if(!txt(k)||!finite(v))issues.push("اثر غیرعددی/نامعتبر در حالت "+(id||i+1)+": "+k);});
  });
  combos.forEach((c,i)=>{
@@ -35,11 +35,18 @@ function audit(input){
    if(!finite(factor))issues.push("ضریب ترکیب برای "+caseId+" عدد متناهی نیست.");
   });
   if(Object.keys(factors).some(k=>!caseMap.has(k)))return;
-  const keys=new Set();
-  Object.values(factors).forEach(()=>{});
-  Object.entries(factors).forEach(([caseId,factor])=>Object.keys(caseMap.get(caseId).effects||{}).forEach(k=>keys.add(k)));
+  const selectedCaseIds=Object.keys(factors);
+  const keys=Object.keys(caseMap.get(selectedCaseIds[0]).effects||{}).sort();
+  if(!keys.length){issues.push("بردار اثرات حالت‌های مرجع ترکیب "+(id||i+1)+" خالی است.");return;}
+  const keySignature=JSON.stringify(keys);
+  selectedCaseIds.slice(1).forEach(caseId=>{
+   const caseKeys=Object.keys(caseMap.get(caseId).effects||{}).sort();
+   if(JSON.stringify(caseKeys)!==keySignature)
+    issues.push("مؤلفه‌های بردار اثرات بین حالت‌های بار ترکیب "+(id||i+1)+" یکسان نیست؛ مؤلفه مفقود نباید به‌طور ضمنی صفر فرض شود.");
+  });
+  if(issues.length)return;
   const effects={};
-  keys.forEach(k=>{effects[k]=Object.entries(factors).reduce((sum,[caseId,factor])=>sum+factor*(caseMap.get(caseId).effects[k]??0),0);});
+  keys.forEach(k=>{effects[k]=selectedCaseIds.reduce((sum,caseId)=>sum+factors[caseId]*caseMap.get(caseId).effects[k],0);});
   rows.push({id,source:{code:txt(src.code),edition:txt(src.edition),clause:txt(src.clause),document:txt(src.document)},effects});
  });
  const keys=new Set(rows.flatMap(r=>Object.keys(r.effects)));
@@ -59,6 +66,8 @@ function selfTest(){
  test("duplicate load case ID rejected",()=>{const p=JSON.parse(JSON.stringify(base));p.loadCases[1].id="D";return !audit(p).success;});
  test("non-finite coefficient rejected",()=>{const p=JSON.parse(JSON.stringify(base));p.combinations[0].factors.D="1.2";return !audit(p).success;});
  test("non-numeric effect rejected",()=>{const p=JSON.parse(JSON.stringify(base));p.loadCases[0].effects.M="10";return !audit(p).success;});
+ test("missing effect component is not silently treated as zero",()=>{const p=JSON.parse(JSON.stringify(base));delete p.loadCases[1].effects.V;return !audit(p).success;});
+ test("empty effect vector rejected",()=>{const p=JSON.parse(JSON.stringify(base));p.loadCases[0].effects={};return !audit(p).success;});
  test("empty combination list rejected",()=>!audit({loadCases:base.loadCases,combinations:[]}).success);
  test("no implicit factors or code presets",()=>Object.keys(audit({}).combinations).length===0);
  test("never enables analysis or approves design",()=>{const r=audit(base);return r.analysisEnabled===false&&r.designApproved===false;});
