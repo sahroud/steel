@@ -22,16 +22,17 @@ function mapAnchorDemand(d){
  if(!d||!d.input||!d.geometry)throw Error("ابتدا محاسبه معتبر گروه بولت را در بخش تقاضا اجرا کنید.");
  if(d.input.signConfirmed!==true||d.input.geometryConfirmed!==true)throw Error("قرارداد علامت و هندسه گروه بولت در مبدأ تأیید نشده است.");
  const g=d.geometry,v=d.input;
- if(!Number.isInteger(g.rows)||!Number.isInteger(g.cols)||!(g.rows>0&&g.cols>0)||!(g.pitchX>0&&g.pitchZ>0))throw Error("هندسه خروجی تقاضای بولت معتبر نیست.");
+ if(!Number.isInteger(g.rows)||!Number.isInteger(g.cols)||!(g.rows>0&&g.cols>0)||(g.cols>1&&!(g.pitchX>0))||(g.rows>1&&!(g.pitchZ>0)))throw Error("هندسه خروجی تقاضای بولت معتبر نیست.");
  if(![v.tension,v.momentX,v.momentZ].every(Number.isFinite))throw Error("سه مؤلفه N، Mx و Mz در خروجی تقاضا کامل نیستند.");
  return {plateXmm:null,plateZmm:null,rows:g.rows,cols:g.cols,pitchXmm:g.pitchX,pitchZmm:g.pitchZ,tensionKN:v.tension,momentXKNm:v.momentX,momentZKNm:v.momentZ,source:"anchor-demand-screen"};
 }
 function calculate(i){
- const positive=["plateXmm","plateZmm","subgradeK","anchorK","rows","cols","pitchXmm","pitchZmm","gridN"];
+ const positive=["plateXmm","plateZmm","subgradeK","anchorK","rows","cols","gridN"];
  positive.forEach(k=>{if(!(Number.isFinite(i[k])&&i[k]>0))throw Error("ورودی مثبت و معتبر برای "+k+" لازم است.");});
  if(!Number.isInteger(i.rows)||!Number.isInteger(i.cols)||i.rows*i.cols>36)throw Error("آرایش بولت باید عدد صحیح و حداکثر ۳۶ بولت باشد.");
  if(!Number.isInteger(i.gridN)||i.gridN<5||i.gridN>41||i.gridN%2===0)throw Error("شبکه تماس باید عدد فرد بین ۵ تا ۴۱ باشد.");
- if(i.rows>1&&i.pitchZmm<=0||i.cols>1&&i.pitchXmm<=0)throw Error("فواصل بولت باید مثبت باشند.");
+ if((i.cols>1&&!(Number.isFinite(i.pitchXmm)&&i.pitchXmm>0))||(i.rows>1&&!(Number.isFinite(i.pitchZmm)&&i.pitchZmm>0)))throw Error("فواصل بولت در هر راستای دارای بیش از یک ردیف/ستون باید مثبت باشند.");
+ if(i.rows===1&&i.pitchZmm!==0||i.cols===1&&i.pitchXmm!==0)throw Error("برای آرایش تک‌ردیفه/تک‌ستونه، فاصله همان راستا باید صفر باشد.");
  if(![i.tensionKN,i.momentXKNm,i.momentZKNm].every(Number.isFinite))throw Error("N، Mx و Mz را هم‌زمان وارد کنید؛ برای صفر عدد صفر بنویسید.");
  const B=i.plateXmm/1000,L=i.plateZmm/1000,dx=B/i.gridN,dz=L/i.gridN,area=dx*dz;
  const anchors=[];for(let r=0;r<i.rows;r++)for(let c=0;c<i.cols;c++)anchors.push({id:"AB-"+String(anchors.length+1).padStart(2,"0"),x:(c-(i.cols-1)/2)*i.pitchXmm/1000,z:(r-(i.rows-1)/2)*i.pitchZmm/1000});
@@ -99,8 +100,17 @@ let last=null;
 let importedDemand=null;
 function loadFromAnchorDemand(){try{const d=root.SteelAnchorDemandScreen?.getLast?.(),m=mapAnchorDemand(d);["plateXmm","plateZmm"].forEach(k=>{});$("pcRows").value=m.rows;$("pcCols").value=m.cols;$("pcPitchX").value=m.pitchXmm;$("pcPitchZ").value=m.pitchZmm;$("pcN").value=m.tensionKN;$("pcMx").value=m.momentXKNm;$("pcMz").value=m.momentZKNm;importedDemand={rows:m.rows,cols:m.cols,pitchXmm:m.pitchXmm,pitchZmm:m.pitchZmm,tensionKN:m.tensionKN,momentXKNm:m.momentXKNm,momentZKNm:m.momentZKNm};$("pcResult").textContent="هندسه و بارهای N، Mx و Mz از خروجی تأییدشده تقاضای گروه بولت منتقل شد. ابعاد صفحه و سختی‌ها را تکمیل و سپس حل کنید؛ Vx، Vz و Ty در مدل تماس جزئی حاضر لحاظ نمی‌شوند.";return m;}catch(e){$("pcResult").textContent=e.message;return null;}}
 function read(){return{plateXmm:num("pcPlateX"),plateZmm:num("pcPlateZ"),rows:num("pcRows"),cols:num("pcCols"),pitchXmm:num("pcPitchX"),pitchZmm:num("pcPitchZ"),tensionKN:num("pcN"),momentXKNm:num("pcMx"),momentZKNm:num("pcMz"),subgradeK:num("pcSubgradeK"),anchorK:num("pcAnchorK"),gridN:num("pcGridN")};}
+function validateImportedDemand(i,imported,latest){
+ if(!imported)return true;
+ const fields=["rows","cols","pitchXmm","pitchZmm","tensionKN","momentXKNm","momentZKNm"];
+ for(const k of fields)if(i[k]!==imported[k])throw Error("پس از انتقال تقاضا، مقدار "+k+" تغییر کرده است؛ برای جلوگیری از گزارش با منشأ نادرست، دوباره «دریافت هندسه و بارها» را بزنید یا انتقال را لغو و ورودی دستی را از ابتدا وارد کنید.");
+ const current=mapAnchorDemand(latest);
+ const source={rows:current.rows,cols:current.cols,pitchXmm:current.pitchXmm,pitchZmm:current.pitchZmm,tensionKN:current.tensionKN,momentXKNm:current.momentXKNm,momentZKNm:current.momentZKNm};
+ for(const k of fields)if(source[k]!==imported[k])throw Error("خروجی تقاضای گروه بولت پس از انتقال تغییر کرده است؛ انتقال تازه را انجام دهید.");
+ return true;
+}
 function run(){
- try{const i=read(),r=calculate(i);r.sourceTransfer=importedDemand?{...importedDemand,source:"anchor-demand-screen",note:"N/Mx/Mz and anchor geometry transferred; shear and torsion are outside this partial-contact model."}:null;last=r;
+ try{const i=read();validateImportedDemand(i,importedDemand,root.SteelAnchorDemandScreen?.getLast?.());const r=calculate(i);r.sourceTransfer=importedDemand?{...importedDemand,source:"anchor-demand-screen",verifiedAgainstLatestDemand:true,note:"N/Mx/Mz and anchor geometry transferred and revalidated; shear and torsion are outside this partial-contact model."}:null;last=r;
  $("pcResult").textContent="سطح تماس فعال: "+fmt(100*r.contact.ratio)+"٪ ("+r.contact.cellCount+"/"+r.contact.totalCellCount+") | فشار تماس حداقل/حداکثر: "+fmt(r.contact.minPressureMPa)+" / "+fmt(r.contact.maxPressureMPa)+" MPa | جمع فشار بتن: "+fmt(r.contact.concreteCompressionKN)+" kN | جمع کشش بولت‌ها: "+fmt(r.anchors.totalTensionKN)+" kN | بیشینه کشش یک بولت: "+fmt(r.anchors.maxTensionKN)+" kN | تکرار: "+r.iterations+" | باقیمانده تعادل: "+fmt(r.residual);
  const t=document.createElement("table");t.innerHTML="<thead><tr><th>بولت</th><th>X (m)</th><th>Z (m)</th><th>کشش (kN)</th><th>جابجایی صفحه (mm)</th></tr></thead><tbody></tbody>";const body=t.querySelector("tbody");
  r.anchors.bolts.forEach(b=>{const tr=document.createElement("tr");[b.id,fmt(b.x),fmt(b.z),fmt(b.tensionKN),fmt(b.displacementMm)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);});
@@ -121,9 +131,12 @@ function selfTest(){
  const base={plateXmm:400,plateZmm:400,rows:2,cols:2,pitchXmm:240,pitchZmm:240,tensionKN:0,momentXKNm:0,momentZKNm:0,subgradeK:20000,anchorK:10000,gridN:21};
  const c=calculate({...base,tensionKN:-100}),t=calculate({...base,tensionKN:40}),m=calculate({...base,momentXKNm:20});
  const mapped=mapAnchorDemand({input:{signConfirmed:true,geometryConfirmed:true,tension:30,momentX:12,momentZ:-4},geometry:{rows:2,cols:3,pitchX:180,pitchZ:220}});
- const checks=[["انتقال هندسه و سه مؤلفه بار از محاسبه گروه بولت",mapped.rows===2&&mapped.cols===3&&mapped.tensionKN===30&&mapped.momentXKNm===12&&mapped.momentZKNm===-4],["رد انتقال بدون تأیید هندسه",(()=>{try{mapAnchorDemand({input:{signConfirmed:true},geometry:{rows:2,cols:2,pitchX:200,pitchZ:200}});return false;}catch(e){return true;}})()],["فشار محوری، تماس کامل و بدون کشش بولت",c.contact.ratio===1&&c.anchors.totalTensionKN===0],["کشش محوری، فعال‌شدن انکربولت‌ها",t.anchors.totalTensionKN>0&&t.contact.ratio===0],["لنگر، تماس جزئی و کشش بولت ایجاد می‌کند",m.contact.ratio>0&&m.contact.ratio<1&&m.anchors.totalTensionKN>0],["تعادل قائم در حد تلرانس",Math.abs(m.equilibrium.verticalResidualKN)<1e-6],["تعادل لنگر در حد تلرانس",Math.abs(m.equilibrium.momentXResidualKNm)<1e-6]];
+ const checks=[["انتقال هندسه و سه مؤلفه بار از محاسبه گروه بولت",mapped.rows===2&&mapped.cols===3&&mapped.tensionKN===30&&mapped.momentXKNm===12&&mapped.momentZKNm===-4],
+ ["پذیرش داده انتقالی بدون تغییر",(()=>{const i={rows:2,cols:3,pitchXmm:180,pitchZmm:220,tensionKN:30,momentXKNm:12,momentZKNm:-4};return validateImportedDemand(i,i,{input:{signConfirmed:true,geometryConfirmed:true,tension:30,momentX:12,momentZ:-4},geometry:{rows:2,cols:3,pitchX:180,pitchZ:220}});})()],
+ ["رد تغییر ورودی پس از انتقال",(()=>{try{const i={rows:2,cols:3,pitchXmm:180,pitchZmm:220,tensionKN:31,momentXKNm:12,momentZKNm:-4},d={rows:2,cols:3,pitchXmm:180,pitchZmm:220,tensionKN:30,momentXKNm:12,momentZKNm:-4};validateImportedDemand(i,d,{input:{signConfirmed:true,geometryConfirmed:true,tension:30,momentX:12,momentZ:-4},geometry:{rows:2,cols:3,pitchX:180,pitchZ:220}});return false;}catch(e){return e.message.includes("تغییر کرده");}})()],
+ ["رد خروجی قدیمی پس از محاسبه مجدد گروه بولت",(()=>{try{const i={rows:2,cols:3,pitchXmm:180,pitchZmm:220,tensionKN:30,momentXKNm:12,momentZKNm:-4},d={...i};validateImportedDemand(i,d,{input:{signConfirmed:true,geometryConfirmed:true,tension:35,momentX:12,momentZ:-4},geometry:{rows:2,cols:3,pitchX:180,pitchZ:220}});return false;}catch(e){return e.message.includes("تغییر کرده");}})()],["رد انتقال بدون تأیید هندسه",(()=>{try{mapAnchorDemand({input:{signConfirmed:true},geometry:{rows:2,cols:2,pitchX:200,pitchZ:200}});return false;}catch(e){return true;}})()],["فشار محوری، تماس کامل و بدون کشش بولت",c.contact.ratio===1&&c.anchors.totalTensionKN===0],["کشش محوری، فعال‌شدن انکربولت‌ها",t.anchors.totalTensionKN>0&&t.contact.ratio===0],["لنگر، تماس جزئی و کشش بولت ایجاد می‌کند",m.contact.ratio>0&&m.contact.ratio<1&&m.anchors.totalTensionKN>0],["تعادل قائم در حد تلرانس",Math.abs(m.equilibrium.verticalResidualKN)<1e-6],["تعادل لنگر در حد تلرانس",Math.abs(m.equilibrium.momentXResidualKNm)<1e-6]];
  return{passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
-root.SteelBaseplatePartialContact={calculate,sensitivity,mapAnchorDemand,selfTest,getLast:()=>last?JSON.parse(JSON.stringify(last)):null};
+root.SteelBaseplatePartialContact={calculate,sensitivity,mapAnchorDemand,validateImportedDemand,selfTest,getLast:()=>last?JSON.parse(JSON.stringify(last)):null};
 if(root.document){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
