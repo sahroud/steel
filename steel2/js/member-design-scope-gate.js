@@ -6,7 +6,7 @@
 "use strict";
 const GROUPS=[
  {key:"column",label:"ستون",family:"hot-rolled-I",required:["section","compression","torsional-buckling","simultaneous-demand","biaxial-flexure","second-order","local-slenderness","shear","torsion","connection"]},
- {key:"rafter",label:"تیر/رفتر",family:"hot-rolled-I-or-tapered",required:["section","section-forces","flexure","ltb","shear","interaction","second-order","local-slenderness","torsion","deflection","connection"]},
+ {key:"rafter",label:"تیر/رفتر",family:"hot-rolled-I-or-tapered",required:["section","section-forces","simultaneous-demand","flexure","ltb","shear","interaction","second-order","local-slenderness","torsion","deflection","connection"]},
  {key:"roofPurlin",label:"لاپه سقف",family:"cold-formed-or-hot-rolled",required:["exact-profile","cold-formed-local-distortional","restraint","biaxial-actions","shear","torsion","load-combination","deflection","connections"]},
  {key:"wallGirt",label:"قید دیوار",family:"cold-formed-or-hot-rolled",required:["exact-profile","cold-formed-local-distortional","restraint","biaxial-actions","shear","torsion","load-combination","deflection","connections"]},
  {key:"braces",label:"مهاربندهای طولی سقف و دیوار",family:"brace-specific",required:["brace-force-demand","tension","compression","unbraced-length","connections","collector-diaphragm"]},
@@ -70,9 +70,12 @@ function audit(){
   if(g.key==="braces"&&root.SteelBraceForceDemandAudit?.audit&&env){const br=root.SteelBraceForceDemandAudit.audit(env,root.SteelStructuralModel?.getData?.());if(br.success)missing.splice(missing.indexOf("brace-force-demand"),1);}
   if(!members.length)missing.unshift("وجود اعضا و نیروهای معتبر در مدل");
   if(g.key==="column"&&root.SteelCompressionCapacity?.analyze)missing.splice(missing.indexOf("compression"),1);
-  if(g.key==="column"&&members.length){
-   const noSim=members.some(m=>!Array.isArray(m.simultaneousCases)||!m.simultaneousCases.length);
-   if(noSim)missing.push("تقاضای شش‌مؤلفه‌ای هم‌زمان برای تمام ترکیبات");
+  if((g.key==="column"||g.key==="rafter")&&members.length){
+   const components=["N","Vy","Vz","T","My","Mz"];
+   const validCase=c=>!!c?.label&&["endI","endJ"].every(end=>c[end]&&components.every(k=>typeof c[end][k]==="number"&&Number.isFinite(c[end][k])));
+   const noSim=members.some(m=>!Array.isArray(m.simultaneousCases)||!m.simultaneousCases.length||m.simultaneousCases.some(c=>!validCase(c)));
+   if(noSim){if(!missing.includes("simultaneous-demand"))missing.push("simultaneous-demand");}
+   else{const i=missing.indexOf("simultaneous-demand");if(i>=0)missing.splice(i,1);}
   }
   const blockers=missing.map(k=>LABELS[k]||k);
   const supported=(SUPPORT[g.key]||[]).slice();
@@ -93,7 +96,8 @@ function audit(){
 }
 function selfTest(){
  const saved={env:root.SteelMemberForceEnvelope,cold:root.SteelColdFormedMemberContract,demand:root.SteelMemberDesignDemandPackage,workbench:root.SteelLoadCaseWorkbench,bridge:root.SteelMemberDemandCombinationBridge};
- root.SteelMemberForceEnvelope={getLast:()=>({members:[{sectionKey:"column",simultaneousCases:[{}]},{sectionKey:"rafter"},{sectionKey:"roofPurlin"},{sectionKey:"wallGirt"}],allCasesEquilibriumOK:true,caseLabelCoverageOK:true,invalidForceVectors:[],unreportedMemberIds:[],extraMemberIds:[],analysisMemberSetMismatchCases:[],duplicateMemberIdsByCase:[],taperedForceTrace:{applicable:false,allApplicableCasesComplete:true}})};
+ const validSim=[{label:"ULS-1",endI:{N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},endJ:{N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}}];
+ root.SteelMemberForceEnvelope={getLast:()=>({members:[{sectionKey:"column",simultaneousCases:validSim},{sectionKey:"rafter",simultaneousCases:validSim},{sectionKey:"roofPurlin"},{sectionKey:"wallGirt"}],allCasesEquilibriumOK:true,caseLabelCoverageOK:true,invalidForceVectors:[],unreportedMemberIds:[],extraMemberIds:[],analysisMemberSetMismatchCases:[],duplicateMemberIdsByCase:[],taperedForceTrace:{applicable:false,allApplicableCasesComplete:true}})};
  root.SteelColdFormedMemberContract={audit:()=>({success:false,designApproved:false})};
  root.SteelMemberDesignDemandPackage={getLast:()=>null};
  root.SteelLoadCaseWorkbench={read:()=>null};
@@ -108,6 +112,8 @@ function selfTest(){
   {name:"column remains blocked by missing full design checks",ok:r.rows[0].status==="blocked"&&r.rows[0].missing.some(x=>x.includes("خمش حول دو محور"))},
   {name:"column requires torsional buckling, shear and torsion checks",ok:r.rows[0].missing.some(x=>x.includes("کمانش پیچشی"))&&r.rows[0].missing.some(x=>x.includes("مقاومت برشی"))&&r.rows[0].missing.some(x=>x.includes("مقاومت پیچشی"))},
   {name:"rafter requires internal force diagram, LTB, stability and connections",ok:r.rows[1].missing.some(x=>x.includes("نمودار معتبر"))&&r.rows[1].missing.some(x=>x.includes("کمانش جانبی"))&&r.rows[1].missing.some(x=>x.includes("مرتبه دوم"))&&r.rows[1].missing.some(x=>x.includes("اتصال عضو"))},
+  {name:"valid simultaneous six-action vectors satisfy the demand gate for column and rafter",ok:!r.rows[0].missing.includes("تقاضاهای هم‌زمان در هر ترکیب بار")&&!r.rows[1].missing.includes("تقاضاهای هم‌زمان در هر ترکیب بار")},
+  {name:"malformed simultaneous vectors block both column and rafter",ok:(()=>{root.SteelMemberForceEnvelope={getLast:()=>({members:[{sectionKey:"column",simultaneousCases:[{}]},{sectionKey:"rafter",simultaneousCases:[{}]}],allCasesEquilibriumOK:true,caseLabelCoverageOK:true,invalidForceVectors:[],unreportedMemberIds:[],extraMemberIds:[],analysisMemberSetMismatchCases:[],duplicateMemberIdsByCase:[],taperedForceTrace:{applicable:false,allApplicableCasesComplete:true}})};const x=audit();return x.rows[0].missing.includes("تقاضاهای هم‌زمان در هر ترکیب بار")&&x.rows[1].missing.includes("تقاضاهای هم‌زمان در هر ترکیب بار");})()},
   {name:"purlin requires cold-formed local and distortional checks",ok:r.rows[2].missing.some(x=>x.includes("کمانش موضعی"))},
   {name:"girt follows a section-specific route",ok:r.rows[3].missing.length>0},
   {name:"purlin and girt expose evidence-only cold-formed contract",ok:r.rows[2].availableLimitedEngines.some(x=>x.includes("قرارداد ممیزی"))&&r.rows[3].availableLimitedEngines.some(x=>x.includes("قرارداد ممیزی"))},
@@ -121,6 +127,7 @@ function selfTest(){
  {name:"valid analysis integrity is reported separately",ok:r.analysisIntegrity.success===true},
  {name:"failed equilibrium, missing members and invalid vectors block every family",ok:broken.analysisIntegrity.success===false&&broken.rows.every(x=>x.missing.includes("سلامت تحلیل: تعادل، پوشش اعضا/حالت‌ها و بردارهای نیرو"))}
  ];
+ root.SteelMemberForceEnvelope=saved.env;
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,tests};
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
