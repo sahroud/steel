@@ -380,7 +380,7 @@ function ensurePanel(){
  panel.innerHTML='<div class="panel-title"><h3>انتقال بار جرثقیل به قاب سه‌بعدی</h3><span class="status">حالت‌های هم‌زمان</span></div>'+
  '<div class="notice">ابتدا تحلیل دو ریل و مشخصات اتصال/مقاطع را تکمیل کنید. در JSON یکپارچه‌سازی، خروج از مرکزیت واکنش قائم و بار افقی را از نقشه وارد کنید. این بخش هر حالت را جداگانه آماده می‌کند؛ بیشینه‌های غیرهم‌زمان با هم جمع نمی‌شوند.</div>'+
  '<div class="form-grid"><div class="field"><label for="crane3DLoadCaseSelect">حالت بار هم‌زمان</label><select id="crane3DLoadCaseSelect"><option value="">ابتدا آماده‌سازی حالات</option></select></div></div>'+
- '<div class="button-grid"><button type="button" class="btn secondary" id="crane3DPrepareCases">آماده‌سازی حالات بار</button><button type="button" class="btn" id="crane3DAnalyzeCase">تحلیل حالت انتخابی در قاب سه‌بعدی</button></div>'+
+ '<div class="button-grid"><button type="button" class="btn secondary" id="crane3DPrepareCases">آماده‌سازی حالات بار</button><button type="button" class="btn" id="crane3DAnalyzeCase">تحلیل حالت انتخابی در قاب سه‌بعدی</button><button type="button" class="btn primary" id="crane3DAutomaticSweep">جاروب کامل موقعیت‌های جرثقیل و استخراج تقاضا</button><button type="button" class="btn secondary" id="crane3DDemandExport" disabled>دریافت بسته مهندسی تقاضا (JSON)</button></div>'+
  '<div id="crane3DLoadTransferResult" class="notice">هنوز حالتی آماده نشده است.</div>';
  const anchor=root.document.getElementById("shedLayoutPanel");
  if(anchor)anchor.insertAdjacentElement("afterend",panel);else main.appendChild(panel);
@@ -398,6 +398,25 @@ function ensurePanel(){
    if(transfer?.cases)transfer.cases.forEach((c,i)=>{const option=root.document.createElement("option");option.value=String(i);option.textContent="حالت "+(i+1)+" ـ موقعیت قطار "+Number(c.referencePosition_m).toFixed(3)+" m";select.appendChild(option);});
    status().textContent=prepared.success?"آماده‌سازی موفق: "+prepared.readyCount+" از "+prepared.total+" حالت دارای بار گره‌ای معتبر هستند. تحلیل هر حالت جداگانه انجام می‌شود.":("آماده‌سازی کامل نشد. حالات آماده: "+prepared.readyCount+"/"+prepared.total+"؛ موارد مسدود: "+prepared.issues.slice(0,8).join(" | "));
   }catch(e){prepared=null;status().textContent="خطا: "+String(e.message||e);}
+ });
+ root.document.getElementById("crane3DAutomaticSweep").addEventListener("click",async()=>{
+  const sweepButton=root.document.getElementById("crane3DAutomaticSweep"),exportButton=root.document.getElementById("crane3DDemandExport");
+  try{
+   sweepButton.disabled=true;exportButton.disabled=true;
+   const result=await analyzeAllFromUI({onProgress:message=>{status().textContent=message;}});
+   if(!result?.success)throw Error((result?.issues||["جاروب خودکار جرثقیل کامل نشد."]).join("؛ "));
+   exportButton.disabled=false;
+   status().textContent="جاروب کامل شد: "+result.total+" موقعیت؛ "+result.demandTraceAudit.memberCount+" عضو و "+result.demandTraceAudit.supportCount+" پایه در بسته تقاضا ثبت شد. کنترل ظرفیت و طراحی اتصال/پی هنوز انجام نشده است.";
+  }catch(e){status().textContent="جاروب متوقف شد: "+String(e.message||e);}
+  finally{sweepButton.disabled=false;}
+ });
+ root.document.getElementById("crane3DDemandExport").addEventListener("click",()=>{
+  try{
+   if(!lastAutomaticEnvelope?.success||!lastAutomaticEnvelope.demandTraceAudit?.success)throw Error("ابتدا جاروب کامل موقعیت‌های جرثقیل را با موفقیت اجرا کنید.");
+   const data={schema:"SAHROUD-STEEL-CRANE-DEMAND-TRACE-1.0",generatedAt:new Date().toISOString(),analysisEnabled:false,caseCount:lastAutomaticEnvelope.total,loadBasis:lastAutomaticEnvelope.loadBasis,notes:lastAutomaticEnvelope.note,demandTraceAudit:lastAutomaticEnvelope.demandTraceAudit,memberForceEnvelope:lastAutomaticEnvelope.memberForceEnvelope,supportReactionEnvelope:lastAutomaticEnvelope.supportReactionEnvelope,criticalCase:lastAutomaticEnvelope.criticalCase,maxTranslation_m:lastAutomaticEnvelope.maxTranslation_m};
+   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"}),url=URL.createObjectURL(blob),a=root.document.createElement("a");
+   a.href=url;a.download="SAHROUD-STEEL-crane-demand-trace.json";root.document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  }catch(e){status().textContent="ساخت بسته خروجی ناموفق بود: "+String(e.message||e);}
  });
  root.document.getElementById("crane3DAnalyzeCase").addEventListener("click",async()=>{
   try{
