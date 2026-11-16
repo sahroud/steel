@@ -104,7 +104,9 @@ function equivalentLinearLoad(qi,qj,L){
     [...qi,...qj].some(v=>!Number.isFinite(Number(v))))
   throw Error("بار گسترده خطی عضو باید دو بردار محلی سه‌مؤلفه‌ای معتبر داشته باشد.");
  const f=Array(12).fill(0),a=qi.map(Number),b=qj.map(Number);
- for(let k=0;k<3;k++){f[k]=L*(2*a[k]+b[k])/6;f[k+6]=L*(a[k]+2*b[k])/6;}
+ f[0]=L*(2*a[0]+b[0])/6;f[6]=L*(a[0]+2*b[0])/6;
+ f[1]=L*(7*a[1]+3*b[1])/20;f[7]=L*(3*a[1]+7*b[1])/20;
+ f[2]=L*(7*a[2]+3*b[2])/20;f[8]=L*(3*a[2]+7*b[2])/20;
  f[5]=L*L*(3*a[1]+2*b[1])/60;f[11]=-L*L*(2*a[1]+3*b[1])/60;
  f[4]=-L*L*(3*a[2]+2*b[2])/60;f[10]=L*L*(2*a[2]+3*b[2])/60;
  return f;
