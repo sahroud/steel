@@ -141,18 +141,21 @@ function buildThicknessCandidates(group){
  if(!GROUPS.some(([g])=>g===group)||!data.groups[group]?.enabled)throw Error("ابتدا مقطع متغیر گروه موردنظر را فعال کنید.");
  const source=STATIONS.map(([key])=>data.groups[group].stations[key]);
  source.forEach((s,i)=>{if(["d","bf"].some(k=>!(Number(s[k])>0)))throw Error("عمق و عرض بال در هر سه ایستگاه باید وارد شود؛ ایستگاه "+(i+1));});
- const sizes=[6,8,10,12],rows=[];
+ const sizes=[6,8,10,12],rows=[],rejected=[];
  sizes.forEach(tw=>sizes.forEach(tf=>{
-  const stations=source.map((s,i)=>({label:STATIONS[i][1],dimensions:{d:Number(s.d),bf:Number(s.bf),tw,tf},...calculate({d:s.d,bf:s.bf,tw,tf})}));
-  const areas=stations.map(x=>x.A_cm2*100),meanArea=(areas[0]+4*areas[1]+areas[2])/6;
-  rows.push({tw,tf,stations,meanArea_mm2:meanArea,mass_kg_per_m:meanArea*0.00785});
+  try{
+   const stations=source.map((s,i)=>({label:STATIONS[i][1],dimensions:{d:Number(s.d),bf:Number(s.bf),tw,tf},...calculate({d:s.d,bf:s.bf,tw,tf})}));
+   const areas=stations.map(x=>x.A_cm2*100),meanArea=(areas[0]+4*areas[1]+areas[2])/6;
+   rows.push({tw,tf,stations,meanArea_mm2:meanArea,mass_kg_per_m:meanArea*0.00785});
+  }catch(error){rejected.push({tw,tf,reason:error?.message||String(error)});}
  }));
  rows.sort((a,b)=>a.mass_kg_per_m-b.mass_kg_per_m);
- return {group,rows,scope:"هندسه و جرم تقریبی بر متر؛ بدون کنترل مقاومت، کمانش، خیز، جوش، سخت‌کننده یا تأیید آیین‌نامه‌ای."};
+ if(!rows.length)throw Error("هیچ ترکیب ضخامت معتبری با ابعاد واردشده سازگار نیست.");
+ return {group,rows,rejected,scope:"هندسه و جرم تقریبی بر متر؛ بدون کنترل مقاومت، کمانش، خیز، جوش، سخت‌کننده یا تأیید آیین‌نامه‌ای."};
 }
 function runThicknessCandidates(){
  const group=$("taperCandidateGroup")?.value||"rafter",result=buildThicknessCandidates(group),host=$("taperThicknessCandidates");
- host.innerHTML="<div class='notice'>۱۶ ترکیب ضخامت جان و بال بررسی شدند. این جدول فقط غربال اولیه هندسی/وزنی است و هیچ ترکیبی را از نظر فنی قبول یا پیشنهاد طراحی نمی‌کند.</div><div style='overflow-x:auto'><table class='data-table'><thead><tr><th>رتبه وزنی</th><th>جان (mm)</th><th>بال (mm)</th><th>جرم تقریبی (kg/m)</th><th>عمق ابتدا/میانه/انتها (mm)</th></tr></thead><tbody>"+result.rows.map((x,i)=>"<tr><td>"+(i+1)+"</td><td>"+x.tw+"</td><td>"+x.tf+"</td><td>"+x.mass_kg_per_m.toFixed(2)+"</td><td>"+x.stations.map(s=>Number(s.dimensions.d).toFixed(0)).join(" / ")+"</td></tr>").join("")+"</tbody></table></div><p class='notice'>کمترین جرم به معنی گزینه مناسب طراحی نیست. مرحله بعدی باید همین گزینه‌ها را با نیروهای واقعی هر ترکیب بار و کنترل‌های آیین‌نامه‌ای بررسی کند.</p>";
+ host.innerHTML="<div class='notice'>"+result.rows.length+" ترکیب معتبر از ۱۶ حالت بررسی شد؛ "+result.rejected.length+" ترکیب به علت ناسازگاری ابعادی کنار گذاشته شد. این جدول فقط غربال اولیه هندسی/وزنی است و هیچ ترکیبی را از نظر فنی قبول یا پیشنهاد طراحی نمی‌کند.</div><div style='overflow-x:auto'><table class='data-table'><thead><tr><th>رتبه وزنی</th><th>جان (mm)</th><th>بال (mm)</th><th>جرم تقریبی (kg/m)</th><th>عمق ابتدا/میانه/انتها (mm)</th></tr></thead><tbody>"+result.rows.map((x,i)=>"<tr><td>"+(i+1)+"</td><td>"+x.tw+"</td><td>"+x.tf+"</td><td>"+x.mass_kg_per_m.toFixed(2)+"</td><td>"+x.stations.map(s=>Number(s.dimensions.d).toFixed(0)).join(" / ")+"</td></tr>").join("")+"</tbody></table></div><p class='notice'>کمترین جرم به معنی گزینه مناسب طراحی نیست. مرحله بعدی باید همین گزینه‌ها را با نیروهای واقعی هر ترکیب بار و کنترل‌های آیین‌نامه‌ای بررسی کند.</p>";
  return result;
 }
 function runAudit(){
