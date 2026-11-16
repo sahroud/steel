@@ -64,7 +64,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     }
     document.body.classList.add("focus-mode");
     document.querySelectorAll("[data-focus-group]").forEach(function(panel){
-      var groups=(panel.getAttribute("data-focus-group")||"").split(/\\s+/);
+      var groups=(panel.getAttribute("data-focus-group")||"").split(/\s+/);
       if(groups.includes(focus))panel.classList.add("focus-visible");
     });
     var active=nav.querySelector('[data-focus-link="'+focus+'"]');
@@ -75,7 +75,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     var targetId=(window.location.hash||"").slice(1);
     var target=targetId&&document.getElementById(targetId);
     if(!target)target=document.querySelector('[data-focus-group].focus-visible');
-    if(target)window.setTimeout(function(){target.scrollIntoView({behavior:"instant",block:"start"});},80);
+    if(target)window.setTimeout(function(){target.scrollIntoView({behavior:"auto",block:"start"});},80);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initFocusWorkspace);
   else initFocusWorkspace();
