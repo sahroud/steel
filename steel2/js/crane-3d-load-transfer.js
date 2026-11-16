@@ -380,7 +380,7 @@ function ensurePanel(){
  panel.innerHTML='<div class="panel-title"><h3>انتقال بار جرثقیل به قاب سه‌بعدی</h3><span class="status">حالت‌های هم‌زمان</span></div>'+
  '<div class="notice">ابتدا تحلیل دو ریل و مشخصات اتصال/مقاطع را تکمیل کنید. در JSON یکپارچه‌سازی، خروج از مرکزیت واکنش قائم و بار افقی را از نقشه وارد کنید. این بخش هر حالت را جداگانه آماده می‌کند؛ بیشینه‌های غیرهم‌زمان با هم جمع نمی‌شوند.</div>'+
  '<div class="form-grid"><div class="field"><label for="crane3DLoadCaseSelect">حالت بار هم‌زمان</label><select id="crane3DLoadCaseSelect"><option value="">ابتدا آماده‌سازی حالات</option></select></div></div>'+
- '<div class="button-grid"><button type="button" class="btn secondary" id="crane3DPrepareCases">آماده‌سازی حالات بار</button><button type="button" class="btn" id="crane3DAnalyzeCase">تحلیل حالت انتخابی در قاب سه‌بعدی</button><button type="button" class="btn primary" id="crane3DAutomaticSweep">جاروب کامل موقعیت‌های جرثقیل و استخراج تقاضا</button><button type="button" class="btn secondary" id="crane3DDemandExport" disabled>دریافت بسته مهندسی تقاضا (JSON)</button></div>'+
+ '<div class="button-grid"><button type="button" class="btn secondary" id="crane3DPrepareCases">آماده‌سازی حالات بار</button><button type="button" class="btn" id="crane3DAnalyzeCase">تحلیل حالت انتخابی در قاب سه‌بعدی</button><button type="button" class="btn primary" id="crane3DAutomaticSweep">جاروب کامل موقعیت‌های جرثقیل و استخراج تقاضا</button><button type="button" class="btn secondary" id="crane3DDemandExport" disabled>دریافت بسته مهندسی تقاضا (JSON)</button><button type="button" class="btn secondary" id="crane3DConnectionExport" disabled>خروجی تقاضای اتصالات جرثقیل (CSV)</button></div>'+
  '<div id="crane3DLoadTransferResult" class="notice">هنوز حالتی آماده نشده است.</div>';
  const anchor=root.document.getElementById("shedLayoutPanel");
  if(anchor)anchor.insertAdjacentElement("afterend",panel);else main.appendChild(panel);
@@ -405,10 +405,22 @@ function ensurePanel(){
    sweepButton.disabled=true;exportButton.disabled=true;
    const result=await analyzeAllFromUI({onProgress:message=>{status().textContent=message;}});
    if(!result?.success)throw Error((result?.issues||["جاروب خودکار جرثقیل کامل نشد."]).join("؛ "));
-   exportButton.disabled=false;
+   exportButton.disabled=false;root.document.getElementById("crane3DConnectionExport").disabled=false;
    status().textContent="جاروب کامل شد: "+result.total+" موقعیت؛ "+result.demandTraceAudit.memberCount+" عضو و "+result.demandTraceAudit.supportCount+" پایه در بسته تقاضا ثبت شد. کنترل ظرفیت و طراحی اتصال/پی هنوز انجام نشده است.";
   }catch(e){status().textContent="جاروب متوقف شد: "+String(e.message||e);}
   finally{sweepButton.disabled=false;}
+ });
+ root.document.getElementById("crane3DAutomaticSweep").addEventListener("click",()=>{root.document.getElementById("crane3DConnectionExport").disabled=true;});
+ root.document.getElementById("crane3DConnectionExport").addEventListener("click",()=>{
+  try{
+   const registry=root.SteelConnectionDemandRegistry;
+   if(!registry?.collectFromCraneDemandTrace||!registry?.toCraneCsv)throw Error("مبدل تقاضای جرثقیل به بانک اتصالات بارگذاری نشده است.");
+   if(!lastAutomaticEnvelope?.success||!lastAutomaticEnvelope.demandTraceAudit?.success)throw Error("ابتدا جاروب کامل و موفق موقعیت‌های جرثقیل را اجرا کنید.");
+   const rows=registry.collectFromCraneDemandTrace(lastAutomaticEnvelope.demandTraceAudit,root.SteelStructuralModel?.getData?.());
+   const csv=registry.toCraneCsv(rows),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=root.document.createElement("a");
+   a.href=url;a.download="SAHROUD-STEEL-crane-connection-demands.csv";root.document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+   status().textContent="خروجی CSV تقاضای اتصال ساخته شد: "+rows.length+" رکورد در گره‌های مشترک واقعی؛ مقادیر محلی با علامت و موقعیت مستقل حفظ شده‌اند.";
+  }catch(e){status().textContent="خروجی تقاضای اتصالات ساخته نشد: "+String(e.message||e);}
  });
  root.document.getElementById("crane3DDemandExport").addEventListener("click",()=>{
   try{
