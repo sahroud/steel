@@ -79,7 +79,7 @@ function toCsv(rows){
  const h=["ترکیب بار","عضو","شناسه","مقطع","انتها","طول m","N kN","Vy kN","Vz kN","T kN.m","My kN.m","Mz kN.m"];
  return "\uFEFF"+[h,...rows.map(r=>[r.combination,r.memberName,r.memberId,r.sectionKey,r.end,r.length,...["N","Vy","Vz","T","My","Mz"].map(k=>r.actions[k])])].map(a=>a.map(csvCell).join(",")).join("\r\n");
 }
-function test(){function test(){
+function test(){
  const f=[{name:"C1",members:[{id:1,name:"رفتر",length:5,axialStart:-100,shearStart:20,momentStart:30,axialEnd:-90,shearEnd:-10,momentEnd:0}]},{name:"C2",members:[{id:1,name:"رفتر",length:5,axialStart:80,shearStart:-35,momentStart:-45,axialEnd:70,shearEnd:15,momentEnd:0}]}];
  const r=collect(f),joint=collectJoints({nodes:[{id:"E",x:0,y:6,z:0,kind:"eave"},{id:"C",x:0,y:0,z:0,kind:"base"}],members:[{id:"COL",start:"C",end:"E",sectionKey:"column"},{id:"RAF",start:"E",end:"E",sectionKey:"rafter"}]});
  const checks=[
@@ -96,7 +96,7 @@ function test(){function test(){
 function mount(){
  if(!root.document||document.getElementById("connectionDemandRegistryPanel"))return;
  const main=document.querySelector("main");if(!main)return;
- const p=document.createElement("section");p.className="panel";p.id="connectionDemandRegistryPanel";
+ const p=document.createElement("section");p.className="panel";p.id="connectionDemandRegistryPanel";p.setAttribute("data-focus-group","connections");
  p.innerHTML=`<div class="panel-title"><h3>بانک نیروهای انتهایی اتصالات</h3></div>
  <div class="notice">نیروهای هم‌زمان هر ترکیب بار با علامت اصلی و برای دو انتهای هر عضو ثبت می‌شوند. بیشینه‌های مستقل با یکدیگر ترکیب نمی‌شوند؛ مؤلفه‌های ناموجود خالی می‌مانند.</div>
  <div class="form-grid"><div class="field"><label for="connDemandMember">عضو</label><select id="connDemandMember"><option value="">همه اعضا</option></select></div><div class="field"><label for="connDemandEnd">انتها</label><select id="connDemandEnd"><option value="">هر دو انتها</option><option value="i">ابتدا (i)</option><option value="j">انتها (j)</option></select></div></div>
@@ -107,6 +107,16 @@ function mount(){
  <div class="notice" style="color:#a65d16">خروجی فعلی، N، برش محلی و لنگر محلی را از ساختار موجود می‌خواند. برش خارج از صفحه، پیچش و لنگر دوم فقط در صورت وجود صریح در خروجی حلگر ثبت می‌شوند. این بانک داده، ظرفیت یا تأیید آیین‌نامه‌ای اتصال صادر نمی‌کند.</div>`;
  const anchor=document.getElementById("connectionDesignPanel")||document.getElementById("cantileverCheckPanel");
  if(anchor?.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);else main.appendChild(p);
+ const params=new URLSearchParams(root.location?.search||"");
+ if(params.get("focus")==="connections"){
+  document.body.classList.add("focus-mode");
+  document.querySelectorAll("[data-focus-group]").forEach(function(panel){panel.classList.remove("focus-visible");});
+  p.classList.add("focus-visible");
+  const nav=document.getElementById("focusWorkspaceNav");
+  if(nav){nav.querySelectorAll("[data-focus-link]").forEach(function(link){link.removeAttribute("aria-current");});const active=nav.querySelector('[data-focus-link="connections"]');if(active)active.setAttribute("aria-current","page");}
+  const caption=document.getElementById("focusWorkspaceCaption");if(caption)caption.textContent="حالت نمایش متمرکز: اتصالات و محل اتصال اجزا؛ برای بازگشت، «نمایش همه بخش‌ها» را انتخاب کنید.";
+  window.setTimeout(function(){p.scrollIntoView({behavior:"auto",block:"start"});},100);
+ }
  let records=[];const $=id=>document.getElementById(id),fmt=v=>v===null?"—":Number(v).toLocaleString("fa-IR",{maximumFractionDigits:3}),esc=v=>String(v??"").replace(/[&<>"\']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","\'":"&#39;"}[ch]));
  function render(){
   const m=$("connDemandMember").value,e=$("connDemandEnd").value;
