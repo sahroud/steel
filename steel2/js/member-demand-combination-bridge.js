@@ -34,8 +34,8 @@ function build(demandPackage,combinationSet,assumptions){
  const packageCaseIds=Array.isArray(p.caseIds)?p.caseIds.map(txt):[];
  const caseIds=new Set();
  loadCases.forEach(c=>{const id=txt(c?.id);if(!id)issues.push("حالت بار بدون شناسه است.");if(caseIds.has(id))issues.push("شناسه حالت بار تکراری است: "+id);caseIds.add(id);if(!packageCaseIds.includes(id))issues.push("حالت بار "+id+" در بسته تقاضا موجود نیست.");});
- const registryInput={loadCases:loadCases.map(c=>({id:c.id,category:c.category||"evidence",effects:{_evidence:0}})),combinations};
- const registry=root.SteelLoadCombinationRegistry?.audit?.(registryInput);
+ const registryInput={loadCases:loadCases.map(c=>({id:c.id,category:c.category||"evidence"})),combinations};
+ const registry=root.SteelLoadCombinationRegistry?.auditDefinitions?.(registryInput);
  if(!registry)issues.push("رجیستری ترکیب بار بارگذاری نشده است.");
  else issues.push(...registry.issues);
  if(!combinations.length)issues.push("هیچ ترکیب باری برای اعمال ضرایب ارائه نشده است.");
