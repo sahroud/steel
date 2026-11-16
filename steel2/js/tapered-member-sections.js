@@ -143,7 +143,7 @@ function buildThicknessCandidates(group){
  source.forEach((s,i)=>{if(["d","bf"].some(k=>!(Number(s[k])>0)))throw Error("عمق و عرض بال در هر سه ایستگاه باید وارد شود؛ ایستگاه "+(i+1));});
  const sizes=[6,8,10,12],rows=[];
  sizes.forEach(tw=>sizes.forEach(tf=>{
-  const stations=source.map((s,i)=>({label:STATIONS[i][1],...calculate({d:s.d,bf:s.bf,tw,tf})}));
+  const stations=source.map((s,i)=>({label:STATIONS[i][1],dimensions:{d:Number(s.d),bf:Number(s.bf),tw,tf},...calculate({d:s.d,bf:s.bf,tw,tf})}));
   const areas=stations.map(x=>x.A_cm2*100),meanArea=(areas[0]+4*areas[1]+areas[2])/6;
   rows.push({tw,tf,stations,meanArea_mm2:meanArea,mass_kg_per_m:meanArea*0.00785});
  }));
@@ -194,11 +194,21 @@ function selfTest(){
 function init(){
  if($("taperedSectionsPanel"))return;
  const main=document.querySelector("main");if(!main)return;
- const p=document.createElement("section");p.className="panel";p.id="taperedSectionsPanel";
+ const p=document.createElement("section");p.className="panel";p.id="taperedSectionsPanel";p.setAttribute("data-focus-group","tapered");
  p.innerHTML="<div class='panel-title'><h3>مقاطع تیرورق متغیرعمق ستون و رفتر</h3><span class='status'>سه ایستگاه هندسی</span></div><div class='notice'>این ابزار برای مقاطع جوشی I با جان و بال‌های مستطیلی است. شعاع گوشه، جوش، سخت‌کننده، ورق مضاعف، تغییر ناگهانی مقطع و اثرات موضعی در خواص هندسی منظور نشده‌اند. تا زمان ورود داده، حالت متغیر غیرفعال است و مقاطع فعلی پروژه تغییر نمی‌کنند.</div><div id='taperedSectionsContent'></div>";
  const anchor=$("sectionGeometryAuditPanel")||$("steelSectionsPanel");
  if(anchor?.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);else main.appendChild(p);
  render();
+ const params=new URLSearchParams(window.location.search);
+ if(params.get("focus")==="tapered"){
+  document.body.classList.add("focus-mode");
+  document.querySelectorAll("[data-focus-group]").forEach(function(panel){panel.classList.remove("focus-visible");});
+  p.classList.add("focus-visible");
+  const nav=document.getElementById("focusWorkspaceNav");
+  if(nav){nav.querySelectorAll("[data-focus-link]").forEach(function(link){link.removeAttribute("aria-current");});const active=nav.querySelector('[data-focus-link="tapered"]');if(active)active.setAttribute("aria-current","page");}
+  const caption=document.getElementById("focusWorkspaceCaption");if(caption)caption.textContent="حالت نمایش متمرکز: مقاطع متغیر و غربال ضخامت؛ برای بازگشت، «نمایش همه بخش‌ها» را انتخاب کنید.";
+  window.setTimeout(function(){p.scrollIntoView({behavior:"auto",block:"start"});},100);
+ }
 }
 root.SteelTaperedSections={calculate,at,segmentModel,resolveForMember,getData,read,setData,runAudit,buildThicknessCandidates,runThicknessCandidates,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
