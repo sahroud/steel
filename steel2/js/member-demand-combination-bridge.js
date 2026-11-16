@@ -109,7 +109,7 @@ function selfTest(){
   ["unknown factor case rejected",()=>{const x=JSON.parse(JSON.stringify(combos));x.combinations[0].factors.X=1;return !build(pkg,x,assumptions).success;}],
   ["missing member case rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases.pop();return !build(x,combos,assumptions).success;}],
   ["station coordinate mismatch rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[1].xMember_m=2.1;return !build(x,combos,assumptions).success;}],
-  ["duplicate station topology rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[1].xMember_m=0;return !build(x,combos,assumptions).success;}],
+  ["duplicate station topology rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[1].xLocal_m=0;x.members[0].cases[1].stations[1].xMember_m=0;return !build(x,combos,assumptions).success;}],
   ["non-finite station coordinate rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[0].xLocal_m=NaN;return !build(x,combos,assumptions).success;}],
   ["local axis mismatch rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[0].localAxes.x=[0,1,0];return !build(x,combos,assumptions).success;}],
   ["incomplete concurrent vector rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));delete x.members[0].cases[1].stations[0].actions.Mz;return !build(x,combos,assumptions).success;}],
