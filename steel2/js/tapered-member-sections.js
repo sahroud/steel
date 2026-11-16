@@ -132,6 +132,28 @@ function render(){
   return '<details class="sub-panel" open><summary>'+label+' — تیرورق متغیرعمق</summary><label><input type="checkbox" id="taper_'+g+'_enabled" '+(q.enabled?'checked':'')+'> اعمال مقطع متغیر در تحلیل سه‌بعدی</label><div class="notice">سه ایستگاه هندسی با درون‌یابی خطی: ستون از پای ستون به بالا و رفتر از لبه بام به تاج؛ این جهت‌گذاری مستقل از ترتیب گره‌های ابتدا/انتهای عضو است. نسبت‌های خروج بال و لاغری جان صرفاً هندسی‌اند و به‌تنهایی تأیید لاغری موضعی آیین‌نامه‌ای نیستند.</div><div class="form-grid">'+STATIONS.map(([s,sl])=>DIMS.map(([d,dl])=>'<div class="field"><label for="taper_'+g+'_'+s+'_'+d+'">'+sl+' — '+dl+'</label><input type="number" min="0" step="0.1" id="taper_'+g+'_'+s+'_'+d+'" value="'+(q.stations[s][d]??'')+'"></div>').join('')).join('')+'</div></details>';
  }).join('')+'<div class="button-grid"><button class="btn secondary" type="button" id="btnTaperAudit">کنترل هندسه و ایستگاه‌های مقطع</button></div><div id="taperedSectionsResults"></div>';
  $("btnTaperAudit").addEventListener("click",runAudit);
+ const candidate=document.createElement("div");candidate.className="sub-panel";candidate.innerHTML="<h4>غربال اولیه ضخامت جان و بال</h4><div class='form-grid'><div class='field'><label for='taperCandidateGroup'>عضو</label><select id='taperCandidateGroup'><option value='rafter'>رفتر</option><option value='column'>ستون</option></select></div></div><button class='btn secondary' type='button' id='btnTaperCandidates'>بررسی ۱۶ ترکیب ضخامت ۶، ۸، ۱۰ و ۱۲ میلی‌متر</button><div id='taperThicknessCandidates'></div>";
+ host.appendChild(candidate);
+ $("btnTaperCandidates").addEventListener("click",()=>{try{runThicknessCandidates();}catch(e){$("taperThicknessCandidates").textContent="توقف بررسی: "+(e?.message||String(e));}});
+}
+function buildThicknessCandidates(group){
+ read();
+ if(!GROUPS.some(([g])=>g===group)||!data.groups[group]?.enabled)throw Error("ابتدا مقطع متغیر گروه موردنظر را فعال کنید.");
+ const source=STATIONS.map(([key])=>data.groups[group].stations[key]);
+ source.forEach((s,i)=>{if(["d","bf"].some(k=>!(Number(s[k])>0)))throw Error("عمق و عرض بال در هر سه ایستگاه باید وارد شود؛ ایستگاه "+(i+1));});
+ const sizes=[6,8,10,12],rows=[];
+ sizes.forEach(tw=>sizes.forEach(tf=>{
+  const stations=source.map((s,i)=>({label:STATIONS[i][1],...calculate({d:s.d,bf:s.bf,tw,tf})}));
+  const areas=stations.map(x=>x.A_cm2*100),meanArea=(areas[0]+4*areas[1]+areas[2])/6;
+  rows.push({tw,tf,stations,meanArea_mm2:meanArea,mass_kg_per_m:meanArea*0.00785});
+ }));
+ rows.sort((a,b)=>a.mass_kg_per_m-b.mass_kg_per_m);
+ return {group,rows,scope:"هندسه و جرم تقریبی بر متر؛ بدون کنترل مقاومت، کمانش، خیز، جوش، سخت‌کننده یا تأیید آیین‌نامه‌ای."};
+}
+function runThicknessCandidates(){
+ const group=$("taperCandidateGroup")?.value||"rafter",result=buildThicknessCandidates(group),host=$("taperThicknessCandidates");
+ host.innerHTML="<div class='notice'>۱۶ ترکیب ضخامت جان و بال بررسی شدند. این جدول فقط غربال اولیه هندسی/وزنی است و هیچ ترکیبی را از نظر فنی قبول یا پیشنهاد طراحی نمی‌کند.</div><div style='overflow-x:auto'><table class='data-table'><thead><tr><th>رتبه وزنی</th><th>جان (mm)</th><th>بال (mm)</th><th>جرم تقریبی (kg/m)</th><th>عمق ابتدا/میانه/انتها (mm)</th></tr></thead><tbody>"+result.rows.map((x,i)=>"<tr><td>"+(i+1)+"</td><td>"+x.tw+"</td><td>"+x.tf+"</td><td>"+x.mass_kg_per_m.toFixed(2)+"</td><td>"+x.stations.map(s=>Number(s.dimensions.d).toFixed(0)).join(" / ")+"</td></tr>").join("")+"</tbody></table></div><p class='notice'>کمترین جرم به معنی گزینه مناسب طراحی نیست. مرحله بعدی باید همین گزینه‌ها را با نیروهای واقعی هر ترکیب بار و کنترل‌های آیین‌نامه‌ای بررسی کند.</p>";
+ return result;
 }
 function runAudit(){
  read();const rows=[];
@@ -178,6 +200,6 @@ function init(){
  if(anchor?.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);else main.appendChild(p);
  render();
 }
-root.SteelTaperedSections={calculate,at,segmentModel,resolveForMember,getData,read,setData,runAudit,selfTest};
+root.SteelTaperedSections={calculate,at,segmentModel,resolveForMember,getData,read,setData,runAudit,buildThicknessCandidates,runThicknessCandidates,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
