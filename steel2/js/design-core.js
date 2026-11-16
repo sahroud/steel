@@ -99,7 +99,7 @@
       data.wallEnvelope[face]={
         material:valid(material?.value,["brick","metal-sheet","sandwich-panel","other"],"brick"),
         orientation:valid(orientation?.value,["vertical","horizontal","custom"],"vertical"),
-        supportMode:valid($("wall"+suffix+"SupportMode")?.value,["unknown","grade-beam","foundation-bearing","steel-secondary","independent"],"unknown"),
+        supportMode:valid($("wall"+suffix+"SupportMode")?.value,["unknown","grade-beam","foundation-bearing","steel-secondary","independent"],"grade-beam"),
         deadSurfaceLoadKNm2:$("wall"+suffix+"DeadSurfaceLoad")?.value??""
       };
     });
@@ -150,7 +150,7 @@
       const v=wall[face]||DEFAULTS.wallEnvelope[face];
       if($("wall"+suffix+"Material"))$("wall"+suffix+"Material").value=valid(v.material,["brick","metal-sheet","sandwich-panel","other"],"brick");
       if($("wall"+suffix+"Orientation"))$("wall"+suffix+"Orientation").value=valid(v.orientation,["vertical","horizontal","custom"],"vertical");
-      if($("wall"+suffix+"SupportMode"))$("wall"+suffix+"SupportMode").value=valid(v.supportMode,["unknown","grade-beam","foundation-bearing","steel-secondary","independent"],"unknown");
+      if($("wall"+suffix+"SupportMode"))$("wall"+suffix+"SupportMode").value=valid(v.supportMode,["unknown","grade-beam","foundation-bearing","steel-secondary","independent"],"grade-beam");
       if($("wall"+suffix+"DeadSurfaceLoad"))$("wall"+suffix+"DeadSurfaceLoad").value=v.deadSurfaceLoadKNm2??"";
     });
     const masonry=d.masonry||DEFAULTS.masonry;
