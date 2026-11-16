@@ -7,6 +7,7 @@ const $=id=>document.getElementById(id);
 const num=id=>{const v=$(id)?.value;if(v===undefined||String(v).trim()==="")return null;const n=Number(v);return Number.isFinite(n)?n:null;};
 const fmt=v=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:2});
 function mapDemand(d){if(!d||!d.input||!d.geometry||d.input.geometryConfirmed!==true||d.input.signConfirmed!==true)throw Error("ابتدا تقاضای گروه بولت را با هندسه و قرارداد علامت تأییدشده محاسبه کنید.");return{nBolts:d.bolts.length,demandT:d.maxTensionKN,demandV:d.maxShearKN};}
+function demandSignature(d){const m=mapDemand(d);return JSON.stringify(m);}
 function calculate(i){
  ["nBolts","ase","fnt","fnv","phiT","phiV","demandT","demandV"].forEach(k=>{if(!Number.isFinite(i[k])||i[k]<0)throw Error("ورودی "+k+" باید عددی و نامنفی باشد.");});
  if(!Number.isInteger(i.nBolts)||i.nBolts<1)throw Error("تعداد بولت باید عدد صحیح مثبت باشد.");
@@ -29,13 +30,14 @@ function mount(){
  '<div class="field"><label>بیشینه تقاضای برش یک بولت (kN)</label><input id="asDemandV" type="number" min="0" step="0.01" placeholder="از تحلیل گروه بولت"></div>'+
  '</div><div class="button-grid"><button id="asImportDemand" class="btn secondary" type="button">دریافت تقاضا از گروه بولت</button><button id="asRun" class="btn primary" type="button">محاسبه مقاومت فولادی</button><button id="asCsv" class="btn secondary" type="button" disabled>خروجی CSV</button></div><div id="asResult" class="notice">ورودی‌ها را تکمیل کنید.</div><div class="notice">تأیید مقاومت فولادی به معنی تأیید مهار در بتن یا تأیید اتصال نیست.</div>';
  a.parentNode.insertBefore(p,a.nextSibling);
- $("asImportDemand").addEventListener("click",()=>{try{const m=mapDemand(root.SteelAnchorDemandScreen?.getLast?.());$("asN").value=m.nBolts;$("asDemandT").value=m.demandT;$("asDemandV").value=m.demandV;$("asResult").textContent="تعداد بولت و بیشینه تقاضای هر بولت منتقل شد؛ مشخصات Ase، Fnt، Fnv و ضرایب φ را همچنان از منبع معتبر وارد کنید.";}catch(e){$("asResult").textContent=e.message;}});$("asRun").addEventListener("click",run);$("asCsv").addEventListener("click",csv);
+ $("asImportDemand").addEventListener("click",()=>{try{const d=root.SteelAnchorDemandScreen?.getLast?.(),m=mapDemand(d);$("asN").value=m.nBolts;$("asDemandT").value=m.demandT;$("asDemandV").value=m.demandV;importedDemandSignature=demandSignature(d);$("asResult").textContent="تعداد بولت و بیشینه تقاضای هر بولت منتقل شد؛ مشخصات Ase، Fnt، Fnv و ضرایب φ را همچنان از منبع معتبر وارد کنید.";}catch(e){importedDemandSignature=null;$("asResult").textContent=e.message;}});$("asRun").addEventListener("click",run);$("asCsv").addEventListener("click",csv);
 }
-let last=null;
+let last=null,importedDemandSignature=null;
 function run(){
  try{
  const i={nBolts:num("asN"),ase:num("asAse"),fnt:num("asFnt"),fnv:num("asFnv"),phiT:num("asPhiT"),phiV:num("asPhiV"),demandT:num("asDemandT"),demandV:num("asDemandV")};
- const r=calculate(i);r.input=i;last=r;
+ if(importedDemandSignature!==null){const current=demandSignature(root.SteelAnchorDemandScreen?.getLast?.());if(current!==importedDemandSignature)throw Error("خروجی تقاضای گروه بولت پس از انتقال تغییر کرده است؛ دوباره انتقال تقاضا را اجرا کنید.");if(i.nBolts!==JSON.parse(importedDemandSignature).nBolts||i.demandT!==JSON.parse(importedDemandSignature).demandT||i.demandV!==JSON.parse(importedDemandSignature).demandV)throw Error("تعداد یا تقاضای بولت پس از انتقال تغییر کرده است؛ انتقال تازه انجام دهید یا انتقال خودکار را لغو کنید.");}
+ const r=calculate(i);r.input=i;r.demandSource=importedDemandSignature?"anchor-demand-screen-verified":"manual-input-unverified";last=r;
  $("asResult").textContent="مقاومت طراحی کششی هر بولت: "+fmt(r.tensionDesignPerBoltKN)+" kN | مقاومت طراحی برشی هر بولت: "+fmt(r.shearDesignPerBoltKN)+" kN | نسبت کشش: "+fmt(r.tensionDemandRatio)+" | نسبت برش: "+fmt(r.shearDemandRatio)+" | "+(r.tensionPass?"کشش فولادی: قبول":"کشش فولادی: نیازمند اصلاح")+" | "+(r.shearPass?"برش فولادی: قبول":"برش فولادی: نیازمند اصلاح")+" — کنترل‌های بتن و اندرکنش باز هستند.";
  $("asCsv").disabled=false;return r;
  }catch(e){last=null;$("asCsv").disabled=true;$("asResult").textContent=e.message;return null;}
@@ -47,6 +49,6 @@ function selfTest(){
  const checks=[["انتقال تقاضای بیشینه هر بولت",mapped.nBolts===2&&mapped.demandT===14&&mapped.demandV===9],["محاسبه ظرفیت کششی",Math.abs(r.tensionDesignPerBoltKN-150)<1e-9],["محاسبه ظرفیت برشی",Math.abs(r.shearDesignPerBoltKN-90)<1e-9],["نسبت تقاضا",Math.abs(r.tensionDemandRatio-2/3)<1e-9],["تغییر سطح مؤثر ظرفیت را خطی تغییر می‌دهد",calculate({...i,ase:1000}).tensionDesignPerBoltKN===2*r.tensionDesignPerBoltKN],["تعداد بولت در ظرفیت کل اثر دارد",r.totalTensionDesignKN===600]];
  return{passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
-root.SteelAnchorSteelCapacity={calculate,mapDemand,selfTest,getLast:()=>last?JSON.parse(JSON.stringify(last)):null};
+root.SteelAnchorSteelCapacity={calculate,mapDemand,demandSignature,selfTest,getLast:()=>last?JSON.parse(JSON.stringify(last)):null};
 if(root.document){if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount);else mount();}
 })(typeof window!=="undefined"?window:globalThis);
