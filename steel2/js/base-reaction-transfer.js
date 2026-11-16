@@ -30,7 +30,7 @@ async function extract(){
 function mount(){
  if($("baseReactionTransferPanel"))return;
  const a=$("baseplatePartialContactPanel")||$("anchorDemandScreenPanel");if(!a)return;
- const p=document.createElement("section");p.className="panel";p.id="baseReactionTransferPanel";
+ const p=document.createElement("section");p.className="panel";p.id="baseReactionTransferPanel";p.setAttribute("data-focus-group","foundation");
  p.innerHTML='<div class="panel-title"><h3>انتقال واکنش واقعی قاب به صفحه‌ستون</h3><span class="status">بر اساس تحلیل ترکیبات بار</span></div>'+
  '<div class="notice">این ابزار واکنش شش‌مؤلفه‌ای هر گره پایه را از تحلیل سه‌بعدی استخراج می‌کند. پس از انتخاب گره و ترکیب بار، مؤلفه‌های هم‌زمان به ورودی تحلیل تماس جزئی منتقل می‌شوند؛ بیشینه‌های مستقل با هم ترکیب نمی‌شوند.</div>'+
  '<div class="button-grid"><button id="brtExtract" class="btn primary" type="button">استخراج واکنش‌های تمام ترکیبات</button></div>'+
