@@ -99,6 +99,8 @@ function selfTest(){
  root.SteelLoadCaseWorkbench={read:()=>null};
  root.SteelMemberDemandCombinationBridge={build:()=>({})};
  const r=audit();
+ root.SteelMemberForceEnvelope={getLast:()=>({members:[],allCasesEquilibriumOK:false,caseLabelCoverageOK:false,invalidForceVectors:[{memberId:"M1"}],unreportedMemberIds:["M2"],extraMemberIds:[],analysisMemberSetMismatchCases:[],duplicateMemberIdsByCase:[],taperedForceTrace:{applicable:false,allApplicableCasesComplete:true}})};
+ const broken=audit();
  root.SteelMemberForceEnvelope=saved.env;root.SteelColdFormedMemberContract=saved.cold;root.SteelMemberDesignDemandPackage=saved.demand;root.SteelLoadCaseWorkbench=saved.workbench;root.SteelMemberDemandCombinationBridge=saved.bridge;
  const tests=[
   {name:"four primary member families and longitudinal braces reported",ok:r.rows.length===10},
@@ -116,7 +118,8 @@ function selfTest(){
   {name:"demand package status is exposed without design approval",ok:r.demandPackage&&r.demandPackage.designApproved===false&&r.designApproved===false},
   {name:"combination audit is not treated as solver demand linkage",ok:r.combinationStatus&&r.combinationStatus.linkedToDemandPackage===false&&r.combinationStatus.solverDemandCasesAvailable===false},
   {name:"combination demand bridge is surfaced as unexecuted and non-approving",ok:r.combinationBridge&&r.combinationBridge.designApproved===false&&r.combinationBridge.proposalExecuted===false},
- {name:"analysis equilibrium and coverage integrity are mandatory",ok:r.rows.every(x=>x.missing.includes("سلامت تحلیل: تعادل، پوشش اعضا/حالت‌ها و بردارهای نیرو"))}
+ {name:"valid analysis integrity is reported separately",ok:r.analysisIntegrity.success===true},
+ {name:"failed equilibrium, missing members and invalid vectors block every family",ok:broken.analysisIntegrity.success===false&&broken.rows.every(x=>x.missing.includes("سلامت تحلیل: تعادل، پوشش اعضا/حالت‌ها و بردارهای نیرو"))}
  ];
  return {passed:tests.filter(x=>x.ok).length,failed:tests.filter(x=>!x.ok).length,tests};
 }
