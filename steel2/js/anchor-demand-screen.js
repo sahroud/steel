@@ -77,7 +77,7 @@ function run(){
   r.input={...vals,tensionCapacity:tc,shearCapacity:vc,signConfirmed:true};r.limitations=["توزیع کشش الاستیک با صفحه صلب و بدون prying است؛ توزیع واقعی ممکن است متفاوت باشد.","برش بین بولت‌ها مساوی فرض شده و اثر اصطکاک تماس، کلید برشی و لغزش لحاظ نشده است.","ظرفیت فولادی، شکست مخروطی بتن، pullout، pry-out، side-face blowout، فاصله لبه، فاصله محوری، اثر گروه، لرزه‌ای، خستگی و اندرکنش آیین‌نامه‌ای کنترل نشده‌اند.","ظرفیت‌های اختیاری صرفاً از ورودی کاربر خوانده می‌شوند و نرم‌افزار صحت آن‌ها را تأیید نمی‌کند."];
   last=r;const body=$("anchorDemandRows");body.replaceChildren();
   r.bolts.forEach(b=>{const tr=document.createElement("tr");[b.mark,fmt(b.x),fmt(b.z),fmt(b.tensionKN),fmt(b.shearXKN),fmt(b.shearZKN),fmt(b.shearResultKN),b.capacityStatus].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});body.appendChild(tr);});
-  const torsionText=" | پیچش Y: "+fmt(r.torsionYKNm)+" kN.m (در این غربال توزیع/طراحی نشده؛ کنترل مستقل لازم است)";
+  const torsionText=" | پیچش Y: "+fmt(r.torsionYKNm)+" kN.m؛ اختلاف تعادل پیچش: "+fmt(r.torsionResidualKNm)+" kN.m (توزیع الاستیک گروه صلب؛ بدون کنترل ظرفیت)";
   const tText=tc>0?"نسبت بیشینه کشش/ظرفیت: "+fmt(r.maxTensionKN/tc):"ظرفیت کششی وارد نشده";
   const vText=vc>0?"نسبت بیشینه برش/ظرفیت: "+fmt(r.maxShearKN/vc):"ظرفیت برشی وارد نشده";
   $("anchorDemandSummary").textContent="تعداد بولت: "+r.bolts.length+" | بیشینه کشش یک بولت: "+fmt(r.maxTensionKN)+" kN | بیشینه برش یک بولت: "+fmt(r.maxShearKN)+" kN | "+tText+" | "+vText+torsionText+" | فقط غربال تقاضا؛ نه تأیید طراحی.";
@@ -86,7 +86,7 @@ function run(){
 }
 function exportCSV(){
  if(!last)return;
- const rows=[["گزارش توزیع تقاضای گروه بولت"],["روش",last.method],["پیچش حول Y (kN.m) — توزیع نشده",last.torsionYKNm],["بیشینه کشش بولت (kN)",last.maxTensionKN],["بیشینه برش بولت (kN)",last.maxShearKN],["بولت","X m","Z m","کشش kN","برش X kN","برش Z kN","برش برآیند kN","نسبت کشش","نسبت برش","وضعیت"],...last.bolts.map(b=>[b.mark,b.x,b.z,b.tensionKN,b.shearXKN,b.shearZKN,b.shearResultKN,b.tensionRatio,b.shearRatio,b.capacityStatus]),...last.limitations.map(x=>["محدودیت",x])];
+ const rows=[["گزارش توزیع تقاضای گروه بولت"],["روش",last.method],["پیچش حول Y (kN.m)",last.torsionYKNm],["پیچش بازیابی‌شده (kN.m)",last.recoveredTorsionYKNm],["باقیمانده پیچش (kN.m)",last.torsionResidualKNm],["بیشینه کشش بولت (kN)",last.maxTensionKN],["بیشینه برش بولت (kN)",last.maxShearKN],["بولت","X m","Z m","کشش kN","برش X kN","برش Z kN","برش برآیند kN","نسبت کشش","نسبت برش","وضعیت"],...last.bolts.map(b=>[b.mark,b.x,b.z,b.tensionKN,b.shearXKN,b.shearZKN,b.shearResultKN,b.tensionRatio,b.shearRatio,b.capacityStatus]),...last.limitations.map(x=>["محدودیت",x])];
  const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SAHROUD-STEEL-Anchor-Demand-Screen.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
