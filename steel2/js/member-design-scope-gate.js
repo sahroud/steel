@@ -92,10 +92,14 @@ function audit(){
  ]};
 }
 function selfTest(){
- const saved=root.SteelMemberForceEnvelope,savedCold=root.SteelColdFormedMemberContract;
- root.SteelMemberForceEnvelope={getLast:()=>({members:[{sectionKey:"column",simultaneousCases:[{}]},{sectionKey:"rafter"},{sectionKey:"roofPurlin"},{sectionKey:"wallGirt"}]})};
+ const saved={env:root.SteelMemberForceEnvelope,cold:root.SteelColdFormedMemberContract,demand:root.SteelMemberDesignDemandPackage,workbench:root.SteelLoadCaseWorkbench,bridge:root.SteelMemberDemandCombinationBridge};
+ root.SteelMemberForceEnvelope={getLast:()=>({members:[{sectionKey:"column",simultaneousCases:[{}]},{sectionKey:"rafter"},{sectionKey:"roofPurlin"},{sectionKey:"wallGirt"}],allCasesEquilibriumOK:true,caseLabelCoverageOK:true,invalidForceVectors:[],unreportedMemberIds:[],extraMemberIds:[],analysisMemberSetMismatchCases:[],duplicateMemberIdsByCase:[],taperedForceTrace:{applicable:false,allApplicableCasesComplete:true}})};
  root.SteelColdFormedMemberContract={audit:()=>({success:false,designApproved:false})};
- const r=audit();root.SteelMemberForceEnvelope=saved;root.SteelColdFormedMemberContract=savedCold;
+ root.SteelMemberDesignDemandPackage={getLast:()=>null};
+ root.SteelLoadCaseWorkbench={read:()=>null};
+ root.SteelMemberDemandCombinationBridge={build:()=>({})};
+ const r=audit();
+ root.SteelMemberForceEnvelope=saved.env;root.SteelColdFormedMemberContract=saved.cold;root.SteelMemberDesignDemandPackage=saved.demand;root.SteelLoadCaseWorkbench=saved.workbench;root.SteelMemberDemandCombinationBridge=saved.bridge;
  const tests=[
   {name:"four primary member families and longitudinal braces reported",ok:r.rows.length===10},
   {name:"column global compression engine remains limited",ok:r.rows[0].availableLimitedEngines.includes("compression-global-buckling-limited")&&r.rows[0].designApproved===false},
