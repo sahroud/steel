@@ -77,11 +77,13 @@ function buildCompressionDemandRows(forceResult){
  const rows=members.map(m=>{
   const ends=Array.isArray(m.ends)?m.ends:[];
   let demand=0,caseLabel="",governing=null,validCount=0,invalidCount=0;
+  const simultaneousCases=[];
   ends.forEach(e=>{
    const raw=Array.isArray(e.values)?e.values:[];
    const v=raw.map(Number);
-   if(v.length!==12||!v.every(Number.isFinite)){invalidCount++;return;}
+   if(v.length!==12||!v.every(Number.isFinite)){invalidCount++;simultaneousCases.push({label:String(e.label||""),valid:false,source:e.source||null});return;}
    validCount++;
+   simultaneousCases.push({label:String(e.label||""),valid:true,source:e.source||null,vector:v.slice(),endI:{N:v[0],Vy:v[1],Vz:v[2],T:v[3],My:v[4],Mz:v[5]},endJ:{N:v[6],Vy:v[7],Vz:v[8],T:v[9],My:v[10],Mz:v[11]}});
    const ni=v[0],nj=v[6],candidate=Math.max(0,ni,-nj);
    if(candidate>demand){
     demand=candidate;caseLabel=e.label||"";
@@ -93,7 +95,7 @@ function buildCompressionDemandRows(forceResult){
   });
   const nonAxial=ends.some(e=>{const v=Array.isArray(e.values)?e.values.map(Number):[];return v.length===12&&v.every(Number.isFinite)&&[1,2,3,4,5,7,8,9,10,11].some(i=>Math.abs(v[i])>1e-6);});
   const coverageComplete=sourceComplete&&invalidCount===0&&validCount>0&&(!expectedCaseCount||validCount===expectedCaseCount);
-  return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,governing,axialOnlyCase:!!governing&&!nonAxial,interactionRequired:!!governing&&nonAxial,caseCount:validCount,expectedCaseCount,invalidCaseCount:invalidCount,coverageComplete};
+  return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,governing,simultaneousCases,axialOnlyCase:!!governing&&!nonAxial,interactionRequired:!!governing&&nonAxial,caseCount:validCount,expectedCaseCount,invalidCaseCount:invalidCount,coverageComplete};
  }).filter(r=>r.caseCount>0||r.invalidCaseCount>0).sort((a,b)=>a.sectionKey.localeCompare(b.sectionKey)||a.id.localeCompare(b.id));
  return rows;
 }
@@ -128,7 +130,7 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
    const matches=Array.isArray(c?.members)?c.members.filter(m=>String(m?.id??"").trim()===id):[];
    if(matches.length!==1)return {label,values:[],invalidForceVector:true};
    const forces=matches[0]?.localEndForces;
-   return {label,values:Array.isArray(forces)?forces.slice(0,12):[],invalidForceVector:false};
+   return {label,source:c?.source||null,values:Array.isArray(forces)?forces.slice(0,12):[],invalidForceVector:false};
   });
   return {id,parentMemberId:sample.parentMemberId||source.parentMemberId||null,taperSegmentIndex:sample.taperSegmentIndex??source.taperSegmentIndex??null,
    sectionKey:String(source.sectionKey||sample.sectionKey||source.section?.sectionKey||""),length:Number(sample.length||source.length)||null,ends};
@@ -172,6 +174,7 @@ function selfTest(){
   {name:"tension is not classified as compression",pass:!!tension&&tension.compressionDemand_kN===0},
   {name:"compression demand uses largest end compression",pass:!!compression&&compression.compressionDemand_kN===1.5&&compression.governingCase==="C2"},
   {name:"same-case bending and shear block axial-only screen",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"B",sectionKey:"column",ends:[{label:"B1",values:[1000,0,0,0,0,250000,-1000,0,0,0,0,0]}]}]})[0];return x.interactionRequired&&!x.axialOnlyCase;})()},
+  {name:"all concurrent case vectors and both ends are retained without envelope mixing",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"C",sectionKey:"column",ends:[{label:"ULS-1",values:[1000,2,3,4,5,6,-1000,-2,-3,-4,-5,-6]},{label:"ULS-2",values:[2000,20,30,40,50,60,-2000,-20,-30,-40,-50,-60]}]}]})[0];return x.simultaneousCases.length===2&&x.simultaneousCases[0].endI.My===5&&x.simultaneousCases[1].endJ.Mz===-60&&x.simultaneousCases[0].vector[1]===2;})()},
   {name:"pure axial case is separately identified",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"A",sectionKey:"column",ends:[{label:"A1",values:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}]})[0];return x.axialOnlyCase&&!x.interactionRequired;})()},
   {name:"bending in any other combination blocks pure-axial screening",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"MIX",sectionKey:"column",ends:[{label:"AXIAL",values:[2000,0,0,0,0,0,-2000,0,0,0,0,0]},{label:"BENDING",values:[1000,0,0,0,0,250000,-1000,0,0,0,0,0]}]}]})[0];return x.interactionRequired&&!x.axialOnlyCase;})()},
   {name:"invalid force vectors are retained as blocked evidence, never silently ignored",pass:(()=>{const x=rows.find(r=>r.id==="BAD");return !!x&&x.coverageComplete===false&&x.invalidCaseCount===1;})()},
