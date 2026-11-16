@@ -62,6 +62,7 @@ function audit(){
   const blockers=missing.map(k=>LABELS[k]||k);
   const supported=(SUPPORT[g.key]||[]).slice();
   if((g.key==="column"||g.key==="rafter")&&root.SteelMemberCombinedActionScreen?.evaluate)supported.push("موتور اندرکنش مقدماتی N-Mx-My؛ ظرفیت‌های طراحی باید جداگانه و مستند وارد شوند و اتصال به تقاضای تحلیل هنوز کامل نیست");
+  if(["roofPurlin","wallGirt","endGirt"].includes(g.key)&&root.SteelColdFormedMemberContract?.audit)supported.push("قرارداد ممیزی خواص واقعی، کمانش موضعی/اعوجاجی، مهار، تقاضای هم‌زمان و اتصالات؛ بدون محاسبه ظرفیت");
   return {group:g.key,label:g.label,memberCount:members.length,availableLimitedEngines:supported,missing:blockers,status:blockers.length?"blocked":"limited-only",designApproved:false};
  });
  return {designApproved:false,rows,demandPackage,combinationStatus,combinationBridge,summary:{groups:rows.length,blocked:rows.filter(x=>x.status==="blocked").length,limitedOnly:rows.filter(x=>x.status==="limited-only").length,demandPackageAvailable:demandPackage.available,demandPackageComplete:demandPackage.success,documentedCombinationSetValid:combinationStatus.success,combinationsLinkedToDemand:combinationStatus.linkedToDemandPackage},rules:[
@@ -71,7 +72,8 @@ function audit(){
   "وجود موتور محدود کمانش فشاری ستون به معنی کنترل کامل ستون نیست.",
   "کنترل مقدماتی لاپه موجود، جایگزین روش طراحی سردنورد و کمانش موضعی/اعوجاجی نیست.",
   "مقادیر بیشینه مستقل ترکیبات بار نباید برای ساخت تقاضای هم‌زمان با یکدیگر ترکیب شوند.",
-  "موتور اندرکنش N-Mx-My فقط با ظرفیت‌های طراحی مستند و تقاضای هم‌زمان قابل استفاده است؛ تا اتصال کامل به تحلیل و تأیید ظرفیت‌ها، مسیر طراحی نهایی نیست."
+  "موتور اندرکنش N-Mx-My فقط با ظرفیت‌های طراحی مستند و تقاضای هم‌زمان قابل استفاده است؛ تا اتصال کامل به تحلیل و تأیید ظرفیت‌ها، مسیر طراحی نهایی نیست.",
+  "قرارداد اعضای سردنورد فقط کامل بودن شواهد هندسه، خواص، کمانش الاستیک، مهار، تقاضا و اتصال را ممیزی می‌کند؛ مقاومت طراحی سردنورد هنوز محاسبه نمی‌شود."
  ]};
 }
 function selfTest(){
