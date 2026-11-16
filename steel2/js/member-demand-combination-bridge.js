@@ -59,10 +59,16 @@ function build(demandPackage,combinationSet,assumptions){
     selected.forEach(x=>{if(!x.entry)issues.push("حالت "+x.caseId+" برای عضو "+id+" موجود نیست.");});
     if(selected.some(x=>!x.entry))return;
     const shapes=selected.map(x=>{
-     const e=x.entry,flat=flatten(e);
+     const e=x.entry,flat=flatten(e),map=new Map();
      if(e.complete!==true)issues.push("حالت "+x.caseId+" برای عضو "+id+" کامل نیست.");
      if(!flat.length)issues.push("ایستگاه‌های عضو "+id+" در حالت "+x.caseId+" خالی/ناشناخته است.");
-     return {caseId:x.caseId,flat,map:new Map(flat.map(z=>[topologyKey(z),z]))};
+     flat.forEach(z=>{
+      const s=z.station,key=topologyKey(z);
+      if(!finite(s?.xLocal_m)||!finite(s?.xMember_m))issues.push("مختصات ایستگاه عضو "+id+" در حالت "+x.caseId+" معتبر نیست.");
+      if(map.has(key))issues.push("ایستگاه تکراری/هم‌مختصات در عضو "+id+" و حالت "+x.caseId+" شناسایی شد.");
+      else map.set(key,z);
+     });
+     return {caseId:x.caseId,flat,map};
     });
     const ref=shapes[0],refKeys=ref?Array.from(ref.map.keys()):[];
     shapes.slice(1).forEach(s=>{
@@ -103,6 +109,8 @@ function selfTest(){
   ["unknown factor case rejected",()=>{const x=JSON.parse(JSON.stringify(combos));x.combinations[0].factors.X=1;return !build(pkg,x,assumptions).success;}],
   ["missing member case rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases.pop();return !build(x,combos,assumptions).success;}],
   ["station coordinate mismatch rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[1].xMember_m=2.1;return !build(x,combos,assumptions).success;}],
+  ["duplicate station topology rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[1].xMember_m=0;return !build(x,combos,assumptions).success;}],
+  ["non-finite station coordinate rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[0].xLocal_m=NaN;return !build(x,combos,assumptions).success;}],
   ["local axis mismatch rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.members[0].cases[1].stations[0].localAxes.x=[0,1,0];return !build(x,combos,assumptions).success;}],
   ["incomplete concurrent vector rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));delete x.members[0].cases[1].stations[0].actions.Mz;return !build(x,combos,assumptions).success;}],
   ["failed demand package rejected",()=>{const x=JSON.parse(JSON.stringify(pkg));x.success=false;return !build(x,combos,assumptions).success;}],
