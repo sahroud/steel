@@ -436,7 +436,7 @@ function ensurePanel(){
    prepared=prepareAll(model,transfer,horizontal,train,config);
    const select=root.document.getElementById("crane3DLoadCaseSelect");select.innerHTML="";
    if(transfer?.cases)transfer.cases.forEach((c,i)=>{const option=root.document.createElement("option");option.value=String(i);option.textContent="حالت "+(i+1)+" ـ موقعیت قطار "+Number(c.referencePosition_m).toFixed(3)+" m";select.appendChild(option);});
-   status().textContent=prepared.success?"آماده‌سازی موفق: "+prepared.readyCount+" از "+prepared.total+" حالت دارای بار گره‌ای معتبر هستند. تحلیل هر حالت جداگانه انجام می‌شود.":("آماده‌سازی کامل نشد. حالات آماده: "+prepared.readyCount+"/"+prepared.total+"؛ موارد مسدود: "+prepared.issues.slice(0,8).join(" | "));
+   status().textContent=prepared.success?"آماده‌سازی موفق: "+prepared.readyCount+" از "+prepared.total+" حالت دارای بار گره‌ای معتبر هستند. شناسنامه منبع کامل: "+prepared.cases.filter(x=>x.sourceProvenanceAudit?.complete).length+"/"+prepared.total+"؛ موارد فاقد ویرایش/محل دقیق/مرجع در ممیزی طراحی مسدود می‌مانند. تحلیل هر حالت جداگانه انجام می‌شود.":("آماده‌سازی کامل نشد. حالات آماده: "+prepared.readyCount+"/"+prepared.total+"؛ موارد مسدود: "+prepared.issues.slice(0,8).join(" | "));
   }catch(e){prepared=null;status().textContent="خطا: "+String(e.message||e);}
  });
  root.document.getElementById("crane3DAutomaticSweep").addEventListener("click",async()=>{
@@ -446,7 +446,7 @@ function ensurePanel(){
    const result=await analyzeAllFromUI({onProgress:message=>{status().textContent=message;}});
    if(!result?.success)throw Error((result?.issues||["جاروب خودکار جرثقیل کامل نشد."]).join("؛ "));
    exportButton.disabled=false;root.document.getElementById("crane3DConnectionExport").disabled=false;root.document.getElementById("crane3DBaseReactionExport").disabled=false;
-   status().textContent="جاروب کامل شد: "+result.total+" موقعیت؛ "+result.demandTraceAudit.memberCount+" عضو و "+result.demandTraceAudit.supportCount+" پایه در بسته تقاضا ثبت شد. کنترل ظرفیت و طراحی اتصال/پی هنوز انجام نشده است.";
+   status().textContent="جاروب کامل شد: "+result.total+" موقعیت؛ "+result.demandTraceAudit.memberCount+" عضو و "+result.demandTraceAudit.supportCount+" پایه ثبت شد. شناسنامه منبع کامل: "+(result.sourceProvenanceComplete?"بله":"خیر")+"؛ حالات ناقص: "+result.sourceProvenanceIncompleteCount+". کنترل ظرفیت و طراحی اتصال/پی هنوز انجام نشده است.";
   }catch(e){status().textContent="جاروب متوقف شد: "+String(e.message||e);}
   finally{sweepButton.disabled=false;}
  });
@@ -473,7 +473,7 @@ function ensurePanel(){
  root.document.getElementById("crane3DDemandExport").addEventListener("click",()=>{
   try{
    if(!lastAutomaticEnvelope?.success||!lastAutomaticEnvelope.demandTraceAudit?.success)throw Error("ابتدا جاروب کامل موقعیت‌های جرثقیل را با موفقیت اجرا کنید.");
-   const data={schema:"SAHROUD-STEEL-CRANE-DEMAND-TRACE-1.0",generatedAt:new Date().toISOString(),analysisEnabled:false,caseCount:lastAutomaticEnvelope.total,loadBasis:lastAutomaticEnvelope.loadBasis,notes:lastAutomaticEnvelope.note,demandTraceAudit:lastAutomaticEnvelope.demandTraceAudit,memberForceEnvelope:lastAutomaticEnvelope.memberForceEnvelope,supportReactionEnvelope:lastAutomaticEnvelope.supportReactionEnvelope,criticalCase:lastAutomaticEnvelope.criticalCase,maxTranslation_m:lastAutomaticEnvelope.maxTranslation_m};
+   const data={schema:"SAHROUD-STEEL-CRANE-DEMAND-TRACE-1.0",generatedAt:new Date().toISOString(),analysisEnabled:false,caseCount:lastAutomaticEnvelope.total,loadBasis:lastAutomaticEnvelope.loadBasis,sourceProvenanceComplete:lastAutomaticEnvelope.sourceProvenanceComplete,sourceProvenanceIncompleteCount:lastAutomaticEnvelope.sourceProvenanceIncompleteCount,sourceProvenanceCases:lastAutomaticEnvelope.sourceProvenanceCases,notes:lastAutomaticEnvelope.note,demandTraceAudit:lastAutomaticEnvelope.demandTraceAudit,memberForceEnvelope:lastAutomaticEnvelope.memberForceEnvelope,supportReactionEnvelope:lastAutomaticEnvelope.supportReactionEnvelope,criticalCase:lastAutomaticEnvelope.criticalCase,maxTranslation_m:lastAutomaticEnvelope.maxTranslation_m};
    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"}),url=URL.createObjectURL(blob),a=root.document.createElement("a");
    a.href=url;a.download="SAHROUD-STEEL-crane-demand-trace.json";root.document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
   }catch(e){status().textContent="ساخت بسته خروجی ناموفق بود: "+String(e.message||e);}
