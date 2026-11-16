@@ -47,6 +47,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     <a href="legacy.html?focus=crane#craneReadinessPanel" data-focus-link="crane">جرثقیل</a>
     <a href="legacy.html?focus=member-check#cantileverCheckPanel" data-focus-link="member-check">کنترل کنسول رفتر</a>
     <a href="legacy.html?focus=tapered#taperedSectionsPanel" data-focus-link="tapered">مقاطع متغیر و ضخامت‌ها</a>
+    <a href="legacy.html?focus=connections#connectionDemandRegistryPanel" data-focus-link="connections">اتصالات و محل اتصال اجزا</a>
     <a href="legacy.html" data-focus-link="all">نمایش همه بخش‌ها</a>
   </div>
 </nav>
@@ -56,7 +57,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
   function initFocusWorkspace(){
     var params=new URLSearchParams(window.location.search);
     var focus=params.get("focus");
-    var valid=["project","loads","drawings","analysis","crane","member-check","tapered"];
+    var valid=["project","loads","drawings","analysis","crane","member-check","tapered","connections"];
     var nav=document.getElementById("focusWorkspaceNav");
     if(!nav)return;
     if(!focus||!valid.includes(focus)){
@@ -70,7 +71,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     });
     var active=nav.querySelector('[data-focus-link="'+focus+'"]');
     if(active)active.setAttribute("aria-current","page");
-    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا",tapered:"مقاطع متغیر و غربال ضخامت"};
+    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا",tapered:"مقاطع متغیر و غربال ضخامت",connections:"اتصالات و محل اتصال اجزا"};
     var caption=document.getElementById("focusWorkspaceCaption");
     if(caption)caption.textContent="حالت نمایش متمرکز: "+labels[focus]+"؛ برای بازگشت، «نمایش همه بخش‌ها» را انتخاب کنید.";
     var targetId=(window.location.hash||"").slice(1);
@@ -447,7 +448,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 <script defer src="js/app.js?v=20261115-single-slope-analysis-guard1"></script>
 <script defer src="js/cantilever-check.js?v=1"></script>
 <script defer src="js/connection-design.js?v=20261110d"></script>
-<script defer src="js/connection-demand-registry.js?v=20261113-demand1"></script>
+<script defer src="js/connection-demand-registry.js?v=20261116-joint-inventory1"></script>
 <script defer src="js/knee-connection-geometry.js?v=20261113-knee1"></script>
 <script defer src="js/purlin-cantilever-connection.js?v=20261110l"></script>
 <script defer src="js/ui-organization.js?v=20261115-gallery-open1"></script>
