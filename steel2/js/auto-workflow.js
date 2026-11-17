@@ -48,16 +48,16 @@
         "</b>"+(x.detail?"<p>"+String(x.detail).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+"</p>":"")+"</div>").join("");
   }
   function hasUsableClimate() {
-    const db=window.SteelClimateDB?.getData?.();
-    const id=$("climateCity")?.value;
-    const record=db?.records?.[id];
-    if(record && record.status && /تأیید رسمی|verified|معتبر و تأیید/i.test(record.status) &&
-       Number.isFinite(Number(record.basicWind)) &&
-       Number.isFinite(Number(record.groundSnow))) {
-      window.SteelClimateDB.loadSelectedCity?.();
-      return {ok:true,detail:"داده شهر از بانک با وضعیت تأییدشده به ورودی‌ها منتقل شد."};
-    }
-    return {ok:false,detail:"برای شهر انتخابی هنوز رکورد باد و برفِ تأییدشده در بانک وجود ندارد؛ نرم‌افزار نباید مقدار حدسی جایگزین کند."};
+    window.SteelClimateDB?.loadSelectedCity?.();
+    const loads=window.SteelLoads?.getData?.()||{};
+    const audit=window.SteelClimateDesignReadiness?.audit?.(loads);
+    if(!audit)return {ok:false,detail:"ممیزی شواهد اقلیمی بارگذاری نشده است؛ تحلیل متوقف می‌ماند."};
+    return {
+      ok:audit.ready===true,
+      detail:audit.ready
+        ?"شواهد اقلیمی، ورودی‌های بار و ویرایش مبنای بارگذاری برای بازبینی مهندسی کامل‌اند."
+        :"پیش‌نیازهای اقلیمی/بارگذاری ناقص‌اند: "+(audit.issues||[]).join("؛ ")
+    };
   }
   function blankOrZero(id) {
     const el=$(id); return !el || el.value.trim()==="" || Number(el.value)===0;
@@ -174,7 +174,8 @@
     const rows=[];
     try {
       const climate=hasUsableClimate();
-      addLine(rows,"تخصیص خودکار بار باد و برف شهر",climate.ok,climate.detail);
+      addLine(rows,"ممیزی مستندات اقلیمی و ورودی‌های بار",climate.ok,climate.detail);
+      if(!climate.ok){setReport(rows,"گزارش اجرای خودکار — داده اقلیمی/بارگذاری تأیید نشده است");return;}
 
       if(window.SteelLoads?.syncLegacyInputs)window.SteelLoads.syncLegacyInputs();
       const loadOK=window.SteelLoads?.check?.()===true;
@@ -217,11 +218,13 @@
             fullModel.geometry.frames.length+" قاب، "+fullModel.nodes.length+" گره و "+fullModel.members.length+" عضو هندسی؛ مدل بدون اجرای ترسیم غیرضروری برای تحلیل آماده شد.");
         } else addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,"مدل هندسی کامل تولید نشد.");
       } catch(e) { addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,e?.message||String(e)); }
+      if(!fullModelOK){setReport(rows,"گزارش اجرای خودکار — مدل هندسی معتبر تولید نشد");return;}
       if(fullModelOK) {
         const crane=auditCraneReadiness(window.SteelStructuralModel?.getData?.()||window.SteelStructuralModel?.model||null);
         if(crane.enabled)addLine(rows,"ممیزی مسیر هندسی جرثقیل تا شبکه حل‌گر",crane.ready,
           crane.detail+" اعمال بار چرخ به حل‌گر تا تکمیل مسیر واقعی تیر حمال، براکت و ستون مسدود می‌ماند.");
         else addLine(rows,"وضعیت جرثقیل پروژه",true,crane.detail);
+        if(crane.enabled&&!crane.ready){setReport(rows,"گزارش اجرای خودکار — مسیر بار جرثقیل ناقص است");return;}
       }
       // اجرای مستقیم و هم‌زمان محاسبه؛ کلیک دکمه با setTimeout اجرا می‌شود
       // و بررسی فوری نتیجه پس از click باعث گزارش کاذب شکست می‌شد.
