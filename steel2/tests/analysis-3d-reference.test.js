@@ -205,12 +205,16 @@ test("triangular gable post-equivalent actions conserve full force and base mome
   const totalForce = actions.reduce((sum, item) => sum + item.baseForceKN + item.topForceKN, 0);
   const totalMoment = actions.reduce((sum, item) =>
     sum + item.topForceKN * item.supportHeightM, 0);
+  const totalMomentY = actions.reduce((sum, item) =>
+    sum + item.momentYAboutSupportKNm - item.xM * item.resultantKN, 0);
   const expectedArea = span * rise / 2;
   const expectedForce = pressure * expectedArea;
   const expectedMoment = pressure * (eave * expectedArea + span * rise ** 2 / 6);
+  const expectedMomentY = -pressure * span * expectedArea / 2;
   assert.ok(Math.abs(totalArea - expectedArea) < 1e-12);
   assert.ok(Math.abs(totalForce - expectedForce) < 1e-12);
   assert.ok(Math.abs(totalMoment - expectedMoment) < 1e-12);
+  assert.ok(Math.abs(totalMomentY - expectedMomentY) < 1e-12);
   assert.equal(actions.length, intervals + 1);
   assert.ok(actions[0].tributaryAreaM2 > 0 && actions.at(-1).tributaryAreaM2 > 0);
 });
