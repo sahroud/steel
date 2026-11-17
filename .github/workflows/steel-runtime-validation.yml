@@ -40,12 +40,14 @@ jobs:
           global.sessionStorage = {getItem: () => null, setItem: () => {}, removeItem: () => {}};
           global.document = {
             readyState: 'complete',
+            head: {appendChild: () => {}},
+            body: {appendChild: () => {}, insertAdjacentElement: () => {}},
             getElementById: () => null,
             querySelector: () => null,
             querySelectorAll: () => [],
             addEventListener: () => {},
             removeEventListener: () => {},
-            createElement: () => ({style: {}, dataset: {}, classList: {add(){}, remove(){}, toggle(){}}})
+            createElement: () => ({style: {}, dataset: {}, children: [], classList: {add(){}, remove(){}, toggle(){}}, appendChild(){}, insertAdjacentElement(){}, setAttribute(){}, addEventListener(){}, removeEventListener(){}, remove(){}})
           };
           vm.runInThisContext(fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8'), {filename: 'legacy-bundle.js'});
           vm.runInThisContext(fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8'), {filename: 'engineering-regression-tests.js'});
