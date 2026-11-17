@@ -94,6 +94,8 @@
   }
   const gammaS=positive(inputs?.soilUnitWeightKNm3),soilCover=inputs?.soilCoverDepthM===""?0:Number(inputs?.soilCoverDepthM);
   if(!Number.isFinite(soilCover)||soilCover<0||(soilCover>0&&!gammaS)){summary.textContent="ضخامت یا وزن مخصوص خاک پوششی نامعتبر است.";return;}
+  const coverage=window.SteelFoundationTakeoff?.validateReactionCaseCoverage?.(foundation.rows);
+  if(!coverage?.ok){summary.textContent="غربال خمش، برش و پانچ متوقف شد: "+(coverage?.issues||["ممیزی پوش واکنش معتبر در دسترس نیست."]).join(" ");return;}
   const records=[],footingSummary=[];
   const addRow=rec=>{
    records.push(rec);const tr=document.createElement("tr");
@@ -112,9 +114,9 @@
    const pedestalWeight=gammaC*cx*cz*pedH,concreteWeight=gammaC*B*L*t+pedestalWeight;
    const soilWeight=soilCover>0?gammaS*Math.max(0,B*L-cx*cz)*soilCover:0;
    const added=concreteWeight+soilWeight,area=B*L;
-   const cases=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:foundation.loadCase||"حالت موجود",values:row.values||[]}];
+   const cases=row.caseReactions;
    cases.forEach(item=>{
-    const v=item.values||[],N=Number(v[1])/1000,mx0=Number(v[3])/1e6,mz0=Number(v[5])/1e6;
+    const v=item.values,N=v[1]/1000,mx0=v[3]/1e6,mz0=v[5]/1e6;
     if(![N,mx0,mz0].every(Number.isFinite)){addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:"—",MuKNmPerM:null,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:null,punchCapacity:null,status:"واکنش ناقص یا نامعتبر"});return;}
     if(N<=0){addRow({nodeId:row.nodeId,caseLabel:item.label,footingDimensions:B+"×"+L+"×"+t,direction:"—",MuKNmPerM:null,AsRequired:null,AsProvided:null,spacingByStrengthMm:null,oneWayDemand:null,oneWayCapacity:null,punchDemand:null,punchCapacity:null,status:"واکنش قائم فشاری مثبت نیست؛ کنترل تماس/بالاکشیدگی جداگانه لازم است"});return;}
     const Mx=mx0-oz*(N+pedestalWeight),Mz=mz0+ox*(N+pedestalWeight),totalN=N+added;
