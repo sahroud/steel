@@ -434,16 +434,16 @@
         if(m.side==="ridge"){
           const wl=m.tributaryWidthLeft||0,wr=m.tributaryWidthRight||0;
           m.lineLoads={
-            dead:(loads.deadLeft||0)*wl+(loads.deadRight||0)*wr,
-            live:(loads.liveLeft||0)*wl+(loads.liveRight||0)*wr,
-            snow:(loads.snowLeft||0)*wl+(loads.snowRight||0)*wr,
-            wind:(loads.windLeft||0)*wl+(loads.windRight||0)*wr,
-            windLeft:(loads.windLeft||0)*wl,windRight:(loads.windRight||0)*wr,
+            dead:SteelLoadTransfer.surfacePressureToLineLoad(loads.deadLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.deadRight||0,wr),
+            live:SteelLoadTransfer.surfacePressureToLineLoad(loads.liveLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.liveRight||0,wr),
+            snow:SteelLoadTransfer.surfacePressureToLineLoad(loads.snowLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.snowRight||0,wr),
+            wind:SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,wr),
+            windLeft:SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,wl),windRight:SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,wr),
             unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr
           };
         }else{
           const side=m.side==="left"?"Left":"Right";
-          m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,windLeft:m.side==="left"?(loads.windLeft||0)*w:0,windRight:m.side==="right"?(loads.windRight||0)*w:0,unit:"kN/m",tributaryWidth:w};
+          m.lineLoads={dead:SteelLoadTransfer.surfacePressureToLineLoad(loads["dead"+side]||0,w),live:SteelLoadTransfer.surfacePressureToLineLoad(loads["live"+side]||0,w),snow:SteelLoadTransfer.surfacePressureToLineLoad(loads["snow"+side]||0,w),wind:SteelLoadTransfer.surfacePressureToLineLoad(loads["wind"+side]||0,w),windLeft:m.side==="left"?SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,w):0,windRight:m.side==="right"?SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,w):0,unit:"kN/m",tributaryWidth:w};
         }
       } else if(m.sectionKey==="wallGirt"){
         const h=m.tributaryHeight||0;
