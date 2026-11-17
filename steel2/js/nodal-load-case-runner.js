@@ -51,6 +51,25 @@ function run(model,loadCase,options){
   return {success:true,status:"isolated_analysis_proposal",caseId:loadCase.id,units:"N,m,Pa",nodalLoad,solverResult:result,simultaneousActionCase:simultaneousCase,designApproved:false,solverEnabled:false,activeProjectMutated:false,limitations:["حالت بار خارجی این اجرا فقط گره‌ای و در دستگاه سراسری است؛ بارهای موجود روی اعضا فقط از دفتر صریح مدل و در قالب بار گسترده یکنواخت یا خطی‌متغیر محلی وارد می‌شوند.","بار متمرکز روی عضو، بار سطحی خام، جرثقیل، دما، نشست و ترکیب بار در این مسیر مستقیم پشتیبانی نمی‌شوند.","حل‌گر خطی مرتبه اول است و اثرات مرتبه دوم، کمانش و کنترل آیین‌نامه‌ای را انجام نمی‌دهد.","نتیجه صرفاً پیشنهاد تحلیل ایزوله است و تأیید طراحی محسوب نمی‌شود."]};
  }catch(e){return {success:false,status:"analysis_failed",issues:[String(e.message||e)],designApproved:false,solverEnabled:false};}
 }
+function stable(v){
+ if(Array.isArray(v))return "["+v.map(stable).join(",")+"]";
+ if(v&&typeof v==="object")return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+stable(v[k])).join(",")+"}";
+ return JSON.stringify(v);
+}
+function runBatch(model,loadCases,options){
+ const cases=Array.isArray(loadCases)?loadCases:[],issues=[],ids=new Set();
+ if(!cases.length)return {success:false,status:"blocked",issues:["حداقل یک حالت بار برای اجرای دسته‌ای لازم است."],cases:[],designApproved:false};
+ cases.forEach((c,i)=>{const id=String(c?.id??"").trim();if(!id)issues.push("حالت بار شماره "+(i+1)+" شناسه ندارد.");else if(ids.has(id))issues.push("شناسه حالت بار در اجرای دسته‌ای تکراری است: "+id);ids.add(id);});
+ if(issues.length)return {success:false,status:"blocked",issues,cases:[],designApproved:false};
+ const outputs=cases.map(c=>run(model,c,options));
+ outputs.forEach((r,i)=>{if(r.success!==true)issues.push("تحلیل حالت "+cases[i].id+" ناموفق/مسدود است: "+(r.issues||[]).join("؛ "));});
+ if(issues.length)return {success:false,status:"batch_incomplete",issues,cases:outputs,completedCaseCount:outputs.filter(x=>x.success).length,designApproved:false,solverEnabled:false};
+ const signature=out=>stable((out.solverResult.members||[]).map(m=>({id:String(m.id),parentMemberId:m.parentMemberId??null,localAxes:m.localAxes??null,section:m.section??null})).sort((a,b)=>a.id.localeCompare(b.id)));
+ const expected=signature(outputs[0]);
+ outputs.slice(1).forEach(out=>{if(signature(out)!==expected)issues.push("توپولوژی اعضا، محورهای محلی یا مشخصات مقطع بین حالت‌های بار یکسان نیست؛ ترکیب خطی متوقف شد.");});
+ if(issues.length)return {success:false,status:"incompatible_case_models",issues,cases:outputs,completedCaseCount:outputs.length,designApproved:false,solverEnabled:false};
+ return {success:true,status:"isolated_cases_complete",cases:outputs,caseIds:outputs.map(x=>x.caseId),completedCaseCount:outputs.length,isolatedPerCase:true,commonSolverTopologyVerified:true,activeProjectMutated:false,designApproved:false,solverEnabled:false,limitations:["هر حالت بار به‌طور مستقل روی یک کپی از مدل تحلیل شده است؛ مدل و تکیه‌گاه‌ها باید در همه اجراها یکسان باشند.","تطابق توپولوژی، محورهای محلی و مشخصات مقطع بررسی می‌شود؛ هم‌ارزی کامل همه فرض‌های تحلیل یا صحت بارگذاری منبع مستقلاً اثبات نمی‌شود.","ترکیب اثرها فقط در پل تقاضای اعضا و با ضرایب و فرض‌های صریح قابل انجام است؛ این خروجی به‌تنهایی ترکیب بار یا تأیید طراحی نیست."]};
+}
 function selfTest(){
  const section={E:200e9,G:77e9,A:.01,Iy:8e-5,Iz:2e-5,J:1e-5};
  const model={nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:3,y:0,z:0}],members:[{id:"M1",start:"FIX",end:"TIP",type:"validation",analysisLoad:{loadDataComplete:true,uniformLocal:[0,0,0]}}]};
@@ -73,10 +92,14 @@ function selfTest(){
  ["solver opt-in required",()=>!run(model,base,{...opts,runSolver:false}).success],
  ["analysis equilibrium and simultaneous end vectors",()=>{const r=run(model,base,opts);return r.success&&r.solverResult.equilibrium.ok&&r.simultaneousActionCase.members[0].endI&&r.simultaneousActionCase.members[0].endJ;}],
  ["model not mutated",()=>{const before=JSON.stringify(model);run(model,base,opts);return JSON.stringify(model)===before;}],
+ ["batch solves each case independently on unchanged model",()=>{const r=runBatch(model,[base,{...base,id:"LC-2",values:{...base.values,Fy:-2}}],opts);return r.success&&r.cases.length===2&&r.isolatedPerCase&&r.caseIds.join(",")==="LC-1,LC-2";}],
+ ["batch duplicate IDs blocked before solver",()=>!runBatch(model,[base,base],opts).success],
+ ["batch incomplete case fails closed",()=>{const r=runBatch(model,[base,{...base,id:"BAD",target:"node:ABSENT"}],opts);return !r.success&&r.completedCaseCount===1;}],
+ ["batch detects incompatible solver topology",()=>{const prior=root.SteelFrame3D;let n=0;root.SteelFrame3D={analyze:(m,o)=>{n++;return {success:true,equilibrium:{ok:true},members:[{id:n===1?"M1":"M2",localEndForces:Array(12).fill(0),localAxes:{x:[1,0,0]}}]};}};const r=runBatch(model,[base,{...base,id:"LC-2"}],opts);root.SteelFrame3D=prior;return !r.success&&r.status==="incompatible_case_models";}],
  ["no design approval",()=>run(model,base,opts).designApproved===false]
  ];
  const results=tests.map(([name,fn])=>{try{return{name,ok:!!fn()};}catch(e){return{name,ok:false,error:String(e.message||e)};}});
  return {passed:results.filter(x=>x.ok).length,failed:results.filter(x=>!x.ok).length,total:results.length,tests:results};
 }
-root.SteelNodalLoadCaseRunner={validateCase,run,selfTest};
+root.SteelNodalLoadCaseRunner={validateCase,run,runBatch,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
