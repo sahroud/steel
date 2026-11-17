@@ -45,13 +45,16 @@ function setData(value){
 }
 function getForGroup(key){
  const raw=JSON.parse(JSON.stringify(data.groups[key]||{}));
+ const coldFormed=["roofPurlin","wallGirt"].includes(key);
  const material=window.SteelSections?.read?.().material||{};
- const thickness=Number(raw.t_mm)>0?Number(raw.t_mm):Number(material.thickness_mm);
- const defaults=window.SteelSections?.getMaterialDefaults?.(material.grade,thickness)||{};
+ const rawThickness=Number(raw.t_mm);
+ const thickness=rawThickness>0?rawThickness:(coldFormed?NaN:Number(material.thickness_mm));
+ const defaults=coldFormed?{}:(window.SteelSections?.getMaterialDefaults?.(material.grade,thickness)||{});
  const hasFy=Number.isFinite(raw.Fy)&&raw.Fy>0,hasFu=Number.isFinite(raw.Fu)&&raw.Fu>0;
  return {...raw,t_mm:Number.isFinite(thickness)&&thickness>0?thickness:null,
    Fy:hasFy?raw.Fy:defaults.Fy_MPa,Fu:hasFu?raw.Fu:defaults.Fu_MPa,
-   materialSource:hasFy&&hasFu?"ورودی اختصاصی گروه":defaults.source||"نیازمند گواهی مصالح"};
+   materialSource:coldFormed?(hasFy&&hasFu?"ورودی گروه؛ تطبیق با گواهی هر عضو الزامی است":"نیازمند گواهی مصالح اختصاصی هر عضو"):(hasFy&&hasFu?"ورودی اختصاصی گروه":defaults.source||"نیازمند گواهی مصالح"),
+   requiresMemberSpecificRecord:coldFormed};
 }
 function validate(){
  const issues=[];
@@ -101,6 +104,17 @@ function selfTest(){
  tests.push({name:"cold-formed groups remain identified as section-specific families",pass:groups.filter(g=>["roofPurlin","wallGirt"].includes(g.key)).every(g=>g.family==="cold-formed-or-hot-rolled")});
  setData({schemaVersion:1,groups:{}});
  tests.push({name:"missing member-group inputs are not silently populated with fabricated capacities",pass:getData().groups.roofPurlin.Fy===null&&getData().groups.wallGirt.Fy===null});
+ const priorWindow=typeof window!=="undefined"?window.SteelSections:undefined;
+ if(typeof window!=="undefined")window.SteelSections={read:()=>({material:{grade:"ST37",thickness_mm:10}}),getMaterialDefaults:()=>({Fy_MPa:240,Fu_MPa:370,source:"hot-rolled material defaults"})};
+ setData({schemaVersion:1,groups:{}});
+ const purlinDefaults=getForGroup("roofPurlin"),girtDefaults=getForGroup("wallGirt"),columnDefaults=getForGroup("column");
+ tests.push({name:"cold-formed groups do not inherit hot-rolled grade or thickness defaults",pass:purlinDefaults.Fy===undefined&&purlinDefaults.Fu===undefined&&purlinDefaults.t_mm===null&&girtDefaults.Fy===undefined&&girtDefaults.t_mm===null});
+ tests.push({name:"cold-formed group output requires member-specific evidence",pass:purlinDefaults.requiresMemberSpecificRecord===true&&girtDefaults.requiresMemberSpecificRecord===true&&purlinDefaults.materialSource.includes("گواهی")});
+ tests.push({name:"hot-rolled groups retain their material-panel fallback",pass:columnDefaults.Fy===240&&columnDefaults.Fu===370&&columnDefaults.t_mm===10&&columnDefaults.requiresMemberSpecificRecord===false});
+ setData({schemaVersion:1,groups:{roofPurlin:{Fy:350,Fu:420,t_mm:2.5},wallGirt:{Fy:345,Fu:410,t_mm:2}}});
+ const explicit=getForGroup("roofPurlin");
+ tests.push({name:"explicit cold-formed group values are preserved without defaults",pass:explicit.Fy===350&&explicit.Fu===420&&explicit.t_mm===2.5&&explicit.requiresMemberSpecificRecord===true});
+ if(typeof window!=="undefined"){if(priorWindow===undefined)delete window.SteelSections;else window.SteelSections=priorWindow;}
  data=prior;render();
  return{passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests,scope:"group input registration and persistence only; no member resistance or approval"};
 }
