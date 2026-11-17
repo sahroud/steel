@@ -222,10 +222,11 @@ async function run(loadCases){
   const equilibrium=auditEquilibrium(solved?.equilibrium);
   if(!equilibrium.ok)throw Error("تعادل حالت "+spec.id+" تأیید نشد: "+equilibrium.issues.join("؛ "));
   const extracted=extractSupportReactions(solved,model);
+  const solverLoadTransferAudit=solved?.solverLoadTransferAudit||null;
   const foundationReactionMappingAudit=auditFoundationReactionMapping(extracted,model.foundationSupportMappings,model);
   const externalLoadLedger=buildExternalLoadLedger(model,solved.members,spec.loadCase?.nodalLoads||[],solved.equivalentReleasedRotationLoads||[]);
   const externalLoadLedgerComparison=compareExternalLedger(externalLoadLedger,solved.equilibrium);
-  results.push({id:spec.id,label:String(spec.label||spec.id),equilibrium,reactions:extracted.rows,foundationReactionMappingAudit,externalLoadLedger,externalLoadLedgerComparison,
+  results.push({id:spec.id,label:String(spec.label||spec.id),equilibrium,reactions:extracted.rows,solverLoadTransferAudit,foundationReactionMappingAudit,externalLoadLedger,externalLoadLedgerComparison,
    totalSolverReaction:extracted.totalSolverReaction,modelNodeCount:solved.nodeCount??model.nodes.length,
    modelMemberCount:solved.memberCount??model.members.length,
    solverResult:solved,foundationDemands:extracted.rows.map(r=>({nodeId:r.nodeId,coordinatesM:r.coordinatesM,actions:r.columnAction,units:r.units,
