@@ -62,6 +62,12 @@ jobs:
           window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
           const result = window.SteelEngineeringRegression.run();
           console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
+          const repeat = window.SteelEngineeringRegression.run();
+          console.log(`Repeat regression: ${repeat.passed}/${repeat.passed + repeat.failed} passed`);
+          if (repeat.failed) {
+            for (const check of repeat.checks.filter(x => !x.pass)) console.error('REPEAT FAIL:', check.name, JSON.stringify(check.detail));
+            process.exit(1);
+          }
           for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, JSON.stringify(check.detail));
           const testSource = fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8');
           const apiNames = [...new Set([...testSource.matchAll(/root\.(?:Steel|SahroudSteel)[A-Za-z0-9_]+(?:\?\.|\.)selfTest/g)].map(x => x[0].match(/root\.((?:Steel|SahroudSteel)[A-Za-z0-9_]+)/)[1]))];
@@ -87,7 +93,6 @@ jobs:
             process.exit(1);
           }
           if (result.failed) process.exit(1);
-          dom.window.close();
           NODE
       - name: Verify production bundle manifest
         if: always()
