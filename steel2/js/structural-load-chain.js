@@ -276,6 +276,20 @@ async function runMemberDesignPipeline(loadCaseSpecs,options){
   return{success:false,status:"solver-or-demand-failure",issues:[String(error?.message||error)],analysisEnabled:false,designApproved:false};
  }
 }
+function auditSolverLoadTransfer(model,solverResult,nodalLoads){
+ const issues=[];
+ if(!solverResult||solverResult.success!==true)issues.push("خروجی موفق حل‌گر برای ممیزی انتقال بار موجود نیست.");
+ const ledger=buildExternalLoadLedger(model,solverResult?.members,nodalLoads,solverResult?.equivalentReleasedRotationLoads);
+ if(!ledger.complete)issues.push(...ledger.issues);
+ const comparison=compareExternalLedger(ledger,solverResult?.equilibrium);
+ if(!comparison.ok)issues.push(...comparison.issues);
+ const equilibrium=auditEquilibrium(solverResult?.equilibrium);
+ if(!equilibrium.ok)issues.push(...equilibrium.issues);
+ return{success:issues.length===0,status:issues.length?"incomplete-or-mismatch":"verified",
+  issues,externalLoadLedger:ledger,solverAppliedResultantComparison:comparison,
+  supportReactionEquilibrium:equilibrium,analysisEnabled:false,designApproved:false,
+  scope:"مقایسه مستقل برآیند بارهای صریح عضو/گره/دوران آزادشده با برآیند اعمال‌شده گزارش‌شده حل‌گر و کنترل تعادل واکنش‌ها؛ نه بازسازی مستقل کامل بردار سختی/بار FEM"};
+}
 function selfTest(){
  const tests=[],ck=(name,fn)=>{try{tests.push({name,pass:!!fn()});}catch(e){tests.push({name,pass:false,error:e.message});}};
  const model={nodes:[{id:"B1",x:0,y:0,z:0,kind:"base"},{id:"B2",x:4,y:0,z:0,kind:"endwall-base"},{id:"N",x:0,y:3,z:0,kind:"frame"}],members:[{id:"C1",start:"B1",end:"N"},{id:"C2",start:"B2",end:"N"}]};
@@ -314,10 +328,14 @@ function selfTest(){
  ck("external load ledger matches solver applied resultant",()=>compareExternalLedger(ledger,eqLedger).ok);
  ck("external load ledger mismatch is detected",()=>!compareExternalLedger(ledger,{...eqLedger,appliedForceN:[10,-390,0]}).ok);
  ck("missing member load prevents complete ledger",()=>!buildExternalLoadLedger(ledgerModel,[{id:"M"}],[]).complete);
+ const integratedFixture={success:true,members:[{id:"M",start:"A",end:"B",localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]}}],equivalentReleasedRotationLoads:[],equilibrium:{...eqLedger,supportReactionN:[-10,800,0],forceResidualN:[0,0,0],supportMomentNm:[0,1854.6666666666667,0],momentResidualNm:[0,0,0],relativeForceResidual:0,relativeMomentResidual:0,ok:true}};
+ ck("integrated load-transfer audit compares ledger, solver resultant and support equilibrium",()=>auditSolverLoadTransfer(ledgerModel,integratedFixture,[{nodeId:"B",values:[10,0,0,0,0,5]}]).success);
+ ck("integrated load-transfer audit blocks solver-resultant mismatch",()=>!auditSolverLoadTransfer(ledgerModel,{...integratedFixture,equilibrium:{...integratedFixture.equilibrium,appliedForceN:[10,-390,0]}},[{nodeId:"B",values:[10,0,0,0,0,5]}]).success);
+ ck("integrated load-transfer audit blocks incomplete member ledger",()=>!auditSolverLoadTransfer({nodes:ledgerModel.nodes,members:[{...ledgerModel.members[0],analysisLoad:{loadDataComplete:true}}]},{...integratedFixture,members:[{id:"M",start:"A",end:"B",localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]}}]},[]).success);
  ck("demand-only status never implies design",()=>x.rows.every(r=>r.designStatus==="demand_only_not_designed")&&!("capacity" in x.rows[0]));
  ck("wind cases use directional adapter output",()=>typeof runDirectionalWind==="function"&&runDirectionalWind.toString().includes("SteelDirectionalWind3D"));
  ck("seismic cases use explicit seismic distributor input",()=>typeof runSeismic==="function"&&runSeismic.toString().includes("SteelSeismicEquivalentLateral"));
  return{passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests,analysisEnabled:false,designApproved:false};
 }
-root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,run,runDirectionalWind,runSeismic,runMemberDesignPipeline,selfTest};
+root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,auditSolverLoadTransfer,run,runDirectionalWind,runSeismic,runMemberDesignPipeline,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
