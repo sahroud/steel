@@ -250,7 +250,7 @@ function audit(model,loads){
   if(!longitudinalBracing.success)issues.push("مسیر باد دیوار انتهایی تا مهاربند طولی کامل نیست: "+longitudinalBracing.issues.join("؛ "));
   rows.push(...(longitudinalBracing.rows||[]));
  }else if(longitudinalBracing)rows.push({id:"endwall-wind-to-longitudinal-bracing",label:"مسیر باد دیوار انتهایی تا مهاربندهای طولی",memberCount:0,coveredCount:0,missingCount:0,status:"not-applicable"});
- const allAssigned=rows.length>0&&rows.every(r=>r.status==="assigned"||r.status==="structural-path"||r.status==="connected"||r.status==="not-applicable");
+ const allAssigned=rows.length>0&&rows.every(r=>r.status==="assigned"||r.status==="verified"||r.status==="structural-path"||r.status==="connected"||r.status==="not-applicable");
  return {success:issues.length===0&&allAssigned,issues,rows,wallDeadLoadTransfer:wallTransfer||null,gableSupportAudit,longitudinalBracing,combinations:comboRows,connectivity:{supportNodeCount:supports.length,disconnectedMemberIds:disconnected},
   inventory:{memberCount:members.length,rafterCount:groups.rafters.length,purlinCount:groups.purlins.length,wallGirtCount:groups.wallGirts.length,endGirtCount:groups.endGirts.length,wallBraceCount:groups.wallBraces.length,roofBraceCount:groups.roofBraces.length,frameCount,rafterFrameCount:frameIds.length},
   scope:"ممیزی تخصیص ورودی‌های بار موجود به اعضا؛ نه تأیید مقدار بار، ضرایب آیین‌نامه‌ای، انتقال بار نهایی یا ایمنی سازه.",
@@ -325,7 +325,7 @@ function selfTest(){
  test("roof purlin tributary width required",()=>{const p=JSON.parse(JSON.stringify(model));p.members[2].lineLoads.tributaryWidth=0;return !audit(p,loads).success;});
  test("incomplete combination factors detected",()=>{const p={...loads,combinations:[{id:"C",dead:1.2,live:null,snow:0}]};return !audit(model,p).success;});
  test("duplicate member identifiers detected",()=>{const p={...model,members:[...members,{...members[0]}]};return !audit(p,loads).success;});
- test("all load groups explicitly reported",()=>audit(model,loads).rows.length===14);
+ test("all load groups explicitly reported",()=>audit(model,loads).rows.length===15);
  test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.24);
  test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
  test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
