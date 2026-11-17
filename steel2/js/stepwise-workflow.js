@@ -106,7 +106,7 @@
     $("shedWorkflowNav")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function init() {
-    ensureShell(); assignPanels(); updateVisibility();
+    ensureShell();\n    ensureFoundationNotice(document.querySelector("main"));\n    assignPanels(); updateVisibility();
     const main = document.querySelector("main");
     if (main && !observer) {
       observer = new MutationObserver(records => {
