@@ -96,6 +96,7 @@ function auditStructuralRun(runResult,model,options){
   if(item?.equilibrium?.ok!==true){issues.push("تعادل حالت بار تأیید نشده است: "+label);return;}
   if(item?.solverLoadTransferAudit?.success!==true)issues.push("ممیزی مستقل انتقال بار حل‌گر برای حالت "+label+" مفقود یا ناموفق است؛ تحویل تقاضا به فونداسیون مسدود شد.");
   if(item?.externalLoadLedgerComparison?.ok!==true)issues.push("تطبیق دفتر بار مستقل با برآیند اعمال‌شده حل‌گر برای حالت "+label+" مفقود یا ناموفق است.");
+  if(item?.foundationReactionMappingAudit&&item.foundationReactionMappingAudit.success!==true)issues.push("نگاشت گره‌های پایه به پی در حالت "+label+" ناموفق است.");
   if(!Array.isArray(item.reactions)){issues.push("واکنش‌های حالت بار موجود نیست: "+label);return;}
   cases.push({label,equilibrium:item.equilibrium});
   item.reactions.forEach(reaction=>{
@@ -125,13 +126,14 @@ function auditStructuralRun(runResult,model,options){
  const envelope={cases,rows};
  const foundationSupportMappings=Array.isArray(model?.foundationSupportMappings)?model.foundationSupportMappings:[];
  const footingMappingStatus=foundationSupportMappings.length?"provided-explicit-mapping":"missing-explicit-support-to-footing-mapping";
+ const foundationMappingAudits=runResult.results.map(item=>({caseId:String(item?.label||item?.id||""),audit:item?.foundationReactionMappingAudit||null}));
  const auditFn=root.SteelFoundationReactionAudit?.audit;
  if(typeof auditFn!=="function")issues.push("ممیزی پوش واکنش فونداسیون بارگذاری نشده است.");
  const base=typeof auditFn==="function"?auditFn(envelope,model,options?.footingSpecFor):null;
  if(base&&!base.ok)issues.push(...base.issues);
  const mapped=audit(envelope,model,options);
  if(!mapped.ok)issues.push(...mapped.issues);
- return {ok:issues.length===0,ready:issues.length===0,issues,demands:mapped.demands||[],footingMappingStatus,foundationSupportMappingsRequiredForFootingDesign:true,caseCount:cases.length,
+ return {ok:issues.length===0,ready:issues.length===0,issues,demands:mapped.demands||[],footingMappingStatus,foundationMappingAudits,foundationSupportMappingsRequiredForFootingDesign:true,caseCount:cases.length,
   supportCount:rows.length,source:"SteelStructuralLoadChain.run",envelope,
   independentCaseDemands:true,combinesEnvelopeExtrema:false,analysisEnabled:false,designApproved:false,
   limitation:"این تبدیل فقط واکنش‌های واقعی هر حالت بار را به قالب ممیزی فونداسیون تبدیل می‌کند؛ ظرفیت صفحه‌ستون، انکر، بتن، پی و خاک طراحی نشده است."};
@@ -169,6 +171,7 @@ function selfTest(){
   ck("rejects structural run with failed equilibrium",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:false},reactions:[]}]};return !auditStructuralRun(run,model).ok;});
   ck("blocks foundation handoff when solver load-transfer audit is missing",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},externalLoadLedgerComparison:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};return !auditStructuralRun(run,model).ok;});
   ck("blocks foundation handoff when integrated solver load-transfer audit fails",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},solverLoadTransferAudit:{success:false},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};return !auditStructuralRun(run,model).ok;});
+  ck("blocks handoff when an explicit support-to-footing mapping audit fails",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},solverLoadTransferAudit:{success:true},externalLoadLedgerComparison:{ok:true},foundationReactionMappingAudit:{success:false},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};return !auditStructuralRun(run,model).ok;});
   ck("reports missing support-to-footing mapping without inventing footing IDs",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};const r=auditStructuralRun(run,model);return r.footingMappingStatus==="missing-explicit-support-to-footing-mapping"&&r.foundationSupportMappingsRequiredForFootingDesign===true;});
   ck("rejects incomplete structural reaction vector",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},solverReaction:{Fx:1}}]}]};return !auditStructuralRun(run,model).ok;});
  }finally{root.SteelFoundationReactionAudit=old;}
