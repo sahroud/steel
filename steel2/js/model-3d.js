@@ -1539,6 +1539,18 @@
     const customNodalLoads=[...nodalMap.values()];
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
     result.additionalNodalLoadCount=customNodalLoads.length;
+    if(!window.SteelStructuralLoadChain?.auditSolverLoadTransfer)throw new Error("ممیزی مستقل دفتر بار و تعادل واکنش‌ها بارگذاری نشده است؛ نتیجه برای طراحی قابل استفاده نیست.");
+    result.solverLoadTransferAudit=window.SteelStructuralLoadChain.auditSolverLoadTransfer(
+      analysisModel,result,customNodalLoads);
+    result.solverLoadTransferAudit.generatedAt=new Date().toISOString();
+    result.solverLoadTransferAudit.memberCount=analysisModel.members.length;
+    result.solverLoadTransferAudit.nodalLoadCount=customNodalLoads.length;
+    result.solverLoadTransferAudit.designDemandEligible=result.solverLoadTransferAudit.success===true;
+    result.designDemandEligible=result.solverLoadTransferAudit.success===true;
+    if(!result.solverLoadTransferAudit.success){
+      result.designGate={...(result.designGate||{}),capacityCalculated:false,codeInteractionCalculated:false,
+        designApproved:false,readyForCodeDesign:false,blockedByLoadTransferAudit:true};
+    }
     result.wallDeadLoadTransfer={totalWeightKN:wallDeadLoadAudit.totalWeightKN,deadFactor:selected.deadFactor,appliedWeightKN:wallDeadLoadAudit.totalWeightKN*selected.deadFactor,faces:wallDeadLoadAudit.rows,nodalLoads:wallDeadNodalLoads,memberLineLoads:wallDeadMemberLoads,appliedToTieBeamMembers:wallDeadMemberLoads.length>0,memberLoadAudit:wallDeadMemberLoadAudit};
     result.wallDeadLoadTransfer.globalReactionEquilibrium=result.equilibrium?{
       success:result.equilibrium.ok===true,
