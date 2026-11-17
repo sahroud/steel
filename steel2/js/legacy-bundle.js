@@ -8713,7 +8713,7 @@ function buildReactionRows(nodes,reactionVector,fixedDofs,springReactionByDof){
  });
  return rows;
 }
-function solve(A,b){
+function solveCore(A,b){
  const n=b.length;
  // Symmetric diagonal equilibration reduces false singularity caused by
  // translational/rotational DOFs having very different stiffness units.
@@ -8732,6 +8732,37 @@ function solve(A,b){
   for(let i=0;i<n;i++){if(i===k)continue;const f=M[i][k];for(let j=k;j<=n;j++)M[i][j]-=f*M[k][j];}
  }
  return M.map((r,i)=>r[n]*scaleD[i]);
+}
+function solve(A,b){
+ let x=solveCore(A,b);
+ const residualFor=solution=>A.map((row,i)=>{
+  let sum=0,correction=0;
+  for(let j=0;j<row.length;j++){
+   const y=row[j]*solution[j]-correction,t=sum+y;
+   correction=(t-sum)-y;sum=t;
+  }
+  return b[i]-sum;
+ });
+ const residualRatio=r=>{
+  let numerator=0,denominator=1;
+  for(let i=0;i<r.length;i++){
+   numerator=Math.max(numerator,Math.abs(r[i]));
+   denominator=Math.max(denominator,Math.abs(b[i]),Math.abs(b[i]-r[i]));
+  }
+  return numerator/denominator;
+ };
+ let residual=residualFor(x),ratio=residualRatio(residual);
+ // Iterative refinement corrects round-off amplified by fine tapered meshes.
+ // Keep a correction only when it measurably reduces the original-system residual.
+ for(let iteration=0;iteration<3&&ratio>1e-13;iteration++){
+  let correction;
+  try{correction=solveCore(A,residual);}catch(_){break;}
+  const candidate=x.map((v,i)=>v+correction[i]);
+  const nextResidual=residualFor(candidate),nextRatio=residualRatio(nextResidual);
+  if(!(nextRatio<ratio))break;
+  x=candidate;residual=nextResidual;ratio=nextRatio;
+ }
+ return x;
 }
 function transpose(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
 function mul(A,B){
@@ -9287,7 +9318,6 @@ function selfTest(){
 }
 root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,rigidArmTransform,memberArmTransform,equivalentUniformLoad,buildReactionRows,solve};
 })(typeof window!=="undefined"?window:globalThis);
-
 /* ===== steel2/js/analysis.js ===== */
 
 /* SAHROUD STEEL - 2D Portal Frame Matrix Analysis
