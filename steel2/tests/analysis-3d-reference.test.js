@@ -131,6 +131,24 @@ test("cantilever lateral nodal load: deflection equals PL^3/(3EIz)", () => {
   assert.ok(Math.abs(result.equilibrium.supportMomentNm[2] + P * L) < 1e-6);
 });
 
+test("six-component nodal action: applied Y moment is included in global equilibrium", () => {
+  const M = 1200;
+  const L = 3;
+  const result = solver.analyze({
+    nodes: [
+      { id: "FIX", x: 0, y: 0, z: 0 },
+      { id: "TIP", x: L, y: 0, z: 0 }
+    ],
+    members: [{ id: "CANT-M", start: "FIX", end: "TIP", sectionKey: "reference" }]
+  }, {
+    sectionResolver: () => section,
+    supports: [{ nodeId: "FIX", fixedDofs: [0, 1, 2, 3, 4, 5] }],
+    nodalLoads: [{ nodeId: "TIP", values: [0, 0, 0, 0, M, 0] }]
+  });
+  assert.equal(result.equilibrium.ok, true);
+  assert.ok(Math.abs(result.equilibrium.supportMomentNm[1] + M) < 1e-6);
+});
+
 test("solver rejects an unstable unsupported model", () => {
   assert.throws(() => solver.analyze({
     nodes: [
