@@ -9,7 +9,6 @@ const finite=v=>typeof v==="number"&&Number.isFinite(v);
 const text=v=>typeof v==="string"&&v.trim().length>0;
 const SOURCE=["document","revision","locator","authority"];
 const ACTIONS=["N_N","Vy_N","Vz_N","T_Nmm","My_Nmm","Mz_Nmm"];
-const PROFILE_FIELDS=["webHeight_mm","flange1_mm","flange2_mm","lip1_mm","lip2_mm","width_mm","height_mm","thickness_mm","insideRadius_mm"];
 const PROPERTY_FIELDS=["Ag_mm2","Ix_mm4","Iy_mm4","Ixy_mm4","J_mm4","Cw_mm6","SxTop_mm3","SxBottom_mm3","SyTop_mm3","SyBottom_mm3","shearCenterX_mm","shearCenterY_mm"];
 const BUCKLING_FIELDS=["PcrGlobal_N","PcrLocal_N","PcrDistortional_N","McrGlobal_Nmm","McrLocal_Nmm","McrDistortional_Nmm"];
 function audit(input){
