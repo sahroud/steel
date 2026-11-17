@@ -25,7 +25,7 @@ jobs:
           set -euo pipefail
           while IFS= read -r -d '' file; do
             node --check "$file"
-          done < <(find steel2/js -maxdepth 1 -type f -name '*.js' -print0)
+          done < <(find steel2 -type f -name '*.js' -print0)
       - name: Install browser-like DOM for deterministic tests
         run: npm install --no-save jsdom@26
       - name: Run engineering software regression suite in DOM
@@ -56,6 +56,8 @@ jobs:
           window.confirm = () => true;
           window.prompt = () => null;
           window.eval(fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8'));
+          window.eval(fs.readFileSync('steel2/tests/analysis-3d-analytical-benchmarks.js', 'utf8'));
+          window.eval(fs.readFileSync('steel2/tests/tapered-member-mesh-convergence.js', 'utf8'));
           window.eval(fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8'));
           window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
           const result = window.SteelEngineeringRegression.run();
