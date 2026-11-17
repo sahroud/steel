@@ -7,7 +7,7 @@
  "use strict";
  const close=(a,b,tol=1e-9)=>Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=tol*Math.max(1,Math.abs(a),Math.abs(b));
  const vec=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>close(v,b[i]));
- const sameRelease=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>Array.isArray(v)&&Array.isArray(b[i])&&v.length===b[i].length&&v.every((x,j)=>x===b[i][j]));
+ const sameRelease=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>Number.isInteger(v)&&v===b[i]);
  function audit(model,result,integration,deadFactor){
   const issues=[],rows=[],included=Array.isArray(integration?.included)?integration.included:[];
   if(!model||!Array.isArray(model.members)||!result||!Array.isArray(result.members))return{success:false,issues:["مدل مونتاژ یا نتیجه واقعی حل‌گر در دسترس نیست."],rows,expectedSegments:0,verifiedSegments:0};
