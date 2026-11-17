@@ -81,15 +81,14 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     var targetId=(window.location.hash||"").slice(1);
     // Panels created by deferred modules may not exist when this handler first runs.
     // Re-apply the selected focus group and resolve the hash after their DOMContentLoaded handlers.
-    window.setTimeout(function(){
+    function restoreFocus(){
       document.querySelectorAll("[data-focus-group]").forEach(function(panel){
-        var groups=(panel.getAttribute("data-focus-group")||"").split(/\s+/);
+        var groups=(panel.getAttribute("data-focus-group")||"").split(/\\s+/);
         if(groups.includes(focus))panel.classList.add("focus-visible");
         else panel.classList.remove("focus-visible");
       });
       var lateTarget=targetId&&document.getElementById(targetId);
       if(!lateTarget)lateTarget=document.querySelector('[data-focus-group].focus-visible');
-      // Open the advanced workspace and every nested details element before navigating.
       if(focus!=="project"){
         var advanced=document.querySelector("#homeAdvancedTools > details");
         if(advanced)advanced.open=true;
@@ -97,7 +96,10 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
       var parent=lateTarget;
       while(parent){if(parent.tagName==="DETAILS")parent.open=true;parent=parent.parentElement;}
       if(lateTarget){lateTarget.hidden=false;lateTarget.scrollIntoView({behavior:"auto",block:"start"});}
-    },140);
+    }
+    // Dynamic panels can be created after the first DOM-ready callback.
+    window.setTimeout(restoreFocus,180);
+    window.setTimeout(restoreFocus,520);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initFocusWorkspace);
   else initFocusWorkspace();
