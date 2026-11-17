@@ -1701,6 +1701,13 @@
         note:"کنترل جمع کنش‌های انتهایی اعضای متصل در محورهای جهانی؛ این کنترل تعادل موضعی است و تأیید مقاومت یا اتصال نیست."
       };
     }
+    if(!window.SteelFoundationModelFingerprint?.build)throw new Error("ماژول مشترک اثرانگشت مدل فونداسیون بارگذاری نشده است.");
+    result.foundationSourceModelFingerprint=window.SteelFoundationModelFingerprint.build(model,{
+      tieBeamLayout:window.SteelTieBeamLayout?.getData?.()||null,
+      loadSettings:window.SteelLoads?.getData?.()||null,
+      sections:window.SteelSections?.read?.()||null,
+      support:$("baseConnection")?.value||"pinned"
+    });
     result.foundationModelFingerprint=JSON.stringify({
       nodes:analysisModel.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),
       members:analysisModel.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),
@@ -1862,9 +1869,14 @@
     for(let i=0;i<cases.length;i++){
       const spec=cases[i];
       const result=await analyze3D({label:spec.label,factors:{...spec.factors,wind:spec.wind||0},windSign:spec.windSign||1});
-      if(!result||!Array.isArray(result.reactions)||!result.foundationModelFingerprint)throw new Error("نتیجه واکنش معتبر برای "+spec.label+" دریافت نشد.");
+      if(!result||!Array.isArray(result.reactions)||!result.foundationModelFingerprint||!result.foundationSourceModelFingerprint)throw new Error("نتیجه واکنش یا اثرانگشت منبع مدل برای "+spec.label+" موجود نیست.");
        if(!result.tieBeamIntegration||!Array.isArray(result.tieBeamIntegration.included)||!Array.isArray(result.tieBeamIntegration.skipped))throw new Error("گزارش ورود/حذف شناژها در تحلیل "+spec.label+" موجود نیست؛ زنجیره انتقال به فونداسیون قابل تأیید نیست.");
+       if(result.tieBeamIntegration.included.length){
+         const audit=result.tieBeamIntegration.solverAudit;
+         if(!audit||audit.success!==true||audit.verifiedSegments!==audit.expectedSegments)throw new Error("ممیزی پس از حل‌گر شناژ در حالت "+spec.label+" کامل نیست؛ تحویل واکنش به فونداسیون متوقف شد.");
+       }
        if(samples.length&&JSON.stringify(samples[0].tieBeamIntegration)!==JSON.stringify(result.tieBeamIntegration))throw new Error("آرایش شناژهای واردشده بین ترکیبات بار یکسان نیست؛ پوش واکنش فونداسیون متوقف شد.");
+       if(samples.length&&samples[0].foundationSourceModelFingerprint!==result.foundationSourceModelFingerprint)throw new Error("اثر انگشت مدل منبع بین ترکیبات بار تغییر کرده است؛ پوش واکنش فونداسیون متوقف شد.");
       if(!result.equilibrium||result.equilibrium.ok!==true)throw new Error("کنترل تعادل حل‌گر برای ترکیب «"+spec.label+"» موفق نیست؛ پوش فونداسیون متوقف شد.");
       const map=new Map();
       for(const reaction of result.reactions){
@@ -1874,7 +1886,7 @@
       }
       const missing=nodes.filter(n=>!map.has(n.id)).map(n=>n.id);
       if(missing.length)throw new Error("حل‌گر واکنش این گره‌های پایه را برنگردانده است: "+missing.join(", ")+"؛ مقدار صفر جایگزین نشد.");
-      samples.push({label:spec.label,factors:{...spec.factors,wind:Number(spec.wind)||0},windSign:spec.windSign||1,equilibrium:result.equilibrium,tieBeamIntegration:result.tieBeamIntegration||null,reactions:nodes.map(n=>({nodeId:n.id,values:map.get(n.id).slice()}))});
+      samples.push({label:spec.label,factors:{...spec.factors,wind:Number(spec.wind)||0},windSign:spec.windSign||1,equilibrium:result.equilibrium,tieBeamIntegration:result.tieBeamIntegration||null,foundationSourceModelFingerprint:result.foundationSourceModelFingerprint,reactions:nodes.map(n=>({nodeId:n.id,values:map.get(n.id).slice()}))});
     }
     const rows=nodes.map(n=>{
       const values=samples.map(s=>({label:s.label,values:s.reactions.find(r=>r.nodeId===n.id)?.values||[0,0,0,0,0,0]}));
@@ -1885,7 +1897,7 @@
       });
       return {nodeId:n.id,x:Number(n.x)||0,y:Number(n.y)||0,z:Number(n.z)||0,kind:n.kind,envelopes,caseReactions:values.map(s=>({label:s.label,values:s.values.slice()}))};
     }).sort((a,b)=>a.z-b.z||a.x-b.x);
-    return {generatedAt:new Date().toISOString(),supportType:$("baseConnection")?.value==="fixed"?"گیردار":"مفصلی",units:"N,N.m",rows,cases:samples.map(s=>({label:s.label,factors:s.factors,windSign:s.windSign,equilibrium:s.equilibrium})),tieBeamIntegration:samples[0]?.tieBeamIntegration||null,windCasesIncluded:windPresent,windFactor:windPresent?1:null,foundationModelFingerprint:samples[0]?.reactions?JSON.stringify({nodes:model.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),members:model.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),tieBeamIntegration:samples[0]?.tieBeamIntegration||null,sections:window.SteelSections?.read?.()||null,support:$("baseConnection")?.value||"pinned"}):null,limitations:["پوش فقط بر اساس ترکیبات موجود در نرم‌افزار ساخته شده و ضرایب آن هنوز با نسخه رسمی آیین‌نامه تطبیق نهایی نشده‌اند.","باد مثبت و منفی با ضریب ۱٫۰ فقط غربال مقدماتی است؛ ترکیبات کامل باد، زلزله، uplift و ضرایب بار آیین‌نامه‌ای تضمین نشده‌اند.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش، اندرکنش خاک و سازه و طراحی پی انجام نشده است."]};
+    return {generatedAt:new Date().toISOString(),supportType:$("baseConnection")?.value==="fixed"?"گیردار":"مفصلی",units:"N,N.m",rows,cases:samples.map(s=>({label:s.label,factors:s.factors,windSign:s.windSign,equilibrium:s.equilibrium})),tieBeamIntegration:samples[0]?.tieBeamIntegration||null,foundationSourceModelFingerprint:samples[0]?.foundationSourceModelFingerprint||null,windCasesIncluded:windPresent,windFactor:windPresent?1:null,foundationModelFingerprint:samples[0]?.reactions?JSON.stringify({nodes:model.nodes.map(n=>[n.id,n.x,n.y,n.z,n.kind]),members:model.members.map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),tieBeamIntegration:samples[0]?.tieBeamIntegration||null,sections:window.SteelSections?.read?.()||null,support:$("baseConnection")?.value||"pinned"}):null,limitations:["پوش فقط بر اساس ترکیبات موجود در نرم‌افزار ساخته شده و ضرایب آن هنوز با نسخه رسمی آیین‌نامه تطبیق نهایی نشده‌اند.","باد مثبت و منفی با ضریب ۱٫۰ فقط غربال مقدماتی است؛ ترکیبات کامل باد، زلزله، uplift و ضرایب بار آیین‌نامه‌ای تضمین نشده‌اند.","تحلیل خطی مرتبه اول است؛ P-Delta، کمانش، اندرکنش خاک و سازه و طراحی پی انجام نشده است."]};
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
   function setData(data){
