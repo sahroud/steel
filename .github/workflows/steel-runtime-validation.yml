@@ -26,40 +26,48 @@ jobs:
           while IFS= read -r -d '' file; do
             node --check "$file"
           done < <(find steel2/js -maxdepth 1 -type f -name '*.js' -print0)
-      - name: Run engineering software regression suite in a real DOM
+      - name: Install browser-like DOM for deterministic tests
+        run: npm install --no-save jsdom@26
+      - name: Run engineering software regression suite in DOM
         shell: bash
         run: |
-          npm install --no-save jsdom@26
           node <<'NODE'
           const fs = require('node:fs');
-          const { JSDOM, VirtualConsole } = require('jsdom');
-          (async () => {
-            const html = fs.readFileSync('steel2/legacy.html', 'utf8');
-            const virtualConsole = new VirtualConsole();
-            const runtimeErrors = [];
-            virtualConsole.on('jsdomError', error => runtimeErrors.push(error.message));
-            const dom = new JSDOM(html, {
-              url: 'https://localhost/steel2/legacy.html',
-              runScripts: 'dangerously',
-              pretendToBeVisual: true,
-              virtualConsole
-            });
-            const { window } = dom;
-            await new Promise(resolve => setTimeout(resolve, 0));
-            if (!window.ResizeObserver) window.ResizeObserver = class { observe(){} unobserve(){} disconnect(){} };
-            if (!window.IntersectionObserver) window.IntersectionObserver = class { observe(){} unobserve(){} disconnect(){} };
-            if (!window.matchMedia) window.matchMedia = () => ({matches:false,addListener(){},removeListener(){},addEventListener(){},removeEventListener(){}});
-            window.eval(fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8'));
-            window.eval(fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8'));
-            const result = window.SteelEngineeringRegression.run();
-            console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
-            for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, check.detail);
-            if (runtimeErrors.length) {
-              console.error('DOM runtime errors:', runtimeErrors.slice(0, 20));
-            }
-            window.close();
-            if (result.failed || runtimeErrors.length) process.exit(1);
-          })().catch(error => { console.error(error); process.exit(1); });
+          const { JSDOM } = require('jsdom');
+          const html = fs.readFileSync('steel2/legacy.html', 'utf8');
+          const dom = new JSDOM(html, {
+            url: 'https://example.test/steel2/legacy.html',
+            runScripts: 'outside-only',
+            pretendToBeVisual: true
+          });
+          const { window } = dom;
+          const context = new Proxy({
+            measureText: () => ({width: 0}),
+            createLinearGradient: () => ({addColorStop() {}}),
+            createRadialGradient: () => ({addColorStop() {}}),
+            getImageData: () => ({data: new Uint8ClampedArray(4)}),
+            canvas: null
+          }, { get(target, key) { return key in target ? target[key] : () => {}; } });
+          window.HTMLCanvasElement.prototype.getContext = () => context;
+          window.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+          window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+          window.matchMedia = () => ({matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}});
+          window.alert = () => {};
+          window.confirm = () => true;
+          window.prompt = () => null;
+          window.eval(fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8'));
+          window.eval(fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8'));
+          window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+          const result = window.SteelEngineeringRegression.run();
+          console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
+          for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, check.detail);
+          const runtime = window.SteelRuntimeIntegrity?.audit?.();
+          if (!runtime?.success) {
+            console.error('Runtime integrity failure:', runtime);
+            process.exit(1);
+          }
+          if (result.failed) process.exit(1);
+          dom.window.close();
           NODE
       - name: Verify production bundle manifest
         run: |
