@@ -30,3 +30,6 @@
 
 - Additional worker-level smoke check: executed the fetched `analysis-3d-worker.js` with a six-component nodal Y-couple. The worker returned success and the solver reported moment residual approximately (4.55\times10^{-13}) N·m, within numerical round-off. This verifies the worker-to-solver nodal-load forwarding path in isolation, not the complete generated shed.
 - CI path filters now include `analysis-3d-worker.js`, `model-3d.js`, and `load-transfer.js` for both push and pull-request events, so future edits to the full transfer chain trigger the reference suite.
+
+
+- Geometry smoke check: built the current 12 m × 36 m × 6 m shed geometry (2 m rise, 4 m end-post spacing) from the actual `model-3d.js` builder in a headless DOM stub. All eight front/rear base/head station pairs resolved to existing shared nodes and had the expected column/end-post/rafter connectivity. This confirms node mapping for that test geometry only; it is not a structural analysis run.
