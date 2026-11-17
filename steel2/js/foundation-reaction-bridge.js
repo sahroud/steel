@@ -22,12 +22,16 @@ function audit(envelope,model,options){
  const demands=[];
  rows.forEach(row=>{
   const nodeId=String(row?.nodeId||"");
+  const coordinates={x:row?.x,y:row?.y,z:row?.z};
+  const coordinateOK=!!nodeId&&[coordinates.x,coordinates.y,coordinates.z].every(finite);
+  if(!coordinateOK)issues.push("شناسه گره و مختصات سه‌بعدی آن باید صریحاً عددی و محدود باشند؛ تبدیل خودکار مختصات متنی مجاز نیست.");
   (row?.caseReactions||[]).forEach(item=>{
    const label=String(item?.label||"");
    try{
+    if(!coordinateOK)throw Error("مختصات/شناسه گره معتبر نیست.");
     if(!labels.has(label))throw Error("حالت بار در فهرست اصلی پوش وجود ندارد.");
     const mapped=mapSix(item.values);
-    demands.push({nodeId,caseId:label,coordinatesM:{x:Number(row.x),y:Number(row.y),z:Number(row.z)},kind:row.kind,
+    demands.push({nodeId,caseId:label,coordinatesM:{...coordinates},kind:row.kind,
      ...mapped,units:{force:"N",moment:"N.m"},status:"demand_only_not_designed",torsionRetained:true,torsionDesignRequired:true});
    }catch(e){issues.push("گره "+nodeId+" / "+label+": "+e.message);}
   });
@@ -96,7 +100,7 @@ function auditStructuralRun(runResult,model,options){
   if(item?.equilibrium?.ok!==true){issues.push("تعادل حالت بار تأیید نشده است: "+label);return;}
   if(item?.solverLoadTransferAudit?.success!==true)issues.push("ممیزی مستقل انتقال بار حل‌گر برای حالت "+label+" مفقود یا ناموفق است؛ تحویل تقاضا به فونداسیون مسدود شد.");
   if(item?.externalLoadLedgerComparison?.ok!==true)issues.push("تطبیق دفتر بار مستقل با برآیند اعمال‌شده حل‌گر برای حالت "+label+" مفقود یا ناموفق است.");
-  if(item?.foundationReactionMappingAudit&&item.foundationReactionMappingAudit.success!==true)issues.push("نگاشت گره‌های پایه به پی در حالت "+label+" ناموفق است.");
+  if(item?.foundationReactionMappingAudit?.success!==true)issues.push("نگاشت صریح و موفق همه گره‌های پایه به شناسه و مرجع هندسی پی در حالت "+label+" موجود نیست؛ تحویل به طراحی فونداسیون مسدود شد.");
   if(!Array.isArray(item.reactions)){issues.push("واکنش‌های حالت بار موجود نیست: "+label);return;}
   cases.push({label,equilibrium:item.equilibrium});
   item.reactions.forEach(reaction=>{
@@ -162,7 +166,7 @@ function selfTest(){
   ck("selects exact node and case only",()=>getDemand(audit(env,model),"B1","ULS-2").columnActionN_Nm[5]===-12000);
   ck("blocks selection from failed audit",()=>{try{getDemand({ok:false,demands:[]},"B1","ULS-1");return false;}catch(e){return true;}});
   ck("never enables analysis or design approval",()=>{const r=audit(env,model);return !r.analysisEnabled&&!r.designApproved&&r.demands.every(d=>d.torsionDesignRequired);});
-  ck("adapts structural load-chain output without mixing cases",()=>{const run={success:true,results:env.cases.map((c,i)=>({id:c.label,label:c.label,equilibrium:{ok:true},solverLoadTransferAudit:{success:true},externalLoadLedgerComparison:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:values[0]*(i+1),Fy:values[1],Fz:values[2],Mx:values[3],My:values[4],Mz:values[5]}}]}))};const r=auditStructuralRun(run,model);return r.ok&&r.demands.length===2&&r.demands[0].caseId!==r.demands[1].caseId;});
+  ck("adapts structural load-chain output without mixing cases",()=>{const run={success:true,results:env.cases.map((c,i)=>({id:c.label,label:c.label,equilibrium:{ok:true},solverLoadTransferAudit:{success:true},externalLoadLedgerComparison:{ok:true},foundationReactionMappingAudit:{success:true,footingDemands:[{footingId:"F1",referencePointM:{x:0,y:0,z:0},actions:{Fx:values[0]*(i+1),Fy:values[1],Fz:values[2],Mx:values[3],My:values[4],Mz:values[5]}}]},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:values[0]*(i+1),Fy:values[1],Fz:values[2],Mx:values[3],My:values[4],Mz:values[5]}}]}))};const r=auditStructuralRun(run,model);return r.ok&&r.demands.length===2&&r.demands[0].caseId!==r.demands[1].caseId;});
   ck("adapts crane support actions per physical base and position",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2},{caseIndex:1,referencePosition_m:4}],supports:[{nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}},{caseIndex:1,referencePosition_m:4,solverReaction:{Fx:2,Fy:3,Fz:4,Mx:5,My:6,Mz:7},columnAction:{Fx:-2,Fy:-3,Fz:-4,Mx:-5,My:-6,Mz:-7}}]}]};const r=auditCraneDemandTrace(trace,model);return r.ok&&r.demands.length===2&&r.demands[1].caseId.includes("@4.0000m")&&r.demands[0].columnActionN_Nm[4]===-5;});
   ck("rejects inconsistent solver-reaction and column-action signs",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2}],supports:[{nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:5,Mz:-6}}]}]};return !auditCraneDemandTrace(trace,model).ok;});
   ck("rejects duplicate physical support rows",()=>{const row={nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]};const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2}],supports:[row,JSON.parse(JSON.stringify(row))]};return !auditCraneDemandTrace(trace,model).ok;});
@@ -172,6 +176,8 @@ function selfTest(){
   ck("blocks foundation handoff when solver load-transfer audit is missing",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},externalLoadLedgerComparison:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};return !auditStructuralRun(run,model).ok;});
   ck("blocks foundation handoff when integrated solver load-transfer audit fails",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},solverLoadTransferAudit:{success:false},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};return !auditStructuralRun(run,model).ok;});
   ck("blocks handoff when an explicit support-to-footing mapping audit fails",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},solverLoadTransferAudit:{success:true},externalLoadLedgerComparison:{ok:true},foundationReactionMappingAudit:{success:false},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};return !auditStructuralRun(run,model).ok;});
+  ck("blocks handoff when support-to-footing mapping audit is absent",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},solverLoadTransferAudit:{success:true},externalLoadLedgerComparison:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};return !auditStructuralRun(run,model).ok;});
+  ck("rejects text coordinates without numeric coercion",()=>!audit({...env,rows:[{...env.rows[0],x:"0"}]},model).ok);
   ck("reports missing support-to-footing mapping without inventing footing IDs",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};const r=auditStructuralRun(run,model);return r.footingMappingStatus==="missing-explicit-support-to-footing-mapping"&&r.foundationSupportMappingsRequiredForFootingDesign===true;});
   ck("rejects incomplete structural reaction vector",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},solverReaction:{Fx:1}}]}]};return !auditStructuralRun(run,model).ok;});
  }finally{root.SteelFoundationReactionAudit=old;}
