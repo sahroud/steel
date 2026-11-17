@@ -1,6 +1,6 @@
 /* SAHROUD STEEL — post-solver verification of concrete tie-beam assembly.
  * Confirms that declared tie-beam segments are present exactly once in the actual solver
- * result, with matching connectivity, section properties, offsets, releases and self-weight metadata.
+ * result, with matching connectivity, section properties, offsets, releases and the actually applied uniform load vector.
  * This is an integration audit, not a concrete/member/foundation code design approval.
  */
 (function(root){
@@ -8,7 +8,10 @@
  const close=(a,b,tol=1e-9)=>Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=tol*Math.max(1,Math.abs(a),Math.abs(b));
  const vec=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>close(v,b[i]));
  const sameRelease=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>Number.isInteger(v)&&v===b[i]);
- function audit(model,result,integration,deadFactor){
+ function audit(model,result,integration,loadCase){
+  const selected=loadCase&&typeof loadCase==="object"?loadCase:{key:"dead",deadFactor:loadCase,direction:[0,-1,0]};
+  const factors=selected.factors&&typeof selected.factors==="object"?selected.factors:null;
+  const deadFactor=Number(selected.deadFactor??(factors?factors.dead:(selected.key==="dead"?1:0)));
   const issues=[],rows=[],included=Array.isArray(integration?.included)?integration.included:[];
   if(!model||!Array.isArray(model.members)||!result||!Array.isArray(result.members))return{success:false,issues:["مدل مونتاژ یا نتیجه واقعی حل‌گر در دسترس نیست."],rows,expectedSegments:0,verifiedSegments:0};
   if(!Number.isFinite(deadFactor)||deadFactor<0)issues.push("ضریب بار مرده برای ممیزی وزن خود معتبر نیست.");
@@ -42,7 +45,27 @@
      const sourceSW=src.analysisLoad?.selfWeightKNm,solvedSW=sol.analysisLoad?.selfWeightKNm;
      if(!Number.isFinite(sourceSW)||!close(sourceSW,expected))local.push("بار خطی وزن خود منبع با A×وزن مخصوص×ضریب مرده تطبیق ندارد");
      if(!Number.isFinite(solvedSW)||!close(solvedSW,expected))local.push("ردیابی وزن خود در عضو بازگشتی حل‌گر ناقص یا متفاوت است");
+     const lineLoads=src.lineLoads||{};
+     let factoredLineLoad=0;
+     if(factors){
+      for(const k of ["dead","live","snow"]){
+       if(!Number.isFinite(lineLoads[k])||!Number.isFinite(factors[k]))local.push("بار/ضریب "+k+" برای بازسازی بار گسترده شناژ معتبر نیست");
+       else factoredLineLoad+=lineLoads[k]*factors[k];
+      }
+     }else if(typeof selected.key==="string"&&Number.isFinite(lineLoads[selected.key]))factoredLineLoad=lineLoads[selected.key];
+     else local.push("حالت بار برای بازسازی مستقل بار گسترده شناژ مشخص نیست");
+     const windOnly=selected.key==="wind"&&!factors;
+     const expectedGlobal=windOnly?[0,0,0]:[0,-(factoredLineLoad+expected)*1000,0];
+     const sourceGlobal=src.analysisLoad?.globalUniform,solvedGlobal=sol.analysisLoad?.globalUniform;
+     const sourceLocal=src.analysisLoad?.uniformLocal,solvedLocal=sol.analysisLoad?.uniformLocal;
+     if(!vec(sourceGlobal,expectedGlobal))local.push("بردار بار گسترده جهانی منبع، وزن خود را دقیقاً یک‌بار به بارهای خطی اضافه‌شده نمی‌کند");
+     if(!vec(solvedGlobal,expectedGlobal))local.push("بردار بار گسترده جهانی عضو حل‌شده با بار مورد انتظار تطبیق ندارد");
      if(!sol.localAxes||!Array.isArray(sol.localAxes.x)||!Array.isArray(sol.localAxes.y)||!Array.isArray(sol.localAxes.z))local.push("محورهای محلی عضو در نتیجه حل‌گر ثبت نشده‌اند");
+     else{
+      const expectedLocal=[sol.localAxes.x,sol.localAxes.y,sol.localAxes.z].map(axis=>axis.reduce((sum,v,i)=>sum+v*expectedGlobal[i],0));
+      if(!vec(sourceLocal,expectedLocal))local.push("تبدیل بار گسترده جهانی به محورهای محلی در مدل منبع سازگار نیست");
+      if(!vec(solvedLocal,expectedLocal))local.push("بردار بار گسترده محلی در عضو بازگشتی حل‌گر با بار مورد انتظار سازگار نیست");
+     }
     }
     rows.push({routeId:String(route.id),memberId:key,verified:local.length===0,issues:local});
     local.forEach(x=>issues.push(key+": "+x));
@@ -54,16 +77,22 @@
   return{schemaVersion:1,success:issues.length===0,issues,expectedSegments:expectedIds.length,verifiedSegments:rows.filter(r=>r.verified).length,rows,solverMemberCount:result.members.length,modelMemberCount:model.members.length,deadFactor,selfWeightAudit:"برای هر قطعه، وزن خطی ثبت‌شده باید دقیقاً برابر A×γc×ضریب D باشد و همان مقدار در نتیجه عضو حل‌گر بازتاب یابد؛ این ممیزی بازسازی مستقل بردار بار FEM نیست.",designApproved:false};
  }
  function selfTest(){
-  const src={id:"T1",start:"A",end:"B",sectionKey:"tieBeam",analysisSection:{E:2e10,G:8e9,A:.3,Iy:.006,Iz:.004,J:.003},endOffsets:{i:[0,-.25,0],j:[0,-.25,0]},endReleases:{i:[],j:[4,5]},tieBeamDensityKNm3:25,analysisLoad:{selfWeightKNm:7.5}};
-  const sol={id:"T1",start:"A",end:"B",sectionKey:"tieBeam",section:{...src.analysisSection},endOffsets:{i:[0,-.25,0],j:[0,-.25,0]},endReleases:{i:[],j:[4,5]},localEndForces:Array(12).fill(0),localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},analysisLoad:{selfWeightKNm:7.5}};
+  const lineLoads={dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0};
+  const appliedLoad={uniformLocal:[0,-7500,0],globalUniform:[0,-7500,0],selfWeightKNm:7.5};
+  const src={id:"T1",start:"A",end:"B",sectionKey:"tieBeam",lineLoads,analysisSection:{E:2e10,G:8e9,A:.3,Iy:.006,Iz:.004,J:.003},endOffsets:{i:[0,-.25,0],j:[0,-.25,0]},endReleases:{i:[],j:[4,5]},tieBeamDensityKNm3:25,analysisLoad:appliedLoad};
+  const sol={id:"T1",start:"A",end:"B",sectionKey:"tieBeam",section:{...src.analysisSection},endOffsets:{i:[0,-.25,0],j:[0,-.25,0]},endReleases:{i:[],j:[4,5]},localEndForces:Array(12).fill(0),localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},analysisLoad:{...appliedLoad,uniformLocal:appliedLoad.uniformLocal.slice(),globalUniform:appliedLoad.globalUniform.slice()}};
   const model={members:[src]},result={memberCount:1,members:[sol]},integration={included:[{id:"R1",memberIds:["T1"]}]};
-  const ok=audit(model,result,integration,1),missing=audit(model,{memberCount:0,members:[]},integration,1);
-  const dup=audit({members:[src,src]},{memberCount:2,members:[sol,sol]},integration,1);
-  const badOffset=audit(model,{memberCount:1,members:[{...sol,endOffsets:{i:[0,0,0],j:[0,-.25,0]}}]},integration,1);
-  const badWeight=audit(model,{memberCount:1,members:[{...sol,analysisLoad:{selfWeightKNm:15}}]},integration,1);
-  const badSection=audit(model,{memberCount:1,members:[{...sol,section:{...sol.section,A:.4}}]},integration,1);
-  const checks={acceptsCompleteSolverMember:ok.success&&ok.verifiedSegments===1,rejectsMissingSolverMember:!missing.success,rejectsDuplicateMember:!dup.success,rejectsWrongRigidOffset:!badOffset.success,rejectsDoubleSelfWeightMetadata:!badWeight.success,rejectsWrongSolverSection:!badSection.success};
-  return{passed:Object.values(checks).every(Boolean),checks,complete:ok,missing,duplicate:dup,badOffset,badWeight,badSection};
+  const deadCase={key:"dead",deadFactor:1,direction:[0,-1,0]};
+  const ok=audit(model,result,integration,deadCase),missing=audit(model,{memberCount:0,members:[]},integration,deadCase);
+  const dup=audit({members:[src,src]},{memberCount:2,members:[sol,sol]},integration,deadCase);
+  const badOffset=audit(model,{memberCount:1,members:[{...sol,endOffsets:{i:[0,0,0],j:[0,-.25,0]}}]},integration,deadCase);
+  const badWeight=audit(model,{memberCount:1,members:[{...sol,analysisLoad:{...sol.analysisLoad,selfWeightKNm:15}}]},integration,deadCase);
+  const omittedWeight=audit(model,{memberCount:1,members:[{...sol,analysisLoad:{...sol.analysisLoad,globalUniform:[0,0,0],uniformLocal:[0,0,0]}}]},integration,deadCase);
+  const doubledWeight=audit(model,{memberCount:1,members:[{...sol,analysisLoad:{...sol.analysisLoad,globalUniform:[0,-15000,0],uniformLocal:[0,-15000,0]}}]},integration,deadCase);
+  const badLocal=audit(model,{memberCount:1,members:[{...sol,analysisLoad:{...sol.analysisLoad,uniformLocal:[0,-7000,0]}}]},integration,deadCase);
+  const badSection=audit(model,{memberCount:1,members:[{...sol,section:{...sol.section,A:.4}}]},integration,deadCase);
+  const checks={acceptsCompleteSolverMember:ok.success&&ok.verifiedSegments===1,rejectsMissingSolverMember:!missing.success,rejectsDuplicateMember:!dup.success,rejectsWrongRigidOffset:!badOffset.success,rejectsWrongSelfWeightMetadata:!badWeight.success,rejectsOmittedSelfWeightFromAppliedLoad:!omittedWeight.success,rejectsDoubleSelfWeightInAppliedLoad:!doubledWeight.success,rejectsWrongLocalLoadProjection:!badLocal.success,rejectsWrongSolverSection:!badSection.success};
+  return{passed:Object.values(checks).every(Boolean),checks,complete:ok,missing,duplicate:dup,badOffset,badWeight,omittedWeight,doubledWeight,badLocal,badSection};
  }
  root.SteelTieBeamSolverAudit={audit,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
