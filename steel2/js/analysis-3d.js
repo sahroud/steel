@@ -26,7 +26,7 @@ function buildReactionRows(nodes,reactionVector,fixedDofs,springReactionByDof){
  });
  return rows;
 }
-function solveCore(A,b){
+function solveDenseCore(A,b){
  const n=b.length;
  // Symmetric diagonal equilibration reduces false singularity caused by
  // translational/rotational DOFs having very different stiffness units.
@@ -45,6 +45,56 @@ function solveCore(A,b){
   for(let i=0;i<n;i++){if(i===k)continue;const f=M[i][k];for(let j=k;j<=n;j++)M[i][j]-=f*M[k][j];}
  }
  return M.map((r,i)=>r[n]*scaleD[i]);
+}
+function solveSparseCG(A,b){
+ const n=b.length,scaleD=Array(n),rows=Array.from({length:n},()=>[]),diag=Array(n);
+ for(let i=0;i<n;i++){
+  const d=Number(A[i]?.[i]);
+  if(!(d>0&&Number.isFinite(d)))throw Error("DOF_SINGULAR:"+i+":قطر مثبت و معتبر برای حل‌گر تکراری وجود ندارد");
+  scaleD[i]=1/Math.sqrt(d);
+ }
+ let maxEntry=0,maxAsymmetry=0;
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+  const a=Number(A[i][j])||0,at=Number(A[j][i])||0;
+  maxEntry=Math.max(maxEntry,Math.abs(a));
+  maxAsymmetry=Math.max(maxAsymmetry,Math.abs(a-at));
+ }
+ if(maxAsymmetry>1e-8*Math.max(1,maxEntry))throw Error("DOF_NOT_SYMMETRIC:ماتریس سختی برای حل‌گر هم‌نهشتی متقارن نیست");
+ for(let i=0;i<n;i++){
+  for(let j=0;j<n;j++){
+   const raw=Number(A[i][j])||0;
+   if(raw===0)continue;
+   const v=raw*scaleD[i]*scaleD[j];
+   if(v!==0)rows[i].push([j,v]);
+  }
+  diag[i]=rows[i].find(x=>x[0]===i)?.[1]??0;
+  if(!(diag[i]>0&&Number.isFinite(diag[i])))throw Error("DOF_SINGULAR:"+i+":قطر مقیاس‌بندی‌شده نامعتبر است");
+ }
+ const rhs=b.map((v,i)=>Number(v)*scaleD[i]);
+ const dotAcc=(x,y)=>{let sum=0,c=0;for(let i=0;i<n;i++){const z=x[i]*y[i]-c,t=sum+z;c=(t-sum)-z;sum=t;}return sum;};
+ const matVec=x=>rows.map(row=>{let sum=0,c=0;for(const [j,v] of row){const z=v*x[j]-c,t=sum+z;c=(t-sum)-z;sum=t;}return sum;});
+ const normB=Math.sqrt(dotAcc(rhs,rhs));
+ if(!(normB>0))return Array(n).fill(0);
+ const x=Array(n).fill(0);let r=rhs.slice(),z=r.map((v,i)=>v/diag[i]),p=z.slice(),rz=dotAcc(r,z);
+ const tolerance=1e-10,maxIterations=Math.min(12000,Math.max(500,n*8));
+ for(let iteration=0;iteration<maxIterations;iteration++){
+  const Ap=matVec(p),denominator=dotAcc(p,Ap);
+  if(!(denominator>0&&Number.isFinite(denominator)))throw Error("DOF_CG_BREAKDOWN:ماتریس سختی مثبت‌معین/پایدار تشخیص داده نشد");
+  const alpha=rz/denominator;
+  for(let i=0;i<n;i++){x[i]+=alpha*p[i];r[i]-=alpha*Ap[i];}
+  if((iteration+1)%50===0)r=rhs.map((v,i)=>v-matVec(x)[i]);
+  const relative=Math.sqrt(dotAcc(r,r))/normB;
+  if(relative<=tolerance)return x.map((v,i)=>v*scaleD[i]);
+  z=r.map((v,i)=>v/diag[i]);
+  const next=dotAcc(r,z),beta=next/rz;
+  if(!(next>=0&&Number.isFinite(next)&&Number.isFinite(beta)))throw Error("DOF_CG_NUMERIC:واگرایی عددی در حل‌گر تکراری");
+  for(let i=0;i<n;i++)p[i]=z[i]+beta*p[i];
+  rz=next;
+ }
+ throw Error("DOF_CG_NO_CONVERGENCE:حل‌گر تکراری پس از "+maxIterations+" تکرار به دقت "+tolerance+" نرسید");
+}
+function solveCore(A,b){
+ return b.length>=450?solveSparseCG(A,b):solveDenseCore(A,b);
 }
 function solve(A,b){
  let x=solveCore(A,b);
