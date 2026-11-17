@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - refactor/centralized-project-state-20261112
+      - sahroud-steel-foundation-input-polish-20261117af
 
 jobs:
   validate-runtime:
