@@ -30,7 +30,7 @@ function validateCase(c,model){
    if(!Array.isArray(ledger.uniformLocal)||ledger.uniformLocal.length!==3||!ledger.uniformLocal.every(finite))issues.push("بار گسترده یکنواخت عضو "+(id||i+1)+" باید با سه مؤلفه عددی محلی و حتی در حالت صفر صریح ثبت شود.");
    if(Array.isArray(ledger.pointLoads)&&ledger.pointLoads.length)issues.push("بار متمرکز روی عضو "+(id||i+1)+" در این مسیر حل‌گر/بازسازی پشتیبانی نمی‌شود.");
    if(Array.isArray(ledger.distributedLoads)&&ledger.distributedLoads.length)issues.push("بار گسترده غیریکنواخت/قطعه‌ای عضو "+(id||i+1)+" در این مسیر پشتیبانی نمی‌شود.");
-   if(ledger.linearLocal!==undefined&&ledger.linearLocal!==null)issues.push("بار خطی متغیر عضو "+(id||i+1)+" در این مسیر پشتیبانی نمی‌شود؛ انتقال آن به بردارهای معادل حل‌گر هنوز پیاده‌سازی و اعتبارسنجی نشده است.");
+   if(ledger.linearLocal!==undefined&&ledger.linearLocal!==null&&(!ledger.linearLocal||!Array.isArray(ledger.linearLocal.start)||ledger.linearLocal.start.length!==3||!ledger.linearLocal.start.every(finite)||!Array.isArray(ledger.linearLocal.end)||ledger.linearLocal.end.length!==3||!ledger.linearLocal.end.every(finite)))issues.push("بار خطی متغیر عضو "+(id||i+1)+" باید دو بردار محلی سه‌مؤلفه‌ای متناهی داشته باشد.");
   });
  }
  return {success:issues.length===0,issues,nodeId};
@@ -68,7 +68,7 @@ function selfTest(){
  ["missing load completeness blocked before solver",()=>{let called=false;const prior=root.SteelFrame3D;root.SteelFrame3D={analyze:()=>{called=true;return {success:true,equilibrium:{ok:true},members:[]};}};const r=run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{uniformLocal:[0,0,0]}}]},base,opts);root.SteelFrame3D=prior;return !r.success&&!called&&r.issues.some(x=>x.includes("کامل‌بودن دفتر بارگذاری"));}],
  ["unsupported point load blocked before solver",()=>!run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{loadDataComplete:true,uniformLocal:[0,0,0],pointLoads:[{x:1}]}}]},base,opts).success],
  ["unsupported nonuniform load blocked before solver",()=>!run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{loadDataComplete:true,uniformLocal:[0,0,0],distributedLoads:[{start:0,end:2}]}}]},base,opts).success],
- ["unsupported linear-local load blocked before solver",()=>!run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{loadDataComplete:true,uniformLocal:[0,0,0],linearLocal:{start:[0,-1,0],end:[0,-2,0]}}}]},base,opts).success],
+ ["malformed linear-local load blocked before solver",()=>!run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{loadDataComplete:true,uniformLocal:[0,0,0],linearLocal:{start:[0,-1],end:[0,-2,0]}}}]},base,opts).success],
  ["duplicate physical member IDs blocked",()=>!run({nodes:model.nodes,members:[model.members[0],{...model.members[0]}]},base,opts).success],
  ["solver opt-in required",()=>!run(model,base,{...opts,runSolver:false}).success],
  ["analysis equilibrium and simultaneous end vectors",()=>{const r=run(model,base,opts);return r.success&&r.solverResult.equilibrium.ok&&r.simultaneousActionCase.members[0].endI&&r.simultaneousActionCase.members[0].endJ;}],
