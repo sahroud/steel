@@ -751,6 +751,7 @@
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
     const nodalLoads=[];
+    const currentWindInputs=window.SteelLoads?.getData?.()||{};
     const gableWindTransfer=[];
     const windFactor=selected.key==="wind"?1:Number(selected.windFactor||0);
     const windSign=selected.key==="wind"?1:Number(selected.windSign||1);
