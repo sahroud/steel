@@ -121,3 +121,10 @@ Added `.github/workflows/steel2-reference-tests.yml` to run the four reference f
 - Added reference tests for unit conversion (including suction sign), tributary-width conservation, asymmetric ridge transfer, and invalid widths.
 - The current geometry supplies **sloped-surface tributary widths**. Therefore the existing pressure values are mathematically interpreted on the sloped roof surface. This is an explicit statement of the current implementation, not a determination that every load input should use that basis under the applicable Iranian code. Before code-compliant use, the load input basis must be defined by load type and checked against the governing provisions; no horizontal-to-slope conversion factor has been introduced.
 - The synthetic helper tests do not yet exercise a complete generated shed model or prove member-load assembly / global equilibrium. CI execution is still unconfirmed.
+
+
+### End-wall gable wind benchmark — 2026-11-17
+
+- Added an independent closed-form helper for the triangular gable area above the eaves: (A=\frac12 B h), resultant (F=pA), centroid at midspan and (h/3) above the eaves. Tests cover positive pressure and negative suction.
+- This helper is a **reference benchmark only**. It is not yet assembled into the 3D model. Existing end-girt loading covers horizontal wall bands; the triangular gable patch above the eaves still has no demonstrated load path into the end frame.
+- Do not claim full end-wall wind transfer until the linearly varying patch is converted into statically equivalent member/nodal actions and independently checked for both resultant force and moment about the end-wall base.
