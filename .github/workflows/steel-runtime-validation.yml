@@ -90,6 +90,7 @@ jobs:
           dom.window.close();
           NODE
       - name: Verify production bundle manifest
+        if: always()
         run: |
           node <<'NODE'
           const fs = require('node:fs');
