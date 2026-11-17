@@ -361,10 +361,29 @@ function analyze(model,options){
  const vectorNorm=v=>Math.hypot(...v);
  const relativeForceResidual=vectorNorm(forceResidual)/Math.max(vectorNorm(appliedForce),vectorNorm(supportForce),1);
  const relativeMomentResidual=vectorNorm(momentResidual)/Math.max(vectorNorm(appliedMoment),vectorNorm(supportMoment),1);
+ // Node-by-node algebraic residual of the assembled 6-DOF system. Fixed-DOF
+ // residuals are identified as support reactions; free-DOF residuals must be
+ // negligible. This is a solver residual check, NOT an independent member-end
+ // force equilibrium reconstruction.
+ const nodeEquilibrium=nodes.map((node,i)=>{
+  const base=i*6,components=[];
+  for(let d=0;d<6;d++){
+   const dof=base+d,isFixed=fixed.has(dof),reaction=isFixed?R[dof]:0;
+   const residual=KD[dof]-F[dof]-reaction;
+   const scaleValue=Math.max(Math.abs(KD[dof]),Math.abs(F[dof]),Math.abs(reaction),1);
+   components.push({dof:d,residual,reaction,isFixed,relativeResidual:Math.abs(residual)/scaleValue});
+  }
+  const maxRelativeResidual=Math.max(0,...components.map(x=>x.relativeResidual));
+  return{nodeId:String(node.id),components,maxRelativeResidual,ok:maxRelativeResidual<=1e-6};
+ });
+ const maxNodeResidualRatio=Math.max(0,...nodeEquilibrium.map(x=>x.maxRelativeResidual));
+ const nodeEquilibriumOk=nodeEquilibrium.every(x=>x.ok);
  const equilibrium={appliedForceN:appliedForce,supportReactionN:supportForce,
   forceResidualN:forceResidual,appliedMomentNm:appliedMoment,supportMomentNm:supportMoment,
   momentResidualNm:momentResidual,relativeForceResidual,relativeMomentResidual,
-  ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6,freeDofCount:free.length};
+  nodeEquilibrium,nodeEquilibriumOk,maxNodeResidualRatio,
+  equilibriumScope:"global resultant plus assembled nodal linear-system residual; not independent member-end-action audit",
+  ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6&&nodeEquilibriumOk,freeDofCount:free.length};
  const results=elements.map(e=>{
   const dg=e.ids.map(i=>D[i]),dl=restoreReleasedRotations(mul(e.T,dg.map(v=>[v])).map(r=>r[0]),e.releaseData),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
@@ -392,6 +411,9 @@ function selfTest(){
  const base={supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],sectionResolver:()=>section};
  const close=(actual,expected,tol)=>Math.abs(actual-expected)<=Math.max(Math.abs(expected)*tol,1e-12);
  const tests=[];
+ const nodeResidualFixture=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[1000,0,0,0,0,0]}]});
+ const nodeResidualPass=nodeResidualFixture.equilibrium.nodeEquilibrium.length===2&&nodeResidualFixture.equilibrium.nodeEquilibrium.every(x=>x.ok)&&nodeResidualFixture.equilibrium.maxNodeResidualRatio<=1e-6&&nodeResidualFixture.equilibrium.equilibriumScope.includes("not independent");
+ tests.push({name:"node-by-node-assembled-equilibrium-residual",ok:nodeResidualPass,maxRelativeResidual:nodeResidualFixture.equilibrium.maxNodeResidualRatio,scope:nodeResidualFixture.equilibrium.equilibriumScope});
  const contract=analyze(makeModel(),base).localEndForceConvention;
  tests.push({name:"local-end-force-contract-metadata",ok:contract?.version===1&&contract.components.length===12&&contract.basis==="member-local"&&contract.verifiedSignCases.axialTension.endI==="negative Fx_i"&&contract.unverifiedSignCases.length===0});
  const axes=analyze(makeModel(),base).members[0].localAxes;
