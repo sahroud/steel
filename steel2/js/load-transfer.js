@@ -33,47 +33,55 @@
     });
   }
 
-  function triangularGablePostEquivalentLoads(pressureKPa, spanM, riseM, postIntervals) {
-    const p = Number(pressureKPa), span = Number(spanM), rise = Number(riseM), count = Number(postIntervals);
+  function triangularGablePostEquivalentLoads(pressureKPa, spanM, riseM, eaveHeightM, postIntervals) {
+    const p = Number(pressureKPa), span = Number(spanM), rise = Number(riseM);
+    const eave = Number(eaveHeightM), count = Number(postIntervals);
     if (!Number.isFinite(p)) throw new TypeError("فشار باد باید عدد محدود باشد.");
     if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(rise) || rise < 0)
       throw new RangeError("دهانه باید مثبت و ارتفاع مثلث نامنفی باشد.");
-    if (!Number.isInteger(count) || count < 2)
-      throw new RangeError("تعداد فاصله ستونک‌ها باید عدد صحیح حداقل دو باشد.");
+    if (!Number.isFinite(eave) || eave <= 0)
+      throw new RangeError("ارتفاع لبه بام باید مثبت باشد.");
+    if (!Number.isInteger(count) || count < 1)
+      throw new RangeError("تعداد فاصله ستونک‌ها باید عدد صحیح مثبت باشد.");
     const half = span / 2;
     const heightAt = x => rise * (x <= half ? x / half : (span - x) / half);
     const integrate = (a, b) => {
       const cuts = [a];
       if (a < half && b > half) cuts.push(half);
       cuts.push(b);
-      let area = 0, squareIntegral = 0;
+      let area = 0, firstMomentAboveEave = 0;
       for (let k = 0; k < cuts.length - 1; k++) {
         const x0 = cuts[k], x1 = cuts[k + 1], dx = x1 - x0;
         const h0 = heightAt(x0), h1 = heightAt(x1);
         area += dx * (h0 + h1) / 2;
-        squareIntegral += dx * (h0 * h0 + h0 * h1 + h1 * h1) / 3;
+        firstMomentAboveEave += dx * (h0 * h0 + h0 * h1 + h1 * h1) / 6;
       }
-      return { area, firstMomentY: squareIntegral / 2 };
+      return { area, firstMomentAboveEave };
     };
-    const posts = [];
-    for (let i = 1; i < count; i++) {
+    const supports = [];
+    for (let i = 0; i <= count; i++) {
       const x = span * i / count;
-      const left = (span * (i - 1) / count + x) / 2;
-      const right = (x + span * (i + 1) / count) / 2;
+      const left = i === 0 ? 0 : span * (i - 0.5) / count;
+      const right = i === count ? span : span * (i + 0.5) / count;
       const cell = integrate(left, right);
-      const h = heightAt(x);
+      const gableHeight = heightAt(x);
+      const supportHeight = eave + gableHeight;
       const resultant = p * cell.area;
-      const centroidY = cell.area > 0 ? cell.firstMomentY / cell.area : 0;
-      const topForce = h > 0 ? resultant * centroidY / h : 0;
-      posts.push(Object.freeze({
+      const centroidAboveEave = cell.area > 0
+        ? cell.firstMomentAboveEave / cell.area : 0;
+      const centroidAboveBase = eave + centroidAboveEave;
+      const topForce = supportHeight > 0
+        ? resultant * centroidAboveBase / supportHeight : 0;
+      supports.push(Object.freeze({
         post: i, xM: x, tributaryLeftM: left, tributaryRightM: right,
         tributaryAreaM2: cell.area, resultantKN: resultant,
-        centroidYAboveEaveM: centroidY,
+        centroidYAboveEaveM: centroidAboveEave,
         baseForceKN: resultant - topForce, topForceKN: topForce,
-        postHeightM: h
+        supportHeightM: supportHeight,
+        momentAboutBaseKNm: resultant * centroidAboveBase
       }));
     }
-    return Object.freeze(posts);
+    return Object.freeze(supports);
   }
   root.SteelLoadTransfer = Object.freeze({
     surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant,
