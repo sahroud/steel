@@ -10666,6 +10666,7 @@ function read(){
 function getData(){return clone(data);}
 function setData(v){data=normalize(v);render();}
 function render(){
+ data=normalize(data);
  const host=$("taperedSectionsContent");if(!host)return;
  host.innerHTML="<div class='field'><label for='taper_segmentsPerMember'>تعداد قطعات تحلیل برای هر عضو متغیرمقطع</label><select id='taper_segmentsPerMember'>"+[4,6,8,12,16,20,24].map(n=>"<option value='"+n+"' "+(data.segmentsPerMember===n?"selected":"")+">"+n+" قطعه</option>").join("")+"</select></div>"+GROUPS.map(([g,label])=>{
   const q=data.groups[g];
@@ -10756,6 +10757,7 @@ function init(){
 root.SteelTaperedSections={calculate,at,segmentModel,resolveForMember,getData,read,setData,runAudit,buildThicknessCandidates,runThicknessCandidates,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
+
 /* ===== steel2/js/tapered-member-force-audit.js ===== */
 (function(root){
 "use strict";
@@ -25889,6 +25891,7 @@ function audit(input){
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function render(){
+ data=normalize(data);
  const host=$("tensionDesignContent");if(!host)return;
  host.innerHTML=GROUPS.map(([g,label])=>{
   const d=data.groups[g]||{};
@@ -25934,6 +25937,7 @@ function selfTest(){
 root.SteelTensionDesignReadiness={getData,setData,readUI,audit,extractGroupTensionDemand,selfTest,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
+
 /* ===== steel2/js/brace-connection-readiness.js ===== */
 /* SAHROUD STEEL — brace-end connection geometry and documentation readiness.
  * Captures connection-specific geometry only. No Whitmore, bolt, weld, block-shear,
