@@ -186,6 +186,10 @@
             data.memberDesignInputs = window.SteelMemberDesignInputs.readUI();
         }
 
+        if (window.SteelColdFormedMemberRegistry) {
+            data.coldFormedMemberRegistry = window.SteelColdFormedMemberRegistry.getData();
+        }
+
         if (window.SteelTensionDesignReadiness && typeof window.SteelTensionDesignReadiness.readUI === "function") {
             data.tensionDesignReadiness = window.SteelTensionDesignReadiness.readUI();
         }
@@ -627,6 +631,10 @@
         if (window.SteelMemberDesignInputs &&
             typeof window.SteelMemberDesignInputs.setData === "function") {
             window.SteelMemberDesignInputs.setData(data.memberDesignInputs || {});
+        }
+
+        if (window.SteelColdFormedMemberRegistry) {
+            window.SteelColdFormedMemberRegistry.setData(data.coldFormedMemberRegistry || {});
         }
 
         if (window.SteelTensionDesignReadiness && typeof window.SteelTensionDesignReadiness.setData === "function") {
