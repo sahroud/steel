@@ -1538,6 +1538,13 @@
     });
     const customNodalLoads=[...nodalMap.values()];
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,{nodalLoads:customNodalLoads});
+    if(tieBeamIntegration.included.length){
+      if(!window.SteelTieBeamSolverAudit?.audit)throw new Error("ممیزی پس از حل‌گر شناژ بارگذاری نشده است؛ نتیجه تحلیل شناژ قابل تأیید نیست.");
+      tieBeamIntegration.solverAudit=window.SteelTieBeamSolverAudit.audit(analysisModel,result,tieBeamIntegration,selected.deadFactor);
+      if(!tieBeamIntegration.solverAudit.success)throw new Error("ممیزی ورود واقعی شناژ به حل‌گر ناموفق است: "+tieBeamIntegration.solverAudit.issues.slice(0,12).join("؛ "));
+    }else{
+      tieBeamIntegration.solverAudit={schemaVersion:1,success:true,expectedSegments:0,verifiedSegments:0,rows:[],issues:[],designApproved:false,note:"در این حالت بارگذاری هیچ مسیر شناژ معتبری برای ورود به حل‌گر ثبت نشده است."};
+    }
     result.additionalNodalLoadCount=customNodalLoads.length;
     if(!window.SteelStructuralLoadChain?.auditSolverLoadTransfer)throw new Error("ممیزی مستقل دفتر بار و تعادل واکنش‌ها بارگذاری نشده است؛ نتیجه برای طراحی قابل استفاده نیست.");
     result.solverLoadTransferAudit=window.SteelStructuralLoadChain.auditSolverLoadTransfer(
