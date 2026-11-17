@@ -30,13 +30,19 @@ function audit(envelope,model,footingSpecFor){
    if(!label||seen.has(label)){issues.push("نام حالت واکنش خالی یا تکراری برای گره "+id);return;}
    seen.add(label);
    if(!expectedCaseLabels.has(label))issues.push("حالت واکنش برای گره "+id+" در فهرست اصلی پوش وجود ندارد: "+label);
-   if(!Array.isArray(item.values)||item.values.length<6||item.values.slice(0,6).some(v=>!finite(Number(v))))issues.push("بردار شش‌مؤلفه‌ای نامعتبر برای گره "+id+" / "+label);
+   if(!Array.isArray(item.values)||item.values.length!==6||!item.values.every(finite))issues.push("بردار باید دقیقاً شش مؤلفه عددی محدود داشته باشد؛ مقدار متنی یا مؤلفه اضافی پذیرفته نیست: "+id+" / "+label);
   });
   expectedCaseLabels.forEach(label=>{if(!seen.has(label))issues.push("واکنش حالت "+label+" برای گره "+id+" موجود نیست.");});
-  if(Array.isArray(cases)&&cases.length===envelope.cases.length&&cases.every(x=>Array.isArray(x.values)&&x.values.length>=6&&x.values.slice(0,6).every(v=>finite(Number(v))))){
+  if(Array.isArray(cases)&&cases.length===envelope.cases.length&&cases.every(x=>Array.isArray(x.values)&&x.values.length===6&&x.values.every(finite))){
    [0,1,2,3,4,5].forEach(k=>{
-    const vals=cases.map(x=>Number(x.values[k])),mn=Math.min(...vals),mx=Math.max(...vals),env=row.envelopes?.[k];
-    if(!env||!finite(Number(env.min))||!finite(Number(env.max))||Math.abs(mn-Number(env.min))>1e-7||Math.abs(mx-Number(env.max))>1e-7)issues.push("پوش کمینه/بیشینه با واکنش‌های خام سازگار نیست: "+id+" مؤلفه "+k);
+    const mn=Math.min(...cases.map(x=>x.values[k])),mx=Math.max(...cases.map(x=>x.values[k])),env=row.envelopes?.[k];
+    if(!env||!finite(env.min)||!finite(env.max)||Math.abs(mn-env.min)>1e-7||Math.abs(mx-env.max)>1e-7)issues.push("پوش کمینه/بیشینه با واکنش‌های خام سازگار نیست: "+id+" مؤلفه "+k);
+    if(env){
+     const minCase=String(env.minCase??""),maxCase=String(env.maxCase??"");
+     const minSource=cases.find(x=>x.label===minCase),maxSource=cases.find(x=>x.label===maxCase);
+     if(!minSource||Math.abs(minSource.values[k]-mn)>1e-7)issues.push("شناسه حالت حاکم کمینه با مقدار واقعی تطبیق ندارد: "+id+" مؤلفه "+k);
+     if(!maxSource||Math.abs(maxSource.values[k]-mx)>1e-7)issues.push("شناسه حالت حاکم بیشینه با مقدار واقعی تطبیق ندارد: "+id+" مؤلفه "+k);
+    }
    });
   }
   if(typeof footingSpecFor==="function"){
@@ -106,7 +112,10 @@ function selfTest(){
   ["unknown case label cannot replace a missing valid case",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,caseReactions:[{label:"UNKNOWN",values:vals1},{label:"C2",values:vals1}]}:r)},model).ok],
   ["case labels may be reordered without losing exact coverage",audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,caseReactions:r.caseReactions.slice().reverse()}:r)},model).ok],
   ["coordinate mismatch rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B2"?{...r,x:9}:r)},model).ok],
-  ["envelope min max mismatch rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,envelopes:r.envelopes.map((e,i)=>i===0?{min:-1,max:1}:e)}:r)},model).ok],
+  ["envelope min max mismatch rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,envelopes:r.envelopes.map((e,i)=>i===0?{...e,min:-1,max:1}:e)}:r)},model).ok],
+  ["envelope governing case ID must match actual minimum",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,envelopes:r.envelopes.map((e,i)=>i===0?{...e,minCase:"UNKNOWN"}:e)}:r)},model).ok],
+  ["non-numeric reaction values are rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,caseReactions:[{label:"C1",values:["10",20,30,1,2,3]}]}:r)},model).ok],
+  ["reaction vectors with extra components are rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,caseReactions:[{label:"C1",values:[...vals1,99]}]}:r)},model).ok],
   ["failed equilibrium rejected",!audit({...env,cases:[{label:"C1",equilibrium:{ok:false}}]},model).ok],
   ["missing footing dimensions rejected",!audit(env,model,()=>({width:0,length:1,thickness:1})).ok],
   ["global-origin moment includes r cross F",good.resultants[0].solverSupportResultant.My===21],
