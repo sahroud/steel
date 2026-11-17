@@ -9,7 +9,8 @@ const $=id=>document.getElementById(id);
 const GROUPS=[["column","ستون"],["rafter","رفتر"]];
 const STATIONS=[["start","ابتدا"],["mid","میانه"],["end","انتها"]];
 const DIMS=[["d","عمق d (mm)"],["bf","عرض بال bf (mm)"],["tw","ضخامت جان tw (mm)"],["tf","ضخامت بال tf (mm)"]];
-let data={schemaVersion:1,segmentsPerMember:8,groups:{column:{enabled:false,stations:{}},rafter:{enabled:false,stations:{}}}};
+const blankStations=()=>({start:{d:null,bf:null,tw:null,tf:null},mid:{d:null,bf:null,tw:null,tf:null},end:{d:null,bf:null,tw:null,tf:null}});
+let data={schemaVersion:1,segmentsPerMember:8,groups:{column:{enabled:false,stations:blankStations()},rafter:{enabled:false,stations:blankStations()}}};
 let audit=[];
 function clone(v){return JSON.parse(JSON.stringify(v));}
 function normalize(v){
