@@ -82,9 +82,10 @@
     }
 
     function hasWind(data) {
-        return Math.abs(Number(data.windLeft) || 0) > 1e-12 ||
-            Math.abs(Number(data.windRight) || 0) > 1e-12 ||
-            Math.abs(Number(data.windWall) || 0) > 1e-12;
+        return [
+            data.windLeft, data.windRight, data.windWall,
+            data.windEndFront, data.windEndBack
+        ].some(value => Math.abs(Number(value) || 0) > 1e-12);
     }
 
     function makeCombinationData(original, options) {
@@ -103,9 +104,13 @@
         data.snowLeft = original.snowLeft * snowFactor;
         data.snowRight = original.snowRight * snowFactor;
 
-        data.windLeft = original.windLeft * windFactor * windSign;
-        data.windRight = original.windRight * windFactor * windSign;
+        data.windLeft = (Number(original.windLeft) || 0) * windFactor * windSign;
+        data.windRight = (Number(original.windRight) || 0) * windFactor * windSign;
         data.windWall = (Number(original.windWall) || 0) * windFactor * windSign;
+        // End-wall pressures are independent input actions and must participate
+        // in the same wind factor/sign as roof and longitudinal-wall pressures.
+        data.windEndFront = (Number(original.windEndFront) || 0) * windFactor * windSign;
+        data.windEndBack = (Number(original.windEndBack) || 0) * windFactor * windSign;
 
         data.windDirection = windSign < 0
             ? oppositeDirection(original.windDirection)
@@ -169,7 +174,7 @@
                 d.liveLeft, d.liveRight,
                 d.snowLeft, d.snowRight,
                 d.windLeft, d.windRight,
-                d.windWall, d.windDirection
+                d.windWall, d.windEndFront, d.windEndBack, d.windDirection
             ]);
 
             if (!signatures.has(signature)) {
