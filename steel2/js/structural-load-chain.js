@@ -224,13 +224,19 @@ function auditEquilibrium(eq,tolerance=1e-6){
 }
 function closeNumber(a,b){return Math.abs(a-b)<=1e-8*Math.max(1,Math.abs(a),Math.abs(b));}
 function buildFoundationReactionEnvelope(caseResults){
- const issues=[],byFooting=new Map();
+ const issues=[],byFooting=new Map(),seenCases=new Set();
  if(!Array.isArray(caseResults)||!caseResults.length)issues.push("نتایج چندحالت بار برای تشکیل پوش واکنش پی موجود نیست.");
  (caseResults||[]).forEach(result=>{
+  const caseId=String(result?.id||"").trim();
+  if(!caseId||seenCases.has(caseId))issues.push("شناسه حالت بار در پوش واکنش پی خالی یا تکراری است: "+caseId);
+  seenCases.add(caseId);
   const audit=result?.foundationReactionMappingAudit;
   if(!audit?.success){issues.push("نگاشت پی در حالت "+String(result?.id||"?")+" کامل نیست؛ پوش پی متوقف شد.");return;}
+  const caseFootings=new Set();
   (audit.footingDemands||[]).forEach(footing=>{
    const id=String(footing.footingId||"").trim(),p=footing.referencePointM,a=footing.actions;
+   if(id&&caseFootings.has(id)){issues.push("پی "+id+" در حالت "+caseId+" بیش از یک بار ثبت شده است.");return;}
+   if(id)caseFootings.add(id);
    if(!id||!p||![p.x,p.y,p.z].every(finite)||!a||!["Fx","Fy","Fz","Mx","My","Mz"].every(k=>finite(a[k]))){
     issues.push("داده پی در حالت "+String(result.id||"?")+" ناقص است.");return;
    }
@@ -256,7 +262,7 @@ function buildFoundationReactionEnvelope(caseResults){
   });
  }
  return{success:issues.length===0,status:issues.length?"envelope-incomplete":"case-preserving-demand-envelope",
-  issues,footings:Array.from(byFooting.values()),caseCount:caseResults?.length||0,
+  issues,footings:issues.length?[]:Array.from(byFooting.values()),caseCount:caseResults?.length||0,
   rule:"هر مؤلفه کمینه/بیشینه با شناسه حالت بار واقعی حفظ می‌شود؛ مؤلفه‌های حاکم از حالت‌های مختلف با هم ترکیب و به‌عنوان یک بردار همزمان ساختگی ارائه نمی‌شوند.",
   units:{force:"N",moment:"N.m"},analysisEnabled:false,designApproved:false};
 }
@@ -449,7 +455,15 @@ function selfTest(){
  ]);
  ck("foundation envelope preserves governing case ID for every component",()=>env.success&&env.footings[0].componentEnvelope.Fx.min.caseId==="W"&&env.footings[0].componentEnvelope.My.max.caseId==="D");
  ck("foundation envelope does not combine extrema into a fictitious simultaneous vector",()=>env.footings[0].caseActions.length===2&&env.rule.includes("بردار همزمان ساختگی"));
- ck("incomplete mapping blocks foundation envelope",()=>!buildFoundationReactionEnvelope([{id:"X",foundationReactionMappingAudit:{success:false,footingDemands:[]}}]).success);
+ ck("incomplete mapping blocks foundation envelope and clears partial footing output",()=>{const bad=buildFoundationReactionEnvelope([{id:"X",foundationReactionMappingAudit:{success:false,footingDemands:[]}}]);return !bad.success&&bad.footings.length===0;});
+ ck("duplicate footing in one load case is blocked",()=>!buildFoundationReactionEnvelope([{id:"X",foundationReactionMappingAudit:{success:true,footingDemands:[
+  {footingId:"F",referencePointM:{x:0,y:0,z:0},actions:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0}},
+  {footingId:"F",referencePointM:{x:0,y:0,z:0},actions:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0}}
+ ]}}]).success);
+ ck("duplicate load-case IDs are blocked",()=>!buildFoundationReactionEnvelope([
+  {id:"X",foundationReactionMappingAudit:{success:true,footingDemands:[]}},
+  {id:"X",foundationReactionMappingAudit:{success:true,footingDemands:[]}}
+ ]).success);
  ck("inconsistent footing reference across cases blocks envelope",()=>!buildFoundationReactionEnvelope([
   {id:"A",foundationReactionMappingAudit:{success:true,footingDemands:[{footingId:"F",referencePointM:{x:0,y:0,z:0},actions:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0}}]}},
   {id:"B",foundationReactionMappingAudit:{success:true,footingDemands:[{footingId:"F",referencePointM:{x:1,y:0,z:0},actions:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0}}]}}
