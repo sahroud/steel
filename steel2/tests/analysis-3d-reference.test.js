@@ -105,3 +105,41 @@ test("solver rejects non-positive section properties", () => {
     supports: [{ nodeId: "N1", fixedDofs: [0, 1, 2, 3, 4, 5] }]
   }), /خاصیت A برای عضو M1 ناقص یا نامعتبر است/);
 });
+
+
+test("cantilever lateral nodal load: deflection equals PL^3/(3EIz)", () => {
+  const P = 500;
+  const L = 3;
+  const result = solver.analyze({
+    nodes: [
+      { id: "FIX", x: 0, y: 0, z: 0 },
+      { id: "TIP", x: L, y: 0, z: 0 }
+    ],
+    members: [{ id: "CANT", start: "FIX", end: "TIP", sectionKey: "reference" }]
+  }, {
+    sectionResolver: () => section,
+    supports: [{ nodeId: "FIX", fixedDofs: [0, 1, 2, 3, 4, 5] }],
+    nodalLoads: [{ nodeId: "TIP", values: [0, P, 0, 0, 0, 0] }]
+  });
+
+  const expected = P * L ** 3 / (3 * section.E * section.Iz);
+  const actual = result.displacements.find(n => n.nodeId === "TIP").values[1];
+  assert.ok(Math.abs(actual - expected) <= Math.max(1e-12, expected * 1e-8),
+    `expected cantilever deflection ${expected}, received ${actual}`);
+  assert.equal(result.equilibrium.ok, true);
+  assert.ok(Math.abs(result.equilibrium.supportReactionN[1] + P) < 1e-6);
+  assert.ok(Math.abs(result.equilibrium.supportMomentNm[2] + P * L) < 1e-6);
+});
+
+test("solver rejects an unstable unsupported model", () => {
+  assert.throws(() => solver.analyze({
+    nodes: [
+      { id: "A", x: 0, y: 0, z: 0 },
+      { id: "B", x: 2, y: 0, z: 0 }
+    ],
+    members: [{ id: "M", start: "A", end: "B", sectionKey: "reference" }]
+  }, {
+    sectionResolver: () => section,
+    supports: []
+  }), /تکین|نامعتبر|DOF_SINGULAR/);
+});
