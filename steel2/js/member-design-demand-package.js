@@ -80,6 +80,15 @@ function buildCombinedFromSolverCases(model,runnerCases,options){
  result.designGate={...(result.designGate||{}),capacityCalculated:false,codeInteractionCalculated:false,designApproved:false,readyForCodeDesign:false};
  last=result;return result;
 }
+function buildCombinedFromBatch(model,batchResult,options){
+ if(batchResult?.success!==true||batchResult?.status!=="isolated_cases_complete"||batchResult?.commonSolverTopologyVerified!==true||!Array.isArray(batchResult.cases)||!batchResult.cases.length){
+  const blocked={success:false,status:"batch-analysis-incomplete",issues:batchResult?.issues?.length?batchResult.issues.slice():["خروجی دسته‌ای باید موفق، کامل و دارای توپولوژی مشترک تأییدشده باشد."],caseIds:batchResult?.caseIds||[],designApproved:false,capacityCalculated:false,readyForCodeDesign:false};
+  last=blocked;return blocked;
+ }
+ const result=buildCombinedFromSolverCases(model,batchResult.cases,options||{});
+ result.batchAudit={status:batchResult.status,caseIds:batchResult.caseIds.slice(),isolatedPerCase:true,commonSolverTopologyVerified:true};
+ last=result;return result;
+}
 function getLast(){return last?JSON.parse(JSON.stringify(last)):null;}
 function selfTest(){
  const row=(x,extra={})=>({x_m:x,N_N:1,Vy_N:2,Vz_N:3,T_Nm:4,My_Nm:5,Mz_Nm:6,...extra});
@@ -94,5 +103,5 @@ function selfTest(){
  const prior=root.SteelSolverSectionForceDiagramBridge,priorCombo=root.SteelMemberDemandCombinationBridge,priorAdapter=root.SteelStationDemandAdapter;let diagramCalled=false;root.SteelSolverSectionForceDiagramBridge={build:(_m,r)=>{diagramCalled=true;return {...c,loadCaseId:r.simultaneousActionCase.caseId,source:r.simultaneousActionCase.source};}};root.SteelStationDemandAdapter={build:diagrams=>({success:true,issues:[],cases:diagrams.map(d=>({caseId:d.loadCaseId,source:d.source,members:[{memberId:"M1",kind:"prismatic",length_m:2,complete:true,stations:[row(0),row(2)]}]}))})};const source={document:"calc.pdf",revision:"R1",locator:"p.2",authority:"designer"};const runner=[{simultaneousActionCase:{caseId:"LC1",source}}];const incomplete=buildFromSolverCases({},[{simultaneousActionCase:{caseId:"LC-MISSING"}}],{expectedMemberIds:["M1"]});const incompleteSkipped=!diagramCalled;const pipeline=buildFromSolverCases({},runner,{expectedMemberIds:["M1"]});const blockedCombo=buildCombinedFromSolverCases({},[{simultaneousActionCase:{caseId:"LC-MISSING"}}],{expectedMemberIds:["M1"]});let bridgeCalled=false;root.SteelMemberDemandCombinationBridge={build:()=>{bridgeCalled=true;return {success:true,designApproved:false,proposals:[]};}};const combined=buildCombinedFromSolverCases({},runner,{expectedMemberIds:["M1"],combinationSet:{loadCases:[],combinations:[]},assumptions:{}});root.SteelSolverSectionForceDiagramBridge=prior;root.SteelMemberDemandCombinationBridge=priorCombo;root.SteelStationDemandAdapter=priorAdapter;const t=[good.success&&good.designGate.designApproved===false,noSource.success===false,noMember.success===false,duplicate.success===false,mixed.success&&mixed.members[0].cases.length===2&&mixed.members[0].cases[0].stations[0].actions.My===5&&mixed.members[0].cases[1].stations[0].actions.My===99,tapered.success&&tapered.members[0].cases[0].segments.length===1,incomplete.status==="source-provenance-incomplete"&&incomplete.solverPipeline.diagramCaseCount===0&&incompleteSkipped,pipeline.success&&pipeline.solverPipeline.isolatedPerCase&&pipeline.caseIds.length===1&&pipeline.sourceAudit?.success===true,blockedCombo.combinationProposal?.status==="blocked-demand-package-incomplete",bridgeCalled&&combined.combinationProposal?.success===true&&combined.designGate.designApproved===false];
  return {passed:t.filter(Boolean).length,failed:t.filter(x=>!x).length,total:t.length,tests:t};
 }
-root.SteelMemberDesignDemandPackage={build,buildFromSolverCases,buildCombinedFromSolverCases,getLast,selfTest};
+root.SteelMemberDesignDemandPackage={build,buildFromSolverCases,buildCombinedFromSolverCases,buildCombinedFromBatch,getLast,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
