@@ -70,7 +70,10 @@ jobs:
             try { diagnostics[name] = window[name].selfTest(); }
             catch (error) { diagnostics[name] = {error: error.message}; }
           }
-          const failedDiagnostics = Object.entries(diagnostics).filter(([, value]) => value?.failed > 0 || value?.error || (value?.tests || value?.checks || []).some(x => x.ok === false || x.pass === false));
+          const failedDiagnostics = Object.entries(diagnostics).filter(([, value]) => {
+            const rows = Array.isArray(value?.tests) ? value.tests : (Array.isArray(value?.checks) ? value.checks : []);
+            return value?.failed > 0 || !!value?.error || rows.some(x => x.ok === false || x.pass === false);
+          });
           console.log('SELFTEST_DIAGNOSTICS:', JSON.stringify(failedDiagnostics).slice(0, 40000));
           const runtime = window.SteelRuntimeIntegrity?.audit?.();
           if (!runtime?.success) {
