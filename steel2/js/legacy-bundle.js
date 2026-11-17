@@ -10757,7 +10757,6 @@ function init(){
 root.SteelTaperedSections={calculate,at,segmentModel,resolveForMember,getData,read,setData,runAudit,buildThicknessCandidates,runThicknessCandidates,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
-
 /* ===== steel2/js/tapered-member-force-audit.js ===== */
 (function(root){
 "use strict";
