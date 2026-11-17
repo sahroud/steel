@@ -195,8 +195,15 @@ function modelFingerprint(model){
   if(!result||!Array.isArray(result.reactions)||!model||!Array.isArray(model.nodes)){
    $("foundationTakeoffSummary").textContent="نتیجه تحلیل سه‌بعدی در دسترس نیست. ابتدا مدل را بسازید و تحلیل سه‌بعدی را با موفقیت اجرا کنید.";return;
   }
-  if(!result.foundationSourceModelFingerprint||!modelFingerprint(model)||result.foundationSourceModelFingerprint!==modelFingerprint(model)){
-   $("foundationTakeoffSummary").textContent="مدل، مقاطع یا بارها پس از آخرین تحلیل تغییر کرده‌اند (یا نتیجه با نسخه قدیمی حل‌گر تولید شده است). برای جلوگیری از متره اشتباه، ابتدا تحلیل سه‌بعدی را دوباره اجرا کنید.";
+  const currentSourceFingerprint=modelFingerprint(model);
+  if(!result.foundationSourceModelFingerprint||!currentSourceFingerprint||result.foundationSourceModelFingerprint!==currentSourceFingerprint){
+   $("foundationTakeoffSummary").textContent="مدل، مسیر شناژ، ترکیبات بار یا مقاطع پس از آخرین تحلیل تغییر کرده‌اند (یا نتیجه با نسخه قدیمی حل‌گر تولید شده است). برای جلوگیری از متره اشتباه، ابتدا تحلیل سه‌بعدی را دوباره اجرا کنید.";
+   return;
+  }
+  const tie=result.tieBeamIntegration;
+  if(!tie||!Array.isArray(tie.included)||!Array.isArray(tie.skipped)||tie.skipped.length||
+     tie.solverAudit?.success!==true||tie.solverAudit.verifiedSegments!==tie.solverAudit.expectedSegments){
+   $("foundationTakeoffSummary").textContent="استخراج واکنش متوقف شد: ممیزی ورود واقعی شناژها به حل‌گر کامل نیست یا یک مسیر شناژ از تحلیل حذف شده است.";
    return;
   }
   let rows;
@@ -220,7 +227,8 @@ function modelFingerprint(model){
    const sm=window.SteelStructuralModel,model=sm.model||sm.build();
    const env=await sm.analyzeFoundationEnvelope();
    if(!env||!Array.isArray(env.rows)||!env.rows.length)throw new Error("پوش واکنش معتبری دریافت نشد.");
-   if(!env.foundationSourceModelFingerprint||!modelFingerprint(model)||env.foundationSourceModelFingerprint!==modelFingerprint(model))throw new Error("مدل، مسیر شناژ، ترکیبات بار یا مقاطع پس از تحلیل تغییر کرده‌اند؛ پوش برای جلوگیری از استفاده اشتباه رد شد.");
+   const currentSourceFingerprint=modelFingerprint(model);
+   if(!env.foundationSourceModelFingerprint||!currentSourceFingerprint||env.foundationSourceModelFingerprint!==currentSourceFingerprint)throw new Error("مدل، مسیر شناژ، ترکیبات بار یا مقاطع پس از تحلیل تغییر کرده‌اند؛ پوش برای جلوگیری از استفاده اشتباه رد شد.");
    const reactionAudit=window.SteelFoundationReactionAudit?.audit?.(env,model,footingSpecFor);
    if(!reactionAudit?.ok)throw new Error("ممیزی کامل‌بودن پوش واکنش ناموفق است: "+(reactionAudit?.issues||["ماژول ممیزی در دسترس نیست."]).join("؛ "));
    const body=$("foundationReactionRows");body.replaceChildren();
