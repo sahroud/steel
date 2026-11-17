@@ -39,7 +39,7 @@ jobs:
           global.localStorage = {getItem: () => null, setItem: () => {}, removeItem: () => {}};
           global.sessionStorage = {getItem: () => null, setItem: () => {}, removeItem: () => {}};
           global.document = {
-            readyState: 'complete',
+            readyState: 'loading',
             head: {appendChild: () => {}},
             body: {appendChild: () => {}, insertAdjacentElement: () => {}},
             getElementById: () => null,
