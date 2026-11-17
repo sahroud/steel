@@ -69,7 +69,7 @@ jobs:
           const required = [
             'project.js','loads.js','analysis-3d.js','analysis.js','model-3d.js',
             'design-core.js','m6-load-combination-templates.js','member-design-demand-package.js',
-            'crane-3d-load-transfer.js','foundation-reaction-bridge.js','runtime-integrity.js'
+            'crane-3d-load-transfer.js','foundation-reaction-bridge.js','runtime-integrity.js','solver-end-action-sign-benchmarks.js'
           ];
           const excluded = [
             'dropbox-integration.js','engineering-workstream-dashboard.js',
@@ -82,7 +82,7 @@ jobs:
             console.error({moduleCount: names.length, duplicates, missing, unexpectedlyIncluded, missingSources});
             process.exit(1);
           }
-          if (!html.includes('js/legacy-bundle.js?v=20261117-runtime3') || html.includes('dropbox@')) {
+          if (!html.includes('js/legacy-bundle.js?v=20261117-runtime4') || html.includes('dropbox@')) {
             console.error('Legacy page does not reference the current single runtime bundle or still loads the external Dropbox SDK.');
             process.exit(1);
           }
