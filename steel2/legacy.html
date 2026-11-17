@@ -38,8 +38,8 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 @media(max-width:600px){.focus-workspace-nav{margin:6px 0;padding:8px}.focus-workspace-nav .focus-links{gap:5px}.focus-workspace-nav a{font-size:12px;padding:7px 9px}}
 </style>
 <nav class="focus-workspace-nav" id="focusWorkspaceNav" aria-label="میانبر بخش‌های نرم‌افزار">
-  <p class="focus-caption" id="focusWorkspaceCaption">ورود مستقیم به بخش موردنیاز؛ با انتخاب «همه بخش‌ها» صفحه کامل نمایش داده می‌شود.</p>
-  <div class="focus-links">
+  <p class="focus-caption" id="focusWorkspaceCaption">برای ورود به فرم اصلی، تحلیل، طراحی اعضا یا پلان فونداسیون، منو را باز کنید.</p>
+  <details class="focus-menu"><summary>منوی بخش‌های نرم‌افزار <span>انتخاب بخش برای ورود مستقیم</span></summary><div class="focus-links">
     <a href="legacy.html?focus=project#projectSetupPanel" data-focus-link="project">مشخصات پروژه</a>
     <a href="legacy.html?focus=loads#loadsPanel" data-focus-link="loads">بارگذاری</a>
     <a href="legacy.html?focus=drawings#framePanel" data-focus-link="drawings">ترسیم و نماها</a>
@@ -50,8 +50,9 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     <a href="legacy.html?focus=tapered#taperedSectionsPanel" data-focus-link="tapered">مقاطع متغیر و ضخامت‌ها</a>
     <a href="legacy.html?focus=connections#connectionDemandRegistryPanel" data-focus-link="connections">اتصالات و محل اتصال اجزا</a>
     <a href="legacy.html?focus=foundation#brtAnchorDemandPanel" data-focus-link="foundation">فونداسیون و انکرها</a>
+    <a href="legacy.html?focus=foundation-plan#constructionDrawingsPanel" data-focus-link="foundation-plan">پلان فونداسیون</a>
     <a href="legacy.html" data-focus-link="all">نمایش همه بخش‌ها</a>
-  </div>
+  </div></details>
 </nav>
 <script>
 (function(){
@@ -59,7 +60,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
   function initFocusWorkspace(){
     var params=new URLSearchParams(window.location.search);
     var focus=params.get("focus");
-    var valid=["project","loads","drawings","analysis","member-design","crane","member-check","tapered","connections","foundation"];
+    var valid=["project","loads","drawings","analysis","member-design","crane","member-check","tapered","connections","foundation","foundation-plan"];
     var nav=document.getElementById("focusWorkspaceNav");
     if(!nav)return;
     if(!focus||!valid.includes(focus)){
@@ -73,7 +74,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     });
     var active=nav.querySelector('[data-focus-link="'+focus+'"]');
     if(active)active.setAttribute("aria-current","page");
-    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا",tapered:"مقاطع متغیر و غربال ضخامت",connections:"اتصالات و محل اتصال اجزا",foundation:"فونداسیون و انکرها"};
+    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا",tapered:"مقاطع متغیر و غربال ضخامت",connections:"اتصالات و محل اتصال اجزا",foundation:"فونداسیون و انکرها","foundation-plan":"پلان فونداسیون"};
     var caption=document.getElementById("focusWorkspaceCaption");
     if(caption)caption.textContent="حالت نمایش متمرکز: "+labels[focus]+"؛ برای بازگشت، «نمایش همه بخش‌ها» را انتخاب کنید.";
     var targetId=(window.location.hash||"").slice(1);
@@ -87,7 +88,18 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
       });
       var lateTarget=targetId&&document.getElementById(targetId);
       if(!lateTarget)lateTarget=document.querySelector('[data-focus-group].focus-visible');
-      if(lateTarget)lateTarget.scrollIntoView({behavior:"auto",block:"start"});
+      // Advanced panels are intentionally grouped in a closed menu on first load.
+      // Open every details ancestor before scrolling so deep links never land in a hidden area.
+      if(focus!=="project"){
+        var advanced=document.querySelector("#homeAdvancedTools > details");
+        if(advanced)advanced.open=true;
+      }
+      var parent=lateTarget;
+      while(parent){if(parent.tagName==="DETAILS")parent.open=true;parent=parent.parentElement;}
+      if(lateTarget){
+        lateTarget.hidden=false;
+        lateTarget.scrollIntoView({behavior:"auto",block:"start"});
+      }
     },140);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initFocusWorkspace);
