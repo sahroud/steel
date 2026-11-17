@@ -21,7 +21,17 @@ function validateCase(c,model){
  const nodeId=c?.target?.slice(5);
  if(!Array.isArray(model?.nodes)||!model.nodes.some(n=>String(n.id)===nodeId))issues.push("گره مقصد در مدل فعال پیدا نشد.");
  if(!Array.isArray(model?.members)||!model.members.length)issues.push("مدل باید اعضای سازه‌ای داشته باشد.");
- if(Array.isArray(model?.members)&&model.members.some(m=>!Array.isArray(m.analysisLoad?.uniformLocal)||m.analysisLoad.uniformLocal.length!==3||m.analysisLoad.uniformLocal.some(v=>!finite(v))))issues.push("بار گسترده هر عضو باید در مدل صریحاً با سه مؤلفه محلی ثبت شده باشد؛ بار صفر را نیز صریح وارد کنید.");
+ if(Array.isArray(model?.members)){
+  const ids=new Set();
+  model.members.forEach((m,i)=>{
+   const id=String(m?.id??"").trim(),ledger=m?.analysisLoad||{};
+   if(!id||ids.has(id))issues.push("شناسه عضو شماره "+(i+1)+" خالی یا تکراری است: "+id);ids.add(id);
+   if(ledger.loadDataComplete!==true&&m?.loadDataComplete!==true)issues.push("کامل‌بودن دفتر بارگذاری عضو "+(id||i+1)+" باید صریحاً تأیید شود.");
+   if(!Array.isArray(ledger.uniformLocal)||ledger.uniformLocal.length!==3||!ledger.uniformLocal.every(finite))issues.push("بار گسترده یکنواخت عضو "+(id||i+1)+" باید با سه مؤلفه عددی محلی و حتی در حالت صفر صریح ثبت شود.");
+   if(Array.isArray(ledger.pointLoads)&&ledger.pointLoads.length)issues.push("بار متمرکز روی عضو "+(id||i+1)+" در این مسیر حل‌گر/بازسازی پشتیبانی نمی‌شود.");
+   if(Array.isArray(ledger.distributedLoads)&&ledger.distributedLoads.length)issues.push("بار گسترده غیریکنواخت/قطعه‌ای عضو "+(id||i+1)+" در این مسیر پشتیبانی نمی‌شود.");
+  });
+ }
  return {success:issues.length===0,issues,nodeId};
 }
 function run(model,loadCase,options){
@@ -42,7 +52,7 @@ function run(model,loadCase,options){
 }
 function selfTest(){
  const section={E:200e9,G:77e9,A:.01,Iy:8e-5,Iz:2e-5,J:1e-5};
- const model={nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:3,y:0,z:0}],members:[{id:"M1",start:"FIX",end:"TIP",type:"validation",analysisLoad:{uniformLocal:[0,0,0]}}]};
+ const model={nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:3,y:0,z:0}],members:[{id:"M1",start:"FIX",end:"TIP",type:"validation",analysisLoad:{loadDataComplete:true,uniformLocal:[0,0,0]}}]};
  const supports=[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}];
  const base={id:"LC-1",type:"nodal",coordinateSystem:"global",target:"node:TIP",forceUnit:"kN",momentUnit:"kN.m",values:{Fx:0,Fy:-1,Fz:0,Mx:0,My:0,Mz:0},source:{document:"calc.pdf",revision:"R1",locator:"p.2",authority:"Designer"}};
  const opts={runSolver:true,supports,sectionResolver:()=>section};
@@ -54,6 +64,10 @@ function selfTest(){
  ["missing node blocked",()=>!run(model,{...base,target:"node:ABSENT"},opts).success],
  ["missing source blocked",()=>!run(model,{...base,source:{document:"x"}},opts).success],
  ["missing explicit zero member load blocked",()=>!run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:undefined}]},base,opts).success],
+ ["missing load completeness blocked before solver",()=>{let called=false;const prior=root.SteelFrame3D;root.SteelFrame3D={analyze:()=>{called=true;return {success:true,equilibrium:{ok:true},members:[]};}};const r=run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{uniformLocal:[0,0,0]}}]},base,opts);root.SteelFrame3D=prior;return !r.success&&!called&&r.issues.some(x=>x.includes("کامل‌بودن دفتر بارگذاری"));}],
+ ["unsupported point load blocked before solver",()=>!run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{loadDataComplete:true,uniformLocal:[0,0,0],pointLoads:[{x:1}]}}]},base,opts).success],
+ ["unsupported nonuniform load blocked before solver",()=>!run({nodes:model.nodes,members:[{...model.members[0],analysisLoad:{loadDataComplete:true,uniformLocal:[0,0,0],distributedLoads:[{start:0,end:2}]}}]},base,opts).success],
+ ["duplicate physical member IDs blocked",()=>!run({nodes:model.nodes,members:[model.members[0],{...model.members[0]}]},base,opts).success],
  ["solver opt-in required",()=>!run(model,base,{...opts,runSolver:false}).success],
  ["analysis equilibrium and simultaneous end vectors",()=>{const r=run(model,base,opts);return r.success&&r.solverResult.equilibrium.ok&&r.simultaneousActionCase.members[0].endI&&r.simultaneousActionCase.members[0].endJ;}],
  ["model not mutated",()=>{const before=JSON.stringify(model);run(model,base,opts);return JSON.stringify(model)===before;}],
