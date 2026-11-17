@@ -30,10 +30,19 @@ function reconstruct(input,options){
  const stations=new Set();
  const count=Math.max(2,Math.min(200,Math.floor(Number(options.subdivisions)||20)));
  for(let i=0;i<=count;i++)stations.add(L*i/count);
- // Add zero-shear locations, where a component of bending moment can peak.
+ // Add exact zero-shear locations, where a component of bending moment can peak.
+ // For a linearly varying load, V(x)=-(F_i+q0*x+deltaQ*x^2/(2L)); solve the quadratic.
  for(const k of [1,2]){
-  const qk=q[k],fik=f[k];
-  if(Math.abs(qk)>1e-12){const x=-fik/qk;if(x>0&&x<L)stations.add(x);}
+  const a=dq[k]/(2*L),b=q0[k],cc=f[k];
+  if(Math.abs(a)<=1e-14){
+   if(Math.abs(b)>1e-12){const x=-cc/b;if(x>0&&x<L)stations.add(x);}
+  }else{
+   const discriminant=b*b-4*a*cc;
+   if(discriminant>=0){
+    const root=Math.sqrt(discriminant);
+    for(const x of [(-b-root)/(2*a),(-b+root)/(2*a)])if(x>0&&x<L)stations.add(x);
+   }
+  }
  }
  const rows=[...stations].sort((a,b)=>a-b).map(x=>{
   const force=[0,1,2].map(k=>-(f[k]+q0[k]*x+dq[k]*x*x/(2*L)));
