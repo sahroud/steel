@@ -9,7 +9,7 @@ function auditSources(cases){
  const rows=(Array.isArray(cases)?cases:[]).map((c,index)=>{
   const source=c?.simultaneousActionCase?.source||c?.source||{};
   const missing=REQUIRED_SOURCE.filter(k=>!(typeof source[k]==="string"&&source[k].trim()));
-  return {caseId:String(c?.simultaneousActionCase?.caseId||c?.loadCaseId||c?.caseId||"CASE-"+(index+1)),source:{...source},missing,complete:missing.length===0};
+  const loadTransferAuditPresent=!!c?.solverLoadTransferAudit;const loadTransferAuditVerified=!loadTransferAuditPresent||c.solverLoadTransferAudit.success===true; if(loadTransferAuditPresent&&!loadTransferAuditVerified)missing.push("solverLoadTransferAudit.success"); return {caseId:String(c?.simultaneousActionCase?.caseId||c?.loadCaseId||c?.caseId||"CASE-"+(index+1)),source:{...source},missing,loadTransferAuditPresent,loadTransferAuditVerified,complete:missing.length===0&&loadTransferAuditVerified};
  });
  return {success:rows.length>0&&rows.every(x=>x.complete),requiredFields:REQUIRED_SOURCE.slice(),caseCount:rows.length,completeCaseCount:rows.filter(x=>x.complete).length,rows};
 }
