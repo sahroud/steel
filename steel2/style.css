@@ -365,3 +365,28 @@ th {
   .quick-actions-buttons button { flex: 1 1 0; }
   .quick-project-status { font-size: 10px; }
 }
+
+
+/* Stepwise engineering workflow */
+.shed-workflow { padding:13px; margin:12px 0; border:1px solid var(--border); border-radius:13px; background:#fff; box-shadow:var(--shadow); }
+.shed-workflow-head,.shed-workflow-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.shed-workflow-head strong { color:var(--navy); font-size:15px; }
+.shed-workflow-head p { margin:2px 0 0; color:var(--muted); font-size:12px; }
+#shedWorkflowCount { color:var(--blue); font-size:12px; white-space:nowrap; }
+.shed-workflow-track { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin:13px 0; }
+.shed-step { display:flex; flex-direction:column; align-items:center; gap:5px; min-width:0; padding:8px 3px; margin:0; border:1px solid var(--border); background:#f7fafb; color:var(--muted); font-size:10px; line-height:1.5; }
+.shed-step .shed-step-number { display:grid; place-items:center; width:25px; height:25px; border-radius:50%; background:#e5edf1; font-weight:800; }
+.shed-step.is-active { border-color:var(--blue); background:#eaf4f7; color:var(--navy); }
+.shed-step.is-active .shed-step-number { background:var(--blue); color:white; }
+.shed-step-title { overflow-wrap:anywhere; }
+.shed-workflow-actions { border-top:1px solid var(--border); padding-top:10px; }
+#shedWorkflowStatus { flex:1; color:var(--muted); font-size:11px; }
+.shed-workflow-actions button { margin:0; min-height:38px; }
+.workflow-managed[hidden] { display:none !important; }
+@media(max-width:650px) {
+ .shed-workflow { padding:9px; }
+ .shed-workflow-track { grid-template-columns:repeat(4,minmax(0,1fr)); }
+ .shed-step { font-size:9px; }
+ .shed-workflow-actions { flex-wrap:wrap; }
+ #shedWorkflowStatus { order:3; flex-basis:100%; }
+}
