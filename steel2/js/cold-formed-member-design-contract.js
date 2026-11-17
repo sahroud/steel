@@ -78,6 +78,11 @@ function audit(input){
  });
  return{success:issues.length===0,readyForResistanceReview:issues.length===0,designApproved:false,capacityCalculated:false,group,memberId:d.memberId,issues:[...new Set(issues)],warnings,caseCount:demands.length,governingSimultaneousActions:governing,contractVersion:2,scope:"Evidence completeness only. This contract does not calculate AISI/M10 resistance, DSM nominal strengths, local/distortional/global buckling capacity, combined-action utilization, screw/bolt/weld resistance, or code compliance."};
 }
+function stable(value){
+ if(value===null||typeof value!=="object")return JSON.stringify(value);
+ if(Array.isArray(value))return "["+value.map(stable).join(",")+"]";
+ return "{"+Object.keys(value).sort().map(k=>JSON.stringify(k)+":"+stable(value[k])).join(",")+"}";
+}
 function auditFromDemandPackage(baseInput,demandPackage,combinationProposal){
  const issues=[],base=baseInput||{},pkg=demandPackage||{},proposal=combinationProposal||{};
  if(pkg.success!==true||pkg.designApproved!==false||pkg.concurrencyPreserved!==true||pkg.caseSeparationPreserved!==true)
@@ -86,9 +91,19 @@ function auditFromDemandPackage(baseInput,demandPackage,combinationProposal){
   issues.push("پیشنهاد ترکیب باید موفق و صریحاً فاقد محاسبه ظرفیت/تأیید طراحی باشد.");
  const memberId=String(base.memberId||"").trim();
  if(!memberId)issues.push("شناسه عضو برای اتصال تقاضا الزامی است.");
- const member=(pkg.members||[]).find(m=>String(m.memberId)===memberId);
- if(!member||member.complete!==true)issues.push("عضو "+memberId+" در بسته تقاضا موجود یا کامل نیست.");
- const sourceMap=new Map((member?.cases||[]).map(c=>[String(c.caseId),c.source||null]));
+ const packageMembers=Array.isArray(pkg.members)?pkg.members:[];
+ const memberMatches=packageMembers.filter(m=>String(m?.memberId||"").trim()===memberId);
+ if(memberMatches.length!==1||memberMatches[0]?.complete!==true)
+  issues.push("عضو "+memberId+" باید دقیقاً یک‌بار و به‌صورت کامل در بسته تقاضا موجود باشد.");
+ const member=memberMatches.length===1?memberMatches[0]:null;
+ const packageCases=Array.isArray(member?.cases)?member.cases:[];
+ const sourceMap=new Map();
+ packageCases.forEach(c=>{
+  const id=String(c?.caseId||"").trim();
+  if(!id||sourceMap.has(id))issues.push("شناسه حالت پایه در بسته تحلیل عضو خالی یا تکراری است: "+id);
+  else if(c.complete!==true||!c.source)issues.push("حالت پایه "+id+" کامل یا دارای منبع مستند نیست.");
+  else sourceMap.set(id,c.source);
+ });
  const combos=Array.isArray(proposal.proposals)?proposal.proposals:[];
  if(!combos.length)issues.push("هیچ پیشنهاد ترکیب بار برای تبدیل به تقاضای عضو موجود نیست.");
  const seen=new Set(),loadCases=[];
@@ -96,25 +111,43 @@ function auditFromDemandPackage(baseInput,demandPackage,combinationProposal){
   const id=String(combo?.combinationId||"").trim();
   if(!id||seen.has(id)){issues.push("شناسه ترکیب عضو خالی یا تکراری است: "+id);return;}
   seen.add(id);
-  const matches=(combo.members||[]).filter(m=>String(m.memberId)===memberId);
+  const matches=(Array.isArray(combo.members)?combo.members:[]).filter(m=>String(m?.memberId||"").trim()===memberId);
   if(matches.length!==1||matches[0]?.complete!==true){issues.push("عضو "+memberId+" در ترکیب "+id+" دقیقاً یک بسته کامل ندارد.");return;}
   const sourceCases=Array.isArray(combo.sourceCases)?combo.sourceCases:[];
+  const sourceIds=sourceCases.map(sc=>String(sc?.caseId||"").trim());
+  if(!sourceCases.length||sourceIds.some(x=>!x)||new Set(sourceIds).size!==sourceIds.length)
+   issues.push("فهرست منابع حالت پایه در ترکیب "+id+" خالی یا دارای شناسه تکراری است.");
+  const stations=Array.isArray(matches[0].stations)?matches[0].stations:[];
+  const stationSourceIds=new Set();
+  let previousX=-Infinity;
   const stationRows=[];
-  const expectedIds=(matches[0].stations||[]).flatMap(st=>st.sourceCaseIds||[]);
-  const declaredIds=[...new Set(expectedIds.map(String))];
-  if(!sourceCases.length||declaredIds.some(cid=>!sourceCases.some(sc=>String(sc.caseId)===cid)))
-   issues.push("منابع حالت‌های پایه برای ترکیب "+id+" کامل/قابل ردیابی نیست.");
+  stations.forEach((st,index)=>{
+   const a=st?.actions||{},values=[a.N,a.Vy,a.Vz,a.T,a.My,a.Mz],x=st?.xMember_m;
+   if(!finite(x)||x<0||x<previousX||!values.every(finite)){
+    issues.push("مختصات مرتب یا شش مؤلفه همزمان ایستگاه "+index+" عضو "+memberId+" در ترکیب "+id+" نامعتبر است.");
+    return;
+   }
+   previousX=x;
+   const stationIds=Array.isArray(st.sourceCaseIds)?st.sourceCaseIds.map(v=>String(v).trim()):[];
+   if(!stationIds.length||stationIds.some(v=>!v)||new Set(stationIds).size!==stationIds.length)
+    issues.push("شناسه حالت‌های پایه ایستگاه "+index+" در ترکیب "+id+" خالی یا تکراری است.");
+   stationIds.forEach(v=>stationSourceIds.add(v));
+   if(st.localAxes!==undefined&&(!st.localAxes||typeof st.localAxes!=="object"||Array.isArray(st.localAxes)))
+    issues.push("محورهای محلی ایستگاه "+index+" در ترکیب "+id+" نامعتبر است.");
+   if(st.segmentId!=null&&!text(st.segmentId))issues.push("شناسه قطعه ایستگاه "+index+" در ترکیب "+id+" نامعتبر است.");
+   stationRows.push({station_mm:x*1000,N_N:a.N,Vy_N:a.Vy,Vz_N:a.Vz,T_Nmm:a.T*1000,My_Nmm:a.My*1000,Mz_Nmm:a.Mz,localAxes:st.localAxes||null,segmentId:st.segmentId||null,segmentIndex:st.segmentIndex??null,sourceCaseIds:stationIds});
+  });
+  if(stationRows.length!==stations.length||stationRows.length<2)issues.push("تبدیل ایستگاه‌های ترکیب "+id+" کامل نیست یا کمتر از دو ایستگاه دارد.");
+  const listed=new Set(sourceIds),allStationIds=stationSourceIds;
+  if([...allStationIds].some(cid=>!listed.has(cid))||sourceIds.some(cid=>!allStationIds.has(cid)))
+   issues.push("فهرست منابع ترکیب "+id+" باید دقیقاً با منابع ارجاع‌شده در ایستگاه‌ها یکسان باشد.");
   sourceCases.forEach(sc=>{
-   const actual=sourceMap.get(String(sc.caseId));
-   if(!actual||JSON.stringify(actual)!==JSON.stringify(sc.source))issues.push("منبع حالت پایه "+sc.caseId+" در ترکیب "+id+" با بسته تحلیل عضو تطبیق ندارد.");
+   const cid=String(sc?.caseId||"").trim(),actual=sourceMap.get(cid);
+   if(!actual||stable(actual)!==stable(sc.source))
+    issues.push("منبع حالت پایه "+cid+" در ترکیب "+id+" با بسته تحلیل عضو تطبیق ندارد.");
   });
-  (matches[0].stations||[]).forEach((st,index)=>{
-   const a=st?.actions||{};
-   const values=[a.N,a.Vy,a.Vz,a.T,a.My,a.Mz];
-   if(!finite(st?.xMember_m)||!values.every(finite)){issues.push("مختصات یا شش مؤلفه همزمان ایستگاه "+index+" عضو "+memberId+" در ترکیب "+id+" نامعتبر است.");return;}
-   stationRows.push({station_mm:st.xMember_m*1000,N_N:a.N,Vy_N:a.Vy,Vz_N:a.Vz,T_Nmm:a.T*1000,My_Nmm:a.My*1000,Mz_Nmm:a.Mz*1000,localAxes:st.localAxes||null,segmentId:st.segmentId||null,segmentIndex:st.segmentIndex??null,sourceCaseIds:(st.sourceCaseIds||[]).slice()});
-  });
-  if(stationRows.length!==(matches[0].stations||[]).length||stationRows.length<2)issues.push("تبدیل ایستگاه‌های ترکیب "+id+" کامل نیست.");
+  if(!text(combo.source?.code)||!text(combo.source?.edition)||!text(combo.source?.clause)||!text(combo.source?.document))
+   issues.push("مرجع مستند مبنای ترکیب "+id+" ناقص است.");
   loadCases.push({caseId:id,label:id,sourceCombination:combo.source||null,sourceCases:sourceCases.map(sc=>({caseId:String(sc.caseId),source:sc.source||null})),stations:stationRows});
  });
  if(issues.length)return {success:false,readyForResistanceReview:false,designApproved:false,capacityCalculated:false,memberId,issues:[...new Set(issues)],scope:"demand adaptation only"};
@@ -149,6 +182,13 @@ function selfTest(){
  t("underlying source provenance mismatch blocks adaptation",()=>{const x=JSON.parse(JSON.stringify(comboProposal));x.proposals[0].sourceCases[0].source.revision="R2";return !auditFromDemandPackage(baseInput,demandPkg,x).success;});
  t("incomplete six-action station blocks adaptation",()=>{const x=JSON.parse(JSON.stringify(comboProposal));delete x.proposals[0].members[0].stations[0].actions.Mz;return !auditFromDemandPackage(baseInput,demandPkg,x).success;});
  t("adapter never calculates resistance or approves design",()=>adapted.capacityCalculated===false&&adapted.designApproved===false);
+ t("duplicate physical member entries in solver package block adaptation",()=>{const x=JSON.parse(JSON.stringify(demandPkg));x.members.push({...x.members[0]});return !auditFromDemandPackage(baseInput,x,comboProposal).success;});
+ t("duplicate base load case IDs block adaptation",()=>{const x=JSON.parse(JSON.stringify(demandPkg));x.members[0].cases.push({...x.members[0].cases[0]});return !auditFromDemandPackage(baseInput,x,comboProposal).success;});
+ t("station provenance must not omit a source case",()=>{const x=JSON.parse(JSON.stringify(comboProposal));x.proposals[0].members[0].stations[0].sourceCaseIds=[];return !auditFromDemandPackage(baseInput,demandPkg,x).success;});
+ t("proposal source list must exactly match station provenance",()=>{const x=JSON.parse(JSON.stringify(comboProposal));x.proposals[0].sourceCases.push({caseId:"UNUSED",source});return !auditFromDemandPackage(baseInput,demandPkg,x).success;});
+ t("station coordinates must be ordered and nonnegative",()=>{const x=JSON.parse(JSON.stringify(comboProposal));x.proposals[0].members[0].stations[1].xMember_m=-1;return !auditFromDemandPackage(baseInput,demandPkg,x).success;});
+ t("combination code basis must be traceable",()=>{const x=JSON.parse(JSON.stringify(comboProposal));delete x.proposals[0].source.clause;return !auditFromDemandPackage(baseInput,demandPkg,x).success;});
+ t("source object key order does not create false mismatch",()=>{const x=JSON.parse(JSON.stringify(comboProposal));x.proposals[0].sourceCases[0].source={authority:source.authority,locator:source.locator,revision:source.revision,document:source.document};return auditFromDemandPackage(baseInput,demandPkg,x).success;});
  return{passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"cold-formed evidence contract and demand adapter regression only; no design capacities or approval"};
 }
 root.SteelColdFormedMemberContract={audit,auditFromDemandPackage,selfTest};
