@@ -25,6 +25,20 @@ function audit(p){
  }
  return {ready:issues.length===0,analysisEnabled:false,issues};
 }
+function auditLoadInterface(sourceLoads,result){
+ const issues=[],rows=Array.isArray(sourceLoads)?sourceLoads:[],applied=Array.isArray(result?.loads)?result.loads:[];
+ const close=(a,b)=>Number.isFinite(Number(a))&&Number.isFinite(Number(b))&&Math.abs(Number(a)-Number(b))<=Math.max(1e-7,Math.max(Math.abs(Number(a)),Math.abs(Number(b)))*1e-9);
+ if(!rows.length)issues.push("بارهای منبع خالی‌اند.");
+ if(applied.length!==rows.length)issues.push("تعداد بارهای اعمال‌شده در FEM با بارهای منتقل‌شده از ریل برابر نیست.");
+ rows.forEach((x,i)=>{const y=applied[i];if(!y){issues.push("ردیف بار FEM شماره "+(i+1)+" مفقود است.");return;}if(!close(x.x_m,y.x_m))issues.push("مختصات بار شماره "+(i+1)+" در رابط ریل/تیر حمال تغییر کرده است.");if(!close(x.P_N,y.P_N))issues.push("مقدار یا علامت بار شماره "+(i+1)+" در رابط ریل/تیر حمال تغییر کرده است.");});
+ const sourceForce=rows.reduce((a,x)=>a+Number(x.P_N),0),sourceMoment=rows.reduce((a,x)=>a+Number(x.P_N)*Number(x.x_m),0);
+ const femForce=applied.reduce((a,x)=>a+Number(x.P_N),0),femMoment=applied.reduce((a,x)=>a+Number(x.P_N)*Number(x.x_m),0);
+ if(!close(sourceForce,femForce))issues.push("برآیند قائم بارها در رابط ریل/تیر حمال حفظ نشده است.");
+ if(!close(sourceMoment,femMoment))issues.push("لنگر بارها حول مبدأ طولی در رابط ریل/تیر حمال حفظ نشده است.");
+ if(!close(sourceForce,result?.equilibrium?.verticalLoad_N))issues.push("برآیند بارهای ورودی با برآیند بار ثبت‌شده در تعادل FEM برابر نیست.");
+ if(result?.equilibrium?.ok!==true)issues.push("تعادل مستقل FEM تیر حمال تأیید نشده است.");
+ return {ok:issues.length===0,sourceLoadCount:rows.length,femLoadCount:applied.length,sourceResultant_N:sourceForce,femResultant_N:femForce,sourceFirstMoment_Nm:sourceMoment,femFirstMoment_Nm:femMoment,issues};
+}
 function analyze(p,transfer){
  const a=audit(p);if(!a.ready)return {success:false,analysisEnabled:false,audit:a};
  if(!transfer?.success||!Array.isArray(transfer.cases)||!transfer.cases.length)return {success:false,analysisEnabled:false,audit:{ready:false,issues:["ابتدا جاروب هم‌زمان دو ریل را اجرا کنید."]}};
@@ -41,8 +55,9 @@ function analyze(p,transfer){
   const loads=c.girderPointLoads[side];
   try{
    const r=fem.analyze({length_m:+p.length_m,E_MPa:+p[side+"E_MPa"],Ix_mm4:+p[side+"Ix_mm4"],supports:p.supportStations_m.map((x,i)=>({x_m:+x,kVertical_N_m:+p[side+"SpringStiffness_N_m"][i]})),pointLoads:loads.map(x=>({x_m:+x.x_m,P_N:+x.P_N}))});
-   if(!r.equilibrium?.ok)throw Error("تعادل تیر حمال برقرار نیست.");
-   results[side].push({caseIndex,caseId:caseKeys[caseIndex],referencePosition_m:c.referencePosition_m,loadCount:loads.length,result:r});
+   const loadTransferAudit=auditLoadInterface(loads,r);
+   if(!loadTransferAudit.ok)throw Error("ممیزی عددی انتقال بار ریل به تیر حمال ناموفق است: "+loadTransferAudit.issues.join("؛ "));
+   results[side].push({caseIndex,caseId:caseKeys[caseIndex],referencePosition_m:c.referencePosition_m,loadCount:loads.length,loadTransferAudit,result:r});
   }catch(e){failures.push({caseIndex,side,reason:String(e.message||e)});}
  }
  const envelopes={};
@@ -80,11 +95,16 @@ function selfTest(){
  test("missing right-rail load in any synchronized case blocks whole run",()=>!analyze(p,{success:true,cases:[{girderPointLoads:{left:[{x_m:5,P_N:-1000}],right:[]}}]}).success);
  test("support stations must include both girder ends",()=>!audit({...p,supportStations_m:[1,5,10]}).ready);
  test("duplicate synchronized case identifiers rejected",()=>!analyze(p,{success:true,cases:[{caseId:"C1",girderPointLoads:{left:[{x_m:5,P_N:-1}],right:[{x_m:5,P_N:-1}]}},{caseId:"C1",girderPointLoads:{left:[{x_m:5,P_N:-1}],right:[{x_m:5,P_N:-1}]}}]}).success);
+ test("numeric interface preserves every transferred load row, sign, coordinate and resultant",()=>{const r=analyze(p,tr);return r.success&&r.cases.left[0].loadTransferAudit.ok&&r.cases.right[0].loadTransferAudit.ok;});
+ test("numeric interface rejects reversed wheel-load sign",()=>{const result={loads:[{x_m:5,P_N:1000}],equilibrium:{ok:true,verticalLoad_N:1000}};return !auditLoadInterface([{x_m:5,P_N:-1000}],result).ok;});
+ test("numeric interface rejects omitted wheel load",()=>{const result={loads:[],equilibrium:{ok:true,verticalLoad_N:0}};return !auditLoadInterface([{x_m:5,P_N:-1000}],result).ok;});
+ test("numeric interface rejects shifted application coordinate",()=>{const result={loads:[{x_m:6,P_N:-1000}],equilibrium:{ok:true,verticalLoad_N:-1000}};return !auditLoadInterface([{x_m:5,P_N:-1000}],result).ok;});
+ test("numeric interface rejects altered resultant",()=>{const result={loads:[{x_m:5,P_N:-900}],equilibrium:{ok:true,verticalLoad_N:-900}};return !auditLoadInterface([{x_m:5,P_N:-1000}],result).ok;});
  test("design approval remains disabled",()=>analyze(p,tr).analysisEnabled===false);
  test("unresolved local limit states disclosed",()=>analyze(p,tr).limitations.some(x=>x.includes("web crippling")));
  test("equilibrium checked for both girder solutions",()=>{const r=analyze(p,tr);return r.cases.left[0].result.equilibrium.ok&&r.cases.right[0].result.equilibrium.ok;});
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t,analysisEnabled:false,note:"Software regression only; no independent engineering validation."};
 }
-root.SteelRunwayGirderFEM={audit,analyze,readUI,getData,setData,selfTest,getLastResult:()=>lastResult};
+root.SteelRunwayGirderFEM={audit,analyze,auditLoadInterface,readUI,getData,setData,selfTest,getLastResult:()=>lastResult};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ensurePanel);else ensurePanel();
 })(typeof window!=="undefined"?window:globalThis);
