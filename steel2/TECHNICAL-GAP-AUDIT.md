@@ -98,3 +98,8 @@ The test file is committed, but the test runner has **not yet been executed in t
 - Audit the separate 3D combination selection path: the current three selectable 3D combinations are gravity-only; wind combinations are not yet exposed as verified 3D cases.
 
 No claim of P2 completion is made.
+
+
+### Automated execution wiring
+
+Added `.github/workflows/steel2-reference-tests.yml` to run the four reference fixtures with Node.js 20 when the solver or test files change on the development branch or in a pull request. No workflow run result is available yet for this commit, so execution remains pending.
