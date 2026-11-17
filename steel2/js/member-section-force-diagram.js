@@ -24,7 +24,10 @@ function reconstruct(input,options){
  if(!finite3(load)||!load.every(Number.isFinite))return fail("بار گسترده یکنواخت محلی باید به‌صورت سه مؤلفه N/m و حتی در حالت صفر صریحاً ارائه شود.");
  if(Array.isArray(input.pointLoads)&&input.pointLoads.length)return fail("بار متمرکز روی طول عضو هنوز پشتیبانی نمی‌شود.");
  if(Array.isArray(input.distributedLoads)&&input.distributedLoads.length)return fail("بار گسترده غیر یکنواخت یا قطعه‌ای هنوز پشتیبانی نمی‌شود.");
- const q=load,stations=new Set();
+ const q=load,linear=input.linearLocal;
+ if(linear!==undefined&&linear!==null&&(!linear||!finite3(linear.start)||!finite3(linear.end)))return fail("بار خطی متغیر محلی باید دو بردار سه‌مؤلفه‌ای متناهی در ابتدا و انتهای عضو داشته باشد.");
+ const q0=linear?linear.start:q,q1=linear?linear.end:q,dq=q1.map((v,i)=>v-q0[i]);
+ const stations=new Set();
  const count=Math.max(2,Math.min(200,Math.floor(Number(options.subdivisions)||20)));
  for(let i=0;i<=count;i++)stations.add(L*i/count);
  // Add zero-shear locations, where a component of bending moment can peak.
@@ -33,9 +36,10 @@ function reconstruct(input,options){
   if(Math.abs(qk)>1e-12){const x=-fik/qk;if(x>0&&x<L)stations.add(x);}
  }
  const rows=[...stations].sort((a,b)=>a-b).map(x=>{
-  const force=[0,1,2].map(k=>-(f[k]+q[k]*x));
-  const rI=[-x,0,0],rQ=[-x*x/2,0,0];
-  const moment=[0,1,2].map(k=>-(f[k+3]+cross(rI,f.slice(0,3))[k]+cross(rQ,q)[k]));
+  const force=[0,1,2].map(k=>-(f[k]+q0[k]*x+dq[k]*x*x/(2*L)));
+  const weighted=[0,1,2].map(k=>-q0[k]*x*x/2-dq[k]*x*x*x/(3*L));
+  const rI=[-x,0,0];
+  const moment=[0,1,2].map(k=>-(f[k+3]+cross(rI,f.slice(0,3))[k]+cross([1,0,0],weighted)[k]));
   return {x_m:x,N_N:force[0],Vy_N:force[1],Vz_N:force[2],T_Nm:moment[0],My_Nm:moment[1],Mz_Nm:moment[2]};
  });
  const endResidual=[0,1,2].map(k=>rows[rows.length-1][["N_N","Vy_N","Vz_N"][k]]-f[k+6]);
@@ -43,7 +47,7 @@ function reconstruct(input,options){
  const scale=Math.max(1,...f.map(Math.abs),...q.map(v=>Math.abs(v)*L));
  const residual=Math.max(...endResidual.map(Math.abs),...momentResidual.map(Math.abs));
  if(residual>1e-7*scale)return fail("تعادل انتهای عضو با بردار نیروهای انتهایی سازگار نیست؛ قرارداد بار یا علامت‌ها نیازمند بازبینی است.",[{endResidual,momentResidual,relativeResidual:residual/scale}]);
- return {status:"ok",ok:true,method:"left-segment equilibrium from solver end actions plus explicit local uniform load",units:{length:"m",force:"N",moment:"N.m",distributedLoad:"N/m"},convention:"At a cut x from physical end i, section resultant equals the negative resultant of the i-end solver action and all applied loads on the left segment; terminal value must match j-end solver action.",stations:rows,checks:{endEquilibrium:true,relativeResidual:residual/scale},limitations:["Only prismatic, unreleased, zero-offset members.","Only explicitly complete local uniform loads; point and nonuniform loads are rejected.","No capacity, code check, stability check, or design approval is produced."]};
+ return {status:"ok",ok:true,method:linear?"left-segment equilibrium from solver end actions plus explicit local linearly varying load":"left-segment equilibrium from solver end actions plus explicit local uniform load",units:{length:"m",force:"N",moment:"N.m",distributedLoad:"N/m"},convention:"At a cut x from physical end i, section resultant equals the negative resultant of the i-end solver action and all applied loads on the left segment; terminal value must match j-end solver action.",stations:rows,checks:{endEquilibrium:true,relativeResidual:residual/scale},limitations:["Only prismatic, unreleased, zero-offset members.","Only explicitly complete local uniform or linearly varying local loads; point loads are rejected.","No capacity, code check, stability check, or design approval is produced."]};
 }
 function selfTest(){
  const checks=[],test=(name,fn)=>{try{checks.push({name,ok:!!fn()});}catch(e){checks.push({name,ok:false,detail:e.message});}};
@@ -53,6 +57,7 @@ function selfTest(){
  test("missing uniform load vector fails closed",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  test("tapered member fails closed",()=>reconstruct({length:4,prismatic:false,loadDataComplete:true,uniformLocal:[0,0,0],localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  test("point load fails closed",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],pointLoads:[{x:2,values:[0,-1,0]}],localEndForces:Array(12).fill(0)}).status==="insufficient_data");
+ test("linear load endpoints must be finite three-vectors",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],linearLocal:{start:[0,-1,0],end:[0,NaN,0]},localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  test("released member fails closed",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],endReleases:{i:[4]},localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,checks};
 }
