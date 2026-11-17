@@ -190,3 +190,36 @@ test("triangular gable resultant preserves suction sign", () => {
   const result = globalThis.SteelLoadTransfer.triangularGableWindResultant(-0.5, 10, 1.5);
   assert.equal(result.resultantKN, -3.75);
 });
+
+
+test("triangular gable post-equivalent actions conserve full force and base moment including edge tributaries", () => {
+  const pressure = 1.2;
+  const span = 12;
+  const rise = 2;
+  const eave = 6;
+  const intervals = 4;
+  const actions = globalThis.SteelLoadTransfer.triangularGablePostEquivalentLoads(
+    pressure, span, rise, eave, intervals
+  );
+  const totalArea = actions.reduce((sum, item) => sum + item.tributaryAreaM2, 0);
+  const totalForce = actions.reduce((sum, item) => sum + item.baseForceKN + item.topForceKN, 0);
+  const totalMoment = actions.reduce((sum, item) =>
+    sum + item.topForceKN * item.supportHeightM, 0);
+  const expectedArea = span * rise / 2;
+  const expectedForce = pressure * expectedArea;
+  const expectedMoment = pressure * (eave * expectedArea + span * rise ** 2 / 6);
+  assert.ok(Math.abs(totalArea - expectedArea) < 1e-12);
+  assert.ok(Math.abs(totalForce - expectedForce) < 1e-12);
+  assert.ok(Math.abs(totalMoment - expectedMoment) < 1e-12);
+  assert.equal(actions.length, intervals + 1);
+  assert.ok(actions[0].tributaryAreaM2 > 0 && actions.at(-1).tributaryAreaM2 > 0);
+});
+
+test("triangular gable post-equivalent actions preserve suction sign and reject invalid geometry", () => {
+  const actions = globalThis.SteelLoadTransfer.triangularGablePostEquivalentLoads(-0.5, 10, 1.5, 5, 5);
+  assert.ok(actions.every(item => item.resultantKN <= 0));
+  assert.throws(() =>
+    globalThis.SteelLoadTransfer.triangularGablePostEquivalentLoads(1, 10, 1, 0, 4),
+    /ارتفاع لبه بام/
+  );
+});
