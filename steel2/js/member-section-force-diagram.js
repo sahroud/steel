@@ -68,6 +68,7 @@ function selfTest(){
  test("point load fails closed",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],pointLoads:[{x:2,values:[0,-1,0]}],localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  test("linear load endpoints must be finite three-vectors",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],linearLocal:{start:[0,-1,0],end:[0,NaN,0]},localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  test("linear varying local load reconstructs solver end actions in equilibrium",()=>{const r=reconstruct({length:3,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],linearLocal:{start:[0,-100,0],end:[0,-300,0]},localEndForces:[0,600,0,0,0,1050,0,0,0,0,0,0]});return r.ok&&Math.abs(r.stations.at(-1).Vy_N)<1e-7&&Math.abs(r.stations.at(-1).Mz_Nm)<1e-7;});
+ test("linear load adds exact internal zero-shear station",()=>{const r=reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],linearLocal:{start:[0,-1,0],end:[0,1,0]},localEndForces:[0,1,0,0,0,0,0,-1,0,0,0,4/3]});return r.ok&&r.stations.some(x=>Math.abs(x.x_m-2)<1e-9);});
  test("released member fails closed",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],endReleases:{i:[4]},localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,checks};
 }
