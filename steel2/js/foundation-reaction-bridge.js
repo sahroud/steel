@@ -94,6 +94,7 @@ function auditStructuralRun(runResult,model,options){
   if(!label||labels.has(label)){issues.push("شناسه حالت بار خالی یا تکراری در نتیجه زنجیره: "+label);return;}
   labels.add(label);
   if(item?.equilibrium?.ok!==true){issues.push("تعادل حالت بار تأیید نشده است: "+label);return;}
+  if(item?.solverLoadTransferAudit&&item.solverLoadTransferAudit.success!==true)issues.push("ممیزی انتقال بار حل‌گر برای حالت "+label+" ناموفق است؛ تحویل تقاضا به فونداسیون مسدود شد.");
   if(!Array.isArray(item.reactions)){issues.push("واکنش‌های حالت بار موجود نیست: "+label);return;}
   cases.push({label,equilibrium:item.equilibrium});
   item.reactions.forEach(reaction=>{
@@ -121,13 +122,15 @@ function auditStructuralRun(runResult,model,options){
   if(row.caseReactions.length!==cases.length)issues.push("واکنش همه حالات بار برای گره "+row.nodeId+" موجود نیست.");
  });
  const envelope={cases,rows};
+ const foundationSupportMappings=Array.isArray(model?.foundationSupportMappings)?model.foundationSupportMappings:[];
+ const footingMappingStatus=foundationSupportMappings.length?"provided-explicit-mapping":"missing-explicit-support-to-footing-mapping";
  const auditFn=root.SteelFoundationReactionAudit?.audit;
  if(typeof auditFn!=="function")issues.push("ممیزی پوش واکنش فونداسیون بارگذاری نشده است.");
  const base=typeof auditFn==="function"?auditFn(envelope,model,options?.footingSpecFor):null;
  if(base&&!base.ok)issues.push(...base.issues);
  const mapped=audit(envelope,model,options);
  if(!mapped.ok)issues.push(...mapped.issues);
- return {ok:issues.length===0,ready:issues.length===0,issues,demands:mapped.demands||[],caseCount:cases.length,
+ return {ok:issues.length===0,ready:issues.length===0,issues,demands:mapped.demands||[],footingMappingStatus,foundationSupportMappingsRequiredForFootingDesign:true,caseCount:cases.length,
   supportCount:rows.length,source:"SteelStructuralLoadChain.run",envelope,
   independentCaseDemands:true,combinesEnvelopeExtrema:false,analysisEnabled:false,designApproved:false,
   limitation:"این تبدیل فقط واکنش‌های واقعی هر حالت بار را به قالب ممیزی فونداسیون تبدیل می‌کند؛ ظرفیت صفحه‌ستون، انکر، بتن، پی و خاک طراحی نشده است."};
@@ -163,6 +166,8 @@ function selfTest(){
   ck("rejects incomplete crane position coverage",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2},{caseIndex:1,referencePosition_m:4}],supports:[{nodeId:"B1",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}]};return !auditCraneDemandTrace(trace,model).ok;});
   ck("blocks crane support IDs absent from physical base nodes",()=>{const trace={success:true,simultaneousCasesPreserved:true,cases:[{caseIndex:0,referencePosition_m:2}],supports:[{nodeId:"GHOST",cases:[{caseIndex:0,referencePosition_m:2,solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},columnAction:{Fx:-1,Fy:-2,Fz:-3,Mx:-4,My:-5,Mz:-6}}]}]};return !auditCraneDemandTrace(trace,model).ok;});
   ck("rejects structural run with failed equilibrium",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:false},reactions:[]}]};return !auditStructuralRun(run,model).ok;});
+  ck("blocks foundation handoff when integrated solver load-transfer audit fails",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},solverLoadTransferAudit:{success:false},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};return !auditStructuralRun(run,model).ok;});
+  ck("reports missing support-to-footing mapping without inventing footing IDs",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},kind:"base",solverReaction:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}]};const r=auditStructuralRun(run,model);return r.footingMappingStatus==="missing-explicit-support-to-footing-mapping"&&r.foundationSupportMappingsRequiredForFootingDesign===true;});
   ck("rejects incomplete structural reaction vector",()=>{const run={success:true,results:[{id:"ULS",label:"ULS",equilibrium:{ok:true},reactions:[{nodeId:"B1",coordinatesM:{x:0,y:0,z:0},solverReaction:{Fx:1}}]}]};return !auditStructuralRun(run,model).ok;});
  }finally{root.SteelFoundationReactionAudit=old;}
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,total:checks.length,checks,analysisEnabled:false,designApproved:false};
