@@ -127,6 +127,7 @@ function read(){
 function getData(){return clone(data);}
 function setData(v){data=normalize(v);render();}
 function render(){
+ data=normalize(data);
  const host=$("taperedSectionsContent");if(!host)return;
  host.innerHTML="<div class='field'><label for='taper_segmentsPerMember'>تعداد قطعات تحلیل برای هر عضو متغیرمقطع</label><select id='taper_segmentsPerMember'>"+[4,6,8,12,16,20,24].map(n=>"<option value='"+n+"' "+(data.segmentsPerMember===n?"selected":"")+">"+n+" قطعه</option>").join("")+"</select></div>"+GROUPS.map(([g,label])=>{
   const q=data.groups[g];
