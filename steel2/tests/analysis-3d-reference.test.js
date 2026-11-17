@@ -143,3 +143,38 @@ test("solver rejects an unstable unsupported model", () => {
     supports: []
   }), /تکین|نامعتبر|DOF_SINGULAR/);
 });
+
+
+const loadTransfer = require("../js/load-transfer.js");
+
+test("surface pressure converts to tributary line load with kN/m units", () => {
+  assert.equal(globalThis.SteelLoadTransfer.surfacePressureToLineLoad(1.25, 2.4), 3);
+  assert.equal(globalThis.SteelLoadTransfer.surfacePressureToLineLoad(-0.8, 1.5), -1.2);
+});
+
+test("roof purlin tributary widths conserve the full sloped roof area width", () => {
+  const slopeLength = 6.5;
+  const intervals = 7;
+  const segment = slopeLength / intervals;
+  const widths = Array.from({ length: intervals + 1 }, (_, i) =>
+    segment * (i === 0 || i === intervals ? 0.5 : 1));
+  const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+  assert.ok(Math.abs(totalWidth - slopeLength) < 1e-12);
+  const pressure = 1.1;
+  const totalLineLoad = widths.reduce((sum, width) =>
+    sum + globalThis.SteelLoadTransfer.surfacePressureToLineLoad(pressure, width), 0);
+  assert.ok(Math.abs(totalLineLoad - pressure * slopeLength) < 1e-12);
+});
+
+test("ridge pressure transfer keeps left and right tributary widths separate", () => {
+  const leftWidth = 0.45;
+  const rightWidth = 0.55;
+  const left = globalThis.SteelLoadTransfer.surfacePressureToLineLoad(1.0, leftWidth);
+  const right = globalThis.SteelLoadTransfer.surfacePressureToLineLoad(1.6, rightWidth);
+  assert.ok(Math.abs(left + right - 1.33) < 1e-12);
+});
+
+test("load transfer rejects invalid tributary widths", () => {
+  assert.throws(() => globalThis.SteelLoadTransfer.surfacePressureToLineLoad(1, -0.1), /عرض بارگیر/);
+  assert.throws(() => globalThis.SteelLoadTransfer.surfacePressureToLineLoad(1, NaN), /عرض بارگیر/);
+});
