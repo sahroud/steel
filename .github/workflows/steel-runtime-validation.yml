@@ -32,6 +32,7 @@ jobs:
         shell: bash
         run: |
           node <<'NODE'
+          (async () => {
           const fs = require('node:fs');
           const { JSDOM } = require('jsdom');
           const html = fs.readFileSync('steel2/legacy.html', 'utf8');
@@ -93,6 +94,9 @@ jobs:
             process.exit(1);
           }
           if (result.failed) process.exit(1);
+          await new Promise(resolve => setTimeout(resolve, 0));
+          dom.window.close();
+          })().catch(error => { console.error(error); process.exit(1); });
           NODE
       - name: Verify production bundle manifest
         if: always()
