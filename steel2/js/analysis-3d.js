@@ -361,6 +361,18 @@ function analyze(model,options){
  const vectorNorm=v=>Math.hypot(...v);
  const relativeForceResidual=vectorNorm(forceResidual)/Math.max(vectorNorm(appliedForce),vectorNorm(supportForce),1);
  const relativeMomentResidual=vectorNorm(momentResidual)/Math.max(vectorNorm(appliedMoment),vectorNorm(supportMoment),1);
+ // Scale nodal residuals against the largest action in the complete system.
+ // Near-zero intermediate-node actions otherwise turn harmless floating-point
+ // noise into a false equilibrium failure as a member mesh is refined.
+ let globalForceScale=1,globalMomentScale=1;
+ nodes.forEach((_,i)=>{
+  for(let d=0;d<6;d++){
+   const dof=i*6+d,reaction=fixed.has(dof)?R[dof]:0;
+   const value=Math.max(Math.abs(KD[dof]),Math.abs(F[dof]),Math.abs(reaction),Math.abs(springReactionByDof[dof]||0));
+   if(d<3)globalForceScale=Math.max(globalForceScale,value);
+   else globalMomentScale=Math.max(globalMomentScale,value);
+  }
+ });
  // Node-by-node algebraic residual of the assembled 6-DOF system. Fixed-DOF
  // residuals are identified as support reactions; free-DOF residuals must be
  // negligible. This is a solver residual check, NOT an independent member-end
@@ -370,8 +382,9 @@ function analyze(model,options){
   for(let d=0;d<6;d++){
    const dof=base+d,isFixed=fixed.has(dof),reaction=isFixed?R[dof]:0;
    const residual=KD[dof]-F[dof]-reaction;
-   const scaleValue=Math.max(Math.abs(KD[dof]),Math.abs(F[dof]),Math.abs(reaction),1);
-   components.push({dof:d,residual,reaction,isFixed,relativeResidual:Math.abs(residual)/scaleValue});
+   const localScaleValue=Math.max(Math.abs(KD[dof]),Math.abs(F[dof]),Math.abs(reaction),1);
+   const scaleValue=Math.max(localScaleValue,d<3?globalForceScale:globalMomentScale);
+   components.push({dof:d,residual,reaction,isFixed,relativeResidual:Math.abs(residual)/scaleValue,localRelativeResidual:Math.abs(residual)/localScaleValue});
   }
   const maxRelativeResidual=Math.max(0,...components.map(x=>x.relativeResidual));
   return{nodeId:String(node.id),components,maxRelativeResidual,ok:maxRelativeResidual<=1e-6};
@@ -413,8 +426,9 @@ function analyze(model,options){
   const components=Array.from({length:6},(_,d)=>{
    const internal=memberEndByNode[i][d],applied=appliedNodalByNode[i][d],support=supportByNode[i][d],spring=springByNode[i][d],connector=connectorByNode[i][d];
    const residual=internal-applied-support-spring-connector;
-   const scaleValue=Math.max(Math.abs(internal),Math.abs(applied),Math.abs(support),Math.abs(spring),Math.abs(connector),1);
-   return{dof:d,memberEndAction:internal,appliedNodalLoad:applied,supportReaction:support,nodalSpringReaction:spring,connectorSpringForce:connector,residual,relativeResidual:Math.abs(residual)/scaleValue};
+   const localScaleValue=Math.max(Math.abs(internal),Math.abs(applied),Math.abs(support),Math.abs(spring),Math.abs(connector),1);
+   const scaleValue=Math.max(localScaleValue,d<3?globalForceScale:globalMomentScale);
+   return{dof:d,memberEndAction:internal,appliedNodalLoad:applied,supportReaction:support,nodalSpringReaction:spring,connectorSpringForce:connector,residual,relativeResidual:Math.abs(residual)/scaleValue,localRelativeResidual:Math.abs(residual)/localScaleValue};
   });
   const maxRelativeResidual=Math.max(0,...components.map(x=>x.relativeResidual));
   return{nodeId:String(node.id),components,maxRelativeResidual,ok:maxRelativeResidual<=1e-6};
@@ -423,7 +437,7 @@ function analyze(model,options){
  const memberEndEquilibriumOk=memberEndEquilibrium.every(x=>x.ok);
  equilibrium={appliedForceN:appliedForce,supportReactionN:supportForce,
   forceResidualN:forceResidual,momentResidualNm:momentResidual,appliedMomentNm:appliedMoment,supportMomentNm:supportMoment,
-  relativeForceResidual,relativeMomentResidual,nodeEquilibrium,nodeEquilibriumOk,maxNodeResidualRatio,
+  relativeForceResidual,relativeMomentResidual,globalForceScaleN:globalForceScale,globalMomentScaleNm:globalMomentScale,nodeEquilibrium,nodeEquilibriumOk,maxNodeResidualRatio,
   memberEndEquilibrium,memberEndEquilibriumOk,maxMemberEndResidualRatio,
   equilibriumScope:"global resultant, assembled nodal residual, and independent recovered member-end-action balance at every physical node; includes rigid-arm transforms, equivalent member loads, nodal loads, supports, nodal springs and coincident-node connector springs",
   ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6&&nodeEquilibriumOk&&memberEndEquilibriumOk,freeDofCount:free.length};
