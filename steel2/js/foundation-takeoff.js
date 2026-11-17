@@ -298,8 +298,6 @@ function modelFingerprint(model){
   if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
   const coverage=validateReactionCaseCoverage(lastReport.rows);
   if(!coverage.ok){if(box)box.textContent="کنترل sliding متوقف شد: "+coverage.issues.join(" ");return null;}
-  const coverage=validateReactionCaseCoverage(lastReport.rows);
-  if(!coverage.ok){if(box)box.textContent="کنترل uplift متوقف شد: "+coverage.issues.join(" ");return null;}
   const records=[];
   lastReport.rows.forEach(row=>{
    const d=footingSpecFor(row),B=d.width,L=d.length,t=d.thickness,valid=B>0&&L>0&&t>0&&(!pedComplete||(pw<=B&&pl<=L));
@@ -328,6 +326,8 @@ function modelFingerprint(model){
   if(!gammaC||!Number.isFinite(cover)||cover<0||(cover>0&&!gammaS)){if(box)box.textContent="برای غربال بالاکشیدگی، وزن مخصوص بتن و در صورت وجود خاک پوششی ضخامت و وزن مخصوص آن لازم است.";return null;}
   const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM),pedComplete=!!(pw&&pl&&ph);
   if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
+  const coverage=validateReactionCaseCoverage(lastReport.rows);
+  if(!coverage.ok){if(box)box.textContent="کنترل uplift متوقف شد: "+coverage.issues.join(" ");return null;}
   const records=[];
   lastReport.rows.forEach(row=>{
    const d=footingSpecFor(row),B=d.width,L=d.length,t=d.thickness,valid=B>0&&L>0&&t>0&&(!pedComplete||(pw<=B&&pl<=L));
