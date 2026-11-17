@@ -101,8 +101,8 @@ function selfTest(){
  const model={nodes:[{id:"B1",x:0,y:0,z:0,kind:"base"},{id:"B2",x:2,y:0,z:0,kind:"endwall-base"}]};
  const vals1=[10,20,30,1,2,3],vals2=[-5,-6,-7,4,5,6];
  const env={cases:[{label:"C1",equilibrium:{ok:true}}],rows:[
-  {nodeId:"B1",x:0,y:0,z:0,caseReactions:[{label:"C1",values:vals1}],envelopes:vals1.map(v=>({min:v,max:v}))},
-  {nodeId:"B2",x:2,y:0,z:0,caseReactions:[{label:"C1",values:vals2}],envelopes:vals2.map(v=>({min:v,max:v}))}
+  {nodeId:"B1",x:0,y:0,z:0,caseReactions:[{label:"C1",values:vals1}],envelopes:vals1.map(v=>({min:v,max:v,minCase:"C1",maxCase:"C1"}))},
+  {nodeId:"B2",x:2,y:0,z:0,caseReactions:[{label:"C1",values:vals2}],envelopes:vals2.map(v=>({min:v,max:v,minCase:"C1",maxCase:"C1"}))}
  ]};
  const good=audit(env,model,()=>({width:1.8,length:1.8,thickness:.8}));
  const tests=[
