@@ -15382,6 +15382,10 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
             customCity: "شاهرود",
             elevation: "1350",
             source: "مبحث ششم ۱۳۹۸؛ سرعت باد ۹۰ km/h مطابق جدول ۶-۱۰-۱ مبحث ششم ۱۳۹۸؛ ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود",
+            sourceDocument: "مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱",
+            sourceClause: "جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ مقدار برف نیازمند تطبیق مستقل",
+            sourceVerified: false,
+            elevationSource: "برآورد تقریبی مرکز شهرک صنعتی؛ نیازمند کنترل با DEM یا نقشه‌برداری",
             groundSnow: "1.0",
             basicWind: "90",
             terrain: "suburban",
@@ -15468,6 +15472,10 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
                     <label for="climateSource">منبع داده اقلیمی</label>
                     <input id="climateSource" type="text" value="ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸">
                 </div>
+                <div class="field"><label for="climateSourceDocument">عنوان سند اقلیمی / شماره نقشه</label><input id="climateSourceDocument" type="text" value="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱"></div>
+                <div class="field"><label for="climateSourceClause">بند، جدول یا صفحه مرجع</label><input id="climateSourceClause" type="text" value="جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ برف نیازمند تطبیق مستقل"></div>
+                <div class="field"><label for="climateElevationSource">منبع ارتفاع واقعی محل</label><input id="climateElevationSource" type="text" value="برآورد تقریبی؛ نیازمند DEM یا برداشت نقشه‌برداری"></div>
+                <div class="field"><label for="climateSourceVerified">کنترل مدرک</label><label class="checkbox-row"><input id="climateSourceVerified" type="checkbox"> سند و داده‌های اقلیمی توسط مهندس مسئول با منبع رسمی کنترل شده‌اند</label></div>
             </div>
 
             <h4>ب ـ پارامترهای اقلیمی ورودی (مقادیر تأییدنشده را خالی بگذارید)</h4>
@@ -15682,6 +15690,10 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
             customCity: "climateCustomCity",
             elevation: "climateElevation",
             source: "climateSource",
+            sourceDocument: "climateSourceDocument",
+            sourceClause: "climateSourceClause",
+            sourceVerified: "climateSourceVerified",
+            elevationSource: "climateElevationSource",
             groundSnow: "climateGroundSnow",
             basicWind: "climateBasicWind",
             terrain: "climateTerrain",
@@ -15692,7 +15704,7 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
         };
         Object.keys(climateFields).forEach(key => {
             const el = $(climateFields[key]);
-            if (el) state.climate[key] = el.value;
+            if (el) state.climate[key] = key === "sourceVerified" ? el.checked === true : el.value;
         });
         if (window.SteelDesignCore && typeof window.SteelDesignCore.getData === "function") {
             const brief = window.SteelDesignCore.getData();
@@ -16020,13 +16032,16 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
             const climateIds = {
                 city: "climateCity", customCity: "climateCustomCity",
                 elevation: "climateElevation", source: "climateSource",
+                sourceDocument: "climateSourceDocument", sourceClause: "climateSourceClause",
+                sourceVerified: "climateSourceVerified", elevationSource: "climateElevationSource",
                 groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
                 terrain: "climateTerrain", topography: "climateTopography",
                 openingArea: "buildingOpeningArea",
                 envelopeArea: "buildingEnvelopeArea", dominantOpening: "buildingDominantOpening"
             };
             Object.keys(climateIds).forEach(key => {
-                if ($(climateIds[key])) $(climateIds[key]).value = state.climate[key];
+                const el = $(climateIds[key]);
+                if (el) { if (key === "sourceVerified") el.checked = state.climate[key] === true; else el.value = state.climate[key] ?? ""; }
             });
 
             renderCombinations();
@@ -16060,6 +16075,8 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
         const climateInputIds = {
             city: "climateCity", customCity: "climateCustomCity",
             elevation: "climateElevation", source: "climateSource",
+            sourceDocument: "climateSourceDocument", sourceClause: "climateSourceClause",
+            sourceVerified: "climateSourceVerified", elevationSource: "climateElevationSource",
             groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
             terrain: "climateTerrain", topography: "climateTopography",
             openingArea: "buildingOpeningArea", envelopeArea: "buildingEnvelopeArea",
@@ -16068,7 +16085,8 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
         Object.keys(climateInputIds).forEach(key => {
             const el = $(climateInputIds[key]);
             if (el && state.climate[key] !== undefined && state.climate[key] !== null) {
-                el.value = state.climate[key];
+                if (key === "sourceVerified") el.checked = state.climate[key] === true;
+                else el.value = state.climate[key];
             }
         });
 
@@ -16189,7 +16207,6 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
     document.addEventListener("DOMContentLoaded", init);
 
 })();
-
 
 /* ===== steel2/js/design-core.js ===== */
 /* SAHROUD STEEL — Independent Engineering Design Core
@@ -16695,13 +16712,16 @@ const cities = [
 ["shahroud","شاهرود"],["semnan","سمنان"],["tehran","تهران"],["mashhad","مشهد"],["tabriz","تبریز"],["isfahan","اصفهان"],["yazd","یزد"],["rasht","رشت"],["sari","ساری"],["kerman","کرمان"],["arak","اراک"],["ardabil","اردبیل"],["urmia","ارومیه"],["ahvaz","اهواز"],["bandar-abbas","بندرعباس"],["bushehr","بوشهر"],["birjand","بیرجند"],["bojnord","بجنورد"],["hamedan","همدان"],["sanandaj","سنندج"],["kermanshah","کرمانشاه"],["ilam","ایلام"],["khorramabad","خرم‌آباد"],["qazvin","قزوین"],["zanjan","زنجان"],["gorgan","گرگان"],["yasuj","یاسوج"],["shiraz","شیراز"],["zahedan","زاهدان"],["zabol","زابل"],["qom","قم"],["kish","کیش"],["abadan","آبادان"],["dezful","دزفول"],["sabzevar","سبزوار"],["neyshabur","نیشابور"],["damghan","دامغان"],["garmsar","گرمسار"],["torbat-heydariyeh","تربت حیدریه"],["chabahar","چابهار"],["bandar-anzali","بندر انزلی"],["amol","آمل"],["babol","بابل"]
 ];
 let records = {};
-cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:null,basicWindPressure:null,snowRegion:null,elevation:null,seismicZone:null,meanAnnualTemperature:null,designTemperature:null,source:"",sourceTitle:"",sourceUrl:"",sourceDate:"",codeEdition:"",verified:false,status:"نیازمند ورود و تطبیق با منبع رسمی"});
+cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:null,basicWindPressure:null,snowRegion:null,elevation:null,seismicZone:null,meanAnnualTemperature:null,designTemperature:null,source:"",sourceTitle:"",sourceClause:"",sourceUrl:"",sourceDate:"",codeEdition:"",verified:false,status:"نیازمند ورود و تطبیق با منبع رسمی"});
 function applyShahroudReference(){
  const r=records.shahroud;if(!r)return;
  r.name="شاهرود";r.basicWind=90;r.basicWindPressure=0.383;r.groundSnow=1.0;r.snowRegion=3;
  if(r.elevation===null||r.elevation===undefined)r.elevation=1350;
  r.siteCoordinates=r.siteCoordinates||{latitude:36.37478,longitude:54.88545};
  r.elevationSource=r.elevationSource||"برآورد تقریبی مرکز شهرک صنعتی؛ نیازمند کنترل با DEM یا برداشت نقشه‌برداری";
+ r.sourceTitle=r.sourceTitle||"مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱";
+ r.sourceClause=r.sourceClause||"جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ مقدار برف نیازمند تطبیق مستقل";
+ r.codeEdition=r.codeEdition||"مبحث ششم ۱۳۹۸";
  r.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ و رکورد PDF پروژه برای سرعت باد؛ سرعت ۹۰ km/h مطابق جدول ۶-۱۰-۱ ویرایش ۱۳۹۸؛ q≈۰٫۳۸۳ kN/m². ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود.";
  r.sourceDate="1398";r.status="سرعت باد و برف استخراج‌شده از رکورد پروژه؛ ارتفاع محل تقریبی و نیازمند کنترل نقشه‌برداری";
 }
@@ -16715,7 +16735,8 @@ function loadSelectedCity(){
  const id=$("climateCity")?.value, r=records[id]; if(!r)return;
  const assign=(field,value)=>{
   const el=$(field);if(!el)return;
-  el.value=value===null||value===undefined?"":String(value);
+  if(el.type==="checkbox")el.checked=value===true;
+  else el.value=value===null||value===undefined?"":String(value);
   el.dispatchEvent(new Event("input",{bubbles:true}));
   el.dispatchEvent(new Event("change",{bubbles:true}));
  };
@@ -16724,6 +16745,10 @@ function loadSelectedCity(){
  assign("climateBasicWind",r.basicWind);
  assign("climateElevation",r.elevation);
  assign("climateSource",r.source||"");
+ assign("climateSourceDocument",r.sourceTitle||"");
+ assign("climateSourceClause",r.sourceClause||"");
+ assign("climateSourceVerified",r.verified===true);
+ assign("climateElevationSource",r.elevationSource||"");
  const status=$("climateNotice");
  if(status){
   const available=[r.basicWind!==null&&r.basicWind!==undefined,r.groundSnow!==null&&r.groundSnow!==undefined,r.elevation!==null&&r.elevation!==undefined].filter(Boolean).length;
@@ -16750,7 +16775,7 @@ function saveCurrentCity(){
  const source=(c.source||"").trim();
  if((wind!==null||snow!==null)&&!source){alert("برای ثبت مقدار باد یا برف، منبع داده را وارد کنید.");return;}
  const previous=records[id]||{};
- records[id]={...previous,id,name,basicWind:wind,groundSnow:snow,basicWindPressure:previous.basicWindPressure??null,snowRegion:previous.snowRegion??null,elevation:elev,source,sourceDate:new Date().toISOString().slice(0,10),verified:false,status:source?"ثبت کاربر؛ نیازمند کنترل منبع":"فاقد داده عددی"};
+ records[id]={...previous,id,name,basicWind:wind,groundSnow:snow,basicWindPressure:previous.basicWindPressure??null,snowRegion:previous.snowRegion??null,elevation:elev,elevationSource:String(c.elevationSource||previous.elevationSource||""),source,sourceTitle:String(c.sourceDocument||previous.sourceTitle||""),sourceClause:String(c.sourceClause||previous.sourceClause||""),sourceUrl:String(previous.sourceUrl||""),sourceDate:String(previous.sourceDate||new Date().toISOString().slice(0,10)),codeEdition:String(previous.codeEdition||""),verified:c.sourceVerified===true,status:c.sourceVerified===true?"تأیید توسط مهندس مسئول؛ نیازمند نگهداری مرجع":"ثبت کاربر؛ نیازمند کنترل منبع"};
  refreshStatus(); alert("رکورد شهر در بانک جاری ثبت شد. برای انتقال آن، پروژه را ذخیره یا از بانک خروجی JSON بگیرید.");
 }
 function exportDatabase(){
@@ -16768,7 +16793,7 @@ function importDatabase(event){
     const r=data.records[id];if(!r||typeof r!=="object")return;
     const n=v=>v===null||v===""||v===undefined?null:Number(v),wind=n(r.basicWind),snow=n(r.groundSnow),elev=n(r.elevation);
     if([wind,snow,elev].some(v=>v!==null&&(!Number.isFinite(v)||v<0)))return;
-    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,siteCoordinates:r.siteCoordinates&&typeof r.siteCoordinates==="object"?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),seismicZone:r.seismicZone??null,meanAnnualTemperature:n(r.meanAnnualTemperature),designTemperature:n(r.designTemperature),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,status:String(r.status||"واردشده؛ نیازمند کنترل")};
+    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,siteCoordinates:r.siteCoordinates&&typeof r.siteCoordinates==="object"?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),seismicZone:r.seismicZone??null,meanAnnualTemperature:n(r.meanAnnualTemperature),designTemperature:n(r.designTemperature),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceClause:String(r.sourceClause||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,status:String(r.status||"واردشده؛ نیازمند کنترل")};
    });
    applyShahroudReference();refreshStatus();loadSelectedCity();alert("بانک اقلیمی وارد شد؛ داده مرجع شاهرود حفظ شد.");
   }catch(e){alert("خطا در وارد کردن بانک: "+e.message);}
@@ -16791,7 +16816,7 @@ function getData(){return {schema:"sahroud-steel-climate-db",version:1,records:J
 function setData(data){
  if(!data||data.schema!=="sahroud-steel-climate-db"||!data.records)return;
  const cleanNumber=v=>v===null||v===undefined||v===""?null:(Number.isFinite(Number(v))?Number(v):null);
- Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),siteCoordinates:r.siteCoordinates&&Number.isFinite(Number(r.siteCoordinates.latitude))&&Number.isFinite(Number(r.siteCoordinates.longitude))?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,seismicZone:r.seismicZone??null,meanAnnualTemperature:cleanNumber(r.meanAnnualTemperature),designTemperature:cleanNumber(r.designTemperature),status:String(r.status||"")};});
+ Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),siteCoordinates:r.siteCoordinates&&Number.isFinite(Number(r.siteCoordinates.latitude))&&Number.isFinite(Number(r.siteCoordinates.longitude))?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceClause:String(r.sourceClause||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,seismicZone:r.seismicZone??null,meanAnnualTemperature:cleanNumber(r.meanAnnualTemperature),designTemperature:cleanNumber(r.designTemperature),status:String(r.status||"")};});
  applyShahroudReference();
  refreshStatus();
 }
@@ -16801,6 +16826,9 @@ records.shahroud.basicWindPressure=0.383;
 records.shahroud.groundSnow=1.0;
 records.shahroud.snowRegion=3;
 records.shahroud.source="مبحث ششم ویرایش چهارم ۱۳۹۸؛ جدول ۶-۱۰-۱ برای سرعت مبنای باد شاهرود: ۹۰ km/h؛ فشار مبنا از رابطه ۶-۱۰-۲: حدود ۰٫۳۸۳ kN/m². مقدار برف طبق رکورد قبلی پروژه و جداگانه نیازمند تطبیق نهایی است.";
+records.shahroud.sourceTitle="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱";
+records.shahroud.sourceClause="جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ مقدار برف نیازمند تطبیق مستقل";
+records.shahroud.codeEdition="مبحث ششم ۱۳۹۸";
 records.shahroud.sourceDate="1398";
 records.shahroud.status="سرعت باد با جدول ویرایش ۱۳۹۸ تطبیق داده شد؛ ارتفاع محل همچنان تقریبی است و بار برف نیازمند کنترل مستقل";
 window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity,getCity:id=>records[id]?JSON.parse(JSON.stringify(records[id])):null};
@@ -21824,16 +21852,16 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
         "</b>"+(x.detail?"<p>"+String(x.detail).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+"</p>":"")+"</div>").join("");
   }
   function hasUsableClimate() {
-    const db=window.SteelClimateDB?.getData?.();
-    const id=$("climateCity")?.value;
-    const record=db?.records?.[id];
-    if(record && record.status && /تأیید رسمی|verified|معتبر و تأیید/i.test(record.status) &&
-       Number.isFinite(Number(record.basicWind)) &&
-       Number.isFinite(Number(record.groundSnow))) {
-      window.SteelClimateDB.loadSelectedCity?.();
-      return {ok:true,detail:"داده شهر از بانک با وضعیت تأییدشده به ورودی‌ها منتقل شد."};
-    }
-    return {ok:false,detail:"برای شهر انتخابی هنوز رکورد باد و برفِ تأییدشده در بانک وجود ندارد؛ نرم‌افزار نباید مقدار حدسی جایگزین کند."};
+    window.SteelClimateDB?.loadSelectedCity?.();
+    const loads=window.SteelLoads?.getData?.()||{};
+    const audit=window.SteelClimateDesignReadiness?.audit?.(loads);
+    if(!audit)return {ok:false,detail:"ممیزی شواهد اقلیمی بارگذاری نشده است؛ تحلیل متوقف می‌ماند."};
+    return {
+      ok:audit.ready===true,
+      detail:audit.ready
+        ?"شواهد اقلیمی، ورودی‌های بار و ویرایش مبنای بارگذاری برای بازبینی مهندسی کامل‌اند."
+        :"پیش‌نیازهای اقلیمی/بارگذاری ناقص‌اند: "+(audit.issues||[]).join("؛ ")
+    };
   }
   function blankOrZero(id) {
     const el=$(id); return !el || el.value.trim()==="" || Number(el.value)===0;
@@ -21950,7 +21978,8 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
     const rows=[];
     try {
       const climate=hasUsableClimate();
-      addLine(rows,"تخصیص خودکار بار باد و برف شهر",climate.ok,climate.detail);
+      addLine(rows,"ممیزی مستندات اقلیمی و ورودی‌های بار",climate.ok,climate.detail);
+      if(!climate.ok){setReport(rows,"گزارش اجرای خودکار — داده اقلیمی/بارگذاری تأیید نشده است");return;}
 
       if(window.SteelLoads?.syncLegacyInputs)window.SteelLoads.syncLegacyInputs();
       const loadOK=window.SteelLoads?.check?.()===true;
@@ -21993,11 +22022,13 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
             fullModel.geometry.frames.length+" قاب، "+fullModel.nodes.length+" گره و "+fullModel.members.length+" عضو هندسی؛ مدل بدون اجرای ترسیم غیرضروری برای تحلیل آماده شد.");
         } else addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,"مدل هندسی کامل تولید نشد.");
       } catch(e) { addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,e?.message||String(e)); }
+      if(!fullModelOK){setReport(rows,"گزارش اجرای خودکار — مدل هندسی معتبر تولید نشد");return;}
       if(fullModelOK) {
         const crane=auditCraneReadiness(window.SteelStructuralModel?.getData?.()||window.SteelStructuralModel?.model||null);
         if(crane.enabled)addLine(rows,"ممیزی مسیر هندسی جرثقیل تا شبکه حل‌گر",crane.ready,
           crane.detail+" اعمال بار چرخ به حل‌گر تا تکمیل مسیر واقعی تیر حمال، براکت و ستون مسدود می‌ماند.");
         else addLine(rows,"وضعیت جرثقیل پروژه",true,crane.detail);
+        if(crane.enabled&&!crane.ready){setReport(rows,"گزارش اجرای خودکار — مسیر بار جرثقیل ناقص است");return;}
       }
       // اجرای مستقیم و هم‌زمان محاسبه؛ کلیک دکمه با setTimeout اجرا می‌شود
       // و بررسی فوری نتیجه پس از click باعث گزارش کاذب شکست می‌شد.
@@ -22155,6 +22186,7 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
   window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,summarizeSourceAudit,sourceAuditDetail,selfTest,lastResult:null};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
+
 /* ===== steel2/js/project-diagnostics.js ===== */
 /* SAHROUD STEEL - Read-only Project Diagnostics 1.0
  * Does not write to localStorage, alter form values, build the model, or change sections.
@@ -31319,13 +31351,14 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 })();
 
 /* ===== steel2/js/runtime-integrity.js ===== */
-/* SAHROUD STEEL — runtime dependency integrity gate.
- * Reports missing core modules; never upgrades a project to design-approved.
+/* SAHROUD STEEL — source module for the production bundle.
+ * Fail-closed runtime dependency check; not a structural design approval.
  */
 (function(root){
 "use strict";
 const required=[
- ["SteelProject","مدیریت پروژه"],["SteelClimateDB","پایگاه اقلیم"],["SteelLoads","بارگذاری"],
+ ["SteelProject","مدیریت پروژه"],
+ ["SteelClimateDesignReadiness","ممیزی شواهد اقلیمی"],["SteelClimateDB","پایگاه اقلیم"],["SteelLoads","بارگذاری"],
  ["SteelAnalysis","تحلیل"],["SteelStructuralModel","مدل سازه"],["SteelAutoWorkflow","گردش کار"],
  ["SteelMemberDesignDemandPackage","تقاضای طراحی اعضا"],["SteelM6AnalysisCoverageAudit","پوشش ترکیبات بار"],
  ["SteelCrane3DLoadTransfer","انتقال بار جرثقیل"],["SteelFoundationModelFingerprint","شناسه مدل فونداسیون"],
@@ -31334,8 +31367,8 @@ const required=[
 function audit(){
  const missing=required.filter(([name])=>!root[name]).map(([name,label])=>({name,label}));
  return {success:missing.length===0,ready:missing.length===0,missing,loaded:required.length-missing.length,total:required.length,
-  designApproved:false,analysisApprovalGranted:false,
-  message:missing.length?"ماژول‌های ضروری بارگذاری نشده‌اند: "+missing.map(x=>x.label).join("، "):"ماژول‌های اصلی نرم‌افزار بارگذاری شده‌اند."};
+ designApproved:false,analysisApprovalGranted:false,
+ message:missing.length?"ماژول‌های ضروری بارگذاری نشده‌اند: "+missing.map(x=>x.label).join("، "):"ماژول‌های اصلی نرم‌افزار بارگذاری شده‌اند."};
 }
 function report(){
  const result=audit(),doc=root.document;if(!doc)return result;
