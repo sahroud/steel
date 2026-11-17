@@ -103,3 +103,12 @@ No claim of P2 completion is made.
 ### Automated execution wiring
 
 Added `.github/workflows/steel2-reference-tests.yml` to run the four reference fixtures with Node.js 20 when the solver or test files change on the development branch or in a pull request. No workflow run result is available yet for this commit, so execution remains pending.
+
+
+### Additional reference coverage and input guidance — 2026-11-17
+
+- Expanded `tests/analysis-3d-reference.test.js` with a cantilever lateral-load fixture checking the closed-form Euler–Bernoulli tip displacement (PL^3/(3EI_z)), vertical support reaction and fixed-end moment; and an unsupported-model fixture that must fail as singular/unstable.
+- Corrected stale Persian load-form guidance that referred to the wind inputs as "three inputs". The UI now describes roof, longitudinal-wall and separate front/rear end-wall pressure inputs, and explicitly states that the longitudinal-wall pressure is currently assumed equal on both sides.
+- Source review confirms `loads.js` stores and serializes both end-wall pressure fields, and `model-3d.js` maps them to the corresponding front/rear `endGirt` members. The triangular gable region above the highest end girt remains excluded.
+- No GitHub Actions run is currently returned for the recent commits. All six reference fixtures are therefore authored but **not verified as executed**. A successful CI result is still a required gate.
+- The current 3D combination path has not yet been proven to include wind actions; the correction in `app.js` applies to its legacy combination builder only. Do not present this as completed 3D wind-combination support.
