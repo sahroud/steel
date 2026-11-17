@@ -37,7 +37,7 @@ function reconstruct(input,options){
  }
  const rows=[...stations].sort((a,b)=>a-b).map(x=>{
   const force=[0,1,2].map(k=>-(f[k]+q0[k]*x+dq[k]*x*x/(2*L)));
-  const weighted=[0,1,2].map(k=>-q0[k]*x*x/2-dq[k]*x*x*x/(3*L));
+  const weighted=[0,1,2].map(k=>-q0[k]*x*x/2-dq[k]*x*x*x/(6*L));
   const rI=[-x,0,0];
   const moment=[0,1,2].map(k=>-(f[k+3]+cross(rI,f.slice(0,3))[k]+cross([1,0,0],weighted)[k]));
   return {x_m:x,N_N:force[0],Vy_N:force[1],Vz_N:force[2],T_Nm:moment[0],My_Nm:moment[1],Mz_Nm:moment[2]};
@@ -58,6 +58,7 @@ function selfTest(){
  test("tapered member fails closed",()=>reconstruct({length:4,prismatic:false,loadDataComplete:true,uniformLocal:[0,0,0],localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  test("point load fails closed",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],pointLoads:[{x:2,values:[0,-1,0]}],localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  test("linear load endpoints must be finite three-vectors",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],linearLocal:{start:[0,-1,0],end:[0,NaN,0]},localEndForces:Array(12).fill(0)}).status==="insufficient_data");
+ test("linear varying local load reconstructs solver end actions in equilibrium",()=>{const r=reconstruct({length:3,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],linearLocal:{start:[0,-100,0],end:[0,-300,0]},localEndForces:[0,600,0,0,0,1050,0,0,0,0,0,0]});return r.ok&&Math.abs(r.stations.at(-1).Vy_N)<1e-7&&Math.abs(r.stations.at(-1).Mz_Nm)<1e-7;});
  test("released member fails closed",()=>reconstruct({length:4,prismatic:true,loadDataComplete:true,uniformLocal:[0,0,0],endReleases:{i:[4]},localEndForces:Array(12).fill(0)}).status==="insufficient_data");
  return {passed:checks.filter(x=>x.ok).length,failed:checks.filter(x=>!x.ok).length,checks};
 }
