@@ -155,9 +155,7 @@ test("surface pressure converts to tributary line load with kN/m units", () => {
 test("roof purlin tributary widths conserve the full sloped roof area width", () => {
   const slopeLength = 6.5;
   const intervals = 7;
-  const segment = slopeLength / intervals;
-  const widths = Array.from({ length: intervals + 1 }, (_, i) =>
-    segment * (i === 0 || i === intervals ? 0.5 : 1));
+  const widths = globalThis.SteelLoadTransfer.equalStationTributaryWidths(slopeLength, intervals);
   const totalWidth = widths.reduce((sum, width) => sum + width, 0);
   assert.ok(Math.abs(totalWidth - slopeLength) < 1e-12);
   const pressure = 1.1;
