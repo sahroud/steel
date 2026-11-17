@@ -223,6 +223,43 @@ function auditEquilibrium(eq,tolerance=1e-6){
  return{ok:issues.length===0,issues,relativeForceResidual:forceRatio??eq.relativeForceResidual??null,relativeMomentResidual:momentRatio??eq.relativeMomentResidual??null,tolerance,method:"independent re-evaluation of returned global equilibrium vectors; not independent load assembly"};
 }
 function closeNumber(a,b){return Math.abs(a-b)<=1e-8*Math.max(1,Math.abs(a),Math.abs(b));}
+function buildFoundationReactionEnvelope(caseResults){
+ const issues=[],byFooting=new Map();
+ if(!Array.isArray(caseResults)||!caseResults.length)issues.push("نتایج چندحالت بار برای تشکیل پوش واکنش پی موجود نیست.");
+ (caseResults||[]).forEach(result=>{
+  const audit=result?.foundationReactionMappingAudit;
+  if(!audit?.success){issues.push("نگاشت پی در حالت "+String(result?.id||"?")+" کامل نیست؛ پوش پی متوقف شد.");return;}
+  (audit.footingDemands||[]).forEach(footing=>{
+   const id=String(footing.footingId||"").trim(),p=footing.referencePointM,a=footing.actions;
+   if(!id||!p||![p.x,p.y,p.z].every(finite)||!a||!["Fx","Fy","Fz","Mx","My","Mz"].every(k=>finite(a[k]))){
+    issues.push("داده پی در حالت "+String(result.id||"?")+" ناقص است.");return;
+   }
+   if(!byFooting.has(id))byFooting.set(id,{footingId:id,referencePointM:{...p},caseActions:[],componentEnvelope:{}});
+   const group=byFooting.get(id);
+   if(["x","y","z"].some(k=>Math.abs(group.referencePointM[k]-p[k])>1e-9)){
+    issues.push("مرجع هندسی پی "+id+" بین حالت‌های بار تغییر کرده است.");return;
+   }
+   group.caseActions.push({caseId:String(result.id),actions:{...a}});
+  });
+ });
+ if(!issues.length){
+  byFooting.forEach(group=>{
+   const caseIds=new Set(group.caseActions.map(x=>x.caseId));
+   if(caseIds.size!==caseResults.length)issues.push("برای پی "+group.footingId+" در همه حالت‌های بار نتیجه وجود ندارد.");
+   ["Fx","Fy","Fz","Mx","My","Mz"].forEach(k=>{
+    const rows=group.caseActions.map(x=>({caseId:x.caseId,value:x.actions[k]}));
+    group.componentEnvelope[k]={
+     min:rows.reduce((a,b)=>b.value<a.value?b:a),
+     max:rows.reduce((a,b)=>b.value>a.value?b:a)
+    };
+   });
+  });
+ }
+ return{success:issues.length===0,status:issues.length?"envelope-incomplete":"case-preserving-demand-envelope",
+  issues,footings:Array.from(byFooting.values()),caseCount:caseResults?.length||0,
+  rule:"هر مؤلفه کمینه/بیشینه با شناسه حالت بار واقعی حفظ می‌شود؛ مؤلفه‌های حاکم از حالت‌های مختلف با هم ترکیب و به‌عنوان یک بردار همزمان ساختگی ارائه نمی‌شوند.",
+  units:{force:"N",moment:"N.m"},analysisEnabled:false,designApproved:false};
+}
 async function run(loadCases){
  const api=root.SteelStructuralModel,model=api?.getData?.();
  const contract=auditSolverContract(api,model);
@@ -248,7 +285,8 @@ async function run(loadCases){
    foundationDemands:foundationReactionMappingAudit.success?foundationReactionMappingAudit.footingDemands:[],
    foundationDemandStatus:foundationReactionMappingAudit.status});
  }
- return{success:true,contract,caseCount:results.length,results,
+ const foundationReactionEnvelope=buildFoundationReactionEnvelope(results);
+ return{success:true,contract,caseCount:results.length,results,foundationReactionEnvelope,
   allCasesEquilibriumOK:results.every(r=>r.equilibrium.ok),
   analysisEnabled:false,designApproved:false,
   scope:"پل استخراج واکنش و تقاضای پایه از قرارداد واقعی حل‌گر؛ بدون طراحی ظرفیت و بدون تأیید مهندسی."};
@@ -405,10 +443,21 @@ function selfTest(){
  ck("integrated load-transfer audit compares ledger, solver resultant and support equilibrium",()=>auditSolverLoadTransfer(ledgerModel,integratedFixture,[{nodeId:"B",values:[10,0,0,0,0,5]}]).success);
  ck("integrated load-transfer audit blocks solver-resultant mismatch",()=>!auditSolverLoadTransfer(ledgerModel,{...integratedFixture,equilibrium:{...integratedFixture.equilibrium,appliedForceN:[10,-390,0]}},[{nodeId:"B",values:[10,0,0,0,0,5]}]).success);
  ck("integrated load-transfer audit blocks incomplete member ledger",()=>!auditSolverLoadTransfer({nodes:ledgerModel.nodes,members:[{...ledgerModel.members[0],analysisLoad:{loadDataComplete:true}}]},{...integratedFixture,members:[{id:"M",start:"A",end:"B",localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]}}]},[]).success);
+ const env=buildFoundationReactionEnvelope([
+  {id:"D",foundationReactionMappingAudit:{success:true,footingDemands:[{footingId:"F1",referencePointM:{x:0,y:0,z:0},actions:{Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6}}]}},
+  {id:"W",foundationReactionMappingAudit:{success:true,footingDemands:[{footingId:"F1",referencePointM:{x:0,y:0,z:0},actions:{Fx:-2,Fy:4,Fz:1,Mx:8,My:-5,Mz:2}}]}}
+ ]);
+ ck("foundation envelope preserves governing case ID for every component",()=>env.success&&env.footings[0].componentEnvelope.Fx.min.caseId==="W"&&env.footings[0].componentEnvelope.My.max.caseId==="D");
+ ck("foundation envelope does not combine extrema into a fictitious simultaneous vector",()=>env.footings[0].caseActions.length===2&&env.rule.includes("بردار همزمان ساختگی"));
+ ck("incomplete mapping blocks foundation envelope",()=>!buildFoundationReactionEnvelope([{id:"X",foundationReactionMappingAudit:{success:false,footingDemands:[]}}]).success);
+ ck("inconsistent footing reference across cases blocks envelope",()=>!buildFoundationReactionEnvelope([
+  {id:"A",foundationReactionMappingAudit:{success:true,footingDemands:[{footingId:"F",referencePointM:{x:0,y:0,z:0},actions:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0}}]}},
+  {id:"B",foundationReactionMappingAudit:{success:true,footingDemands:[{footingId:"F",referencePointM:{x:1,y:0,z:0},actions:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0}}]}}
+ ]).success);
  ck("demand-only status never implies design",()=>x.rows.every(r=>r.designStatus==="demand_only_not_designed")&&!("capacity" in x.rows[0]));
  ck("wind cases use directional adapter output",()=>typeof runDirectionalWind==="function"&&runDirectionalWind.toString().includes("SteelDirectionalWind3D"));
  ck("seismic cases use explicit seismic distributor input",()=>typeof runSeismic==="function"&&runSeismic.toString().includes("SteelSeismicEquivalentLateral"));
  return{passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests,analysisEnabled:false,designApproved:false};
 }
-root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,auditFoundationReactionMapping,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,auditSolverLoadTransfer,run,runDirectionalWind,runSeismic,runMemberDesignPipeline,selfTest};
+root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,auditFoundationReactionMapping,buildFoundationReactionEnvelope,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,auditSolverLoadTransfer,run,runDirectionalWind,runSeismic,runMemberDesignPipeline,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
