@@ -4,7 +4,8 @@
 (function(root){
 "use strict";
 const required=[
- ["SteelProject","مدیریت پروژه"],["SteelClimateDB","پایگاه اقلیم"],["SteelLoads","بارگذاری"],
+ ["SteelProject","مدیریت پروژه"],
+ ["SteelClimateDesignReadiness","ممیزی شواهد اقلیمی"],["SteelClimateDB","پایگاه اقلیم"],["SteelLoads","بارگذاری"],
  ["SteelAnalysis","تحلیل"],["SteelStructuralModel","مدل سازه"],["SteelAutoWorkflow","گردش کار"],
  ["SteelMemberDesignDemandPackage","تقاضای طراحی اعضا"],["SteelM6AnalysisCoverageAudit","پوشش ترکیبات بار"],
  ["SteelCrane3DLoadTransfer","انتقال بار جرثقیل"],["SteelFoundationModelFingerprint","شناسه مدل فونداسیون"],
