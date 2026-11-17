@@ -29,7 +29,8 @@ function loadSelectedCity(){
  const id=$("climateCity")?.value, r=records[id]; if(!r)return;
  const assign=(field,value)=>{
   const el=$(field);if(!el)return;
-  el.value=value===null||value===undefined?"":String(value);
+  if(el.type==="checkbox")el.checked=value===true;
+  else el.value=value===null||value===undefined?"":String(value);
   el.dispatchEvent(new Event("input",{bubbles:true}));
   el.dispatchEvent(new Event("change",{bubbles:true}));
  };
