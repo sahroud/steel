@@ -85,6 +85,10 @@ function audit(envelope,model,footingSpecFor){
    issues.push("ممیزی باقیمانده تعادل گره‌به‌گره حل‌گر برای حالت بار موجود یا موفق نیست: "+String(c?.label));
   else if(c.equilibrium.nodeEquilibrium.some(n=>n?.ok!==true||!Array.isArray(n.components)||n.components.length!==6))
    issues.push("ممیزی تعادل گره‌به‌گره ناقص یا ناموفق است: "+String(c?.label));
+  if(c?.equilibrium?.memberEndEquilibriumOk!==true||!Array.isArray(c?.equilibrium?.memberEndEquilibrium)||!c.equilibrium.memberEndEquilibrium.length)
+   issues.push("ممیزی مستقل تعادل گره از نیروهای انتهایی اعضا برای حالت بار موجود یا موفق نیست: "+String(c?.label));
+  else if(c.equilibrium.memberEndEquilibrium.some(n=>n?.ok!==true||!Array.isArray(n.components)||n.components.length!==6))
+   issues.push("ممیزی مستقل نیروهای انتهایی اعضا در گره‌ها ناقص یا ناموفق است: "+String(c?.label));
  });
  const resultants=(envelope?.cases||[]).map(c=>{
   const F=[0,0,0],M=[0,0,0];
@@ -104,7 +108,7 @@ function audit(envelope,model,footingSpecFor){
 function selfTest(){
  const model={nodes:[{id:"B1",x:0,y:0,z:0,kind:"base"},{id:"B2",x:2,y:0,z:0,kind:"endwall-base"}]};
  const vals1=[10,20,30,1,2,3],vals2=[-5,-6,-7,4,5,6];
- const env={cases:[{label:"C1",equilibrium:{ok:true,nodeEquilibriumOk:true,nodeEquilibrium:[{nodeId:"B1",ok:true,components:Array(6).fill({})},{nodeId:"B2",ok:true,components:Array(6).fill({})}]}}],rows:[
+ const env={cases:[{label:"C1",equilibrium:{ok:true,nodeEquilibriumOk:true,memberEndEquilibriumOk:true,memberEndEquilibrium:[{nodeId:'B1',ok:true,components:Array(6).fill({})},{nodeId:'B2',ok:true,components:Array(6).fill({})}],nodeEquilibrium:[{nodeId:"B1",ok:true,components:Array(6).fill({})},{nodeId:"B2",ok:true,components:Array(6).fill({})}]}}],rows:[
   {nodeId:"B1",x:0,y:0,z:0,caseReactions:[{label:"C1",values:vals1}],envelopes:vals1.map(v=>({min:v,max:v,minCase:"C1",maxCase:"C1"}))},
   {nodeId:"B2",x:2,y:0,z:0,caseReactions:[{label:"C1",values:vals2}],envelopes:vals2.map(v=>({min:v,max:v,minCase:"C1",maxCase:"C1"}))}
  ]};
@@ -122,6 +126,7 @@ function selfTest(){
   ["reaction vectors with extra components are rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,caseReactions:[{label:"C1",values:[...vals1,99]}]}:r)},model).ok],
   ["failed equilibrium rejected",!audit({...env,cases:[{label:"C1",equilibrium:{ok:false,nodeEquilibriumOk:true,nodeEquilibrium:[{nodeId:"B1",ok:true,components:Array(6).fill({})}]}}]},model).ok],
   ["missing node-equilibrium audit rejected",!audit({...env,cases:[{label:"C1",equilibrium:{ok:true}}]},model).ok],
+  ["missing independent member-end equilibrium audit rejected",!audit({...env,cases:[{label:"C1",equilibrium:{ok:true,nodeEquilibriumOk:true,nodeEquilibrium:[{nodeId:"B1",ok:true,components:Array(6).fill({})}]}}]},model).ok],
   ["failed node-equilibrium row rejected",!audit({...env,cases:[{label:"C1",equilibrium:{ok:true,nodeEquilibriumOk:false,nodeEquilibrium:[{nodeId:"B1",ok:false,components:Array(6).fill({})}]}}]},model).ok],
   ["missing footing dimensions rejected",!audit(env,model,()=>({width:0,length:1,thickness:1})).ok],
   ["global-origin moment includes r cross F",good.resultants[0].solverSupportResultant.My===21],
