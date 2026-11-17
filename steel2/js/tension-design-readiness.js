@@ -8,7 +8,7 @@
 const $=id=>document.getElementById(id);
 const GROUPS=[["roofBrace","مهارب سقف"],["wallBrace","مهارب دیوار"],["endPost","ستونک انتهایی"]];
 const FIELDS=[["Ag_cm2","سطح ناخالص Ag (cm²)"],["An_cm2","سطح خالص An (cm²)"],["Ae_cm2","سطح خالص مؤثر Ae (cm²)"],["U","ضریب تأخیر برشی U"],["eccentricity_mm","خروج از مرکزیت اتصال (mm)"],["forceDemandKN","نیروی کششی تقاضا (kN)"]];
-let data={schemaVersion:1,groups:{}};
+let data=fresh();
 function fresh(){const o={schemaVersion:1,groups:{}};GROUPS.forEach(([g])=>o.groups[g]={});return o;}
 function normalize(v){
  const out=fresh();
