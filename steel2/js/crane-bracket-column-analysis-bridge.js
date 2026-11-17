@@ -15,13 +15,15 @@ function prepare(input){
  if(!id)issues.push("شناسه یکتای حالت بار پایه الزامی است.");
  const contract=root.SteelStructuralLoadChain?.auditSolverContract?.(api,model);
  if(!contract?.ready)issues.push(...(contract?.issues||["ممیزی قرارداد حل‌گر انجام نشد."]));
- const built=root.SteelCraneBracketColumnFEMAdapter?.buildLoadCase?.(model,base,input?.transferResult);
+ const transferResult=input?.runwayGirderResult?root.SteelCraneRunwayBracketDemandBridge?.audit?.(input.runwayGirderResult,input.bracketMapping,{verticalUnitVector_global:input.verticalUnitVector_global}):input?.transferResult;
+ if(input?.runwayGirderResult&&!transferResult?.success)issues.push(...(transferResult?.issues||["پل واکنش تیر حمال به براکت/ستون ناموفق است."]));
+ const built=root.SteelCraneBracketColumnFEMAdapter?.buildLoadCase?.(model,base,transferResult);
  if(!built?.success)issues.push(...(built?.issues||["آداپتور FEM تقاضای براکت ناموفق است."]));
  const ready=issues.length===0;
  return {success:ready,ready,caseId:id,loadCase:ready?built.loadCase:null,addedDemandCount:built?.addedDemandCount||0,
   aggregatedNodeCount:built?.aggregatedNodeCount||0,solverContract:contract||null,issues,
   analysisExecuted:false,analysisEnabled:false,designApproved:false,
-  route:"crane wheel → rail → runway girder → bracket → column node → global six-DOF nodal load → 3D frame solver",
+  route:input?.runwayGirderResult?"crane wheel → rail → runway girder FEM support reaction → explicit bracket geometry → column node six-DOF demand → 3D frame solver":"crane wheel → rail → runway girder → bracket → column node → global six-DOF nodal load → 3D frame solver",
   note:"این مرحله فقط حالت بار حل‌گر را آماده می‌کند. اجرای تحلیل نیازمند فراخوانی جداگانه runPrepared با allowSolve:true است."};
 }
 function runPrepared(prepared,options){
