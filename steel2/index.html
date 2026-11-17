@@ -249,30 +249,6 @@
 
 </main>
 
-<script>
-(function () {
-    "use strict";
-    const slope = 0.20;
-    const fmt = value => Number(value).toLocaleString("fa-IR", {minimumFractionDigits:2, maximumFractionDigits:2});
-    window.updateRoofGeometry = function () {
-        const span = Number(document.getElementById("span")?.value);
-        const height = Number(document.getElementById("height")?.value);
-        const riseField = document.getElementById("rise");
-        if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(height) || height <= 0) return;
-        const rise = span * 0.5 * slope;
-        if (riseField) riseField.value = rise.toFixed(6);
-        const slopeEl = document.getElementById("roofSlopeDisplay");
-        const riseEl = document.getElementById("roofRiseDisplay");
-        const totalEl = document.getElementById("roofTotalHeightDisplay");
-        if (slopeEl) slopeEl.textContent = "۲۰٪";
-        if (riseEl) riseEl.textContent = fmt(rise) + " متر";
-        if (totalEl) totalEl.textContent = fmt(height + rise) + " متر";
-    };
-    ["span", "height"].forEach(id => document.getElementById(id)?.addEventListener("input", window.updateRoofGeometry));
-    window.addEventListener("DOMContentLoaded", window.updateRoofGeometry);
-    window.updateRoofGeometry();
-})();
-</script>
 <script src="js/project.js?v=20261112purlinmigration1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/model-3d.js?v=20261112endwallbase1"></script>
