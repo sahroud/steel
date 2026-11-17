@@ -82,7 +82,7 @@ jobs:
           const required = [
             'project.js','loads.js','analysis-3d.js','analysis.js','model-3d.js',
             'design-core.js','m6-load-combination-templates.js','member-design-demand-package.js',
-            'crane-3d-load-transfer.js','foundation-reaction-bridge.js','runtime-integrity.js','solver-end-action-sign-benchmarks.js'
+            'crane-3d-load-transfer.js','foundation-reaction-bridge.js','runtime-integrity.js','analysis-scope-audit.js','solver-end-action-sign-benchmarks.js'
           ];
           const excluded = [
             'dropbox-integration.js','engineering-workstream-dashboard.js',
