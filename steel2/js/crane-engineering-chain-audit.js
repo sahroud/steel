@@ -33,10 +33,10 @@ function audit(p){
  const transferSet=new Set(transferIds),frameSet=new Set(frameIds),girderSet=new Set(girderIds);
  const frameSourceIds=(frame.cases||[]).map(x=>text(x.sourceTransferCaseId)).filter(Boolean);
  const girderSourceIds=(girder.cases||[]).map(x=>text(x.sourceTransferCaseId)).filter(Boolean);
- const frameCovers=transferIds.length>0&&transferIds.every(x=>frameSourceIds.includes(x));
- const girderCovers=transferIds.length>0&&transferIds.every(x=>girderSourceIds.includes(x));
- add("all-transfer-cases-reach-3d-frame",frameCovers,"تمام شناسه‌های حالت انتقال دو ریل باید در نتایج قاب سه‌بعدی موجود باشند.");
- add("all-transfer-cases-reach-runway-girders",girderCovers,"تمام شناسه‌های حالت انتقال باید در نتایج تیر حمال نیز موجود باشند.");
+ const frameCovers=transferIds.length>0&&frameSourceIds.length===transferIds.length&&unique(frameSourceIds)&&transferIds.every(x=>frameSourceIds.includes(x));
+ const girderCovers=transferIds.length>0&&girderSourceIds.length===transferIds.length&&unique(girderSourceIds)&&transferIds.every(x=>girderSourceIds.includes(x));
+ add("one-to-one-transfer-case-coverage-in-3d-frame",frameCovers,"هر حالت انتقال باید دقیقاً یک نتیجه قاب متناظر داشته باشد؛ تکرار پیوند یا حذف حالت پذیرفته نیست.");
+ add("one-to-one-transfer-case-coverage-in-runway-girders",girderCovers,"هر حالت انتقال باید دقیقاً یک نتیجه تیر حمال متناظر داشته باشد؛ تکرار پیوند یا حذف حالت پذیرفته نیست.");
  const frameNoOrphans=frameSourceIds.every(x=>transferSet.has(x));
  const girderNoOrphans=girderSourceIds.every(x=>transferSet.has(x));
  add("no-unmatched-frame-cases",frameNoOrphans,"حالت تحلیل سه‌بعدی بدون حالت انتقال متناظر پذیرفته نیست.");
@@ -79,6 +79,8 @@ function selfTest(){const t=[],test=(name,fn)=>{try{t.push({name,ok:!!fn()});}ca
  test("rejects duplicate frame identifiers",()=>!audit({...p,frameAnalysis:{...p.frameAnalysis,cases:[p.frameAnalysis.cases[0],p.frameAnalysis.cases[0]]}}).success);
  test("rejects duplicate girder identifiers",()=>!audit({...p,runwayGirder:{...p.runwayGirder,cases:[p.runwayGirder.cases[0],p.runwayGirder.cases[0]]}}).success);
  test("rejects unequal stage case counts",()=>!audit({...p,runwayGirder:{...p.runwayGirder,cases:[p.runwayGirder.cases[0]]}}).success);
+ test("rejects duplicated source-transfer link that hides an omitted frame case",()=>!audit({...p,frameAnalysis:{...p.frameAnalysis,cases:[p.frameAnalysis.cases[0],{...p.frameAnalysis.cases[1],sourceTransferCaseId:"C1"}]}}).success);
+ test("rejects duplicated source-transfer link that hides an omitted runway case",()=>!audit({...p,runwayGirder:{...p.runwayGirder,cases:[p.runwayGirder.cases[0],{...p.runwayGirder.cases[1],sourceTransferCaseId:"C1"}]}}).success);
  test("does not enable analysis or approve design",()=>{const r=audit(p);return r.analysisEnabled===false&&r.designApproved===false;});
  test("does not label traceability as code compliance",()=>audit(p).limitations.some(x=>x.includes("ظرفیت‌سنجی")));
  return {passed:t.filter(x=>x.ok).length,failed:t.filter(x=>!x.ok).length,total:t.length,tests:t,analysisEnabled:false,note:"Software traceability tests only; no structural validation or code approval."};
