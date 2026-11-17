@@ -37,7 +37,7 @@
  function panel(){
   if($("foundationTakeoffPanel"))return;
   const root=$("costEstimatePanel")||$("quantityTakeoffPanel");if(!root)return;
-  const p=document.createElement("section");p.className="panel";p.id="foundationTakeoffPanel";
+  const p=document.createElement("section");p.className="panel";p.id="foundationTakeoffPanel";p.setAttribute("data-focus-group","foundation");
   p.innerHTML='<div class="panel-title"><h3>متره فونداسیون بر اساس واکنش‌های تحلیل سه‌بعدی</h3><span class="status">استخراج نیرو؛ نه طراحی پی</span></div>'+
    '<div class="notice">ابتدا تحلیل سه‌بعدی موردنظر را اجرا کنید؛ سپس واکنش‌های گره‌های پایه از همان حالت بار استخراج می‌شوند. ابعاد پی باید پس از طراحی ژئوتکنیکی و سازه‌ای وارد شوند. این بخش فعلاً واکنش‌ها و مقادیر هندسیِ مبتنی بر ابعاد واردشده را گزارش می‌کند و ظرفیت خاک، برون‌مرکزی، لغزش، واژگونی، پانچ، برش یک‌طرفه، آرماتور و بولت را طراحی یا تأیید نمی‌کند.</div>'+
    '<div class="form-grid">'+
