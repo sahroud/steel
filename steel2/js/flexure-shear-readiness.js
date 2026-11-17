@@ -29,30 +29,30 @@ function audit(envelope){
   const list=members.filter(m=>m.sectionKey===g);
   if(!list.length){missingGroups.push(g);warnings.push(label+": عضو/نیروی استخراج‌شده در گزارش فعلی وجود ندارد؛ پوشش طراحی این گروه تأیید نشده است.");return;}
   const d=root.SteelMemberDesignInputs?.getForGroup?.(g)||{};
-  const missing=[];
+  const missing=[],inputMissing=[],demandMissing=[],resistanceMissing=[];
   if(path==="section-specific"){
-   missing.push("نوع مقطع این گروه (نورد گرم یا سردنورد) و مشخصات هندسی واقعی آن هنوز برای انتخاب مسیر طراحی ثبت نشده است.");
-   missing.push("موتور مقاومت متناسب با نوع مقطع، شامل حالت‌های حدی لازم، هنوز به تقاضای این گروه متصل نشده است.");
+   resistanceMissing.push("نوع مقطع این گروه (نورد گرم یا سردنورد) و مشخصات هندسی واقعی آن هنوز برای انتخاب مسیر طراحی ثبت نشده است.");
+   resistanceMissing.push("موتور مقاومت متناسب با نوع مقطع، شامل حالت‌های حدی لازم، هنوز به تقاضای این گروه متصل نشده است.");
   }else if(path==="axial"){
-   missing.push("موتور کامل مقاومت کششی/فشاری و کنترل اتصال مهاربند به تقاضای واقعی این گروه متصل نشده است.");
+   resistanceMissing.push("موتور کامل مقاومت کششی/فشاری و کنترل اتصال مهاربند به تقاضای واقعی این گروه متصل نشده است.");
   }
-  if(path==="flexure") [["t_mm","ضخامت مبنای مصالح"],["Fy","Fy"],["Fu","Fu"],["E_MPa","مدول الاستیسیته E"],["G_MPa","مدول برشی G"],["Kx","ضریب طول مؤثر Kx"],["Ky","ضریب طول مؤثر Ky"],["Kz","ضریب طول مؤثر پیچشی Kz"],["Lcx","طول مؤثر فشاری حول x"],["Lcy","طول مؤثر فشاری حول y"],["Lcz","طول مؤثر پیچشی"],["Lb","طول مهارنشده خمشی Lb"],["Cb","ضریب Cb"]].forEach(([k,n])=>{if(!(Number(d[k])>0))missing.push(n+" معتبر نیست.");});
-  if(path==="flexure"&&!(Number(d.Fu)>=Number(d.Fy)&&Number(d.Fy)>0))missing.push("رابطه Fu و Fy معتبر نیست.");
+  if(path==="flexure") [["t_mm","ضخامت مبنای مصالح"],["Fy","Fy"],["Fu","Fu"],["E_MPa","مدول الاستیسیته E"],["G_MPa","مدول برشی G"],["Kx","ضریب طول مؤثر Kx"],["Ky","ضریب طول مؤثر Ky"],["Kz","ضریب طول مؤثر پیچشی Kz"],["Lcx","طول مؤثر فشاری حول x"],["Lcy","طول مؤثر فشاری حول y"],["Lcz","طول مؤثر پیچشی"],["Lb","طول مهارنشده خمشی Lb"],["Cb","ضریب Cb"]].forEach(([k,n])=>{if(!(Number(d[k])>0))inputMissing.push(n+" معتبر نیست.");});
+  if(path==="flexure"&&!(Number(d.Fu)>=Number(d.Fy)&&Number(d.Fy)>0))inputMissing.push("رابطه Fu و Fy معتبر نیست.");
   const taperedMembers=list.filter(m=>m?.taperApplied===true||m?.taperSegmentCount!=null||m?.parentMemberId);
-  if(taperedMembers.length)missing.push(taperedMembers.length+" قطعه از عضو متغیرمقطع شناسایی شد؛ مسیر مقاومت/کمانش تیرورق متغیرمقطع و اثر تغییرات در طول عضو هنوز پشتیبانی نشده است.");
-  if(path==="flexure"&&!String(d.bracingNote||"").trim())missing.push("شرح مهار جانبی/پیچشی ثبت نشده است.");
+  if(taperedMembers.length)resistanceMissing.push(taperedMembers.length+" قطعه از عضو متغیرمقطع شناسایی شد؛ مسیر مقاومت/کمانش تیرورق متغیرمقطع و اثر تغییرات در طول عضو هنوز پشتیبانی نشده است.");
+  if(path==="flexure"&&!String(d.bracingNote||"").trim())inputMissing.push("شرح مهار جانبی/پیچشی ثبت نشده است.");
   const expectedLabels=cases.map(c=>String(c.label||""));
   const demand=[];
   list.forEach(m=>{
    const memberCases=Array.isArray(m.simultaneousCases)?m.simultaneousCases:[];
    const actualLabels=memberCases.map(c=>String(c.label||""));
    const duplicateLabels=[...new Set(actualLabels.filter((x,i)=>actualLabels.indexOf(x)!==i))];
-   if(memberCases.length!==expectedLabels.length||duplicateLabels.length||expectedLabels.some(x=>!actualLabels.includes(x)))missing.push("پوش هم‌زمان عضو "+m.id+" با برچسب دقیق تمام ترکیبات بار تطبیق ندارد.");
+   if(memberCases.length!==expectedLabels.length||duplicateLabels.length||expectedLabels.some(x=>!actualLabels.includes(x)))demandMissing.push("پوش هم‌زمان عضو "+m.id+" با برچسب دقیق تمام ترکیبات بار تطبیق ندارد.");
    let peakM={value:0,caseLabel:null,end:null,component:null},peakV={value:0,caseLabel:null,end:null,component:null};
    memberCases.forEach(c=>{
-    if(!String(c?.label||"").trim())missing.push("برچسب ترکیب بار برای عضو "+m.id+" خالی است.");
+    if(!String(c?.label||"").trim())demandMissing.push("برچسب ترکیب بار برای عضو "+m.id+" خالی است.");
     [["I",c.endI],["J",c.endJ]].forEach(([end,e])=>{
-     if(!completeEndActions(e)){missing.push("بردار شش‌مؤلفه‌ای "+end+" عضو "+m.id+" در ترکیب "+String(c?.label||"—")+" ناقص یا نامعتبر است.");return;}
+     if(!completeEndActions(e)){demandMissing.push("بردار شش‌مؤلفه‌ای "+end+" عضو "+m.id+" در ترکیب "+String(c?.label||"—")+" ناقص یا نامعتبر است.");return;}
      [["My",e.My],["Mz",e.Mz]].forEach(([component,value])=>{const n=Number(value);if(Math.abs(n)>peakM.value)peakM={value:Math.abs(n),caseLabel:c.label,end,component};});
      [["Vy",e.Vy],["Vz",e.Vz]].forEach(([component,value])=>{const n=Number(value);if(Math.abs(n)>peakV.value)peakV={value:Math.abs(n),caseLabel:c.label,end,component};});
     });
@@ -60,13 +60,14 @@ function audit(envelope){
    demand.push({id:m.id,M:peakM.value,V:peakV.value,governingMoment:peakM,governingShear:peakV});
   });
   const noSection=list.filter(m=>!(Number(m.section?.A)>0&&Number(m.section?.Iy)>0&&Number(m.section?.Iz)>0&&Number(m.section?.J)>0));
-  if(noSection.length)missing.push(noSection.length+" عضو فاقد خواص کامل A/Iy/Iz/J در خروجی تحلیل است.");
+  if(noSection.length)inputMissing.push(noSection.length+" عضو فاقد خواص کامل A/Iy/Iz/J در خروجی تحلیل است.");
   if(demand.every(x=>x.M===0&&x.V===0))warnings.push(label+": تقاضای خمش و برش در گزارش نیرو صفر است؛ بارگذاری و محورهای محلی بازبینی شوند.");
+  missing.push(...inputMissing,...demandMissing,...resistanceMissing);
   if(missing.length)missing.forEach(x=>issues.push(label+": "+x));
   const governingMoment=demand.reduce((a,x)=>x.M>a.value?{value:x.M,memberId:x.id,...x.governingMoment}:a,{value:0,memberId:null,caseLabel:null,end:null,component:null});
   const governingShear=demand.reduce((a,x)=>x.V>a.value?{value:x.V,memberId:x.id,...x.governingShear}:a,{value:0,memberId:null,caseLabel:null,end:null,component:null});
   const forceDemandComplete=list.every(m=>{const mc=Array.isArray(m.simultaneousCases)?m.simultaneousCases:[];const labels=mc.map(c=>String(c?.label||""));return mc.length===expectedLabels.length&&new Set(labels).size===labels.length&&!expectedLabels.some(x=>!labels.includes(x))&&mc.every(c=>completeEndActions(c?.endI)&&completeEndActions(c?.endJ));});
-  rows.push({group:g,label,designPath:path,count:list.length,ready:false,inputDataComplete:missing.length===0,forceDemandComplete,resistanceCalculated:false,designApproved:false,missing,maximumMoment_Nm:governingMoment.value,maximumShear_N:governingShear.value,governingMoment,governingShear,demands:demand});
+  rows.push({group:g,label,designPath:path,count:list.length,ready:false,inputDataComplete:inputMissing.length===0,forceDemandComplete:demandMissing.length===0&&forceDemandComplete,resistanceCalculated:false,resistanceCalculated:false,resistanceStatus:"not-calculated",designApproved:false,inputMissing,demandMissing,resistanceMissing,missing,maximumMoment_Nm:governingMoment.value,maximumShear_N:governingShear.value,governingMoment,governingShear,demands:demand});
  });
  const memberCoverage=root.SteelColdFormedMemberRegistry?.auditDemandLink?.(env)||null;
  if(memberCoverage?.available&&!memberCoverage.success)memberCoverage.issues.forEach(x=>issues.push("اتصال تقاضای واقعی به پرونده اعضای سردنورد: "+x));
@@ -87,6 +88,8 @@ function selfTest(){
   {name:"all nine member groups are represented",pass:r.rows.length===9&&r.missingGroups.length===0},
   {name:"complete force vectors and input data never imply calculated resistance or approval",pass:r.rows.every(x=>x.ready===false&&x.resistanceCalculated===false&&x.designApproved===false)&&r.resistanceCalculated===false&&r.designApproved===false&&r.status==="demand-and-input-audit-only"},
   {name:"input audit completion is explicitly separate from design readiness",pass:r.inputAuditComplete===false&&r.rows.every(x=>typeof x.inputDataComplete==="boolean"&&typeof x.forceDemandComplete==="boolean")},
+  {name:"missing force demand does not contaminate member input completeness",pass:(()=>{const bad=members.map((m,i)=>i===0?{...m,simultaneousCases:[{...m.simultaneousCases[0],endI:{...m.simultaneousCases[0].endI,T:null}}]}:m);const x=audit({...env,members:bad}).rows.find(y=>y.group==="column");return x.inputDataComplete===true&&x.forceDemandComplete===false&&x.resistanceCalculated===false;})()},
+  {name:"missing material or stability inputs do not erase complete force demand",pass:(()=>{const prior=root.SteelMemberDesignInputs;root.SteelMemberDesignInputs={getForGroup:()=>({})};const x=audit(env).rows.find(y=>y.group==="column");if(prior===undefined)delete root.SteelMemberDesignInputs;else root.SteelMemberDesignInputs=prior;return x.inputDataComplete===false&&x.forceDemandComplete===true&&x.resistanceStatus==="not-calculated";})()},
   {name:"duplicate simultaneous case labels cannot pass force-demand completeness",pass:(()=>{const bad=members.map((m,i)=>i===0?{...m,simultaneousCases:[m.simultaneousCases[0],{...m.simultaneousCases[0]}]}:m);return audit({...env,members:bad}).rows.find(x=>x.group==="column")?.forceDemandComplete===false;})()},
   {name:"tapered physical members are explicitly blocked from prismatic resistance paths",pass:(()=>{const tapered=members.map((m,i)=>i===1?{...m,parentMemberId:"R1",taperSegmentIndex:1,taperSegmentCount:8}:m);const x=audit({...env,members:tapered});return x.rows.find(y=>y.group==="rafter")?.missing.some(v=>v.includes("متغیرمقطع"))&&x.designApproved===false;})()},
   {name:"purlins and girts require section-specific design path",pass:["roofPurlin","wallGirt"].every(k=>r.rows.find(x=>x.group===k)?.designPath==="section-specific"&&!r.rows.find(x=>x.group===k)?.ready)},
