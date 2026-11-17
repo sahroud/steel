@@ -137,7 +137,11 @@ jobs:
             console.error('No auditable preliminary workflow report was produced.', result);
             process.exit(1);
           }
-          console.log(`Default 12x36/Shahroud/no-crane workflow: ${result.passed}/${result.total} stages passed; ${result.blocked} blocked for explicit inputs.`);
+          if (result.rows.length !== 1 || result.rows[0].label !== 'ممیزی مستندات اقلیمی و ورودی‌های بار' || result.rows[0].ok !== false) {
+            console.error('Unverified default climate data must stop the workflow before any structural analysis.', result);
+            process.exit(1);
+          }
+          console.log(`Default 12x36/Shahroud/no-crane workflow safely blocked at climate evidence gate: ${result.blocked} explicit evidence gate.`);
           for (const row of result.rows.filter(x => !x.ok)) console.log('BLOCKED:', row.label, '-', row.detail);
           dom.window.close();
           NODE
@@ -154,7 +158,7 @@ jobs:
           const duplicates = names.filter((x, i) => names.indexOf(x) !== i);
           const required = [
             'project.js','loads.js','analysis-3d.js','analysis.js','model-3d.js',
-            'design-core.js','m6-load-combination-templates.js','member-design-demand-package.js',
+            'design-core.js','climate-design-readiness.js','m6-load-combination-templates.js','member-design-demand-package.js',
             'crane-3d-load-transfer.js','foundation-reaction-bridge.js','runtime-integrity.js','analysis-scope-audit.js','solver-end-action-sign-benchmarks.js'
           ];
           const excluded = [
@@ -168,7 +172,7 @@ jobs:
             console.error({moduleCount: names.length, duplicates, missing, unexpectedlyIncluded, missingSources});
             process.exit(1);
           }
-          if (!html.includes('js/legacy-bundle.js?v=20261117-runtime7') || html.includes('dropbox@')) {
+          if (!html.includes('js/legacy-bundle.js?v=20261117-runtime8') || html.includes('dropbox@')) {
             console.error('Legacy page does not reference the current single runtime bundle or still loads the external Dropbox SDK.');
             process.exit(1);
           }
