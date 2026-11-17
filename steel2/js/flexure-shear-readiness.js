@@ -65,7 +65,7 @@ function audit(envelope){
   if(missing.length)missing.forEach(x=>issues.push(label+": "+x));
   const governingMoment=demand.reduce((a,x)=>x.M>a.value?{value:x.M,memberId:x.id,...x.governingMoment}:a,{value:0,memberId:null,caseLabel:null,end:null,component:null});
   const governingShear=demand.reduce((a,x)=>x.V>a.value?{value:x.V,memberId:x.id,...x.governingShear}:a,{value:0,memberId:null,caseLabel:null,end:null,component:null});
-  const forceDemandComplete=list.every(m=>{const mc=Array.isArray(m.simultaneousCases)?m.simultaneousCases:[];const labels=mc.map(c=>String(c?.label||""));return mc.length===expectedLabels.length&&!new Set(labels).size===false&&!expectedLabels.some(x=>!labels.includes(x))&&mc.every(c=>completeEndActions(c?.endI)&&completeEndActions(c?.endJ));});
+  const forceDemandComplete=list.every(m=>{const mc=Array.isArray(m.simultaneousCases)?m.simultaneousCases:[];const labels=mc.map(c=>String(c?.label||""));return mc.length===expectedLabels.length&&new Set(labels).size===labels.length&&!expectedLabels.some(x=>!labels.includes(x))&&mc.every(c=>completeEndActions(c?.endI)&&completeEndActions(c?.endJ));});
   rows.push({group:g,label,designPath:path,count:list.length,ready:false,inputDataComplete:missing.length===0,forceDemandComplete,resistanceCalculated:false,designApproved:false,missing,maximumMoment_Nm:governingMoment.value,maximumShear_N:governingShear.value,governingMoment,governingShear,demands:demand});
  });
  const memberCoverage=root.SteelColdFormedMemberRegistry?.auditDemandLink?.(env)||null;
@@ -87,6 +87,7 @@ function selfTest(){
   {name:"all nine member groups are represented",pass:r.rows.length===9&&r.missingGroups.length===0},
   {name:"complete force vectors and input data never imply calculated resistance or approval",pass:r.rows.every(x=>x.ready===false&&x.resistanceCalculated===false&&x.designApproved===false)&&r.resistanceCalculated===false&&r.designApproved===false&&r.status==="demand-and-input-audit-only"},
   {name:"input audit completion is explicitly separate from design readiness",pass:r.inputAuditComplete===false&&r.rows.every(x=>typeof x.inputDataComplete==="boolean"&&typeof x.forceDemandComplete==="boolean")},
+  {name:"duplicate simultaneous case labels cannot pass force-demand completeness",pass:(()=>{const bad=members.map((m,i)=>i===0?{...m,simultaneousCases:[m.simultaneousCases[0],{...m.simultaneousCases[0]}]}:m);return audit({...env,members:bad}).rows.find(x=>x.group==="column")?.forceDemandComplete===false;})()},
   {name:"tapered physical members are explicitly blocked from prismatic resistance paths",pass:(()=>{const tapered=members.map((m,i)=>i===1?{...m,parentMemberId:"R1",taperSegmentIndex:1,taperSegmentCount:8}:m);const x=audit({...env,members:tapered});return x.rows.find(y=>y.group==="rafter")?.missing.some(v=>v.includes("متغیرمقطع"))&&x.designApproved===false;})()},
   {name:"purlins and girts require section-specific design path",pass:["roofPurlin","wallGirt"].every(k=>r.rows.find(x=>x.group===k)?.designPath==="section-specific"&&!r.rows.find(x=>x.group===k)?.ready)},
   {name:"braces require axial resistance and connection design",pass:["roofBrace","wallBrace"].every(k=>r.rows.find(x=>x.group===k)?.designPath==="axial"&&!r.rows.find(x=>x.group===k)?.ready)},
