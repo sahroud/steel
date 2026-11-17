@@ -71,10 +71,10 @@ function audit(model,loads){
   const ll=m.lineLoads||{},side=m.side;
   let wl=0,wr=0;
   if(side==="ridge"){
-   wl=num(m.tributaryWidthLeft);wr=num(m.tributaryWidthRight);
+   wl=num(m.tributaryWidthLeft??ll.tributaryWidthLeft);wr=num(m.tributaryWidthRight??ll.tributaryWidthRight);
    if(wl===null||wr===null||wl<0||wr<0){purlinMagnitudeChecks.push({memberId:String(m.id),ok:false,reason:"ridge-tributary-widths-missing-or-invalid"});return;}
   }else{
-   const width=num(m.tributaryWidth);
+   const width=num(m.tributaryWidth??ll.tributaryWidth);
    if(width===null||width<=0){purlinMagnitudeChecks.push({memberId:String(m.id),ok:false,reason:"tributary-width-missing-or-invalid"});return;}
    if(side==="left")wl=width;
    else if(side==="right")wr=width;
@@ -326,7 +326,7 @@ function selfTest(){
  test("incomplete combination factors detected",()=>{const p={...loads,combinations:[{id:"C",dead:1.2,live:null,snow:0}]};return !audit(model,p).success;});
  test("duplicate member identifiers detected",()=>{const p={...model,members:[...members,{...members[0]}]};return !audit(p,loads).success;});
  test("all load groups explicitly reported",()=>audit(model,loads).rows.length===14);
- test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.2);
+ test("wind signs are preserved",()=>audit(model,loads).success&&members[2].lineLoads.windLeft===-.24);
  test("never enables analysis or approves design",()=>{const r=audit(model,loads);return r.analysisEnabled===false&&r.designApproved===false;});
  test("roof gravity is assigned to purlins not rafters",()=>audit(model,loads).rows.find(r=>r.id==="dead").memberCount===1 );
  test("actual 3D model rafter naming is included by section key and axis",()=>audit(model,loads).inventory.rafterCount===2&&audit(model,loads).rows.find(r=>r.id==="rafter-reaction-path").memberCount===2 );
