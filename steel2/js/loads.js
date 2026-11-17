@@ -30,6 +30,10 @@
             customCity: "شاهرود",
             elevation: "1350",
             source: "مبحث ششم ۱۳۹۸؛ سرعت باد ۹۰ km/h مطابق جدول ۶-۱۰-۱ مبحث ششم ۱۳۹۸؛ ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود",
+            sourceDocument: "مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱",
+            sourceClause: "جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ مقدار برف نیازمند تطبیق مستقل",
+            sourceVerified: false,
+            elevationSource: "برآورد تقریبی مرکز شهرک صنعتی؛ نیازمند کنترل با DEM یا نقشه‌برداری",
             groundSnow: "1.0",
             basicWind: "90",
             terrain: "suburban",
@@ -116,6 +120,10 @@
                     <label for="climateSource">منبع داده اقلیمی</label>
                     <input id="climateSource" type="text" value="ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸">
                 </div>
+                <div class="field"><label for="climateSourceDocument">عنوان سند اقلیمی / شماره نقشه</label><input id="climateSourceDocument" type="text" value="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱"></div>
+                <div class="field"><label for="climateSourceClause">بند، جدول یا صفحه مرجع</label><input id="climateSourceClause" type="text" value="جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ برف نیازمند تطبیق مستقل"></div>
+                <div class="field"><label for="climateElevationSource">منبع ارتفاع واقعی محل</label><input id="climateElevationSource" type="text" value="برآورد تقریبی؛ نیازمند DEM یا برداشت نقشه‌برداری"></div>
+                <div class="field"><label for="climateSourceVerified">کنترل مدرک</label><label class="checkbox-row"><input id="climateSourceVerified" type="checkbox"> سند و داده‌های اقلیمی توسط مهندس مسئول با منبع رسمی کنترل شده‌اند</label></div>
             </div>
 
             <h4>ب ـ پارامترهای اقلیمی ورودی (مقادیر تأییدنشده را خالی بگذارید)</h4>
@@ -330,6 +338,10 @@
             customCity: "climateCustomCity",
             elevation: "climateElevation",
             source: "climateSource",
+            sourceDocument: "climateSourceDocument",
+            sourceClause: "climateSourceClause",
+            sourceVerified: "climateSourceVerified",
+            elevationSource: "climateElevationSource",
             groundSnow: "climateGroundSnow",
             basicWind: "climateBasicWind",
             terrain: "climateTerrain",
@@ -340,7 +352,7 @@
         };
         Object.keys(climateFields).forEach(key => {
             const el = $(climateFields[key]);
-            if (el) state.climate[key] = el.value;
+            if (el) state.climate[key] = key === "sourceVerified" ? el.checked === true : el.value;
         });
         if (window.SteelDesignCore && typeof window.SteelDesignCore.getData === "function") {
             const brief = window.SteelDesignCore.getData();
@@ -668,13 +680,16 @@
             const climateIds = {
                 city: "climateCity", customCity: "climateCustomCity",
                 elevation: "climateElevation", source: "climateSource",
+                sourceDocument: "climateSourceDocument", sourceClause: "climateSourceClause",
+                sourceVerified: "climateSourceVerified", elevationSource: "climateElevationSource",
                 groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
                 terrain: "climateTerrain", topography: "climateTopography",
                 openingArea: "buildingOpeningArea",
                 envelopeArea: "buildingEnvelopeArea", dominantOpening: "buildingDominantOpening"
             };
             Object.keys(climateIds).forEach(key => {
-                if ($(climateIds[key])) $(climateIds[key]).value = state.climate[key];
+                const el = $(climateIds[key]);
+                if (el) { if (key === "sourceVerified") el.checked = state.climate[key] === true; else el.value = state.climate[key] ?? ""; }
             });
 
             renderCombinations();
@@ -708,6 +723,8 @@
         const climateInputIds = {
             city: "climateCity", customCity: "climateCustomCity",
             elevation: "climateElevation", source: "climateSource",
+            sourceDocument: "climateSourceDocument", sourceClause: "climateSourceClause",
+            sourceVerified: "climateSourceVerified", elevationSource: "climateElevationSource",
             groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
             terrain: "climateTerrain", topography: "climateTopography",
             openingArea: "buildingOpeningArea", envelopeArea: "buildingEnvelopeArea",
@@ -716,7 +733,8 @@
         Object.keys(climateInputIds).forEach(key => {
             const el = $(climateInputIds[key]);
             if (el && state.climate[key] !== undefined && state.climate[key] !== null) {
-                el.value = state.climate[key];
+                if (key === "sourceVerified") el.checked = state.climate[key] === true;
+                else el.value = state.climate[key];
             }
         });
 

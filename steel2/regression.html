@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123b52">
+<title>SAHROUD STEEL | آزمون‌های مهندسی نرم‌افزار</title>
+<link rel="stylesheet" href="style.css?v=20261117-runtime-test1">
+<style>
+.test-intro{max-width:1100px;margin:18px auto;padding:16px;border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;color:#17364a}
+.test-intro h2{margin:0 0 8px}.test-intro p{line-height:1.9;margin:6px 0}
+#engineeringRegressionPanel{max-width:1100px;margin:16px auto;padding:16px;border:1px solid #cbd5e1;border-radius:14px;background:#fff}
+#engineeringRegressionResults{overflow-wrap:anywhere;line-height:1.8}
+#engineeringRegressionResults ul{padding-right:22px}
+#engineeringRegressionResults li{padding:5px 0;border-bottom:1px solid #e2e8f0}
+#engineeringRegressionResults .notice{margin-top:12px;padding:12px;border-radius:10px;background:#fff7ed;color:#7c2d12}
+.test-actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.test-actions a,.test-actions button{border:0;border-radius:9px;padding:10px 14px;background:#123b52;color:white;text-decoration:none;font:inherit;cursor:pointer}
+#runtimeStatus{padding:10px;border-radius:10px;background:#eef2ff;margin:12px 0}
+</style>
+<script defer src="js/legacy-bundle.js?v=20261117-runtime4"></script>
+<script defer src="js/engineering-regression-tests.js?v=20261117-runtime2"></script>
+</head>
+<body>
+<header class="header">
+ <div class="brand"><div class="logo">S</div><div><h1>SAHROUD STEEL</h1><p>آزمون‌های نرم‌افزاری و کنترل یکپارچگی</p></div></div>
+ <div class="version">محیط آزمون ـ مستقل از پروژه فعال</div>
+</header>
+<main class="container">
+ <section class="test-intro">
+  <h2>آزمون‌های بازگشتی محاسبات و زنجیره مهندسی</h2>
+  <p>این صفحه برای اجرای آزمون‌های نرم‌افزاری، کنترل فرمول‌ها، قراردادهای داده و مسیر انتقال نیرو است. آزمون موفق به‌تنهایی به معنی تأیید آیین‌نامه‌ای یا تأیید طراحی سازه نیست.</p>
+  <div id="runtimeStatus">در انتظار بارگذاری بسته محاسباتی…</div>
+  <div class="test-actions">
+   <a href="legacy.html">بازگشت به نرم‌افزار طراحی سوله</a>
+   <button type="button" id="runRuntimeAudit">بررسی سلامت ماژول‌ها</button>
+  </div>
+ </section>
+ <section id="engineeringRegressionPanel">
+  <h3>آزمون‌های رگرسیون</h3>
+  <p>برای اجرای آزمون‌ها، دکمه زیر را انتخاب کنید.</p>
+  <div class="test-actions"><button type="button" id="runAllTests">اجرای همه آزمون‌ها</button></div>
+  <div id="engineeringRegressionResults" aria-live="polite"></div>
+ </section>
+</main>
+<script>
+document.getElementById("runRuntimeAudit").addEventListener("click",function(){
+ const r=window.SteelRuntimeIntegrity?.report?.();
+ const el=document.getElementById("runtimeStatus");
+ el.textContent=r?(r.success?"ماژول‌های ضروری بارگذاری شده‌اند؛ این نتیجه تأیید مهندسی نیست.":"مسدود: "+r.message):"ماژول کنترل سلامت در دسترس نیست.";
+});
+document.getElementById("runAllTests").addEventListener("click",function(){
+ const r=window.SteelEngineeringRegression?.run?.();
+ if(!r)document.getElementById("engineeringRegressionResults").textContent="موتور آزمون بارگذاری نشده است.";
+});
+</script>
+</body>
+</html>

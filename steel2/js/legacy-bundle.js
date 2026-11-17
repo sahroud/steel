@@ -1,3 +1,4 @@
+/* SAHROUD STEEL runtime bundle — engineering core. Optional Dropbox, roadmap dashboard, and fabrication-economics UI excluded from the default runtime. */
 /* ===== steel2/js/m6-load-combination-templates.js ===== */
 /* SAHROUD STEEL — M6:1398 LRFD load-combination template generator.
  * Source: Iranian National Building Regulations, Topic 6, 4th ed. (1398),
@@ -5462,184 +5463,6 @@ window.SteelEndWallAudit={audit,getLastResult:()=>window.SteelEndWallAudit.lastR
  window.SteelFabricationTakeoff={getData,setData,steelMass,addItem,enrich};
 })();
 
-/* ===== steel2/js/market-price-engine.js ===== */
-/* SAHROUD STEEL — Project-local market price registry
- * Prices are quotations, not guaranteed delivered prices. No scraping or fabricated feeds.
- */
-(function(){
- "use strict";
- const KEY="sahroudSteel.marketPrices.v1", $=id=>document.getElementById(id);
- const state={endpoint:"",intervalMinutes:60,autoRefresh:false,prices:[],lastFetchAt:null,lastError:""};
- let autoTimer=null;
- const units=["تومان/کیلوگرم","تومان/تن","تومان/مترمربع","تومان/مترمکعب","تومان/عدد","تومان/متر","تومان/کیسه","تومان/مجموع"];
- const presets=[
-  {code:"steel.ipe14",name:"تیرآهن IPE 14",unit:"تومان/کیلوگرم"},
-  {code:"steel.sheet3",name:"ورق سیاه ۳ میلی‌متر",unit:"تومان/کیلوگرم"},
-  {code:"cement.type2.bag",name:"سیمان تیپ ۲ پاکتی",unit:"تومان/تن"},
-  {code:"panel.wall40",name:"ساندویچ‌پنل دیواری ۴ سانتی‌متر",unit:"تومان/مترمربع"},
-  {code:"panel.roof50",name:"ساندویچ‌پنل سقفی ۵ سانتی‌متر",unit:"تومان/مترمربع"},
-  {code:"brick",name:"آجر",unit:"تومان/عدد"},
-  {code:"concrete.ready",name:"بتن آماده فونداسیون",unit:"تومان/مترمکعب"},
-  {code:"rebar.a3",name:"میلگرد آجدار A3",unit:"تومان/کیلوگرم"},
-  {code:"excavation",name:"خاکبرداری و بارگیری",unit:"تومان/مترمکعب"},
-  {code:"formwork",name:"قالب‌بندی بتن",unit:"تومان/مترمربع"},
-  {code:"anchor.bolt",name:"بولت و متعلقات صفحه‌ستون",unit:"تومان/عدد"},
-  {code:"concrete.floor",name:"بتن کف سوله",unit:"تومان/مترمکعب"},
-  {code:"door.industrial",name:"درب صنعتی و کرکره",unit:"تومان/مترمربع"},
-  {code:"gutter",name:"آبرو و ناودانی",unit:"تومان/متر"},
-  {code:"electrical.package",name:"برق و روشنایی پروژه",unit:"تومان/مجموع"}
- ];
- const fmt=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:2});
- function projectCity(){
-  const el=$("city"); if(!el)return "";
-  if(el.value==="other"||el.value==="custom")return ($("cityName")?.value||"").trim();
-  const opt=el.options?.[el.selectedIndex];return (opt?.textContent||el.value||"").trim().replace(/\s*\(پیش‌فرض\)\s*/g,"");
- }
- function safeDate(v){const d=new Date(v);return Number.isFinite(d.getTime())?d.toISOString():null;}
- function normalize(p,allowUserVerified){
-  if(!p||typeof p!=="object")throw Error("رکورد قیمت ساختار معتبری ندارد.");
-  const price=Number(p.price),updatedAt=safeDate(p.updatedAt||p.date);
-  if(!p.code||!p.name||!Number.isFinite(price)||price<=0||!p.unit||!updatedAt)throw Error("هر قیمت باید کد، نام، مبلغ مثبت، واحد و تاریخ معتبر داشته باشد.");
-  const freight= p.freightToman===""||p.freightToman==null?null:Number(p.freightToman);
-  const tax= p.taxPercent===""||p.taxPercent==null?null:Number(p.taxPercent);
-  return {
-   code:String(p.code),name:String(p.name),productSpec:String(p.productSpec||""),
-   price,unit:String(p.unit),city:String(p.city||p.quoteCity||"نامشخص"),
-   seller:String(p.seller||""),source:String(p.source||"منبع تعریف‌شده توسط کاربر"),
-   sourceType:String(p.sourceType||"manual"),deliveryCity:String(p.deliveryCity||""),
-   includesFreight: p.includesFreight===true, freightToman:Number.isFinite(freight)&&freight>=0?freight:null,
-   includesTax:p.includesTax===true,taxPercent:Number.isFinite(tax)&&tax>=0?tax:null,
-   sourceUrl:String(p.sourceUrl||""),updatedAt,currency:"تومان",
-   verifiedByUser:allowUserVerified&&p.verifiedByUser===true
-  };
- }
- function freshness(p){const age=Date.now()-new Date(p.updatedAt).getTime();return age<0?"تاریخ نامعتبر":age>36*3600000?"قدیمی‌تر از ۳۶ ساعت":"تازه (کمتر از ۳۶ ساعت)";}
- function render(){
-  const body=$("marketPriceRows");if(!body)return;body.replaceChildren();
-  if(!state.prices.length){body.innerHTML='<tr><td colspan="10">هنوز قیمتی ثبت نشده است؛ قیمت را دستی وارد یا API مجاز JSON را تنظیم کنید.</td></tr>';return;}
-  state.prices.forEach((p,i)=>{
-   const tr=document.createElement("tr");
-   const delivery=p.deliveryCity||"تحویل نامشخص";
-   const freight=p.includesFreight?"حمل منظور شده":p.freightToman!==null?"حمل جدا: "+fmt(p.freightToman):"حمل نامشخص";
-   const tax=p.includesTax?"مالیات منظور شده":p.taxPercent!==null?"مالیات جدا: "+p.taxPercent+"٪":"مالیات نامشخص";
-   [p.name+(p.productSpec?" — "+p.productSpec:""),fmt(p.price),p.unit,p.city,p.seller||p.source,delivery,freight+"؛ "+tax,p.verifiedByUser?"تأیید دستی کاربر":"تأییدنشده",new Date(p.updatedAt).toLocaleString("fa-IR")+"؛ "+freshness(p)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});
-   const td=document.createElement("td"),b=document.createElement("button");b.type="button";b.className="btn secondary";b.textContent="حذف";b.addEventListener("click",()=>{state.prices.splice(i,1);persist();render();});td.appendChild(b);tr.appendChild(td);body.appendChild(tr);
-  });
- }
- function status(msg,isError){const el=$("marketPriceStatus");if(el){el.textContent=msg;el.style.color=isError?"#b91c1c":"";}}
- function getData(){return JSON.parse(JSON.stringify(state));}
- function persist(){try{localStorage.setItem(KEY,JSON.stringify(getData()));}catch(e){console.warn("Market price local save failed",e);}}
- function setData(d){
-  if(!d||typeof d!=="object")return;
-  state.endpoint=String(d.endpoint||"");state.intervalMinutes=Math.max(5,Math.min(1440,Number(d.intervalMinutes)||60));state.autoRefresh=!!d.autoRefresh;
-  state.prices=Array.isArray(d.prices)?d.prices.map(p=>{try{return normalize(p,true);}catch(_){return null;}}).filter(Boolean):[];
-  state.lastFetchAt=safeDate(d.lastFetchAt);state.lastError=String(d.lastError||"");
-  if($("marketPriceEndpoint"))$("marketPriceEndpoint").value=state.endpoint;
-  if($("marketPriceInterval"))$("marketPriceInterval").value=state.intervalMinutes;
-  if($("marketPriceAuto"))$("marketPriceAuto").checked=state.autoRefresh;
-  render();configureAutoRefresh();
- }
- function configureAutoRefresh(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;}if(state.autoRefresh&&state.endpoint)autoTimer=setInterval(()=>{if(document.visibilityState==="visible")refresh();},state.intervalMinutes*60000);}
- async function refresh(){
-  state.endpoint=$("marketPriceEndpoint")?.value.trim()||state.endpoint;
-  if(!state.endpoint){status("نشانی API وارد نشده است. فقط API مجاز JSON با دسترسی CORS قابل استفاده است.",true);return false;}
-  status("در حال دریافت قیمت‌ها…");
-  try{
-   const response=await fetch(state.endpoint,{cache:"no-store",headers:{Accept:"application/json"}});
-   if(!response.ok)throw Error("پاسخ سرویس: HTTP "+response.status);
-   const payload=await response.json(),items=Array.isArray(payload)?payload:payload.prices;
-   if(!Array.isArray(items)||!items.length)throw Error("ساختار پاسخ باید آرایه prices باشد.");
-   const next=items.map(p=>normalize(p,false)),now=Date.now();
-   if(next.some(p=>new Date(p.updatedAt).getTime()>now+5*60000))throw Error("تاریخ یکی از قیمت‌ها در آینده است.");
-   const byKey=new Map(state.prices.map(p=>[p.code+"|"+p.city+"|"+p.seller,p]));
-   next.forEach(p=>byKey.set(p.code+"|"+p.city+"|"+p.seller,p));
-   state.prices=Array.from(byKey.values());state.lastFetchAt=new Date().toISOString();state.lastError="";
-   render();persist();status("دریافت "+next.length+" قیمت انجام شد. قیمت‌های API تأییدشده محسوب نمی‌شوند؛ شهر پروژه فعلی: "+(projectCity()||"ثبت‌نشده")+".");
-   return true;
-  }catch(e){state.lastError=e.message;persist();status("دریافت ناموفق: "+e.message+"؛ قیمت‌های قبلی حفظ شدند.",true);return false;}
- }
- function addManual(){
-  try{
-   const p=normalize({
-    code:$("marketPriceCode").value.trim(),name:$("marketPriceName").value.trim(),productSpec:$("marketPriceSpec").value.trim(),
-    price:$("marketPriceValue").value,unit:$("marketPriceUnit").value,
-    city:$("marketPriceCity").value.trim()||"نامشخص",
-    seller:$("marketPriceSeller").value.trim(),source:$("marketPriceSource").value.trim()||"ورود دستی",
-    sourceType:$("marketPriceSourceType").value,deliveryCity:$("marketPriceDeliveryCity").value.trim(),
-    includesFreight:$("marketPriceFreightIncluded").checked,freightToman:$("marketPriceFreight").value,
-    includesTax:$("marketPriceTaxIncluded").checked,taxPercent:$("marketPriceTaxPercent").value,
-    sourceUrl:$("marketPriceUrl").value.trim(),verifiedByUser:$("marketPriceVerified").checked,
-    updatedAt:new Date().toISOString()
-   },true);
-   const i=state.prices.findIndex(x=>x.code===p.code&&x.city===p.city&&x.seller===p.seller);
-   if(i>=0)state.prices[i]=p;else state.prices.push(p);
-   render();persist();status("قیمت ثبت شد. شهر بازار با شهر پروژه متفاوت است مگر اینکه صریحاً یکسان باشد؛ تحویل و هزینه‌های جانبی جداگانه بررسی شوند.");
-  }catch(e){status(e.message,true);}
- }
- function exportCSV(){
-  const cols=["code","name","productSpec","price","unit","city","seller","source","sourceType","deliveryCity","includesFreight","freightToman","includesTax","taxPercent","sourceUrl","updatedAt","verifiedByUser"];
-  const rows=[cols,...state.prices.map(p=>cols.map(k=>p[k]??""))];
-  const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
-  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");a.href=url;a.download="Sahroud_Steel_Market_Prices.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
- }
- function mount(){
-  if($("marketPricePanel"))return;
-  const panel=document.createElement("section");panel.className="panel";panel.id="marketPricePanel";
-  panel.innerHTML=`
-   <div class="panel-title"><h3>بانک قیمت بازار شهر محل اجرای پروژه</h3><span class="status">قیمت محلی و قابل رهگیری</span></div>
-   <div class="notice">شهر پروژه: <strong id="marketProjectCity"></strong>. قیمت هر کالا در شهر بازار/فروشنده ثبت می‌شود؛ شهر تحویل، حمل و مالیات مستقل‌اند. قیمت شهر دیگر، قیمت تحویل محل پروژه فرض نمی‌شود. API فقط JSON مجاز با CORS است و داده API خودکار تأییدشده نیست.</div>
-   <div class="form-grid">
-    <div class="field"><label for="marketPriceEndpoint">نشانی API قیمت (JSON)</label><input id="marketPriceEndpoint" type="url" placeholder="https://your-domain.example/api/prices"></div>
-    <div class="field"><label for="marketPriceInterval">فاصله به‌روزرسانی (دقیقه)</label><input id="marketPriceInterval" type="number" min="5" max="1440" value="60"></div>
-    <div class="field"><label><input id="marketPriceAuto" type="checkbox"> به‌روزرسانی خودکار هنگام بازبودن نرم‌افزار</label></div>
-   </div>
-   <div class="button-grid"><button id="marketPriceRefresh" class="btn primary" type="button">دریافت قیمت‌ها</button><button id="marketPriceExport" class="btn secondary" type="button">خروجی CSV قیمت‌ها</button></div>
-   <div id="marketPriceStatus" class="notice">قیمت‌ها هنوز دریافت یا ثبت نشده‌اند.</div>
-   <h4>ثبت قیمت کالا یا خدمت در بازار</h4>
-   <div class="form-grid">
-    <div class="field"><label for="marketPriceCode">کد یکتا</label><input id="marketPriceCode" placeholder="مثلاً steel.ipe14"></div>
-    <div class="field"><label for="marketPriceName">نام کالا/خدمت</label><input id="marketPriceName" placeholder="نام دقیق کالا"></div>
-    <div class="field"><label for="marketPriceSpec">مشخصات فنی دقیق</label><input id="marketPriceSpec" placeholder="استاندارد، گرید، ضخامت، ابعاد و پوشش"></div>
-    <div class="field"><label for="marketPriceValue">قیمت پایه (تومان)</label><input id="marketPriceValue" type="number" min="0" step="any"></div>
-    <div class="field"><label for="marketPriceUnit">واحد قیمت</label><select id="marketPriceUnit">${units.map(u=>'<option>'+u+'</option>').join("")}</select></div>
-    <div class="field"><label for="marketPriceCity">شهر بازار/انبار/کارخانه</label><input id="marketPriceCity" placeholder="شهر محل عرضه"><button id="marketUseProjectCity" type="button" class="btn secondary">قرار دادن شهر پروژه</button></div>
-    <div class="field"><label for="marketPriceSeller">نام فروشنده/کارخانه</label><input id="marketPriceSeller" placeholder="نام فروشنده"></div>
-    <div class="field"><label for="marketPriceSourceType">نوع منبع</label><select id="marketPriceSourceType"><option value="factory">کارخانه</option><option value="warehouse">انبار</option><option value="market">بازار محلی</option><option value="exchange">بورس کالا</option><option value="manual">ورود دستی</option><option value="api">API</option></select></div>
-    <div class="field"><label for="marketPriceDeliveryCity">شهر تحویل اعلام‌شده (اگر قطعی است)</label><input id="marketPriceDeliveryCity" placeholder="خالی = نامشخص"></div>
-    <div class="field"><label for="marketPriceFreight">هزینه حمل جداگانه (تومان؛ مبنای محاسبه در یادداشت ثبت شود)</label><input id="marketPriceFreight" type="number" min="0" step="any" placeholder="در صورت اطلاع"></div>
-    <div class="field"><label for="marketPriceTaxPercent">مالیات جداگانه (%)</label><input id="marketPriceTaxPercent" type="number" min="0" step="any" placeholder="در صورت اطلاع"></div>
-    <div class="field"><label for="marketPriceSource">منبع/مرجع قیمت</label><input id="marketPriceSource" placeholder="وب‌سایت، پیش‌فاکتور، تماس و ..."></div>
-    <div class="field"><label for="marketPriceUrl">پیوند منبع یا پیش‌فاکتور</label><input id="marketPriceUrl" type="url" placeholder="https://..."></div>
-    <div class="field"><label><input id="marketPriceFreightIncluded" type="checkbox"> هزینه حمل در قیمت منظور شده</label></div>
-    <div class="field"><label><input id="marketPriceTaxIncluded" type="checkbox"> مالیات در قیمت منظور شده</label></div>
-    <div class="field"><label><input id="marketPriceVerified" type="checkbox"> این قیمت را شخصاً با فروشنده/مدرک تطبیق داده‌ام</label></div>
-   </div>
-   <button id="marketPriceAdd" class="btn success" type="button">ثبت قیمت بازار</button>
-   <h4>قیمت‌های ثبت‌شده</h4>
-   <div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:1250px"><thead><tr><th>کالا و مشخصات</th><th>قیمت</th><th>واحد</th><th>شهر بازار</th><th>فروشنده/منبع</th><th>شهر تحویل</th><th>حمل و مالیات</th><th>تأیید</th><th>تاریخ و تازگی</th><th>عملیات</th></tr></thead><tbody id="marketPriceRows"></tbody></table></div>
-   <h4>منابع قابل بررسی (نیازمند تطبیق شهر و مشخصات)</h4>
-   <ul><li><a href="https://arznab.com/en/steel" target="_blank" rel="noopener">Arznab ـ آهن و فولاد</a></li><li><a href="https://sitahan.com/" target="_blank" rel="noopener">سایت آهن</a></li><li><a href="https://ahanonline.com/" target="_blank" rel="noopener">آهن آنلاین</a></li></ul>
-   <p class="geometry-hint">API: آرایه prices با فیلدهای code, name, price, unit, city, seller, productSpec, source, sourceType, deliveryCity, includesFreight, freightToman, includesTax, taxPercent, sourceUrl, updatedAt. فیلد verified ارسالی API نادیده گرفته می‌شود.</p>
-  `;
-  const footer=document.querySelector("footer");if(footer)footer.parentNode.insertBefore(panel,footer);else document.querySelector("main")?.appendChild(panel);
-  $("marketPriceProjectCity").textContent=projectCity()||"انتخاب نشده";
-  let lastProjectCity=projectCity();
-  if($("marketPriceCity")&&!$("marketPriceCity").value.trim())$("marketPriceCity").value=lastProjectCity;
-  $("marketPriceEndpoint").value=state.endpoint;$("marketPriceInterval").value=state.intervalMinutes;$("marketPriceAuto").checked=state.autoRefresh;
-  $("marketPriceRefresh").addEventListener("click",refresh);$("marketPriceExport").addEventListener("click",exportCSV);$("marketPriceAdd").addEventListener("click",addManual);
-  $("marketPriceEndpoint").addEventListener("change",()=>{state.endpoint=$("marketPriceEndpoint").value.trim();persist();configureAutoRefresh();});
-  $("marketPriceInterval").addEventListener("change",()=>{state.intervalMinutes=Math.max(5,Math.min(1440,Number($("marketPriceInterval").value)||60));persist();configureAutoRefresh();});
-  $("marketPriceAuto").addEventListener("change",()=>{state.autoRefresh=$("marketPriceAuto").checked;persist();configureAutoRefresh();});
-  $("marketUseProjectCity")?.addEventListener("click",()=>{$("marketPriceCity").value=projectCity();});
-  const syncProjectCity=()=>{const next=projectCity();$("marketPriceProjectCity").textContent=next||"انتخاب نشده";const cityInput=$("marketPriceCity");if(cityInput&&(!cityInput.value.trim()||cityInput.value.trim()===lastProjectCity))cityInput.value=next;lastProjectCity=next;};
-  $("city")?.addEventListener("change",()=>{if($("cityName"))$("cityName").style.display=($("city").value==="other"||$("city").value==="custom")?"":"none";syncProjectCity();});
-  $("cityName")?.addEventListener("input",syncProjectCity);
-  render();configureAutoRefresh();
- }
- window.SteelMarketPrices={getData,setData,refresh,addManual,render,getProjectCity:projectCity,syncProjectCity:()=>{const el=$("marketPriceProjectCity");if(el)el.textContent=projectCity()||"انتخاب نشده";},units,presets};
- document.addEventListener("DOMContentLoaded",mount);
-})();
-
 /* ===== steel2/js/code-reference-registry.js ===== */
 /* SAHROUD STEEL — Engineering reference register
  * Curated bibliographic records only. A download page is not proof of legal adoption.
@@ -8890,7 +8713,7 @@ function buildReactionRows(nodes,reactionVector,fixedDofs,springReactionByDof){
  });
  return rows;
 }
-function solve(A,b){
+function solveDenseCore(A,b){
  const n=b.length;
  // Symmetric diagonal equilibration reduces false singularity caused by
  // translational/rotational DOFs having very different stiffness units.
@@ -8909,6 +8732,90 @@ function solve(A,b){
   for(let i=0;i<n;i++){if(i===k)continue;const f=M[i][k];for(let j=k;j<=n;j++)M[i][j]-=f*M[k][j];}
  }
  return M.map((r,i)=>r[n]*scaleD[i]);
+}
+function solveSparseCG(A,b){
+ const n=b.length,scaleD=Array(n),rows=Array.from({length:n},()=>[]),diag=Array(n);
+ if(!Array.isArray(A)||A.length!==n||A.some(row=>!Array.isArray(row)||row.length!==n)||!Array.isArray(b)||b.some(v=>!Number.isFinite(Number(v))))
+  throw Error("DOF_MATRIX_INVALID:ابعاد یا مقادیر ماتریس سختی/بردار بار معتبر نیستند");
+ for(let i=0;i<n;i++){
+  const d=Number(A[i]?.[i]);
+  if(!(d>0&&Number.isFinite(d)))throw Error("DOF_SINGULAR:"+i+":قطر مثبت و معتبر برای حل‌گر تکراری وجود ندارد");
+  scaleD[i]=1/Math.sqrt(d);
+ }
+ let maxEntry=0,maxAsymmetry=0;
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+  const a=Number(A[i][j]),at=Number(A[j][i]);
+  if(!Number.isFinite(a)||!Number.isFinite(at))throw Error("DOF_MATRIX_INVALID:ماتریس سختی شامل مقدار غیرمتناهی است");
+  maxEntry=Math.max(maxEntry,Math.abs(a));
+  maxAsymmetry=Math.max(maxAsymmetry,Math.abs(a-at));
+ }
+ if(maxAsymmetry>1e-8*Math.max(1,maxEntry))throw Error("DOF_NOT_SYMMETRIC:ماتریس سختی برای حل‌گر هم‌نهشتی متقارن نیست");
+ for(let i=0;i<n;i++){
+  for(let j=0;j<n;j++){
+   const raw=Number(A[i][j]);
+   if(raw===0)continue;
+   const v=raw*scaleD[i]*scaleD[j];
+   if(v!==0)rows[i].push([j,v]);
+  }
+  diag[i]=rows[i].find(x=>x[0]===i)?.[1]??0;
+  if(!(diag[i]>0&&Number.isFinite(diag[i])))throw Error("DOF_SINGULAR:"+i+":قطر مقیاس‌بندی‌شده نامعتبر است");
+ }
+ const rhs=b.map((v,i)=>Number(v)*scaleD[i]);
+ const dotAcc=(x,y)=>{let sum=0,c=0;for(let i=0;i<n;i++){const z=x[i]*y[i]-c,t=sum+z;c=(t-sum)-z;sum=t;}return sum;};
+ const matVec=x=>rows.map(row=>{let sum=0,c=0;for(const [j,v] of row){const z=v*x[j]-c,t=sum+z;c=(t-sum)-z;sum=t;}return sum;});
+ const normB=Math.sqrt(dotAcc(rhs,rhs));
+ if(!(normB>0))return Array(n).fill(0);
+ const x=Array(n).fill(0);let r=rhs.slice(),z=r.map((v,i)=>v/diag[i]),p=z.slice(),rz=dotAcc(r,z);
+ const tolerance=1e-10,maxIterations=Math.min(12000,Math.max(500,n*8));
+ for(let iteration=0;iteration<maxIterations;iteration++){
+  const Ap=matVec(p),denominator=dotAcc(p,Ap);
+  if(!(denominator>0&&Number.isFinite(denominator)))throw Error("DOF_CG_BREAKDOWN:ماتریس سختی مثبت‌معین/پایدار تشخیص داده نشد");
+  const alpha=rz/denominator;
+  for(let i=0;i<n;i++){x[i]+=alpha*p[i];r[i]-=alpha*Ap[i];}
+  if((iteration+1)%50===0){const Ax=matVec(x);r=rhs.map((v,i)=>v-Ax[i]);}
+  const relative=Math.sqrt(dotAcc(r,r))/normB;
+  if(relative<=tolerance)return x.map((v,i)=>v*scaleD[i]);
+  z=r.map((v,i)=>v/diag[i]);
+  const next=dotAcc(r,z),beta=next/rz;
+  if(!(next>=0&&Number.isFinite(next)&&Number.isFinite(beta)))throw Error("DOF_CG_NUMERIC:واگرایی عددی در حل‌گر تکراری");
+  for(let i=0;i<n;i++)p[i]=z[i]+beta*p[i];
+  rz=next;
+ }
+ throw Error("DOF_CG_NO_CONVERGENCE:حل‌گر تکراری پس از "+maxIterations+" تکرار به دقت "+tolerance+" نرسید");
+}
+function solveCore(A,b){
+ return b.length>=450?solveSparseCG(A,b):solveDenseCore(A,b);
+}
+function solve(A,b){
+ let x=solveCore(A,b);
+ const residualFor=solution=>A.map((row,i)=>{
+  let sum=0,correction=0;
+  for(let j=0;j<row.length;j++){
+   const y=row[j]*solution[j]-correction,t=sum+y;
+   correction=(t-sum)-y;sum=t;
+  }
+  return b[i]-sum;
+ });
+ const residualRatio=r=>{
+  let numerator=0,denominator=1;
+  for(let i=0;i<r.length;i++){
+   numerator=Math.max(numerator,Math.abs(r[i]));
+   denominator=Math.max(denominator,Math.abs(b[i]),Math.abs(b[i]-r[i]));
+  }
+  return numerator/denominator;
+ };
+ let residual=residualFor(x),ratio=residualRatio(residual);
+ // Iterative refinement corrects round-off amplified by fine tapered meshes.
+ // Keep a correction only when it measurably reduces the original-system residual.
+ for(let iteration=0;iteration<3&&ratio>1e-13;iteration++){
+  let correction;
+  try{correction=solveCore(A,residual);}catch(_){break;}
+  const candidate=x.map((v,i)=>v+correction[i]);
+  const nextResidual=residualFor(candidate),nextRatio=residualRatio(nextResidual);
+  if(!(nextRatio<ratio))break;
+  x=candidate;residual=nextResidual;ratio=nextRatio;
+ }
+ return x;
 }
 function transpose(A){return A[0].map((_,j)=>A.map(r=>r[j]));}
 function mul(A,B){
@@ -9225,6 +9132,18 @@ function analyze(model,options){
  const vectorNorm=v=>Math.hypot(...v);
  const relativeForceResidual=vectorNorm(forceResidual)/Math.max(vectorNorm(appliedForce),vectorNorm(supportForce),1);
  const relativeMomentResidual=vectorNorm(momentResidual)/Math.max(vectorNorm(appliedMoment),vectorNorm(supportMoment),1);
+ // Scale nodal residuals against the largest action in the complete system.
+ // Near-zero intermediate-node actions otherwise turn harmless floating-point
+ // noise into a false equilibrium failure as a member mesh is refined.
+ let globalForceScale=1,globalMomentScale=1;
+ nodes.forEach((_,i)=>{
+  for(let d=0;d<6;d++){
+   const dof=i*6+d,reaction=fixed.has(dof)?R[dof]:0;
+   const value=Math.max(Math.abs(KD[dof]),Math.abs(F[dof]),Math.abs(reaction),Math.abs(springReactionByDof[dof]||0));
+   if(d<3)globalForceScale=Math.max(globalForceScale,value);
+   else globalMomentScale=Math.max(globalMomentScale,value);
+  }
+ });
  // Node-by-node algebraic residual of the assembled 6-DOF system. Fixed-DOF
  // residuals are identified as support reactions; free-DOF residuals must be
  // negligible. This is a solver residual check, NOT an independent member-end
@@ -9234,8 +9153,9 @@ function analyze(model,options){
   for(let d=0;d<6;d++){
    const dof=base+d,isFixed=fixed.has(dof),reaction=isFixed?R[dof]:0;
    const residual=KD[dof]-F[dof]-reaction;
-   const scaleValue=Math.max(Math.abs(KD[dof]),Math.abs(F[dof]),Math.abs(reaction),1);
-   components.push({dof:d,residual,reaction,isFixed,relativeResidual:Math.abs(residual)/scaleValue});
+   const localScaleValue=Math.max(Math.abs(KD[dof]),Math.abs(F[dof]),Math.abs(reaction),1);
+   const scaleValue=Math.max(localScaleValue,d<3?globalForceScale:globalMomentScale);
+   components.push({dof:d,residual,reaction,isFixed,relativeResidual:Math.abs(residual)/scaleValue,localRelativeResidual:Math.abs(residual)/localScaleValue});
   }
   const maxRelativeResidual=Math.max(0,...components.map(x=>x.relativeResidual));
   return{nodeId:String(node.id),components,maxRelativeResidual,ok:maxRelativeResidual<=1e-6};
@@ -9277,8 +9197,9 @@ function analyze(model,options){
   const components=Array.from({length:6},(_,d)=>{
    const internal=memberEndByNode[i][d],applied=appliedNodalByNode[i][d],support=supportByNode[i][d],spring=springByNode[i][d],connector=connectorByNode[i][d];
    const residual=internal-applied-support-spring-connector;
-   const scaleValue=Math.max(Math.abs(internal),Math.abs(applied),Math.abs(support),Math.abs(spring),Math.abs(connector),1);
-   return{dof:d,memberEndAction:internal,appliedNodalLoad:applied,supportReaction:support,nodalSpringReaction:spring,connectorSpringForce:connector,residual,relativeResidual:Math.abs(residual)/scaleValue};
+   const localScaleValue=Math.max(Math.abs(internal),Math.abs(applied),Math.abs(support),Math.abs(spring),Math.abs(connector),1);
+   const scaleValue=Math.max(localScaleValue,d<3?globalForceScale:globalMomentScale);
+   return{dof:d,memberEndAction:internal,appliedNodalLoad:applied,supportReaction:support,nodalSpringReaction:spring,connectorSpringForce:connector,residual,relativeResidual:Math.abs(residual)/scaleValue,localRelativeResidual:Math.abs(residual)/localScaleValue};
   });
   const maxRelativeResidual=Math.max(0,...components.map(x=>x.relativeResidual));
   return{nodeId:String(node.id),components,maxRelativeResidual,ok:maxRelativeResidual<=1e-6};
@@ -9287,7 +9208,7 @@ function analyze(model,options){
  const memberEndEquilibriumOk=memberEndEquilibrium.every(x=>x.ok);
  equilibrium={appliedForceN:appliedForce,supportReactionN:supportForce,
   forceResidualN:forceResidual,momentResidualNm:momentResidual,appliedMomentNm:appliedMoment,supportMomentNm:supportMoment,
-  relativeForceResidual,relativeMomentResidual,nodeEquilibrium,nodeEquilibriumOk,maxNodeResidualRatio,
+  relativeForceResidual,relativeMomentResidual,globalForceScaleN:globalForceScale,globalMomentScaleNm:globalMomentScale,nodeEquilibrium,nodeEquilibriumOk,maxNodeResidualRatio,
   memberEndEquilibrium,memberEndEquilibriumOk,maxMemberEndResidualRatio,
   equilibriumScope:"global resultant, assembled nodal residual, and independent recovered member-end-action balance at every physical node; includes rigid-arm transforms, equivalent member loads, nodal loads, supports, nodal springs and coincident-node connector springs",
   ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6&&nodeEquilibriumOk&&memberEndEquilibriumOk,freeDofCount:free.length};
@@ -9450,8 +9371,6 @@ function selfTest(){
 }
 root.SteelFrame3D={analyze,selfTest,frameLocalStiffness,makeTransform,rigidArmTransform,memberArmTransform,equivalentUniformLoad,buildReactionRows,solve};
 })(typeof window!=="undefined"?window:globalThis);
-
-
 /* ===== steel2/js/analysis.js ===== */
 
 /* SAHROUD STEEL - 2D Portal Frame Matrix Analysis
@@ -10042,6 +9961,68 @@ window.SteelAnalysis = { calculate };
 
 })();
 
+
+/* ===== steel2/js/solver-end-action-sign-benchmarks.js ===== */
+/* SAHROUD STEEL — independent local end-action sign benchmarks.
+ * Analytical single-member checks only; not code design or independent validation of the full building solver.
+ */
+(function(root){
+"use strict";
+function selfTest(){
+ const E=200e9,G=77e9,A=.01,Iy=8e-5,Iz=2e-5,J=1e-5,L=3;
+ const section={E,G,A,Iy,Iz,J},solver=root.SteelFrame3D;
+ const close=(a,b,t=1e-7)=>Number.isFinite(a)&&Math.abs(a-b)<=Math.max(Math.abs(b)*t,1e-9);
+ const tests=[];
+ const add=(name,fn)=>{try{const detail=fn();tests.push({name,ok:detail===true,detail:detail===true?"passed":detail});}catch(e){tests.push({name,ok:false,error:String(e.message||e)});}};
+ const solve=(nodes,members,supportNode,loadNode,load,extra={})=>{
+  if(!solver?.analyze)throw Error("SteelFrame3D.analyze در دسترس نیست.");
+  return solver.analyze({nodes,members},{sectionResolver:()=>section,supports:[{nodeId:supportNode,fixedDofs:[0,1,2,3,4,5]}],nodalLoads:[{nodeId:loadNode,values:load}],...extra});
+ };
+ add("cantilever-tip-concentrated-Mz",()=>{
+  const r=solve([{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],[{id:"M",start:"A",end:"B"}],"A","B",[0,0,0,0,0,1000]);
+  const f=r.members[0].localEndForces;
+  return r.equilibrium.ok&&close(f[5],-1000)&&close(f[11],1000);
+ });
+ add("cantilever-tip-concentrated-My",()=>{
+  const r=solve([{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],[{id:"M",start:"A",end:"B"}],"A","B",[0,0,0,0,1000,0]);
+  const f=r.members[0].localEndForces;
+  return r.equilibrium.ok&&close(f[4],-1000)&&close(f[10],1000);
+ });
+ add("reversed-node-order-axial-tension",()=>{
+  const r=solve([{id:"B",x:L,y:0,z:0},{id:"A",x:0,y:0,z:0}],[{id:"M",start:"B",end:"A"}],"B","A",[-1000,0,0,0,0,0]);
+  const f=r.members[0].localEndForces,ex=r.members[0].localAxes.x;
+  return r.equilibrium.ok&&close(ex[0],-1)&&close(ex[1],0)&&close(f[0],-1000)&&close(f[6],1000);
+ });
+ add("rotated-member-local-y-axis-and-bending",()=>{
+  const r=solve([{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:L,z:0}],[{id:"M",start:"A",end:"B"}],"A","B",[1000,0,0,0,0,0]);
+  const m=r.members[0],f=m.localEndForces;
+  return r.equilibrium.ok&&close(m.localAxes.y[0],-1)&&close(m.localAxes.y[1],0)&&close(f[1],1000)&&close(f[7],-1000)&&close(f[5],3000);
+ });
+ add("cantilever-tip-concentrated-Mx-torsion",()=>{
+  const r=solve([{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],[{id:"M",start:"A",end:"B"}],"A","B",[0,0,0,1000,0,0]);
+  const f=r.members[0].localEndForces;
+  return r.equilibrium.ok&&close(f[3],-1000)&&close(f[9],1000);
+ });
+ add("released-j-end-bending-moment",()=>{
+  const r=solver.analyze({nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],members:[{id:"M",start:"A",end:"B",endReleases:{j:[5]}}]},{sectionResolver:()=>section,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[5]}],nodalLoads:[{nodeId:"B",values:[0,-1000,0,0,0,0]}]});
+  const f=r.members[0].localEndForces;
+  return r.equilibrium.ok&&Math.abs(f[11])<1e-6&&close(f[1],1000)&&close(f[7],-1000);
+ });
+ add("axial-compression-sign-reversal",()=>{
+  const tension=solve([{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],[{id:"M",start:"A",end:"B"}],"A","B",[1000,0,0,0,0,0]);
+  const compression=solve([{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],[{id:"M",start:"A",end:"B"}],"A","B",[-1000,0,0,0,0,0]);
+  const a=tension.members[0].localEndForces,b=compression.members[0].localEndForces;
+  return tension.equilibrium.ok&&compression.equilibrium.ok&&a[0]<0&&a[6]>0&&b[0]>0&&b[6]<0;
+ });
+ add("local-axis-and-force-metadata-consistency",()=>{
+  const r=solve([{id:"A",x:0,y:0,z:0},{id:"B",x:L,y:0,z:0}],[{id:"M",start:"A",end:"B"}],"A","B",[0,-1000,0,0,0,0]);
+  const c=r.localEndForceConvention,m=r.members[0];
+  return c?.version===1&&c.basis==="member-local"&&m.localEndForceConventionVersion===c.version&&m.localAxes.x[0]===1&&m.localEndForces.length===12&&r.equilibrium.ok;
+ });
+ return {passed:tests.filter(t=>t.ok).length,failed:tests.filter(t=>!t.ok).length,total:tests.length,tests,note:"آزمون‌های تحلیلی عضو منفرد برای قرارداد علامت؛ جایگزین اعتبارسنجی مستقل حل‌گر، مدل سه‌بعدی کامل یا کنترل آیین‌نامه‌ای نیست."};
+}
+root.SteelSolverEndActionSignBenchmarks={selfTest};
+})(typeof window!=="undefined"?window:globalThis);
 
 /* ===== steel2/js/sections.js ===== */
 /* SAHROUD STEEL - Material and Section Properties 3.0 */
@@ -10663,7 +10644,8 @@ const $=id=>document.getElementById(id);
 const GROUPS=[["column","ستون"],["rafter","رفتر"]];
 const STATIONS=[["start","ابتدا"],["mid","میانه"],["end","انتها"]];
 const DIMS=[["d","عمق d (mm)"],["bf","عرض بال bf (mm)"],["tw","ضخامت جان tw (mm)"],["tf","ضخامت بال tf (mm)"]];
-let data={schemaVersion:1,segmentsPerMember:8,groups:{column:{enabled:false,stations:{}},rafter:{enabled:false,stations:{}}}};
+const blankStations=()=>({start:{d:null,bf:null,tw:null,tf:null},mid:{d:null,bf:null,tw:null,tf:null},end:{d:null,bf:null,tw:null,tf:null}});
+let data={schemaVersion:1,segmentsPerMember:8,groups:{column:{enabled:false,stations:blankStations()},rafter:{enabled:false,stations:blankStations()}}};
 let audit=[];
 function clone(v){return JSON.parse(JSON.stringify(v));}
 function normalize(v){
@@ -10780,6 +10762,7 @@ function read(){
 function getData(){return clone(data);}
 function setData(v){data=normalize(v);render();}
 function render(){
+ data=normalize(data);
  const host=$("taperedSectionsContent");if(!host)return;
  host.innerHTML="<div class='field'><label for='taper_segmentsPerMember'>تعداد قطعات تحلیل برای هر عضو متغیرمقطع</label><select id='taper_segmentsPerMember'>"+[4,6,8,12,16,20,24].map(n=>"<option value='"+n+"' "+(data.segmentsPerMember===n?"selected":"")+">"+n+" قطعه</option>").join("")+"</select></div>"+GROUPS.map(([g,label])=>{
   const q=data.groups[g];
@@ -10870,8 +10853,6 @@ function init(){
 root.SteelTaperedSections={calculate,at,segmentModel,resolveForMember,getData,read,setData,runAudit,buildThicknessCandidates,runThicknessCandidates,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
-
-
 /* ===== steel2/js/tapered-member-force-audit.js ===== */
 (function(root){
 "use strict";
@@ -10997,133 +10978,6 @@ function selfTest(){
  return {passed:checks.filter(Boolean).length,failed:checks.filter(x=>!x).length,checks};
 }
 root.SteelTaperedMemberDesignReadiness={audit,selfTest};
-})(typeof window!=="undefined"?window:globalThis);
-
-
-/* ===== steel2/js/tapered-fabrication-economics.js ===== */
-/* SAHROUD STEEL — fabrication geometry and material-cost alternatives.
- * Quantity comparison only: it does not select or approve a structurally adequate section.
- */
-(function(root){
-"use strict";
-const D=["d","bf","tw","tf"];
-const num=v=>(v===null||v===undefined||String(v).trim()==="")?null:(Number.isFinite(Number(v))?Number(v):null);
-function area(s){
- const d=num(s?.d),bf=num(s?.bf),tw=num(s?.tw),tf=num(s?.tf);
- if([d,bf,tw,tf].some(v=>v===null||v<=0)||d<=2*tf||bf<=tw)throw Error("ابعاد I نامعتبر است؛ d>2tf و bf>tw باید برقرار باشد.");
- return 2*bf*tf+(d-2*tf)*tw;
-}
-function normalize(input){
- const x=input||{},L=num(x.length_m),rho=num(x.density_kg_m3??7850),raw=Array.isArray(x.stations)?x.stations:[];
- if(!(L>0))throw Error("طول عضو باید مثبت و بر حسب متر باشد.");
- if(!(rho>0))throw Error("چگالی فولاد باید مثبت باشد.");
- if(raw.length<2)throw Error("حداقل دو ایستگاه مقطع لازم است.");
- const stations=raw.map((s,i)=>({x_m:num(s.x_m),section:Object.fromEntries(D.map(k=>[k,num(s[k])])),sourceIndex:i})).sort((a,b)=>a.x_m-b.x_m);
- if(stations.some(s=>s.x_m===null||D.some(k=>s.section[k]===null)||s.x_m<0||s.x_m>L))throw Error("مختصات یا ابعاد ایستگاه‌ها ناقص/نامعتبر است.");
- if(Math.abs(stations[0].x_m)>1e-8||Math.abs(stations.at(-1).x_m-L)>1e-6)throw Error("ایستگاه نخست باید صفر و ایستگاه آخر برابر طول عضو باشد.");
- for(let i=0;i<stations.length;i++){area(stations[i].section);if(i&&stations[i].x_m-stations[i-1].x_m<=1e-8)throw Error("مختصات ایستگاه‌ها باید یکتا و افزایشی باشند.");}
- return {length_m:L,density_kg_m3:rho,stations,prices:x.prices||{},weldLineCount:num(x.weldLineCount),includeWeldCost:x.includeWeldCost===true};
-}
-function interp(a,b,t){const o={};D.forEach(k=>o[k]=a[k]+(b[k]-a[k])*t);return o;}
-function sectionMass(section,lengthM,rho){const A=area(section),volume=A*lengthM*1e-3;return {area_mm2:A,volume_m3:volume,mass_kg:volume*rho};}
-function build(input){
- const x=normalize(input),s=x.stations,L=x.length_m,rho=x.density_kg_m3;
- let continuousVolumeMm2m=0,stepVolumeMm2m=0,stepZones=[];
- for(let i=0;i<s.length-1;i++){
-  const a=s[i],b=s[i+1],dx=b.x_m-a.x_m,mid=interp(a.section,b.section,.5);
-  // Simpson integration is exact for the cubic area function of linearly varying dimensions.
-  const A0=area(a.section),Am=area(mid),A1=area(b.section);
-  continuousVolumeMm2m+=dx*(A0+4*Am+A1)/6;
-  stepVolumeMm2m+=dx*Am;
-  stepZones.push({from_m:a.x_m,to_m:b.x_m,section:mid,area_mm2:Am});
- }
- const maxStation=s.reduce((best,v)=>area(v.section)>area(best.section)?v:best,s[0]);
- const options=[
-  {id:"uniform-max-area",label:"منشوری با سطح مقطع برابر بزرگ‌ترین سطح ایستگاه‌ها",method:"بزرگ‌ترین A ایستگاه در تمام طول عضو",volumeMm2m:area(maxStation.section)*L,constantSection:maxStation.section,zoneCount:1},
-  {id:"continuous-taper",label:"متغیرمقطع پیوسته با درون‌یابی خطی ابعاد",method:"انتگرال‌گیری سیمپسون روی سطح مقطع حاصل از درون‌یابی خطی ابعاد",volumeMm2m:continuousVolumeMm2m,zoneCount:s.length-1},
-  {id:"stepped-midpoint",label:"چندپله‌ای با مقطع ثابت در هر بازه",method:"مقطع هر بازه از ابعاد میان‌یابی‌شده در وسط همان بازه",volumeMm2m:stepVolumeMm2m,zones:stepZones,zoneCount:stepZones.length}
- ];
- const p=x.prices,steelRate=num(p.steel_toman_per_kg),weldRate=num(p.weld_toman_per_meter);
- const weldLength=x.weldLineCount!==null&&x.weldLineCount>=0?x.weldLineCount*L:null;
- const rows=options.map(o=>{
-  const volume=o.volumeMm2m*1e-3,mass=volume*rho;
-  const steelCost=steelRate!==null&&steelRate>=0?mass*steelRate:null;
-  const weldCost=x.includeWeldCost&&weldLength!==null&&weldRate!==null&&weldRate>=0?weldLength*weldRate:null;
-  return {...o,steelVolume_m3:volume,steelMass_kg:mass,steelCost_toman:steelCost,weldLineLength_m:weldLength,weldCost_toman:weldCost,totalCost_toman:steelCost!==null&&(x.includeWeldCost?weldCost!==null:true)?steelCost+(weldCost||0):null};
- });
- const base=rows[0],bestMass=rows.reduce((a,b)=>b.steelMass_kg<a.steelMass_kg?b:a,rows[0]);
- return {success:true,length_m:L,density_kg_m3:rho,stationCount:s.length,maximumAreaStation:{x_m:maxStation.x_m,area_mm2:area(maxStation.section)},options:rows,lowestMaterialMassOption:bestMass.id,priceInputs:{steel_toman_per_kg:steelRate,weld_toman_per_meter:weldRate,weldLineCount:x.weldLineCount,weldLineLength_m:weldLength},warnings:["این مقایسه فقط متره هندسی/وزنی و برآورد هزینه بر پایه قیمت‌های ورودی است؛ هیچ گزینه‌ای از نظر مقاومت، پایداری، خیز، خستگی، اتصال یا آیین‌نامه تأیید نشده است.","گزینه منشوریِ مبنا با بزرگ‌ترین سطح مقطع ایستگاه‌ها فقط یک خط مبنای وزنی است و لزوماً مقطع طراحی ایمن نیست.","گزینه چندپله‌ای از مقطع ثابت در وسط هر بازه استفاده می‌کند؛ جزئیات برش، پرت ورق، وصله، جوش، تلرانس و محدودیت حمل در این نسخه محاسبه نشده‌اند.","قیمت خالی به معنی هزینه نامشخص است و صفر تلقی نمی‌شود."] ,analysisEnabled:false,designApproved:false};
-}
-function selfTest(){
- const input={length_m:10,density_kg_m3:7850,stations:[{x_m:0,d:600,bf:250,tw:8,tf:14},{x_m:5,d:450,bf:220,tw:8,tf:12},{x_m:10,d:600,bf:250,tw:8,tf:14}],prices:{}};
- const r=build(input),bad=(()=>{try{build({...input,stations:[input.stations[0],{...input.stations[1],d:0},input.stations[2]]});return false;}catch(e){return true;}})();
- const blankPrice=build({...input,prices:{steel_toman_per_kg:"",weld_toman_per_meter:""},weldLineCount:""});
- const checks=[r.options.length===3,r.options[0].steelMass_kg>0,r.options.every(o=>o.steelCost_toman===null&&o.totalCost_toman===null),r.options[1].steelMass_kg>r.options[2].steelMass_kg,bad&&!r.designApproved&&!r.analysisEnabled,blankPrice.priceInputs.steel_toman_per_kg===null&&blankPrice.priceInputs.weldLineCount===null];
- return {passed:checks.filter(Boolean).length,failed:checks.filter(v=>!v).length,checks};
-}
-root.SteelTaperedFabricationEconomics={build,selfTest};
-})(typeof window!=="undefined"?window:globalThis);
-
-
-/* ===== steel2/js/tapered-fabrication-ui.js ===== */
-/* SAHROUD STEEL — UI for tapered fabrication quantity alternatives.
- * Inputs are explicit; geometry is read from the tapered-section editor only.
- */
-(function(root){
-"use strict";
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const fmt=v=>Number.isFinite(Number(v))?Number(v).toLocaleString("fa-IR",{maximumFractionDigits:2}):"نامشخص";
-function inputFor(group,length,density,steelPrice,weldCount,weldRate,includeWeld){
- const api=root.SteelTaperedSections;
- if(!api?.getData)throw Error("ماژول مقاطع متغیرمقطع در دسترس نیست.");
- const data=api.getData(),g=data.groups?.[group];
- if(!g?.enabled)throw Error("ابتدا گزینه اعمال مقطع متغیر را برای این گروه فعال و ایستگاه‌ها را تکمیل کنید.");
- const L=Number(length),stations=[["start",0],["mid",L/2],["end",L]].map(([key,x_m])=>{
-  const s=g.stations?.[key]||{};
-  return {x_m,d:s.d,bf:s.bf,tw:s.tw,tf:s.tf};
- });
- return {length_m:L,density_kg_m3:density,stations,prices:{steel_toman_per_kg:steelPrice,weld_toman_per_meter:weldRate},weldLineCount:weldCount,includeWeldCost:includeWeld===true};
-}
-function calculate(){
- const group=$("taperEconomyGroup")?.value||"rafter";
- const input=inputFor(group,$("taperEconomyLength")?.value,$("taperEconomyDensity")?.value,$("taperEconomySteelPrice")?.value,$("taperEconomyWeldCount")?.value,$("taperEconomyWeldRate")?.value,$("taperEconomyIncludeWeld")?.checked);
- const result=root.SteelTaperedFabricationEconomics.build(input);
- const body=$("taperEconomyRows");
- body.innerHTML=result.options.map(o=>"<tr><td>"+esc(o.label)+"</td><td>"+fmt(o.zoneCount)+"</td><td>"+fmt(o.steelMass_kg)+" kg</td><td>"+(o.steelCost_toman===null?"نامشخص":fmt(o.steelCost_toman)+" تومان")+"</td><td>"+(o.weldCost_toman===null?"نامشخص":fmt(o.weldCost_toman)+" تومان")+"</td><td>"+(o.totalCost_toman===null?"نامشخص":fmt(o.totalCost_toman)+" تومان")+"</td></tr>").join("");
- $("taperEconomyStatus").textContent="مقایسه هندسی/وزنی انجام شد؛ گزینه کم‌وزن‌تر در این مدل: "+result.lowestMaterialMassOption+"؛ هیچ گزینه‌ای طراحی یا تأیید سازه‌ای نشده است.";
- $("taperEconomyWarnings").innerHTML=result.warnings.map(x=>"<p>"+esc(x)+"</p>").join("");
- return result;
-}
-function init(){
- if($("taperedFabricationEconomicsPanel"))return;
- const main=document.querySelector("main");if(!main)return;
- const panel=document.createElement("section");panel.className="panel";panel.id="taperedFabricationEconomicsPanel";
- panel.innerHTML="<div class='panel-title'><h3>مقایسه اقتصادی و متره مقاطع منشوری و متغیرمقطع</h3><span class='status'>متره، نه طراحی</span></div>"+
- "<div class='notice'>ابعاد سه ایستگاه از فرم «مقاطع تیرورق متغیرعمق» خوانده می‌شود. طول عضو و قیمت‌ها باید صریح وارد شوند. این مقایسه به‌تنهایی کفایت سازه‌ای یا قابلیت ساخت را تأیید نمی‌کند.</div>"+
- "<div class='form-grid'><div class='field'><label for='taperEconomyGroup'>گروه عضو</label><select id='taperEconomyGroup'><option value='rafter'>رفتر</option><option value='column'>ستون</option></select></div>"+
- "<div class='field'><label for='taperEconomyLength'>طول فیزیکی عضو (m)</label><input id='taperEconomyLength' type='number' min='0.01' step='0.01' placeholder='طول واقعی عضو'></div>"+
- "<div class='field'><label for='taperEconomyDensity'>چگالی (kg/m³)</label><input id='taperEconomyDensity' type='number' min='1' step='1' value='7850'></div>"+
- "<div class='field'><label for='taperEconomySteelPrice'>قیمت فولاد (تومان/kg) — اختیاری</label><input id='taperEconomySteelPrice' type='number' min='0' step='1000' placeholder='قیمت معتبر روز'></div>"+
- "<div class='field'><label for='taperEconomyWeldCount'>تعداد خطوط جوش طولی — ورودی کاربر</label><input id='taperEconomyWeldCount' type='number' min='0' step='1' placeholder='در صورت اطلاع'></div>"+
- "<div class='field'><label for='taperEconomyWeldRate'>هزینه هر متر خط جوش (تومان/m)</label><input id='taperEconomyWeldRate' type='number' min='0' step='1000' placeholder='در صورت داشتن نرخ'></div>"+
- "<div class='field'><label><input id='taperEconomyIncludeWeld' type='checkbox'> هزینه جوش در جمع هزینه منظور شود</label></div></div>"+
- "<div class='button-grid'><button type='button' class='btn primary' id='btnTaperEconomy'>محاسبه و مقایسه سه روش</button></div>"+
- "<div id='taperEconomyStatus' class='notice'>برای محاسبه، ابتدا مقطع متغیر و ایستگاه‌های آن را تعریف کنید.</div>"+
- "<div style='overflow-x:auto'><table class='data-table'><thead><tr><th>روش</th><th>تعداد بازه</th><th>جرم فولاد</th><th>هزینه فولاد</th><th>هزینه جوش</th><th>جمع هزینه معلوم</th></tr></thead><tbody id='taperEconomyRows'></tbody></table></div>"+
- "<div id='taperEconomyWarnings' class='notice'></div>";
- const anchor=$("taperedSectionsPanel")||$("sectionGeometryAuditPanel");
- if(anchor?.parentNode)anchor.parentNode.insertBefore(panel,anchor.nextSibling);else main.appendChild(panel);
- $("btnTaperEconomy").addEventListener("click",()=>{try{calculate();}catch(e){$("taperEconomyStatus").textContent="توقف محاسبه: "+(e?.message||String(e));$("taperEconomyRows").innerHTML="";}});
-}
-function selfTest(){
- const tests=[];
- tests.push({name:"three-station-map",pass:typeof inputFor==="function"});
- tests.push({name:"engine-required",pass:!!root.SteelTaperedFabricationEconomics?.build});
- return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,tests};
-}
-root.SteelTaperedFabricationUI={inputFor,calculate,selfTest};
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
 
 
@@ -12059,373 +11913,6 @@ root.SteelTaperedCaseForceBridge={build,selfTest};
     }
 })();
 
-
-/* ===== steel2/js/desing.js ===== */
-/* SAHROUD STEEL - Member Design Demand Report
-Version 2.0
-Member force envelopes include uniform local distributed loads.
-Units: kN, m, kN.m
-*/
-(function () {
-"use strict";
-
-const $ = id => document.getElementById(id);
-
-const MEMBER_NAMES = [
-    "ستون چپ",
-    "ستون راست",
-    "رفتر چپ",
-    "رفتر راست"
-];
-
-function fmt(value, digits = 2) {
-    return Number(value || 0).toLocaleString("fa-IR", {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits
-    });
-}
-
-function esc(value) {
-    return String(value ?? "").replace(/[&<>"']/g, ch => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-    })[ch]);
-}
-
-function forceAt(member, type, x) {
-    const qx = Number(member.localLoadX) || 0;
-    const qy = Number(member.localLoadY) || 0;
-
-    if (type === "N") {
-        return -(Number(member.axialStart) || 0) - qx * x;
-    }
-
-    if (type === "V") {
-        return -(Number(member.shearStart) || 0) - qy * x;
-    }
-
-    return -(Number(member.momentStart) || 0) +
-        (Number(member.shearStart) || 0) * x +
-        0.5 * qy * x * x;
-}
-
-function getStations(member) {
-    const L = Number(member.length);
-    const stations = [0, L];
-
-    const qy = Number(member.localLoadY) || 0;
-    const shearStart = Number(member.shearStart) || 0;
-
-    if (Math.abs(qy) > 1e-12) {
-        const x = -shearStart / qy;
-
-        if (x > 0 && x < L) {
-            stations.push(x);
-        }
-    }
-
-    return [...new Set(stations)].sort((a, b) => a - b);
-}
-
-function newDemand() {
-    return {
-        compression: {
-            value: 0,
-            combination: "—",
-            position: "—"
-        },
-        tension: {
-            value: 0,
-            combination: "—",
-            position: "—"
-        },
-        moment: {
-            value: 0,
-            combination: "—",
-            position: "—"
-        },
-        shear: {
-            value: 0,
-            combination: "—",
-            position: "—"
-        }
-    };
-}
-
-function updateDemand(target, value, combination, position) {
-    if (value > target.value) {
-        target.value = value;
-        target.combination = combination;
-        target.position = fmt(position) + " m";
-    }
-}
-
-function calculateDemand() {
-    const output = $("memberDemandResults");
-
-    try {
-        const cases =
-            window.SteelAnalysis &&
-            window.SteelAnalysis.combinationResults;
-
-        if (!Array.isArray(cases) || !cases.length) {
-            throw new Error(
-                "ابتدا تحلیل ترکیبات بار LRFD را اجرا کنید."
-            );
-        }
-
-        const result = {};
-
-        MEMBER_NAMES.forEach(name => {
-            result[name] = newDemand();
-        });
-
-        let processed = 0;
-
-        cases.forEach(item => {
-            (item.members || []).forEach(member => {
-                const name = member.name;
-
-                if (!result[name]) return;
-
-                const L = Number(member.length);
-
-                if (!Number.isFinite(L) || L <= 0 ||
-                    !Number.isFinite(Number(member.localLoadX)) ||
-                    !Number.isFinite(Number(member.localLoadY))) {
-                    throw new Error(
-                        "اطلاعات طول یا بار محلی عضو «" +
-                        name +
-                        "» ناقص است. تحلیل را دوباره اجرا کنید."
-                    );
-                }
-
-                const stations = getStations(member);
-
-                stations.forEach(x => {
-                    const N = forceAt(member, "N", x);
-                    const V = forceAt(member, "V", x);
-                    const M = forceAt(member, "M", x);
-
-                    // قرارداد این گزارش:
-                    // N منفی = فشار و N مثبت = کشش
-                    const compression = Math.max(0, -N);
-                    const tension = Math.max(0, N);
-
-                    updateDemand(
-                        result[name].compression,
-                        compression,
-                        item.name,
-                        x
-                    );
-
-                    updateDemand(
-                        result[name].tension,
-                        tension,
-                        item.name,
-                        x
-                    );
-
-                    updateDemand(
-                        result[name].moment,
-                        Math.abs(M),
-                        item.name,
-                        x
-                    );
-
-                    updateDemand(
-                        result[name].shear,
-                        Math.abs(V),
-                        item.name,
-                        x
-                    );
-                });
-
-                processed++;
-            });
-        });
-
-        if (!processed) {
-            throw new Error(
-                "اطلاعات اعضا در نتایج ترکیبات بار پیدا نشد."
-            );
-        }
-
-        const rows = MEMBER_NAMES.map(name => {
-            const r = result[name];
-
-            return `
-                <tr>
-                    <td><b>${esc(name)}</b></td>
-
-                    <td>${fmt(r.compression.value)}</td>
-                    <td>${esc(r.compression.combination)}</td>
-                    <td>${esc(r.compression.position)}</td>
-
-                    <td>${fmt(r.tension.value)}</td>
-                    <td>${esc(r.tension.combination)}</td>
-                    <td>${esc(r.tension.position)}</td>
-
-                    <td>${fmt(r.moment.value)}</td>
-                    <td>${esc(r.moment.combination)}</td>
-                    <td>${esc(r.moment.position)}</td>
-
-                    <td>${fmt(r.shear.value)}</td>
-                    <td>${esc(r.shear.combination)}</td>
-                    <td>${esc(r.shear.position)}</td>
-                </tr>
-            `;
-        }).join("");
-
-        output.innerHTML = `
-            <hr>
-            <h4>جدول تقاضای طراحی در طول اعضا</h4>
-
-            <p>
-                تعداد ترکیبات بررسی‌شده:
-                <b>${fmt(cases.length, 0)}</b>
-            </p>
-
-            <div style="overflow-x:auto">
-                <table style="
-                    width:100%;
-                    min-width:1450px;
-                    border-collapse:collapse;
-                    font-size:12px
-                ">
-                    <thead>
-                        <tr>
-                            <th rowspan="2">عضو</th>
-                            <th colspan="3">فشار محوری (kN)</th>
-                            <th colspan="3">کشش محوری (kN)</th>
-                            <th colspan="3">لنگر |M| (kN.m)</th>
-                            <th colspan="3">برش |V| (kN)</th>
-                        </tr>
-                        <tr>
-                            <th>بیشینه</th>
-                            <th>ترکیب حاکم</th>
-                            <th>موقعیت</th>
-
-                            <th>بیشینه</th>
-                            <th>ترکیب حاکم</th>
-                            <th>موقعیت</th>
-
-                            <th>بیشینه</th>
-                            <th>ترکیب حاکم</th>
-                            <th>موقعیت</th>
-
-                            <th>بیشینه</th>
-                            <th>ترکیب حاکم</th>
-                            <th>موقعیت</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            </div>
-
-            <div class="notice">
-                <b>روش استخراج تقاضا</b>
-                <p>
-                    نیروهای داخلی با استفاده از نیروهای انتهایی،
-                    بارهای گسترده یکنواخت محلی و معادلات تعادل عضو
-                    در ابتدا، انتها و نقاط بحرانی محاسبه شده‌اند.
-                </p>
-                <p>
-                    برای لنگر خمشی، نقطه صفرشدن نیروی برشی نیز
-                    بررسی شده است.
-                </p>
-            </div>
-
-            <div class="notice">
-                <b>محدودیت مهم</b>
-                <p>
-                    این جدول تقاضای تحلیل را گزارش می‌کند و به‌تنهایی
-                    کنترل مقاومت یا تأیید طراحی نیست.
-                </p>
-                <p>
-                    بار متمرکز، بار گسترده متغیر، اثرات مرتبه دوم،
-                    کمانش موضعی و جانبی‌پیچشی و کنترل کامل آیین‌نامه‌ای
-                    هنوز باید جداگانه بررسی شوند.
-                </p>
-            </div>
-        `;
-
-        window.SteelAnalysis.memberDemandResults = result;
-
-        const status = $("projectStatus");
-        if (status) {
-            status.textContent =
-                "تقاضای نیروهای داخلی در طول چهار عضو و تمام ترکیبات بار استخراج شد.";
-        }
-
-    } catch (error) {
-        output.innerHTML = `
-            <div class="notice" style="color:#b45309">
-                <b>خطا در محاسبه تقاضای اعضا:</b>
-                <p>${esc(error.message)}</p>
-            </div>
-        `;
-    }
-}
-
-function createPanel() {
-    if ($("memberDesignPanel")) return;
-
-    const panel = document.createElement("section");
-    panel.className = "panel";
-    panel.id = "memberDesignPanel";
-
-    panel.innerHTML = `
-        <div class="panel-title">
-            <h3>گزارش تقاضای طراحی اعضا</h3>
-        </div>
-
-        <div class="notice">
-            استخراج بیشینه فشار، کشش، لنگر و برش
-            در طول هر عضو از تمام ترکیبات بار.
-        </div>
-
-        <div class="button-grid">
-            <button id="btnMemberDemand"
-                class="btn primary" type="button">
-                محاسبه تقاضای طراحی اعضا
-            </button>
-        </div>
-
-        <div id="memberDemandResults"></div>
-    `;
-
-    const stabilityPanel = $("stabilityPanel");
-
-    if (stabilityPanel && stabilityPanel.parentNode) {
-        stabilityPanel.parentNode.insertBefore(
-            panel,
-            stabilityPanel.nextSibling
-        );
-    } else {
-        document.querySelector("main")?.appendChild(panel);
-    }
-
-    $("btnMemberDemand").addEventListener(
-        "click",
-        calculateDemand
-    );
-}
-
-function init() {
-    createPanel();
-}
-
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-} else {
-    init();
-}
-
-})();
 
 /* ===== steel2/js/interaction.js ===== */
 
@@ -15948,6 +15435,10 @@ if (document.readyState === "loading") {
             customCity: "شاهرود",
             elevation: "1350",
             source: "مبحث ششم ۱۳۹۸؛ سرعت باد ۹۰ km/h مطابق جدول ۶-۱۰-۱ مبحث ششم ۱۳۹۸؛ ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود",
+            sourceDocument: "مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱",
+            sourceClause: "جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ مقدار برف نیازمند تطبیق مستقل",
+            sourceVerified: false,
+            elevationSource: "برآورد تقریبی مرکز شهرک صنعتی؛ نیازمند کنترل با DEM یا نقشه‌برداری",
             groundSnow: "1.0",
             basicWind: "90",
             terrain: "suburban",
@@ -16034,6 +15525,10 @@ if (document.readyState === "loading") {
                     <label for="climateSource">منبع داده اقلیمی</label>
                     <input id="climateSource" type="text" value="ورود دستی مهندس / نیازمند تطبیق با مبحث ششم ۱۳۹۸">
                 </div>
+                <div class="field"><label for="climateSourceDocument">عنوان سند اقلیمی / شماره نقشه</label><input id="climateSourceDocument" type="text" value="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱"></div>
+                <div class="field"><label for="climateSourceClause">بند، جدول یا صفحه مرجع</label><input id="climateSourceClause" type="text" value="جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ برف نیازمند تطبیق مستقل"></div>
+                <div class="field"><label for="climateElevationSource">منبع ارتفاع واقعی محل</label><input id="climateElevationSource" type="text" value="برآورد تقریبی؛ نیازمند DEM یا برداشت نقشه‌برداری"></div>
+                <div class="field"><label for="climateSourceVerified">کنترل مدرک</label><label class="checkbox-row"><input id="climateSourceVerified" type="checkbox"> سند و داده‌های اقلیمی توسط مهندس مسئول با منبع رسمی کنترل شده‌اند</label></div>
             </div>
 
             <h4>ب ـ پارامترهای اقلیمی ورودی (مقادیر تأییدنشده را خالی بگذارید)</h4>
@@ -16248,6 +15743,10 @@ if (document.readyState === "loading") {
             customCity: "climateCustomCity",
             elevation: "climateElevation",
             source: "climateSource",
+            sourceDocument: "climateSourceDocument",
+            sourceClause: "climateSourceClause",
+            sourceVerified: "climateSourceVerified",
+            elevationSource: "climateElevationSource",
             groundSnow: "climateGroundSnow",
             basicWind: "climateBasicWind",
             terrain: "climateTerrain",
@@ -16258,7 +15757,7 @@ if (document.readyState === "loading") {
         };
         Object.keys(climateFields).forEach(key => {
             const el = $(climateFields[key]);
-            if (el) state.climate[key] = el.value;
+            if (el) state.climate[key] = key === "sourceVerified" ? el.checked === true : el.value;
         });
         if (window.SteelDesignCore && typeof window.SteelDesignCore.getData === "function") {
             const brief = window.SteelDesignCore.getData();
@@ -16586,13 +16085,16 @@ if (document.readyState === "loading") {
             const climateIds = {
                 city: "climateCity", customCity: "climateCustomCity",
                 elevation: "climateElevation", source: "climateSource",
+                sourceDocument: "climateSourceDocument", sourceClause: "climateSourceClause",
+                sourceVerified: "climateSourceVerified", elevationSource: "climateElevationSource",
                 groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
                 terrain: "climateTerrain", topography: "climateTopography",
                 openingArea: "buildingOpeningArea",
                 envelopeArea: "buildingEnvelopeArea", dominantOpening: "buildingDominantOpening"
             };
             Object.keys(climateIds).forEach(key => {
-                if ($(climateIds[key])) $(climateIds[key]).value = state.climate[key];
+                const el = $(climateIds[key]);
+                if (el) { if (key === "sourceVerified") el.checked = state.climate[key] === true; else el.value = state.climate[key] ?? ""; }
             });
 
             renderCombinations();
@@ -16626,6 +16128,8 @@ if (document.readyState === "loading") {
         const climateInputIds = {
             city: "climateCity", customCity: "climateCustomCity",
             elevation: "climateElevation", source: "climateSource",
+            sourceDocument: "climateSourceDocument", sourceClause: "climateSourceClause",
+            sourceVerified: "climateSourceVerified", elevationSource: "climateElevationSource",
             groundSnow: "climateGroundSnow", basicWind: "climateBasicWind",
             terrain: "climateTerrain", topography: "climateTopography",
             openingArea: "buildingOpeningArea", envelopeArea: "buildingEnvelopeArea",
@@ -16634,7 +16138,8 @@ if (document.readyState === "loading") {
         Object.keys(climateInputIds).forEach(key => {
             const el = $(climateInputIds[key]);
             if (el && state.climate[key] !== undefined && state.climate[key] !== null) {
-                el.value = state.climate[key];
+                if (key === "sourceVerified") el.checked = state.climate[key] === true;
+                else el.value = state.climate[key];
             }
         });
 
@@ -16755,7 +16260,6 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
 
 })();
-
 
 /* ===== steel2/js/design-core.js ===== */
 /* SAHROUD STEEL — Independent Engineering Design Core
@@ -17261,13 +16765,16 @@ const cities = [
 ["shahroud","شاهرود"],["semnan","سمنان"],["tehran","تهران"],["mashhad","مشهد"],["tabriz","تبریز"],["isfahan","اصفهان"],["yazd","یزد"],["rasht","رشت"],["sari","ساری"],["kerman","کرمان"],["arak","اراک"],["ardabil","اردبیل"],["urmia","ارومیه"],["ahvaz","اهواز"],["bandar-abbas","بندرعباس"],["bushehr","بوشهر"],["birjand","بیرجند"],["bojnord","بجنورد"],["hamedan","همدان"],["sanandaj","سنندج"],["kermanshah","کرمانشاه"],["ilam","ایلام"],["khorramabad","خرم‌آباد"],["qazvin","قزوین"],["zanjan","زنجان"],["gorgan","گرگان"],["yasuj","یاسوج"],["shiraz","شیراز"],["zahedan","زاهدان"],["zabol","زابل"],["qom","قم"],["kish","کیش"],["abadan","آبادان"],["dezful","دزفول"],["sabzevar","سبزوار"],["neyshabur","نیشابور"],["damghan","دامغان"],["garmsar","گرمسار"],["torbat-heydariyeh","تربت حیدریه"],["chabahar","چابهار"],["bandar-anzali","بندر انزلی"],["amol","آمل"],["babol","بابل"]
 ];
 let records = {};
-cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:null,basicWindPressure:null,snowRegion:null,elevation:null,seismicZone:null,meanAnnualTemperature:null,designTemperature:null,source:"",sourceTitle:"",sourceUrl:"",sourceDate:"",codeEdition:"",verified:false,status:"نیازمند ورود و تطبیق با منبع رسمی"});
+cities.forEach(([id,name]) => records[id] = {id,name,groundSnow:null,basicWind:null,basicWindPressure:null,snowRegion:null,elevation:null,seismicZone:null,meanAnnualTemperature:null,designTemperature:null,source:"",sourceTitle:"",sourceClause:"",sourceUrl:"",sourceDate:"",codeEdition:"",verified:false,status:"نیازمند ورود و تطبیق با منبع رسمی"});
 function applyShahroudReference(){
  const r=records.shahroud;if(!r)return;
  r.name="شاهرود";r.basicWind=90;r.basicWindPressure=0.383;r.groundSnow=1.0;r.snowRegion=3;
  if(r.elevation===null||r.elevation===undefined)r.elevation=1350;
  r.siteCoordinates=r.siteCoordinates||{latitude:36.37478,longitude:54.88545};
  r.elevationSource=r.elevationSource||"برآورد تقریبی مرکز شهرک صنعتی؛ نیازمند کنترل با DEM یا برداشت نقشه‌برداری";
+ r.sourceTitle=r.sourceTitle||"مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱";
+ r.sourceClause=r.sourceClause||"جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ مقدار برف نیازمند تطبیق مستقل";
+ r.codeEdition=r.codeEdition||"مبحث ششم ۱۳۹۸";
  r.source="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱ و رکورد PDF پروژه برای سرعت باد؛ سرعت ۹۰ km/h مطابق جدول ۶-۱۰-۱ ویرایش ۱۳۹۸؛ q≈۰٫۳۸۳ kN/m². ارتفاع ۱۳۵۰ متر برآورد تقریبی مرکز شهرک صنعتی شاهرود.";
  r.sourceDate="1398";r.status="سرعت باد و برف استخراج‌شده از رکورد پروژه؛ ارتفاع محل تقریبی و نیازمند کنترل نقشه‌برداری";
 }
@@ -17281,7 +16788,8 @@ function loadSelectedCity(){
  const id=$("climateCity")?.value, r=records[id]; if(!r)return;
  const assign=(field,value)=>{
   const el=$(field);if(!el)return;
-  el.value=value===null||value===undefined?"":String(value);
+  if(el.type==="checkbox")el.checked=value===true;
+  else el.value=value===null||value===undefined?"":String(value);
   el.dispatchEvent(new Event("input",{bubbles:true}));
   el.dispatchEvent(new Event("change",{bubbles:true}));
  };
@@ -17290,6 +16798,10 @@ function loadSelectedCity(){
  assign("climateBasicWind",r.basicWind);
  assign("climateElevation",r.elevation);
  assign("climateSource",r.source||"");
+ assign("climateSourceDocument",r.sourceTitle||"");
+ assign("climateSourceClause",r.sourceClause||"");
+ assign("climateSourceVerified",r.verified===true);
+ assign("climateElevationSource",r.elevationSource||"");
  const status=$("climateNotice");
  if(status){
   const available=[r.basicWind!==null&&r.basicWind!==undefined,r.groundSnow!==null&&r.groundSnow!==undefined,r.elevation!==null&&r.elevation!==undefined].filter(Boolean).length;
@@ -17316,7 +16828,7 @@ function saveCurrentCity(){
  const source=(c.source||"").trim();
  if((wind!==null||snow!==null)&&!source){alert("برای ثبت مقدار باد یا برف، منبع داده را وارد کنید.");return;}
  const previous=records[id]||{};
- records[id]={...previous,id,name,basicWind:wind,groundSnow:snow,basicWindPressure:previous.basicWindPressure??null,snowRegion:previous.snowRegion??null,elevation:elev,source,sourceDate:new Date().toISOString().slice(0,10),verified:false,status:source?"ثبت کاربر؛ نیازمند کنترل منبع":"فاقد داده عددی"};
+ records[id]={...previous,id,name,basicWind:wind,groundSnow:snow,basicWindPressure:previous.basicWindPressure??null,snowRegion:previous.snowRegion??null,elevation:elev,elevationSource:String(c.elevationSource||previous.elevationSource||""),source,sourceTitle:String(c.sourceDocument||previous.sourceTitle||""),sourceClause:String(c.sourceClause||previous.sourceClause||""),sourceUrl:String(previous.sourceUrl||""),sourceDate:String(previous.sourceDate||new Date().toISOString().slice(0,10)),codeEdition:String(previous.codeEdition||""),verified:c.sourceVerified===true,status:c.sourceVerified===true?"تأیید توسط مهندس مسئول؛ نیازمند نگهداری مرجع":"ثبت کاربر؛ نیازمند کنترل منبع"};
  refreshStatus(); alert("رکورد شهر در بانک جاری ثبت شد. برای انتقال آن، پروژه را ذخیره یا از بانک خروجی JSON بگیرید.");
 }
 function exportDatabase(){
@@ -17334,7 +16846,7 @@ function importDatabase(event){
     const r=data.records[id];if(!r||typeof r!=="object")return;
     const n=v=>v===null||v===""||v===undefined?null:Number(v),wind=n(r.basicWind),snow=n(r.groundSnow),elev=n(r.elevation);
     if([wind,snow,elev].some(v=>v!==null&&(!Number.isFinite(v)||v<0)))return;
-    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,siteCoordinates:r.siteCoordinates&&typeof r.siteCoordinates==="object"?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),seismicZone:r.seismicZone??null,meanAnnualTemperature:n(r.meanAnnualTemperature),designTemperature:n(r.designTemperature),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,status:String(r.status||"واردشده؛ نیازمند کنترل")};
+    records[id]={id,name:String(r.name||id),basicWind:wind,groundSnow:snow,basicWindPressure:n(r.basicWindPressure),snowRegion:n(r.snowRegion),elevation:elev,siteCoordinates:r.siteCoordinates&&typeof r.siteCoordinates==="object"?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),seismicZone:r.seismicZone??null,meanAnnualTemperature:n(r.meanAnnualTemperature),designTemperature:n(r.designTemperature),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceClause:String(r.sourceClause||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,status:String(r.status||"واردشده؛ نیازمند کنترل")};
    });
    applyShahroudReference();refreshStatus();loadSelectedCity();alert("بانک اقلیمی وارد شد؛ داده مرجع شاهرود حفظ شد.");
   }catch(e){alert("خطا در وارد کردن بانک: "+e.message);}
@@ -17357,7 +16869,7 @@ function getData(){return {schema:"sahroud-steel-climate-db",version:1,records:J
 function setData(data){
  if(!data||data.schema!=="sahroud-steel-climate-db"||!data.records)return;
  const cleanNumber=v=>v===null||v===undefined||v===""?null:(Number.isFinite(Number(v))?Number(v):null);
- Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),siteCoordinates:r.siteCoordinates&&Number.isFinite(Number(r.siteCoordinates.latitude))&&Number.isFinite(Number(r.siteCoordinates.longitude))?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,seismicZone:r.seismicZone??null,meanAnnualTemperature:cleanNumber(r.meanAnnualTemperature),designTemperature:cleanNumber(r.designTemperature),status:String(r.status||"")};});
+ Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),siteCoordinates:r.siteCoordinates&&Number.isFinite(Number(r.siteCoordinates.latitude))&&Number.isFinite(Number(r.siteCoordinates.longitude))?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),source:String(r.source||""),sourceTitle:String(r.sourceTitle||""),sourceClause:String(r.sourceClause||""),sourceUrl:String(r.sourceUrl||""),sourceDate:String(r.sourceDate||""),codeEdition:String(r.codeEdition||""),verified:r.verified===true,seismicZone:r.seismicZone??null,meanAnnualTemperature:cleanNumber(r.meanAnnualTemperature),designTemperature:cleanNumber(r.designTemperature),status:String(r.status||"")};});
  applyShahroudReference();
  refreshStatus();
 }
@@ -17367,6 +16879,9 @@ records.shahroud.basicWindPressure=0.383;
 records.shahroud.groundSnow=1.0;
 records.shahroud.snowRegion=3;
 records.shahroud.source="مبحث ششم ویرایش چهارم ۱۳۹۸؛ جدول ۶-۱۰-۱ برای سرعت مبنای باد شاهرود: ۹۰ km/h؛ فشار مبنا از رابطه ۶-۱۰-۲: حدود ۰٫۳۸۳ kN/m². مقدار برف طبق رکورد قبلی پروژه و جداگانه نیازمند تطبیق نهایی است.";
+records.shahroud.sourceTitle="مبحث ششم ۱۳۹۸؛ جدول ۶-۱۰-۱";
+records.shahroud.sourceClause="جدول ۶-۱۰-۱ و رابطه ۶-۱۰-۲؛ مقدار برف نیازمند تطبیق مستقل";
+records.shahroud.codeEdition="مبحث ششم ۱۳۹۸";
 records.shahroud.sourceDate="1398";
 records.shahroud.status="سرعت باد با جدول ویرایش ۱۳۹۸ تطبیق داده شد؛ ارتفاع محل همچنان تقریبی است و بار برف نیازمند کنترل مستقل";
 window.SteelClimateDB={getData,setData,saveCurrentCity,exportDatabase,loadSelectedCity,getCity:id=>records[id]?JSON.parse(JSON.stringify(records[id])):null};
@@ -22376,25 +21891,30 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
     return "ردیابی منبع: "+summary.completeCaseCount+" از "+summary.caseCount+" حالت کامل؛ "+summary.incompleteCaseCount+" حالت ناقص. فیلدهای مفقود: "+fields+". شناسه حالت‌های ناقص: "+ids+". تا تکمیل مدرک، بازسازی نمودار نیروهای داخلی برای این بسته عمداً اجرا نشده است.";
   }
   function setReport(rows, heading) {
-    const out=$("steelAutoWorkflowResults"); if(!out)return;
     const pass=rows.filter(x=>x.ok).length;
     const missing=rows.filter(x=>!x.ok).length;
+    window.SteelAutoWorkflow=window.SteelAutoWorkflow||{};
+    window.SteelAutoWorkflow.lastResult={
+      heading,rows:rows.map(x=>({...x})),passed:pass,blocked:missing,total:rows.length,
+      success:missing===0,designApproved:false,generatedAt:new Date().toISOString()
+    };
+    const out=$("steelAutoWorkflowResults"); if(!out)return window.SteelAutoWorkflow.lastResult;
     out.innerHTML="<h4>"+heading+"</h4>"+
       "<p>مراحل انجام‌شده: "+pass+" | نیازمند تکمیل یا بررسی: "+missing+"</p>"+
       rows.map(x=>'<div class="notice"><b>'+(x.ok?"✓ ":"⚠ ")+x.label+
         "</b>"+(x.detail?"<p>"+String(x.detail).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+"</p>":"")+"</div>").join("");
   }
   function hasUsableClimate() {
-    const db=window.SteelClimateDB?.getData?.();
-    const id=$("climateCity")?.value;
-    const record=db?.records?.[id];
-    if(record && record.status && /تأیید رسمی|verified|معتبر و تأیید/i.test(record.status) &&
-       Number.isFinite(Number(record.basicWind)) &&
-       Number.isFinite(Number(record.groundSnow))) {
-      window.SteelClimateDB.loadSelectedCity?.();
-      return {ok:true,detail:"داده شهر از بانک با وضعیت تأییدشده به ورودی‌ها منتقل شد."};
-    }
-    return {ok:false,detail:"برای شهر انتخابی هنوز رکورد باد و برفِ تأییدشده در بانک وجود ندارد؛ نرم‌افزار نباید مقدار حدسی جایگزین کند."};
+    window.SteelClimateDB?.loadSelectedCity?.();
+    const loads=window.SteelLoads?.getData?.()||{};
+    const audit=window.SteelClimateDesignReadiness?.audit?.(loads);
+    if(!audit)return {ok:false,detail:"ممیزی شواهد اقلیمی بارگذاری نشده است؛ تحلیل متوقف می‌ماند."};
+    return {
+      ok:audit.ready===true,
+      detail:audit.ready
+        ?"شواهد اقلیمی، ورودی‌های بار و ویرایش مبنای بارگذاری برای بازبینی مهندسی کامل‌اند."
+        :"پیش‌نیازهای اقلیمی/بارگذاری ناقص‌اند: "+(audit.issues||[]).join("؛ ")
+    };
   }
   function blankOrZero(id) {
     const el=$(id); return !el || el.value.trim()==="" || Number(el.value)===0;
@@ -22511,7 +22031,8 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
     const rows=[];
     try {
       const climate=hasUsableClimate();
-      addLine(rows,"تخصیص خودکار بار باد و برف شهر",climate.ok,climate.detail);
+      addLine(rows,"ممیزی مستندات اقلیمی و ورودی‌های بار",climate.ok,climate.detail);
+      if(!climate.ok){setReport(rows,"گزارش اجرای خودکار — داده اقلیمی/بارگذاری تأیید نشده است");return;}
 
       if(window.SteelLoads?.syncLegacyInputs)window.SteelLoads.syncLegacyInputs();
       const loadOK=window.SteelLoads?.check?.()===true;
@@ -22554,28 +22075,36 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
             fullModel.geometry.frames.length+" قاب، "+fullModel.nodes.length+" گره و "+fullModel.members.length+" عضو هندسی؛ مدل بدون اجرای ترسیم غیرضروری برای تحلیل آماده شد.");
         } else addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,"مدل هندسی کامل تولید نشد.");
       } catch(e) { addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,e?.message||String(e)); }
+      if(!fullModelOK){setReport(rows,"گزارش اجرای خودکار — مدل هندسی معتبر تولید نشد");return;}
       if(fullModelOK) {
         const crane=auditCraneReadiness(window.SteelStructuralModel?.getData?.()||window.SteelStructuralModel?.model||null);
         if(crane.enabled)addLine(rows,"ممیزی مسیر هندسی جرثقیل تا شبکه حل‌گر",crane.ready,
           crane.detail+" اعمال بار چرخ به حل‌گر تا تکمیل مسیر واقعی تیر حمال، براکت و ستون مسدود می‌ماند.");
         else addLine(rows,"وضعیت جرثقیل پروژه",true,crane.detail);
+        if(crane.enabled&&!crane.ready){setReport(rows,"گزارش اجرای خودکار — مسیر بار جرثقیل ناقص است");return;}
       }
       // اجرای مستقیم و هم‌زمان محاسبه؛ کلیک دکمه با setTimeout اجرا می‌شود
       // و بررسی فوری نتیجه پس از click باعث گزارش کاذب شکست می‌شد.
-      let comboRun=null;
+      let combinationReport=null,combinationResults=[];
       try {
-        window.SteelAnalysis.combinationResults=[];
-        if(typeof window.SteelAnalysis?.calculateCombinations!=="function") {
-          throw new Error("تابع محاسبه هم‌زمان ترکیبات بار در دسترس نیست؛ فایل app.js را به‌روزرسانی کنید.");
-        }
-        comboRun=await window.SteelAnalysis.calculateCombinations();
+        const modelApi=window.SteelStructuralModel;
+        if(typeof modelApi?.analyzeAll3DCombinations!=="function")
+          throw new Error("حل‌گر سه‌بعدی و سازنده ترکیبات بار در دسترس نیست؛ تحلیل قاب دوبعدی قدیمی جایگزین آن نمی‌شود.");
+        combinationReport=await modelApi.analyzeAll3DCombinations({
+          onProgress:message=>{const host=$("steelAutoWorkflowResults");if(host)host.textContent=message;}
+        });
+        combinationResults=Array.isArray(combinationReport?.results)?combinationReport.results:[];
       } catch(e) {
-        comboRun={success:false,error:e?.message||String(e)};
+        combinationReport={success:false,error:e?.message||String(e),results:[],combinationCount:0,passed:0,failed:0};
       }
-      const comboOK=!!comboRun?.success&&Array.isArray(window.SteelAnalysis?.combinationResults)&&window.SteelAnalysis.combinationResults.length>0;
-      addLine(rows,"تحلیل قاب و ترکیبات بار موجود",comboOK,
-        comboOK?"تمام "+window.SteelAnalysis.combinationResults.length+" حالت ترکیب بار موجود تحلیل شدند.":(comboRun?.error||"تحلیل ترکیبات بار خروجی معتبر تولید نکرد؛ پیام تحلیل را بررسی کنید."));
-      const m6Coverage=window.SteelM6AnalysisCoverageAudit?.audit?.({analyzedCases:comboOK?window.SteelAnalysis.combinationResults:[],temperatureApplicable:null});
+      const comboOK=!!combinationReport&&combinationReport.combinationCount>0&&
+        combinationReport.failed===0&&combinationReport.passed===combinationReport.combinationCount&&
+        combinationResults.length===combinationReport.combinationCount;
+      const failedComboDetails=combinationResults.filter(x=>x.success!==true).map(x=>x.label+": "+(x.failure||"تعادل تأیید نشد.")).slice(0,8);
+      addLine(rows,"تحلیل سه‌بعدی مستقل ترکیبات موجود",comboOK,
+        comboOK?"تمام "+combinationReport.combinationCount+" ترکیب موجود با حل مستقل سه‌بعدی و کنترل تعادل تحلیل شدند؛ این مجموعه هنوز پوش کامل مبحث ششم نیست.":
+        (combinationReport?.error||failedComboDetails.join("؛ ")||"ترکیبات موجود کامل نیستند یا یک/چند حالت بار در حل‌گر سه‌بعدی تأیید نشد."));
+      const m6Coverage=window.SteelM6AnalysisCoverageAudit?.audit?.({analyzedCases:comboOK?combinationResults:[],temperatureApplicable:null});
       if(m6Coverage) {
         const covered=m6Coverage.coveredFamilies.map(id=>id.replace("M6-ULS-","")).join("، ")||"هیچ‌کدام";
         const missing=m6Coverage.missingRequiredFamilies.map(id=>id.replace("M6-ULS-","")).join("، ")||"—";
@@ -22584,25 +22113,25 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
       } else addLine(rows,"پوشش خانواده‌های ترکیبات بار مبحث ششم",false,"دروازه ممیزی پوشش ترکیبات بار بارگذاری نشده است.");
 
       if(comboOK) {
-        const taperBridge=window.SteelTaperedCaseForceBridge?.build?.(window.SteelStructuralModel?.getData?.(),window.SteelAnalysis.combinationResults);
+        const taperBridge=window.SteelTaperedCaseForceBridge?.build?.(window.SteelStructuralModel?.getData?.(),combinationResults);
         if(taperBridge)window.SteelTaperedCaseForceBridge.lastResult=taperBridge;
         addLine(rows,"انتقال نیروهای هم‌زمان هر ترکیب به قطعات منشوری/متغیرمقطع",!!taperBridge?.success,
           taperBridge?.status==="no-tapered-members"?"در مدل فعلی عضو متغیرمقطع فعال وجود ندارد.":taperBridge?.success?(taperBridge.analysisSegmentCount+" قطعه در "+taperBridge.caseCount+" ترکیب، با حفظ بردارهای ۱۲ مؤلفه‌ای و تعادل هر حالت ثبت شد."):(taperBridge?.issues||["پل انتقال نیرو بارگذاری نشده یا داده کافی نیست."]).join("؛ "));
         if(taperBridge?.analysisSegmentCount>0){
-          const firstCase=window.SteelAnalysis.combinationResults[0];
-          const readiness=window.SteelTaperedMemberDesignReadiness?.audit?.({members:firstCase?.members||[],loadCases:window.SteelAnalysis.combinationResults,memberInputs:{}});
+          const firstCase=combinationResults[0];
+          const readiness=window.SteelTaperedMemberDesignReadiness?.audit?.({members:firstCase?.members||[],loadCases:combinationResults,memberInputs:{}});
           if(readiness)window.SteelTaperedMemberDesignReadiness.lastResult=readiness;
           addLine(rows,"آمادگی طراحی مقاومتی اعضای متغیرمقطع",!!readiness?.success,
             readiness?.success?"ورودی‌های دروازه طراحی کامل‌اند؛ این وضعیت هنوز به معنی تأیید مقاومت نیست.":(readiness?.memberRows||[]).map(x=>x.parentMemberId+": "+x.missingInputs.join("، ")).join("؛ ")||"ورودی‌های لازم برای ممیزی آماده‌سازی در دسترس نیست.");
         }
-        const hasMemberDemand=window.SteelAnalysis.combinationResults.every(item=>
+        const hasMemberDemand=combinationResults.every(item=>
           Array.isArray(item.members)&&item.members.length>0&&item.members.every(m=>
             Array.isArray(m.localEndForces)&&m.localEndForces.length===12&&m.localEndForces.every(v=>Number.isFinite(Number(v)))));
         addLine(rows,"استخراج بردارهای هم‌زمان تقاضای اعضا در هر ترکیب",
           hasMemberDemand,
           hasMemberDemand?"بردار ۱۲ مؤلفه‌ای نیرو برای تک‌تک اعضا و هر ترکیب حفظ شده است؛ پوش‌های مستقل N/V/M صرفاً خلاصه‌اند و جایگزین نیروهای هم‌زمان برای طراحی نیستند.":"در یک یا چند ترکیب، بردار نیروهای هم‌زمان تمام اعضا موجود یا کامل نیست.");
 
-        const coverage=audit3DCombinationCoverage(window.SteelStructuralModel?.getData?.(),window.SteelAnalysis.combinationResults);
+        const coverage=audit3DCombinationCoverage(window.SteelStructuralModel?.getData?.(),combinationResults);
         addLine(rows,"ممیزی پوشش تحلیل سه‌بعدی تمام اعضا",coverage.success,
           coverage.success
             ? coverage.expectedMemberCount+" عضو مدل در هر "+coverage.caseCount+" ترکیب، با شناسه یکتا، بردار کامل ۱۲ مؤلفه‌ای نیرو و تعادل عددی ثبت شده‌اند. این ممیزی پوشش نتایج است؛ نه تأیید مقاومت یا طراحی آیین‌نامه‌ای."
@@ -22614,7 +22143,7 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
         try {
           const demandApi=window.SteelMemberDesignDemandPackage;
           const modelMembers=Array.isArray(fullModelForAnalysis?.members)?fullModelForAnalysis.members:[];
-          const sourceCases=window.SteelAnalysis.combinationResults;
+          const sourceCases=combinationResults;
           if(!demandApi?.buildFromSolverCases) throw new Error("بسته تقاضای ایستگاهی یا پل نمودار نیرو بارگذاری نشده است.");
           if(!modelMembers.length) throw new Error("مدل فیزیکی اعضا برای استخراج تقاضای ایستگاهی موجود نیست.");
           const runnerCases=sourceCases.map(item=>({
@@ -22648,14 +22177,11 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
 
         const bucklingMessage=$("bucklingMessage");
         if($("combinationBucklingResults"))$("combinationBucklingResults").innerHTML="";
-        if(bucklingMessage)bucklingMessage.textContent="کنترل کمانش در حال اجراست...";
-        window.SteelStability?.checkCombinationBuckling?.();
-        const bucklingText=bucklingMessage?.textContent||"";
-        const bucklingOK=/انجام شد|موفق/i.test(bucklingText)&&!/خطا/.test(bucklingText);
+        if(bucklingMessage)bucklingMessage.textContent="کنترل کمانش کامل سه‌بعدی هنوز در این نسخه فعال نیست.";
         const gaps=stabilityGaps();
         const gapText=gaps.length?"موارد واردنشده: "+gaps.join("؛ ")+". ":"";
-        addLine(rows,"کنترل مقدماتی کمانش در ترکیبات بار",bucklingOK,
-          bucklingOK?bucklingText:gapText+"طول مهارنشده و K از ترسیم شماتیک مهاربند یا قید به‌تنهایی قابل تأیید نیستند؛ فقط مهارهایی باید منظور شوند که پیوستگی، سختی و اتصال آن‌ها طراحی و تأیید شده باشد. "+bucklingText);
+        addLine(rows,"کنترل کمانش و پایداری نهایی اعضا",false,
+          gapText+"حل‌گر فعلی خطی و مرتبه اول است؛ کنترل کامل P-Delta، طول مؤثر، کمانش موضعی/پیچشی و اندرکنش اعضا هنوز به زنجیره سه‌بعدی متصل نشده است. هیچ نتیجه مقدماتی به‌عنوان قبولی طراحی ثبت نمی‌شود.");
 
         runStep(rows,"کنترل مقدماتی کنسول رفتر",()=>window.SteelCantileverCheck?.calculate?.(),
           ()=>!!window.SteelCantileverCheck?.lastResult);
@@ -22710,7 +22236,7 @@ root.SteelM6AnalysisCoverageAudit={audit,selfTest};
     if(first)main.insertBefore(panel,first);else main.appendChild(panel);
     $("btnSteelAutoWorkflow").addEventListener("click",run);
   }
-  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,summarizeSourceAudit,sourceAuditDetail,selfTest};
+  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,summarizeSourceAudit,sourceAuditDetail,selfTest,lastResult:null};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 
@@ -26039,7 +25565,7 @@ root.SteelTensionCapacityScreen={analyze,selfTest};
 const $=id=>document.getElementById(id);
 const GROUPS=[["roofBrace","مهارب سقف"],["wallBrace","مهارب دیوار"],["endPost","ستونک انتهایی"]];
 const FIELDS=[["Ag_cm2","سطح ناخالص Ag (cm²)"],["An_cm2","سطح خالص An (cm²)"],["Ae_cm2","سطح خالص مؤثر Ae (cm²)"],["U","ضریب تأخیر برشی U"],["eccentricity_mm","خروج از مرکزیت اتصال (mm)"],["forceDemandKN","نیروی کششی تقاضا (kN)"]];
-let data={schemaVersion:1,groups:{}};
+let data=fresh();
 function fresh(){const o={schemaVersion:1,groups:{}};GROUPS.forEach(([g])=>o.groups[g]={});return o;}
 function normalize(v){
  const out=fresh();
@@ -26132,6 +25658,7 @@ function audit(input){
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function render(){
+ data=normalize(data);
  const host=$("tensionDesignContent");if(!host)return;
  host.innerHTML=GROUPS.map(([g,label])=>{
   const d=data.groups[g]||{};
@@ -26177,7 +25704,6 @@ function selfTest(){
 root.SteelTensionDesignReadiness={getData,setData,readUI,audit,extractGroupTensionDemand,selfTest,render};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
-
 
 /* ===== steel2/js/brace-connection-readiness.js ===== */
 /* SAHROUD STEEL — brace-end connection geometry and documentation readiness.
@@ -26534,7 +26060,7 @@ if(typeof document!=="undefined"){if(document.readyState==="loading")document.ad
 function num(v){const n=Number(v);return Number.isFinite(n)?n:null;}
 function evaluate(input){
  const x=input||{},issues=[];
- const req=["boltCount","boltPretension_kN","slipCoefficient","slipPlanes","holeClass","fillersCount","slipDemand_kN","tensionDemand_kN","tensionBolts"];
+ const req=["boltCount","boltPretension_kN","slipCoefficient","slipPlanes","fillersCount","slipDemand_kN","tensionDemand_kN","tensionBolts"];
  const v={};req.forEach(k=>{v[k]=num(x[k]);if(v[k]===null)issues.push("ورودی عددی معتبر برای "+k+" لازم است.");});
  if(!["standard","short-perpendicular","oversized","short-parallel","long-slot"].includes(x.holeClass))issues.push("نوع سوراخ باید صریح و در دامنه پشتیبانی باشد.");
  if(x.surfaceClass!=="A"&&x.surfaceClass!=="B"&&x.surfaceClass!=="tested")issues.push("کلاس سطح اصطکاک باید A/B یا نتیجه آزمون مستند باشد.");
@@ -26566,7 +26092,6 @@ function selfTest(){
 }
 root.SteelBraceSlipCriticalScreen={evaluate,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
-
 
 /* ===== steel2/js/bolt-geometry-screen.js ===== */
 (function(root){
@@ -30665,36 +30190,6 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 window.SteelReferenceModelViewer={get selectedMember(){return selected;},get mode(){return mode;}};
 })();
 
-/* ===== steel2/js/engineering-workstream-dashboard.js ===== */
-/* SAHROUD STEEL — engineering workstream dashboard; status is explicit, not inferred as approval. */
-(function(root){
-"use strict";
-const phases=[
-{id:"P0",name:"پایه نرم‌افزار، پروژه و مجوز",status:"active",gate:"پایداری ذخیره‌سازی، نسخه‌بندی و مجوز"},
-{id:"P1",name:"ورودی‌ها و هندسه سه‌بعدی",status:"in_progress",gate:"هندسه، واحدها، محورهای محلی و قیود تأییدشده"},
-{id:"P2",name:"مبنای آیین‌نامه و بارگذاری",status:"in_progress",gate:"ویرایش آیین‌نامه، اقلیم، بارها و ترکیبات مستند"},
-{id:"P3",name:"تحلیل سه‌بعدی و کنترل تعادل",status:"in_progress",gate:"بنچمارک مستقل، تعادل و پوش نیروهای همزمان"},
-{id:"P4",name:"طراحی اعضای فولادی",status:"partial",gate:"کشش، فشار، خمش، برش، پیچش و اندرکنش"},
-{id:"P5",name:"جرثقیل سقفی ۳۰ تن",status:"partial",gate:"واکنش چرخ، ضربه، نیروهای جانبی، خستگی و مسیر بار"},
-{id:"P6",name:"اتصالات و صفحه‌ستون",status:"partial",gate:"پیچ، جوش، ورق گاست، سخت‌کننده و انتقال نیرو"},
-{id:"P7",name:"فونداسیون و شناژ",status:"partial",gate:"واکنش معتبر، خاک، پایداری، بتن و آرماتور"},
-{id:"P8",name:"نقشه‌ها و متره",status:"planned",gate:"نقشه قابل ساخت، جزئیات و تطبیق مقادیر"},
-{id:"P9",name:"گزارش و کنترل کیفیت",status:"in_progress",gate:"ردیابی ورودی تا خروجی و گزارش خطا/هشدار"},
-{id:"P10",name:"انتشار و پذیرش",status:"planned",gate:"تست مرورگر، امنیت، مستندات و پذیرش کاربر"}
-];
-const labels={active:"در حال انجام",in_progress:"توسعه جاری",partial:"ناقص / محدود",planned:"برنامه‌ریزی‌شده"};
-function render(){
- if(document.getElementById("engineeringRoadmapPanel"))return;const anchor=document.querySelector("main .welcome");if(!anchor)return;
- const panel=document.createElement("section");panel.className="panel";panel.id="engineeringRoadmapPanel";
- const rows=phases.map(p=>'<div class="roadmap-row"><div class="roadmap-id">'+p.id+'</div><div class="roadmap-main"><strong>'+p.name+'</strong><small>دروازه پذیرش: '+p.gate+'</small></div><span class="roadmap-state state-'+p.status+'">'+labels[p.status]+'</span></div>').join("");
- panel.innerHTML='<div class="panel-title"><h3>نقشه راه و وضعیت گام‌های توسعه SAHROUD STEEL</h3><span class="status">نمای برنامه‌ریزی</span></div><p class="notice">وضعیت‌ها نشان‌دهنده پیشرفت نرم‌افزار هستند، نه تأیید مهندسی یا صلاحیت طراحی. هر فاز تا عبور از دروازه پذیرش خودش قابل انتشار نهایی نیست.</p><div class="roadmap-list">'+rows+'</div><div class="notice roadmap-foot"><strong>مسیر بحرانی بعدی:</strong> دریافت خروجی هندسی معتبر از مدل مبدأ ← تطبیق گره‌ها و اعضا ← تکمیل مقاطع و قیود ← اتصال کنترل‌شده به مدل تحلیل ← آزمون تعادل و بنچمارک مستقل.</div>';
- anchor.parentNode.insertBefore(panel,anchor.nextSibling);
- const style=document.createElement("style");style.textContent='#engineeringRoadmapPanel .roadmap-list{display:grid;gap:7px}.roadmap-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--card,#fff)}.roadmap-id{font-weight:800;color:var(--navy);min-width:34px}.roadmap-main{flex:1;display:grid;gap:3px}.roadmap-main small{color:var(--muted,#647783);font-size:12px}.roadmap-state{font-size:11px;padding:4px 8px;border-radius:20px;background:#edf1f4;color:#445}.state-active,.state-in_progress{background:#e8f2f8;color:#14536b}.state-partial{background:#fff4df;color:#815400}.state-planned{background:#f0f0f0;color:#555}.roadmap-foot{margin-top:12px}';document.head.appendChild(style);
-}
-root.SteelEngineeringRoadmap={phases:phases.map(x=>({...x})),getSummary(){return phases.reduce((a,p)=>(a[p.status]=(a[p.status]||0)+1,a),{});}};
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",render);else render();
-})(window);
-
 /* ===== steel2/js/design-basis-intake.js ===== */
 /* SAHROUD STEEL — project design-basis intake; evidence capture only, never design approval. */
 (function(){
@@ -30970,233 +30465,6 @@ function selfTest(){
 root.SteelMemberSectionEvidenceIntake={build,fromRegistry,drawingTrace,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
 
-
-/* ===== steel2/js/dropbox-integration.js ===== */
-/* SAHROUD STEEL - Dropbox direct upload (OAuth 2.0 PKCE) */
-(function () {
-  "use strict";
-
-  const CLIENT_ID = "zevuaxek7hupqfb";
-  const REDIRECT_URI = "https://sahroud.github.io/steel/steel2/dropbox-callback.html";
-  const FOLDER = "/نتایج نرم‌افزارهای مهندسی";
-  const TOKEN_KEY = "sahroud_dropbox_refresh_token_v1";
-  const AUTO_KEY = "sahroud_dropbox_auto_upload_v1";
-  const REPORT_KEY = "sahroud_steel_latest_span_report_v1";
-  const $ = id => document.getElementById(id);
-
-  let auth = null;
-  let dbx = null;
-  let uploadInProgress = false;
-
-  function hasToken() {
-    try { return !!localStorage.getItem(TOKEN_KEY); } catch (_) { return false; }
-  }
-
-  function getLatestReport() {
-    const live = window.SteelStructuralModel?.lastSpanComparison;
-    if (live && typeof live === "object") return live;
-    try {
-      const saved = localStorage.getItem(REPORT_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch (_) { return null; }
-  }
-
-  function rememberLatestReport(report) {
-    if (!report || typeof report !== "object") return;
-    try { localStorage.setItem(REPORT_KEY, JSON.stringify(report)); } catch (_) {}
-    if (window.SteelStructuralModel) window.SteelStructuralModel.lastSpanComparison = report;
-  }
-
-  function getClient() {
-    if (!window.Dropbox || !window.Dropbox.DropboxAuth || !window.Dropbox.Dropbox) {
-      throw new Error("کتابخانه رسمی Dropbox بارگذاری نشده است؛ اتصال اینترنت را بررسی کنید.");
-    }
-    const refreshToken = localStorage.getItem(TOKEN_KEY);
-    if (!refreshToken) throw new Error("ابتدا Dropbox را متصل کنید.");
-    auth = new window.Dropbox.DropboxAuth({ clientId: CLIENT_ID, refreshToken });
-    dbx = new window.Dropbox.Dropbox({ auth });
-    return dbx;
-  }
-
-  function setStatus(message, isError) {
-    const el = $("dropboxStatus");
-    if (!el) return;
-    el.textContent = message;
-    el.style.color = isError ? "#b45309" : "#166534";
-  }
-
-  function updateUI() {
-    const connected = hasToken();
-    const connect = $("btnDropboxConnect");
-    const disconnect = $("btnDropboxDisconnect");
-    const upload = $("btnDropboxUploadLatest");
-    const projectUpload = $("btnDropboxUploadProject");
-    const auto = $("dropboxAutoUpload");
-    if (connect) connect.hidden = connected;
-    if (disconnect) disconnect.hidden = !connected;
-    if (upload) upload.disabled = uploadInProgress || !connected || !getLatestReport();
-    if (projectUpload) projectUpload.disabled = uploadInProgress || !connected || !window.SteelProject?.getData;
-    if (auto) auto.checked = localStorage.getItem(AUTO_KEY) !== "false";
-    setStatus(connected
-      ? "Dropbox در این مرورگر متصل است. پوشه مقصد: " + FOLDER
-      : "Dropbox هنوز در این مرورگر متصل نشده است.", false);
-  }
-
-  async function connect() {
-    if (!window.Dropbox?.DropboxAuth) throw new Error("کتابخانه Dropbox در دسترس نیست.");
-    if (!window.crypto?.subtle) throw new Error("مرورگر باید از Web Crypto پشتیبانی کند؛ صفحه را با HTTPS باز کنید.");
-    const stateBytes = new Uint8Array(24);
-    crypto.getRandomValues(stateBytes);
-    const state = Array.from(stateBytes, b => b.toString(16).padStart(2, "0")).join("");
-    auth = new window.Dropbox.DropboxAuth({ clientId: CLIENT_ID });
-    const url = await auth.getAuthenticationUrl(
-      REDIRECT_URI, state, "code", "offline",
-      ["files.content.write"], undefined, true
-    );
-    sessionStorage.setItem("sahroud_dropbox_state", state);
-    sessionStorage.setItem("sahroud_dropbox_code_verifier", auth.getCodeVerifier());
-    window.location.assign(url);
-  }
-
-  async function uploadSpanReport(report) {
-    if (!report || typeof report !== "object") throw new Error("گزارش آزمایش معتبر نیست.");
-    const client = getClient();
-    if (auth && typeof auth.checkAndRefreshAccessToken === "function") {
-      await auth.checkAndRefreshAccessToken();
-    }
-    const date = new Date(report.generatedAt || Date.now());
-    if (!Number.isFinite(date.getTime())) throw new Error("زمان ثبت گزارش معتبر نیست.");
-    const stamp = date.toISOString().replace(/[-:]/g, "").replace(/\\.\\d{3}Z$/, "Z");
-    const fileName = "sahroud-steel-span10-" + stamp + ".json";
-    const path = FOLDER + "/" + fileName;
-    const response = await client.filesUpload({
-      path,
-      contents: JSON.stringify(report, null, 2),
-      // Re-sending the same run updates its report instead of failing on a duplicate name.
-      mode: { ".tag": "overwrite" },
-      autorename: false,
-      mute: true
-    });
-    setStatus("ارسال تأیید شد؛ گزارش در Dropbox ذخیره شد: " + (response.result.path_display || path), false);
-    return response.result;
-  }
-
-  async function uploadCurrentProject() {
-    if (!window.SteelProject || typeof window.SteelProject.getData !== "function") throw new Error("مدیر پروژه آماده نیست.");
-    const data = window.SteelProject.getData();
-    if (!data || typeof data !== "object") throw new Error("اطلاعات پروژه برای ذخیره آماده نیست.");
-    const client = getClient();
-    if (auth && typeof auth.checkAndRefreshAccessToken === "function") await auth.checkAndRefreshAccessToken();
-    const path = FOLDER + "/Sahroud_Steel_Project.json";
-    const response = await client.filesUpload({
-      path,
-      contents: JSON.stringify(data, null, 2),
-      mode: { ".tag": "overwrite" },
-      autorename: false,
-      mute: true
-    });
-    setStatus("پروژه فعلی مستقیماً در Dropbox ذخیره شد: " + (response.result.path_display || path), false);
-    return response.result;
-  }
-
-  function addPanel() {
-    if ($("dropboxIntegrationPanel")) return;
-    const anchor = $("shedLayoutPanel") || $("fullModel3DResult")?.closest(".panel");
-    if (!anchor || !anchor.parentNode) return;
-    const panel = document.createElement("section");
-    panel.className = "panel";
-    panel.id = "dropboxIntegrationPanel";
-    panel.innerHTML =
-      '<div class="panel-title"><h3>ذخیره گزارش در Dropbox</h3><span class="status">اتصال مستقیم</span></div>' +
-      '<p>گزارش آزمایش دهانه ۱۰ متر در پوشه «نتایج نرم‌افزارهای مهندسی» ذخیره می‌شود. این اتصال فقط اجازه بارگذاری فایل گزارش را درخواست می‌کند.</p>' +
-      '<div class="button-grid">' +
-      '<button type="button" id="btnDropboxConnect" class="btn primary">اتصال به Dropbox</button>' +
-      '<button type="button" id="btnDropboxDisconnect" class="btn secondary" hidden>قطع اتصال این مرورگر</button>' +
-      '<button type="button" id="btnDropboxUploadLatest" class="btn success" disabled>بارگذاری آخرین گزارش</button>' +
-      '<button type="button" id="btnDropboxUploadProject" class="btn primary" disabled>ذخیره مستقیم پروژه در Dropbox</button>' +
-      '</div>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="dropboxAutoUpload" checked> بارگذاری خودکار گزارش‌های آزمایش بعدی پس از اتصال</label>' +
-      '<div id="dropboxStatus" class="notice" aria-live="polite">وضعیت اتصال بررسی می‌شود.</div>' +
-      '<p class="geometry-hint">برای اتصال، صفحه رسمی Dropbox باز می‌شود و باید دسترسی را تأیید کنید. کلید محرمانه یا رمز عبور در این نرم‌افزار ذخیره نمی‌شود. توکن تمدید دسترسی در حافظه محلی همین مرورگر نگهداری می‌شود؛ برای قطع کامل مجوز، دسترسی برنامه را از تنظیمات امنیتی Dropbox نیز لغو کنید.</p>';
-    anchor.parentNode.insertBefore(panel, anchor.nextSibling);
-
-    $("btnDropboxConnect").addEventListener("click", async () => {
-      try { setStatus("در حال انتقال به صفحه امن Dropbox…", false); await connect(); }
-      catch (e) { setStatus("اتصال شروع نشد: " + e.message, true); }
-    });
-    $("btnDropboxDisconnect").addEventListener("click", () => {
-      try { localStorage.removeItem(TOKEN_KEY); auth = null; dbx = null; }
-      catch (e) { setStatus("خطا در قطع اتصال: " + e.message, true); return; }
-      updateUI();
-    });
-    $("btnDropboxUploadLatest").addEventListener("click", async () => {
-      if (uploadInProgress) return;
-      const report = getLatestReport();
-      if (!report) {
-        setStatus("گزارش آزمایش دهانه ۱۰ متر پیدا نشد؛ ابتدا آزمایش را اجرا کنید.", true);
-        return;
-      }
-      uploadInProgress = true;
-      updateUI();
-      setStatus("در حال ارسال گزارش به Dropbox؛ لطفاً دکمه را دوباره نزنید…", false);
-      try {
-        await uploadSpanReport(report);
-      } catch (e) {
-        setStatus("ارسال ناموفق بود: " + (e.error?.error_summary || e.message) + "؛ گزارش در حافظه مرورگر باقی مانده است.", true);
-      } finally {
-        uploadInProgress = false;
-        updateUI();
-      }
-    });
-    $("btnDropboxUploadProject").addEventListener("click", async () => {
-      if (uploadInProgress) return;
-      uploadInProgress = true;
-      updateUI();
-      setStatus("در حال ذخیره فایل کامل پروژه در Dropbox…", false);
-      try { await uploadCurrentProject(); }
-      catch (e) { setStatus("ذخیره پروژه ناموفق بود: " + (e.error?.error_summary || e.message), true); }
-      finally { uploadInProgress = false; updateUI(); }
-    });
-    $("dropboxAutoUpload").addEventListener("change", e => {
-      localStorage.setItem(AUTO_KEY, e.target.checked ? "true" : "false");
-    });
-    updateUI();
-  }
-
-  window.addEventListener("sahroud:span-report-ready", async event => {
-    rememberLatestReport(event.detail);
-    updateUI();
-    if (localStorage.getItem(AUTO_KEY) === "false" || !hasToken()) return;
-    try {
-      setStatus("گزارش جدید شناسایی شد؛ بارگذاری خودکار آغاز شد…", false);
-      await uploadSpanReport(event.detail);
-    } catch (e) {
-      setStatus("گزارش آماده است اما بارگذاری خودکار ناموفق بود: " + (e.error?.error_summary || e.message), true);
-    }
-  });
-
-  window.SahroudDropbox = {
-    uploadSpanReport,
-    uploadCurrentProject,
-    isConnected: hasToken,
-    isAutoUploadEnabled: () => localStorage.getItem(AUTO_KEY) !== "false"
-  };
-
-  function init() {
-    addPanel();
-    const params = new URLSearchParams(location.search);
-    if (params.get("dropbox") === "connected") {
-      history.replaceState({}, document.title, location.pathname);
-      setStatus("اتصال Dropbox با موفقیت برقرار شد. اکنون می‌توانید گزارش قبلی را بارگذاری کنید یا آزمایش را دوباره اجرا کنید.", false);
-    } else if (params.get("dropbox") === "error") {
-      setStatus("اتصال Dropbox ناموفق بود: " + (params.get("message") || "خطای نامشخص"), true);
-    }
-    updateUI();
-  }
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
-})();
 
 /* ===== steel2/js/building-coverage-matrix.js ===== */
 /* SAHROUD STEEL — whole-building engineering coverage matrix.
@@ -32135,3 +31403,100 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   }
 })();
 
+/* ===== steel2/js/runtime-integrity.js ===== */
+/* SAHROUD STEEL — source module for the production bundle.
+ * Fail-closed runtime dependency check; not a structural design approval.
+ */
+(function(root){
+"use strict";
+const required=[
+ ["SteelProject","مدیریت پروژه"],
+ ["SteelClimateDesignReadiness","ممیزی شواهد اقلیمی"],["SteelClimateDB","پایگاه اقلیم"],["SteelLoads","بارگذاری"],
+ ["SteelAnalysis","تحلیل"],["SteelStructuralModel","مدل سازه"],["SteelAutoWorkflow","گردش کار"],
+ ["SteelMemberDesignDemandPackage","تقاضای طراحی اعضا"],["SteelM6AnalysisCoverageAudit","پوشش ترکیبات بار"],
+ ["SteelCrane3DLoadTransfer","انتقال بار جرثقیل"],["SteelFoundationModelFingerprint","شناسه مدل فونداسیون"],
+ ["SteelFoundationReactionBridge","انتقال واکنش فونداسیون"]
+];
+function audit(){
+ const missing=required.filter(([name])=>!root[name]).map(([name,label])=>({name,label}));
+ return {success:missing.length===0,ready:missing.length===0,missing,loaded:required.length-missing.length,total:required.length,
+ designApproved:false,analysisApprovalGranted:false,
+ message:missing.length?"ماژول‌های ضروری بارگذاری نشده‌اند: "+missing.map(x=>x.label).join("، "):"ماژول‌های اصلی نرم‌افزار بارگذاری شده‌اند."};
+}
+function report(){
+ const result=audit(),doc=root.document;if(!doc)return result;
+ const status=doc.getElementById("homeWorkflowStatus");
+ if(status){status.dataset.runtimeStatus=result.success?"ready":"blocked";if(!result.success)status.textContent=result.message;}
+ if(!result.success){const panel=doc.getElementById("analysisMessage");if(panel)panel.textContent=result.message+" اجرای تحلیل/طراحی تا رفع این نقص معتبر نیست.";}
+ return result;
+}
+root.SteelRuntimeIntegrity={audit,report,required:required.map(x=>x[0])};
+if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",report,{once:true});else report();}
+})(typeof window!=="undefined"?window:globalThis);
+
+/* ===== steel2/js/analysis-scope-audit.js ===== */
+/* SAHROUD STEEL — explicit scope audit for the legacy 2D analysis path.
+ * This is a limitation register, not a solver and never a design approval.
+ */
+(function(root){
+ "use strict";
+ const limitations=[
+  {id:"combination-analysis",label:"ترکیبات بار آیین‌نامه‌ای در تحلیل قاب دوبعدی قدیمی اعمال نمی‌شوند",status:"not-included",scope:"legacy-2d"},
+  {id:"pdelta",label:"تحلیل مرتبه دوم و اثر P-Delta در تحلیل قاب دوبعدی قدیمی انجام نمی‌شود",status:"not-included",scope:"legacy-2d"},
+  {id:"longitudinal-wind",label:"باد طولی و باد دیوارهای جلو و عقب در تحلیل قاب دوبعدی قدیمی پوشش داده نمی‌شوند",status:"not-included",scope:"legacy-2d"},
+  {id:"member-design",label:"کنترل کامل مقاومت، پایداری، تغییرشکل و اتصالات از خروجی تحلیل قاب دوبعدی نتیجه نمی‌شود",status:"not-included",scope:"legacy-2d"},
+  {id:"3d-first-order",label:"حل‌گر سه‌بعدی فعلی تحلیل خطی مرتبه اول انجام می‌دهد؛ اثرات P-Delta و تحلیل غیرخطی در آن پیاده‌سازی نشده‌اند",status:"not-included",scope:"3d-solver"},
+  {id:"3d-shear-deformation",label:"تغییرشکل برشی و اثرات وابسته به مدل‌های تیر تیموشنکو در حل‌گر سه‌بعدی منظور نشده‌اند",status:"not-included",scope:"3d-solver"},
+  {id:"3d-warping",label:"پیچش مقاطع باز با درجات آزادی وارپینگ در حل‌گر سه‌بعدی مدل نشده است",status:"not-included",scope:"3d-solver"},
+  {id:"3d-stability",label:"حل‌گر سه‌بعدی به‌تنهایی کنترل کمانش کلی، موضعی و پیچشی یا مقاومت اعضا را انجام نمی‌دهد",status:"not-included",scope:"3d-solver"},
+  {id:"load-input-transfer",label:"مدیریت ورودی بار به‌تنهایی اثبات نمی‌کند که همه بارهای ثقلی، برف، باد، زلزله و جرثقیل به مدل سه‌بعدی منتقل شده‌اند",status:"not-proven",scope:"load-path"},
+  {id:"code-combination-coverage",label:"وجود قالب ترکیبات مبحث ششم به‌تنهایی اثبات‌کننده تولید و تحلیل تمام خانواده‌ها و شاخه‌های لازم برای پروژه نیست",status:"not-proven",scope:"load-combinations"},
+  {id:"member-capacity-design",label:"بسته تقاضای اعضا و دروازه دامنه طراحی، جایگزین کنترل کامل مقاومت، پایداری، خیز و اتصالات نیستند",status:"not-included",scope:"member-design"},
+  {id:"foundation-design",label:"پل واکنش فونداسیون فقط واکنش‌ها را منتقل و ممیزی می‌کند؛ طراحی پی، خاک، لغزش، واژگونی و آرماتور نهایی را تأیید نمی‌کند",status:"not-included",scope:"foundation"},
+  {id:"crane-final-design",label:"انتقال بار جرثقیل و استخراج تقاضا به‌تنهایی تأیید طراحی تیر حمال، براکت، خستگی، اتصالات و ستون نیست",status:"not-included",scope:"crane"}
+ ];
+ function audit(){
+  const legacy=!!root.SteelAnalysis;
+  const solver3D=!!root.SteelFrame3D&&typeof root.SteelFrame3D.analyze==="function";
+  const model3D=!!root.SteelStructuralModel;
+  const loadsInput=!!root.SteelLoads;
+  const loadChain=!!root.SteelStructuralLoadChain;
+  const memberGate=!!root.SteelMemberDesignScopeGate;
+  const foundationBridge=!!root.SteelFoundationReactionBridge;
+  const craneTransfer=!!root.SteelCrane3DLoadTransfer;
+  return {
+   legacy2DAnalysisAvailable:legacy,
+   general3DSolverAvailable:solver3D,
+   structuralModelApiAvailable:model3D,
+   loadInputApiAvailable:loadsInput,
+   structuralLoadChainApiAvailable:loadChain,
+   memberDesignScopeGateAvailable:memberGate,
+   foundationReactionBridgeAvailable:foundationBridge,
+   craneLoadTransferApiAvailable:craneTransfer,
+   legacy2DLimitations:limitations.filter(x=>x.scope==="legacy-2d").map(x=>({...x})),
+   threeDSolverLimitations:limitations.filter(x=>x.scope==="3d-solver").map(x=>({...x})),
+   loadPathLimitations:limitations.filter(x=>["load-path","load-combinations"].includes(x.scope)).map(x=>({...x})),
+   downstreamDesignLimitations:limitations.filter(x=>["member-design","foundation","crane"].includes(x.scope)).map(x=>({...x})),
+   fullBuildingAnalysisProven:false,
+   codeCombinationCoverageProven:false,
+   pDeltaCoverageProven:false,
+   memberCapacityDesignProven:false,
+   foundationDesignProven:false,
+   craneFinalDesignProven:false,
+   designApproved:false,
+   analysisApprovalGranted:false,
+   message:"وجود حل‌گر سه‌بعدی، قالب ترکیبات یا پل واکنش به‌تنهایی اثبات‌کننده تحلیل کامل ساختمان، پوشش همه بارها و ترکیبات، یا تأیید طراحی اعضا، جرثقیل و فونداسیون نیست."
+  };
+ }
+ function selfTest(){
+  const r=audit();
+  const required=["3d-first-order","3d-stability","load-input-transfer","code-combination-coverage","member-capacity-design","foundation-design","crane-final-design"];
+  const ids=new Set(limitations.map(x=>x.id));
+  const ok=r.designApproved===false&&r.analysisApprovalGranted===false&&
+   r.fullBuildingAnalysisProven===false&&r.codeCombinationCoverageProven===false&&
+   r.pDeltaCoverageProven===false&&required.every(x=>ids.has(x))&&
+   r.threeDSolverLimitations.length>=3&&r.downstreamDesignLimitations.length>=3;
+  return {passed:ok?1:0,failed:ok?0:1,total:1,checks:[{name:"legacy and 3D analysis limitations remain explicit; no full design approval is implied",ok}]};
+ }
+ root.SteelAnalysisScopeAudit={audit,selfTest};
+})(typeof window!=="undefined"?window:globalThis);

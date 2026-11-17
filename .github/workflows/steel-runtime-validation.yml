@@ -1,0 +1,189 @@
+name: SAHROUD STEEL runtime validation
+
+concurrency:
+  group: sahroud-steel-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - sahroud-steel-runtime-integration-20261117ag
+  pull_request:
+    branches:
+      - refactor/centralized-project-state-20261112
+      - sahroud-steel-foundation-input-polish-20261117af
+
+jobs:
+  validate-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Parse all JavaScript source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find steel2 -type f -name '*.js' -print0)
+      - name: Install browser-like DOM for deterministic tests
+        run: npm install --no-save jsdom@26
+      - name: Run engineering software regression suite in DOM
+        shell: bash
+        run: |
+          node <<'NODE'
+          (async () => {
+          const fs = require('node:fs');
+          const { JSDOM } = require('jsdom');
+          const html = fs.readFileSync('steel2/legacy.html', 'utf8');
+          const dom = new JSDOM(html, {
+            url: 'https://example.test/steel2/legacy.html',
+            runScripts: 'outside-only',
+            pretendToBeVisual: true
+          });
+          const { window } = dom;
+          const context = new Proxy({
+            measureText: () => ({width: 0}),
+            createLinearGradient: () => ({addColorStop() {}}),
+            createRadialGradient: () => ({addColorStop() {}}),
+            getImageData: () => ({data: new Uint8ClampedArray(4)}),
+            canvas: null
+          }, { get(target, key) { return key in target ? target[key] : () => {}; } });
+          window.HTMLCanvasElement.prototype.getContext = () => context;
+          window.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+          window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+          window.matchMedia = () => ({matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}});
+          window.alert = () => {};
+          window.confirm = () => true;
+          window.prompt = () => null;
+          window.eval(fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8'));
+          window.eval(fs.readFileSync('steel2/tests/analysis-3d-analytical-benchmarks.js', 'utf8'));
+          window.eval(fs.readFileSync('steel2/tests/tapered-member-mesh-convergence.js', 'utf8'));
+          window.eval(fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8'));
+          window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+          const result = window.SteelEngineeringRegression.run();
+          console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
+          const repeat = window.SteelEngineeringRegression.run();
+          console.log(`Repeat regression: ${repeat.passed}/${repeat.passed + repeat.failed} passed`);
+          if (repeat.failed) {
+            for (const check of repeat.checks.filter(x => !x.pass)) console.error('REPEAT FAIL:', check.name, JSON.stringify(check.detail));
+            process.exit(1);
+          }
+          for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, JSON.stringify(check.detail));
+          const testSource = fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8');
+          const apiNames = [...new Set([...testSource.matchAll(/root\.(?:Steel|SahroudSteel)[A-Za-z0-9_]+(?:\?\.|\.)selfTest/g)].map(x => x[0].match(/root\.((?:Steel|SahroudSteel)[A-Za-z0-9_]+)/)[1]))];
+          const diagnostics = {};
+          for (const name of apiNames) {
+            try { diagnostics[name] = window[name].selfTest(); }
+            catch (error) { diagnostics[name] = {error: error.message}; }
+          }
+          const failedDiagnostics = Object.entries(diagnostics).filter(([, value]) => {
+            const rows = Array.isArray(value?.tests) ? value.tests : (Array.isArray(value?.checks) ? value.checks : []);
+            return value?.failed > 0 || !!value?.error || rows.some(x => x.ok === false || x.pass === false);
+          });
+          console.log('SELFTEST_DIAGNOSTICS:', JSON.stringify(failedDiagnostics).slice(0, 40000));
+          console.log('SOLVER_BENCHMARK_DIAGNOSTICS:', JSON.stringify({
+            analyze: typeof window.SteelFrame3D?.analyze,
+            taperedAPI: typeof window.SteelTaperedSections?.segmentModel,
+            analytical: window.SahroudSteelAnalyticalBenchmarks?.run?.(),
+            taperedMesh: window.SahroudSteelTaperedMeshConvergence?.run?.()
+          }).slice(0, 12000));
+          const runtime = window.SteelRuntimeIntegrity?.audit?.();
+          if (!runtime?.success) {
+            console.error('Runtime integrity failure:', runtime);
+            process.exit(1);
+          }
+          if (result.failed) process.exit(1);
+          await new Promise(resolve => setTimeout(resolve, 0));
+          dom.window.close();
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
+      - name: Smoke test default 12x36 no-crane project workflow
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { JSDOM } = require('jsdom');
+          const dom = new JSDOM(fs.readFileSync('steel2/legacy.html', 'utf8'), {
+            url: 'https://example.test/steel2/legacy.html',
+            runScripts: 'outside-only',
+            pretendToBeVisual: true
+          });
+          const { window } = dom;
+          const context = new Proxy({
+            measureText: () => ({width: 0}),
+            createLinearGradient: () => ({addColorStop() {}}),
+            createRadialGradient: () => ({addColorStop() {}}),
+            getImageData: () => ({data: new Uint8ClampedArray(4)})
+          }, {get(target, key) { return key in target ? target[key] : () => {}; }});
+          window.HTMLCanvasElement.prototype.getContext = () => context;
+          window.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+          window.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
+          window.matchMedia = () => ({matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}});
+          window.alert = () => {}; window.confirm = () => true; window.prompt = () => null;
+          window.eval(fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8'));
+          window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+          const span = window.document.getElementById('span')?.value;
+          const length = window.document.getElementById('length')?.value;
+          const city = window.document.getElementById('city')?.value;
+          const crane = window.document.getElementById('crane_enabled')?.checked;
+          if (Number(span) !== 12 || Number(length) !== 36 || city !== 'shahroud' || crane !== false) {
+            console.error({span, length, city, crane});
+            process.exit(1);
+          }
+          await window.SteelAutoWorkflow.run();
+          const result = window.SteelAutoWorkflow.lastResult;
+          if (!result || !result.total || result.designApproved !== false) {
+            console.error('No auditable preliminary workflow report was produced.', result);
+            process.exit(1);
+          }
+          if (result.rows.length !== 1 || result.rows[0].label !== 'ممیزی مستندات اقلیمی و ورودی‌های بار' || result.rows[0].ok !== false) {
+            console.error('Unverified default climate data must stop the workflow before any structural analysis.', result);
+            process.exit(1);
+          }
+          console.log(`Default 12x36/Shahroud/no-crane workflow safely blocked at climate evidence gate: ${result.blocked} explicit evidence gate.`);
+          for (const row of result.rows.filter(x => !x.ok)) console.log('BLOCKED:', row.label, '-', row.detail);
+          dom.window.close();
+          NODE
+      - name: Verify production bundle manifest
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const bundle = fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8');
+          const html = fs.readFileSync('steel2/legacy.html', 'utf8');
+          const headers = [...bundle.matchAll(/\/\* ===== (steel2\/js\/[^=]+) ===== \*\//g)].map(x => x[1]);
+          const names = headers.map(x => path.basename(x));
+          const duplicates = names.filter((x, i) => names.indexOf(x) !== i);
+          const required = [
+            'project.js','loads.js','analysis-3d.js','analysis.js','model-3d.js',
+            'design-core.js','climate-design-readiness.js','m6-load-combination-templates.js','member-design-demand-package.js',
+            'crane-3d-load-transfer.js','foundation-reaction-bridge.js','runtime-integrity.js','analysis-scope-audit.js','solver-end-action-sign-benchmarks.js'
+          ];
+          const excluded = [
+            'dropbox-integration.js','market-price-engine.js','engineering-workstream-dashboard.js',
+            'tapered-fabrication-economics.js','tapered-fabrication-ui.js'
+          ];
+          const missing = required.filter(x => !names.includes(x));
+          const unexpectedlyIncluded = excluded.filter(x => names.includes(x));
+          const missingSources = headers.filter(x => !fs.existsSync(x));
+          if (!headers.length || duplicates.length || missing.length || unexpectedlyIncluded.length || missingSources.length) {
+            console.error({moduleCount: names.length, duplicates, missing, unexpectedlyIncluded, missingSources});
+            process.exit(1);
+          }
+          if (!html.includes('js/legacy-bundle.js?v=20261117-runtime8') || html.includes('dropbox@')) {
+            console.error('Legacy page does not reference the current single runtime bundle or still loads the external Dropbox SDK.');
+            process.exit(1);
+          }
+          if (!bundle.includes('SteelRuntimeIntegrity')) {
+            console.error('Runtime integrity gate is missing from the production bundle.');
+            process.exit(1);
+          }
+          console.log('Runtime manifest OK:', names.length, 'modules; all source files exist; required engineering modules present.');
+          NODE

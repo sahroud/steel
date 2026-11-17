@@ -34,25 +34,30 @@
     return "ردیابی منبع: "+summary.completeCaseCount+" از "+summary.caseCount+" حالت کامل؛ "+summary.incompleteCaseCount+" حالت ناقص. فیلدهای مفقود: "+fields+". شناسه حالت‌های ناقص: "+ids+". تا تکمیل مدرک، بازسازی نمودار نیروهای داخلی برای این بسته عمداً اجرا نشده است.";
   }
   function setReport(rows, heading) {
-    const out=$("steelAutoWorkflowResults"); if(!out)return;
     const pass=rows.filter(x=>x.ok).length;
     const missing=rows.filter(x=>!x.ok).length;
+    window.SteelAutoWorkflow=window.SteelAutoWorkflow||{};
+    window.SteelAutoWorkflow.lastResult={
+      heading,rows:rows.map(x=>({...x})),passed:pass,blocked:missing,total:rows.length,
+      success:missing===0,designApproved:false,generatedAt:new Date().toISOString()
+    };
+    const out=$("steelAutoWorkflowResults"); if(!out)return window.SteelAutoWorkflow.lastResult;
     out.innerHTML="<h4>"+heading+"</h4>"+
       "<p>مراحل انجام‌شده: "+pass+" | نیازمند تکمیل یا بررسی: "+missing+"</p>"+
       rows.map(x=>'<div class="notice"><b>'+(x.ok?"✓ ":"⚠ ")+x.label+
         "</b>"+(x.detail?"<p>"+String(x.detail).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+"</p>":"")+"</div>").join("");
   }
   function hasUsableClimate() {
-    const db=window.SteelClimateDB?.getData?.();
-    const id=$("climateCity")?.value;
-    const record=db?.records?.[id];
-    if(record && record.status && /تأیید رسمی|verified|معتبر و تأیید/i.test(record.status) &&
-       Number.isFinite(Number(record.basicWind)) &&
-       Number.isFinite(Number(record.groundSnow))) {
-      window.SteelClimateDB.loadSelectedCity?.();
-      return {ok:true,detail:"داده شهر از بانک با وضعیت تأییدشده به ورودی‌ها منتقل شد."};
-    }
-    return {ok:false,detail:"برای شهر انتخابی هنوز رکورد باد و برفِ تأییدشده در بانک وجود ندارد؛ نرم‌افزار نباید مقدار حدسی جایگزین کند."};
+    window.SteelClimateDB?.loadSelectedCity?.();
+    const loads=window.SteelLoads?.getData?.()||{};
+    const audit=window.SteelClimateDesignReadiness?.audit?.(loads);
+    if(!audit)return {ok:false,detail:"ممیزی شواهد اقلیمی بارگذاری نشده است؛ تحلیل متوقف می‌ماند."};
+    return {
+      ok:audit.ready===true,
+      detail:audit.ready
+        ?"شواهد اقلیمی، ورودی‌های بار و ویرایش مبنای بارگذاری برای بازبینی مهندسی کامل‌اند."
+        :"پیش‌نیازهای اقلیمی/بارگذاری ناقص‌اند: "+(audit.issues||[]).join("؛ ")
+    };
   }
   function blankOrZero(id) {
     const el=$(id); return !el || el.value.trim()==="" || Number(el.value)===0;
@@ -169,7 +174,8 @@
     const rows=[];
     try {
       const climate=hasUsableClimate();
-      addLine(rows,"تخصیص خودکار بار باد و برف شهر",climate.ok,climate.detail);
+      addLine(rows,"ممیزی مستندات اقلیمی و ورودی‌های بار",climate.ok,climate.detail);
+      if(!climate.ok){setReport(rows,"گزارش اجرای خودکار — داده اقلیمی/بارگذاری تأیید نشده است");return;}
 
       if(window.SteelLoads?.syncLegacyInputs)window.SteelLoads.syncLegacyInputs();
       const loadOK=window.SteelLoads?.check?.()===true;
@@ -212,28 +218,36 @@
             fullModel.geometry.frames.length+" قاب، "+fullModel.nodes.length+" گره و "+fullModel.members.length+" عضو هندسی؛ مدل بدون اجرای ترسیم غیرضروری برای تحلیل آماده شد.");
         } else addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,"مدل هندسی کامل تولید نشد.");
       } catch(e) { addLine(rows,"ساخت و اعتبارسنجی مدل هندسی",false,e?.message||String(e)); }
+      if(!fullModelOK){setReport(rows,"گزارش اجرای خودکار — مدل هندسی معتبر تولید نشد");return;}
       if(fullModelOK) {
         const crane=auditCraneReadiness(window.SteelStructuralModel?.getData?.()||window.SteelStructuralModel?.model||null);
         if(crane.enabled)addLine(rows,"ممیزی مسیر هندسی جرثقیل تا شبکه حل‌گر",crane.ready,
           crane.detail+" اعمال بار چرخ به حل‌گر تا تکمیل مسیر واقعی تیر حمال، براکت و ستون مسدود می‌ماند.");
         else addLine(rows,"وضعیت جرثقیل پروژه",true,crane.detail);
+        if(crane.enabled&&!crane.ready){setReport(rows,"گزارش اجرای خودکار — مسیر بار جرثقیل ناقص است");return;}
       }
       // اجرای مستقیم و هم‌زمان محاسبه؛ کلیک دکمه با setTimeout اجرا می‌شود
       // و بررسی فوری نتیجه پس از click باعث گزارش کاذب شکست می‌شد.
-      let comboRun=null;
+      let combinationReport=null,combinationResults=[];
       try {
-        window.SteelAnalysis.combinationResults=[];
-        if(typeof window.SteelAnalysis?.calculateCombinations!=="function") {
-          throw new Error("تابع محاسبه هم‌زمان ترکیبات بار در دسترس نیست؛ فایل app.js را به‌روزرسانی کنید.");
-        }
-        comboRun=await window.SteelAnalysis.calculateCombinations();
+        const modelApi=window.SteelStructuralModel;
+        if(typeof modelApi?.analyzeAll3DCombinations!=="function")
+          throw new Error("حل‌گر سه‌بعدی و سازنده ترکیبات بار در دسترس نیست؛ تحلیل قاب دوبعدی قدیمی جایگزین آن نمی‌شود.");
+        combinationReport=await modelApi.analyzeAll3DCombinations({
+          onProgress:message=>{const host=$("steelAutoWorkflowResults");if(host)host.textContent=message;}
+        });
+        combinationResults=Array.isArray(combinationReport?.results)?combinationReport.results:[];
       } catch(e) {
-        comboRun={success:false,error:e?.message||String(e)};
+        combinationReport={success:false,error:e?.message||String(e),results:[],combinationCount:0,passed:0,failed:0};
       }
-      const comboOK=!!comboRun?.success&&Array.isArray(window.SteelAnalysis?.combinationResults)&&window.SteelAnalysis.combinationResults.length>0;
-      addLine(rows,"تحلیل قاب و ترکیبات بار موجود",comboOK,
-        comboOK?"تمام "+window.SteelAnalysis.combinationResults.length+" حالت ترکیب بار موجود تحلیل شدند.":(comboRun?.error||"تحلیل ترکیبات بار خروجی معتبر تولید نکرد؛ پیام تحلیل را بررسی کنید."));
-      const m6Coverage=window.SteelM6AnalysisCoverageAudit?.audit?.({analyzedCases:comboOK?window.SteelAnalysis.combinationResults:[],temperatureApplicable:null});
+      const comboOK=!!combinationReport&&combinationReport.combinationCount>0&&
+        combinationReport.failed===0&&combinationReport.passed===combinationReport.combinationCount&&
+        combinationResults.length===combinationReport.combinationCount;
+      const failedComboDetails=combinationResults.filter(x=>x.success!==true).map(x=>x.label+": "+(x.failure||"تعادل تأیید نشد.")).slice(0,8);
+      addLine(rows,"تحلیل سه‌بعدی مستقل ترکیبات موجود",comboOK,
+        comboOK?"تمام "+combinationReport.combinationCount+" ترکیب موجود با حل مستقل سه‌بعدی و کنترل تعادل تحلیل شدند؛ این مجموعه هنوز پوش کامل مبحث ششم نیست.":
+        (combinationReport?.error||failedComboDetails.join("؛ ")||"ترکیبات موجود کامل نیستند یا یک/چند حالت بار در حل‌گر سه‌بعدی تأیید نشد."));
+      const m6Coverage=window.SteelM6AnalysisCoverageAudit?.audit?.({analyzedCases:comboOK?combinationResults:[],temperatureApplicable:null});
       if(m6Coverage) {
         const covered=m6Coverage.coveredFamilies.map(id=>id.replace("M6-ULS-","")).join("، ")||"هیچ‌کدام";
         const missing=m6Coverage.missingRequiredFamilies.map(id=>id.replace("M6-ULS-","")).join("، ")||"—";
@@ -242,25 +256,25 @@
       } else addLine(rows,"پوشش خانواده‌های ترکیبات بار مبحث ششم",false,"دروازه ممیزی پوشش ترکیبات بار بارگذاری نشده است.");
 
       if(comboOK) {
-        const taperBridge=window.SteelTaperedCaseForceBridge?.build?.(window.SteelStructuralModel?.getData?.(),window.SteelAnalysis.combinationResults);
+        const taperBridge=window.SteelTaperedCaseForceBridge?.build?.(window.SteelStructuralModel?.getData?.(),combinationResults);
         if(taperBridge)window.SteelTaperedCaseForceBridge.lastResult=taperBridge;
         addLine(rows,"انتقال نیروهای هم‌زمان هر ترکیب به قطعات منشوری/متغیرمقطع",!!taperBridge?.success,
           taperBridge?.status==="no-tapered-members"?"در مدل فعلی عضو متغیرمقطع فعال وجود ندارد.":taperBridge?.success?(taperBridge.analysisSegmentCount+" قطعه در "+taperBridge.caseCount+" ترکیب، با حفظ بردارهای ۱۲ مؤلفه‌ای و تعادل هر حالت ثبت شد."):(taperBridge?.issues||["پل انتقال نیرو بارگذاری نشده یا داده کافی نیست."]).join("؛ "));
         if(taperBridge?.analysisSegmentCount>0){
-          const firstCase=window.SteelAnalysis.combinationResults[0];
-          const readiness=window.SteelTaperedMemberDesignReadiness?.audit?.({members:firstCase?.members||[],loadCases:window.SteelAnalysis.combinationResults,memberInputs:{}});
+          const firstCase=combinationResults[0];
+          const readiness=window.SteelTaperedMemberDesignReadiness?.audit?.({members:firstCase?.members||[],loadCases:combinationResults,memberInputs:{}});
           if(readiness)window.SteelTaperedMemberDesignReadiness.lastResult=readiness;
           addLine(rows,"آمادگی طراحی مقاومتی اعضای متغیرمقطع",!!readiness?.success,
             readiness?.success?"ورودی‌های دروازه طراحی کامل‌اند؛ این وضعیت هنوز به معنی تأیید مقاومت نیست.":(readiness?.memberRows||[]).map(x=>x.parentMemberId+": "+x.missingInputs.join("، ")).join("؛ ")||"ورودی‌های لازم برای ممیزی آماده‌سازی در دسترس نیست.");
         }
-        const hasMemberDemand=window.SteelAnalysis.combinationResults.every(item=>
+        const hasMemberDemand=combinationResults.every(item=>
           Array.isArray(item.members)&&item.members.length>0&&item.members.every(m=>
             Array.isArray(m.localEndForces)&&m.localEndForces.length===12&&m.localEndForces.every(v=>Number.isFinite(Number(v)))));
         addLine(rows,"استخراج بردارهای هم‌زمان تقاضای اعضا در هر ترکیب",
           hasMemberDemand,
           hasMemberDemand?"بردار ۱۲ مؤلفه‌ای نیرو برای تک‌تک اعضا و هر ترکیب حفظ شده است؛ پوش‌های مستقل N/V/M صرفاً خلاصه‌اند و جایگزین نیروهای هم‌زمان برای طراحی نیستند.":"در یک یا چند ترکیب، بردار نیروهای هم‌زمان تمام اعضا موجود یا کامل نیست.");
 
-        const coverage=audit3DCombinationCoverage(window.SteelStructuralModel?.getData?.(),window.SteelAnalysis.combinationResults);
+        const coverage=audit3DCombinationCoverage(window.SteelStructuralModel?.getData?.(),combinationResults);
         addLine(rows,"ممیزی پوشش تحلیل سه‌بعدی تمام اعضا",coverage.success,
           coverage.success
             ? coverage.expectedMemberCount+" عضو مدل در هر "+coverage.caseCount+" ترکیب، با شناسه یکتا، بردار کامل ۱۲ مؤلفه‌ای نیرو و تعادل عددی ثبت شده‌اند. این ممیزی پوشش نتایج است؛ نه تأیید مقاومت یا طراحی آیین‌نامه‌ای."
@@ -272,7 +286,7 @@
         try {
           const demandApi=window.SteelMemberDesignDemandPackage;
           const modelMembers=Array.isArray(fullModelForAnalysis?.members)?fullModelForAnalysis.members:[];
-          const sourceCases=window.SteelAnalysis.combinationResults;
+          const sourceCases=combinationResults;
           if(!demandApi?.buildFromSolverCases) throw new Error("بسته تقاضای ایستگاهی یا پل نمودار نیرو بارگذاری نشده است.");
           if(!modelMembers.length) throw new Error("مدل فیزیکی اعضا برای استخراج تقاضای ایستگاهی موجود نیست.");
           const runnerCases=sourceCases.map(item=>({
@@ -306,14 +320,11 @@
 
         const bucklingMessage=$("bucklingMessage");
         if($("combinationBucklingResults"))$("combinationBucklingResults").innerHTML="";
-        if(bucklingMessage)bucklingMessage.textContent="کنترل کمانش در حال اجراست...";
-        window.SteelStability?.checkCombinationBuckling?.();
-        const bucklingText=bucklingMessage?.textContent||"";
-        const bucklingOK=/انجام شد|موفق/i.test(bucklingText)&&!/خطا/.test(bucklingText);
+        if(bucklingMessage)bucklingMessage.textContent="کنترل کمانش کامل سه‌بعدی هنوز در این نسخه فعال نیست.";
         const gaps=stabilityGaps();
         const gapText=gaps.length?"موارد واردنشده: "+gaps.join("؛ ")+". ":"";
-        addLine(rows,"کنترل مقدماتی کمانش در ترکیبات بار",bucklingOK,
-          bucklingOK?bucklingText:gapText+"طول مهارنشده و K از ترسیم شماتیک مهاربند یا قید به‌تنهایی قابل تأیید نیستند؛ فقط مهارهایی باید منظور شوند که پیوستگی، سختی و اتصال آن‌ها طراحی و تأیید شده باشد. "+bucklingText);
+        addLine(rows,"کنترل کمانش و پایداری نهایی اعضا",false,
+          gapText+"حل‌گر فعلی خطی و مرتبه اول است؛ کنترل کامل P-Delta، طول مؤثر، کمانش موضعی/پیچشی و اندرکنش اعضا هنوز به زنجیره سه‌بعدی متصل نشده است. هیچ نتیجه مقدماتی به‌عنوان قبولی طراحی ثبت نمی‌شود.");
 
         runStep(rows,"کنترل مقدماتی کنسول رفتر",()=>window.SteelCantileverCheck?.calculate?.(),
           ()=>!!window.SteelCantileverCheck?.lastResult);
@@ -368,6 +379,6 @@
     if(first)main.insertBefore(panel,first);else main.appendChild(panel);
     $("btnSteelAutoWorkflow").addEventListener("click",run);
   }
-  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,summarizeSourceAudit,sourceAuditDetail,selfTest};
+  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,summarizeSourceAudit,sourceAuditDetail,selfTest,lastResult:null};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
