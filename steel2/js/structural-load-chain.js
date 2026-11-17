@@ -310,6 +310,7 @@ function selfTest(){
  const rotatedLedger=buildExternalLoadLedger({nodes:ledgerModel.nodes,members:[{id:"M",start:"A",end:"B",analysisLoad:{loadDataComplete:true,uniformLocal:[0,-100,0]}}]},[{id:"M",localAxes:{x:[1,0,0],y:[0,0,1],z:[0,-1,0]}}],[],[]);
  ck("local member load transformed through actual solver axes",()=>rotatedLedger.complete&&rotatedLedger.resultant.forceN[2]===-400);
  ck("missing member load prevents complete ledger",()=>!buildExternalLoadLedger({nodes:ledgerModel.nodes,members:[{id:"M",start:"A",end:"B",analysisLoad:{loadDataComplete:true}}]},[{id:"M",localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]}}],[]).complete);
+ const eqLedger={appliedForceN:[10,-800,0],appliedMomentNm:[0,0,-1854.6666666666667]};
  ck("external load ledger matches solver applied resultant",()=>compareExternalLedger(ledger,eqLedger).ok);
  ck("external load ledger mismatch is detected",()=>!compareExternalLedger(ledger,{...eqLedger,appliedForceN:[10,-390,0]}).ok);
  ck("missing member load prevents complete ledger",()=>!buildExternalLoadLedger(ledgerModel,[{id:"M"}],[]).complete);
