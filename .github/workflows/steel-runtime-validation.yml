@@ -85,7 +85,7 @@ jobs:
             'crane-3d-load-transfer.js','foundation-reaction-bridge.js','runtime-integrity.js','analysis-scope-audit.js','solver-end-action-sign-benchmarks.js'
           ];
           const excluded = [
-            'dropbox-integration.js','engineering-workstream-dashboard.js',
+            'dropbox-integration.js','market-price-engine.js','engineering-workstream-dashboard.js',
             'tapered-fabrication-economics.js','tapered-fabrication-ui.js'
           ];
           const missing = required.filter(x => !names.includes(x));
