@@ -75,6 +75,12 @@ jobs:
             return value?.failed > 0 || !!value?.error || rows.some(x => x.ok === false || x.pass === false);
           });
           console.log('SELFTEST_DIAGNOSTICS:', JSON.stringify(failedDiagnostics).slice(0, 40000));
+          console.log('SOLVER_BENCHMARK_DIAGNOSTICS:', JSON.stringify({
+            analyze: typeof window.SteelFrame3D?.analyze,
+            taperedAPI: typeof window.SteelTaperedSections?.segmentModel,
+            analytical: window.SahroudSteelAnalyticalBenchmarks?.run?.(),
+            taperedMesh: window.SahroudSteelTaperedMeshConvergence?.run?.()
+          }).slice(0, 12000));
           const runtime = window.SteelRuntimeIntegrity?.audit?.();
           if (!runtime?.success) {
             console.error('Runtime integrity failure:', runtime);
