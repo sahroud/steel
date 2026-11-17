@@ -195,6 +195,8 @@ function selfTest(){
  const good=memberCapacityFromInput({id:"M1",sectionKey:"column"}, {...base}, {...restraint},false);
  const missing=memberCapacityFromInput({id:"M2",sectionKey:"column"}, {...base}, {},false);
  const noGroupEvidence=memberCapacityFromInput({id:"M5",sectionKey:"column"}, {...base,sectionEvidence:{}}, {...restraint},false);
+ const noMaterialEvidence=memberCapacityFromInput({id:"M7",sectionKey:"column"}, {...base,materialEvidence:{}}, {...restraint},false);
+ const noStabilityEvidence=memberCapacityFromInput({id:"M8",sectionKey:"column"}, {...base,stabilityEvidence:{}}, {...restraint},false);
  const noRestraintEvidence=memberCapacityFromInput({id:"M6",sectionKey:"column"}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
  const mismatch=memberCapacityFromInput({id:"M3",sectionKey:"column"}, {...base,sectionPropertiesMatchReviewed:false}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
  const tapered=memberCapacityFromInput({id:"M4",sectionKey:"column",taperSegmentIndex:1}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
@@ -215,6 +217,8 @@ function selfTest(){
   {name:"member capacity calculated only with sourced group and member restraint records",pass:good.ok&&good.LRFD.designStrength_kN>0},
   {name:"missing member unbraced lengths are blocked",pass:!missing.ok},
   {name:"missing section-property provenance blocks member capacity",pass:!noGroupEvidence.ok&&noGroupEvidence.scope==="blocked-missing-source-provenance"},
+  {name:"missing material certificate provenance blocks member capacity",pass:!noMaterialEvidence.ok&&noMaterialEvidence.scope==="blocked-missing-source-provenance"},
+  {name:"missing group stability provenance blocks member capacity",pass:!noStabilityEvidence.ok&&noStabilityEvidence.scope==="blocked-missing-source-provenance"},
   {name:"missing member-specific restraint provenance blocks member capacity",pass:!noRestraintEvidence.ok&&noRestraintEvidence.scope==="blocked-missing-source-provenance"},
   {name:"unconfirmed section-property mapping is blocked",pass:!mismatch.ok},
   {name:"tapered analysis segment is blocked",pass:!tapered.ok}
