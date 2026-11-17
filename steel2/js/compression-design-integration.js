@@ -165,9 +165,13 @@ function selfTest(){
   {id:"BAD",sectionKey:"rafter",ends:[{label:"BAD",values:[0,1,2]}]}
  ]});
  const tension=rows.find(r=>r.id==="T1"),compression=rows.find(r=>r.id==="C1");
- const base={sectionPropertiesMatchReviewed:true,sectionType:"doubly-symmetric-I",sectionTypeReviewed:true,localSlendernessReviewed:true,localSlendernessClass:"non-slender",Ag_mm2:10000,Ix_mm4:8e8,Iy_mm4:1e8,J_mm4:2e6,h0_mm:500,Kx:1,Ky:1,Kz:1,Fy_MPa:235,E_MPa:200000,G_MPa:76923,nu:0.3};
- const good=memberCapacityFromInput({id:"M1",sectionKey:"column"}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
+ const ev={document:"design-basis.pdf",revision:"R1",locator:"p.4",authority:"engineer-reviewed"};
+ const base={sectionPropertiesMatchReviewed:true,sectionType:"doubly-symmetric-I",sectionTypeReviewed:true,localSlendernessReviewed:true,localSlendernessClass:"non-slender",Ag_mm2:10000,Ix_mm4:8e8,Iy_mm4:1e8,J_mm4:2e6,h0_mm:500,Kx:1,Ky:1,Kz:1,Fy_MPa:235,E_MPa:200000,G_MPa:76923,nu:0.3,sectionEvidence:ev,materialEvidence:ev,stabilityEvidence:ev};
+ const restraint={Lx_mm:6000,Ly_mm:4000,Lz_mm:5000,restraintEvidence:ev};
+ const good=memberCapacityFromInput({id:"M1",sectionKey:"column"}, {...base}, {...restraint},false);
  const missing=memberCapacityFromInput({id:"M2",sectionKey:"column"}, {...base}, {},false);
+ const noGroupEvidence=memberCapacityFromInput({id:"M5",sectionKey:"column"}, {...base,sectionEvidence:{}}, {...restraint},false);
+ const noRestraintEvidence=memberCapacityFromInput({id:"M6",sectionKey:"column"}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
  const mismatch=memberCapacityFromInput({id:"M3",sectionKey:"column"}, {...base,sectionPropertiesMatchReviewed:false}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
  const tapered=memberCapacityFromInput({id:"M4",sectionKey:"column",taperSegmentIndex:1}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
  const tests=[
@@ -184,8 +188,10 @@ function selfTest(){
   {name:"global 3D mapping issues block every member capacity row",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]},{id:"EXTRA",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column"}]});return !x.success&&x.members.every(r=>r.coverageComplete===false);})()},
   {name:"results for members outside the reference model block completeness",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]},{id:"EXTRA",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column"}]});return !x.success&&x.issues.some(s=>s.includes("در مدل مرجع یافت نشد"));})()},
   {name:"missing model member registry blocks completeness",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{});return !x.success&&x.issues.some(s=>s.includes("مدل مرجع موجود نیست"));})()},
-  {name:"member capacity calculated with explicit unbraced lengths",pass:good.ok&&good.LRFD.designStrength_kN>0},
+  {name:"member capacity calculated only with sourced group and member restraint records",pass:good.ok&&good.LRFD.designStrength_kN>0},
   {name:"missing member unbraced lengths are blocked",pass:!missing.ok},
+  {name:"missing section-property provenance blocks member capacity",pass:!noGroupEvidence.ok&&noGroupEvidence.scope==="blocked-missing-source-provenance"},
+  {name:"missing member-specific restraint provenance blocks member capacity",pass:!noRestraintEvidence.ok&&noRestraintEvidence.scope==="blocked-missing-source-provenance"},
   {name:"unconfirmed section-property mapping is blocked",pass:!mismatch.ok},
   {name:"tapered analysis segment is blocked",pass:!tapered.ok}
  ];
@@ -204,7 +210,10 @@ function render(){
    '</div><div class="form-grid"><label><input type="checkbox" id="cc_'+g+'_sectionTypeReviewed" '+(d.sectionTypeReviewed?'checked':'')+'> تأیید شد مقطع واقعاً I دوبل‌متقارن است</label>'+
    '<label><input type="checkbox" id="cc_'+g+'_sectionPropertiesMatchReviewed" '+(d.sectionPropertiesMatchReviewed?'checked':'')+'> تأیید شد خواص هندسی ثبت‌شده دقیقاً به اعضای این گروه تعلق دارد</label>'+
    '<label><input type="checkbox" id="cc_'+g+'_localSlendernessReviewed" '+(d.localSlendernessReviewed?'checked':'')+'> کنترل لاغری موضعی بال و جان طبق جدول معتبر انجام شده و مقطع غیرلاغر است</label></div>'+
-   '<div class="field"><label for="cc_'+g+'_note">منبع هندسه، مهاربندی و کنترل لاغری</label><input type="text" id="cc_'+g+'_note" value="'+esc(d.note)+'" placeholder="شماره نقشه، جدول/بند، گزارش یا گواهی مصالح"></div></details>';
+   '<div class="field"><label for="cc_'+g+'_note">یادداشت مهندسی</label><input type="text" id="cc_'+g+'_note" value="'+esc(d.note)+'" placeholder="توضیح تکمیلی"></div>'+
+   '<details class="sub-panel"><summary>ردگیری مدارک الزامی (سند | ویرایش | محل دقیق | مرجع تأیید)</summary>'+
+   ['sectionEvidence','materialEvidence','stabilityEvidence'].map((k,i)=>'<div class="field"><label for="cc_'+g+'_'+k+'">'+['مدرک هندسه و خواص مقطع','گواهی مصالح','مدرک مهاربندی و طول‌های مؤثر'][i]+'</label><input type="text" id="cc_'+g+'_'+k+'" value="'+esc(evidenceText(d[k]))+'" placeholder="drawing.pdf | R2 | Sheet 3 / Detail 4 | designer review"></div>').join('')+
+   '</details></details>';
  }).join("")+
  '<div class="notice">مساحت، ممان‌های اینرسی و J در صورت خالی بودن، از رجیستر مقطع همین گروه به‌صورت اولیه خوانده می‌شوند (A: cm²→mm² و ممان‌ها: cm⁴→mm⁴)؛ آن‌ها را با مشخصات واقعی مقطع تطبیق دهید. مقدار h0 و طول‌های مهارنشده باید از هندسه و نقشه واقعی برداشت شوند. E و G فقط از ورودی صریح همین فرم یا رجیستر اختصاصی اعضا خوانده می‌شوند؛ مقدار پیش‌فرض یا تخمین برای آن‌ها وجود ندارد و در صورت فقدان، موتور مقاومت ظرفیت ارائه نمی‌کند. Fy از رجیستر گروه عضو یا پنل مصالح خوانده می‌شود، مگر آنکه جداگانه در این فرم وارد شود. Kها را بدون تحلیل/پیوست معتبر حدس نزنید.</div>'+
  '<div class="button-grid"><button type="button" class="btn primary" id="btnCompressionCapacityRun">محاسبه مقاومت کمانش کلی ستون و رفتر</button></div><div id="compressionCapacityResults"></div>';
@@ -245,7 +254,7 @@ function renderResults(){
   ? buildCompressionDemandRowsFrom3D(combinationResults,modelData)
   : root.SteelMemberForceEnvelope?.getLast?.();
  const demandRows=buildCompressionDemandRows(forceResult);
- const demandHtml=demandRows.length?'<h4>تقاضای فشاری و ظرفیت کمانش کلی در سطح عضو</h4><p class="notice">برای هر عضو، سه طول مهارنشده را مستقل وارد کنید. خواص مقطع و مصالح از فرم گروه ستون/رفتر خوانده می‌شود؛ قبل از استفاده باید یکسان بودن آن‌ها با عضو انتخابی را کنترل کنید.</p><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>شناسه عضو/قطعه</th><th>گروه</th><th>ترکیب حاکم</th><th>انتهای حاکم</th><th>فشار بیشینه (kN)</th><th>Lx (mm)</th><th>Ly (mm)</th><th>Lz (mm)</th><th>ظرفیت LRFD φPn (kN)</th><th>ظرفیت ASD (kN)</th><th>نسبت محوری P/φPn</th><th>نتیجه غربال</th></tr></thead><tbody>'+demandRows.map(r=>{
+ const demandHtml=demandRows.length?'<h4>تقاضای فشاری و ظرفیت کمانش کلی در سطح عضو</h4><p class="notice">برای هر عضو، سه طول مهارنشده را مستقل وارد کنید. خواص مقطع و مصالح از فرم گروه ستون/رفتر خوانده می‌شود؛ قبل از استفاده باید یکسان بودن آن‌ها با عضو انتخابی را کنترل کنید.</p><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>شناسه عضو/قطعه</th><th>گروه</th><th>ترکیب حاکم</th><th>انتهای حاکم</th><th>فشار بیشینه (kN)</th><th>Lx (mm)</th><th>Ly (mm)</th><th>Lz (mm)</th><th>مرجع مهاربندی عضو (سند | ویرایش | محل | تأییدکننده)</th><th>ظرفیت LRFD φPn (kN)</th><th>ظرفیت ASD (kN)</th><th>نسبت محوری P/φPn</th><th>نتیجه غربال</th></tr></thead><tbody>'+demandRows.map(r=>{
   const ov=data.memberOverrides[String(r.id)]||{},g=r.sectionKey;
   let cap=null,screen=null,why="";
   if(r.compressionDemand_kN>0&&r.coverageComplete){
@@ -256,7 +265,7 @@ function renderResults(){
     else why="نیازمند کنترل اندرکنش هم‌زمان N-M-V-T؛ نسبت محوری به‌تنهایی مجاز نیست.";
    }catch(e){why=e.message;}
   }else if(!r.coverageComplete)why="پوشش ترکیبات سه‌بعدی ناقص است؛ ظرفیت/نسبت نمایش داده نمی‌شود.";
-  return '<tr><td>'+esc(r.id)+'</td><td>'+esc(g)+'</td><td>'+esc(r.governingCase||'—')+'</td><td>'+esc(r.governing?.end||'—')+'</td><td>'+r.compressionDemand_kN.toFixed(2)+'</td>'+["Lx_mm","Ly_mm","Lz_mm"].map(k=>'<td><input type="number" min="1" step="any" data-member-id="'+esc(r.id)+'" data-member-length="'+k+'" value="'+(ov[k]??"")+'" style="width:92px"></td>').join("")+'<td>'+(cap?.ok?cap.LRFD.designStrength_kN.toFixed(2):"—")+'</td><td>'+(cap?.ok?cap.ASD.allowableStrength_kN.toFixed(2):"—")+'</td><td>'+(screen?.ok?screen.ratio.toFixed(3):"—")+'</td><td>'+(screen?.ok?(screen.withinAxialStrength?"در محدوده مقاومت محوری — غیرنهایی":"بیش از مقاومت محوری — مردود در غربال"):esc(why||"ابتدا طول‌های مهارنشده را وارد کنید"))+'</td></tr>';
+  return '<tr><td>'+esc(r.id)+'</td><td>'+esc(g)+'</td><td>'+esc(r.governingCase||'—')+'</td><td>'+esc(r.governing?.end||'—')+'</td><td>'+r.compressionDemand_kN.toFixed(2)+'</td>'+["Lx_mm","Ly_mm","Lz_mm"].map(k=>'<td><input type="number" min="1" step="any" data-member-id="'+esc(r.id)+'" data-member-length="'+k+'" value="'+(ov[k]??"")+'" style="width:92px"></td>').join("")+'<td><input type="text" data-member-id="'+esc(r.id)+'" data-member-restraint-evidence value="'+esc(evidenceText(ov.restraintEvidence))+'" placeholder="drawing.pdf | R1 | Detail 2 | designer" style="min-width:220px"></td><td>'+(cap?.ok?cap.LRFD.designStrength_kN.toFixed(2):"—")+'</td><td>'+(cap?.ok?cap.ASD.allowableStrength_kN.toFixed(2):"—")+'</td><td>'+(screen?.ok?screen.ratio.toFixed(3):"—")+'</td><td>'+(screen?.ok?(screen.withinAxialStrength?"در محدوده مقاومت محوری — غیرنهایی":"بیش از مقاومت محوری — مردود در غربال"):esc(why||"ابتدا طول‌های مهارنشده را وارد کنید"))+'</td></tr>';
 }).join("")+'</tbody></table></div><button type="button" class="btn" id="btnCompressionMemberRecalc">به‌روزرسانی ظرفیت اعضا</button>':'<div class="notice">برای نمایش تقاضای فشاری، ابتدا تحلیل سه‌بعدی و استخراج پوش نیروها را اجرا کنید.</div>';
  host.innerHTML=html+demandHtml+'<div class="notice">تقاضای فشاری از قرارداد علامت نیروی محلی حل‌گر استخراج شده است: کشش (Nᵢ منفی و Nⱼ مثبت) فشار محسوب نمی‌شود؛ فشار (Nᵢ مثبت و Nⱼ منفی) با بیشینه دو انتها گزارش می‌شود. این قرارداد با آزمون عضو محوری کنترل شده است. نسبت P/φPn فقط در حالتی نمایش داده می‌شود که بارگذاری حاکم واقعاً محوری باشد و در همان ترکیب هیچ خمش، برش یا پیچشی در دو انتهای عضو وجود نداشته باشد. در بارگذاری مرکب، محاسبه نسبت محوری مسدود است تا اندرکنش کامل پیاده‌سازی شود. همچنین کمانش موضعی، اعضای مرکب، مقاطع نامتقارن/متغیرعمق، اندرکنش فشار و خمش، تحلیل مرتبه دوم و کنترل لرزه‌ای خارج از دامنه‌اند. ظرفیت‌های نمایش‌داده‌شده فقط مقاومت کمانش کلی بر مبنای طول‌های واردشده هستند و به معنی قبولی عضو نیستند؛ تقاضا و ظرفیت تا زمان تأیید مبنای ترکیب‌بار و همه کنترل‌های لازم نباید به‌صورت نسبت بهره‌برداری یا قبولی/ردی تفسیر شوند.</div>';
  const recalc=$("btnCompressionMemberRecalc");if(recalc)recalc.addEventListener("click",()=>{readUI();renderResults();});
