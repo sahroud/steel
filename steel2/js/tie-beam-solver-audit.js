@@ -100,7 +100,7 @@
   const comboSolved={...sol,analysisLoad:{...comboApplied,globalUniform:comboApplied.globalUniform.slice(),uniformLocal:comboApplied.uniformLocal.slice()}};
   const combo=audit({members:[comboSource]},{memberCount:1,members:[comboSolved]},integration,{key:"combo",deadFactor:1.2,windFactor:0,factors:{dead:1.2,live:1.6,snow:.5}});
   const checks={acceptsCompleteSolverMember:ok.success&&ok.verifiedSegments===1,rejectsMissingSolverMember:!missing.success,rejectsDuplicateMember:!dup.success,rejectsWrongRigidOffset:!badOffset.success,rejectsWrongSelfWeightMetadata:!badWeight.success,rejectsOmittedSelfWeightFromAppliedLoad:!omittedWeight.success,rejectsDoubleSelfWeightInAppliedLoad:!doubledWeight.success,rejectsWrongLocalLoadProjection:!badLocal.success,rejectsWrongSolverSection:!badSection.success,acceptsFactoredGravityCombination:combo.success};
-  return{passed:Object.values(checks).every(Boolean),checks,complete:ok,missing,duplicate,badOffset,badWeight,omittedWeight,doubledWeight,badLocal,badSection,combo};
+  return{passed:Object.values(checks).every(Boolean),checks,complete:ok,missing,duplicate:dup,badOffset,badWeight,omittedWeight,doubledWeight,badLocal,badSection,combo};
  }
  root.SteelTieBeamSolverAudit={audit,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
