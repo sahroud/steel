@@ -54,6 +54,9 @@
       }
      }else if(typeof selected.key==="string"&&Number.isFinite(lineLoads[selected.key]))factoredLineLoad=lineLoads[selected.key];
      else local.push("حالت بار برای بازسازی مستقل بار گسترده شناژ مشخص نیست");
+     const windActive=selected.key==="wind"||Number(selected.windFactor)>0;
+     if(windActive&&["wind","windLeft","windRight","windEnd"].some(k=>Number(lineLoads[k]||0)!==0))
+      local.push("بار باد خطی مستقیم روی شناژ در قرارداد فعلی انتقال بار پشتیبانی نمی‌شود");
      const windOnly=selected.key==="wind"&&!factors;
      const expectedGlobal=windOnly?[0,0,0]:[0,-(factoredLineLoad+expected)*1000,0];
      const sourceGlobal=src.analysisLoad?.globalUniform,solvedGlobal=sol.analysisLoad?.globalUniform;
@@ -74,7 +77,7 @@
   if(new Set(expectedIds).size!==expectedIds.length)issues.push("یک شناسه قطعه در بیش از یک مسیر شناژ ثبت شده است.");
   const actualTieIds=model.members.filter(m=>m.sectionKey==="tieBeam").map(m=>String(m.id));
   if(actualTieIds.length!==expectedIds.length||actualTieIds.some(id=>!expectedIds.includes(id)))issues.push("اعضای شناژ مدل مونتاژشده با فهرست مسیرهای تأییدشده تطابق کامل ندارند.");
-  return{schemaVersion:1,success:issues.length===0,issues,expectedSegments:expectedIds.length,verifiedSegments:rows.filter(r=>r.verified).length,rows,solverMemberCount:result.members.length,modelMemberCount:model.members.length,deadFactor,selfWeightAudit:"برای هر قطعه، وزن خطی ثبت‌شده باید دقیقاً برابر A×γc×ضریب D باشد و همان مقدار در نتیجه عضو حل‌گر بازتاب یابد؛ این ممیزی بازسازی مستقل بردار بار FEM نیست.",designApproved:false};
+  return{schemaVersion:1,success:issues.length===0,issues,expectedSegments:expectedIds.length,verifiedSegments:rows.filter(r=>r.verified).length,rows,solverMemberCount:result.members.length,modelMemberCount:model.members.length,deadFactor,selfWeightAudit:"برای هر قطعه، وزن خطی ثبت‌شده باید دقیقاً برابر A×γc×ضریب D باشد و همان مقدار در نتیجه عضو حل‌گر بازتاب یابد؛ این ممیزی بازسازی کامل بارهای متغیر و بردار بار FEM نیست.",designApproved:false};
  }
  function selfTest(){
   const lineLoads={dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0};
@@ -91,8 +94,13 @@
   const doubledWeight=audit(model,{memberCount:1,members:[{...sol,analysisLoad:{...sol.analysisLoad,globalUniform:[0,-15000,0],uniformLocal:[0,-15000,0]}}]},integration,deadCase);
   const badLocal=audit(model,{memberCount:1,members:[{...sol,analysisLoad:{...sol.analysisLoad,uniformLocal:[0,-7000,0]}}]},integration,deadCase);
   const badSection=audit(model,{memberCount:1,members:[{...sol,section:{...sol.section,A:.4}}]},integration,deadCase);
-  const checks={acceptsCompleteSolverMember:ok.success&&ok.verifiedSegments===1,rejectsMissingSolverMember:!missing.success,rejectsDuplicateMember:!dup.success,rejectsWrongRigidOffset:!badOffset.success,rejectsWrongSelfWeightMetadata:!badWeight.success,rejectsOmittedSelfWeightFromAppliedLoad:!omittedWeight.success,rejectsDoubleSelfWeightInAppliedLoad:!doubledWeight.success,rejectsWrongLocalLoadProjection:!badLocal.success,rejectsWrongSolverSection:!badSection.success};
-  return{passed:Object.values(checks).every(Boolean),checks,complete:ok,missing,duplicate:dup,badOffset,badWeight,omittedWeight,doubledWeight,badLocal,badSection};
+  const comboLineLoads={...lineLoads,dead:2,live:1,snow:.5};
+  const comboApplied={selfWeightKNm:9,globalUniform:[0,-13250,0],uniformLocal:[0,-13250,0]};
+  const comboSource={...src,lineLoads:comboLineLoads,analysisLoad:comboApplied};
+  const comboSolved={...sol,analysisLoad:{...comboApplied,globalUniform:comboApplied.globalUniform.slice(),uniformLocal:comboApplied.uniformLocal.slice()}};
+  const combo=audit({members:[comboSource]},{memberCount:1,members:[comboSolved]},integration,{key:"combo",deadFactor:1.2,windFactor:0,factors:{dead:1.2,live:1.6,snow:.5}});
+  const checks={acceptsCompleteSolverMember:ok.success&&ok.verifiedSegments===1,rejectsMissingSolverMember:!missing.success,rejectsDuplicateMember:!dup.success,rejectsWrongRigidOffset:!badOffset.success,rejectsWrongSelfWeightMetadata:!badWeight.success,rejectsOmittedSelfWeightFromAppliedLoad:!omittedWeight.success,rejectsDoubleSelfWeightInAppliedLoad:!doubledWeight.success,rejectsWrongLocalLoadProjection:!badLocal.success,rejectsWrongSolverSection:!badSection.success,acceptsFactoredGravityCombination:combo.success};
+  return{passed:Object.values(checks).every(Boolean),checks,complete:ok,missing,duplicate,badOffset,badWeight,omittedWeight,doubledWeight,badLocal,badSection,combo};
  }
  root.SteelTieBeamSolverAudit={audit,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
