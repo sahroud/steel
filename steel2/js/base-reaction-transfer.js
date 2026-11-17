@@ -8,7 +8,7 @@
 const $=id=>document.getElementById(id),fmt=v=>Number(v).toLocaleString("fa-IR",{maximumFractionDigits:4});
 let last=null;
 function mapReaction(values){
- if(!Array.isArray(values)||values.length<6||values.slice(0,6).some(v=>!Number.isFinite(Number(v))))throw Error("بردار واکنش شش‌مؤلفه‌ای معتبر نیست.");
+ if(!Array.isArray(values)||values.length!==6||!values.every(v=>typeof v==="number"&&Number.isFinite(v)))throw Error("بردار واکنش باید دقیقاً شش مؤلفه عددی محدود داشته باشد.");
  return {
   N_tensionPositive_kN:-Number(values[1])/1000,
   Vx_kN:-Number(values[0])/1000,
@@ -92,7 +92,9 @@ function selfTest(){
  ["معکوس‌کردن برش‌های کنش ستون",m.Vx_kN===-1&&m.Vz_kN===3],
  ["معکوس‌کردن پیچش کنش ستون",m.Ty_kNm===-5],
  ["خروجی کامل شش‌مؤلفه‌ای کنش ستون",m.columnAction.N_tensionPositive_kN===-200&&m.columnAction.Mx_kNm===-400&&m.columnAction.Mz_kNm===600],
- ["رد بردار واکنش ناقص",(()=>{try{mapReaction([1,2]);return false;}catch(e){return true;}})()]
+ ["رد بردار واکنش ناقص",(()=>{try{mapReaction([1,2]);return false;}catch(e){return true;}})()],
+ ["رد بردار واکنش دارای مؤلفه اضافی",(()=>{try{mapReaction([1,2,3,4,5,6,7]);return false;}catch(e){return true;}})()],
+ ["رد مؤلفه واکنش متنی",(()=>{try{mapReaction([1,2,3,4,5,"6"]);return false;}catch(e){return true;}})()]
  ];
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
