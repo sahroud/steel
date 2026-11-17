@@ -181,7 +181,7 @@ test("load transfer rejects invalid tributary widths", () => {
 test("triangular gable wind resultant and centroid match closed-form geometry", () => {
   const result = globalThis.SteelLoadTransfer.triangularGableWindResultant(1.2, 12, 2);
   assert.equal(result.areaM2, 12);
-  assert.equal(result.resultantKN, 14.4);
+  assert.ok(Math.abs(result.resultantKN - 14.4) < 1e-12);
   assert.equal(result.centroidXFromLeftM, 6);
   assert.ok(Math.abs(result.centroidYAboveEaveM - 2 / 3) < 1e-12);
 });
