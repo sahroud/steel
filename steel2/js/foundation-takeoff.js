@@ -11,6 +11,26 @@
  const fmt=x=>Number(x).toLocaleString("fa-IR",{maximumFractionDigits:3});
  const num=x=>{const n=Number(x);return Number.isFinite(n)&&n>0?n:null;};
  const signedNum=x=>{if(x===null||x===undefined||String(x).trim()==="")return null;const n=Number(x);return Number.isFinite(n)?n:null;};
+ function validateReactionCaseCoverage(rows){
+  const issues=[],all=Array.isArray(rows)?rows:[];
+  if(!all.length)return{ok:false,issues:["فهرست پایه‌های فونداسیون خالی است."],labels:[]};
+  let expected=null;
+  all.forEach(row=>{
+   const id=String(row?.nodeId??""),cases=row?.caseReactions;
+   if(!Array.isArray(cases)||!cases.length){issues.push("پوش واکنش تفکیک‌شده برحسب حالت بار برای پایه "+id+" موجود نیست؛ واکنش منفرد جایگزین پذیرفته نمی‌شود.");return;}
+   const seen=new Set();
+   cases.forEach(item=>{
+    const label=String(item?.label??"");
+    if(!label||seen.has(label)){issues.push("شناسه حالت بار خالی یا تکراری برای پایه "+id+" است.");return;}
+    seen.add(label);
+    if(!Array.isArray(item.values)||item.values.length!==6||!item.values.every(v=>typeof v==="number"&&Number.isFinite(v)))issues.push("واکنش پایه "+id+" در حالت "+label+" باید دقیقاً شش مؤلفه عددی محدود داشته باشد.");
+   });
+   const labels=Array.from(seen).sort();
+   if(expected===null)expected=labels;
+   else if(labels.length!==expected.length||labels.some((x,i)=>x!==expected[i]))issues.push("پوش حالات بار پایه "+id+" با سایر پایه‌ها یکسان نیست.");
+  });
+  return{ok:issues.length===0,issues,labels:expected||[]};
+ }
  let lastReport=null;
  let footingSchedule={};
  let rebarIsoView={angle:0,zoom:1};
@@ -227,6 +247,8 @@ function modelFingerprint(model){
   }
   const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM),pedComplete=!!(pw&&pl&&ph);
   if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
+  const coverage=validateReactionCaseCoverage(lastReport.rows);
+  if(!coverage.ok){if(box)box.textContent="کنترل bearing متوقف شد: "+coverage.issues.join(" ");return null;}
   const cases=[];
   lastReport.rows.forEach(row=>{
    const d=footingSpecFor(row),B=d.width,L=d.length,t=d.thickness;
@@ -234,7 +256,7 @@ function modelFingerprint(model){
    const pedestalWeight=pedComplete&&valid?gammaC*pw*pl*ph:0;
    const concreteWeight=valid?gammaC*B*L*t+pedestalWeight:0;
    const soilWeight=valid&&cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
-   const source=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
+   const source=row.caseReactions;
    source.forEach(item=>{
     const v=item.values||[],N=Number(v[1])/1000,MxBase=Number(v[3])/1e6,MzBase=Number(v[5])/1e6;
     if(![N,MxBase,MzBase].every(Number.isFinite))return;
@@ -274,12 +296,16 @@ function modelFingerprint(model){
   }
   const pw=num(state.pedestalWidthM),pl=num(state.pedestalLengthM),ph=num(state.pedestalHeightM),pedComplete=!!(pw&&pl&&ph);
   if((pw||pl||ph)&&!pedComplete){if(box)box.textContent="ابعاد پدستال ناقص است؛ هر سه بعد را وارد کنید یا هر سه را خالی بگذارید.";return null;}
+  const coverage=validateReactionCaseCoverage(lastReport.rows);
+  if(!coverage.ok){if(box)box.textContent="کنترل sliding متوقف شد: "+coverage.issues.join(" ");return null;}
+  const coverage=validateReactionCaseCoverage(lastReport.rows);
+  if(!coverage.ok){if(box)box.textContent="کنترل uplift متوقف شد: "+coverage.issues.join(" ");return null;}
   const records=[];
   lastReport.rows.forEach(row=>{
    const d=footingSpecFor(row),B=d.width,L=d.length,t=d.thickness,valid=B>0&&L>0&&t>0&&(!pedComplete||(pw<=B&&pl<=L));
    const concrete=valid?gammaC*(B*L*t+(pedComplete?pw*pl*ph:0)):0;
    const soil=valid&&cover>0?gammaS*Math.max(0,B*L-(pedComplete?pw*pl:0))*cover:0;
-   const source=Array.isArray(row.caseReactions)&&row.caseReactions.length?row.caseReactions:[{label:lastReport.loadCase,values:row.values||[]}];
+   const source=row.caseReactions;
    source.forEach(item=>{
     const v=item.values||[],fx=Number(v[0])/1000,fz=Number(v[2])/1000,fy=Number(v[1])/1000;
     if(![fx,fz,fy].every(Number.isFinite))return;
@@ -775,5 +801,5 @@ function calculatePedestalRebar(baseCount){
  function getData(){readInputs();return JSON.parse(JSON.stringify({...state,footingSchedule}));}
  function setData(d){if(!d||typeof d!=="object")return;footingSchedule=d.footingSchedule&&typeof d.footingSchedule==="object"?JSON.parse(JSON.stringify(d.footingSchedule)):{};keys.forEach(k=>{if(d[k]!==undefined)state[k]=d[k];const el=$(map[k]);if(el)el.value=state[k]??"";});if(!state.footingClass)state.footingClass="main";if(state.footingWidthM==="")state.footingWidthM="1.80";if(state.footingLengthM==="")state.footingLengthM="1.80";if(state.footingThicknessM==="")state.footingThicknessM="0.80";if(state.bottomBarDiaXmm==="")state.bottomBarDiaXmm="16";if(state.bottomBarSpacingXmm==="")state.bottomBarSpacingXmm="150";if(state.bottomBarDiaZmm==="")state.bottomBarDiaZmm="16";if(state.bottomBarSpacingZmm==="")state.bottomBarSpacingZmm="150";keys.forEach(k=>{const el=$(map[k]);if(el)el.value=state[k]??"";});}
  document.addEventListener("DOMContentLoaded",()=>{panel();$("ftClass")?.addEventListener("change",e=>applyFootingClass(e.target.value));});
- window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildTieRouteTakeoff,buildTieRebarTakeoff,buildFootingRebarGeometry,footingGridSpecs,footingDatumGeometry,defaultFootingSpec,footingSpecFor,footingsAlongStraightRoute,calculateFootingRebar,applyFootingClass,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,normalizeBaseReactions,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
+ window.SteelFoundationTakeoff={getData,setData,extract,quantify,buildTieRouteTakeoff,buildTieRebarTakeoff,buildFootingRebarGeometry,footingGridSpecs,footingDatumGeometry,defaultFootingSpec,footingSpecFor,footingsAlongStraightRoute,calculateFootingRebar,applyFootingClass,checkTieBeamRebarClearance,checkSelectedTieFootingClash,renderRebarDrawing,normalizeBaseReactions,validateReactionCaseCoverage,selfTest,getLast:()=>lastReport?JSON.parse(JSON.stringify(lastReport)):null};
 })();
