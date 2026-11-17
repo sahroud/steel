@@ -13,6 +13,11 @@ const FIELDS=[
 ];
 const $=id=>document.getElementById(id);
 let data={schemaVersion:1,groups:{column:{},rafter:{}},memberOverrides:{}};
+const EVIDENCE_KEYS=["document","revision","locator","authority"];
+function normalizeEvidence(v){const out={};EVIDENCE_KEYS.forEach(k=>out[k]=String(v?.[k]??"").trim());return out;}
+function evidenceIssues(label,v){const e=normalizeEvidence(v),missing=EVIDENCE_KEYS.filter(k=>!e[k]);return missing.length?[label+" — مدرک ناقص است: "+missing.join("، ")]:[];}
+function evidenceText(v){const e=normalizeEvidence(v);return EVIDENCE_KEYS.map(k=>e[k]).join(" | ");}
+function parseEvidenceText(v){const parts=String(v??"").split("|").map(x=>x.trim());return parts.length===4?{document:parts[0],revision:parts[1],locator:parts[2],authority:parts[3]}:{document:"",revision:"",locator:"",authority:""};}
 function normalize(v){
  const out={schemaVersion:1,groups:{},memberOverrides:{}};
  GROUPS.forEach(([g])=>{
@@ -23,10 +28,13 @@ function normalize(v){
   dst.localSlendernessReviewed=src.localSlendernessReviewed===true;
   dst.localSlendernessClass=src.localSlendernessClass==="non-slender"?"non-slender":"unreviewed";
   dst.note=String(src.note||"");
+  dst.sectionEvidence=normalizeEvidence(src.sectionEvidence);
+  dst.materialEvidence=normalizeEvidence(src.materialEvidence);
+  dst.stabilityEvidence=normalizeEvidence(src.stabilityEvidence);
   out.groups[g]=dst;
  });
  const overrides=v?.memberOverrides||{};
- Object.keys(overrides).forEach(id=>{const src=overrides[id]||{},row={};["Lx_mm","Ly_mm","Lz_mm"].forEach(k=>{const n=Number(src[k]);row[k]=src[k]!==null&&src[k]!==undefined&&src[k]!==""&&Number.isFinite(n)&&n>0?n:null;});out.memberOverrides[String(id)]=row;});
+ Object.keys(overrides).forEach(id=>{const src=overrides[id]||{},row={};["Lx_mm","Ly_mm","Lz_mm"].forEach(k=>{const n=Number(src[k]);row[k]=src[k]!==null&&src[k]!==undefined&&src[k]!==""&&Number.isFinite(n)&&n>0?n:null;});row.restraintEvidence=normalizeEvidence(src.restraintEvidence);out.memberOverrides[String(id)]=row;});
  return out;
 }
 function getData(){return JSON.parse(JSON.stringify(data));}
@@ -40,10 +48,16 @@ function readUI(){
   d.localSlendernessReviewed=$("cc_"+g+"_localSlendernessReviewed")?.checked===true;
   d.localSlendernessClass=d.localSlendernessReviewed?"non-slender":"unreviewed";
   d.note=$("cc_"+g+"_note")?.value||"";
+  d.sectionEvidence=parseEvidenceText($("cc_"+g+"_sectionEvidence")?.value);
+  d.materialEvidence=parseEvidenceText($("cc_"+g+"_materialEvidence")?.value);
+  d.stabilityEvidence=parseEvidenceText($("cc_"+g+"_stabilityEvidence")?.value);
   data.groups[g]=d;
  });
  const resultHost=$("compressionCapacityResults");
- if(resultHost){resultHost.querySelectorAll("[data-member-length]").forEach(el=>{const id=el.getAttribute("data-member-id"),key=el.getAttribute("data-member-length");if(!id||!key)return;data.memberOverrides[id]=data.memberOverrides[id]||{Lx_mm:null,Ly_mm:null,Lz_mm:null};data.memberOverrides[id][key]=el.value===""?null:Number(el.value);});}
+ if(resultHost){
+ resultHost.querySelectorAll("[data-member-length]").forEach(el=>{const id=el.getAttribute("data-member-id"),key=el.getAttribute("data-member-length");if(!id||!key)return;data.memberOverrides[id]=data.memberOverrides[id]||{Lx_mm:null,Ly_mm:null,Lz_mm:null};data.memberOverrides[id][key]=el.value===""?null:Number(el.value);});
+ resultHost.querySelectorAll("[data-member-restraint-evidence]").forEach(el=>{const id=el.getAttribute("data-member-id");if(!id)return;data.memberOverrides[id]=data.memberOverrides[id]||{Lx_mm:null,Ly_mm:null,Lz_mm:null};data.memberOverrides[id].restraintEvidence=parseEvidenceText(el.value);});
+}
  return getData();
 }
 function setData(v){data=normalize(v);render();}
@@ -60,7 +74,17 @@ function getInput(g){
   E_MPa:Number(d.E_MPa)>0?Number(d.E_MPa):(Number(member.E_MPa)>0?Number(member.E_MPa):null),
   G_MPa:Number(d.G_MPa)>0?Number(d.G_MPa):(Number(member.G_MPa)>0?Number(member.G_MPa):null)};
 }
+function groupEvidenceIssues(g,source){
+ const d=source||data.groups[g]||{};
+ return [
+  ...evidenceIssues("منبع هندسه و خواص مقطع گروه "+g,d.sectionEvidence),
+  ...evidenceIssues("گواهی مصالح گروه "+g,d.materialEvidence),
+  ...evidenceIssues("مبنای مهاربندی و طول‌های مؤثر گروه "+g,d.stabilityEvidence)
+ ];
+}
 function analyzeGroup(g){
+ const evidence=groupEvidenceIssues(g);
+ if(evidence.length)return {ok:false,issues:evidence,scope:"blocked-missing-source-provenance"};
  const engine=root.SteelCompressionCapacity;
  if(!engine||typeof engine.analyze!=="function")throw Error("موتور مقاومت فشاری بارگذاری نشده است.");
  const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
@@ -224,7 +248,9 @@ function memberCapacityFromInput(row,base,override,taperedEnabled){
  if(row.taperSegmentIndex!==null&&row.taperSegmentIndex!==undefined)return {ok:false,issues:["قطعه متعلق به عضو متغیرعمق است؛ ظرفیت منشوری مجاز نیست."]};
  if(taperedEnabled===true)return {ok:false,issues:["گروه در مدل متغیرعمق فعال است."]};
  if(base.sectionPropertiesMatchReviewed!==true)return {ok:false,issues:["یکسان بودن خواص هندسی ثبت‌شده با این عضو هنوز تأیید نشده است."]};
- for(const k of ["Lx_mm","Ly_mm","Lz_mm"]){
+ const evidence=[...groupEvidenceIssues(g,base),...evidenceIssues("مرجع طول‌های مهارنشده/مهاربندی عضو "+String(row.id||""),override?.restraintEvidence)];
+ if(evidence.length)return {ok:false,issues:evidence,scope:"blocked-missing-source-provenance"};
+ for(const k of ["Lx_mm","Ly_mm","Lz_mm"){
   if(!(Number(override?.[k])>0))return {ok:false,issues:["طول مهارنشده "+k+" برای این عضو باید جداگانه وارد و تأیید شود."]};
   base[k]=Number(override[k]);
  }
