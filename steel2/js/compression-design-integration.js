@@ -250,7 +250,7 @@ function memberCapacityFromInput(row,base,override,taperedEnabled){
  if(base.sectionPropertiesMatchReviewed!==true)return {ok:false,issues:["یکسان بودن خواص هندسی ثبت‌شده با این عضو هنوز تأیید نشده است."]};
  const evidence=[...groupEvidenceIssues(g,base),...evidenceIssues("مرجع طول‌های مهارنشده/مهاربندی عضو "+String(row.id||""),override?.restraintEvidence)];
  if(evidence.length)return {ok:false,issues:evidence,scope:"blocked-missing-source-provenance"};
- for(const k of ["Lx_mm","Ly_mm","Lz_mm"){
+ for(const k of ["Lx_mm","Ly_mm","Lz_mm"]){
   if(!(Number(override?.[k])>0))return {ok:false,issues:["طول مهارنشده "+k+" برای این عضو باید جداگانه وارد و تأیید شود."]};
   base[k]=Number(override[k]);
  }
