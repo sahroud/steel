@@ -68,6 +68,7 @@ function selfTest(){
  try{
   ck("maps every left/right support reaction to one unique bracket",()=>audit(result,map,{verticalUnitVector_global:[0,1,0]}).success);
   ck("uses equal-and-opposite beam-on-bracket vertical force",()=>{const r=audit(result,map,{verticalUnitVector_global:[0,1,0]});return r.success&&r.demands.find(x=>x.connectionId==="left-BR1").force_N[1]===-1000;});
+  ck("transfers eccentric vertical reaction into the correct column-node moment",()=>{const r=audit(result,map,{verticalUnitVector_global:[0,1,0]});const d=r.demands.find(x=>x.connectionId==="left-BR1");return r.success&&d.momentAtColumnNode_Nm[2]===1000;});
   ck("rejects incomplete bracket mapping",()=>!audit(result,map.slice(1),{verticalUnitVector_global:[0,1,0]}).success);
   ck("rejects incorrect longitudinal station coordinate",()=>!audit(result,map.map((x,i)=>i===0?{...x,x_m:0.1}:x),{verticalUnitVector_global:[0,1,0]}).success);
   ck("rejects duplicate bracket mapping",()=>!audit(result,[...map,map[0]],{verticalUnitVector_global:[0,1,0]}).success);
