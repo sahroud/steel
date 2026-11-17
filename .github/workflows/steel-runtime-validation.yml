@@ -62,6 +62,20 @@ jobs:
           window.eval(fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8'));
           window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
           const result = window.SteelEngineeringRegression.run();
+          await window.SteelAutoWorkflow?.run?.();
+          const autoReport = window.SteelAutoWorkflow?.lastResult;
+          const threeDRow = autoReport?.rows?.find(x => x.label === 'تحلیل سه‌بعدی مستقل ترکیبات موجود');
+          console.log('AUTO_WORKFLOW_3D:', JSON.stringify({
+            reportCreated: !!autoReport,
+            analysisRowFound: !!threeDRow,
+            analysisPassed: threeDRow?.ok === true,
+            detail: threeDRow?.detail || null,
+            designApproved: autoReport?.designApproved === true
+          }));
+          if (!threeDRow) {
+            console.error('Automatic workflow did not route through the 3D combination solver.');
+            process.exit(1);
+          }
           console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
           const repeat = window.SteelEngineeringRegression.run();
           console.log(`Repeat regression: ${repeat.passed}/${repeat.passed + repeat.failed} passed`);
