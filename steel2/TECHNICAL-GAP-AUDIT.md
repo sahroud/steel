@@ -112,3 +112,12 @@ Added `.github/workflows/steel2-reference-tests.yml` to run the four reference f
 - Source review confirms `loads.js` stores and serializes both end-wall pressure fields, and `model-3d.js` maps them to the corresponding front/rear `endGirt` members. The triangular gable region above the highest end girt remains excluded.
 - No GitHub Actions run is currently returned for the recent commits. All six reference fixtures are therefore authored but **not verified as executed**. A successful CI result is still a required gate.
 - The current 3D combination path has not yet been proven to include wind actions; the correction in `app.js` applies to its legacy combination builder only. Do not present this as completed 3D wind-combination support.
+
+
+### Roof pressure-to-purlin transfer — 2026-11-17
+
+- Added `js/load-transfer.js` with a shared conversion (q\,[kN/m²] \times b\,[m] = w\,[kN/m]) and an equal-station tributary-width generator (half-width at the two boundary stations; full interval width at interior stations).
+- Integrated both helpers into `model-3d.js`; left/right ridge contributions remain separate before summation, so asymmetric roof pressures are preserved.
+- Added reference tests for unit conversion (including suction sign), tributary-width conservation, asymmetric ridge transfer, and invalid widths.
+- The current geometry supplies **sloped-surface tributary widths**. Therefore the existing pressure values are mathematically interpreted on the sloped roof surface. This is an explicit statement of the current implementation, not a determination that every load input should use that basis under the applicable Iranian code. Before code-compliant use, the load input basis must be defined by load type and checked against the governing provisions; no horizontal-to-slope conversion factor has been introduced.
+- The synthetic helper tests do not yet exercise a complete generated shed model or prove member-load assembly / global equilibrium. CI execution is still unconfirmed.
