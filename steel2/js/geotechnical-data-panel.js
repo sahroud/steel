@@ -12,7 +12,7 @@
   if($("geotechnicalDataPanel"))return;
   try{const x=JSON.parse(localStorage.getItem("sahroudSteel.geotechnicalData.v1")||"null");if(x&&typeof x==="object")state={...state,...x};}catch(e){}
   const root=$("foundationTakeoffPanel")||$("costEstimatePanel");if(!root)return;
-  const p=document.createElement("section");p.className="panel";p.id="geotechnicalDataPanel";
+  const p=document.createElement("section");p.className="panel";p.id="geotechnicalDataPanel";p.setAttribute("data-focus-group","foundation geotechnical");
   p.innerHTML='<div class="panel-title"><h3>پرونده ژئوتکنیک و مشخصات خاک</h3><span class="status">ورودی از گزارش خاک</span></div>'+
    '<div class="notice">هیچ مقدار ژئوتکنیکی پیش‌فرض نشده است. اعداد باید عیناً از گزارش مکانیک خاک و با توجه به تراز پی، سطح آب، نوع بارگذاری و شرایط اجرایی وارد شوند. ظرفیت باربری ناخالص و خالص قابل جایگزینی مستقیم نیستند؛ مقدار خالص به‌صورت خودکار به ناخالص تبدیل نمی‌شود.</div>'+
    '<h4>مشخصات و اعتبار گزارش</h4><div class="form-grid">'+

@@ -9,7 +9,8 @@ const $=id=>document.getElementById(id);
 const GROUPS=[["column","ستون"],["rafter","رفتر"]];
 const STATIONS=[["start","ابتدا"],["mid","میانه"],["end","انتها"]];
 const DIMS=[["d","عمق d (mm)"],["bf","عرض بال bf (mm)"],["tw","ضخامت جان tw (mm)"],["tf","ضخامت بال tf (mm)"]];
-let data={schemaVersion:1,segmentsPerMember:8,groups:{column:{enabled:false,stations:{}},rafter:{enabled:false,stations:{}}}};
+const blankStations=()=>({start:{d:null,bf:null,tw:null,tf:null},mid:{d:null,bf:null,tw:null,tf:null},end:{d:null,bf:null,tw:null,tf:null}});
+let data={schemaVersion:1,segmentsPerMember:8,groups:{column:{enabled:false,stations:blankStations()},rafter:{enabled:false,stations:blankStations()}}};
 let audit=[];
 function clone(v){return JSON.parse(JSON.stringify(v));}
 function normalize(v){
@@ -126,6 +127,7 @@ function read(){
 function getData(){return clone(data);}
 function setData(v){data=normalize(v);render();}
 function render(){
+ data=normalize(data);
  const host=$("taperedSectionsContent");if(!host)return;
  host.innerHTML="<div class='field'><label for='taper_segmentsPerMember'>تعداد قطعات تحلیل برای هر عضو متغیرمقطع</label><select id='taper_segmentsPerMember'>"+[4,6,8,12,16,20,24].map(n=>"<option value='"+n+"' "+(data.segmentsPerMember===n?"selected":"")+">"+n+" قطعه</option>").join("")+"</select></div>"+GROUPS.map(([g,label])=>{
   const q=data.groups[g];
