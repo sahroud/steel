@@ -8735,6 +8735,8 @@ function solveDenseCore(A,b){
 }
 function solveSparseCG(A,b){
  const n=b.length,scaleD=Array(n),rows=Array.from({length:n},()=>[]),diag=Array(n);
+ if(!Array.isArray(A)||A.length!==n||A.some(row=>!Array.isArray(row)||row.length!==n)||!Array.isArray(b)||b.some(v=>!Number.isFinite(Number(v))))
+  throw Error("DOF_MATRIX_INVALID:ابعاد یا مقادیر ماتریس سختی/بردار بار معتبر نیستند");
  for(let i=0;i<n;i++){
   const d=Number(A[i]?.[i]);
   if(!(d>0&&Number.isFinite(d)))throw Error("DOF_SINGULAR:"+i+":قطر مثبت و معتبر برای حل‌گر تکراری وجود ندارد");
@@ -8742,14 +8744,15 @@ function solveSparseCG(A,b){
  }
  let maxEntry=0,maxAsymmetry=0;
  for(let i=0;i<n;i++)for(let j=0;j<n;j++){
-  const a=Number(A[i][j])||0,at=Number(A[j][i])||0;
+  const a=Number(A[i][j]),at=Number(A[j][i]);
+  if(!Number.isFinite(a)||!Number.isFinite(at))throw Error("DOF_MATRIX_INVALID:ماتریس سختی شامل مقدار غیرمتناهی است");
   maxEntry=Math.max(maxEntry,Math.abs(a));
   maxAsymmetry=Math.max(maxAsymmetry,Math.abs(a-at));
  }
  if(maxAsymmetry>1e-8*Math.max(1,maxEntry))throw Error("DOF_NOT_SYMMETRIC:ماتریس سختی برای حل‌گر هم‌نهشتی متقارن نیست");
  for(let i=0;i<n;i++){
   for(let j=0;j<n;j++){
-   const raw=Number(A[i][j])||0;
+   const raw=Number(A[i][j]);
    if(raw===0)continue;
    const v=raw*scaleD[i]*scaleD[j];
    if(v!==0)rows[i].push([j,v]);
