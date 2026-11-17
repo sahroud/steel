@@ -82,7 +82,7 @@ function solveSparseCG(A,b){
   if(!(denominator>0&&Number.isFinite(denominator)))throw Error("DOF_CG_BREAKDOWN:ماتریس سختی مثبت‌معین/پایدار تشخیص داده نشد");
   const alpha=rz/denominator;
   for(let i=0;i<n;i++){x[i]+=alpha*p[i];r[i]-=alpha*Ap[i];}
-  if((iteration+1)%50===0)r=rhs.map((v,i)=>v-matVec(x)[i]);
+  if((iteration+1)%50===0){const Ax=matVec(x);r=rhs.map((v,i)=>v-Ax[i]);}
   const relative=Math.sqrt(dotAcc(r,r))/normB;
   if(relative<=tolerance)return x.map((v,i)=>v*scaleD[i]);
   z=r.map((v,i)=>v/diag[i]);
