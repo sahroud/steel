@@ -271,7 +271,7 @@
     const girtHeights=[],nGirt=Math.max(0,Math.floor(height/gsp));
     for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
     const roofY=x=>height+(x<=half?rise*x/half:rise*(span-x)/half);
-    const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp));
+    const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp)),roofStationWidths=SteelLoadTransfer.equalStationTributaryWidths(totalRoofSlope,roofRows);
     // Every purlin/rafter crossing is a shared structural node, not two coincident but disconnected nodes.
     const roofXs=[0,span];
     [-1,1].forEach(side=>{for(let ri=0;ri<=roofRows;ri++){
@@ -307,7 +307,7 @@
       for(let ri=0;ri<=roofRows;ri++){
         const t=ri/roofRows;
         const x=side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t);
-        const width=(totalRoofSlope/roofRows)*(ri===0||ri===roofRows?0.5:1);
+        const width=roofStationWidths[ri];
         const key=x.toFixed(7);
         const existing=purlinStations.get(key);
         if(existing){
