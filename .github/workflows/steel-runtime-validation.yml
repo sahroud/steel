@@ -61,6 +61,14 @@ jobs:
           const result = window.SteelEngineeringRegression.run();
           console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
           for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, check.detail);
+          const testSource = fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8');
+          const apiNames = [...new Set([...testSource.matchAll(/root\\.(Steel[A-Za-z0-9_]+)\\?\\.selfTest\\?\\./g)].map(x => x[1]))];
+          const diagnostics = {};
+          for (const name of apiNames) {
+            try { const fn = window[name]?.selfTest; if (typeof fn === 'function') diagnostics[name] = fn(); }
+            catch (error) { diagnostics[name] = {error: error.message}; }
+          }
+          console.log('SELFTEST_DIAGNOSTICS:', JSON.stringify(diagnostics).slice(0, 30000));
           const runtime = window.SteelRuntimeIntegrity?.audit?.();
           if (!runtime?.success) {
             console.error('Runtime integrity failure:', runtime);
