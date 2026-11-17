@@ -60,6 +60,47 @@ function extractSupportReactions(result,model){
   resultantMomentReference:"global origin (0,0,0); includes r x F for every support node",
   units:{force:"N",moment:"N.m"}};
 }
+function auditFoundationReactionMapping(reactionExtraction,mappings,model){
+ const issues=[];
+ const rows=Array.isArray(reactionExtraction?.rows)?reactionExtraction.rows:[];
+ if(!rows.length)issues.push("ردیف واکنش پایه برای نگاشت به پی موجود نیست.");
+ if(!Array.isArray(mappings)||!mappings.length)issues.push("نگاشت صریح supportNodeId به footingId ارائه نشده است.");
+ const rowById=new Map(rows.map(r=>[String(r.nodeId),r]));
+ const mapBySupport=new Map(),footings=new Map();
+ (mappings||[]).forEach((m,index)=>{
+  const supportId=String(m?.supportNodeId??"").trim(),footingId=String(m?.footingId??"").trim();
+  if(!supportId||!footingId){issues.push("نگاشت شماره "+(index+1)+" باید supportNodeId و footingId غیرخالی داشته باشد.");return;}
+  if(mapBySupport.has(supportId)){issues.push("نگاشت تکیه‌گاه تکراری است: "+supportId);return;}
+  if(!rowById.has(supportId)){issues.push("نگاشت به گره پایه ناشناخته/فاقد واکنش اشاره می‌کند: "+supportId);return;}
+  const p=m.referencePointM;
+  if(!p||![p.x,p.y,p.z].every(finite)){issues.push("مرجع مختصات پی "+footingId+" باید referencePointM سه‌مؤلفه‌ای متناهی داشته باشد.");return;}
+  mapBySupport.set(supportId,{footingId,referencePointM:{x:p.x,y:p.y,z:p.z}});
+  if(!footings.has(footingId))footings.set(footingId,{footingId,supportNodeIds:[],referencePointM:{x:p.x,y:p.y,z:p.z},actions:{Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0}});
+  const group=footings.get(footingId),q=group.referencePointM;
+  if(["x","y","z"].some(k=>Math.abs(q[k]-p[k])>1e-9)){issues.push("برای پی "+footingId+" مرجع مختصات یکسان تعریف نشده است.");return;}
+  group.supportNodeIds.push(supportId);
+  const row=rowById.get(supportId),a=row.columnAction,r=row.coordinatesM;
+  if(!a||![a.Fx,a.Fy,a.Fz,a.Mx,a.My,a.Mz].every(finite)||!r||![r.x,r.y,r.z].every(finite)){issues.push("بردار شش‌مؤلفه‌ای کنش ستون/مختصات معتبر نیست: "+supportId);return;}
+  const dx=r.x-q.x,dy=r.y-q.y,dz=r.z-q.z;
+  group.actions.Fx+=a.Fx;group.actions.Fy+=a.Fy;group.actions.Fz+=a.Fz;
+  group.actions.Mx+=a.Mx+dy*a.Fz-dz*a.Fy;
+  group.actions.My+=a.My+dz*a.Fx-dx*a.Fz;
+  group.actions.Mz+=a.Mz+dx*a.Fy-dy*a.Fx;
+ });
+ rows.forEach(r=>{if(!mapBySupport.has(String(r.nodeId)))issues.push("گره پایه "+r.nodeId+" به هیچ پی مشخصی نگاشت نشده است.");});
+ const total={Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0};
+ footings.forEach(g=>{
+  const p=g.referencePointM,a=g.actions;
+  total.Fx+=a.Fx;total.Fy+=a.Fy;total.Fz+=a.Fz;
+  total.Mx+=a.Mx+p.y*a.Fz-p.z*a.Fy;
+  total.My+=a.My+p.z*a.Fx-p.x*a.Fz;
+  total.Mz+=a.Mz+p.x*a.Fy-p.y*a.Fx;
+ });
+ return{success:issues.length===0,status:issues.length?"mapping-incomplete":"mapped-demand-only",issues,
+  footingDemands:Array.from(footings.values()),totalColumnActionAtGlobalOrigin:total,
+  units:{force:"N",moment:"N.m"},analysisEnabled:false,designApproved:false,
+  scope:"تجمیع تقاضای شش‌مؤلفه‌ای ستون‌ها در مرجع صریح هر پی؛ بدون استنتاج خودکار هندسه پی، طراحی پی/شناژ، کنترل خاک، لغزش، واژگونی یا ظرفیت انکر"};
+}
 function buildExternalLoadLedger(model,solverMembers,nodalLoads,releasedRotationLoads){
  const issues=[],force=[0,0,0],moment=[0,0,0],memberRows=[],nodeRows=[],releasedRows=[];
  const nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n]));
@@ -299,6 +340,18 @@ function selfTest(){
  ck("missing base nodes blocked",()=>!auditSolverContract(api,{nodes:[{id:"N"}],members:[]}).ready);
   ck("nonfinite model node coordinates blocked",()=>!auditSolverContract(api,{nodes:[{id:"B",x:0,y:0,z:NaN,kind:"base"}],members:[]}).ready);
  ck("duplicate node blocked",()=>!auditSolverContract(api,{nodes:[{id:"B",kind:"base"},{id:"B",kind:"base"}],members:[]}).ready);
+ const mappingRows={rows:[
+  {nodeId:"S1",coordinatesM:{x:0,y:0,z:0},columnAction:{Fx:10,Fy:20,Fz:30,Mx:1,My:2,Mz:3}},
+  {nodeId:"S2",coordinatesM:{x:2,y:0,z:0},columnAction:{Fx:5,Fy:0,Fz:0,Mx:0,My:0,Mz:0}}
+ ]};
+ const mapGood=[{supportNodeId:"S1",footingId:"F1",referencePointM:{x:0,y:0,z:0}},{supportNodeId:"S2",footingId:"F1",referencePointM:{x:0,y:0,z:0}}];
+ const mapped=auditFoundationReactionMapping(mappingRows,mapGood,{});
+ ck("multiple column bases aggregate to one footing with moments translated to footing reference",()=>{const g=mapped.footingDemands[0].actions;return mapped.success&&mapped.footingDemands.length===1&&g.Fx===15&&g.Fy===20&&g.Mz===3&&mapped.totalColumnActionAtGlobalOrigin.Mz===3;});
+ ck("duplicate support-to-footing mapping is blocked",()=>!auditFoundationReactionMapping(mappingRows,[...mapGood,mapGood[0]],{}).success);
+ ck("unmapped physical support blocks complete footing demand",()=>!auditFoundationReactionMapping(mappingRows,[mapGood[0]],{}).success);
+ ck("unknown support mapping is blocked",()=>!auditFoundationReactionMapping(mappingRows,[...mapGood,{supportNodeId:"S3",footingId:"F2",referencePointM:{x:0,y:0,z:0}}],{}).success);
+ ck("missing footing reference point is blocked",()=>!auditFoundationReactionMapping(mappingRows,[{supportNodeId:"S1",footingId:"F1"},{...mapGood[1]}],{}).success);
+ ck("inconsistent reference points for same footing are blocked",()=>!auditFoundationReactionMapping(mappingRows,[mapGood[0],{...mapGood[1],referencePointM:{x:1,y:0,z:0}}],{}).success);
  const res={reactions:[{nodeId:"B1",values:[100,200,300,4,5,6]},{nodeId:"B2",values:[-10,-20,-30,-1,-2,-3]}]};
  const x=extractSupportReactions(res,model);
  ck("all support reactions extracted",()=>x.rows.length===2&&x.rows[0].nodeId==="B1");
@@ -337,5 +390,5 @@ function selfTest(){
  ck("seismic cases use explicit seismic distributor input",()=>typeof runSeismic==="function"&&runSeismic.toString().includes("SteelSeismicEquivalentLateral"));
  return{passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests,analysisEnabled:false,designApproved:false};
 }
-root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,auditSolverLoadTransfer,run,runDirectionalWind,runSeismic,runMemberDesignPipeline,selfTest};
+root.SteelStructuralLoadChain={auditSolverContract,extractSupportReactions,auditFoundationReactionMapping,buildExternalLoadLedger,compareExternalLedger,auditEquilibrium,auditSolverLoadTransfer,run,runDirectionalWind,runSeismic,runMemberDesignPipeline,selfTest};
 })(typeof window!=="undefined"?window:globalThis);
