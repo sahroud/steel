@@ -378,13 +378,7 @@ function analyze(model,options){
  });
  const maxNodeResidualRatio=Math.max(0,...nodeEquilibrium.map(x=>x.maxRelativeResidual));
  const nodeEquilibriumOk=nodeEquilibrium.every(x=>x.ok);
- const equilibrium={appliedForceN:appliedForce,supportReactionN:supportForce,
-  forceResidualN:forceResidual,appliedMomentNm:appliedMoment,supportMomentNm:supportMoment,
-  momentResidualNm:momentResidual,relativeForceResidual,relativeMomentResidual,
-  nodeEquilibrium,nodeEquilibriumOk,maxNodeResidualRatio,
-  memberEndEquilibrium,memberEndEquilibriumOk,maxMemberEndResidualRatio,
-  equilibriumScope:"global resultant, assembled nodal residual, and independent recovered member-end-action balance at every physical node; includes rigid-arm transforms, equivalent member loads, nodal loads, supports, nodal springs and coincident-node connector springs",
-  ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6&&nodeEquilibriumOk&&memberEndEquilibriumOk,freeDofCount:free.length};
+ let equilibrium=null;
  const results=elements.map(e=>{
   const dg=e.ids.map(i=>D[i]),dl=restoreReleasedRotations(mul(e.T,dg.map(v=>[v])).map(r=>r[0]),e.releaseData),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
@@ -427,6 +421,12 @@ function analyze(model,options){
  });
  const maxMemberEndResidualRatio=Math.max(0,...memberEndEquilibrium.map(x=>x.maxRelativeResidual));
  const memberEndEquilibriumOk=memberEndEquilibrium.every(x=>x.ok);
+ equilibrium={appliedForceN:appliedForce,supportReactionN:supportForce,
+  forceResidualN:forceResidual,momentResidualNm:momentResidual,appliedMomentNm:appliedMoment,supportMomentNm:supportMoment,
+  relativeForceResidual,relativeMomentResidual,nodeEquilibrium,nodeEquilibriumOk,maxNodeResidualRatio,
+  memberEndEquilibrium,memberEndEquilibriumOk,maxMemberEndResidualRatio,
+  equilibriumScope:"global resultant, assembled nodal residual, and independent recovered member-end-action balance at every physical node; includes rigid-arm transforms, equivalent member loads, nodal loads, supports, nodal springs and coincident-node connector springs",
+  ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6&&nodeEquilibriumOk&&memberEndEquilibriumOk,freeDofCount:free.length};
  let maxTranslation=0,maxDisplacement=null;
  nodes.forEach((n,i)=>{
   const components=D.slice(i*6,i*6+3);
