@@ -101,6 +101,7 @@ function audit(input){
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function render(){
+ data=normalize(data);
  const host=$("tensionDesignContent");if(!host)return;
  host.innerHTML=GROUPS.map(([g,label])=>{
   const d=data.groups[g]||{};
