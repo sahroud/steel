@@ -181,9 +181,11 @@ function normalizeBaseReactions(reactions,supportNodes){
  }).sort((a,b)=>a.z-b.z||a.x-b.x);
 }
 function modelFingerprint(model){
-  return JSON.stringify({
-   nodes:(model.nodes||[]).map(n=>[n.id,n.x,n.y,n.z,n.kind]),
-   members:(model.members||[]).map(m=>[m.id,m.start,m.end,m.sectionKey,m.lineLoads||{}]),
+  const builder=window.SteelFoundationModelFingerprint?.build;
+  if(typeof builder!=="function")return null;
+  return builder(model,{
+   tieBeamLayout:window.SteelTieBeamLayout?.getData?.()||null,
+   loadSettings:window.SteelLoads?.getData?.()||null,
    sections:window.SteelSections?.read?.()||null,
    support:$("baseConnection")?.value||"pinned"
   });
@@ -193,7 +195,7 @@ function modelFingerprint(model){
   if(!result||!Array.isArray(result.reactions)||!model||!Array.isArray(model.nodes)){
    $("foundationTakeoffSummary").textContent="نتیجه تحلیل سه‌بعدی در دسترس نیست. ابتدا مدل را بسازید و تحلیل سه‌بعدی را با موفقیت اجرا کنید.";return;
   }
-  if(!result.foundationModelFingerprint||result.foundationModelFingerprint!==modelFingerprint(model)){
+  if(!result.foundationSourceModelFingerprint||!modelFingerprint(model)||result.foundationSourceModelFingerprint!==modelFingerprint(model)){
    $("foundationTakeoffSummary").textContent="مدل، مقاطع یا بارها پس از آخرین تحلیل تغییر کرده‌اند (یا نتیجه با نسخه قدیمی حل‌گر تولید شده است). برای جلوگیری از متره اشتباه، ابتدا تحلیل سه‌بعدی را دوباره اجرا کنید.";
    return;
   }
@@ -218,7 +220,7 @@ function modelFingerprint(model){
    const sm=window.SteelStructuralModel,model=sm.model||sm.build();
    const env=await sm.analyzeFoundationEnvelope();
    if(!env||!Array.isArray(env.rows)||!env.rows.length)throw new Error("پوش واکنش معتبری دریافت نشد.");
-   if(env.foundationModelFingerprint!==modelFingerprint(model))throw new Error("مدل یا مقاطع هنگام تحلیل تغییر کرده‌اند؛ پوش برای جلوگیری از استفاده اشتباه رد شد.");
+   if(!env.foundationSourceModelFingerprint||!modelFingerprint(model)||env.foundationSourceModelFingerprint!==modelFingerprint(model))throw new Error("مدل، مسیر شناژ، ترکیبات بار یا مقاطع پس از تحلیل تغییر کرده‌اند؛ پوش برای جلوگیری از استفاده اشتباه رد شد.");
    const reactionAudit=window.SteelFoundationReactionAudit?.audit?.(env,model,footingSpecFor);
    if(!reactionAudit?.ok)throw new Error("ممیزی کامل‌بودن پوش واکنش ناموفق است: "+(reactionAudit?.issues||["ماژول ممیزی در دسترس نیست."]).join("؛ "));
    const body=$("foundationReactionRows");body.replaceChildren();
