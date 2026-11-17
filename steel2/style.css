@@ -493,3 +493,15 @@ th {
 .focus-workspace-nav a{min-height:36px;padding:6px 10px;}
 @media(max-width:600px){.focus-menu>summary{min-height:42px}.focus-workspace-nav .focus-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.focus-workspace-nav a{justify-content:center;text-align:center;font-size:11px;padding:7px 5px}}
 .home-advanced-tools #homeAdvancedContent>.panel{content-visibility:auto;contain-intrinsic-size:640px;}
+
+
+/* Foundation input workspace: compact summaries, readable mobile forms. */
+.foundation-detail-group{border:1px solid #d5e1e7;border-radius:11px;margin:12px 0;background:#fbfdfe;overflow:hidden}
+.foundation-detail-group>summary{cursor:pointer;list-style:none;padding:13px 15px;min-height:46px;display:flex;align-items:center;gap:8px;font-weight:800;color:#123b52;background:#edf4f7}
+.foundation-detail-group>summary::-webkit-details-marker{display:none}
+.foundation-detail-group[open]>summary{border-bottom:1px solid #d5e1e7}
+.foundation-detail-group>*:not(summary){margin-inline:10px}
+#foundationTakeoffPanel>.form-grid{gap:12px}
+#foundationTakeoffPanel .field input,#foundationTakeoffPanel .field select{min-height:42px}
+#foundationTakeoffPanel .button-grid{gap:8px}
+@media(max-width:600px){.foundation-detail-group>summary{min-height:48px;padding:12px}.foundation-detail-group>*:not(summary){margin-inline:7px}#foundationTakeoffPanel{padding:12px}}
