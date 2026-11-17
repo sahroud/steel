@@ -5979,6 +5979,24 @@ window.SteelEndWallAudit={audit,getLastResult:()=>window.SteelEndWallAudit.lastR
    '<div style="overflow-x:auto"><table class="data-table" style="width:100%;min-width:920px"><thead><tr><th>گره پایه</th><th>مختصات X/Z (متر)</th><th>Fx min/max (kN)</th><th>Fy min/max (kN)</th><th>Fz min/max (kN)</th><th>Mx min/max (kN.m)</th><th>My min/max (kN.m)</th><th>Mz min/max (kN.m)</th></tr></thead><tbody id="foundationReactionRows"></tbody></table></div>'+
    '<div id="foundationQuantitySummary" class="notice">برای متره، ابعاد واقعی پی را وارد کنید.</div>'+
    '<h4>ترسیم آرماتور شناژ و فونداسیون</h4><div class="notice">حالت ترسیم مستقل از متره و طراحی است. حالت پیش‌فرض فقط آرایش نمایشی درخواستی را نشان می‌دهد؛ حالت طراحی از خروجی غربال/آرماتور ثبت‌شده استفاده می‌کند و اگر داده کافی موجود نباشد، بخش مربوطه را ترسیم نمی‌کند.</div><div class="form-grid"><div class="field"><label for="rebarDrawingMode">مبنای ترسیم میلگردها</label><select id="rebarDrawingMode"><option value="default" selected>آرایش پیش‌فرض اجرایی</option><option value="design">مقادیر طراحی/محاسبات نرم‌افزار</option></select></div></div><div class="button-grid"><button id="btnRefreshRebarDrawing" class="btn secondary" type="button">به‌روزرسانی ترسیم</button></div><div class="form-grid"><div class="field"><label for="footingRebarTarget">انتخاب فونداسیون برای جزئیات</label><select id="footingRebarTarget"><option value="">اولین فونداسیون</option></select></div><div class="field"><label for="tieRebarTarget">انتخاب شناژ برای جزئیات</label><select id="tieRebarTarget"><option value="">اولین شناژ</option></select></div></div><div id="rebarDrawingSummary" class="notice">آرایش پیش‌فرض انتخاب شده است.</div><div id="rebarDrawingCanvas" class="drawing-area" style="overflow-x:auto;min-height:320px"></div>';
+  // Keep core geometry visible; fold specialist checks into compact, independent groups.
+  p.querySelectorAll("h4").forEach(function(heading){
+    const title=(heading.textContent||"").trim(),parent=heading.parentNode;
+    if(!title||!parent)return;
+    const details=document.createElement("details");
+    details.className="foundation-detail-group";
+    const summary=document.createElement("summary");
+    summary.textContent=title;
+    parent.insertBefore(details,heading);
+    details.appendChild(summary);
+    let node=heading;
+    while(node){
+      const next=node.nextSibling;
+      if(node!==heading&&node.nodeType===1&&node.tagName==="H4")break;
+      details.appendChild(node);
+      node=next;
+    }
+  });
   root.parentNode.insertBefore(p,root.nextSibling);
   keys.forEach(k=>{const el=$(map[k]);if(el){el.value=state[k]??"";el.addEventListener("change",()=>{state[k]=el.value;});}});
   $("btnFoundationReactions").addEventListener("click",extract);
