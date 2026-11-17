@@ -49,7 +49,8 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     <a href="legacy.html?focus=member-check#cantileverCheckPanel" data-focus-link="member-check">کنترل کنسول رفتر</a>
     <a href="legacy.html?focus=tapered#taperedSectionsPanel" data-focus-link="tapered">مقاطع متغیر و ضخامت‌ها</a>
     <a href="legacy.html?focus=connections#connectionDemandRegistryPanel" data-focus-link="connections">اتصالات و محل اتصال اجزا</a>
-    <a href="legacy.html?focus=foundation#brtAnchorDemandPanel" data-focus-link="foundation">فونداسیون و انکرها</a>
+    <a href="legacy.html?focus=foundation#foundationTakeoffPanel" data-focus-link="foundation">ابعاد و متره فونداسیون</a>
+    <a href="legacy.html?focus=geotechnical#geotechnicalDataPanel" data-focus-link="geotechnical">اطلاعات ژئوتکنیک و خاک</a>
     <a href="legacy.html?focus=foundation-plan#constructionDrawingsPanel" data-focus-link="foundation-plan">پلان فونداسیون</a>
     <a href="legacy.html" data-focus-link="all">نمایش همه بخش‌ها</a>
   </div></details>
@@ -60,7 +61,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
   function initFocusWorkspace(){
     var params=new URLSearchParams(window.location.search);
     var focus=params.get("focus");
-    var valid=["project","loads","drawings","analysis","member-design","crane","member-check","tapered","connections","foundation","foundation-plan"];
+    var valid=["project","loads","drawings","analysis","member-design","crane","member-check","tapered","connections","foundation","foundation-plan","geotechnical"];
     var nav=document.getElementById("focusWorkspaceNav");
     if(!nav)return;
     if(!focus||!valid.includes(focus)){
@@ -74,7 +75,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
     });
     var active=nav.querySelector('[data-focus-link="'+focus+'"]');
     if(active)active.setAttribute("aria-current","page");
-    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا",tapered:"مقاطع متغیر و غربال ضخامت",connections:"اتصالات و محل اتصال اجزا",foundation:"فونداسیون و انکرها","foundation-plan":"پلان فونداسیون"};
+    var labels={project:"مشخصات پروژه",loads:"بارگذاری",drawings:"ترسیم و نماها",analysis:"تحلیل و نتایج",crane:"جرثقیل", "member-check":"کنترل اعضا",tapered:"مقاطع متغیر و غربال ضخامت",connections:"اتصالات و محل اتصال اجزا",foundation:"فونداسیون و انکرها","foundation-plan":"پلان فونداسیون",geotechnical:"اطلاعات ژئوتکنیک و خاک"};
     var caption=document.getElementById("focusWorkspaceCaption");
     if(caption)caption.textContent="حالت نمایش متمرکز: "+labels[focus]+"؛ برای بازگشت، «نمایش همه بخش‌ها» را انتخاب کنید.";
     var targetId=(window.location.hash||"").slice(1);
@@ -415,7 +416,7 @@ body.focus-mode [data-focus-group].focus-visible{scroll-margin-top:95px}
 <script defer src="js/code-reference-registry.js?v=20261116-m9-ch18-source1"></script>
 <script defer src="js/cost-estimate-engine.js?v=20261113-blinding-cost-bridge1"></script>
 <script defer src="js/foundation-takeoff.js?v=20261117-canonical-source-fingerprint1"></script>
-<script defer src="js/geotechnical-data-panel.js?v=20261112geotech1"></script>
+<script defer src="js/geotechnical-data-panel.js?v=20261117-foundation-workspace1"></script>
 <script defer src="js/tie-beam-layout.js?v=20261117-source-fingerprint1"></script>\n<script defer src="js/site-work-takeoff.js?v=20261113-sitework-blinding1"></script>
 
 <script defer src="js/tie-beam-reinforcement.js?v=20261113-continuous-footing-bars1"></script>
