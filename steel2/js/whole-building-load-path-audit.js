@@ -62,6 +62,40 @@ function audit(model,loads){
   if(bad.length)issues.push(label+": بار یا عرض بارگیر نامعتبر در "+bad.slice(0,8).join("، "));
   rows.push({id,label,memberCount:targetMembers.length,coveredCount:covered.length,missingCount:missing.length,invalidCount:bad.length,status:missing.length||bad.length?"incomplete":"assigned",sampleMissing:missing.slice(0,8)});
  });
+ // Independently verify the numerical conversion from roof surface pressure (kN/m²)
+ // to each purlin line load (kN/m), including the two separate roof slopes at ridge.
+ const purlinMagnitudeChecks=[];
+ const magnitudeTolerance=1e-8;
+ const closeLoad=(actual,expected)=>finite(actual)&&Math.abs(actual-expected)<=magnitudeTolerance*Math.max(1,Math.abs(actual),Math.abs(expected));
+ groups.purlins.forEach(m=>{
+  const ll=m.lineLoads||{},side=m.side;
+  let wl=0,wr=0;
+  if(side==="ridge"){
+   wl=num(m.tributaryWidthLeft);wr=num(m.tributaryWidthRight);
+   if(wl===null||wr===null||wl<0||wr<0){purlinMagnitudeChecks.push({memberId:String(m.id),ok:false,reason:"ridge-tributary-widths-missing-or-invalid"});return;}
+  }else{
+   const width=num(m.tributaryWidth);
+   if(width===null||width<=0){purlinMagnitudeChecks.push({memberId:String(m.id),ok:false,reason:"tributary-width-missing-or-invalid"});return;}
+   if(side==="left")wl=width;
+   else if(side==="right")wr=width;
+   else {purlinMagnitudeChecks.push({memberId:String(m.id),ok:false,reason:"unknown-roof-side"});return;}
+  }
+  const expectedLoads={
+   dead:(num(loads?.deadLeft)??NaN)*wl+(num(loads?.deadRight)??NaN)*wr,
+   live:(num(loads?.liveLeft)??NaN)*wl+(num(loads?.liveRight)??NaN)*wr,
+   snow:(num(loads?.snowLeft)??NaN)*wl+(num(loads?.snowRight)??NaN)*wr,
+   windLeft:(num(loads?.windLeft)??NaN)*wl,
+   windRight:(num(loads?.windRight)??NaN)*wr
+  };
+  expectedLoads.wind=expectedLoads.windLeft+expectedLoads.windRight;
+  const differences=Object.entries(expectedLoads).filter(([key,value])=>!Number.isFinite(value)||!closeLoad(ll[key],value)).map(([key,value])=>({key,actual:ll[key]??null,expected:value}));
+  const widthExpected=wl+wr,widthActual=num(ll.tributaryWidth);
+  const widthOk=widthActual!==null&&closeLoad(widthActual,widthExpected);
+  purlinMagnitudeChecks.push({memberId:String(m.id),side,tributaryWidthLeftM:wl,tributaryWidthRightM:wr,tributaryWidthActualM:widthActual,expectedLoadsKNm:expectedLoads,ok:differences.length===0&&widthOk,differences,widthOk});
+ });
+ const badPurlinMagnitudes=purlinMagnitudeChecks.filter(x=>!x.ok);
+ if(badPurlinMagnitudes.length)issues.push("مقدار بار خطی/عرض بارگیر "+badPurlinMagnitudes.length+" لاپه با حاصل‌ضرب فشار سطحی در عرض بارگیر منطبق نیست: "+badPurlinMagnitudes.slice(0,8).map(x=>x.memberId).join("، "));
+ rows.push({id:"roof-purlin-line-load-magnitude",label:"تطبیق عددی بار سطحی سقف با بار خطی لاپه‌ها",memberCount:purlinMagnitudeChecks.length,coveredCount:purlinMagnitudeChecks.length-badPurlinMagnitudes.length,missingCount:0,invalidCount:badPurlinMagnitudes.length,status:badPurlinMagnitudes.length?"incomplete":"verified",checks:purlinMagnitudeChecks,method:"q_line = p_surface × tributary_width; ridge sides checked separately",units:{surface:"kN/m²",line:"kN/m",width:"m"}});
  // Roof area loads are carried by purlins; rafters receive purlin support reactions and self-weight.
  const rafterDuplicate=[],rafterMissing=[];
  groups.rafters.forEach(m=>["dead","live","snow"].forEach(k=>{
@@ -243,7 +277,7 @@ function selfTest(){
  const members=[
   {id:"R1",sectionKey:"rafter",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
   {id:"R2",sectionKey:"rafter",axis:"transverse",frame:1,type:"رفتر قاب",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryWidth:4}},
-  {id:"P1",sectionKey:"roofPurlin",side:"left",start:"B",end:"T",lineLoads:{dead:1,live:.5,snow:.5,wind:0,windLeft:-.2,windRight:-.2,windEnd:0,tributaryWidth:1.2}},
+  {id:"P1",sectionKey:"roofPurlin",side:"left",start:"B",end:"T",lineLoads:{dead:.6,live:.6,snow:1.2,wind:-.24,windLeft:-.24,windRight:0,windEnd:0,tributaryWidth:1.2}},
   {id:"W1",sectionKey:"wallGirt",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:.3,windLeft:0,windRight:0,windEnd:0,tributaryHeight:2}},
   {id:"C1",sectionKey:"column",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0}},
   {id:"E1",sectionKey:"endGirt",start:"B",end:"T",lineLoads:{dead:0,live:0,snow:0,wind:0,windLeft:0,windRight:0,windEnd:0,tributaryHeight:2}},
@@ -254,6 +288,10 @@ function selfTest(){
  const loads={deadLeft:.5,deadRight:.5,liveLeft:.5,liveRight:.5,snowLeft:1,snowRight:1,windLeft:-.2,windRight:-.2,windWall:.3,windEndFront:0,windEndBack:0,combinations:[{id:"C1",name:"نمونه",dead:1.2,live:1.6,snow:0}]};
  test("complete member load paths accepted",()=>audit(model,loads).success);
  test("missing roof wind transfer detected",()=>{const p=JSON.parse(JSON.stringify(model));delete p.members[2].lineLoads.windLeft;return !audit(p,loads).success;});
+ test("roof surface-to-purlin numerical transfer verified",()=>audit(model,loads).rows.find(x=>x.id==="roof-purlin-line-load-magnitude").status==="verified");
+ test("incorrect purlin dead line load rejected",()=>{const p=JSON.parse(JSON.stringify(model));p.members.find(m=>m.id==="P1").lineLoads.dead=.61;return !audit(p,loads).success;});
+ test("ridge purlin left/right tributary loads checked independently",()=>{const p=JSON.parse(JSON.stringify(model));const m=p.members.find(x=>x.id==="P1");m.side="ridge";m.tributaryWidthLeft=.6;m.tributaryWidthRight=.6;m.lineLoads={...m.lineLoads,dead:.6,live:.6,snow:1.2,wind:-.24,windLeft:-.12,windRight:-.12,tributaryWidth:1.2};return audit(p,loads).rows.find(x=>x.id==="roof-purlin-line-load-magnitude").status==="verified";});
+ test("ridge purlin wrong-side wind transfer rejected",()=>{const p=JSON.parse(JSON.stringify(model));const m=p.members.find(x=>x.id==="P1");m.side="ridge";m.tributaryWidthLeft=.6;m.tributaryWidthRight=.6;m.lineLoads={...m.lineLoads,dead:.6,live:.6,snow:1.2,wind:-.24,windLeft:-.24,windRight:0,tributaryWidth:1.2};return !audit(p,loads).success;});
  const braceGeometryFixture=()=>{
   const p=JSON.parse(JSON.stringify(model));p.geometry={frames:[0,5],span:20,height:6,rise:2,braceBays:1};
   p.nodes=[{id:"B",kind:"base",x:0,y:0,z:0},{id:"B2",kind:"base",x:20,y:0,z:0},{id:"B3",kind:"base",x:0,y:0,z:5},{id:"B4",kind:"base",x:20,y:0,z:5},
