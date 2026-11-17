@@ -9,7 +9,7 @@ const finite=v=>typeof v==="number"&&Number.isFinite(v);
 const text=v=>typeof v==="string"&&v.trim().length>0;
 const SOURCE=["document","revision","locator","authority"];
 const ACTIONS=["N_N","Vy_N","Vz_N","T_Nmm","My_Nmm","Mz_Nmm"];
-const PROFILE_FIELDS=["webHeight_mm","flange1_mm","flange2_mm","lip1_mm","lip2_mm","thickness_mm","insideRadius_mm"];
+const PROFILE_FIELDS=["webHeight_mm","flange1_mm","flange2_mm","lip1_mm","lip2_mm","width_mm","height_mm","thickness_mm","insideRadius_mm"];
 const PROPERTY_FIELDS=["Ag_mm2","Ix_mm4","Iy_mm4","Ixy_mm4","J_mm4","Cw_mm6","SxTop_mm3","SxBottom_mm3","SyTop_mm3","SyBottom_mm3","shearCenterX_mm","shearCenterY_mm"];
 const BUCKLING_FIELDS=["PcrGlobal_N","PcrLocal_N","PcrDistortional_N","McrGlobal_Nmm","McrLocal_Nmm","McrDistortional_Nmm"];
 function audit(input){
@@ -20,8 +20,18 @@ function audit(input){
  const p=d.profile||{};
  if(!["C","Z","RHS","hat","custom"].includes(p.family))issues.push("خانواده دقیق مقطع (C/Z/RHS/کلاهکی/سفارشی) نامشخص است.");
  ["designation","manufacturer","catalogRevision"].forEach(k=>{if(!text(p[k]))issues.push("مشخصات شناسایی مقطع "+k+" ناقص است.");});
- PROFILE_FIELDS.forEach(k=>{if(!positive(p[k]))issues.push("بعد واقعی مقطع "+k+" معتبر نیست.");});
- if(p.thickness_mm>0&&p.insideRadius_mm>p.thickness_mm*5)warnings.push("شعاع داخلی بزرگ نسبت به ضخامت ثبت شده است؛ واحد و هندسه مقطع بازبینی شود.");
+ const requirePositive=(k)=>{if(!positive(p[k]))issues.push("بعد واقعی مقطع "+k+" معتبر نیست.");};
+ const requireNonnegative=(k)=>{if(!finite(p[k])||p[k]<0)issues.push("بعد مقطع "+k+" باید صریحاً صفر یا مثبت باشد.");};
+ if(["C","Z","hat"].includes(p.family)){
+  ["webHeight_mm","flange1_mm","flange2_mm","thickness_mm","insideRadius_mm"].forEach(requirePositive);
+  ["lip1_mm","lip2_mm"].forEach(requireNonnegative);
+ }else if(p.family==="RHS"){
+  ["width_mm","height_mm","thickness_mm","insideRadius_mm"].forEach(requirePositive);
+ }else if(p.family==="custom"){
+  ["thickness_mm","insideRadius_mm"].forEach(requirePositive);
+  if(!text(p.geometryDescription)||!text(p.geometryReference))issues.push("مقطع سفارشی باید توصیف هندسه و مرجع نقشه/مدل دقیق داشته باشد.");
+ }
+ if(positive(p.thickness_mm)&&positive(p.insideRadius_mm)&&p.insideRadius_mm>p.thickness_mm*5)warnings.push("شعاع داخلی بزرگ نسبت به ضخامت ثبت شده است؛ واحد و هندسه مقطع بازبینی شود.");
  const m=d.material||{};
  ["Fy_MPa","Fu_MPa","E_MPa"].forEach(k=>{if(!positive(m[k]))issues.push("مشخصه مصالح "+k+" معتبر نیست.");});
  if(positive(m.Fy_MPa)&&positive(m.Fu_MPa)&&m.Fu_MPa<m.Fy_MPa)issues.push("Fu از Fy کمتر ثبت شده است.");
@@ -161,6 +171,11 @@ function selfTest(){
  const tests=[],t=(name,fn)=>{try{tests.push({name,pass:fn()===true});}catch(e){tests.push({name,pass:false,error:String(e)});}};
  t("complete evidence package passes readiness only",()=>{const x=audit(good);return x.success&&x.readyForResistanceReview&&!x.designApproved&&!x.capacityCalculated;});
  t("missing exact geometry blocks",()=>!audit({...good,profile:{...good.profile,lip1_mm:null}}).success);
+ t("unlipped C/Z profiles accept explicit zero lip dimensions",()=>audit({...good,profile:{...good.profile,family:"C",lip1_mm:0,lip2_mm:0}}).success);
+ t("RHS profile validates its own width-height geometry without channel lips",()=>{const p={...good.profile,family:"RHS",width_mm:100,height_mm:200};delete p.webHeight_mm;delete p.flange1_mm;delete p.flange2_mm;delete p.lip1_mm;delete p.lip2_mm;return audit({...good,profile:p}).success;});
+ t("RHS profile without width is blocked",()=>{const p={...good.profile,family:"RHS",height_mm:200};delete p.width_mm;return !audit({...good,profile:p}).success;});
+ t("custom profile requires a drawing or model geometry reference",()=>!audit({...good,profile:{...good.profile,family:"custom"}}).success);
+ t("custom profile with explicit geometry provenance remains evidence-only",()=>audit({...good,profile:{...good.profile,family:"custom",geometryDescription:"بازسازی مقطع از پلی‌لاین CAD",geometryReference:"DWG-17 / detail 4"}}).success);
  t("missing local/distortional/global buckling results block",()=>!audit({...good,elasticBuckling:{...good.elasticBuckling,PcrLocal_N:null}}).success);
  t("unreviewed buckling model blocks",()=>!audit({...good,elasticBuckling:{...good.elasticBuckling,reviewed:false}}).success);
  t("unverified flange restraint blocks",()=>!audit({...good,restraint:{...good.restraint,braceCapacityVerified:false}}).success);
