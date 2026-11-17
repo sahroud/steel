@@ -29,6 +29,28 @@ function auditModelCoverage(envelope){
  if(extra.length)issues.push(extra.length+" پرونده به عضو موجود در مدل متصل نیست.");
  return {success:issues.length===0,available:true,designApproved:false,modelMemberCount:model.length,registeredRecordCount:records.length,missingMemberIds:missing,extraMemberIds:extra,duplicateModelIds:duplicates,issues,scope:"identity coverage only; no section resistance or design approval"};
 }
+function auditDemandLink(envelope,demandPackage){
+ const coverage=auditModelCoverage(envelope),env=envelope||root.SteelMemberForceEnvelope?.getLast?.();
+ const model=Array.isArray(env?.members)?env.members.filter(m=>["roofPurlin","wallGirt","endGirt","roofEdge"].includes(m.sectionKey)):[];
+ if(!coverage.available)return {success:false,available:false,designApproved:false,coverage,issues:coverage.issues.slice(),members:[]};
+ const pkg=demandPackage||root.SteelMemberDesignDemandPackage?.getLast?.(),proposal=pkg?.combinationProposal,issues=coverage.issues.slice(),results=[];
+ if(!pkg)issues.push("بسته تقاضای ایستگاهی عضو از تحلیل حل‌گر در دسترس نیست.");
+ if(pkg&&pkg.success!==true)issues.push("بسته تقاضای ایستگاهی کامل و موفق نیست.");
+ if(!proposal||proposal.success!==true)issues.push("پیشنهاد ترکیب بار صریح و موفق برای اتصال تقاضا به پرونده عضو موجود نیست.");
+ const contract=root.SteelColdFormedMemberContract;
+ if(!contract?.auditFromDemandPackage)issues.push("مبدل قراردادی تقاضای اعضای سردنورد بارگذاری نشده است.");
+ model.forEach(m=>{
+  const id=String(m.id??m.memberId??"").trim(),matches=records.filter(r=>String(r.memberId??"").trim()===id);
+  if(matches.length!==1){results.push({memberId:id,success:false,issues:["برای عضو مدل دقیقاً یک پرونده فیزیکی لازم است."]});return;}
+  const record=matches[0],local=[];
+  if(record.group!==m.sectionKey)local.push("گروه پرونده با گروه عضو در مدل یکسان نیست.");
+  let audit=null;
+  if(!local.length&&pkg?.success===true&&proposal?.success===true&&contract?.auditFromDemandPackage){audit=contract.auditFromDemandPackage(record,pkg,proposal);if(audit.success!==true)local.push(...(audit.issues||["تطبیق تقاضا با پرونده عضو موفق نبود."]));}
+  results.push({memberId:id,success:local.length===0&&audit?.success===true,issues:local,audit});
+ });
+ results.forEach(r=>r.issues.forEach(x=>issues.push("عضو "+r.memberId+": "+x)));
+ return {success:issues.length===0&&results.length===model.length&&results.every(r=>r.success),available:true,designApproved:false,coverage,demandPackageStatus:pkg?.status||null,combinationStatus:proposal?.status||null,members:results,issues,scope:"physical member ID + exact demand package + explicit combination proposal; no resistance calculation"};
+}
 function readEditor(){try{return {value:JSON.parse($("cfmMemberJson")?.value||""),error:null};}catch(e){return {value:null,error:"JSON نامعتبر است: "+e.message};}}
 function status(message){const el=$("cfmRegistryStatus");if(el)el.textContent=message;}
 function render(){
@@ -50,7 +72,19 @@ function render(){
 }
 function init(){if($("coldFormedMemberRegistryPanel"))return;const anchor=$("memberDesignInputsPanel");if(!anchor)return;const panel=document.createElement("section");panel.className="panel";panel.id="coldFormedMemberRegistryPanel";panel.setAttribute("data-focus-group","member-design");panel.innerHTML='<div class="panel-title"><h3>پرونده اختصاصی هر لاپه و قید — مقاطع سردنورد</h3><span class="status">شناسه‌محور</span></div><div id="coldFormedMemberRegistryContent"></div>';anchor.insertAdjacentElement("afterend",panel);render();}
 function selfTest(){const prior=clone(records),tests=[];records=[{memberId:"P-01",group:"roofPurlin"},{memberId:"G-01",group:"wallGirt"}];tests.push({name:"distinct physical member IDs are retained",pass:getData().records.length===2&&getData().records[0].memberId!==getData().records[1].memberId});setData({schemaVersion:1,records:[{memberId:"P-02",group:"roofPurlin"}]});tests.push({name:"project save/load round trip retains member record",pass:getData().records.length===1&&getData().records[0].memberId==="P-02"});tests.push({name:"incomplete evidence remains blocked without approval",pass:auditRecord(records[0]).success===false});const coverage=auditModelCoverage({members:[{id:"P-01",sectionKey:"roofPurlin"},{id:"G-01",sectionKey:"wallGirt"}]});tests.push({name:"model coverage detects missing physical member records",pass:coverage.available&&coverage.missingMemberIds.length===2&&coverage.designApproved===false});
- tests.push({name:"untrusted member labels are HTML-escaped before rendering",pass:esc("<img src=x onerror=alert(1)>")==="&lt;img src=x onerror=alert(1)&gt;"});records=prior;render();return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"member-specific persistence and evidence gate only; no resistance design"};}
-root.SteelColdFormedMemberRegistry={getData,setData,auditRecord,auditModelCoverage,selfTest};
+ tests.push({name:"untrusted member labels are HTML-escaped before rendering",pass:esc("<img src=x onerror=alert(1)>")==="&lt;img src=x onerror=alert(1)&gt;"});
+const priorContract=root.SteelColdFormedMemberContract,priorPkg=root.SteelMemberDesignDemandPackage;
+const model={members:[{id:"P-01",sectionKey:"roofPurlin"}]};
+root.SteelColdFormedMemberContract={auditFromDemandPackage:(record,pkg,proposal)=>({success:record.memberId==="P-01"&&pkg.success===true&&proposal.success===true,issues:[]})};
+root.SteelMemberDesignDemandPackage={getLast:()=>null};records=[{memberId:"P-01",group:"roofPurlin"}];
+tests.push({name:"cold-formed demand link blocks when solver package is absent",pass:auditDemandLink(model).success===false});
+const validPkg={success:true,status:"station-demand-evidence-complete",combinationProposal:{success:true,status:"linear-combination-demand-proposal"}};
+tests.push({name:"matching physical member and explicit demand combination are linked",pass:auditDemandLink(model,validPkg).success===true});
+records=[{memberId:"P-01",group:"wallGirt"}];
+tests.push({name:"record group mismatch against model blocks demand link",pass:auditDemandLink(model,validPkg).success===false});
+if(priorContract===undefined)delete root.SteelColdFormedMemberContract;else root.SteelColdFormedMemberContract=priorContract;
+if(priorPkg===undefined)delete root.SteelMemberDesignDemandPackage;else root.SteelMemberDesignDemandPackage=priorPkg;
+records=prior;records=prior;render();return {passed:tests.filter(x=>x.pass).length,failed:tests.filter(x=>!x.pass).length,total:tests.length,tests,scope:"member-specific persistence and evidence gate only; no resistance design"};}
+root.SteelColdFormedMemberRegistry={getData,setData,auditRecord,auditModelCoverage,auditDemandLink,selfTest};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
