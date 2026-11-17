@@ -38,16 +38,20 @@ jobs:
           global.cancelAnimationFrame = () => {};
           global.localStorage = {getItem: () => null, setItem: () => {}, removeItem: () => {}};
           global.sessionStorage = {getItem: () => null, setItem: () => {}, removeItem: () => {}};
+          const elements = new Map();
+          function mockElement(id = '') {
+            return {id, value: '', checked: false, disabled: false, hidden: false, textContent: '', innerHTML: '', className: '', type: '', name: '', dataset: {}, style: {}, children: [], options: [], selectedOptions: [], classList: {add(){}, remove(){}, toggle(){return false}, contains(){return false}}, appendChild(){}, insertBefore(){}, insertAdjacentElement(){}, setAttribute(){}, getAttribute(){return null}, removeAttribute(){}, addEventListener(){}, removeEventListener(){}, querySelector(){return null}, querySelectorAll(){return []}, closest(){return null}, matches(){return false}, focus(){}, click(){}, dispatchEvent(){return true}, remove(){}, getBoundingClientRect(){return {width:0,height:0,top:0,left:0,right:0,bottom:0}}};
+          }
           global.document = {
             readyState: 'loading',
-            head: {appendChild: () => {}},
-            body: {appendChild: () => {}, insertAdjacentElement: () => {}},
-            getElementById: () => null,
+            head: mockElement('head'),
+            body: mockElement('body'),
+            getElementById: id => { if (!elements.has(id)) elements.set(id, mockElement(id)); return elements.get(id); },
             querySelector: () => null,
             querySelectorAll: () => [],
             addEventListener: () => {},
             removeEventListener: () => {},
-            createElement: () => ({style: {}, dataset: {}, children: [], classList: {add(){}, remove(){}, toggle(){}}, appendChild(){}, insertAdjacentElement(){}, setAttribute(){}, addEventListener(){}, removeEventListener(){}, remove(){}})
+            createElement: tag => mockElement(tag)
           };
           vm.runInThisContext(fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8'), {filename: 'legacy-bundle.js'});
           vm.runInThisContext(fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8'), {filename: 'engineering-regression-tests.js'});
