@@ -3,7 +3,7 @@
 function num(v){const n=Number(v);return Number.isFinite(n)?n:null;}
 function evaluate(input){
  const x=input||{},issues=[];
- const req=["boltCount","boltPretension_kN","slipCoefficient","slipPlanes","holeClass","fillersCount","slipDemand_kN","tensionDemand_kN","tensionBolts"];
+ const req=["boltCount","boltPretension_kN","slipCoefficient","slipPlanes","fillersCount","slipDemand_kN","tensionDemand_kN","tensionBolts"];
  const v={};req.forEach(k=>{v[k]=num(x[k]);if(v[k]===null)issues.push("ورودی عددی معتبر برای "+k+" لازم است.");});
  if(!["standard","short-perpendicular","oversized","short-parallel","long-slot"].includes(x.holeClass))issues.push("نوع سوراخ باید صریح و در دامنه پشتیبانی باشد.");
  if(x.surfaceClass!=="A"&&x.surfaceClass!=="B"&&x.surfaceClass!=="tested")issues.push("کلاس سطح اصطکاک باید A/B یا نتیجه آزمون مستند باشد.");
