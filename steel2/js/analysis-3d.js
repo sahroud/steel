@@ -382,13 +382,51 @@ function analyze(model,options){
   forceResidualN:forceResidual,appliedMomentNm:appliedMoment,supportMomentNm:supportMoment,
   momentResidualNm:momentResidual,relativeForceResidual,relativeMomentResidual,
   nodeEquilibrium,nodeEquilibriumOk,maxNodeResidualRatio,
-  equilibriumScope:"global resultant plus assembled nodal linear-system residual; not independent member-end-action audit",
-  ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6&&nodeEquilibriumOk,freeDofCount:free.length};
+  memberEndEquilibrium,memberEndEquilibriumOk,maxMemberEndResidualRatio,
+  equilibriumScope:"global resultant, assembled nodal residual, and independent recovered member-end-action balance at every physical node; includes rigid-arm transforms, equivalent member loads, nodal loads, supports, nodal springs and coincident-node connector springs",
+  ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6&&nodeEquilibriumOk&&memberEndEquilibriumOk,freeDofCount:free.length};
  const results=elements.map(e=>{
   const dg=e.ids.map(i=>D[i]),dl=restoreReleasedRotations(mul(e.T,dg.map(v=>[v])).map(r=>r[0]),e.releaseData),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
   return {id:e.member.id,localEndForceConventionVersion:LOCAL_END_FORCE_CONVENTION.version,parentMemberId:e.member.parentMemberId||null,taperSegmentIndex:e.member.taperSegmentIndex||null,taperSegmentCount:e.member.taperSegmentCount||null,start:e.member.start,end:e.member.end,sectionKey:e.member.sectionKey||e.props.sectionKey||"",type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props,endReleases:e.endReleases,endOffsets:{i:e.offsetI.slice(),j:e.offsetJ.slice()}};
  });
+ // Independent node balance from recovered element end actions. End actions are
+ // transformed from physical member ends to joint DOFs through Tjoint, which
+ // includes rigid-arm offsets. Equivalent member-load effects are already
+ // embedded in localEndForces (= k*d - equivalentLocalLoad).
+ const memberEndByNode=nodes.map(()=>Array(6).fill(0));
+ elements.forEach((e,index)=>{
+  const local=results[index].localEndForces;
+  const joint=mul(transpose(e.T),local.map(v=>[v])).map(r=>r[0]);
+  const ia=nodeMap.get(e.member.start),ib=nodeMap.get(e.member.end);
+  for(let d=0;d<6;d++){memberEndByNode[ia][d]+=joint[d];memberEndByNode[ib][d]+=joint[d+6];}
+ });
+ const appliedNodalByNode=nodes.map(()=>Array(6).fill(0));
+ (options.nodalLoads||[]).forEach(load=>{
+  const ni=nodeMap.get(load.nodeId);load.values.forEach((v,d)=>appliedNodalByNode[ni][d]+=Number(v));
+ });
+ const supportByNode=nodes.map(()=>Array(6).fill(0));
+ fixed.forEach(dof=>{supportByNode[Math.floor(dof/6)][dof%6]+=R[dof];});
+ const springByNode=nodes.map(()=>Array(6).fill(0));
+ nodalSprings.forEach(sp=>{springByNode[sp.nodeIndex][sp.dof]+=springReactionByDof[sp.globalDof];});
+ const connectorByNode=nodes.map(()=>Array(6).fill(0));
+ connectorSprings.forEach(sp=>{
+  const force=sp.stiffness*(D[sp.globalDofJ]-D[sp.globalDofI]);
+  connectorByNode[sp.nodeIndexI][sp.dof]+=force;
+  connectorByNode[sp.nodeIndexJ][sp.dof]-=force;
+ });
+ const memberEndEquilibrium=nodes.map((node,i)=>{
+  const components=Array.from({length:6},(_,d)=>{
+   const internal=memberEndByNode[i][d],applied=appliedNodalByNode[i][d],support=supportByNode[i][d],spring=springByNode[i][d],connector=connectorByNode[i][d];
+   const residual=internal-applied-support-spring-connector;
+   const scaleValue=Math.max(Math.abs(internal),Math.abs(applied),Math.abs(support),Math.abs(spring),Math.abs(connector),1);
+   return{dof:d,memberEndAction:internal,appliedNodalLoad:applied,supportReaction:support,nodalSpringReaction:spring,connectorSpringForce:connector,residual,relativeResidual:Math.abs(residual)/scaleValue};
+  });
+  const maxRelativeResidual=Math.max(0,...components.map(x=>x.relativeResidual));
+  return{nodeId:String(node.id),components,maxRelativeResidual,ok:maxRelativeResidual<=1e-6};
+ });
+ const maxMemberEndResidualRatio=Math.max(0,...memberEndEquilibrium.map(x=>x.maxRelativeResidual));
+ const memberEndEquilibriumOk=memberEndEquilibrium.every(x=>x.ok);
  let maxTranslation=0,maxDisplacement=null;
  nodes.forEach((n,i)=>{
   const components=D.slice(i*6,i*6+3);
@@ -412,8 +450,13 @@ function selfTest(){
  const close=(actual,expected,tol)=>Math.abs(actual-expected)<=Math.max(Math.abs(expected)*tol,1e-12);
  const tests=[];
  const nodeResidualFixture=analyze(makeModel(),{...base,nodalLoads:[{nodeId:"TIP",values:[1000,0,0,0,0,0]}]});
- const nodeResidualPass=nodeResidualFixture.equilibrium.nodeEquilibrium.length===2&&nodeResidualFixture.equilibrium.nodeEquilibrium.every(x=>x.ok)&&nodeResidualFixture.equilibrium.maxNodeResidualRatio<=1e-6&&nodeResidualFixture.equilibrium.equilibriumScope.includes("not independent");
- tests.push({name:"node-by-node-assembled-equilibrium-residual",ok:nodeResidualPass,maxRelativeResidual:nodeResidualFixture.equilibrium.maxNodeResidualRatio,scope:nodeResidualFixture.equilibrium.equilibriumScope});
+ const nodeResidualPass=nodeResidualFixture.equilibrium.nodeEquilibrium.length===2&&nodeResidualFixture.equilibrium.nodeEquilibrium.every(x=>x.ok)&&nodeResidualFixture.equilibrium.maxNodeResidualRatio<=1e-6;
+ tests.push({name:"node-by-node-assembled-equilibrium-residual",ok:nodeResidualPass,maxRelativeResidual:nodeResidualFixture.equilibrium.maxNodeResidualRatio});
+ const memberBalancePass=nodeResidualFixture.equilibrium.memberEndEquilibriumOk===true&&nodeResidualFixture.equilibrium.memberEndEquilibrium.length===2&&nodeResidualFixture.equilibrium.memberEndEquilibrium.every(x=>x.ok)&&nodeResidualFixture.equilibrium.maxMemberEndResidualRatio<=1e-6;
+ tests.push({name:"independent-member-end-action-node-balance-including-support",ok:memberBalancePass,maxRelativeResidual:nodeResidualFixture.equilibrium.maxMemberEndResidualRatio});
+ const offsetModel={nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:L,y:0,z:0}],members:[{id:"OFFSET",start:"FIX",end:"TIP",type:"validation",endOffsets:{i:[0,-.25,0],j:[0,0,0]}}]};
+ const offsetBalance=analyze(offsetModel,{...base,nodalLoads:[{nodeId:"TIP",values:[0,0,-1000,0,0,0]}]});
+ tests.push({name:"independent-node-balance-includes-rigid-arm-moment-transfer",ok:offsetBalance.equilibrium.memberEndEquilibriumOk===true&&offsetBalance.equilibrium.ok,maxRelativeResidual:offsetBalance.equilibrium.maxMemberEndResidualRatio});
  const contract=analyze(makeModel(),base).localEndForceConvention;
  tests.push({name:"local-end-force-contract-metadata",ok:contract?.version===1&&contract.components.length===12&&contract.basis==="member-local"&&contract.verifiedSignCases.axialTension.endI==="negative Fx_i"&&contract.unverifiedSignCases.length===0});
  const axes=analyze(makeModel(),base).members[0].localAxes;
