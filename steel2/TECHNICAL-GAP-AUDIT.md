@@ -9,7 +9,10 @@ Branch: `refactor/stepwise-shed-workflow`
 - The 3D load assembly applies member self-weight using section area and steel unit weight, and distributes entered gravity loads to frame members.
 - Entered net wind pressures are mapped to roof purlins, longitudinal wall girts and end-wall girts.
 
-## Confirmed gaps to address before a final design claim
+## Confirmed issues and gaps to address before a final design claim
+
+- **Roof gravity-load duplication corrected on this branch:** the model builder was assigning roof dead/live/snow area loads both to rafters and to roof purlins. Since purlins are modeled and transfer their reactions into rafters, this duplicates the roof surface loads. The updated builder applies these area loads through purlins when purlins exist; direct rafter area loading is retained only as a fallback when no roof purlin members exist. Member self-weight remains calculated separately.
+- **Roof tributary-width convention still needs verification:** purlin tributary widths are currently generated along the sloped roof station spacing. The adopted load input convention (horizontal projected area versus actual roof surface area) must be explicitly defined and reconciled with the applicable code before finalizing the conversion.
 1. **Crane system:** no crane load fields, crane runway/rail members, wheel loads, impact/side thrust, crane combinations or crane-specific checks were found in the `steel2` source search. This is a required development stream when the user selects a crane.
 2. **Seismic actions:** the current 3D combination builder in `js/app.js` builds D, Lr, S and W combinations; seismic load cases and seismic combinations are not present in that builder.
 3. **Wind coefficients:** `climate-load-engine.js` calculates/records pressure information but the final code coefficients are not automatically resolved into all member-level wind loads. Manual net pressure input remains a separate path.
