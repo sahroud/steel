@@ -20,5 +20,19 @@
     return Array.from({ length: count + 1 }, (_, i) =>
       segment * (i === 0 || i === count ? 0.5 : 1));
   }
-  root.SteelLoadTransfer = Object.freeze({ surfacePressureToLineLoad, equalStationTributaryWidths });
+  function triangularGableWindResultant(pressureKPa, spanM, riseM) {
+    const p = Number(pressureKPa), span = Number(spanM), rise = Number(riseM);
+    if (!Number.isFinite(p)) throw new TypeError("فشار باد باید عدد محدود باشد.");
+    if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(rise) || rise < 0)
+      throw new RangeError("دهانه باید مثبت و ارتفاع مثلث نامنفی باشد.");
+    return Object.freeze({
+      areaM2: 0.5 * span * rise,
+      resultantKN: p * 0.5 * span * rise,
+      centroidXFromLeftM: span / 2,
+      centroidYAboveEaveM: rise / 3
+    });
+  }
+  root.SteelLoadTransfer = Object.freeze({
+    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant
+  });
 })(typeof globalThis !== "undefined" ? globalThis : window);
