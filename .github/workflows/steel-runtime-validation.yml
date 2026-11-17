@@ -115,7 +115,7 @@ jobs:
             console.error({moduleCount: names.length, duplicates, missing, unexpectedlyIncluded, missingSources});
             process.exit(1);
           }
-          if (!html.includes('js/legacy-bundle.js?v=20261117-runtime5') || html.includes('dropbox@')) {
+          if (!html.includes('js/legacy-bundle.js?v=20261117-runtime6') || html.includes('dropbox@')) {
             console.error('Legacy page does not reference the current single runtime bundle or still loads the external Dropbox SDK.');
             process.exit(1);
           }
