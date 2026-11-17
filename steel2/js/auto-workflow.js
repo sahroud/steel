@@ -34,9 +34,14 @@
     return "ردیابی منبع: "+summary.completeCaseCount+" از "+summary.caseCount+" حالت کامل؛ "+summary.incompleteCaseCount+" حالت ناقص. فیلدهای مفقود: "+fields+". شناسه حالت‌های ناقص: "+ids+". تا تکمیل مدرک، بازسازی نمودار نیروهای داخلی برای این بسته عمداً اجرا نشده است.";
   }
   function setReport(rows, heading) {
-    const out=$("steelAutoWorkflowResults"); if(!out)return;
     const pass=rows.filter(x=>x.ok).length;
     const missing=rows.filter(x=>!x.ok).length;
+    window.SteelAutoWorkflow=window.SteelAutoWorkflow||{};
+    window.SteelAutoWorkflow.lastResult={
+      heading,rows:rows.map(x=>({...x})),passed:pass,blocked:missing,total:rows.length,
+      success:missing===0,designApproved:false,generatedAt:new Date().toISOString()
+    };
+    const out=$("steelAutoWorkflowResults"); if(!out)return window.SteelAutoWorkflow.lastResult;
     out.innerHTML="<h4>"+heading+"</h4>"+
       "<p>مراحل انجام‌شده: "+pass+" | نیازمند تکمیل یا بررسی: "+missing+"</p>"+
       rows.map(x=>'<div class="notice"><b>'+(x.ok?"✓ ":"⚠ ")+x.label+
@@ -368,6 +373,6 @@
     if(first)main.insertBefore(panel,first);else main.appendChild(panel);
     $("btnSteelAutoWorkflow").addEventListener("click",run);
   }
-  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,summarizeSourceAudit,sourceAuditDetail,selfTest};
+  window.SteelAutoWorkflow={run,audit3DCombinationCoverage,auditCraneReadiness,summarizeSourceAudit,sourceAuditDetail,selfTest,lastResult:null};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
