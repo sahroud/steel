@@ -11,6 +11,7 @@ function audit(envelope,model,footingSpecFor){
  if(!Array.isArray(envelope?.rows)||!envelope.rows.length)issues.push("پوش فاقد ردیف واکنش پایه است.");
  if(!Array.isArray(model?.nodes)||!supports.length)issues.push("مدل فاقد گره پایه معتبر است.");
  const supportById=new Map(supports.map(n=>[String(n.id),n])),rowById=new Map();
+ const expectedCaseLabels=new Set((envelope?.cases||[]).map(c=>String(c?.label??"")));
  (envelope?.rows||[]).forEach(row=>{
   const id=String(row?.nodeId??"");
   if(!id||rowById.has(id)){issues.push("شناسه ردیف پایه خالی یا تکراری است: "+id);return;}
@@ -28,8 +29,10 @@ function audit(envelope,model,footingSpecFor){
    const label=String(item?.label??"");
    if(!label||seen.has(label)){issues.push("نام حالت واکنش خالی یا تکراری برای گره "+id);return;}
    seen.add(label);
+   if(!expectedCaseLabels.has(label))issues.push("حالت واکنش برای گره "+id+" در فهرست اصلی پوش وجود ندارد: "+label);
    if(!Array.isArray(item.values)||item.values.length<6||item.values.slice(0,6).some(v=>!finite(Number(v))))issues.push("بردار شش‌مؤلفه‌ای نامعتبر برای گره "+id+" / "+label);
   });
+  expectedCaseLabels.forEach(label=>{if(!seen.has(label))issues.push("واکنش حالت "+label+" برای گره "+id+" موجود نیست.");});
   if(Array.isArray(cases)&&cases.length===envelope.cases.length&&cases.every(x=>Array.isArray(x.values)&&x.values.length>=6&&x.values.slice(0,6).every(v=>finite(Number(v))))){
    [0,1,2,3,4,5].forEach(k=>{
     const vals=cases.map(x=>Number(x.values[k])),mn=Math.min(...vals),mx=Math.max(...vals),env=row.envelopes?.[k];
@@ -100,6 +103,8 @@ function selfTest(){
   ["valid complete envelope accepted",good.ok],
   ["missing support row rejected",!audit({...env,rows:env.rows.slice(0,1)},model).ok],
   ["missing case reaction rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,caseReactions:[]}:r)},model).ok],
+  ["unknown case label cannot replace a missing valid case",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,caseReactions:[{label:"UNKNOWN",values:vals1},{label:"C2",values:vals1}]}:r)},model).ok],
+  ["case labels may be reordered without losing exact coverage",audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,caseReactions:r.caseReactions.slice().reverse()}:r)},model).ok],
   ["coordinate mismatch rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B2"?{...r,x:9}:r)},model).ok],
   ["envelope min max mismatch rejected",!audit({...env,rows:env.rows.map(r=>r.nodeId==="B1"?{...r,envelopes:r.envelopes.map((e,i)=>i===0?{min:-1,max:1}:e)}:r)},model).ok],
   ["failed equilibrium rejected",!audit({...env,cases:[{label:"C1",equilibrium:{ok:false}}]},model).ok],
