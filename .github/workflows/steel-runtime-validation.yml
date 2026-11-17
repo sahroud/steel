@@ -62,13 +62,14 @@ jobs:
           console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
           for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, check.detail);
           const testSource = fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8');
-          const apiNames = [...new Set([...testSource.matchAll(/root\.(Steel[A-Za-z0-9_]+)\?\.selfTest/g)].map(x => x[1]))];
+          const apiNames = Object.keys(window).filter(name => /^Steel/.test(name) && typeof window[name]?.selfTest === 'function');
           const diagnostics = {};
           for (const name of apiNames) {
-            try { const fn = window[name]?.selfTest; if (typeof fn === 'function') diagnostics[name] = fn(); }
+            try { diagnostics[name] = window[name].selfTest(); }
             catch (error) { diagnostics[name] = {error: error.message}; }
           }
-          console.log('SELFTEST_DIAGNOSTICS:', JSON.stringify(diagnostics).slice(0, 30000));
+          const failedDiagnostics = Object.entries(diagnostics).filter(([, value]) => value?.failed > 0 || value?.error || (value?.tests || value?.checks || []).some(x => x.ok === false || x.pass === false));
+          console.log('SELFTEST_DIAGNOSTICS:', JSON.stringify(failedDiagnostics).slice(0, 40000));
           const runtime = window.SteelRuntimeIntegrity?.audit?.();
           if (!runtime?.success) {
             console.error('Runtime integrity failure:', runtime);
