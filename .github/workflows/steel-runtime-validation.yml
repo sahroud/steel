@@ -62,7 +62,7 @@ jobs:
           window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
           const result = window.SteelEngineeringRegression.run();
           console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
-          for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, check.detail);
+          for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, JSON.stringify(check.detail));
           const testSource = fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8');
           const apiNames = [...new Set([...testSource.matchAll(/root\.(?:Steel|SahroudSteel)[A-Za-z0-9_]+(?:\?\.|\.)selfTest/g)].map(x => x[0].match(/root\.((?:Steel|SahroudSteel)[A-Za-z0-9_]+)/)[1]))];
           const diagnostics = {};
