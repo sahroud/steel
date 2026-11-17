@@ -8,6 +8,7 @@ const positive=v=>typeof v==="number"&&Number.isFinite(v)&&v>0;
 const finite=v=>typeof v==="number"&&Number.isFinite(v);
 const text=v=>typeof v==="string"&&v.trim().length>0;
 const SOURCE=["document","revision","locator","authority"];
+function sourceIssues(label,source){const missing=SOURCE.filter(k=>!text(source?.[k]));return missing.length?[label+" فاقد ردگیری مستند است: "+missing.join("، ")+"."]:[];}
 const ACTIONS=["N_N","Vy_N","Vz_N","T_Nmm","My_Nmm","Mz_Nmm"];
 const PROPERTY_FIELDS=["Ag_mm2","Ix_mm4","Iy_mm4","Ixy_mm4","J_mm4","Cw_mm6","SxTop_mm3","SxBottom_mm3","SyTop_mm3","SyBottom_mm3","shearCenterX_mm","shearCenterY_mm"];
 const BUCKLING_FIELDS=["PcrGlobal_N","PcrLocal_N","PcrDistortional_N","McrGlobal_Nmm","McrLocal_Nmm","McrDistortional_Nmm"];
@@ -19,6 +20,7 @@ function audit(input){
  const p=d.profile||{};
  if(!["C","Z","RHS","hat","custom"].includes(p.family))issues.push("خانواده دقیق مقطع (C/Z/RHS/کلاهکی/سفارشی) نامشخص است.");
  ["designation","manufacturer","catalogRevision"].forEach(k=>{if(!text(p[k]))issues.push("مشخصات شناسایی مقطع "+k+" ناقص است.");});
+ issues.push(...sourceIssues("کاتالوگ/نقشه هندسه مقطع",p.catalogEvidence));
  const requirePositive=(k)=>{if(!positive(p[k]))issues.push("بعد واقعی مقطع "+k+" معتبر نیست.");};
  const requireNonnegative=(k)=>{if(!finite(p[k])||p[k]<0)issues.push("بعد مقطع "+k+" باید صریحاً صفر یا مثبت باشد.");};
  if(["C","Z","hat"].includes(p.family)){
@@ -35,13 +37,16 @@ function audit(input){
  ["Fy_MPa","Fu_MPa","E_MPa"].forEach(k=>{if(!positive(m[k]))issues.push("مشخصه مصالح "+k+" معتبر نیست.");});
  if(positive(m.Fy_MPa)&&positive(m.Fu_MPa)&&m.Fu_MPa<m.Fy_MPa)issues.push("Fu از Fy کمتر ثبت شده است.");
  if(!text(m.standard)||!text(m.certificateReference))issues.push("استاندارد محصول و مرجع گواهی مصالح ثبت نشده است.");
+ issues.push(...sourceIssues("گواهی مصالح",m.certificateEvidence));
  const s=d.sectionProperties||{};
  PROPERTY_FIELDS.forEach(k=>{if(!finite(s[k])||(k!=="Ixy_mm4"&&k!=="shearCenterX_mm"&&k!=="shearCenterY_mm"&&s[k]<=0))issues.push("خاصیت واقعی مقطع "+k+" معتبر نیست.");});
  if(positive(s.Ix_mm4)&&positive(s.Iy_mm4)&&Math.abs(Number(s.Ixy_mm4)||0)>=Math.sqrt(s.Ix_mm4*s.Iy_mm4))issues.push("ماتریس اینرسی مقطع نامعتبر یا تکین است.");
  if(!text(s.source)||!text(s.method)||!text(s.revision))issues.push("منبع، روش استخراج و نسخه خواص مقطع باید مشخص باشد.");
+ issues.push(...sourceIssues("مدرک خواص هندسی مقطع",s.evidence));
  const b=d.elasticBuckling||{};
  BUCKLING_FIELDS.forEach(k=>{if(!positive(b[k]))issues.push("خروجی کمانش الاستیک "+k+" لازم است.");});
  if(!text(b.solver)||!text(b.version)||!text(b.modelReference)||b.reviewed!==true)issues.push("مدل و خروجی کمانش الاستیک باید دارای نرم‌افزار/نسخه/مرجع مدل و بازبینی مستند باشد.");
+ issues.push(...sourceIssues("گزارش محاسبه کمانش الاستیک",b.evidence));
  const r=d.restraint||{};
  if(![true,false].includes(r.compressionFlangeBraced))issues.push("وضعیت مهار بال فشاری باید صریحاً تعیین شود.");
  if(!positive(r.unbracedLength_mm))issues.push("طول مهارنشده واقعی باید ثبت شود.");
@@ -74,8 +79,10 @@ function audit(input){
  });
  const connection=d.connection||{};
  if(!text(connection.type)||!text(connection.reference)||connection.capacityVerified!==true)issues.push("نوع اتصال و مرجع/ظرفیت تأییدشده اتصال لاپه/قید لازم است.");
+ issues.push(...sourceIssues("مدرک ظرفیت اتصال",connection.evidence));
  const service=d.serviceability||{};
  if(service.checked!==true||!text(service.combinationReference)||!positive(service.limitRatio))issues.push("کنترل خیز/تغییرمکان در ترکیب بهره‌برداری و حد مجاز مستند نیست.");
+ issues.push(...sourceIssues("مدرک کنترل بهره‌برداری/خیز",service.evidence));
  const governing={};
  ACTIONS.forEach(k=>{
   let best=null;
@@ -166,10 +173,18 @@ function auditFromDemandPackage(baseInput,demandPackage,combinationProposal){
  return result;
 }
 function selfTest(){
- const good={group:"roofPurlin",memberId:"P-01",profile:{family:"Z",designation:"Z200-70-20-2.5",manufacturer:"MFG",catalogRevision:"R2",webHeight_mm:200,flange1_mm:70,flange2_mm:70,lip1_mm:20,lip2_mm:20,thickness_mm:2.5,insideRadius_mm:3},material:{Fy_MPa:350,Fu_MPa:420,E_MPa:200000,standard:"EN 10346",certificateReference:"MTC-01"},sectionProperties:{Ag_mm2:900,Ix_mm4:4e6,Iy_mm4:2e6,Ixy_mm4:0,J_mm4:5000,Cw_mm6:1e10,SxTop_mm3:40000,SxBottom_mm3:40000,SyTop_mm3:20000,SyBottom_mm3:20000,shearCenterX_mm:0,shearCenterY_mm:0,source:"manufacturer table",method:"tested section properties",revision:"R2"},elasticBuckling:{PcrGlobal_N:50000,PcrLocal_N:30000,PcrDistortional_N:40000,McrGlobal_Nmm:2e7,McrLocal_Nmm:1e7,McrDistortional_Nmm:1.5e7,solver:"CUFSM",version:"5.0",modelReference:"model-P01",reviewed:true},restraint:{compressionFlangeBraced:true,braceSpacing_mm:1500,unbracedLength_mm:1500,braceType:"sag rod and sheeting",braceConnectionReference:"BR-01",braceCapacityVerified:true},loadCases:[{caseId:"ULS-1",label:"ULS-1",source:{document:"calc.pdf",revision:"A",locator:"p.10",authority:"engineer"},stations:[{station_mm:0,N_N:0,Vy_N:100,Vz_N:0,T_Nmm:0,My_Nmm:1000,Mz_Nmm:0},{station_mm:6000,N_N:0,Vy_N:-100,Vz_N:0,T_Nmm:0,My_Nmm:1000,Mz_Nmm:0}]}],connection:{type:"self-drilling screws",reference:"CONN-01",capacityVerified:true},serviceability:{checked:true,combinationReference:"SLS-1",limitRatio:180}};
+ const good={group:"roofPurlin",memberId:"P-01",profile:{family:"Z",designation:"Z200-70-20-2.5",manufacturer:"MFG",catalogRevision:"R2",catalogEvidence:{document:"fixture.pdf",revision:"R2",locator:"sheet-1",authority:"manufacturer"},webHeight_mm:200,flange1_mm:70,flange2_mm:70,lip1_mm:20,lip2_mm:20,thickness_mm:2.5,insideRadius_mm:3},material:{Fy_MPa:350,Fu_MPa:420,E_MPa:200000,standard:"EN 10346",certificateReference:"MTC-01",certificateEvidence:{document:"fixture.pdf",revision:"R2",locator:"sheet-1",authority:"manufacturer"}},sectionProperties:{Ag_mm2:900,Ix_mm4:4e6,Iy_mm4:2e6,Ixy_mm4:0,J_mm4:5000,Cw_mm6:1e10,SxTop_mm3:40000,SxBottom_mm3:40000,SyTop_mm3:20000,SyBottom_mm3:20000,shearCenterX_mm:0,shearCenterY_mm:0,source:"manufacturer table",method:"tested section properties",revision:"R2",evidence:{document:"fixture.pdf",revision:"R2",locator:"sheet-1",authority:"manufacturer"}},elasticBuckling:{PcrGlobal_N:50000,PcrLocal_N:30000,PcrDistortional_N:40000,McrGlobal_Nmm:2e7,McrLocal_Nmm:1e7,McrDistortional_Nmm:1.5e7,solver:"CUFSM",version:"5.0",modelReference:"model-P01",reviewed:true,evidence:{document:"fixture.pdf",revision:"R2",locator:"sheet-1",authority:"manufacturer"}},restraint:{compressionFlangeBraced:true,braceSpacing_mm:1500,unbracedLength_mm:1500,braceType:"sag rod and sheeting",braceConnectionReference:"BR-01",braceCapacityVerified:true},loadCases:[{caseId:"ULS-1",label:"ULS-1",source:{document:"calc.pdf",revision:"A",locator:"p.10",authority:"engineer"},stations:[{station_mm:0,N_N:0,Vy_N:100,Vz_N:0,T_Nmm:0,My_Nmm:1000,Mz_Nmm:0},{station_mm:6000,N_N:0,Vy_N:-100,Vz_N:0,T_Nmm:0,My_Nmm:1000,Mz_Nmm:0}]}],connection:{type:"self-drilling screws",reference:"CONN-01",capacityVerified:true,evidence:{document:"fixture.pdf",revision:"R2",locator:"sheet-1",authority:"manufacturer"}},serviceability:{checked:true,combinationReference:"SLS-1",limitRatio:180,evidence:{document:"fixture.pdf",revision:"R2",locator:"sheet-1",authority:"manufacturer"}}};
  const tests=[],t=(name,fn)=>{try{tests.push({name,pass:fn()===true});}catch(e){tests.push({name,pass:false,error:String(e)});}};
  t("complete evidence package passes readiness only",()=>{const x=audit(good);return x.success&&x.readyForResistanceReview&&!x.designApproved&&!x.capacityCalculated;});
  t("missing exact geometry blocks",()=>!audit({...good,profile:{...good.profile,lip1_mm:null}}).success);
+ t("missing manufacturer geometry provenance blocks",()=>!audit({...good,profile:{...good.profile,catalogEvidence:null}}).success);
+ t("missing material certificate provenance blocks",()=>!audit({...good,material:{...good.material,certificateEvidence:null}}).success);
+ t("missing section property source provenance blocks",()=>!audit({...good,sectionProperties:{...good.sectionProperties,evidence:{document:"x"}}}).success);
+ t("missing elastic buckling report provenance blocks",()=>!audit({...good,elasticBuckling:{...good.elasticBuckling,evidence:null}}).success);
+ t("missing connection capacity provenance blocks",()=>!audit({...good,connection:{...good.connection,evidence:{document:"x"}}}).success);
+ t("missing serviceability report provenance blocks",()=>!audit({...good,serviceability:{...good.serviceability,evidence:null}}).success);
+ t("complete evidence sources retain readiness-only status",()=>{const x=audit(good);return x.success&&x.designApproved===false&&x.capacityCalculated===false;});
+
  t("unlipped C/Z profiles accept explicit zero lip dimensions",()=>audit({...good,profile:{...good.profile,family:"C",lip1_mm:0,lip2_mm:0}}).success);
  t("RHS profile validates its own width-height geometry without channel lips",()=>{const p={...good.profile,family:"RHS",width_mm:100,height_mm:200};delete p.webHeight_mm;delete p.flange1_mm;delete p.flange2_mm;delete p.lip1_mm;delete p.lip2_mm;return audit({...good,profile:p}).success;});
  t("RHS profile without width is blocked",()=>{const p={...good.profile,family:"RHS",height_mm:200};delete p.width_mm;return !audit({...good,profile:p}).success;});
