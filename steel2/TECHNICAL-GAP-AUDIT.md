@@ -58,3 +58,43 @@ The following observations were verified directly in `js/model-3d.js`, `js/analy
 - Compare global equilibrium residuals and member/joint equilibrium; fail the test if any required load family is absent, not merely if the solver balances.
 
 No load algorithm was changed in this audit update because the load-area convention and missing end-wall triangular load must first be resolved and covered by independent tests.
+
+
+## P2 follow-up — combination path and reference fixtures — 2026-11-17
+
+### Confirmed defect corrected
+
+The legacy combination builder in `js/app.js` detected wind cases using only roof and longitudinal-wall pressure fields. It did not detect nonzero `windEndFront` or `windEndBack`; and its factored combination copy did not multiply either end-wall pressure by the wind factor/sign. This could silently omit end-wall wind from combinations built through that path. The following source correction was committed:
+
+- `hasWind()` now considers roof, longitudinal-wall, front end-wall and rear end-wall pressure inputs.
+- `makeCombinationData()` now applies the selected wind factor/sign to both end-wall pressure inputs.
+- The de-duplication signature now includes both end-wall fields so distinct end-wall cases are not collapsed.
+
+This fixes the identified data propagation omission in the legacy combination builder. It does **not** certify that the generated combination factors, signs, or wind direction cases comply with the applicable edition of Mabhas 6; that requires formal source verification and review of the load-generation convention.
+
+### Independent solver reference tests added
+
+Added `tests/analysis-3d-reference.test.js` with four Node test-runner fixtures:
+
+1. Axial nodal force: checks (u=PL/EA), support reaction and global equilibrium.
+2. Uniform local axial member load: checks (u=qL^2/(2EA)), support reaction and global equilibrium.
+3. Missing member endpoint: solver must reject the model.
+4. Non-positive section area: solver must reject invalid section properties.
+
+Run from repository root using:
+
+```sh
+node --test steel2/tests/analysis-3d-reference.test.js
+```
+
+The test file is committed, but the test runner has **not yet been executed in this environment**. It is therefore recorded as authored / pending execution, not passed.
+
+### Remaining P2 blockers
+
+- Resolve and document whether roof surface inputs are referenced to horizontal plan area or actual sloping area before changing purlin tributary widths.
+- Add independent integrated-load checks for left, right and ridge purlins.
+- Add front/rear end-wall triangular pressure transfer above the top girt and verify its resultant and centroid.
+- Add wind-direction and combination tests that prove each roof, side-wall and end-wall pressure field reaches the intended members exactly once.
+- Audit the separate 3D combination selection path: the current three selectable 3D combinations are gravity-only; wind combinations are not yet exposed as verified 3D cases.
+
+No claim of P2 completion is made.
