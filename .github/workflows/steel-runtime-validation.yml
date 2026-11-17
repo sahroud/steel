@@ -25,6 +25,35 @@ jobs:
           while IFS= read -r -d '' file; do
             node --check "$file"
           done < <(find steel2/js -maxdepth 1 -type f -name '*.js' -print0)
+      - name: Run engineering software regression suite
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const vm = require('node:vm');
+          global.window = globalThis;
+          global.addEventListener = () => {};
+          global.removeEventListener = () => {};
+          global.requestAnimationFrame = () => 0;
+          global.cancelAnimationFrame = () => {};
+          global.localStorage = {getItem: () => null, setItem: () => {}, removeItem: () => {}};
+          global.sessionStorage = {getItem: () => null, setItem: () => {}, removeItem: () => {}};
+          global.document = {
+            readyState: 'complete',
+            getElementById: () => null,
+            querySelector: () => null,
+            querySelectorAll: () => [],
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            createElement: () => ({style: {}, dataset: {}, classList: {add(){}, remove(){}, toggle(){}}})
+          };
+          vm.runInThisContext(fs.readFileSync('steel2/js/legacy-bundle.js', 'utf8'), {filename: 'legacy-bundle.js'});
+          vm.runInThisContext(fs.readFileSync('steel2/js/engineering-regression-tests.js', 'utf8'), {filename: 'engineering-regression-tests.js'});
+          const result = global.SteelEngineeringRegression.run();
+          console.log(`Software regression: ${result.passed}/${result.passed + result.failed} passed`);
+          for (const check of result.checks.filter(x => !x.pass)) console.error('FAIL:', check.name, check.detail);
+          if (result.failed) process.exit(1);
+          NODE
       - name: Verify production bundle manifest
         run: |
           node <<'NODE'
