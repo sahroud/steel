@@ -584,7 +584,7 @@
     });
     return {ready:missing.length===0,groupCount:groups.size,memberCount:model.members.length,missing};
   }
-  function run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports){
+  function run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads){
     return new Promise((resolve,reject)=>{
       let worker;
       try{
@@ -614,6 +614,7 @@
           model:analysisModel,
           sectionsByMemberId,
           supports,
+          nodalLoads:nodalLoads||[],
           releasePurlinRafterRotation:true
         });
       }catch(error){
@@ -749,7 +750,58 @@
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
-    const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports);
+    const nodalLoads=[];
+    const gableWindTransfer=[];
+    const windFactor=selected.key==="wind"?1:Number(selected.windFactor||0);
+    const windSign=selected.key==="wind"?1:Number(selected.windSign||1);
+    if(windFactor!==0&&Number(model.geometry.rise)>0){
+      const intervals=Math.max(1,Math.ceil(Number(model.geometry.span)/Number(model.geometry.endPostSpacing||4)));
+      const nodeAt=(x,y,z)=>{
+        const found=analysisModel.nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7);
+        if(!found)throw new Error("گره معادل بار باد دیوار انتهایی پیدا نشد: x="+x+", y="+y+", z="+z);
+        return found;
+      };
+      const loadByNode=new Map();
+      const addNodal=(node,values)=>{
+        const current=loadByNode.get(node.id)||[0,0,0,0,0,0];
+        values.forEach((value,i)=>current[i]+=value);
+        loadByNode.set(node.id,current);
+      };
+      ["front","rear"].forEach(face=>{
+        const rawPressure=Number(face==="front"?currentWindInputs.windEndFront:currentWindInputs.windEndBack)||0;
+        if(rawPressure===0)return;
+        const faceSign=face==="front"?1:-1;
+        const pressureKPa=rawPressure*windFactor*windSign*faceSign;
+        const actions=window.SteelLoadTransfer.triangularGablePostEquivalentLoads(
+          pressureKPa,Number(model.geometry.span),Number(model.geometry.rise),
+          Number(model.geometry.height),intervals
+        );
+        actions.forEach(action=>{
+          const z=face==="front"?0:Number(model.geometry.length);
+          const base=nodeAt(action.xM,0,z);
+          const head=nodeAt(action.xM,action.supportHeightM,z);
+          const baseConnected=analysisModel.members.some(member=>
+            (member.start===base.id||member.end===base.id)&&
+            (member.sectionKey==="column"||member.sectionKey==="endPost"));
+          const headConnected=analysisModel.members.some(member=>
+            (member.start===head.id||member.end===head.id)&&
+            (member.sectionKey==="column"||member.sectionKey==="endPost"||member.sectionKey==="rafter"));
+          if(!baseConnected||!headConnected)
+            throw new Error("مسیر سازه‌ای ستونک باد مثلثی کامل نیست؛ گره پایه/سر ستونک: "+base.id+" / "+head.id);
+          addNodal(base,[0,0,action.baseForceKN*1000,0,action.momentYAboutSupportKNm*1000,0]);
+          addNodal(head,[0,0,action.topForceKN*1000,0,0,0]);
+        });
+        gableWindTransfer.push({
+          face,pressureKPa,postStations:actions.length,
+          resultantKN:actions.reduce((sum,item)=>sum+item.resultantKN,0),
+          momentXAboutGlobalOriginKNm:actions.reduce((sum,item)=>sum+item.topForceKN*item.supportHeightM,0),
+          momentYAboutGlobalOriginKNm:actions.reduce((sum,item)=>sum+item.momentYAboutSupportKNm-item.xM*item.resultantKN,0)
+        });
+      });
+      nodalLoads.push(...Array.from(loadByNode,([nodeId,values])=>({nodeId,values})));
+    }
+    const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads);
+    result.gableWindTransfer=gableWindTransfer;
 
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
