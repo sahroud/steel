@@ -24,7 +24,7 @@
     if (/مشخصات پروژه|اطلاعات پروژه|کارفرما|طراح|محل احداث/.test(t)) return 0;
     if (/هندسه|مشخصات هندسی|تکیه.?گاه|بازشو|دهانه|سیستم سازه/.test(t) && !/پرلین|قید|اتصال|کنترل|طراحی/.test(t)) return 1;
     if (/بارگذار|اقلیم|باد|برف|مصالح|مقطع|فولاد|جرثقیل|بار مرده|بار زنده/.test(t)) return 2;
-    if (/مدل هندسی|نمایش قاب|تحلیل|نتایج تحلیل|نمودار نیرو|مدل سه.?بعدی/.test(t)) return 3;
+    if (/مدل هندسی|نمایش قاب|تحلیل|نتایج تحلیل|نمودار نیرو|مدل سه.?بعدی|عملیات پروژه|اجرای هوشمند/.test(t)) return 3;
     if (/فونداسیون|پی منفرد|شناژ|خاک زیر|آرماتوربندی پی/.test(t)) return 5;
     if (/گزارش|نقشه|متره|خروجی نهایی|دفترچه محاسبات|pdf/.test(t)) return 6;
     if (/اتصال|پرلین|مهاربند|مهاربندی|قید|پایداری|کمانش|کنسول|طراحی|برش|خمش|تعامل|ستون|رفتر/.test(t)) return 4;
@@ -42,6 +42,15 @@
     $("shedWorkflowPrev").addEventListener("click", () => go(active - 1));
     $("shedWorkflowNext").addEventListener("click", () => go(active + 1));
     renderTrack();
+  }
+  function ensureFoundationNotice(main) {
+    if (document.getElementById("foundationGapPanel")) return;
+    const panel = document.createElement("section");
+    panel.id = "foundationGapPanel";
+    panel.className = "panel";
+    panel.innerHTML = '<div class="panel-title"><h3>فونداسیون و شناژها</h3><span class="status">ماژول محاسباتی تکمیل نشده</span></div><div class="notice">این نسخه هنوز طراحی محاسباتی یکپارچه پی، شناژ، ظرفیت باربری خاک، نشست، لغزش، واژگونی و جزئیات آرماتور را اجرا نمی‌کند. واکنش‌های معتبر تکیه‌گاهی و گزارش ژئوتکنیک باید پیش از طراحی پی در دسترس باشند. این بخش عمداً به‌عنوان «تکمیل‌نشده» نمایش داده می‌شود و خروجی اجرایی تولید نمی‌کند.</div>';
+    const footer = main.querySelector("footer");
+    if (footer) footer.before(panel); else main.appendChild(panel);
   }
   function renderTrack() {
     const track = $("shedWorkflowTrack"); if (!track) return;
