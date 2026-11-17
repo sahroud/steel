@@ -149,7 +149,7 @@ const loadTransfer = require("../js/load-transfer.js");
 
 test("surface pressure converts to tributary line load with kN/m units", () => {
   assert.equal(globalThis.SteelLoadTransfer.surfacePressureToLineLoad(1.25, 2.4), 3);
-  assert.equal(globalThis.SteelLoadTransfer.surfacePressureToLineLoad(-0.8, 1.5), -1.2);
+  assert.ok(Math.abs(globalThis.SteelLoadTransfer.surfacePressureToLineLoad(-0.8, 1.5) + 1.2) < 1e-12);
 });
 
 test("roof purlin tributary widths conserve the full sloped roof area width", () => {
