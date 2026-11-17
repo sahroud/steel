@@ -5,7 +5,7 @@
 "use strict";
 function run(){
  const checks=[];
- const test=(name,fn)=>{try{const detail=fn();checks.push({name,pass:detail!==false,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
+ const test=(name,fn)=>{try{const detail=fn();const pass=detail!==false&&!(detail&&typeof detail==="object"&&detail.ok===false);checks.push({name,pass,detail:detail===undefined?"OK":detail});}catch(e){checks.push({name,pass:false,detail:e.message});}};
  const passedAll=r=>{
   if(!r||typeof r!=="object")return false;
   const total=Number.isFinite(r.total)?r.total:
@@ -109,7 +109,7 @@ test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISecti
     const tip=result.displacements.find(x=>x.nodeId==="TIP").values,delta=Math.abs(tip[0]*ey[0]+tip[1]*ey[1]);
     errors.push(Math.abs(delta-exact)/exact*100);equilibrium.push(result.equilibrium.ok);
    });
-   return errors[0]>errors[1]&&errors[1]>errors[2]&&errors[2]>errors[3]&&errors[1]<0.5&&errors[2]<0.15&&equilibrium.every(Boolean)?"4/8/16/24-segment inclined rafter cantilever bending converges to Simpson-integrated variable-I reference; errors "+errors.map(x=>x.toFixed(3)+"%").join("/")+", equilibrium OK":false;
+   const ok=errors[0]>errors[1]&&errors[1]>errors[2]&&errors[2]>errors[3]&&errors[1]<0.5&&errors[2]<0.15&&equilibrium.every(Boolean);return {ok,errorsPercent:errors,equilibrium,referenceDeflectionM:exact,segmentCounts:[4,8,16,24],criteria:"monotonic convergence; 8-segment <0.5%; 16-segment <0.15%; all equilibria pass"};
   }finally{api.setData(old);}
  });
  test("tapered 3D axial convergence against analytical integral",()=>{
@@ -190,7 +190,7 @@ test("I-section symmetry",()=>{const x=root.SteelSectionGeometry.calculateISecti
  test("whole-building member load path audit",()=>{const r=root.SteelWholeBuildingLoadPathAudit?.selfTest?.();return passedAll(r)?"Roof, wall and end-wall wind paths, audited gable end-girt transfer, explicit member loads, support reachability, shared-node connectivity, X-brace geometry and brace-to-support path traces: 35/35":false;});
  test("3D FEM transfers purlin load into rafter support reactions with released rotations",()=>{const r=root.SteelFrame3D?.selfTest?.();const q=r?.tests?.find(x=>x.name==="purlin-load-transfers-to-rafter-supports-with-bending-rotations-released");return passedAll(r)&&q?.ok===true?"3D member FEM: 19/19, including purlin load transfer, released end moments and support reaction closure":false;});
  test("3D frame solver analytical reference benchmarks",()=>{const r=root.SahroudSteelAnalyticalBenchmarks?.run?.();return passedAll(r)?"Cantilever deflection, axial extension, simply-supported beam UDL deflection and total reaction: 4/4":false;});
- test("tapered-member mesh convergence reference benchmark",()=>{const r=root.SahroudSteelTaperedMeshConvergence?.run?.();return passedAll(r)?"Simpson-integrated tapered cantilever reference, monotonic mesh convergence and 8/16/32-segment error thresholds: 5/5":false;});
+ test("tapered-member mesh convergence reference benchmark",()=>{const r=root.SahroudSteelTaperedMeshConvergence?.run?.();return {ok:passedAll(r),report:r||null};});
  test("fresh generated-model structural integrity audit",()=>{const r=root.SteelFreshModelStructuralAudit?.selfTest?.();return passedAll(r)?"Fresh-model node/member identity, endpoint, zero-length, fail-closed orchestration and shared-API restoration: 8/8":false;});
  test("tensile demand bridge extracts end-aware FEM tension envelope",()=>{const r=root.SteelTensionDesignReadiness?.selfTest?.();return passedAll(r)?"End-aware tensile demand bridge, governing member/case/end provenance, axial-only and documented-zero-eccentricity guards plus fail-closed sign/equilibrium checks: 7/7":false;});
  test("compression demand bridge extracts end-aware FEM compression envelope",()=>{const r=root.SteelCompressionDesignReadiness?.selfTest?.();return passedAll(r)?"End-aware compression demand bridge, governing case/end and fail-closed sign/equilibrium guards: 5/5":false;});
