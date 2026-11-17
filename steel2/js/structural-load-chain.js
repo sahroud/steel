@@ -96,10 +96,25 @@ function auditFoundationReactionMapping(reactionExtraction,mappings,model){
   total.My+=a.My+p.z*a.Fx-p.x*a.Fz;
   total.Mz+=a.Mz+p.x*a.Fy-p.y*a.Fx;
  });
+ const expected={Fx:0,Fy:0,Fz:0,Mx:0,My:0,Mz:0};
+ rows.forEach(r=>{
+  const a=r.columnAction,p=r.coordinatesM;if(!a||!p)return;
+  expected.Fx+=a.Fx;expected.Fy+=a.Fy;expected.Fz+=a.Fz;
+  expected.Mx+=a.Mx+p.y*a.Fz-p.z*a.Fy;
+  expected.My+=a.My+p.z*a.Fx-p.x*a.Fz;
+  expected.Mz+=a.Mz+p.x*a.Fy-p.y*a.Fx;
+ });
+ const components=["Fx","Fy","Fz","Mx","My","Mz"],differences={};
+ components.forEach(k=>{differences[k]=total[k]-expected[k];});
+ const tolerance=1e-8;
+ const reconciliation={ok:components.every(k=>Math.abs(differences[k])<=tolerance*Math.max(1,Math.abs(total[k]),Math.abs(expected[k]))),
+  expectedColumnActionAtGlobalOrigin:expected,mappedFootingActionAtGlobalOrigin:total,differences,tolerance,
+  method:"componentwise six-DOF comparison after translation of every support and footing resultant to global origin"};
+ if(!reconciliation.ok)issues.push("جمع نیرو/لنگرهای تجمیع‌شده پی با مجموع مستقل کنش ستون‌ها در مبدأ جهانی برابر نیست.");
  return{success:issues.length===0,status:issues.length?"mapping-incomplete":"mapped-demand-only",issues,
-  footingDemands:Array.from(footings.values()),totalColumnActionAtGlobalOrigin:total,
+  footingDemands:Array.from(footings.values()),totalColumnActionAtGlobalOrigin:total,reconciliation,
   units:{force:"N",moment:"N.m"},analysisEnabled:false,designApproved:false,
-  scope:"تجمیع تقاضای شش‌مؤلفه‌ای ستون‌ها در مرجع صریح هر پی؛ بدون استنتاج خودکار هندسه پی، طراحی پی/شناژ، کنترل خاک، لغزش، واژگونی یا ظرفیت انکر"};
+  scope:"تجمیع تقاضای شش‌مؤلفه‌ای ستون‌ها در مرجع صریح هر پی و تطبیق مستقل برآیند؛ بدون استنتاج خودکار هندسه پی، طراحی پی/شناژ، کنترل خاک، لغزش، واژگونی یا ظرفیت انکر"};
 }
 function buildExternalLoadLedger(model,solverMembers,nodalLoads,releasedRotationLoads){
  const issues=[],force=[0,0,0],moment=[0,0,0],memberRows=[],nodeRows=[],releasedRows=[];
@@ -229,8 +244,9 @@ async function run(loadCases){
   results.push({id:spec.id,label:String(spec.label||spec.id),equilibrium,reactions:extracted.rows,solverLoadTransferAudit,foundationReactionMappingAudit,externalLoadLedger,externalLoadLedgerComparison,
    totalSolverReaction:extracted.totalSolverReaction,modelNodeCount:solved.nodeCount??model.nodes.length,
    modelMemberCount:solved.memberCount??model.members.length,
-   solverResult:solved,foundationDemands:extracted.rows.map(r=>({nodeId:r.nodeId,coordinatesM:r.coordinatesM,actions:r.columnAction,units:r.units,
-    status:"نیروهای تقاضا؛ نیازمند طراحی مستقل صفحه‌ستون، انکر و پی"}))});
+   solverResult:solved,supportDemands:extracted.rows,
+   foundationDemands:foundationReactionMappingAudit.success?foundationReactionMappingAudit.footingDemands:[],
+   foundationDemandStatus:foundationReactionMappingAudit.status});
  }
  return{success:true,contract,caseCount:results.length,results,
   allCasesEquilibriumOK:results.every(r=>r.equilibrium.ok),
@@ -348,7 +364,9 @@ function selfTest(){
  ]};
  const mapGood=[{supportNodeId:"S1",footingId:"F1",referencePointM:{x:0,y:0,z:0}},{supportNodeId:"S2",footingId:"F1",referencePointM:{x:0,y:0,z:0}}];
  const mapped=auditFoundationReactionMapping(mappingRows,mapGood,{});
- ck("multiple column bases aggregate to one footing with moments translated to footing reference",()=>{const g=mapped.footingDemands[0].actions;return mapped.success&&mapped.footingDemands.length===1&&g.Fx===15&&g.Fy===20&&g.Mz===3&&mapped.totalColumnActionAtGlobalOrigin.Mz===3;});
+ ck("multiple column bases aggregate to one footing with moments translated to footing reference",()=>{const g=mapped.footingDemands[0].actions;return mapped.success&&mapped.footingDemands.length===1&&g.Fx===15&&g.Fy===20&&g.Mz===3&&mapped.totalColumnActionAtGlobalOrigin.Mz===3&&mapped.reconciliation.ok;});
+ ck("mapped footing resultants reconcile all six components at global origin",()=>mapped.reconciliation.ok&&["Fx","Fy","Fz","Mx","My","Mz"].every(k=>Math.abs(mapped.reconciliation.differences[k])<1e-8));
+ ck("incomplete mapping cannot be treated as successful footing demand",()=>!auditFoundationReactionMapping(mappingRows,[mapGood[0]],{}).success);
  ck("duplicate support-to-footing mapping is blocked",()=>!auditFoundationReactionMapping(mappingRows,[...mapGood,mapGood[0]],{}).success);
  ck("unmapped physical support blocks complete footing demand",()=>!auditFoundationReactionMapping(mappingRows,[mapGood[0]],{}).success);
  ck("unknown support mapping is blocked",()=>!auditFoundationReactionMapping(mappingRows,[...mapGood,{supportNodeId:"S3",footingId:"F2",referencePointM:{x:0,y:0,z:0}}],{}).success);
