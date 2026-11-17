@@ -63,23 +63,49 @@ function extractSupportReactions(result,model){
 function buildExternalLoadLedger(model,solverMembers,nodalLoads,releasedRotationLoads){
  const issues=[],force=[0,0,0],moment=[0,0,0],memberRows=[],nodeRows=[],releasedRows=[];
  const nodes=new Map((model?.nodes||[]).map(n=>[String(n.id),n]));
- const sourceMembers=new Map((model?.members||[]).map(m=>[String(m.id),m]));
+ const solvedById=new Map((solverMembers||[]).map(m=>[String(m.id),m]));
+ const sourceMembers=Array.isArray(model?.members)?model.members:[];
  const add=(f,m,p)=>{for(let i=0;i<3;i++)force[i]+=f[i];moment[0]+=m[0]+p[1]*f[2]-p[2]*f[1];moment[1]+=m[1]+p[2]*f[0]-p[0]*f[2];moment[2]+=m[2]+p[0]*f[1]-p[1]*f[0];};
+ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
  if(!Array.isArray(solverMembers)||!solverMembers.length)issues.push("فهرست اعضای حل‌شده خالی است.");
- (solverMembers||[]).forEach(solved=>{
-  const source=sourceMembers.get(String(solved.id))||solved,q=solved?.analysisLoad?.globalUniform;
-  if(!Array.isArray(q)||q.length!==3||q.some(v=>!finite(v))){issues.push("بار گسترده جهانی برای عضو حل‌شده "+solved.id+" موجود/معتبر نیست.");return;}
-  const ni=nodes.get(String(source.start??solved.start)),nj=nodes.get(String(source.end??solved.end));
-  if(!ni||!nj){issues.push("مختصات گره‌های عضو حل‌شده "+solved.id+" موجود نیست.");return;}
-  const oi=source.endOffsets?.i||solved.endOffsets?.i||[0,0,0],oj=source.endOffsets?.j||solved.endOffsets?.j||[0,0,0];
-  if(oi.length!==3||oj.length!==3||[...oi,...oj].some(v=>!finite(v))){issues.push("بازوی انتهایی عضو "+solved.id+" نامعتبر است.");return;}
+ if(!sourceMembers.length)issues.push("فهرست اعضای فیزیکی مدل خالی است.");
+ const solvedIds=new Set((solverMembers||[]).map(m=>String(m.id)));
+ sourceMembers.forEach((source,index)=>{
+  const id=String(source?.id??"").trim(),solved=solvedById.get(id),ledger=source?.analysisLoad||{};
+  if(!id||!solved){issues.push("عضو مدل "+(id||index+1)+" در خروجی حل‌گر متناظر ندارد.");return;}
+  if(ledger.loadDataComplete!==true&&source.loadDataComplete!==true){issues.push("کامل‌بودن دفتر بار عضو "+id+" صریحاً تأیید نشده است.");return;}
+  const ni=nodes.get(String(source.start)),nj=nodes.get(String(source.end));
+  if(!ni||!nj){issues.push("گره‌های عضو "+id+" در مدل موجود نیستند.");return;}
+  const oi=source.endOffsets?.i||[0,0,0],oj=source.endOffsets?.j||[0,0,0];
+  if(oi.length!==3||oj.length!==3||[...oi,...oj].some(v=>!finite(v))){issues.push("بازوی انتهایی عضو "+id+" نامعتبر است.");return;}
   const a=[ni.x+oi[0],ni.y+oi[1],ni.z+oi[2]],b=[nj.x+oj[0],nj.y+oj[1],nj.z+oj[2]];
-  if([...a,...b].some(v=>!finite(v))){issues.push("مختصات هندسی عضو "+solved.id+" نامعتبر است.");return;}
-  const L=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]);
-  if(!(L>0)){issues.push("طول فیزیکی عضو "+solved.id+" صفر/نامعتبر است.");return;}
-  const f=q.map(v=>v*L),p=a.map((v,i)=>(v+b[i])/2);
-  add(f,[0,0,0],p);memberRows.push({memberId:String(solved.id),sourceMemberPresent:sourceMembers.has(String(solved.id)),globalUniformNPerM:q.slice(),lengthM:L,resultantForceN:f,centroidM:p});
+  if([...a,...b].some(v=>!finite(v))){issues.push("مختصات هندسی عضو "+id+" نامعتبر است.");return;}
+  const delta=b.map((v,i)=>v-a[i]),L=Math.hypot(...delta);
+  if(!(L>0)){issues.push("طول فیزیکی عضو "+id+" صفر/نامعتبر است.");return;}
+  const ex=delta.map(v=>v/L),axes=solved.localAxes;
+  const basis=axes&&[axes.x,axes.y,axes.z];
+  if(!basis||basis.length!==3||basis.some(v=>!Array.isArray(v)||v.length!==3||v.some(x=>!finite(x)))){
+   issues.push("محورهای محلی حل‌شده عضو "+id+" برای تبدیل مستقل بار محلی به جهانی موجود/معتبر نیست.");return;
+  }
+  const transform=q=>[0,1,2].map(g=>q.reduce((sum,v,k)=>sum+v*basis[k][g],0));
+  const uniform=ledger.uniformLocal;
+  if(!Array.isArray(uniform)||uniform.length!==3||uniform.some(v=>!finite(v))){issues.push("سه مؤلفه بار یکنواخت محلی عضو "+id+" باید صریح و متناهی باشد.");return;}
+  const linear=ledger.linearLocal;
+  if(linear!==undefined&&linear!==null&&(!Array.isArray(linear.start)||linear.start.length!==3||linear.start.some(v=>!finite(v))||!Array.isArray(linear.end)||linear.end.length!==3||linear.end.some(v=>!finite(v)))){
+   issues.push("بار خطی‌متغیر محلی عضو "+id+" باید دو بردار سه‌مؤلفه‌ای متناهی داشته باشد.");return;
+  }
+  const q0=uniform.map(Number),q1=linear?linear.start.map((v,i)=>Number(v)+Number(linear.end[i])):q0.map(v=>2*v);
+  const resultantLocal=q0.map((v,i)=>L*(v+Number(linear?linear.end[i]:v))/2);
+  const firstMomentLocal=q0.map((v,i)=>L*L*(v+2*Number(linear?linear.end[i]:v))/6);
+  const resultant=transform(resultantLocal),firstMoment=transform(firstMomentLocal);
+  const distributedMoment=cross(ex,firstMoment);
+  const centroidMoment=cross(a,resultant);
+  add(resultant,distributedMoment.map((v,i)=>v+centroidMoment[i]),[0,0,0]);
+  memberRows.push({memberId:id,sourceMemberPresent:true,localUniformNPerM:q0,localLinearEndNPerM:linear?linear.end.map(Number):null,
+   localResultantN:resultantLocal,globalResultantN:resultant,globalFirstMomentAboutStartNm:firstMoment,
+   distributedMomentAboutGlobalOriginNm:distributedMoment.map((v,i)=>v+centroidMoment[i]),lengthM:L,localAxes:basis});
  });
+ (solverMembers||[]).forEach(solved=>{if(!sourceMembers.some(m=>String(m.id)===String(solved.id)))issues.push("عضو حل‌شده "+String(solved.id)+" در مدل فیزیکی منبع وجود ندارد.");});
  (nodalLoads||[]).forEach((load,index)=>{
   const n=nodes.get(String(load?.nodeId)),v=load?.values;
   if(!n||!Array.isArray(v)||v.length!==6||v.some(x=>!finite(x))){issues.push("بار گره‌ای شماره "+(index+1)+" ناقص یا نامعتبر است.");return;}
@@ -95,7 +121,7 @@ function buildExternalLoadLedger(model,solverMembers,nodalLoads,releasedRotation
  });
  return{complete:issues.length===0,issues,memberCount:memberRows.length,nodalLoadCount:nodeRows.length,releasedRotationLoadCount:releasedRows.length,
   members:memberRows,nodalLoads:nodeRows,releasedRotationLoads:releasedRows,resultant:{forceN:force,momentNm:moment,momentReference:"global origin (0,0,0)"},
-  method:"independent centroidal resultant of every solved member globalUniform line load, explicit nodal loads and unique equivalent released-rotation moments; not a full FE load-vector reconstruction"};
+  method:"independent integration of explicit uniform and linearly varying local member-load vectors using solved local axes, plus explicit nodal and released-rotation loads; not a full FE load-vector reconstruction"};
 }
 function compareExternalLedger(ledger,equilibrium,tolerance=1e-6){
  const issues=[];
@@ -278,10 +304,12 @@ function selfTest(){
  ck("inconsistent residual vector blocked",()=>!auditEquilibrium({...eqGood,forceResidualN:[0,1,0]}).ok);
  ck("reported residual ratio mismatch blocked",()=>!auditEquilibrium({...eqGood,relativeForceResidual:0.25}).ok);
  ck("valid equilibrium vectors independently rechecked",()=>auditEquilibrium(eqGood).ok);
- const ledgerModel={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],members:[{id:"M",start:"A",end:"B"}]};
- const ledger=buildExternalLoadLedger(ledgerModel,[{id:"M",start:"A",end:"B",analysisLoad:{globalUniform:[0,-100,0]}},{id:"DYNAMIC",start:"A",end:"B",analysisLoad:{globalUniform:[0,0,5]}}],[{nodeId:"B",values:[10,0,0,0,0,5]}],[{nodeId:"A",memberId:"M",end:"i",momentNm:[0,0,7]}]);
- ck("independent ledger includes solved-only member, nodal load and released-rotation moment",()=>ledger.complete&&ledger.memberCount===2&&ledger.nodalLoadCount===1&&ledger.releasedRotationLoadCount===1&&ledger.resultant.forceN[0]===10&&ledger.resultant.forceN[1]===-400&&ledger.resultant.forceN[2]===20&&ledger.resultant.momentNm[2]===-788);
- const eqLedger={appliedForceN:[10,-400,20],appliedMomentNm:[0,-40,-788]};
+ const ledgerModel={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],members:[{id:"M",start:"A",end:"B",analysisLoad:{loadDataComplete:true,uniformLocal:[0,-100,0],linearLocal:{start:[0,0,0],end:[0,-200,0]}}}]};
+ const ledger=buildExternalLoadLedger(ledgerModel,[{id:"M",start:"A",end:"B",localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]}}],[{nodeId:"B",values:[10,0,0,0,0,5]}],[{nodeId:"A",memberId:"M",end:"i",momentNm:[0,0,7]}]);
+ ck("ledger integrates explicit uniform plus linear local member loads from source model",()=>ledger.complete&&ledger.memberCount===1&&ledger.resultant.forceN[0]===10&&ledger.resultant.forceN[1]===-800&&ledger.resultant.forceN[2]===0&&ledger.resultant.momentNm[2]===-1598);
+ const rotatedLedger=buildExternalLoadLedger({nodes:ledgerModel.nodes,members:[{id:"M",start:"A",end:"B",analysisLoad:{loadDataComplete:true,uniformLocal:[0,-100,0]}}]},[{id:"M",localAxes:{x:[1,0,0],y:[0,0,1],z:[0,-1,0]}}],[],[]);
+ ck("local member load transformed through actual solver axes",()=>rotatedLedger.complete&&rotatedLedger.resultant.forceN[2]===-400);
+ ck("missing member load prevents complete ledger",()=>!buildExternalLoadLedger({nodes:ledgerModel.nodes,members:[{id:"M",start:"A",end:"B",analysisLoad:{loadDataComplete:true}}]},[{id:"M",localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]}}],[]).complete);
  ck("external load ledger matches solver applied resultant",()=>compareExternalLedger(ledger,eqLedger).ok);
  ck("external load ledger mismatch is detected",()=>!compareExternalLedger(ledger,{...eqLedger,appliedForceN:[10,-390,0]}).ok);
  ck("missing member load prevents complete ledger",()=>!buildExternalLoadLedger(ledgerModel,[{id:"M"}],[]).complete);
