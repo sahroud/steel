@@ -94,9 +94,9 @@ function buildExternalLoadLedger(model,solverMembers,nodalLoads,releasedRotation
   if(linear!==undefined&&linear!==null&&(!Array.isArray(linear.start)||linear.start.length!==3||linear.start.some(v=>!finite(v))||!Array.isArray(linear.end)||linear.end.length!==3||linear.end.some(v=>!finite(v)))){
    issues.push("بار خطی‌متغیر محلی عضو "+id+" باید دو بردار سه‌مؤلفه‌ای متناهی داشته باشد.");return;
   }
-  const q0=uniform.map(Number),q1=linear?linear.start.map((v,i)=>Number(v)+Number(linear.end[i])):q0.map(v=>2*v);
-  const resultantLocal=q0.map((v,i)=>L*(v+Number(linear?linear.end[i]:v))/2);
-  const firstMomentLocal=q0.map((v,i)=>L*L*(v+2*Number(linear?linear.end[i]:v))/6);
+  const q0=uniform.map((v,i)=>v+(linear?Number(linear.start[i]):0)),q1=uniform.map((v,i)=>v+(linear?Number(linear.end[i]):0));
+  const resultantLocal=q0.map((v,i)=>L*(v+q1[i])/2);
+  const firstMomentLocal=q0.map((v,i)=>L*L*(v+2*q1[i])/6);
   const resultant=transform(resultantLocal),firstMoment=transform(firstMomentLocal);
   const distributedMoment=cross(ex,firstMoment);
   const centroidMoment=cross(a,resultant);
@@ -306,7 +306,7 @@ function selfTest(){
  ck("valid equilibrium vectors independently rechecked",()=>auditEquilibrium(eqGood).ok);
  const ledgerModel={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],members:[{id:"M",start:"A",end:"B",analysisLoad:{loadDataComplete:true,uniformLocal:[0,-100,0],linearLocal:{start:[0,0,0],end:[0,-200,0]}}}]};
  const ledger=buildExternalLoadLedger(ledgerModel,[{id:"M",start:"A",end:"B",localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]}}],[{nodeId:"B",values:[10,0,0,0,0,5]}],[{nodeId:"A",memberId:"M",end:"i",momentNm:[0,0,7]}]);
- ck("ledger integrates explicit uniform plus linear local member loads from source model",()=>ledger.complete&&ledger.memberCount===1&&ledger.resultant.forceN[0]===10&&ledger.resultant.forceN[1]===-800&&ledger.resultant.forceN[2]===0&&ledger.resultant.momentNm[2]===-1598);
+ ck("ledger integrates explicit uniform plus linear local member loads from source model",()=>ledger.complete&&ledger.memberCount===1&&ledger.resultant.forceN[0]===10&&ledger.resultant.forceN[1]===-800&&ledger.resultant.forceN[2]===0&&Math.abs(ledger.resultant.momentNm[2]+1854.6666666666667)<1e-8);
  const rotatedLedger=buildExternalLoadLedger({nodes:ledgerModel.nodes,members:[{id:"M",start:"A",end:"B",analysisLoad:{loadDataComplete:true,uniformLocal:[0,-100,0]}}]},[{id:"M",localAxes:{x:[1,0,0],y:[0,0,1],z:[0,-1,0]}}],[],[]);
  ck("local member load transformed through actual solver axes",()=>rotatedLedger.complete&&rotatedLedger.resultant.forceN[2]===-400);
  ck("missing member load prevents complete ledger",()=>!buildExternalLoadLedger({nodes:ledgerModel.nodes,members:[{id:"M",start:"A",end:"B",analysisLoad:{loadDataComplete:true}}]},[{id:"M",localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]}}],[]).complete);
