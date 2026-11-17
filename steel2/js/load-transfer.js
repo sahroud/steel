@@ -49,14 +49,15 @@
       const cuts = [a];
       if (a < half && b > half) cuts.push(half);
       cuts.push(b);
-      let area = 0, firstMomentAboveEave = 0;
+      let area = 0, firstMomentAboveEave = 0, firstMomentX = 0;
       for (let k = 0; k < cuts.length - 1; k++) {
         const x0 = cuts[k], x1 = cuts[k + 1], dx = x1 - x0;
         const h0 = heightAt(x0), h1 = heightAt(x1);
         area += dx * (h0 + h1) / 2;
         firstMomentAboveEave += dx * (h0 * h0 + h0 * h1 + h1 * h1) / 6;
+        firstMomentX += dx * ((2 * x0 + x1) * h0 + (x0 + 2 * x1) * h1) / 6;
       }
-      return { area, firstMomentAboveEave };
+      return { area, firstMomentAboveEave, firstMomentX };
     };
     const supports = [];
     for (let i = 0; i <= count; i++) {
@@ -78,7 +79,8 @@
         centroidYAboveEaveM: centroidAboveEave,
         baseForceKN: resultant - topForce, topForceKN: topForce,
         supportHeightM: supportHeight,
-        momentAboutBaseKNm: resultant * centroidAboveBase
+        momentAboutBaseKNm: resultant * centroidAboveBase,
+        momentYAboutSupportKNm: -p * (cell.firstMomentX - x * cell.area)
       }));
     }
     return Object.freeze(supports);
