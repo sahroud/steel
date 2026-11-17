@@ -14,6 +14,7 @@ self.onmessage=function(event){
         return section;
       },
       supports:data.supports||[],
+      nodalLoads:data.nodalLoads||[],
       releasePurlinRafterRotation:data.releasePurlinRafterRotation===true
     });
     self.postMessage({ok:true,result});
