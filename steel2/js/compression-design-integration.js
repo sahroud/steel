@@ -1,0 +1,310 @@
+/* SAHROUD STEEL — compression capacity integration.
+ * Stores explicit section and stability inputs for the limited global-buckling engine.
+ * A utilization ratio is exposed only for verified pure-axial cases; combined actions remain blocked.
+ */
+(function(root){
+"use strict";
+const GROUPS=[["column","ستون"],["rafter","رفتر"]];
+const FIELDS=[
+ ["Ag_mm2","مساحت کل Ag (mm²)"],["Ix_mm4","ممان اینرسی Ix (mm⁴)"],["Iy_mm4","ممان اینرسی Iy (mm⁴)"],
+ ["J_mm4","ثابت پیچشی J (mm⁴)"],["h0_mm","فاصله مرکز تا مرکز بال‌ها h0 (mm)"],
+ ["Lx_mm","طول مهارنشده محور x (mm)"],["Ly_mm","طول مهارنشده محور y (mm)"],["Lz_mm","طول مهارنشده پیچشی (mm)"],
+ ["Kx","ضریب Kx"],["Ky","ضریب Ky"],["Kz","ضریب Kz"],["Fy_MPa","تنش تسلیم Fy (MPa)"],["E_MPa","مدول الاستیسیته E (MPa)"],["G_MPa","مدول برشی G (MPa)"]
+];
+const $=id=>document.getElementById(id);
+let data={schemaVersion:1,groups:{column:{},rafter:{}},memberOverrides:{}};
+const EVIDENCE_KEYS=["document","revision","locator","authority"];
+function normalizeEvidence(v){const out={};EVIDENCE_KEYS.forEach(k=>out[k]=String(v?.[k]??"").trim());return out;}
+function evidenceIssues(label,v){const e=normalizeEvidence(v),missing=EVIDENCE_KEYS.filter(k=>!e[k]);return missing.length?[label+" — مدرک ناقص است: "+missing.join("، ")]:[];}
+function evidenceText(v){const e=normalizeEvidence(v);return EVIDENCE_KEYS.map(k=>e[k]).join(" | ");}
+function parseEvidenceText(v){const parts=String(v??"").split("|").map(x=>x.trim());return parts.length===4?{document:parts[0],revision:parts[1],locator:parts[2],authority:parts[3]}:{document:"",revision:"",locator:"",authority:""};}
+function normalize(v){
+ const out={schemaVersion:1,groups:{},memberOverrides:{}};
+ GROUPS.forEach(([g])=>{
+  const src=v?.groups?.[g]||{},dst={};
+  FIELDS.forEach(([k])=>{const n=Number(src[k]);dst[k]=src[k]!==""&&src[k]!==null&&src[k]!==undefined&&Number.isFinite(n)?n:null;});
+  dst.sectionTypeReviewed=src.sectionTypeReviewed===true;
+  dst.sectionPropertiesMatchReviewed=src.sectionPropertiesMatchReviewed===true;
+  dst.localSlendernessReviewed=src.localSlendernessReviewed===true;
+  dst.localSlendernessClass=src.localSlendernessClass==="non-slender"?"non-slender":"unreviewed";
+  dst.note=String(src.note||"");
+  dst.sectionEvidence=normalizeEvidence(src.sectionEvidence);
+  dst.materialEvidence=normalizeEvidence(src.materialEvidence);
+  dst.stabilityEvidence=normalizeEvidence(src.stabilityEvidence);
+  out.groups[g]=dst;
+ });
+ const overrides=v?.memberOverrides||{};
+ Object.keys(overrides).forEach(id=>{const src=overrides[id]||{},row={};["Lx_mm","Ly_mm","Lz_mm"].forEach(k=>{const n=Number(src[k]);row[k]=src[k]!==null&&src[k]!==undefined&&src[k]!==""&&Number.isFinite(n)&&n>0?n:null;});row.restraintEvidence=normalizeEvidence(src.restraintEvidence);out.memberOverrides[String(id)]=row;});
+ return out;
+}
+function getData(){return JSON.parse(JSON.stringify(data));}
+function readUI(){
+ GROUPS.forEach(([g])=>{
+  if(!$("cc_"+g+"_Ag_mm2"))return;
+  const d={};
+  FIELDS.forEach(([k])=>{const el=$("cc_"+g+"_"+k);d[k]=el&&el.value!==""?Number(el.value):null;});
+  d.sectionTypeReviewed=$("cc_"+g+"_sectionTypeReviewed")?.checked===true;
+  d.sectionPropertiesMatchReviewed=$("cc_"+g+"_sectionPropertiesMatchReviewed")?.checked===true;
+  d.localSlendernessReviewed=$("cc_"+g+"_localSlendernessReviewed")?.checked===true;
+  d.localSlendernessClass=d.localSlendernessReviewed?"non-slender":"unreviewed";
+  d.note=$("cc_"+g+"_note")?.value||"";
+  d.sectionEvidence=parseEvidenceText($("cc_"+g+"_sectionEvidence")?.value);
+  d.materialEvidence=parseEvidenceText($("cc_"+g+"_materialEvidence")?.value);
+  d.stabilityEvidence=parseEvidenceText($("cc_"+g+"_stabilityEvidence")?.value);
+  data.groups[g]=d;
+ });
+ const resultHost=$("compressionCapacityResults");
+ if(resultHost){
+ resultHost.querySelectorAll("[data-member-length]").forEach(el=>{const id=el.getAttribute("data-member-id"),key=el.getAttribute("data-member-length");if(!id||!key)return;data.memberOverrides[id]=data.memberOverrides[id]||{Lx_mm:null,Ly_mm:null,Lz_mm:null};data.memberOverrides[id][key]=el.value===""?null:Number(el.value);});
+ resultHost.querySelectorAll("[data-member-restraint-evidence]").forEach(el=>{const id=el.getAttribute("data-member-id");if(!id)return;data.memberOverrides[id]=data.memberOverrides[id]||{Lx_mm:null,Ly_mm:null,Lz_mm:null};data.memberOverrides[id].restraintEvidence=parseEvidenceText(el.value);});
+}
+ return getData();
+}
+function setData(v){data=normalize(v);render();}
+function materialFy(g){
+ const m=root.SteelMemberDesignInputs?.getForGroup?.(g)||{};
+ if(Number(m.Fy)>0)return Number(m.Fy);
+ const s=root.SteelSections?.read?.()||{};
+ return Number(s.material?.Fy_MPa)>0?Number(s.material.Fy_MPa):null;
+}
+function getInput(g){
+ const d=readUI().groups[g],member=root.SteelMemberDesignInputs?.getForGroup?.(g)||{};
+ return {...d,sectionType:d.sectionTypeReviewed?"doubly-symmetric-I":"unreviewed",
+  Fy_MPa:Number(d.Fy_MPa)>0?d.Fy_MPa:materialFy(g),
+  E_MPa:Number(d.E_MPa)>0?Number(d.E_MPa):(Number(member.E_MPa)>0?Number(member.E_MPa):null),
+  G_MPa:Number(d.G_MPa)>0?Number(d.G_MPa):(Number(member.G_MPa)>0?Number(member.G_MPa):null)};
+}
+function groupEvidenceIssues(g,source){
+ const d=source||data.groups[g]||{};
+ return [
+  ...evidenceIssues("منبع هندسه و خواص مقطع گروه "+g,d.sectionEvidence),
+  ...evidenceIssues("گواهی مصالح گروه "+g,d.materialEvidence),
+  ...evidenceIssues("مبنای مهاربندی و طول‌های مؤثر گروه "+g,d.stabilityEvidence)
+ ];
+}
+function analyzeGroup(g){
+ const evidence=groupEvidenceIssues(g);
+ if(evidence.length)return {ok:false,issues:evidence,scope:"blocked-missing-source-provenance"};
+ const engine=root.SteelCompressionCapacity;
+ if(!engine||typeof engine.analyze!=="function")throw Error("موتور مقاومت فشاری بارگذاری نشده است.");
+ const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
+ if(tapered?.enabled===true)return {ok:false,issues:["عضو "+(g==="column"?"ستون":"رفتر")+" به‌صورت متغیرعمق تعریف شده است؛ موتور فعلی فقط عضو منشوری را می‌پذیرد."]};
+ const input=getInput(g);
+ input.localSlendernessClass=input.localSlendernessReviewed?"non-slender":"unreviewed";
+ return engine.analyze(input);
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function buildCompressionDemandRows(forceResult){
+ const members=Array.isArray(forceResult?.members)?forceResult.members:[];
+ const expectedCaseCount=Number(forceResult?.expectedCaseCount)||0;
+ const sourceComplete=forceResult?.success!==false;
+ const rows=members.map(m=>{
+  const ends=Array.isArray(m.ends)?m.ends:[];
+  let demand=0,caseLabel="",governing=null,validCount=0,invalidCount=0;
+  const simultaneousCases=[];
+  ends.forEach(e=>{
+   const raw=Array.isArray(e.values)?e.values:[];
+   const v=raw.map(Number);
+   if(v.length!==12||!v.every(Number.isFinite)){invalidCount++;simultaneousCases.push({label:String(e.label||""),valid:false,source:e.source||null});return;}
+   validCount++;
+   simultaneousCases.push({label:String(e.label||""),valid:true,source:e.source||null,vector:v.slice(),endI:{N:v[0],Vy:v[1],Vz:v[2],T:v[3],My:v[4],Mz:v[5]},endJ:{N:v[6],Vy:v[7],Vz:v[8],T:v[9],My:v[10],Mz:v[11]}});
+   const ni=v[0],nj=v[6],candidate=Math.max(0,ni,-nj);
+   if(candidate>demand){
+    demand=candidate;caseLabel=e.label||"";
+    const end=ni>=-nj?"I":"J",o=end==="I"?0:6;
+    governing={label:caseLabel,end,compression_N:candidate,
+     Vy_N:v[o+1],Vz_N:v[o+2],T_Nmm:v[o+3],My_Nmm:v[o+4],Mz_Nmm:v[o+5],
+     otherEnd:{Vy_N:v[end==="I"?7:1],Vz_N:v[end==="I"?8:2],T_Nmm:v[end==="I"?9:3],My_Nmm:v[end==="I"?10:4],Mz_Nmm:v[end==="I"?11:5]}};
+   }
+  });
+  const nonAxial=ends.some(e=>{const v=Array.isArray(e.values)?e.values.map(Number):[];return v.length===12&&v.every(Number.isFinite)&&[1,2,3,4,5,7,8,9,10,11].some(i=>Math.abs(v[i])>1e-6);});
+  const coverageComplete=sourceComplete&&invalidCount===0&&validCount>0&&(!expectedCaseCount||validCount===expectedCaseCount);
+  return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,governing,simultaneousCases,axialOnlyCase:!!governing&&!nonAxial,interactionRequired:!!governing&&nonAxial,caseCount:validCount,expectedCaseCount,invalidCaseCount:invalidCount,coverageComplete};
+ }).filter(r=>r.caseCount>0||r.invalidCaseCount>0).sort((a,b)=>a.sectionKey.localeCompare(b.sectionKey)||a.id.localeCompare(b.id));
+ return rows;
+}
+function buildCompressionDemandRowsFrom3D(combinations,modelData){
+ const cases=Array.isArray(combinations)?combinations:[];
+ if(!cases.length)return {success:false,issues:["نتایج ترکیبات تحلیل سه‌بعدی در دسترس نیستند."],members:[],expectedCaseCount:0};
+ const modelMembers=Array.isArray(modelData?.members)?modelData.members:[];
+ const issues=[],modelById=new Map(),resultIds=new Set();
+ if(!modelMembers.length)issues.push("فهرست اعضای مدل مرجع موجود نیست؛ کنترل کامل بودن پوشش تحلیل ممکن نیست.");
+ modelMembers.forEach((m,i)=>{
+  const id=String(m?.id??"").trim();
+  if(!id){issues.push("شناسه یکی از اعضای مدل مرجع خالی است.");return;}
+  if(modelById.has(id))issues.push("شناسه عضو در مدل مرجع تکراری است: "+id+".");
+  else modelById.set(id,m);
+ });
+ cases.forEach((c,ci)=>{
+  const label=String(c?.id||c?.label||c?.name||ci+1);
+  if(!Array.isArray(c?.members)){issues.push("فهرست اعضای ترکیب "+label+" موجود نیست.");return;}
+  c.members.forEach(m=>{
+   const id=String(m?.id??"").trim();
+   if(!id){issues.push("شناسه عضو در نتایج ترکیب "+label+" خالی است.");return;}
+   resultIds.add(id);
+  });
+ });
+ const allIds=new Set([...modelById.keys(),...resultIds]);
+ resultIds.forEach(id=>{if(!modelById.has(id))issues.push("عضو "+id+" در نتایج تحلیل وجود دارد اما در مدل مرجع یافت نشد.");});
+ const rows=[...allIds].map(id=>{
+  const source=modelById.get(id)||{};
+  const sample=(cases.find(c=>Array.isArray(c?.members)&&c.members.some(m=>String(m?.id??"").trim()===id))?.members||[]).find(m=>String(m?.id??"").trim()===id)||{};
+  const ends=cases.map((c,ci)=>{
+   const label=String(c?.id||c?.label||c?.name||"—");
+   const matches=Array.isArray(c?.members)?c.members.filter(m=>String(m?.id??"").trim()===id):[];
+   if(matches.length!==1)return {label,values:[],invalidForceVector:true};
+   const forces=matches[0]?.localEndForces;
+   return {label,source:c?.source||null,values:Array.isArray(forces)?forces.slice(0,12):[],invalidForceVector:false};
+  });
+  return {id,parentMemberId:sample.parentMemberId||source.parentMemberId||null,taperSegmentIndex:sample.taperSegmentIndex??source.taperSegmentIndex??null,
+   sectionKey:String(source.sectionKey||sample.sectionKey||source.section?.sectionKey||""),length:Number(sample.length||source.length)||null,ends};
+ });
+ cases.forEach(c=>{
+  const members=Array.isArray(c?.members)?c.members:[];
+  const seen=members.map(m=>String(m?.id??"").trim()).filter(Boolean);
+  if(new Set(seen).size!==seen.length)issues.push("شناسه عضو تکراری در ترکیب "+String(c?.id||c?.label||"—")+".");
+  modelById.forEach((_,id)=>{
+   const count=seen.filter(x=>x===id).length;
+   if(count!==1)issues.push("عضو "+id+" در ترکیب "+String(c?.id||c?.label||"—")+" دقیقاً یک نتیجه ندارد.");
+  });
+ });
+ const success=issues.length===0;
+ const prepared=buildCompressionDemandRows({members:rows,expectedCaseCount:cases.length,success});
+ return {success,members:prepared,expectedCaseCount:cases.length,caseIds:cases.map(c=>String(c?.id||c?.label||c?.name||"—")),issues};
+}
+
+function evaluateAxialOnlyMember(row,base,override,taperedEnabled){
+ if(row?.coverageComplete!==true)return {ok:false,reason:"پوشش همه ترکیب‌های تحلیل سه‌بعدی برای این عضو کامل نیست."};
+ if(!row?.axialOnlyCase||row.interactionRequired)return {ok:false,reason:"بارگذاری حاکم دارای خمش، برش یا پیچش هم‌زمان است؛ کنترل اندرکنش کامل هنوز موجود نیست."};
+ if(!(row.compressionDemand_kN>0))return {ok:false,reason:"تقاضای فشاری مثبت در حالت حاکم ثبت نشده است."};
+ const cap=memberCapacityFromInput(row,base,override,taperedEnabled);
+ if(!cap.ok)return {ok:false,reason:(cap.issues||[]).join("؛ ")};
+ const ratio=row.compressionDemand_kN/cap.LRFD.designStrength_kN;
+ return {ok:true,scope:"axial-only-global-buckling-screen",demand_kN:row.compressionDemand_kN,designStrength_kN:cap.LRFD.designStrength_kN,ratio,withinAxialStrength:ratio<=1,capacity:cap,disclaimer:"فقط غربال مقاومت محوری در حالت بدون خمش/برش/پیچش؛ تأیید طراحی عضو نیست."};
+}
+function selfTest(){
+ const rows=buildCompressionDemandRows({members:[
+  {id:"T1",sectionKey:"column",ends:[{label:"TENSION",values:[-1000,0,0,0,0,0,1000,0,0,0,0,0]}]},
+  {id:"C1",sectionKey:"column",ends:[{label:"C1",values:[800,0,0,0,0,0,-800,0,0,0,0,0]},{label:"C2",values:[1500,0,0,0,0,0,-1500,0,0,0,0,0]}]},
+  {id:"BAD",sectionKey:"rafter",ends:[{label:"BAD",values:[0,1,2]}]}
+ ]});
+ const tension=rows.find(r=>r.id==="T1"),compression=rows.find(r=>r.id==="C1");
+ const ev={document:"design-basis.pdf",revision:"R1",locator:"p.4",authority:"engineer-reviewed"};
+ const base={sectionPropertiesMatchReviewed:true,sectionType:"doubly-symmetric-I",sectionTypeReviewed:true,localSlendernessReviewed:true,localSlendernessClass:"non-slender",Ag_mm2:10000,Ix_mm4:8e8,Iy_mm4:1e8,J_mm4:2e6,h0_mm:500,Kx:1,Ky:1,Kz:1,Fy_MPa:235,E_MPa:200000,G_MPa:76923,nu:0.3,sectionEvidence:ev,materialEvidence:ev,stabilityEvidence:ev};
+ const restraint={Lx_mm:6000,Ly_mm:4000,Lz_mm:5000,restraintEvidence:ev};
+ const good=memberCapacityFromInput({id:"M1",sectionKey:"column"}, {...base}, {...restraint},false);
+ const missing=memberCapacityFromInput({id:"M2",sectionKey:"column"}, {...base}, {},false);
+ const noGroupEvidence=memberCapacityFromInput({id:"M5",sectionKey:"column"}, {...base,sectionEvidence:{}}, {...restraint},false);
+ const noRestraintEvidence=memberCapacityFromInput({id:"M6",sectionKey:"column"}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
+ const mismatch=memberCapacityFromInput({id:"M3",sectionKey:"column"}, {...base,sectionPropertiesMatchReviewed:false}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
+ const tapered=memberCapacityFromInput({id:"M4",sectionKey:"column",taperSegmentIndex:1}, {...base}, {Lx_mm:6000,Ly_mm:4000,Lz_mm:5000},false);
+ const tests=[
+  {name:"tension is not classified as compression",pass:!!tension&&tension.compressionDemand_kN===0},
+  {name:"compression demand uses largest end compression",pass:!!compression&&compression.compressionDemand_kN===1.5&&compression.governingCase==="C2"},
+  {name:"same-case bending and shear block axial-only screen",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"B",sectionKey:"column",ends:[{label:"B1",values:[1000,0,0,0,0,250000,-1000,0,0,0,0,0]}]}]})[0];return x.interactionRequired&&!x.axialOnlyCase;})()},
+  {name:"all concurrent case vectors and both ends are retained without envelope mixing",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"C",sectionKey:"column",ends:[{label:"ULS-1",values:[1000,2,3,4,5,6,-1000,-2,-3,-4,-5,-6]},{label:"ULS-2",values:[2000,20,30,40,50,60,-2000,-20,-30,-40,-50,-60]}]}]})[0];return x.simultaneousCases.length===2&&x.simultaneousCases[0].endI.My===5&&x.simultaneousCases[1].endJ.Mz===-60&&x.simultaneousCases[0].vector[1]===2;})()},
+  {name:"pure axial case is separately identified",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"A",sectionKey:"column",ends:[{label:"A1",values:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}]})[0];return x.axialOnlyCase&&!x.interactionRequired;})()},
+  {name:"bending in any other combination blocks pure-axial screening",pass:(()=>{const x=buildCompressionDemandRows({members:[{id:"MIX",sectionKey:"column",ends:[{label:"AXIAL",values:[2000,0,0,0,0,0,-2000,0,0,0,0,0]},{label:"BENDING",values:[1000,0,0,0,0,250000,-1000,0,0,0,0,0]}]}]})[0];return x.interactionRequired&&!x.axialOnlyCase;})()},
+  {name:"invalid force vectors are retained as blocked evidence, never silently ignored",pass:(()=>{const x=rows.find(r=>r.id==="BAD");return !!x&&x.coverageComplete===false&&x.invalidCaseCount===1;})()},
+  {name:"3D combinations are mapped without losing per-case concurrent actions",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]},{id:"U2",members:[{id:"M1",localEndForces:[1500,0,0,0,0,0,-1500,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column",length:6}]});return x.success&&x.members[0].coverageComplete&&x.members[0].caseCount===2&&x.members[0].compressionDemand_kN===1.5;})()},
+  {name:"missing member in any 3D combination blocks its demand coverage",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]},{id:"U2",members:[]}],{members:[{id:"M1",sectionKey:"column"}]});return !x.success&&!x.members[0].coverageComplete;})()},
+  {name:"model member absent from every combination is retained and blocked",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]},{id:"U2",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column"},{id:"M2",sectionKey:"rafter"}]});const m=x.members.find(r=>r.id==="M2");return !x.success&&!!m&&m.coverageComplete===false&&m.invalidCaseCount===2;})()},
+  {name:"global 3D mapping issues block every member capacity row",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]},{id:"EXTRA",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column"}]});return !x.success&&x.members.every(r=>r.coverageComplete===false);})()},
+  {name:"results for members outside the reference model block completeness",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]},{id:"EXTRA",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{members:[{id:"M1",sectionKey:"column"}]});return !x.success&&x.issues.some(s=>s.includes("در مدل مرجع یافت نشد"));})()},
+  {name:"missing model member registry blocks completeness",pass:(()=>{const x=buildCompressionDemandRowsFrom3D([{id:"U1",members:[{id:"M1",localEndForces:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}]}],{});return !x.success&&x.issues.some(s=>s.includes("مدل مرجع موجود نیست"));})()},
+  {name:"member capacity calculated only with sourced group and member restraint records",pass:good.ok&&good.LRFD.designStrength_kN>0},
+  {name:"missing member unbraced lengths are blocked",pass:!missing.ok},
+  {name:"missing section-property provenance blocks member capacity",pass:!noGroupEvidence.ok&&noGroupEvidence.scope==="blocked-missing-source-provenance"},
+  {name:"missing member-specific restraint provenance blocks member capacity",pass:!noRestraintEvidence.ok&&noRestraintEvidence.scope==="blocked-missing-source-provenance"},
+  {name:"unconfirmed section-property mapping is blocked",pass:!mismatch.ok},
+  {name:"tapered analysis segment is blocked",pass:!tapered.ok}
+ ];
+ return {passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests};
+}
+function sectionDefaults(g){
+ const s=root.SteelSections?.read?.()||{},m=s[g]||{},p=s.analysis3d?.groups?.[g]||{};
+ return {Ag_mm2:Number(m.A_cm2)>0?Number(m.A_cm2)*100:null,Ix_mm4:Number(m.Ix_cm4)>0?Number(m.Ix_cm4)*1e4:null,Iy_mm4:Number(m.Iy_cm4)>0?Number(m.Iy_cm4)*1e4:null,J_mm4:Number(p.J_cm4)>0?Number(p.J_cm4)*1e4:null};
+}
+function render(){
+ const host=$("compressionCapacityIntegrationContent");if(!host)return;
+ host.innerHTML=GROUPS.map(([g,label])=>{
+  const d=data.groups[g]||{},defaults=sectionDefaults(g);
+  return '<details class="sub-panel"><summary>'+label+' — ظرفیت فشاری محدود</summary><div class="form-grid">'+
+   FIELDS.map(([k,caption])=>'<div class="field"><label for="cc_'+g+'_'+k+'">'+caption+'</label><input type="number" min="0" step="any" id="cc_'+g+'_'+k+'" value="'+(d[k]??defaults[k]??"")+'"></div>').join("")+
+   '</div><div class="form-grid"><label><input type="checkbox" id="cc_'+g+'_sectionTypeReviewed" '+(d.sectionTypeReviewed?'checked':'')+'> تأیید شد مقطع واقعاً I دوبل‌متقارن است</label>'+
+   '<label><input type="checkbox" id="cc_'+g+'_sectionPropertiesMatchReviewed" '+(d.sectionPropertiesMatchReviewed?'checked':'')+'> تأیید شد خواص هندسی ثبت‌شده دقیقاً به اعضای این گروه تعلق دارد</label>'+
+   '<label><input type="checkbox" id="cc_'+g+'_localSlendernessReviewed" '+(d.localSlendernessReviewed?'checked':'')+'> کنترل لاغری موضعی بال و جان طبق جدول معتبر انجام شده و مقطع غیرلاغر است</label></div>'+
+   '<div class="field"><label for="cc_'+g+'_note">یادداشت مهندسی</label><input type="text" id="cc_'+g+'_note" value="'+esc(d.note)+'" placeholder="توضیح تکمیلی"></div>'+
+   '<details class="sub-panel"><summary>ردگیری مدارک الزامی (سند | ویرایش | محل دقیق | مرجع تأیید)</summary>'+
+   ['sectionEvidence','materialEvidence','stabilityEvidence'].map((k,i)=>'<div class="field"><label for="cc_'+g+'_'+k+'">'+['مدرک هندسه و خواص مقطع','گواهی مصالح','مدرک مهاربندی و طول‌های مؤثر'][i]+'</label><input type="text" id="cc_'+g+'_'+k+'" value="'+esc(evidenceText(d[k]))+'" placeholder="drawing.pdf | R2 | Sheet 3 / Detail 4 | designer review"></div>').join('')+
+   '</details></details>';
+ }).join("")+
+ '<div class="notice">مساحت، ممان‌های اینرسی و J در صورت خالی بودن، از رجیستر مقطع همین گروه به‌صورت اولیه خوانده می‌شوند (A: cm²→mm² و ممان‌ها: cm⁴→mm⁴)؛ آن‌ها را با مشخصات واقعی مقطع تطبیق دهید. مقدار h0 و طول‌های مهارنشده باید از هندسه و نقشه واقعی برداشت شوند. E و G فقط از ورودی صریح همین فرم یا رجیستر اختصاصی اعضا خوانده می‌شوند؛ مقدار پیش‌فرض یا تخمین برای آن‌ها وجود ندارد و در صورت فقدان، موتور مقاومت ظرفیت ارائه نمی‌کند. Fy از رجیستر گروه عضو یا پنل مصالح خوانده می‌شود، مگر آنکه جداگانه در این فرم وارد شود. Kها را بدون تحلیل/پیوست معتبر حدس نزنید.</div>'+
+ '<div class="button-grid"><button type="button" class="btn primary" id="btnCompressionCapacityRun">محاسبه مقاومت کمانش کلی ستون و رفتر</button></div><div id="compressionCapacityResults"></div>';
+}
+function memberCapacityFromInput(row,base,override,taperedEnabled){
+ const g=row.sectionKey;
+ if(g!=="column"&&g!=="rafter")return {ok:false,issues:["گروه عضو در موتور فعلی پشتیبانی نمی‌شود."]};
+ if(row.taperSegmentIndex!==null&&row.taperSegmentIndex!==undefined)return {ok:false,issues:["قطعه متعلق به عضو متغیرعمق است؛ ظرفیت منشوری مجاز نیست."]};
+ if(taperedEnabled===true)return {ok:false,issues:["گروه در مدل متغیرعمق فعال است."]};
+ if(base.sectionPropertiesMatchReviewed!==true)return {ok:false,issues:["یکسان بودن خواص هندسی ثبت‌شده با این عضو هنوز تأیید نشده است."]};
+ const evidence=[...groupEvidenceIssues(g,base),...evidenceIssues("مرجع طول‌های مهارنشده/مهاربندی عضو "+String(row.id||""),override?.restraintEvidence)];
+ if(evidence.length)return {ok:false,issues:evidence,scope:"blocked-missing-source-provenance"};
+ for(const k of ["Lx_mm","Ly_mm","Lz_mm"]){
+  if(!(Number(override?.[k])>0))return {ok:false,issues:["طول مهارنشده "+k+" برای این عضو باید جداگانه وارد و تأیید شود."]};
+  base[k]=Number(override[k]);
+ }
+ base.localSlendernessClass=base.localSlendernessReviewed?"non-slender":"unreviewed";
+ return root.SteelCompressionCapacity.analyze(base);
+}
+function capacityForMember(row){
+ const g=row.sectionKey;
+ if(g!=="column"&&g!=="rafter")return {ok:false,issues:["گروه عضو در موتور فعلی پشتیبانی نمی‌شود."]};
+ const base=getInput(g),override=data.memberOverrides[String(row.id)]||{};
+ const tapered=root.SteelTaperedSections?.getData?.().groups?.[g];
+ return memberCapacityFromInput(row,base,override,tapered?.enabled===true);
+}
+function renderResults(){
+ const host=$("compressionCapacityResults");if(!host)return;
+ readUI();
+ const html=GROUPS.map(([g,label])=>{
+  let r;try{r=analyzeGroup(g);}catch(e){return '<div class="notice"><b>'+label+'</b><p>'+esc(e.message)+'</p></div>';}
+  if(!r.ok)return '<div class="notice"><b>'+label+' — ظرفیت محاسبه نشد</b><ul>'+r.issues.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div>';
+  return '<div class="notice"><b>'+label+' — نتیجه محدود کمانش کلی</b><p>حالت حاکم: '+esc(r.governingMode)+' | Fe='+r.Fe_MPa.toFixed(2)+' MPa | Fcr='+r.Fcr_MPa.toFixed(2)+' MPa</p>'+
+   '<p>Pn='+r.Pn_kN.toFixed(2)+' kN | LRFD: φPn='+r.LRFD.designStrength_kN.toFixed(2)+' kN | ASD: Pn/Ω='+r.ASD.allowableStrength_kN.toFixed(2)+' kN</p>'+
+   '<p>لاغری: λx='+r.slenderness.x.toFixed(1)+'، λy='+r.slenderness.y.toFixed(1)+'</p><ul>'+r.warnings.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div>';
+ }).join("");
+ const modelData=root.SteelStructuralModel?.getData?.();
+ const combinationResults=root.SteelStructuralModel?.combinationResults||root.SteelAnalysis?.combinationResults;
+ const forceResult=Array.isArray(combinationResults)&&combinationResults.length
+  ? buildCompressionDemandRowsFrom3D(combinationResults,modelData)
+  : root.SteelMemberForceEnvelope?.getLast?.();
+ const demandRows=buildCompressionDemandRows(forceResult);
+ const demandHtml=demandRows.length?'<h4>تقاضای فشاری و ظرفیت کمانش کلی در سطح عضو</h4><p class="notice">برای هر عضو، سه طول مهارنشده را مستقل وارد کنید. خواص مقطع و مصالح از فرم گروه ستون/رفتر خوانده می‌شود؛ قبل از استفاده باید یکسان بودن آن‌ها با عضو انتخابی را کنترل کنید.</p><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>شناسه عضو/قطعه</th><th>گروه</th><th>ترکیب حاکم</th><th>انتهای حاکم</th><th>فشار بیشینه (kN)</th><th>Lx (mm)</th><th>Ly (mm)</th><th>Lz (mm)</th><th>مرجع مهاربندی عضو (سند | ویرایش | محل | تأییدکننده)</th><th>ظرفیت LRFD φPn (kN)</th><th>ظرفیت ASD (kN)</th><th>نسبت محوری P/φPn</th><th>نتیجه غربال</th></tr></thead><tbody>'+demandRows.map(r=>{
+  const ov=data.memberOverrides[String(r.id)]||{},g=r.sectionKey;
+  let cap=null,screen=null,why="";
+  if(r.compressionDemand_kN>0&&r.coverageComplete){
+   try{
+    cap=capacityForMember(r);
+    if(!cap.ok)why=(cap.issues||[]).join("؛ ");
+    if(r.axialOnlyCase)screen=evaluateAxialOnlyMember(r,getInput(g),ov,root.SteelTaperedSections?.getData?.().groups?.[g]?.enabled===true);
+    else why="نیازمند کنترل اندرکنش هم‌زمان N-M-V-T؛ نسبت محوری به‌تنهایی مجاز نیست.";
+   }catch(e){why=e.message;}
+  }else if(!r.coverageComplete)why="پوشش ترکیبات سه‌بعدی ناقص است؛ ظرفیت/نسبت نمایش داده نمی‌شود.";
+  return '<tr><td>'+esc(r.id)+'</td><td>'+esc(g)+'</td><td>'+esc(r.governingCase||'—')+'</td><td>'+esc(r.governing?.end||'—')+'</td><td>'+r.compressionDemand_kN.toFixed(2)+'</td>'+["Lx_mm","Ly_mm","Lz_mm"].map(k=>'<td><input type="number" min="1" step="any" data-member-id="'+esc(r.id)+'" data-member-length="'+k+'" value="'+(ov[k]??"")+'" style="width:92px"></td>').join("")+'<td><input type="text" data-member-id="'+esc(r.id)+'" data-member-restraint-evidence value="'+esc(evidenceText(ov.restraintEvidence))+'" placeholder="drawing.pdf | R1 | Detail 2 | designer" style="min-width:220px"></td><td>'+(cap?.ok?cap.LRFD.designStrength_kN.toFixed(2):"—")+'</td><td>'+(cap?.ok?cap.ASD.allowableStrength_kN.toFixed(2):"—")+'</td><td>'+(screen?.ok?screen.ratio.toFixed(3):"—")+'</td><td>'+(screen?.ok?(screen.withinAxialStrength?"در محدوده مقاومت محوری — غیرنهایی":"بیش از مقاومت محوری — مردود در غربال"):esc(why||"ابتدا طول‌های مهارنشده را وارد کنید"))+'</td></tr>';
+}).join("")+'</tbody></table></div><button type="button" class="btn" id="btnCompressionMemberRecalc">به‌روزرسانی ظرفیت اعضا</button>':'<div class="notice">برای نمایش تقاضای فشاری، ابتدا تحلیل سه‌بعدی و استخراج پوش نیروها را اجرا کنید.</div>';
+ host.innerHTML=html+demandHtml+'<div class="notice">تقاضای فشاری از قرارداد علامت نیروی محلی حل‌گر استخراج شده است: کشش (Nᵢ منفی و Nⱼ مثبت) فشار محسوب نمی‌شود؛ فشار (Nᵢ مثبت و Nⱼ منفی) با بیشینه دو انتها گزارش می‌شود. این قرارداد با آزمون عضو محوری کنترل شده است. نسبت P/φPn فقط در حالتی نمایش داده می‌شود که بارگذاری حاکم واقعاً محوری باشد و در همان ترکیب هیچ خمش، برش یا پیچشی در دو انتهای عضو وجود نداشته باشد. در بارگذاری مرکب، محاسبه نسبت محوری مسدود است تا اندرکنش کامل پیاده‌سازی شود. همچنین کمانش موضعی، اعضای مرکب، مقاطع نامتقارن/متغیرعمق، اندرکنش فشار و خمش، تحلیل مرتبه دوم و کنترل لرزه‌ای خارج از دامنه‌اند. ظرفیت‌های نمایش‌داده‌شده فقط مقاومت کمانش کلی بر مبنای طول‌های واردشده هستند و به معنی قبولی عضو نیستند؛ تقاضا و ظرفیت تا زمان تأیید مبنای ترکیب‌بار و همه کنترل‌های لازم نباید به‌صورت نسبت بهره‌برداری یا قبولی/ردی تفسیر شوند.</div>';
+ const recalc=$("btnCompressionMemberRecalc");if(recalc)recalc.addEventListener("click",()=>{readUI();renderResults();});
+}
+function init(){
+ if($("compressionCapacityIntegrationPanel"))return;
+ const anchor=$("compressionDesignPanel");if(!anchor)return;
+ const p=document.createElement("section");p.className="panel";p.id="compressionCapacityIntegrationPanel";
+ p.innerHTML='<div class="panel-title"><h3>محاسبه محدود مقاومت اعضای فشاری — ستون و رفتر</h3><span class="status">موتور کمانش کلی</span></div>'+
+ '<div class="notice">این ماژول به موتور محاسباتی متصل است، اما تنها برای مقطع I دوبل‌متقارن منشوری و غیرلاغر. برای رفتر متغیرعمق، مقاطع لاغر یا هر مقطع دیگر فعلاً نتیجه ظرفیت معتبر تولید نمی‌شود.</div><div id="compressionCapacityIntegrationContent"></div>';
+ anchor.insertAdjacentElement("afterend",p);render();
+ $("btnCompressionCapacityRun")?.addEventListener("click",renderResults);
+}
+root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,capacityForMember,memberCapacityFromInput,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,buildCompressionDemandRowsFrom3D,selfTest,render};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})(typeof window!=="undefined"?window:globalThis);
