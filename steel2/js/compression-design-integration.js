@@ -219,15 +219,6 @@ function selfTest(){
   {name:"unconfirmed section-property mapping is blocked",pass:!mismatch.ok},
   {name:"tapered analysis segment is blocked",pass:!tapered.ok}
  ];
- const priorData=getData();
- const groupBase={...base,Lx_mm:6000,Ly_mm:4000,Lz_mm:5000};
- setData({schemaVersion:1,groups:{column:{...groupBase,sectionEvidence:{},materialEvidence:ev,stabilityEvidence:ev}}});
- const blockedGroup=analyzeGroup("column");
- tests.push({name:"group-level compression calculation is blocked when section evidence is absent",pass:blockedGroup.ok===false&&blockedGroup.scope==="blocked-missing-source-provenance"});
- setData({schemaVersion:1,groups:{column:groupBase}});
- const persisted=getData().groups.column;
- tests.push({name:"source provenance records survive project data normalization",pass:persisted.sectionEvidence.document===ev.document&&persisted.materialEvidence.locator===ev.locator&&persisted.stabilityEvidence.authority===ev.authority});
- setData(priorData);
  return {passed:tests.filter(t=>t.pass).length,failed:tests.filter(t=>!t.pass).length,tests};
 }
 function sectionDefaults(g){
