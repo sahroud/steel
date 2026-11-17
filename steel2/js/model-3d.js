@@ -419,11 +419,15 @@
     // Assign tributary line loads to the geometric members from current area-load inputs.
     const loads=window.SteelLoads?.getData?.()||{};
     const frameTrib=frames.map((z,i)=>i===0?(frames[1]-z)/2:i===frames.length-1?(z-frames[i-1])/2:(frames[i+1]-frames[i-1])/2);
+    // Roof area loads must enter the 3D model through roof purlins when they exist.
+    // Applying the same area load directly to rafters as well would double-count it.
+    const roofPurlinsPresent=members.some(m=>m.sectionKey==="roofPurlin");
     members.forEach(m=>{
       if(m.axis==="transverse"){
         const fi=(m.frame||1)-1,tw=frameTrib[fi]||spacing;
-        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:(loads.deadLeft||0)*tw,live:(loads.liveLeft||0)*tw,snow:(loads.snowLeft||0)*tw,wind:0,unit:"kN/m",tributaryWidth:tw};
-        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw,live:(loads.liveRight||0)*tw,snow:(loads.snowRight||0)*tw,wind:0,unit:"kN/m",tributaryWidth:tw};
+        const directRafterLoadFactor=roofPurlinsPresent?0:1;
+        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:(loads.deadLeft||0)*tw*directRafterLoadFactor,live:(loads.liveLeft||0)*tw*directRafterLoadFactor,snow:(loads.snowLeft||0)*tw*directRafterLoadFactor,wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"};
+        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw*directRafterLoadFactor,live:(loads.liveRight||0)*tw*directRafterLoadFactor,snow:(loads.snowRight||0)*tw*directRafterLoadFactor,wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"};
         else m.lineLoads={wind:0,unit:"kN/m",tributaryWidth:tw};
       } else if(m.sectionKey==="roofPurlin"){
         const w=m.tributaryWidth||0;
