@@ -501,3 +501,29 @@ test("wind mapper records the explicit wind axis and direction",()=>{
   const mapped=globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers(model,pressure,"positive");
   assert.equal(mapped.windDirection,"longitudinal-positive");
 });
+
+test("service wind drift check compares relative top-to-base movement with 0.0025H",()=>{
+  const model={geometry:{height:4},nodes:[
+    {id:"B1",x:0,y:0,z:0},{id:"T1",x:0,y:4,z:0},
+    {id:"B2",x:8,y:0,z:0},{id:"T2",x:8,y:4,z:0}
+  ],members:[]};
+  const displacements=[
+    {nodeId:"B1",values:[0,0,0]},{nodeId:"T1",values:[0.005,0,0]},
+    {nodeId:"B2",values:[0,0,0]},{nodeId:"T2",values:[0.012,0,0]}
+  ];
+  const result=globalThis.SteelLoadTransfer.checkWindDrift(model,displacements,"transverse-positive");
+  assert.equal(result.ready,true);
+  assert.equal(result.ok,false);
+  assert.ok(Math.abs(result.driftRatio-0.003)<1e-12);
+  assert.equal(result.limitRatio,0.0025);
+  assert.equal(result.criticalPair.topNodeId,"T2");
+});
+
+test("service wind drift check fails closed when base-to-top displacement pairs are unavailable",()=>{
+  const result=globalThis.SteelLoadTransfer.checkWindDrift(
+    {geometry:{height:4},nodes:[{id:"T",x:0,y:4,z:0}],members:[]},
+    [{nodeId:"T",values:[0.01,0,0]}],"longitudinal-positive"
+  );
+  assert.equal(result.ready,false);
+  assert.equal(result.ok,false);
+});
