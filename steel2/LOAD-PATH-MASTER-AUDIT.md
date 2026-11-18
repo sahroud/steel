@@ -275,3 +275,8 @@
 - برای اعضای طولی در امتداد Z، دستگاه پیش‌فرض متفاوت است: local-y در راستای X و local-z در راستای Y قرار می‌گیرد. بنابراین خواص مقطع پرلین/قید طولی را نمی‌توان صرفاً با فرض نگاشت ستون/رفتر وارد کرد؛ جهت چرخش/نصب مقطع باید جداگانه تعریف شود.
 - آزمون‌های محلی محور برای ستون، رفتر چپ/راست و عضو طولی به فایل آزمون حل‌گر افزوده شدند. آزمون‌های محاسبه تیرورق و قرارداد نگاشت نیز در همان فایل آزمون تجمیع شدند.
 - این بررسی صحت قرارداد محور در دستگاه پیش‌فرض را پوشش می‌دهد؛ هنوز roll angle/section orientation واقعی برای مقاطع Z/C، نبشی، قوطی و مهاربندهای خارج از صفحه به‌صورت ورودی صریح مدل نشده است.
+
+
+## 2026-11-18 — Member-specific section orientation capability
+
+The 3D solver now accepts `member.referenceAxis` when constructing each member's local transformation, falling back to the prior global `options.referenceAxis` only when no member value is supplied. This is infrastructure, not a completed orientation assignment: model generation has not yet supplied verified reference axes for every member family. Section roll, local-axis sign, purlin/girt installation orientation and load-component consistency remain open verification items.
