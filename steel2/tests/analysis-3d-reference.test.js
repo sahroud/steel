@@ -1388,6 +1388,7 @@ test("built-up I section calculator returns symmetric centroid and gross area",(
   assert.equal(r.strongAxis.sectionModulusTopCm3,r.strongAxis.sectionModulusBottomCm3);
   assert.equal(r.designStatus,"geometry-only-not-code-verified");
   assert.equal(r.torsion.warpingIncluded,false);
+  assert.equal(r.assumptions.length,2);
 });
 
 test("built-up I section calculator handles asymmetric flange geometry",()=>{
