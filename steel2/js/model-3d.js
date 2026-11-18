@@ -857,7 +857,7 @@
     result.gableWindTransfer=gableWindTransfer;
     if(zoneWindMapping)result.windZoneTransfer={windDirection:zoneWindMapping.windDirection,internalScenario:zoneWindMapping.internalScenario,pressureScale:selected.windFactor,serviceability:!!selected.serviceability,counts:zoneWindMapping.counts,endFacePressures:zoneWindMapping.endFacePressures};
     if(selected.serviceability)result.windServiceability=window.SteelLoadTransfer.checkWindDrift(
-      analysisModel,result.displacements,selected.windZoneDirection,0.0025
+      {...analysisModel,geometry:model.geometry},result.displacements,selected.windZoneDirection,0.0025
     );
 
     if(result.maxDisplacement){
