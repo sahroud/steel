@@ -1073,7 +1073,8 @@ test("12x36 production shed roof dead-load resultant and global moments match ho
     m.analysisLoad={uniformLocal:local};
   });
   const result=solver.calculateGlobalLoadResultants({nodes:model.nodes,members:loaded},[]);
-  const roofCos=(model.geometry.span/2)/Math.hypot(model.geometry.span/2,model.geometry.rise);\n  const expectedKN=2*model.geometry.totalRoofSlope*roofCos*(model.geometry.length+1.6);
+  const roofCos=(model.geometry.span/2)/Math.hypot(model.geometry.span/2,model.geometry.rise);
+  const expectedKN=2*model.geometry.totalRoofSlope*roofCos*(model.geometry.length+1.6);
   const expectedForceY=-expectedKN*1000;
   const expectedMomentX=-(model.geometry.length/2)*expectedForceY;
   const expectedMomentZ=(model.geometry.span/2)*expectedForceY;
