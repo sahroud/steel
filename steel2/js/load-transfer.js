@@ -172,6 +172,46 @@
     return Object.freeze({schemaVersion:"1.1.0",windDirection:pressureResult.direction,internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
   }
 
+  function checkWindDrift(model, displacementRecords, windDirection, limitRatio) {
+    const directions=WIND_DIRECTIONS;
+    const ratio=limitRatio===undefined?0.0025:Number(limitRatio);
+    if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members)||
+       !Array.isArray(displacementRecords)||!directions.includes(windDirection)||
+       !Number.isFinite(ratio)||ratio<=0)
+      return Object.freeze({ready:false,ok:false,reason:"ورودی کنترل دریفت باد ناقص یا نامعتبر است."});
+    const height=Number(model.geometry&&model.geometry.height);
+    if(!Number.isFinite(height)||height<=0)
+      return Object.freeze({ready:false,ok:false,reason:"ارتفاع مبنای کنترل دریفت معتبر نیست."});
+    const axis=windDirection.startsWith("transverse-")?0:2;
+    const nodeById=new Map(model.nodes.map(node=>[String(node.id),node]));
+    const dispById=new Map(displacementRecords.map(item=>[String(item.nodeId),item.values]));
+    const tolerance=1e-7, topCandidates=[];
+    model.nodes.forEach(node=>{
+      if(!(Number(node.y)>=height*0.9))return;
+      const base=model.nodes.find(candidate=>
+        Math.abs(Number(candidate.y))<=tolerance&&
+        Math.abs(Number(candidate.x)-Number(node.x))<=tolerance&&
+        Math.abs(Number(candidate.z)-Number(node.z))<=tolerance);
+      if(base)topCandidates.push({top:node,base});
+    });
+    if(!topCandidates.length)
+      return Object.freeze({ready:false,ok:false,reason:"گره‌های متناظر پایه و بالای ستون برای کنترل دریفت پیدا نشدند."});
+    let maximum=0,critical=null;
+    for(const pair of topCandidates){
+      const topD=dispById.get(String(pair.top.id)),baseD=dispById.get(String(pair.base.id));
+      if(!Array.isArray(topD)||!Array.isArray(baseD)||
+         !Number.isFinite(Number(topD[axis]))||!Number.isFinite(Number(baseD[axis])))
+        return Object.freeze({ready:false,ok:false,reason:"جابجایی یکی از گره‌های کنترل دریفت در خروجی تحلیل موجود نیست."});
+      const drift=Math.abs(Number(topD[axis])-Number(baseD[axis]));
+      if(drift>maximum){maximum=drift;critical={topNodeId:pair.top.id,baseNodeId:pair.base.id};}
+    }
+    const ratioActual=maximum/height;
+    return Object.freeze({ready:true,ok:ratioActual<=ratio,windDirection,axis:axis===0?"X":"Z",
+      maximumRelativeDisplacementM:maximum,heightM:height,driftRatio:ratioActual,limitRatio:ratio,
+      criticalPair:critical,checkedPairs:topCandidates.length,
+      serviceWindApproximation:"0.8V; pressure scale 0.64 relative to 50-year basic wind pressure"});
+  }
+
   function applyWindZonePressureMapping(model, pressureResult, internalScenario) {
     const mapping = mapWindZonePressuresToMembers(model, pressureResult, internalScenario);
     const members = model.members.map(member => {
@@ -197,6 +237,6 @@
   }
   root.SteelLoadTransfer = Object.freeze({
     surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES,
-    triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, preliminaryWindCombinations
+    triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, checkWindDrift, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
