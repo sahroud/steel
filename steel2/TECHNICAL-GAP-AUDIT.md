@@ -244,3 +244,12 @@
 - The 3D load assembly now passes each member's optional `referenceAxis` to the same `makeTransform` routine used by the solver. This keeps global-to-local distributed-load conversion consistent with the element stiffness transformation whenever a member-specific orientation is supplied.
 - Members without an explicit `referenceAxis` retain the solver's existing default-axis behavior; no unverified orientation is inferred or assigned to purlins, girts, braces, or other groups.
 - This is a consistency fix, not evidence that production member orientations have been fully specified. Actual section installation axes and restraint details remain to be verified from fabrication/design data. No new end-to-end structural validation or CI pass is claimed.
+
+
+### Load-vector, solver and equilibrium audit share member-specific local axes — 2026-11-18
+
+- A shared `globalVectorToLocal` helper now uses the solver's `makeTransform` routine; the production 3D load assembler calls it rather than duplicating axis projection logic.
+- The independent global resultant audit now reconstructs local distributed loads using each member's `referenceAxis`, matching the element stiffness transformation.
+- Invalid/zero reference-axis vectors are rejected. Members without an explicit axis retain the documented default behavior; this does not certify that their physical section orientation is known.
+- Added regression fixtures for a vertical member with a non-default local roll, round-trip global/local vector reconstruction, agreement between the independent resultant audit and solver load audit, and malformed-axis rejection.
+- The fixtures are authored but have not been executed in this environment; CI is not confirmed. Production geometry still needs verified orientation metadata for each section family.
