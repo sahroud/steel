@@ -977,6 +977,8 @@
       nodalLoads.push(...Array.from(loadByNode,([nodeId,values])=>({nodeId,values})));
     }
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads);
+    if(!window.SahroudMemberDemand3D)throw new Error("موتور استخراج تقاضای اعضای سه‌بعدی بارگذاری نشده است.");
+    result.memberDemand=window.SahroudMemberDemand3D.extractCase(result,analysisModel);
     result.orientationAudit=window.SteelFrame3D.auditMemberOrientation(analysisModel);
     result.sectionPropertyAudit=window.SteelFrame3D.auditMemberSectionProperties(analysisModel,sectionsByMemberId);
     result.codeDesignInputReadiness={ready:result.orientationAudit.readyForCodeDesign&&result.sectionPropertyAudit.readyForCodeDesign,
