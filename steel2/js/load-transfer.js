@@ -85,8 +85,11 @@
     }
     return Object.freeze(supports);
   }
+  const WIND_DIRECTIONS = Object.freeze(["transverse-positive","transverse-negative","longitudinal-positive","longitudinal-negative"]);
+  const REQUIRED_WIND_ZONES = Object.freeze(["roof-left","roof-right","long-wall-left","long-wall-right","end-wall-front","end-wall-back"]);
   function calculateWindZonePressures(input) {
     const data=input||{}, coefficients=data.coefficients||{}, zones=data.zones||{};
+    const direction=WIND_DIRECTIONS.includes(data.direction)?data.direction:null;
     const finite=value=>{
       if(value===null||value===undefined||value==="")return null;
       const number=Number(value);
@@ -118,14 +121,15 @@
         netInternalNegative:external+internal
       });
     });
-    const ready=commonReady&&Object.keys(zones).length>0&&Object.values(rows).every(Boolean);
-    return Object.freeze({q,rows:Object.freeze(rows),ready});
+    const allZonesPresent=REQUIRED_WIND_ZONES.every(key=>Object.prototype.hasOwnProperty.call(zones,key)&&finite(zones[key])!==null);
+    const ready=commonReady&&direction!==null&&allZonesPresent&&REQUIRED_WIND_ZONES.every(key=>!!rows[key]);
+    return Object.freeze({q,rows:Object.freeze(rows),ready,direction,zones:Object.freeze({...zones})});
   }
 
   function mapWindZonePressuresToMembers(model, pressureResult, internalScenario) {
     if (!model || !Array.isArray(model.members)) throw new TypeError("مدل دارای فهرست اعضای معتبر نیست.");
-    if (!pressureResult || pressureResult.ready !== true || !pressureResult.rows)
-      throw new Error("فشارهای شش‌ناحیه‌ای کامل و معتبر نیستند؛ انتقال بار متوقف شد.");
+    if (!pressureResult || pressureResult.ready !== true || !pressureResult.rows || !WIND_DIRECTIONS.includes(pressureResult.direction))
+      throw new Error("فشارهای شش‌ناحیه‌ای کامل و دارای جهت باد معتبر نیستند؛ انتقال بار متوقف شد.");
     const scenario = internalScenario === "negative" ? "netInternalNegative" :
       internalScenario === "positive" ? "netInternalPositive" : null;
     if (!scenario) throw new RangeError("حالت فشار داخلی باید positive یا negative باشد.");
@@ -165,7 +169,7 @@
       }
     });
     if(!mappedRoof||!mappedWalls||!mappedEndWalls)throw new Error("نگاشت باد نیازمند پرلین سقف، دیوارگیر طولی و تیر دیوار انتهایی است.");
-    return Object.freeze({schemaVersion:"1.0.0",internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
+    return Object.freeze({schemaVersion:"1.1.0",windDirection:pressureResult.direction,internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
   }
 
   function applyWindZonePressureMapping(model, pressureResult, internalScenario) {
@@ -192,7 +196,7 @@
     ].map(item=>Object.freeze(item)));
   }
   root.SteelLoadTransfer = Object.freeze({
-    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant,
+    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES,
     triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
