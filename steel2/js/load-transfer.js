@@ -168,6 +168,19 @@
     return Object.freeze({schemaVersion:"1.0.0",internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
   }
 
+  function applyWindZonePressureMapping(model, pressureResult, internalScenario) {
+    const mapping = mapWindZonePressuresToMembers(model, pressureResult, internalScenario);
+    const members = model.members.map(member => {
+      const mapped = mapping.memberLoads[String(member.id)];
+      if (!mapped) return { ...member, lineLoads: { ...(member.lineLoads || {}) } };
+      return { ...member, lineLoads: { ...(member.lineLoads || {}), ...mapped } };
+    });
+    return Object.freeze({
+      model: { ...model, members },
+      mapping
+    });
+  }
+
   function preliminaryWindCombinations() {
     return Object.freeze([
       {key:"comboWind08P",label:"آزمایشی 0.8D+1.6W (جهت +)",dead:0.8,live:0,snow:0,wind:1.6,sign:1},
@@ -180,6 +193,6 @@
   }
   root.SteelLoadTransfer = Object.freeze({
     surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant,
-    triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, preliminaryWindCombinations
+    triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
