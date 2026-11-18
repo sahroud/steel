@@ -159,6 +159,27 @@
         if(validationButtons) panel.insertBefore(extraHost,validationButtons);
         else panel.appendChild(extraHost);
 
+        const provenanceGroups=[
+          ["column","ستون"],["rafter","رفتر"],["roofPurlin","پرلین سقف"],
+          ["wallGirt","قید دیوار"],["endPost","ستونک انتهایی"],["endGirt","تیر انتهایی"],
+          ["wallBrace","مهاربند دیوار"],["roofBrace","مهاربند سقف"],["roofEdge","تیر لبه سقف"]
+        ];
+        const provenance=document.createElement("details");
+        provenance.className="sub-panel";
+        provenance.id="sectionProvenancePanel";
+        provenance.innerHTML='<summary>هـ ـ شناسنامه و مستندات هر مقطع</summary>'+
+          '<div class="notice">برای هر گروه، نام سازنده/کاتالوگ و شماره سند یا نقشه و صفحه را وارد کنید. تیک تأیید فقط پس از تطبیق مستقل با مدرک واقعی زده شود؛ ورود اطلاعات به‌تنهایی تأیید فنی نیست.</div>'+
+          provenanceGroups.map(([key,label])=>'<div class="sub-panel"><h4>'+label+'</h4><div class="form-grid">'+
+            '<div class="field"><label for="sp_'+key+'_profile">نام دقیق مقطع/مدل</label><input id="sp_'+key+'_profile" type="text"></div>'+
+            '<div class="field"><label for="sp_'+key+'_manufacturer">سازنده/تولیدکننده</label><input id="sp_'+key+'_manufacturer" type="text"></div>'+
+            '<div class="field"><label for="sp_'+key+'_document">شناسه سند/نقشه یا لینک مرجع</label><input id="sp_'+key+'_document" type="text"></div>'+
+            '<div class="field"><label for="sp_'+key+'_catalog">شماره کاتالوگ/استاندارد</label><input id="sp_'+key+'_catalog" type="text"></div>'+
+            '<div class="field"><label for="sp_'+key+'_page">شماره صفحه/جزئیات</label><input id="sp_'+key+'_page" type="text"></div>'+
+            '<div class="field"><label><input id="sp_'+key+'_verified" type="checkbox"> مشخصات با مدرک واقعی تطبیق و تأیید شد</label></div>'+
+            '</div></div>').join("");
+        if(validationButtons) panel.insertBefore(provenance,validationButtons);
+        else panel.appendChild(provenance);
+
         const girderBuilder=document.createElement("details");
         girderBuilder.className="sub-panel";
         girderBuilder.id="builtUpGirderBuilder";
@@ -225,6 +246,18 @@
         };
     }
 
+    function readSectionProvenance(key) {
+        const value=suffix=>String($("sp_"+key+"_"+suffix)?.value||"").trim();
+        return {
+            profile:value("profile"),
+            manufacturer:value("manufacturer"),
+            sourceDocumentId:value("document"),
+            catalogReference:[value("manufacturer"),value("catalog"),value("page")].filter(Boolean).join(" | "),
+            sourcePage:value("page"),
+            sectionDataVerified:!!$("sp_"+key+"_verified")?.checked
+        };
+    }
+
     function read() {
         return {
             material: {
@@ -250,7 +283,8 @@
                         A_cm2:Number($("p3_"+key+"_A")?.value),
                         Iy_cm4:Number($("p3_"+key+"_Iy")?.value),
                         Iz_cm4:Number($("p3_"+key+"_Iz")?.value),
-                        J_cm4:Number($("p3_"+key+"_J")?.value)
+                        J_cm4:Number($("p3_"+key+"_J")?.value),
+                        ...readSectionProvenance(key)
                     }];
                 }))
             }
@@ -295,7 +329,7 @@
         const required=[["A_cm2","مساحت A (cm²)"],["Iy_cm4","ممان اینرسی Iy (cm⁴)"],["Iz_cm4","ممان اینرسی Iz (cm⁴)"],["J_cm4","ثابت پیچشی J (cm⁴)"]];
         const missing=required.find(([field])=>!(Number.isFinite(Number(p[field]))&&Number(p[field])>0));
         if(missing) throw new Error("برای گروه " + labels[key] + "، مقدار " + missing[1] + " خالی یا نامعتبر است. مقدار واقعی مقطع را وارد کنید.");
-        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile:key==="column"?d.column.profile:key==="rafter"?d.rafter.profile:""};
+        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile:p.profile||(key==="column"?d.column.profile:key==="rafter"?d.rafter.profile:""),manufacturer:p.manufacturer||"",sourceDocumentId:p.sourceDocumentId||"",catalogReference:p.catalogReference||"",sourcePage:p.sourcePage||"",sectionDataVerified:p.sectionDataVerified===true};
     }
     function setData(data) {
         if (!data || typeof data !== "object") return;
@@ -329,6 +363,17 @@
             if (element && value !== undefined && value !== null) {
                 element.value = value;
             }
+        });
+
+        Object.entries(data.analysis3d?.groups||{}).forEach(([key,p])=>{
+            const values={profile:p.profile,manufacturer:p.manufacturer,document:p.sourceDocumentId,
+                catalog:p.catalogReference,page:p.sourcePage};
+            Object.entries(values).forEach(([suffix,value])=>{
+                const el=$("sp_"+key+"_"+suffix);
+                if(el&&value!==undefined&&value!==null)el.value=value;
+            });
+            const verified=$("sp_"+key+"_verified");
+            if(verified)verified.checked=p.sectionDataVerified===true;
         });
 
         // داده‌های قدیمی سه‌بعدی پس از بازیابی فیلدهای اصلی، فقط خانه‌های خالی را تکمیل می‌کنند.
