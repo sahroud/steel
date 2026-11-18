@@ -710,6 +710,33 @@ test("wind-zone coverage audit identifies gaps and overlapping zones", () => {
   assert.equal(overlap.uncoveredFootprintAreaM2,null);
 });
 
+test("member tributary footprint uses actual 3D endpoints and explicit perpendicular width vector", () => {
+  const helper=globalThis.SteelLoadTransfer.buildMemberTributaryFootprint;
+  const result=helper({
+    memberId:"PURLIN-1",
+    start:{x:0,y:3,z:0},end:{x:4,y:5,z:0},
+    tributaryWidthVector:{x:-1,y:2,z:0},
+    areaBasis:"sloped-surface"
+  });
+  assert.ok(Math.abs(result.memberLengthM-Math.sqrt(20))<1e-10);
+  assert.ok(Math.abs(result.tributaryWidthM-Math.sqrt(5))<1e-10);
+  assert.ok(Math.abs(result.footprintAreaM2-Math.sqrt(100))<1e-10);
+  assert.equal(result.vertices.length,4);
+  assert.equal(result.pressureReady,false);
+  assert.throws(()=>helper({
+    start:{x:0,y:0,z:0},end:{x:2,y:0,z:0},
+    tributaryWidthVector:{x:1,y:1,z:0},areaBasis:"projected"
+  }),/عمود/);
+  assert.throws(()=>helper({
+    start:{x:0,y:0,z:0},end:{x:0,y:0,z:0},
+    tributaryWidthVector:{x:0,y:1,z:0},areaBasis:"projected"
+  }),/مثبت/);
+  assert.throws(()=>helper({
+    start:{x:0,y:0,z:0},end:{x:2,y:0,z:0},
+    tributaryWidthVector:{x:0,y:1,z:0}
+  }),/مبنای footprint/);
+});
+
 test("polygonal C&C tributary patch requires finite coordinates and explicit area basis", () => {
   const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
   assert.throws(() => helper({
