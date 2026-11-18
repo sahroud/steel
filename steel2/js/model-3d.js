@@ -576,6 +576,8 @@
     assignGeometricMemberLineLoads(members,{span,rise},frameTrib,loads);
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8,
       roofRows,totalRoofSlope:totalRoofSlope,roofStationSpacing:totalRoofSlope/roofRows},nodes,members,generatedAt:new Date().toISOString()};
+    if(typeof window.SteelFrame3D?.auditMemberOrientation!=="function")throw new Error("ممیزی جهت‌گیری اعضا در حل‌گر سه‌بعدی بارگذاری نشده است؛ ساخت مدل متوقف شد.");
+    model.orientationAudit=window.SteelFrame3D.auditMemberOrientation(model);
     model.windFootprints=buildRoofPurlinWindFootprints(model);
     return model;
   }
@@ -966,6 +968,7 @@
       nodalLoads.push(...Array.from(loadByNode,([nodeId,values])=>({nodeId,values})));
     }
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads);
+    result.orientationAudit=window.SteelFrame3D.auditMemberOrientation(analysisModel);
     result.gableWindTransfer=gableWindTransfer;
     if(zoneWindMapping)result.windZoneTransfer={windDirection:zoneWindMapping.windDirection,internalScenario:zoneWindMapping.internalScenario,pressureScale:selected.windFactor,serviceability:!!selected.serviceability,applicationScope:zoneWindMapping.applicationScope,windProcedure:zoneWindMapping.windProcedure,componentsCladdingStatus:zoneWindMapping.componentsCladdingStatus,codeComplianceStatus:zoneWindMapping.codeComplianceStatus,designWarning:zoneWindMapping.designWarning,counts:zoneWindMapping.counts,endFacePressures:zoneWindMapping.endFacePressures};
     if(selected.serviceability)result.windServiceability=window.SteelLoadTransfer.checkWindDrift(
@@ -1055,7 +1058,7 @@
     result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. حالت باد، فشار خالص دستی واردشده را به پرلین‌های سقف، قیدهای طولی دو دیوار جانبی و ناحیه مثلثی دیوارهای انتهایی منتقل می‌کند؛ ناحیه مثلثی با نیروها و لنگرهای گره‌ای معادل ایستایی مدل شده است. فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، بازشوهای غالب و پیچش کلی هنوز کامل مدل نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
-  function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members,windFootprints:model.windFootprints||[]}:null;}
+  function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members,windFootprints:model.windFootprints||[],orientationAudit:model.orientationAudit||null}:null;}
   function setData(data){
     if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});}
     build();draw();showSummary();
