@@ -1642,3 +1642,45 @@ test("member orientation audit flags zero-length or disconnected member geometry
   });
   assert.equal(disconnected.members[0].status,"invalid-member-geometry");
 });
+
+
+test("orientation audit rejects a reference axis parallel to the member because the solver would fall back",()=>{
+  const report=solver.auditMemberOrientation({
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:4}],
+    members:[{id:"PARALLEL",start:"A",end:"B",sectionKey:"roofPurlin",
+      referenceAxis:[0,0,1],sectionOrientationVerified:true}]
+  });
+  assert.equal(report.readyForCodeDesign,false);
+  assert.equal(report.members[0].status,"reference-axis-parallel-to-member");
+  assert.equal(report.groups.roofPurlin.parallelReferenceAxis,1);
+  assert.equal(report.groups.roofPurlin.directionCounts.longitudinal,1);
+});
+
+test("orientation audit distinguishes malformed reference axes from missing axes",()=>{
+  const report=solver.auditMemberOrientation({
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2,y:0,z:0}],
+    members:[{id:"BAD",start:"A",end:"B",sectionKey:"wallBrace",referenceAxis:[0,NaN,1]}]
+  });
+  assert.equal(report.members[0].status,"invalid-reference-axis");
+  assert.equal(report.groups.wallBrace.invalidReferenceAxis,1);
+  assert.deepEqual(report.groups.wallBrace.unverifiedMemberIds,["BAD"]);
+});
+
+test("orientation audit summarizes generated member direction classes without approving installation",()=>{
+  const report=solver.auditMemberOrientation({
+    nodes:[
+      {id:"A",x:0,y:0,z:0},{id:"B",x:0,y:3,z:0},
+      {id:"C",x:0,y:3,z:4},{id:"D",x:2,y:3,z:4}
+    ],
+    members:[
+      {id:"COL",start:"A",end:"B",sectionKey:"column"},
+      {id:"PUR",start:"B",end:"C",sectionKey:"roofPurlin"},
+      {id:"GIR",start:"C",end:"D",sectionKey:"wallGirt"}
+    ]
+  });
+  assert.equal(report.readyForCodeDesign,false);
+  assert.equal(report.groups.column.directionCounts.vertical,1);
+  assert.equal(report.groups.roofPurlin.directionCounts.longitudinal,1);
+  assert.equal(report.groups.wallGirt.directionCounts.transverse,1);
+  assert.deepEqual(report.groups.roofPurlin.unverifiedMemberIds,["PUR"]);
+});
