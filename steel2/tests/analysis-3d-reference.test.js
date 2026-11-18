@@ -1790,3 +1790,21 @@ test("3D member-demand extraction fails closed for missing model members and mal
   assert.throws(()=>demand.extractCase({success:true,members:[]},source),/عضو/);
   assert.throws(()=>demand.recoverMember({id:"M1",length:2,localEndForces:[1,2],analysisLoad:{uniformLocal:[0,0,0]}}),/۱۲ مؤلفه/);
 });
+
+
+test("3D recovered transverse shear and bending close to zero at a free cantilever tip",()=>{
+  const model={
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],
+    members:[{id:"CANT",type:"cantilever",sectionKey:"rafter",start:"A",end:"B",
+      referenceAxis:[0,0,1],analysisLoad:{uniformLocal:[0,5,-2]}}]
+  };
+  const result=solver.analyze(model,{
+    sectionResolver:()=>section,
+    supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]}]
+  });
+  const recovered=globalThis.SahroudMemberDemand3D.recoverMember({
+    ...result.members[0],sectionKey:"rafter",analysisLoad:model.members[0].analysisLoad
+  });
+  const tip=recovered.samples.find(x=>Math.abs(x.x-4)<1e-10);
+  for(const key of ["N","Vy","Vz","T","My","Mz"])assert.ok(Math.abs(tip[key])<1e-6,key+" tip action should close to zero; got "+tip[key]);
+});
