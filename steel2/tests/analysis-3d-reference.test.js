@@ -737,6 +737,49 @@ test("member tributary footprint uses actual 3D endpoints and explicit perpendic
   }),/مبنای footprint/);
 });
 
+test("model-generated roof purlin footprints use clipped station strips and split ridge faces", () => {
+  const fs=require("node:fs");
+  const source=fs.readFileSync(require("node:path").join(__dirname,"../js/model-3d.js"),"utf8");
+  const start=source.indexOf("function buildRoofPurlinWindFootprints(sourceModel)");
+  assert.ok(start>=0,"roof footprint builder must exist in model-3d.js");
+  const open=source.indexOf("{",start);let depth=0,end=-1;
+  for(let i=open;i<source.length;i++){if(source[i]==="{")depth++;else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}}
+  assert.ok(end>open,"roof footprint builder must have a complete body");
+  const build=new Function("return ("+source.slice(start,end)+")")();
+  const model={
+    geometry:{roofRows:2,roofStationSpacing:2,totalRoofSlope:4},
+    nodes:[
+      {id:"L0",x:0,y:0,z:0},{id:"L1",x:0,y:0,z:3},
+      {id:"R0",x:4,y:0,z:0},{id:"R1",x:4,y:0,z:3},
+      {id:"T0",x:2,y:1,z:0},{id:"T1",x:2,y:1,z:3}
+    ],
+    members:[
+      {id:"LEFT-EAVE",sectionKey:"roofPurlin",start:"L0",end:"L1",side:"left",row:1,rowLeft:1,tributaryWidth:1},
+      {id:"RIDGE",sectionKey:"roofPurlin",start:"T0",end:"T1",side:"ridge",rowLeft:3,rowRight:1,tributaryWidthLeft:1,tributaryWidthRight:1},
+      {id:"RIGHT-EAVE",sectionKey:"roofPurlin",start:"R0",end:"R1",side:"right",row:3,rowRight:3,tributaryWidth:1}
+    ]
+  };
+  const result=build(model);
+  assert.equal(result.length,4);
+  assert.deepEqual(result.map(x=>x.face),["left","left","right","right"]);
+  assert.ok(result.every(x=>x.areaBasis==="sloped-surface"&&x.pressureReady===false));
+  assert.ok(result.every(x=>Math.abs(x.areaM2-3)<1e-10));
+  assert.deepEqual(result[0].vertices,[{x:0,y:0},{x:1,y:0},{x:1,y:3},{x:0,y:3}]);
+  assert.deepEqual(result[1].vertices,[{x:3,y:0},{x:4,y:0},{x:4,y:3},{x:3,y:3}]);
+});
+
+test("model-generated roof purlin footprints reject missing member endpoints", () => {
+  const fs=require("node:fs");
+  const source=fs.readFileSync(require("node:path").join(__dirname,"../js/model-3d.js"),"utf8");
+  const start=source.indexOf("function buildRoofPurlinWindFootprints(sourceModel)");
+  const open=source.indexOf("{",start);let depth=0,end=-1;
+  for(let i=open;i<source.length;i++){if(source[i]==="{")depth++;else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}}
+  const build=new Function("return ("+source.slice(start,end)+")")();
+  assert.throws(()=>build({geometry:{roofRows:1,roofStationSpacing:2,totalRoofSlope:2},nodes:[],members:[
+    {id:"BAD",sectionKey:"roofPurlin",start:"MISSING",end:"ALSO-MISSING",side:"left",row:1,tributaryWidth:1}
+  ]}),/گره عضو پرلین/);
+});
+
 test("polygonal C&C tributary patch requires finite coordinates and explicit area basis", () => {
   const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
   assert.throws(() => helper({
