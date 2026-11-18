@@ -888,7 +888,7 @@
         group.count++;group.lengthM+=memberLength;group.totalKN+=memberWeight;
       }
       const totalLineLoad=lineLoad+selfWeightLineLoad;
-      const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
+      const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z],m.referenceAxis||undefined);
       let global;
       if(selected.key==="wind"||selected.windFactor>0){
         // Wind inputs are signed NET pressures (kN/m²), not basic wind speed.
