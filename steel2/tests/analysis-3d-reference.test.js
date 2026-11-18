@@ -441,3 +441,26 @@ test("six-zone application adapter replaces only wind line loads and preserves g
   assert.equal(applied.mapping.endFacePressures.rear,-3.678);
   assert.equal(source.members[0].lineLoads.windLeft,999,"source model must not be mutated");
 });
+
+test("six-zone negative internal-pressure scenario keeps zone signs independently",()=>{
+  const pressure=globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    basicWindKmh:360,
+    coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},
+    zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}
+  });
+  const model={members:[
+    {id:"P-L",sectionKey:"roofPurlin",side:"left",tributaryWidth:1},
+    {id:"P-R",sectionKey:"roofPurlin",side:"right",tributaryWidth:1},
+    {id:"W-L",sectionKey:"wallGirt",side:"left",tributaryHeight:1},
+    {id:"W-R",sectionKey:"wallGirt",side:"right",tributaryHeight:1},
+    {id:"E-F",sectionKey:"endGirt",endFace:"front",tributaryHeight:1},
+    {id:"E-R",sectionKey:"endGirt",endFace:"rear",tributaryHeight:1}
+  ]};
+  const result=globalThis.SteelLoadTransfer.applyWindZonePressureMapping(model,pressure,"negative");
+  assert.ok(Math.abs(result.model.members[0].lineLoads.windLeft-6.13)<1e-12);
+  assert.ok(Math.abs(result.model.members[1].lineLoads.windRight-(-1.839))<1e-12);
+  assert.ok(Math.abs(result.model.members[2].lineLoads.wind-4.291)<1e-12);
+  assert.ok(Math.abs(result.model.members[3].lineLoads.wind-(-3.065))<1e-12);
+  assert.ok(Math.abs(result.mapping.endFacePressures.front-6.13)<1e-12);
+  assert.ok(Math.abs(result.mapping.endFacePressures.rear-(-1.226))<1e-12);
+});
