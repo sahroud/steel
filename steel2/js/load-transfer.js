@@ -95,9 +95,13 @@
     const speed=finite(data.basicWindKmh);
     const q=speed===null||speed<0?null:0.000613*Math.pow(speed/3.6,2);
     const required=["importance","exposure","topography","gust","directionality","internalGust","internalPressure"];
+    const nonNegative=["importance","exposure","topography","gust","directionality","internalGust"];
     const values={};
     required.forEach(key=>values[key]=finite(coefficients[key]));
-    const commonReady=q!==null&&required.every(key=>values[key]!==null);
+    // Pressure coefficients may be signed; amplification/importance factors may not.
+    // Reject invalid factors instead of allowing negative multipliers to reverse loads silently.
+    const factorsReady=nonNegative.every(key=>values[key]!==null&&values[key]>=0);
+    const commonReady=q!==null&&required.every(key=>values[key]!==null)&&factorsReady;
     const common=commonReady
       ? values.importance*q*values.exposure*values.topography*values.directionality
       : null;
