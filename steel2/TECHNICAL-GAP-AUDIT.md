@@ -52,3 +52,20 @@
 - Reduced-model end-to-end integration check completed on 2026-11-18 using the actual `model-3d.js`, `analysis-3d.js`, `analysis-3d-worker.js`, and `load-transfer.js` sources with a headless DOM/Worker harness. Test geometry: 4 m span × 4 m length, 3 m eave, 1 m rise; 32 nodes and 49 members; generic positive elastic section properties were supplied for harness purposes.
 - Direct wind and all six newly added wind-combination cases solved successfully in this reduced model. Relative force residuals were between approximately (6.5\times10^{-15}) and (4.5\times10^{-14}); relative moment residuals were between approximately (1.4\times10^{-14}) and (9.9\times10^{-14}). Front/rear triangular-gable resultant signs reversed correctly with the selected wind direction and scaled by the selected wind factor.
 - This is a meaningful integration smoke test of the complete software path, but it is **not** a validation of the 12 m × 36 m production project, actual section assignments, realistic stiffnesses, official wind pressures, or member design. A prior attempt to solve the full default-sized geometry in the constrained harness exceeded its execution time limit.
+
+
+### Wind-zone pressure calculation refactor — 2026-11-18
+
+- Added `SteelLoadTransfer.calculateWindZonePressures()` as the shared calculation function for the six entered roof/wall/end-wall Cp zones. It calculates basic pressure from the entered basic wind speed and returns both internal-pressure sign scenarios for each zone.
+- `climate-load-engine.js` now delegates its zone calculation to this shared helper rather than maintaining a second copy of the pressure formula. Existing display labels and preliminary/unverified status remain unchanged.
+- Added three reference tests for both internal-pressure signs, suction sign preservation, missing coefficient/Cp fail-closed behavior, and rejection of negative basic wind speed. The suite now contains 20 authored tests.
+- **Not connected to the 3D member load path yet.** The 3D solver still consumes the existing signed manual `windLeft`, `windRight`, `windWall`, `windEndFront`, and `windEndBack` pressure inputs. The six-zone calculator remains a separate preliminary calculation/display until explicit selection of internal-pressure scenario, wind direction, and a complete mapping to the corresponding roof purlins, wall girts, end-wall girts, and triangular gable actions is implemented and tested.
+- The GitHub Actions workflow is configured for push events on this branch, but the available status/run lookup returned no status records for the latest commit. Therefore the new 20-test suite has **not** been reported as passing; native Node/GitHub Actions execution remains unverified.
+
+### Crane and second-order analysis source audit — 2026-11-18
+
+- Reviewed the active `model-3d.js` geometry builder, 3D load-case dispatch, member-load assembly, `analysis-3d-worker.js`, and the current reference tests.
+- The active 3D model does not generate runway girders, crane rails, crane wheels, crane brackets, or crane-specific load cases. The worker accepts general member loads and six-component nodal loads, but there is no crane-specific input contract or validated mapping of wheel positions/actions into the 3D frame.
+- No crane wheel reactions, vertical impact allowance, transverse surge, longitudinal traction, wheel spacing, trolley position envelope, skewing, or runway-girder checks are presently assembled by this 3D workflow. These must come from documented crane supplier data and applicable code provisions; they must not be guessed from crane capacity alone.
+- The current solver remains first-order linear elastic. No geometric stiffness/P-Delta iteration, eigenvalue buckling analysis, or code member-stability design is performed by the 3D solver. These remain explicit blockers to final structural design.
+- Consequently, crane-enabled 3D analysis and stability design are not implemented or validated. The existing UI's crane choice must not be interpreted as evidence that crane actions are included in this 3D solver.
