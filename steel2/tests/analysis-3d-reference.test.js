@@ -294,6 +294,7 @@ test("wind-zone pressure helper calculates both internal-pressure signs", () => 
 
 test("wind-zone pressure helper fails closed when required coefficients or zone Cp are missing", () => {
   const input = {
+    direction:"transverse-positive",
     basicWindKmh: 360,
     coefficients: {
       importance: 1, exposure: 1, topography: 1, gust: 1,
@@ -330,7 +331,7 @@ test("wind-zone pressure helper rejects negative amplification factors", () => {
       importance: 1, exposure: -1, topography: 1, gust: 1,
       directionality: 1, internalGust: 1, internalPressure: 0.2
     },
-    zones: { "roof-left": 0.8 }
+    zones: { "roof-left": 0.8, "roof-right": -0.5, "long-wall-left": 0.7, "long-wall-right": -0.6, "end-wall-front": 0.9, "end-wall-back": -0.4 }
   });
   assert.equal(result.ready, false);
   assert.equal(result.rows["roof-left"], null);
@@ -344,7 +345,7 @@ test("wind-zone pressure helper preserves signed internal pressure while validat
       importance: 1, exposure: 1, topography: 1, gust: 1,
       directionality: 1, internalGust: 1, internalPressure: -0.2
     },
-    zones: { "roof-left": 0.8 }
+    zones: { "roof-left": 0.8, "roof-right": -0.5, "long-wall-left": 0.7, "long-wall-right": -0.6, "end-wall-front": 0.9, "end-wall-back": -0.4 }
   });
   assert.equal(result.ready, true);
   assert.ok(Math.abs(result.rows["roof-left"].netInternalPositive - 3.678) < 1e-12);
@@ -359,7 +360,7 @@ test("wind-zone pressure helper accepts zero basic wind as zero pressure", () =>
       importance: 1, exposure: 1, topography: 1, gust: 1,
       directionality: 1, internalGust: 1, internalPressure: 0.2
     },
-    zones: { "roof-left": 0.8 }
+    zones: { "roof-left": 0.8, "roof-right": -0.5, "long-wall-left": 0.7, "long-wall-right": -0.6, "end-wall-front": 0.9, "end-wall-back": -0.4 }
   });
   assert.equal(result.ready, true);
   assert.equal(result.q, 0);
