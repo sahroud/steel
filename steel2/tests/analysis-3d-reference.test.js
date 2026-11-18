@@ -747,7 +747,7 @@ test("model-generated roof purlin footprints use clipped station strips and spli
   assert.ok(end>open,"roof footprint builder must have a complete body");
   const build=new Function("return ("+source.slice(start,end)+")")();
   const model={
-    geometry:{roofRows:2,roofStationSpacing:2,totalRoofSlope:4},
+    geometry:{roofRows:2,roofStationSpacing:1,totalRoofSlope:2,span:4,height:3,rise:0,roofOverhang:0},
     nodes:[
       {id:"L0",x:0,y:0,z:0},{id:"L1",x:0,y:0,z:3},
       {id:"R0",x:4,y:0,z:0},{id:"R1",x:4,y:0,z:3},
@@ -763,10 +763,10 @@ test("model-generated roof purlin footprints use clipped station strips and spli
   assert.equal(result.length,4);
   assert.deepEqual(result.map(x=>x.face),["left","left","right","right"]);
   assert.ok(result.every(x=>x.areaBasis==="sloped-surface"&&x.pressureReady===false));
-  assert.ok(result.every(x=>Math.abs(x.areaM2-3)<1e-10));
+  assert.ok(result.every(x=>Math.abs(x.areaM2-1.5)<1e-10));
   assert.deepEqual(result[0].vertices,[{x:0,y:0},{x:1,y:0},{x:1,y:3},{x:0,y:3}]);
   assert.deepEqual(result[1].vertices,[{x:3,y:0},{x:4,y:0},{x:4,y:3},{x:3,y:3}]);
-  const globalRidge=result[1].globalVertices.find(p=>Math.abs(p.z)<1e-9&&Math.abs(p.y-1)<1e-9);
+  const globalRidge=result[1].globalVertices.find(p=>Math.abs(p.z)<1e-9&&Math.abs(p.y-3)<1e-9);
   assert.ok(globalRidge,"left-face ridge point must map into global XYZ");
   assert.ok(Math.abs(globalRidge.x-2)<1e-9);
   assert.ok(result.every(x=>x.globalVertices.length===4));
