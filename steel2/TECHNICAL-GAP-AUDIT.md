@@ -253,3 +253,12 @@
 - Invalid/zero reference-axis vectors are rejected. Members without an explicit axis retain the documented default behavior; this does not certify that their physical section orientation is known.
 - Added regression fixtures for a vertical member with a non-default local roll, round-trip global/local vector reconstruction, agreement between the independent resultant audit and solver load audit, and malformed-axis rejection.
 - The fixtures are authored but have not been executed in this environment; CI is not confirmed. Production geometry still needs verified orientation metadata for each section family.
+
+
+### 2026-11-18 — هم‌راستاسازی ممیزی برآیند بار با محور اختصاصی عضو
+
+- در بازبینی مجدد کد اجرایی مشخص شد `calculateGlobalLoadResultants` با وجود ثبت آزمون محور اختصاصی، `makeTransform` را بدون `member.referenceAxis` فراخوانی می‌کرد؛ بنابراین آزمون موجود برای عضو قائم با محور مرجع `[0,1,0]` باید این اختلاف را آشکار کند.
+- فراخوانی ممیزی اصلاح شد تا همان محور اختصاصی عضو را که حل‌گر و تبدیل بار جهانی به محلی استفاده می‌کنند، به کار ببرد.
+- آزمون رگرسیون موجود در `tests/analysis-3d-reference.test.js` همین حالت را کنترل می‌کند؛ با این حال اجرای آزمون و CI پس از اصلاح هنوز تأیید نشده است.
+- commit اصلاح: `f23347de037e70702be9f57afb0bcfaf378fe347`.
+- وضعیت فعلی CI برای این commit: هیچ workflow run یا status check گزارش نشده؛ نتیجه را نامشخص/تأییدنشده نگه می‌داریم.
