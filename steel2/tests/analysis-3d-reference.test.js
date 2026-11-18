@@ -1009,3 +1009,77 @@ test("production geometry builder conserves roof dead-load tributary area across
   assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="front"&&m.lineLoads.windEnd===0.4*m.tributaryHeight));
   assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="rear"&&m.lineLoads.windEnd===-0.35*m.tributaryHeight));
 });
+
+
+test("independent global load resultant audit matches assembled solver load vector for inclined member and nodal actions",()=>{
+  const model={
+    nodes:[{id:"A",x:1,y:2,z:3},{id:"B",x:5,y:5,z:7},{id:"C",x:0,y:0,z:0}],
+    members:[{id:"INCLINED",start:"A",end:"B",analysisLoad:{uniformLocal:[0,-1250,340]}}]
+  };
+  const nodalLoads=[{nodeId:"C",values:[300,-400,500,120,230,-340]}];
+  const direct=solver.calculateGlobalLoadResultants(model,nodalLoads);
+  const solved=solver.analyze(model,{
+    sectionResolver:()=>section,
+    supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]},{nodeId:"C",fixedDofs:[0,1,2,3,4,5]}],
+    nodalLoads
+  });
+  assert.equal(solved.loadAssemblyAudit.ok,true);
+  assert.ok(Math.hypot(...direct.forceN.map((v,i)=>v-solved.equilibrium.appliedForceN[i]))<1e-7);
+  assert.ok(Math.hypot(...direct.momentNm.map((v,i)=>v-solved.equilibrium.appliedMomentNm[i]))<1e-7);
+});
+
+test("12x36 production shed roof dead-load resultant and global moments match horizontal projected roof area",()=>{
+  const fs=require("node:fs"),path=require("node:path");
+  const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
+  const extract=name=>{
+    const start=source.indexOf("function "+name+"(");
+    assert.ok(start>=0,name+" must exist in production model");
+    const open=source.indexOf("{",start);let depth=0,end=-1;
+    for(let i=open;i<source.length;i++){
+      if(source[i]==="{")depth++;
+      else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}
+    }
+    assert.ok(end>open,name+" must have a complete body");
+    return source.slice(start,end);
+  };
+  const addNode=(nodes,x,y,z,kind)=>{
+    const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7);
+    if(old){if(kind==="roof-edge")old.kind="roof-edge";return old;}
+    const node={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"};nodes.push(node);return node;
+  };
+  const addMember=(members,a,b,type,sectionKey,extra)=>{
+    members.push({id:"M"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",
+      length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
+  };
+  const loads={deadLeft:2,deadRight:2,liveLeft:0,liveRight:0,snowLeft:0,snowRight:0,
+    windLeft:0,windRight:0,windWall:0,windEndFront:0,windEndBack:0,
+    deadAreaBasis:"horizontal-projection",liveAreaBasis:"horizontal-projection",snowAreaBasis:"horizontal-projection"};
+  const values={span:12,length:36,spacing:6,height:6,rise:2,modelPurlinSpacing:1.4,
+    modelGirtSpacing:1.5,modelEndPostSpacing:4,modelBraceBays:1,modelPurlinClipDeduction:0,modelPurlinAssemblyGap:0};
+  const val=(id,fallback)=>Number.isFinite(Number(values[id]))?Number(values[id]):fallback;
+  const transfer=globalThis.SteelLoadTransfer;
+  const footprint=new Function("return ("+extract("buildRoofPurlinWindFootprints")+")")();
+  const assign=new Function("SteelLoadTransfer","return ("+extract("assignGeometricMemberLineLoads")+")")(transfer);
+  const build=new Function("val","addNode","addMember","SteelLoadTransfer","window","buildRoofPurlinWindFootprints","assignGeometricMemberLineLoads",
+    "return ("+extract("build")+")")(val,addNode,addMember,transfer,{SteelLoads:{getData:()=>loads}},footprint,assign);
+  const model=build(),nodeMap=new Map(model.nodes.map(n=>[n.id,n]));
+  const loaded=model.members.filter(m=>m.sectionKey==="roofPurlin");
+  assert.ok(loaded.length>0);
+  loaded.forEach(m=>{
+    const a=nodeMap.get(m.start),b=nodeMap.get(m.end);
+    const tr=solver.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
+    const global=[0,-m.lineLoads.dead*1000,0];
+    const local=[tr.axes.x,tr.axes.y,tr.axes.z].map(axis=>axis.reduce((sum,v,i)=>sum+v*global[i],0));
+    m.analysisLoad={uniformLocal:local};
+  });
+  const result=solver.calculateGlobalLoadResultants({nodes:model.nodes,members:loaded},[]);
+  const expectedKN=2*model.geometry.span*(model.geometry.length+1.6);
+  const expectedForceY=-expectedKN*1000;
+  const expectedMomentX=-(model.geometry.length/2)*expectedForceY;
+  const expectedMomentZ=(model.geometry.span/2)*expectedForceY;
+  assert.ok(Math.abs(result.forceN[1]-expectedForceY)<1e-5);
+  assert.ok(Math.abs(result.forceN[0])<1e-7&&Math.abs(result.forceN[2])<1e-7);
+  assert.ok(Math.abs(result.momentNm[0]-expectedMomentX)<1e-4);
+  assert.ok(Math.abs(result.momentNm[2]-expectedMomentZ)<1e-4);
+  assert.ok(Math.abs(result.momentNm[1])<1e-4);
+});
