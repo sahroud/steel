@@ -114,3 +114,9 @@
 - تابع کنترل دریفت، بیشینه جابه‌جایی نسبی گره بالای ستون نسبت به پایه متناظر را در محور باد محاسبه و با 0.0025H مقایسه می‌کند.
 - در صورت نبودن گره‌های متناظر یا خروجی جابه‌جایی، نتیجه «قابل ارزیابی نیست» است و قبولی صادر نمی‌شود.
 - این کنترل هنوز جایگزین کنترل کامل بهره‌برداری، ارتعاش/شتاب، باد دینامیکی یا کنترل پروژه واقعی نیست.
+
+### Test execution note — 2026-11-18
+
+- Syntax parsing succeeded for the updated load-transfer, climate-load-engine, model-3d, and reference-test files.
+- All 34 test callbacks were executed through an isolated JavaScript harness: 34 passed, 0 failed. This is not a substitute for the repository's native `node --test` or GitHub Actions run.
+- GitHub Actions for final test commit `5288fb0198728e6e24185f2ffea28c4bff3ad568` remains queued; CI is not marked passed.
