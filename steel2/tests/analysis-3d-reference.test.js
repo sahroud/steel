@@ -1598,3 +1598,40 @@ test("member-specific reference axis takes precedence over global solver default
   const fallback = solver.makeTransform(a, b, [0, 0, 1]);
   assert.notDeepEqual(member.axes.y, fallback.axes.y);
 });
+
+
+test("member orientation audit reports solver defaults as unverified and groups members",()=>{
+  const report=solver.auditMemberOrientation({
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:3},{id:"C",x:2,y:0,z:0}],
+    members:[
+      {id:"P1",start:"A",end:"B",sectionKey:"roofPurlin"},
+      {id:"R1",start:"A",end:"C",sectionKey:"rafter",referenceAxis:[0,0,1]}
+    ]
+  });
+  assert.equal(report.memberCount,2);
+  assert.equal(report.verifiedCount,0);
+  assert.equal(report.readyForCodeDesign,false);
+  assert.equal(report.groups.roofPurlin.missingReferenceAxis,1);
+  assert.equal(report.groups.rafter.unverifiedSectionRoll,1);
+  assert.deepEqual(report.members[0].memberDirection,[0,0,1]);
+  assert.equal(report.members[0].referenceAxisSource,"solver-default");
+});
+
+test("member orientation audit marks a member verified only with explicit axis and section-roll evidence",()=>{
+  const report=solver.auditMemberOrientation({
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:2,z:0}],
+    members:[{id:"COL1",start:"A",end:"B",sectionKey:"column",
+      referenceAxis:[0,0,1],sectionOrientationVerified:true}]
+  });
+  assert.equal(report.verifiedCount,1);
+  assert.equal(report.unverifiedCount,0);
+  assert.equal(report.readyForCodeDesign,true);
+  assert.equal(report.members[0].status,"verified");
+});
+
+test("member orientation audit rejects zero-length or disconnected member geometry",()=>{
+  assert.throws(()=>solver.auditMemberOrientation({
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:0}],
+    members:[{id:"ZERO",start:"A",end:"B",sectionKey:"brace"}]
+  }),/invalid|معتبر/);
+});
