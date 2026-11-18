@@ -491,3 +491,13 @@ Status: regression cases have been added but are not yet CI-verified. The built-
 - [ ] Populate member-specific axes only from verified section installation geometry; do not infer unverified axes for secondary members.
 - [ ] Add a generated-model integration fixture that checks load-vector transformation and solver stiffness use identical axes for representative member groups.
 - [ ] Run the native reference suite and confirm a GitHub Actions run for the resulting commit before closing this gate.
+
+
+### Member-axis integration subgate — 2026-11-18
+
+- [x] Centralize global-to-local distributed-load projection in the solver module and reuse it in the production 3D model assembler.
+- [x] Make the independent global resultant audit honor member-specific reference axes.
+- [x] Reject malformed or zero reference-axis vectors.
+- [x] Add regression fixtures for transformed load direction, resultant-vs-solver audit agreement, and invalid-axis rejection.
+- [ ] Execute the native Node test suite and confirm the corresponding GitHub Actions run.
+- [ ] Populate member axes from verified production section-installation geometry; until then, no automatic orientation approval for secondary members.
