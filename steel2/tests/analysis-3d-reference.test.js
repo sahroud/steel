@@ -1271,3 +1271,31 @@ test("12x36 production model reports dense-solver degree-of-freedom and memory s
   assert.ok(nDof>=model.nodes.length*6);
   assert.ok(freeDof>0);
 });
+
+
+test("sparse conjugate-gradient solver matches dense reference for a loaded 3D cantilever",()=>{
+  const model={
+    nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:3,y:0,z:0}],
+    members:[{id:"CANT",start:"FIX",end:"TIP",sectionKey:"reference",
+      analysisLoad:{uniformLocal:[0,-120,35]}}]
+  };
+  const options={
+    sectionResolver:()=>section,
+    supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],
+    nodalLoads:[{nodeId:"TIP",values:[0,250,-80,120,35,-60]}]
+  };
+  const dense=solver.analyze(model,options);
+  const sparse=solver.analyze(model,{...options,sparseSolver:true});
+  assert.equal(dense.solverAlgorithm,"dense-gaussian-elimination");
+  assert.equal(sparse.solverAlgorithm,"diagonally-scaled-sparse-conjugate-gradient");
+  assert.equal(sparse.equilibrium.ok,true);
+  assert.equal(sparse.loadAssemblyAudit.ok,true);
+  const denseTip=dense.displacements.find(n=>n.nodeId==="TIP").values;
+  const sparseTip=sparse.displacements.find(n=>n.nodeId==="TIP").values;
+  denseTip.forEach((value,i)=>assert.ok(Math.abs(value-sparseTip[i])<=Math.max(1e-11,Math.abs(value)*1e-7),
+    "DOF "+i+" dense="+value+" sparse="+sparseTip[i]));
+  const denseReaction=dense.reactions.find(n=>n.nodeId==="FIX").values;
+  const sparseReaction=sparse.reactions.find(n=>n.nodeId==="FIX").values;
+  denseReaction.forEach((value,i)=>assert.ok(Math.abs(value-sparseReaction[i])<1e-6,
+    "reaction DOF "+i+" dense="+value+" sparse="+sparseReaction[i]));
+});
