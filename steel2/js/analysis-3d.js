@@ -149,7 +149,7 @@ function calculateGlobalLoadResultants(model,nodalLoads){
   if(!Array.isArray(q)||q.length!==3||q.some(v=>!Number.isFinite(Number(v))))throw Error("بار گسترده محلی عضو "+member.id+" برای ممیزی نامعتبر است.");
   const a=nodeMap.get(member.start),b=nodeMap.get(member.end);
   if(!a||!b)throw Error("گره عضو "+member.id+" در ممیزی برآیند بار یافت نشد.");
-  const tr=makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
+  const tr=makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z],member.referenceAxis||undefined);
   const qGlobal=[0,1,2].map(i=>tr.axes.x[i]*q[0]+tr.axes.y[i]*q[1]+tr.axes.z[i]*q[2]);
   const resultant=qGlobal.map(v=>v*tr.L);
   addAt(resultant,[0,0,0],[(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2]);
