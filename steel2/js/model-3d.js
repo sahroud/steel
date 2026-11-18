@@ -294,11 +294,23 @@
         const [u0,u1]=bounds(Number(item.row),item.fromRidge);
         if(!(u1-u0>1e-9)||!(z1-z0>1e-9))throw new Error("ابعاد footprint پرلین "+member.id+" صفر یا نامعتبر است.");
         const vertices=[{x:u0,y:z0},{x:u1,y:z0},{x:u1,y:z1},{x:u0,y:z1}];
+        const halfSlope=Math.hypot(Number(g.span)/2,Number(g.rise));
+        const cos=(Number(g.span)/2)/halfSlope,sin=Number(g.rise)/halfSlope;
+        const overhang=Number(g.roofOverhang);
+        if(!(halfSlope>0)||!(overhang>=0)||!Number.isFinite(overhang))
+          throw new Error("هندسه شیب و پیش‌آمدگی سقف برای تبدیل مختصات معتبر نیست.");
+        const globalVertices=vertices.map(p=>({
+          x:item.face==="left"?-overhang*cos+p.x*cos:Number(g.span)+overhang*cos-p.x*cos,
+          y:Number(g.height)-overhang*sin+p.x*sin,
+          z:p.y
+        }));
         footprints.push(Object.freeze({
           id:member.id+"_"+item.face,memberId:member.id,face:item.face,
           vertices:Object.freeze(vertices.map(p=>Object.freeze(p))),
+          globalVertices:Object.freeze(globalVertices.map(p=>Object.freeze(p))),
           areaM2:(u1-u0)*(z1-z0),areaBasis:"sloped-surface",
           localCoordinateSystem:"roof-face-u-from-eave-edge-and-global-z",
+          globalCoordinateSystem:"building-x-y-z",
           tributaryWidthM:u1-u0,longitudinalLengthM:z1-z0,
           geometrySource:"actual-model-member-endpoints-and-roof-station-grid",
           verificationStatus:"geometry-only-not-code-verified",pressureReady:false
