@@ -929,3 +929,29 @@ test("geometric load assignment falls back to rafters only without purlins and r
   assert.ok(Math.abs(members[4].lineLoads.windEnd+0.6)<1e-12);
   assert.throws(()=>assign([{id:"BAD",axis:"transverse",frame:1,type:"رفتر چپ"}],{span:12,rise:2},[0],loads),/عرض بارگیر قاب/);
 });
+
+
+test("integrated assigned purlin line load closes global force and moment against cantilever reactions",()=>{
+  const assign=extractModelLoadAssignment();
+  const member={id:"PURLIN-CANTILEVER",sectionKey:"roofPurlin",side:"left",tributaryWidth:1.5};
+  assign([member],{span:12,rise:2},[2],{
+    deadLeft:2,deadRight:0,liveLeft:0,snowLeft:0,
+    deadAreaBasis:"sloped-surface",liveAreaBasis:"sloped-surface",snowAreaBasis:"sloped-surface"
+  });
+  const q=member.lineLoads.dead*1000;
+  member.analysisLoad={uniformLocal:[0,-q,0]};
+  const result=solver.analyze({
+    nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:2,y:0,z:0}],
+    members:[member]
+  },{
+    sectionResolver:()=>section,
+    supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}]
+  });
+  assert.equal(result.equilibrium.ok,true);
+  assert.ok(Math.abs(result.equilibrium.appliedForceN[1]+q*2)<1e-6);
+  assert.ok(Math.abs(result.equilibrium.supportReactionN[1]-q*2)<1e-6);
+  assert.ok(Math.abs(result.equilibrium.appliedMomentNm[2]+q*2)<1e-6);
+  assert.ok(Math.abs(result.equilibrium.supportMomentNm[2]-q*2)<1e-6);
+  assert.ok(Math.hypot(...result.equilibrium.forceResidualN)<1e-6);
+  assert.ok(Math.hypot(...result.equilibrium.momentResidualNm)<1e-6);
+});
