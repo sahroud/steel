@@ -44,6 +44,13 @@
       strongAxis:{label:"horizontal-centroidal",inertiaCm4:mm4ToCm4(Ix),sectionModulusTopCm3:mm3ToCm3(STop),sectionModulusBottomCm3:mm3ToCm3(SBottom)},
       weakAxis:{label:"vertical-centroidal",inertiaCm4:mm4ToCm4(Iy),sectionModulusCm3:mm3ToCm3(Sy)},
       torsion:{JApproxCm4:mm4ToCm4(J),method:"thin-walled-open-section-sum-bt3-over-3",warpingIncluded:false},
+      analysisSolverMapping:{
+        strongAxis:"Iz",
+        weakAxis:"Iy",
+        validFor:"column-and-rafter-members-in-global-XY-frame-plane-with-default-solver-reference-axis",
+        localBasis:"member-local-x along member; local-y in frame plane; local-z normal to frame plane",
+        longitudinalMembers:"not-applicable; determine section roll and local-axis orientation independently"
+      },
       geometryMethod:"three-non-overlapping-rectangles-parallel-axis-theorem",
       assumptions:["بال بالا و پایین نسبت به محور جان مرکزی و هم‌راستا فرض شده‌اند.","ارتفاع ورودی جان، ارتفاع خالص بین دو بال است؛ هم‌پوشانی جان و بال در مساحت شمرده نمی‌شود."],
       weldsIncludedInGrossArea:false,
