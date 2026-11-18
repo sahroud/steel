@@ -45,10 +45,11 @@
       weakAxis:{label:"vertical-centroidal",inertiaCm4:mm4ToCm4(Iy),sectionModulusCm3:mm3ToCm3(Sy)},
       torsion:{JApproxCm4:mm4ToCm4(J),method:"thin-walled-open-section-sum-bt3-over-3",warpingIncluded:false},
       geometryMethod:"three-non-overlapping-rectangles-parallel-axis-theorem",
+      assumptions:["بال بالا و پایین نسبت به محور جان مرکزی و هم‌راستا فرض شده‌اند.","ارتفاع ورودی جان، ارتفاع خالص بین دو بال است؛ هم‌پوشانی جان و بال در مساحت شمرده نمی‌شود."],
       weldsIncludedInGrossArea:false,
       designStatus:"geometry-only-not-code-verified",
       warnings:[
-        "محاسبه فقط خواص هندسی مقطع ناخالص سه مستطیلِ بدون هم‌پوشانی است.",
+        "محاسبه فقط خواص هندسی مقطع ناخالص سه مستطیلِ بدون هم‌پوشانی است؛ بال‌ها باید نسبت به جان مرکزی و هم‌راستا باشند.",
         "ثابت پیچشی J تقریبیِ مقطع نازک‌جداره باز است؛ اثر تابیدگی، قیود انتهایی، جوش و اعوجاج لحاظ نشده است.",
         "کنترل لاغری موضعی جان و بال، کمانش، مقاومت، جوش‌ها، خستگی و انطباق آیین‌نامه‌ای انجام نشده است.",
         "پیش از استفاده تحلیلی، محور قوی/ضعیف این خروجی باید با دستگاه محلی عضو در مدل تطبیق داده شود."
