@@ -1084,3 +1084,31 @@ test("12x36 production shed roof dead-load resultant and global moments match ho
   assert.ok(Math.abs(result.momentNm[2]-expectedMomentZ)<1e-4);
   assert.ok(Math.abs(result.momentNm[1])<1e-4);
 });
+
+
+test("production wind member vector mapping preserves roof normals and wall-face pressure signs",()=>{
+  const fs=require("node:fs"),path=require("node:path");
+  const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
+  const start=source.indexOf("function windMemberLineLoadGlobal(");
+  assert.ok(start>=0,"production wind vector mapper must exist");
+  const open=source.indexOf("{",start);let depth=0,end=-1;
+  for(let i=open;i<source.length;i++){
+    if(source[i]==="{")depth++;
+    else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}
+  }
+  assert.ok(end>open);
+  const map=new Function("return ("+source.slice(start,end)+")")();
+  const geometry={span:12,rise:2};
+  const factor=1.6,sign=-1,slope=2/6,norm=Math.hypot(slope,1);
+  const roof=map({id:"P",sectionKey:"roofPurlin",lineLoads:{windLeft:1.2,windRight:-0.4}},geometry,factor,sign);
+  assert.ok(Math.abs(roof[0]-((1.2-(-0.4))*slope/norm*factor*sign))<1e-12);
+  assert.ok(Math.abs(roof[1]-(-(1.2+(-0.4))/norm*factor*sign))<1e-12);
+  assert.equal(roof[2],0);
+  assert.deepEqual(map({sectionKey:"wallGirt",side:"left",lineLoads:{wind:0.5}},geometry,factor,sign),[-0.8,0,0]);
+  assert.deepEqual(map({sectionKey:"wallGirt",side:"right",lineLoads:{wind:0.5}},geometry,factor,sign),[0.8,0,0]);
+  assert.deepEqual(map({sectionKey:"endGirt",endFace:"front",lineLoads:{windEnd:0.25}},geometry,factor,sign),[0,0,-0.4]);
+  assert.deepEqual(map({sectionKey:"endGirt",endFace:"rear",lineLoads:{windEnd:0.25}},geometry,factor,sign),[0,0,0.4]);
+  assert.deepEqual(map({sectionKey:"column",lineLoads:{}},geometry,factor,sign),[0,0,0]);
+  assert.throws(()=>map({sectionKey:"wallGirt",side:"unknown",lineLoads:{wind:1}},geometry,1,1),/سمت دیوارگیر/);
+  assert.throws(()=>map({sectionKey:"roofPurlin",lineLoads:{windLeft:1}},geometry,-1,1),/ضریب یا علامت باد/);
+});
