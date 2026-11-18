@@ -179,7 +179,7 @@
 
     <section class="panel">
         <div class="panel-title">
-            <h3>۶ ـ عملیات پروژه</h3>
+            <h3>۷ ـ عملیات پروژه</h3>
         </div>
         <div class="button-grid">
             <button id="btnDraw" class="btn primary" type="button">
@@ -205,7 +205,7 @@
 
     <section class="panel">
         <div class="panel-title">
-            <h3>۷ ـ نتایج تحلیل</h3>
+            <h3>۸ ـ نتایج تحلیل</h3>
         </div>
         <div id="results">
             <div class="result-card">
@@ -249,7 +249,7 @@
 
 </main>
 
-<script src="js/load-transfer.js?v=20261117a"></script>
+<script src="js/load-transfer.js?v=20261117a"></script>\n<script src="js/crane-design.js?v=20261118a"></script>
 <script src="js/project.js?v=20261112purlinmigration1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/model-3d.js?v=20261112endwallbase1"></script>
@@ -285,3 +285,31 @@
 
 </body>
 </html>
+
+<script>
+(function(){
+  const byId=id=>document.getElementById(id);
+  const enabled=byId("craneEnabled"), capacity=byId("craneCapacity"), status=byId("craneDesignStatus");
+  if(!enabled||!capacity||!status||!window.SahroudCraneDesign)return;
+  function refresh(){
+    const on=enabled.value==="on";
+    capacity.disabled=!on;
+    ["craneSpan","craneRunwayLength","craneHookLift","craneDuty","craneCycles"].forEach(id=>{byId(id).disabled=!on;});
+    if(!on){status.textContent="جرثقیل خاموش است؛ هیچ بار یا عضوی از جرثقیل نباید وارد تحلیل سوله شود.";return;}
+    try{
+      const cfg=window.SahroudCraneDesign.createConfiguration({
+        enabled:true,capacityTonnes:capacity.value,
+        craneSpanM:byId("craneSpan").value,
+        runwayLengthM:byId("craneRunwayLength").value,
+        hookLiftM:byId("craneHookLift").value,
+        dutyClass:byId("craneDuty").value,
+        cyclesPerHour:byId("craneCycles").value
+      });
+      const readiness=window.SahroudCraneDesign.assessReadiness(cfg);
+      status.textContent="جرثقیل "+capacity.value+" تن انتخاب شده است. "+(readiness.ready?"ورودی‌های پایه کامل‌اند؛ هنوز محاسبات سازه‌ای و مکانیکی و تأیید منبع لازم است.":"برای طراحی معتبر هنوز داده‌های هندسی، کلاس کاری و مستندات سازنده/طراحی لازم است. ظرفیت انتخابی به‌تنهایی بار چرخ یا مقاطع را تعیین نمی‌کند.");
+    }catch(e){status.textContent=e.message;}
+  }
+  [enabled,capacity,...["craneSpan","craneRunwayLength","craneHookLift","craneDuty","craneCycles"].map(byId)].forEach(el=>el.addEventListener("change",refresh));
+  refresh();
+})();
+</script>
