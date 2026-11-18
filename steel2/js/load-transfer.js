@@ -277,6 +277,9 @@
     const basis=data.areaBasis;
     if(basis!=="projected"&&basis!=="sloped-surface")
       throw new RangeError("مبنای سطح هم‌پوشانی باید projected یا sloped-surface باشد.");
+    if((data.footprintAreaBasis!==undefined&&data.footprintAreaBasis!==basis)||
+       (data.zoneAreaBasis!==undefined&&data.zoneAreaBasis!==basis))
+      throw new RangeError("مبنای سطح بارگیر عضو و ناحیه باد باید یکسان باشد.");
     const footprint=calculatePolygonEffectiveWindArea({vertices:data.footprintVertices,areaBasis:basis,component:"footprint"});
     const zone=calculatePolygonEffectiveWindArea({vertices:data.zoneVertices,areaBasis:basis,component:"zone"});
     const toPoints=vertices=>vertices.map(p=>({x:Number(p.x),y:Number(p.y)}));
