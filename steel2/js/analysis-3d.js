@@ -216,6 +216,42 @@ function auditMemberOrientation(model){
     groups,members,
     note:"جهت هندسی و دسته‌بندی طولی/عرضی/قائم/مورب از مختصات مدل استخراج می‌شود. محور مرجع موازی عضو نامعتبر است، زیرا تبدیل حل‌گر آن را با محور جایگزین می‌کند. referenceAxis و تأیید چرخش واقعی مقطع باید از نقشه ساخت/نصب یا مشخصات مستند وارد شوند."};
 }
+function auditMemberSectionProperties(model,sectionsByMemberId){
+  if(!model||!Array.isArray(model.members)||!sectionsByMemberId||typeof sectionsByMemberId!=="object")
+    throw Error("مدل یا نگاشت مشخصات مقاطع برای ممیزی معتبر نیست.");
+  const required=["E","G","A","Iy","Iz","J"],groups=Object.create(null),members=[];
+  model.members.forEach(member=>{
+    const id=String(member.id),p=sectionsByMemberId[id],key=String(member.sectionKey||"unassigned");
+    const missing=required.filter(field=>!p||p[field]===undefined||p[field]===null||p[field]==="");
+    const invalid=required.filter(field=>p&&p[field]!==undefined&&p[field]!==null&&p[field]!==""&&
+      !(Number.isFinite(Number(p[field]))&&Number(p[field])>0));
+    const keyMismatch=!!(p&&p.sectionKey!==undefined&&String(p.sectionKey)!==key);
+    const status=!p?"section-properties-missing":missing.length?"section-properties-incomplete":
+      invalid.length?"section-properties-invalid":keyMismatch?"section-key-mismatch":"inputs-valid-provenance-unverified";
+    const item={id:member.id,sectionKey:key,status,missingProperties:missing,invalidProperties:invalid,
+      sectionKeyMismatch:keyMismatch,profile:p&&p.profile?String(p.profile):"",
+      sourceDocumentProvided:!!(p&&(p.sourceDocumentId||p.sourceDocument||p.catalogReference)),
+      sectionDataVerified:!!(p&&p.sectionDataVerified===true)};
+    members.push(item);
+    if(!groups[key])groups[key]={count:0,validInputs:0,missing:0,incomplete:0,invalid:0,keyMismatch:0,
+      provenanceVerified:0,memberIds:[],unverifiedMemberIds:[]};
+    const g=groups[key];g.count++;g.memberIds.push(id);
+    if(status==="inputs-valid-provenance-unverified")g.validInputs++;
+    if(status==="section-properties-missing")g.missing++;
+    if(status==="section-properties-incomplete")g.incomplete++;
+    if(status==="section-properties-invalid")g.invalid++;
+    if(status==="section-key-mismatch")g.keyMismatch++;
+    if(item.sourceDocumentProvided&&item.sectionDataVerified)g.provenanceVerified++;
+    if(status!=="inputs-valid-provenance-unverified"||!item.sourceDocumentProvided||!item.sectionDataVerified)
+      g.unverifiedMemberIds.push(id);
+  });
+  const valid=members.filter(x=>x.status==="inputs-valid-provenance-unverified").length;
+  const evidenced=members.filter(x=>x.sourceDocumentProvided&&x.sectionDataVerified&&x.status==="inputs-valid-provenance-unverified").length;
+  return {memberCount:members.length,validInputCount:valid,invalidInputCount:members.length-valid,
+    provenanceVerifiedCount:evidenced,readyForAnalysis:members.length>0&&valid===members.length,
+    readyForCodeDesign:members.length>0&&evidenced===members.length,groups,members,
+    note:"این ممیزی فقط کامل و مثبت‌بودن E، G، A، Iy، Iz و J را می‌سنجد. مقادیر ورودی معتبر تا زمان ثبت مرجع کاتالوگ/نقشه و تأیید مستند، داده تأییدشده طراحی محسوب نمی‌شوند."};
+}
 function analyze(model,options){
  options=options||{};
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل هندسی معتبر ارائه نشده است.");
@@ -379,5 +415,5 @@ function analyze(model,options){
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
  return {success:true,method:"3D linear elastic direct stiffness",solverAlgorithm:useSparse?"diagonally-scaled-sparse-conjugate-gradient":"dense-gaussian-elimination",units:"N,m,Pa",loadAssemblyAudit,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
-root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,globalVectorToLocal,equivalentUniformLoad,calculateGlobalLoadResultants,auditMemberOrientation,solve,solveSparseConjugateGradient};
+root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,globalVectorToLocal,equivalentUniformLoad,calculateGlobalLoadResultants,auditMemberOrientation,auditMemberSectionProperties,solve,solveSparseConjugateGradient};
 })(typeof window!=="undefined"?window:globalThis);
