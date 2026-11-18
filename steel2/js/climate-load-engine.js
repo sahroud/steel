@@ -83,25 +83,16 @@
   }
   function calculateWindZones() {
     const loads=window.SteelLoads&&window.SteelLoads.getData?window.SteelLoads.getData():{};
-    const climate=loads.climate||{},speed=finite(climate.basicWind);
-    const q=speed===null?null:0.000613*Math.pow(speed/3.6,2);
-    const c=readWindCoefficients(),v={};
-    Object.keys(windCoefficientDefaults).forEach(k=>v[k]=finite(c[k]));
+    const climate=loads.climate||{};
+    if(!window.SteelLoadTransfer||typeof window.SteelLoadTransfer.calculateWindZonePressures!=="function")
+      return {q:null,rows:{},zones:readWindZones(),ready:false};
     const zones=readWindZones();
-    const required=["importance","exposure","topography","gust","directionality","internalGust"];
-    const commonReady=q!==null&&required.every(k=>v[k]!==null);
-    const internalMagnitude=v.internalPressure===null?null:Math.abs(v.internalPressure);
-    const rows={};
-    Object.keys(zones).forEach(key=>{
-      const cp=finite(zones[key]);
-      if(!commonReady||cp===null||internalMagnitude===null){rows[key]=null;return;}
-      const common=v.importance*q*v.exposure*v.topography*v.directionality;
-      const ext=common*v.gust*cp;
-      const intMagnitude=common*v.internalGust*internalMagnitude;
-      rows[key]={cp,external:ext,internalPositive:intMagnitude,internalNegative:-intMagnitude,
-        netInternalPositive:ext-intMagnitude,netInternalNegative:ext+intMagnitude};
+    const result=window.SteelLoadTransfer.calculateWindZonePressures({
+      basicWindKmh:climate.basicWind,
+      coefficients:readWindCoefficients(),
+      zones
     });
-    return {q,rows,zones,ready:Object.values(rows).every(Boolean)};
+    return {...result,zones};
   }
   function updateWindZones() {
     const r=calculateWindZones();
