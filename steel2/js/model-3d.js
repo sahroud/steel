@@ -532,7 +532,7 @@
         addMember(members,c,d,"مهاربند ضربدری سقف","roofBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true});
       });
     });
-    assignGeometricMemberLineLoads(members,{span,rise},frameTrib,loads);
+    const frameTrib=frames.map((z,i)=>i===0?(frames[1]-z)/2:i===frames.length-1?(z-frames[i-1])/2:(frames[i+1]-frames[i-1])/2);\n    assignGeometricMemberLineLoads(members,{span,rise},frameTrib,loads);
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8,
       roofRows,totalRoofSlope:totalRoofSlope,roofStationSpacing:totalRoofSlope/roofRows},nodes,members,generatedAt:new Date().toISOString()};
     model.windFootprints=buildRoofPurlinWindFootprints(model);
