@@ -399,6 +399,34 @@ test("crane design readiness fails closed until geometry duty and verified sourc
 
 
 
+test("wind procedure screening selects low-rise combined coefficients for the 12x36 Shahrud shed geometry",()=>{
+  const result=globalThis.SteelLoadTransfer.classifyWindProcedure({span:12,length:36,height:6,rise:2});
+  assert.equal(result.ready,true);
+  assert.equal(result.method,"low-rise-combined-coefficients");
+  assert.equal(result.coefficientConvention,"combined-GCp; do-not-apply-G-separately");
+  assert.equal(result.codeClause,"6-10-9");
+  assert.equal(result.meanRoofHeightM,7);
+  assert.equal(result.smallerPlanDimensionM,12);
+  assert.ok(Math.abs(result.heightToSmallerPlanRatio-7/12)<1e-12);
+  assert.equal(result.cAndCRequiredIndependently,true);
+});
+
+test("wind procedure screening does not classify height or ratio boundary as low-rise",()=>{
+  const heightBoundary=globalThis.SteelLoadTransfer.classifyWindProcedure({span:12,length:36,height:19,rise:2});
+  const ratioBoundary=globalThis.SteelLoadTransfer.classifyWindProcedure({span:12,length:36,height:11,rise:2});
+  assert.equal(heightBoundary.method,"general-or-other-applicable-method");
+  assert.equal(ratioBoundary.heightToSmallerPlanRatio,1);
+  assert.equal(ratioBoundary.method,"general-or-other-applicable-method");
+});
+
+test("wind procedure screening fails closed for incomplete or invalid geometry",()=>{
+  const missing=globalThis.SteelLoadTransfer.classifyWindProcedure({span:12,length:36,height:6});
+  const invalid=globalThis.SteelLoadTransfer.classifyWindProcedure({span:0,length:36,height:6,rise:2});
+  assert.equal(missing.ready,false);
+  assert.equal(missing.method,"undetermined");
+  assert.equal(invalid.ready,false);
+});
+
 test("six-zone pressure mapping transfers signed pressures to roof, side-wall and end-wall members",()=>{
   const p=globalThis.SteelLoadTransfer.calculateWindZonePressures({
     direction:"transverse-positive",
@@ -493,13 +521,15 @@ test("wind mapper records the explicit wind axis and direction",()=>{
     coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},
     zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}
   });
-  const model={members:[
+  const model={geometry:{span:12,length:36,height:6,rise:2},members:[
     {id:"P",sectionKey:"roofPurlin",side:"left",tributaryWidth:1},
     {id:"W",sectionKey:"wallGirt",side:"left",tributaryHeight:1},
     {id:"E",sectionKey:"endGirt",endFace:"front",tributaryHeight:1}
   ]};
   const mapped=globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers(model,pressure,"positive");
   assert.equal(mapped.windDirection,"longitudinal-positive");
+  assert.equal(mapped.windProcedure.method,"low-rise-combined-coefficients");
+  assert.equal(mapped.windProcedure.codeClause,"6-10-9");
   assert.equal(mapped.applicationScope,"preliminary-global-surface-pressure");
   assert.equal(mapped.componentsCladdingStatus,"not-independently-designed");
   assert.equal(mapped.codeComplianceStatus,"not-established");
