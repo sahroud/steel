@@ -588,3 +588,17 @@ Status: implementation is CI-verified; project-specific section data and design 
 - [ ] Independently verify actual section properties, source-document authenticity, local axes, and installed orientation against project/shop drawings.
 
 Status: the evidence-entry workflow is implemented; user-entered provenance is not automatic document authentication or engineering approval.
+
+
+## 2026-11-18 — بازگشت به طراحی اصلی: تقاضای داخلی اعضای سه‌بعدی
+
+- [x] ایجاد موتور مستقل بازیابی N، Vy، Vz، T، My و Mz از نیروهای انتهایی حل‌گر و بار گسترده یکنواخت محلی.
+- [x] نمونه‌برداری در طول عضو و درج نقاط صفرشدن برش برای اکسترمم‌های خمشی.
+- [x] اتصال تقاضای بازیابی‌شده به نتیجه هر تحلیل سه‌بعدی.
+- [x] ایجاد ساختار پوش تقاضای مؤلفه‌ای بین ترکیبات بار با ثبت ترکیب حاکم برای هر مؤلفه.
+- [x] افزودن آزمون‌های مرجع برای بازیابی نیروها، بار گسترده، پوش ترکیبات و ورودی ناقص.
+- [ ] تأیید CI و سپس اعتبارسنجی مستقل علامت و تعادل نیروهای مقطعی با مدل‌های مرجع تیر سه‌بعدی.
+- [ ] اتصال تقاضای سه‌بعدی به ظرفیت‌های خمشی، برشی، محوری و پیچشی برای همه گروه‌های عضو.
+- [ ] پیاده‌سازی اندرکنش هم‌زمان N-M-V-T و کنترل‌های پایداری/مرتبه دوم با مرجع آیین‌نامه‌ای معتبر.
+
+اولویت توسعه از این نقطه موتور طراحی اعضا و اتصالات است؛ فرم‌ها و ممیزی‌های مدیریتی تا وقتی مانع صحت محاسبات نباشند در صف بعدی می‌مانند.
