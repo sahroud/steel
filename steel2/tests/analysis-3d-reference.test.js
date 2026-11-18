@@ -618,6 +618,25 @@ test("polygonal C&C tributary patch rejects self-intersection and degenerate pol
   }), /مساحت/);
 });
 
+test("polygonal C&C tributary patch rejects adjacent-edge backtracking overlap", () => {
+  const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
+  assert.throws(() => helper({
+    vertices:[{x:0,y:0},{x:2,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}],
+    areaBasis:"projected"
+  }), /روی هم افتاده|برگشتی/);
+});
+
+test("polygonal C&C centroid is invariant under reversed vertex winding", () => {
+  const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
+  const vertices=[{x:0,y:0},{x:4,y:0},{x:4,y:2},{x:0,y:2}];
+  const forward=helper({vertices,areaBasis:"projected"});
+  const reverse=helper({vertices:vertices.slice().reverse(),areaBasis:"projected"});
+  assert.equal(forward.effectiveAreaM2,8);
+  assert.equal(reverse.effectiveAreaM2,8);
+  assert.ok(Math.abs(forward.centroid.x-reverse.centroid.x)<1e-12);
+  assert.ok(Math.abs(forward.centroid.y-reverse.centroid.y)<1e-12);
+});
+
 test("polygonal C&C tributary patch requires finite coordinates and explicit area basis", () => {
   const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
   assert.throws(() => helper({
