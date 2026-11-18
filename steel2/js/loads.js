@@ -18,7 +18,9 @@
         liveRight: 0.75,
         snowLeft: 1.0,
         snowRight: 1.0,
-        roofLoadAreaBasis: "horizontal-projection",
+        deadAreaBasis: "unspecified",
+        liveAreaBasis: "unspecified",
+        snowAreaBasis: "unspecified",
         windLeft: 0,
         windRight: 0,
         windWall: 0,
@@ -196,19 +198,35 @@
                 فشار مبنای باد پس از بارگذاری اطلاعات محاسبه می‌شود.
             </div>
 
-            <h4>مبنای سطح بارهای ثقلی سقف</h4>
+            <h4>مبنای سطح هر بار ثقلی سقف</h4>
             <div class="form-grid">
                 <div class="field">
-                    <label for="roofLoadAreaBasis">مبنای تعریف بار مرده، زنده و برف</label>
-                    <select id="roofLoadAreaBasis">
-                        <option value="unspecified">انتخاب نشده؛ تحلیل مجاز نیست</option>
-                        <option value="horizontal-projection" selected>تصویر افقی سقف</option>
+                    <label for="deadAreaBasis">مبنای بار مرده سقف</label>
+                    <select id="deadAreaBasis">
+                        <option value="unspecified">انتخاب نشده</option>
+                        <option value="horizontal-projection">تصویر افقی سقف</option>
+                        <option value="sloped-surface">سطح واقعی شیب‌دار سقف</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="liveAreaBasis">مبنای بار زنده سقف</label>
+                    <select id="liveAreaBasis">
+                        <option value="unspecified">انتخاب نشده</option>
+                        <option value="horizontal-projection">تصویر افقی سقف</option>
+                        <option value="sloped-surface">سطح واقعی شیب‌دار سقف</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="snowAreaBasis">مبنای بار برف سقف</label>
+                    <select id="snowAreaBasis">
+                        <option value="unspecified">انتخاب نشده</option>
+                        <option value="horizontal-projection">تصویر افقی سقف</option>
                         <option value="sloped-surface">سطح واقعی شیب‌دار سقف</option>
                     </select>
                 </div>
             </div>
             <div class="notice">
-                مبنا باید با منبع بار ورودی یکسان باشد. در حالت تصویر افقی، نرم‌افزار عرض بارگیر روی شیب را در cos(زاویه سقف) ضرب می‌کند؛ در حالت سطح شیب‌دار این تبدیل انجام نمی‌شود. پروژه‌های قدیمی فاقد این فیلد با وضعیت «انتخاب نشده» باز می‌شوند تا مبنا بی‌صدا حدس زده نشود.
+                مبنای هر بار باید با منبع محاسبه همان بار یکسان باشد؛ این سه بار لزوماً مبنای یکسان ندارند. در حالت تصویر افقی، عرض بارگیر روی شیب در cos(زاویه سقف) ضرب می‌شود؛ در حالت سطح شیب‌دار این تبدیل انجام نمی‌شود. پروژه‌های قدیمی فاقد مبنای صریح با وضعیت «انتخاب نشده» باز می‌شوند و تا تعیین مبنا تحلیل آن بار متوقف می‌ماند.
             </div>
 
             <h4>د ـ بار مرده سقف</h4>
@@ -350,7 +368,10 @@
             if (el) state[key] = number(el.value);
         });
 
-        if ($("roofLoadAreaBasis")) state.roofLoadAreaBasis = $("roofLoadAreaBasis").value;
+        ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+            const el = $(key);
+            if (el) state[key] = el.value;
+        });
 
         if ($("loadWindDirection")) {
             state.windDirection = $("loadWindDirection").value;
@@ -442,9 +463,16 @@
             }
         }
 
-        const hasRoofGravityLoad = [data.deadLeft, data.deadRight, data.liveLeft, data.liveRight, data.snowLeft, data.snowRight].some(v => Number(v) > 0);
-        if (hasRoofGravityLoad && !["horizontal-projection", "sloped-surface"].includes(data.roofLoadAreaBasis)) {
-            return "مبنای سطح بارهای ثقلی سقف انتخاب نشده است؛ برای جلوگیری از تبدیل اشتباه بار، تحلیل متوقف شد.";
+        const basisChecks = [
+            ["deadAreaBasis", [data.deadLeft, data.deadRight], "بار مرده"],
+            ["liveAreaBasis", [data.liveLeft, data.liveRight], "بار زنده"],
+            ["snowAreaBasis", [data.snowLeft, data.snowRight], "بار برف"]
+        ];
+        for (const [key, values, label] of basisChecks) {
+            if (values.some(v => Number(v) > 0) &&
+                !["horizontal-projection", "sloped-surface"].includes(data[key])) {
+                return "مبنای سطح " + label + " سقف انتخاب نشده است؛ تحلیل این بار متوقف شد.";
+            }
         }
 
         const signed = [
@@ -574,7 +602,9 @@
             liveRight: 0.75,
             snowLeft: 1.0,
             snowRight: 1.0,
-            roofLoadAreaBasis: "horizontal-projection",
+            deadAreaBasis: "unspecified",
+            liveAreaBasis: "unspecified",
+            snowAreaBasis: "unspecified",
             windLeft: 0,
             windRight: 0,
             windWall: 0,
@@ -604,7 +634,9 @@
             }
         });
 
-        if ($("roofLoadAreaBasis")) $("roofLoadAreaBasis").value = state.roofLoadAreaBasis;
+        ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+            if ($(key)) $(key).value = state[key];
+        });
 
         if ($("loadWindDirection")) {
             $("loadWindDirection").value = "left-to-right";
@@ -633,8 +665,12 @@
             "windLeft", "windRight", "windWall", "windEndFront", "windEndBack"
         ];
 
-        state.roofLoadAreaBasis = ["horizontal-projection", "sloped-surface"].includes(data.roofLoadAreaBasis)
+        const legacyBasis = ["horizontal-projection", "sloped-surface"].includes(data.roofLoadAreaBasis)
             ? data.roofLoadAreaBasis : "unspecified";
+        ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+            state[key] = ["horizontal-projection", "sloped-surface"].includes(data[key])
+                ? data[key] : legacyBasis;
+        });
 
         keys.forEach(key => {
             if (Number.isFinite(Number(data[key]))) {
@@ -716,7 +752,9 @@
                 if ($(climateIds[key])) $(climateIds[key]).value = state.climate[key];
             });
 
-            if ($("roofLoadAreaBasis")) $("roofLoadAreaBasis").value = state.roofLoadAreaBasis;
+            ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+                if ($(key)) $(key).value = state[key];
+            });
             renderCombinations();
 
             if (data.combinations) {
@@ -778,6 +816,10 @@
                 }
             });
         }
+
+        ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+            if ($(key)) $(key).value = state[key];
+        });
 
         const panel = $("advancedLoadPanel");
 
