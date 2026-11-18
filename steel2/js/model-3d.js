@@ -55,7 +55,7 @@
       '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
-      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option><option value="comboWind08P">آزمایشی باد: 0.8D+1.6W (جهت +)</option><option value="comboWind08N">آزمایشی باد: 0.8D+1.6W (جهت −)</option><option value="comboLiveWind08P">آزمایشی: 1.2D+1.6L+0.5S+0.8W (+)</option><option value="comboLiveWind08N">آزمایشی: 1.2D+1.6L+0.5S+0.8W (−)</option><option value="comboSnowWind08P">آزمایشی: 1.2D+1.6S+0.5L+0.8W (+)</option><option value="comboSnowWind08N">آزمایشی: 1.2D+1.6S+0.5L+0.8W (−)</option></select></div></div>' +
+      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="zoneWindPositive">باد ناحیه‌ای ـ فشار داخلی مثبت</option><option value="zoneWindNegative">باد ناحیه‌ای ـ فشار داخلی منفی</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option><option value="comboWind08P">آزمایشی باد: 0.8D+1.6W (جهت +)</option><option value="comboWind08N">آزمایشی باد: 0.8D+1.6W (جهت −)</option><option value="comboLiveWind08P">آزمایشی: 1.2D+1.6L+0.5S+0.8W (+)</option><option value="comboLiveWind08N">آزمایشی: 1.2D+1.6L+0.5S+0.8W (−)</option><option value="comboSnowWind08P">آزمایشی: 1.2D+1.6S+0.5L+0.8W (+)</option><option value="comboSnowWind08N">آزمایشی: 1.2D+1.6S+0.5L+0.8W (−)</option></select></div></div>' +
       '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
@@ -89,6 +89,7 @@
           (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو"+(result.selfWeight.bySectionGroup?" | تفکیک وزن گروه‌ها: "+Object.entries(result.selfWeight.bySectionGroup).map(([k,v])=>k+"="+v.totalKN.toFixed(2)+"kN، "+v.count+" عضو، "+v.lengthM.toFixed(1)+"m").join("؛ "):""):"")+
           (result.equilibrium?" | کنترل تعادل نیرو: "+(result.equilibrium.relativeForceResidual*100).toExponential(2)+"٪؛ تعادل لنگر: "+(result.equilibrium.relativeMomentResidual*100).toExponential(2)+"٪؛ "+(result.equilibrium.ok?"تعادل کلی برقرار":"هشدار: عدم تعادل کلی"):" | کنترل تعادل در دسترس نیست")+
           (result.gableWindTransfer&&result.gableWindTransfer.length?" | باد مثلثی دیوار انتهایی: "+result.gableWindTransfer.map(x=>x.face+"="+x.resultantKN.toFixed(3)+"kN").join("، "):"")+
+          (result.windZoneTransfer?" | نگاشت باد شش‌ناحیه‌ای: "+result.windZoneTransfer.internalScenario+"؛ پرلین "+result.windZoneTransfer.counts.roofPurlins+"، دیوار طولی "+result.windZoneTransfer.counts.longitudinalWallGirts+"، دیوار انتهایی "+result.windZoneTransfer.counts.endWallGirts:"")+
           ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل خطی مرتبه اول است، P-Delta و کنترل کمانش در آن لحاظ نشده است. هر پرلین به‌صورت قطعه مستقل بین دو قاب مدل شده است؛ دوران‌های انتهایی هر قطعه از رفتر و از قطعه پرلین دهانه مجاور جدا هستند (فرض مفصل ایده‌آل). سختی واقعی کلیپس و پیچ‌ها، لغزش و خروج از صفحه هنوز مدل نشده و نتیجه تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
         if(Array.isArray(result.criticalMemberReport)&&result.criticalMemberReport.length){
           const fmt=(v,factor=1,d=3)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
@@ -640,6 +641,11 @@
       wind:{key:"wind",label:"باد ـ فشار خالص ورودی",direction:null,deadFactor:0}
     };
     let selected=cases[loadCase];
+    if(loadCase==="zoneWindPositive"||loadCase==="zoneWindNegative"){
+      selected={key:"zoneWind",label:loadCase==="zoneWindPositive"?"باد شش‌ناحیه‌ای ـ فشار داخلی مثبت":"باد شش‌ناحیه‌ای ـ فشار داخلی منفی",
+        direction:null,deadFactor:0,windFactor:1,windSign:1,
+        windZoneScenario:loadCase==="zoneWindPositive"?"positive":"negative"};
+    }
     if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
       const f=loadCase.factors;
       selected={key:"combo",label:String(loadCase.label||"ترکیب بار سه‌بعدی"),
@@ -664,10 +670,21 @@
         windFactor:combo.wind,windSign:combo.sign,deadFactor:combo.dead};
     }
     if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود.");
-    const analysisModel={
+    let analysisModel={
       nodes:model.nodes.map(n=>({...n})),
       members:model.members.map(m=>({...m}))
     };
+    let zoneWindMapping=null;
+    if(selected.windZoneScenario){
+      const pressureResult=window.SteelClimateLoadEngine?.calculateWindZones?.();
+      if(!pressureResult||pressureResult.ready!==true)
+        throw new Error("دفتر فشار باد شش‌ناحیه‌ای کامل نیست؛ هر شش Cp و ضرایب مشترک را تکمیل کنید.");
+      const applied=window.SteelLoadTransfer.applyWindZonePressureMapping(
+        analysisModel,pressureResult,selected.windZoneScenario
+      );
+      analysisModel=applied.model;
+      zoneWindMapping=applied.mapping;
+    }
     // Build an indexed node registry and validate connectivity before creating element loads.
     const nodeById=new Map();
     const duplicateNodeIds=[];
@@ -778,7 +795,7 @@
         loadByNode.set(node.id,current);
       };
       ["front","rear"].forEach(face=>{
-        const rawPressure=Number(face==="front"?currentWindInputs.windEndFront:currentWindInputs.windEndBack)||0;
+        const rawPressure=zoneWindMapping?Number(zoneWindMapping.endFacePressures[face]):Number(face==="front"?currentWindInputs.windEndFront:currentWindInputs.windEndBack)||0;
         if(rawPressure===0)return;
         const faceSign=face==="front"?1:-1;
         const pressureKPa=rawPressure*windFactor*windSign*faceSign;
@@ -812,6 +829,7 @@
     }
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads);
     result.gableWindTransfer=gableWindTransfer;
+    if(zoneWindMapping)result.windZoneTransfer={internalScenario:zoneWindMapping.internalScenario,counts:zoneWindMapping.counts,endFacePressures:zoneWindMapping.endFacePressures};
 
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
