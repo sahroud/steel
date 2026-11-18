@@ -1756,7 +1756,7 @@ test("3D member-demand recovery includes axial, biaxial shear, torsion and both 
   assert.ok(demand);
   const member={id:"D1",sectionKey:"rafter",length:4,localEndForces:[100,20,-30,4,50,-60,-100,-20,30,-4,-50,60],analysisLoad:{uniformLocal:[10,5,-2]}};
   const start=demand.sectionForcesAt(member,0),mid=demand.sectionForcesAt(member,2),end=demand.sectionForcesAt(member,4);
-  assert.deepEqual([start.N,start.Vy,start.Vz,start.T,start.My,start.Mz],[ -100,-20,30,-4,50,60 ]);
+  assert.deepEqual([start.N,start.Vy,start.Vz,start.T,start.My,start.Mz],[ -100,-20,30,-4,-50,60 ]);
   assert.equal(mid.N,-120);
   assert.equal(mid.Vy,-30);
   assert.equal(mid.Vz,34);
