@@ -1299,3 +1299,22 @@ test("sparse conjugate-gradient solver matches dense reference for a loaded 3D c
   denseReaction.forEach((value,i)=>assert.ok(Math.abs(value-sparseReaction[i])<1e-6,
     "reaction DOF "+i+" dense="+value+" sparse="+sparseReaction[i]));
 });
+
+
+test("automatic sparse solver activates above 600 DOFs and matches analytical long-cantilever deflection",()=>{
+  const segmentCount=100,segmentLength=0.5,totalLength=segmentCount*segmentLength,P=500;
+  const nodes=Array.from({length:segmentCount+1},(_,i)=>({id:"N"+i,x:i*segmentLength,y:0,z:0}));
+  const members=Array.from({length:segmentCount},(_,i)=>({id:"M"+i,start:"N"+i,end:"N"+(i+1),sectionKey:"reference"}));
+  const result=solver.analyze({nodes,members},{
+    sectionResolver:()=>section,
+    supports:[{nodeId:"N0",fixedDofs:[0,1,2,3,4,5]}],
+    nodalLoads:[{nodeId:"N"+segmentCount,values:[0,P,0,0,0,0]}]
+  });
+  assert.equal(result.solverAlgorithm,"diagonally-scaled-sparse-conjugate-gradient");
+  assert.equal(result.nodeCount,segmentCount+1);
+  assert.equal(result.equilibrium.ok,true);
+  const actual=result.displacements.find(n=>n.nodeId==="N"+segmentCount).values[1];
+  const expected=P*totalLength**3/(3*section.E*section.Iz);
+  assert.ok(Math.abs(actual-expected)<=Math.max(1e-10,expected*2e-5),
+    "expected "+expected+" m, received "+actual+" m");
+});
