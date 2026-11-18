@@ -155,6 +155,37 @@
     });
   }
 
+  // Geometry-only C&C effective-area record. No code coefficient or pressure is inferred.
+  // For a rectangular tributary patch: effective area = member tributary width x loaded length.
+  function calculateRectangularEffectiveWindArea(input) {
+    const data = input || {};
+    const width = Number(data.tributaryWidthM);
+    const length = Number(data.loadedLengthM);
+    if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(length) || length <= 0) {
+      throw new RangeError("عرض بارگیر و طول بارگذاری سطح مؤثر باد باید مثبت و محدود باشند.");
+    }
+    const area = width * length;
+    const component = typeof data.component === "string" && data.component.trim()
+      ? data.component.trim() : "unspecified";
+    const areaBasis = data.areaBasis === "sloped-surface" || data.areaBasis === "projected"
+      ? data.areaBasis : null;
+    if (!areaBasis) throw new RangeError("مبنای سطح مؤثر باید sloped-surface یا projected مشخص شود.");
+    return Object.freeze({
+      component,
+      tributaryWidthM: width,
+      loadedLengthM: length,
+      effectiveAreaM2: area,
+      areaBasis,
+      geometryMethod: "rectangular-tributary-patch",
+      codeEdition: "مبحث ششم، ویرایش ۱۳۹۸",
+      codeClause: "6-10; exact C&C figure/table selection pending",
+      coefficientSource: null,
+      verificationStatus: "geometry-only-not-code-verified",
+      pressureReady: false,
+      warning: "این مقدار فقط مساحت هندسی بارگیر مستطیلی است؛ انتخاب ناحیه، ضرایب C&C، حداقل/حداکثر سطح مؤثر و فشار طراحی باید جداگانه از شکل و ضوابط دقیق مبحث ششم و شرایط عضو/اتصال احراز شود."
+    });
+  }
+
   function mapWindZonePressuresToMembers(model, pressureResult, internalScenario) {
     if (!model || !Array.isArray(model.members)) throw new TypeError("مدل دارای فهرست اعضای معتبر نیست.");
     if (!pressureResult || pressureResult.ready !== true || !pressureResult.rows || !WIND_DIRECTIONS.includes(pressureResult.direction))
@@ -264,7 +295,7 @@
     ].map(item=>Object.freeze(item)));
   }
   root.SteelLoadTransfer = Object.freeze({
-    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure,
+    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea,
     triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, checkWindDrift, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
