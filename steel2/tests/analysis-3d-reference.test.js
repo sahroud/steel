@@ -1479,3 +1479,59 @@ test("built-up section calculator rejects invalid plate dimensions",()=>{
   assert.throws(()=>globalThis.SahroudBuiltUpSection.calculateBuiltUpISection({...base,webThicknessMm:400}),/عرض/);
 });
 
+
+
+const builtUp = globalThis.SahroudBuiltUpSection;
+test("built-up I section: symmetric geometry has centered centroid and equal top/bottom modulus", () => {
+  const r = builtUp.calculateBuiltUpISection({
+    topFlangeWidthMm: 200, topFlangeThicknessMm: 12,
+    bottomFlangeWidthMm: 200, bottomFlangeThicknessMm: 12,
+    webClearHeightMm: 400, webThicknessMm: 8
+  });
+  assert.ok(Math.abs(r.centroidYFromBottomMm - 212) < 1e-10);
+  assert.ok(Math.abs(r.strongAxis.sectionModulusTopCm3 -
+    r.strongAxis.sectionModulusBottomCm3) < 1e-10);
+  assert.equal(r.areaCm2, 80);
+  assert.equal(r.designStatus, "geometry-only-not-code-verified");
+});
+
+test("built-up I section: unequal flanges shift centroid and produce unequal moduli", () => {
+  const r = builtUp.calculateBuiltUpISection({
+    topFlangeWidthMm: 180, topFlangeThicknessMm: 10,
+    bottomFlangeWidthMm: 240, bottomFlangeThicknessMm: 16,
+    webClearHeightMm: 500, webThicknessMm: 10
+  });
+  assert.ok(r.centroidYFromBottomMm > 0);
+  assert.ok(r.centroidYFromBottomMm < r.dimensionsMm.totalDepthMm);
+  assert.notEqual(r.strongAxis.sectionModulusTopCm3,
+    r.strongAxis.sectionModulusBottomCm3);
+  assert.ok(r.strongAxis.inertiaCm4 > r.weakAxis.inertiaCm4);
+});
+
+test("built-up I section: gross area excludes flange-web overlap by definition", () => {
+  const r = builtUp.calculateBuiltUpISection({
+    topFlangeWidthMm: 200, topFlangeThicknessMm: 12,
+    bottomFlangeWidthMm: 200, bottomFlangeThicknessMm: 12,
+    webClearHeightMm: 400, webThicknessMm: 8
+  });
+  const expectedCm2 = (200*12 + 8*400 + 200*12) / 100;
+  assert.equal(r.areaCm2, expectedCm2);
+});
+
+test("built-up I section: invalid and non-finite dimensions fail closed", () => {
+  assert.throws(() => builtUp.calculateBuiltUpISection({
+    topFlangeWidthMm: 200, topFlangeThicknessMm: 12,
+    bottomFlangeWidthMm: 200, bottomFlangeThicknessMm: 12,
+    webClearHeightMm: 400, webThicknessMm: 8
+  }).areaCm2 !== 0 ? (() => { throw new Error("unexpected"); })() : null);
+  assert.throws(() => builtUp.calculateBuiltUpISection({
+    topFlangeWidthMm: 200, topFlangeThicknessMm: 12,
+    bottomFlangeWidthMm: 200, bottomFlangeThicknessMm: 12,
+    webClearHeightMm: 400, webThicknessMm: 0
+  }));
+  assert.throws(() => builtUp.calculateBuiltUpISection({
+    topFlangeWidthMm: 200, topFlangeThicknessMm: 12,
+    bottomFlangeWidthMm: 200, bottomFlangeThicknessMm: 12,
+    webClearHeightMm: 400, webThicknessMm: Infinity
+  }));
+});
