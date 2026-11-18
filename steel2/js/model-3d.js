@@ -654,14 +654,9 @@
         factors:{dead:Number(combo.dead)||0,live:Number(combo.live)||0,snow:Number(combo.snow)||0},
         deadFactor:Number(combo.dead)||0};
     }else{
-      const preliminaryWindCombos={
-        comboWind08P:{label:"آزمایشی 0.8D+1.6W (جهت +)",dead:0.8,live:0,snow:0,wind:1.6,sign:1},
-        comboWind08N:{label:"آزمایشی 0.8D+1.6W (جهت −)",dead:0.8,live:0,snow:0,wind:1.6,sign:-1},
-        comboLiveWind08P:{label:"آزمایشی 1.2D+1.6L+0.5S+0.8W (جهت +)",dead:1.2,live:1.6,snow:0.5,wind:0.8,sign:1},
-        comboLiveWind08N:{label:"آزمایشی 1.2D+1.6L+0.5S+0.8W (جهت −)",dead:1.2,live:1.6,snow:0.5,wind:0.8,sign:-1},
-        comboSnowWind08P:{label:"آزمایشی 1.2D+1.6S+0.5L+0.8W (جهت +)",dead:1.2,live:0.5,snow:1.6,wind:0.8,sign:1},
-        comboSnowWind08N:{label:"آزمایشی 1.2D+1.6S+0.5L+0.8W (جهت −)",dead:1.2,live:0.5,snow:1.6,wind:0.8,sign:-1}
-      };
+      const preliminaryWindCombos=Object.fromEntries(
+        window.SteelLoadTransfer.preliminaryWindCombinations().map(combo=>[combo.key,combo])
+      );
       const combo=preliminaryWindCombos[loadCase];
       if(combo)selected={key:"combo",label:combo.label,direction:[0,-1,0],
         factors:{dead:combo.dead,live:combo.live,snow:combo.snow,wind:combo.wind},
