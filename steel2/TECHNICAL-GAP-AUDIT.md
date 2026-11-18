@@ -69,3 +69,12 @@
 - No crane wheel reactions, vertical impact allowance, transverse surge, longitudinal traction, wheel spacing, trolley position envelope, skewing, or runway-girder checks are presently assembled by this 3D workflow. These must come from documented crane supplier data and applicable code provisions; they must not be guessed from crane capacity alone.
 - The current solver remains first-order linear elastic. No geometric stiffness/P-Delta iteration, eigenvalue buckling analysis, or code member-stability design is performed by the 3D solver. These remain explicit blockers to final structural design.
 - Consequently, crane-enabled 3D analysis and stability design are not implemented or validated. The existing UI's crane choice must not be interpreted as evidence that crane actions are included in this 3D solver.
+
+
+### Wind input validation hardening — 2026-11-18
+
+- Hardened the shared six-zone wind-pressure helper: importance, exposure, topography, gust, directionality, and internal-gust multipliers must be finite and non-negative. Signed external and internal pressure coefficients remain signed inputs; internal pressure sign is represented by the two separate positive/negative scenarios.
+- Invalid negative multipliers now fail closed (no zone pressures are returned), preventing a malformed amplification factor from silently reversing pressure direction.
+- Added three reference tests: negative multiplier rejection, signed internal-pressure handling, and the zero-wind limiting case. The authored reference suite now contains 23 tests.
+- This is input-validation hardening only. It does not establish official coefficient values, resolve opening/dominant-opening classifications, or connect the six-zone results to the active 3D member-load assembly. The 3D model still consumes manually entered signed net pressures for its wind load path.
+- Native node test execution and GitHub Actions execution must be checked after this commit; no pass is claimed here.
