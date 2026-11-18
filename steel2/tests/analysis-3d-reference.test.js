@@ -500,6 +500,10 @@ test("wind mapper records the explicit wind axis and direction",()=>{
   ]};
   const mapped=globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers(model,pressure,"positive");
   assert.equal(mapped.windDirection,"longitudinal-positive");
+  assert.equal(mapped.applicationScope,"preliminary-global-surface-pressure");
+  assert.equal(mapped.componentsCladdingStatus,"not-independently-designed");
+  assert.equal(mapped.codeComplianceStatus,"not-established");
+  assert.match(mapped.designWarning,/MWFRS.*components-and-cladding/);
 });
 
 test("service wind drift check compares relative top-to-base movement with 0.0025H",()=>{
