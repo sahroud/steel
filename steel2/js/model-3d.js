@@ -386,6 +386,33 @@
     });
     return {roofPurlinsPresent,roofLoadAreaBasis,roofLoadBasisReady};
   }
+  function windMemberLineLoadGlobal(member,geometry,windFactor,windSign) {
+    if(!member||!geometry)throw new Error("عضو و هندسه برای تبدیل باد به محور جهانی الزامی است.");
+    const factor=Number(windFactor),sign=Number(windSign);
+    if(!Number.isFinite(factor)||factor<0||![1,-1].includes(sign))
+      throw new Error("ضریب یا علامت باد برای تبدیل جهانی نامعتبر است.");
+    const result=[0,0,0],lineLoads=member.lineLoads||{};
+    const pressure=(key)=>{
+      const value=Number(lineLoads[key]??0);
+      if(!Number.isFinite(value))throw new Error("بار باد عضو "+(member.id||"نامشخص")+" در مؤلفه "+key+" معتبر نیست.");
+      return value;
+    };
+    if(member.sectionKey==="roofPurlin"){
+      const span=Number(geometry.span),rise=Number(geometry.rise);
+      if(!(span>0)||!Number.isFinite(rise)||rise<0)throw new Error("هندسه سقف برای تبدیل بردار باد معتبر نیست.");
+      const slope=rise/(span/2),norm=Math.hypot(slope,1);
+      const left=pressure("windLeft"),right=pressure("windRight");
+      result[0]=(left-right)*slope/norm*factor*sign;
+      result[1]=-(left+right)/norm*factor*sign;
+    }else if(member.sectionKey==="wallGirt"){
+      if(member.side!=="left"&&member.side!=="right")throw new Error("سمت دیوارگیر برای تبدیل باد مشخص نیست.");
+      result[0]=(member.side==="left"?1:-1)*pressure("wind")*factor*sign;
+    }else if(member.sectionKey==="endGirt"){
+      if(member.endFace!=="front"&&member.endFace!=="rear")throw new Error("وجه تیر انتهایی برای تبدیل باد مشخص نیست.");
+      result[2]=(member.endFace==="front"?1:-1)*pressure("windEnd")*factor*sign;
+    }
+    return result;
+  }
   function build() {
     const span=val("span",20), length=val("length",30), spacing=val("spacing",5), height=val("height",6), rise=val("rise",2);
     const psp=val("modelPurlinSpacing",1.2), gsp=val("modelGirtSpacing",1.5), endsp=val("modelEndPostSpacing",4);
@@ -870,26 +897,9 @@
         // Positive = pressure toward the enclosed building; negative = suction.
         // Roof pressure is transferred to purlins normal to each roof slope.
         // Side-wall pressure is transferred to longitudinal wall girts, normal to the wall.
-        global=[0,0,0];
+        global=windMemberLineLoadGlobal(m,model.geometry,windFactor,windSign).map(value=>value*1000);
         // A wind combination carries its factored gravity actions as well.
         if(selected.key!=="wind")global[1]-=totalLineLoad*1000;
-        if(m.sectionKey==="roofPurlin"){
-          const half=Number(model.geometry.span)/2;
-          const rise=Number(model.geometry.rise);
-          const slope=rise/half;
-          const norm=Math.hypot(slope,1);
-          const left=Number(m.lineLoads?.windLeft||0)*1000*windFactor*windSign;
-          const right=Number(m.lineLoads?.windRight||0)*1000*windFactor*windSign;
-          global[0]+=left*slope/norm-right*slope/norm;
-          global[1]-=(left+right)/norm;
-        }else if(m.sectionKey==="wallGirt"){
-          const wall=Number(m.lineLoads?.wind||0)*1000*windFactor*windSign;
-          global[0]+=m.side==="left"?wall:-wall;
-        }else if(m.sectionKey==="endGirt"){
-          // Positive pressure acts inward: +Z on the front face and -Z on the rear face.
-          const endWall=Number(m.lineLoads?.windEnd||0)*1000*windFactor*windSign;
-          global[2]+=m.endFace==="front"?endWall:-endWall;
-        }
       }else{
         global=selected.direction.map(v=>v*totalLineLoad*1000);
       }
@@ -1063,6 +1073,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,getProposedUnbracedLengths,buildRoofPurlinWindFootprints,assignGeometricMemberLineLoads,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,getProposedUnbracedLengths,buildRoofPurlinWindFootprints,assignGeometricMemberLineLoads,windMemberLineLoadGlobal,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
