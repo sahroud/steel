@@ -85,6 +85,39 @@
     }
     return Object.freeze(supports);
   }
+  function calculateWindZonePressures(input) {
+    const data=input||{}, coefficients=data.coefficients||{}, zones=data.zones||{};
+    const finite=value=>{
+      if(value===null||value===undefined||value==="")return null;
+      const number=Number(value);
+      return Number.isFinite(number)?number:null;
+    };
+    const speed=finite(data.basicWindKmh);
+    const q=speed===null||speed<0?null:0.000613*Math.pow(speed/3.6,2);
+    const required=["importance","exposure","topography","gust","directionality","internalGust","internalPressure"];
+    const values={};
+    required.forEach(key=>values[key]=finite(coefficients[key]));
+    const commonReady=q!==null&&required.every(key=>values[key]!==null);
+    const common=commonReady
+      ? values.importance*q*values.exposure*values.topography*values.directionality
+      : null;
+    const internalMagnitude=commonReady?Math.abs(values.internalPressure):null;
+    const rows={};
+    Object.keys(zones).forEach(key=>{
+      const cp=finite(zones[key]);
+      if(!commonReady||cp===null){rows[key]=null;return;}
+      const external=common*values.gust*cp;
+      const internal=common*values.internalGust*internalMagnitude;
+      rows[key]=Object.freeze({
+        cp,external,internalMagnitude:internal,
+        netInternalPositive:external-internal,
+        netInternalNegative:external+internal
+      });
+    });
+    const ready=commonReady&&Object.keys(zones).length>0&&Object.values(rows).every(Boolean);
+    return Object.freeze({q,rows:Object.freeze(rows),ready});
+  }
+
   function preliminaryWindCombinations() {
     return Object.freeze([
       {key:"comboWind08P",label:"آزمایشی 0.8D+1.6W (جهت +)",dead:0.8,live:0,snow:0,wind:1.6,sign:1},
