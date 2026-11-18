@@ -154,6 +154,20 @@
         </div>
     </section>
 
+    <section class="panel" id="craneDesignPanel">
+        <div class="panel-title"><h3>۵ ـ جرثقیل سقفی اختیاری</h3><span class="status">پیش‌طرح؛ نیازمند داده فنی</span></div>
+        <div class="form-grid">
+            <div class="field"><label for="craneEnabled">وضعیت جرثقیل</label><select id="craneEnabled"><option value="off" selected>بدون جرثقیل</option><option value="on">دارای جرثقیل سقفی دوپل</option></select></div>
+            <div class="field"><label for="craneCapacity">ظرفیت نامی بالابری</label><select id="craneCapacity" disabled><option value="" selected>انتخاب ظرفیت</option><option value="5">۵ تن</option><option value="10">۱۰ تن</option><option value="20">۲۰ تن</option></select></div>
+            <div class="field"><label for="craneSpan">دهانه جرثقیل (متر)</label><input id="craneSpan" type="number" min="0.1" step="0.1" placeholder="نیازمند اندازه‌گیری" disabled></div>
+            <div class="field"><label for="craneRunwayLength">طول مسیر حرکت پل (متر)</label><input id="craneRunwayLength" type="number" min="0.1" step="0.1" placeholder="نیازمند تعیین" disabled></div>
+            <div class="field"><label for="craneHookLift">ارتفاع بالابری (متر)</label><input id="craneHookLift" type="number" min="0.1" step="0.1" placeholder="نیازمند تعیین" disabled></div>
+            <div class="field"><label for="craneDuty">کلاس کاری / طیف بهره‌برداری</label><input id="craneDuty" type="text" placeholder="طبق سیکل کاری و استاندارد مبنا" disabled></div>
+            <div class="field"><label for="craneCycles">تعداد سیکل در ساعت</label><input id="craneCycles" type="number" min="0.1" step="0.1" placeholder="نیازمند تعیین" disabled></div>
+        </div>
+        <div id="craneDesignStatus" class="notice">جرثقیل خاموش است؛ هیچ بار یا عضوی از جرثقیل نباید وارد تحلیل سوله شود. انتخاب ظرفیت به‌تنهایی برای طراحی و بارگذاری کافی نیست.</div>
+    </section>
+
     <section class="panel">
         <div class="panel-title">
             <h3>۵ ـ نمایش قاب</h3>
