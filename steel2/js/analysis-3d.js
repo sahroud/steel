@@ -172,27 +172,41 @@ function auditMemberOrientation(model){
   model.members.forEach(member=>{
     const key=String(member.sectionKey||"unassigned");
     const a=nodes.get(String(member.start)),b=nodes.get(String(member.end));
-    let direction=null,geometryValid=!!(a&&b);
+    let direction=null,length=0,geometryValid=!!(a&&b);
     if(geometryValid){
       const d=[b.x-a.x,b.y-a.y,b.z-a.z].map(Number),L=Math.hypot(...d);
       geometryValid=Number.isFinite(L)&&L>EPS;
-      if(geometryValid)direction=d.map(v=>v/L);
+      if(geometryValid){length=L;direction=d.map(v=>v/L);}
     }
     const axis=member.referenceAxis;
-    const explicitAxisValid=Array.isArray(axis)&&axis.length===3&&axis.every(v=>Number.isFinite(Number(v)))&&Math.hypot(...axis.map(Number))>EPS;
+    const axisShapeValid=Array.isArray(axis)&&axis.length===3&&axis.every(v=>Number.isFinite(Number(v)));
+    const axisLength=axisShapeValid?Math.hypot(...axis.map(Number)):0;
+    const explicitAxisValid=axisShapeValid&&axisLength>EPS;
+    const axisParallel=!!(explicitAxisValid&&direction&&Math.abs(direction.reduce((sum,v,i)=>sum+v*Number(axis[i]),0)/axisLength)>0.95);
     const sectionOrientationVerified=member.sectionOrientationVerified===true;
+    const directionClass=!direction?"invalid":Math.abs(direction[1])>=0.95?"vertical":
+      Math.abs(direction[2])>=0.95?"longitudinal":Math.abs(direction[0])>=0.95?"transverse":"diagonal-or-oblique";
     const status=!geometryValid?"invalid-member-geometry":
+      (axis!==undefined&&!axisShapeValid?"invalid-reference-axis":
       (!explicitAxisValid?"reference-axis-unverified":
-      (!sectionOrientationVerified?"section-roll-unverified":"verified"));
-    const item={id:member.id,sectionKey:key,status,memberDirection:direction,
-      referenceAxis:explicitAxisValid?axis.map(Number):null,
+      (axisParallel?"reference-axis-parallel-to-member":
+      (!sectionOrientationVerified?"section-roll-unverified":"verified"))));
+    const item={id:member.id,sectionKey:key,type:member.type||"",status,memberDirection:direction,
+      directionClass,lengthM:length,referenceAxis:explicitAxisValid?axis.map(Number):null,
       referenceAxisSource:explicitAxisValid?"member-metadata":"solver-default",
-      sectionOrientationVerified};
+      referenceAxisParallelToMember:axisParallel,sectionOrientationVerified};
     members.push(item);
-    if(!groups[key])groups[key]={count:0,verified:0,missingReferenceAxis:0,unverifiedSectionRoll:0,invalidGeometry:0};
-    const g=groups[key];g.count++;
+    if(!groups[key])groups[key]={count:0,verified:0,missingReferenceAxis:0,invalidReferenceAxis:0,
+      parallelReferenceAxis:0,unverifiedSectionRoll:0,invalidGeometry:0,
+      directionCounts:{vertical:0,longitudinal:0,transverse:0,"diagonal-or-oblique":0,invalid:0},
+      memberIds:[],unverifiedMemberIds:[]};
+    const g=groups[key];g.count++;g.memberIds.push(String(member.id||""));
+    g.directionCounts[directionClass]++;
     if(status==="verified")g.verified++;
+    else g.unverifiedMemberIds.push(String(member.id||""));
     if(status==="reference-axis-unverified")g.missingReferenceAxis++;
+    if(status==="invalid-reference-axis")g.invalidReferenceAxis++;
+    if(status==="reference-axis-parallel-to-member")g.parallelReferenceAxis++;
     if(status==="section-roll-unverified")g.unverifiedSectionRoll++;
     if(status==="invalid-member-geometry")g.invalidGeometry++;
   });
@@ -200,7 +214,7 @@ function auditMemberOrientation(model){
   return {memberCount:members.length,verifiedCount:verified,
     unverifiedCount:members.length-verified,readyForCodeDesign:members.length>0&&verified===members.length,
     groups,members,
-    note:"جهت هندسی محور عضو از مختصات گره‌ها استخراج می‌شود؛ referenceAxis و تأیید چرخش واقعی مقطع باید از نقشه ساخت/نصب یا مشخصات مستند وارد شوند. محور پیش‌فرض حل‌گر به معنی تأیید جهت نصب نیست."};
+    note:"جهت هندسی و دسته‌بندی طولی/عرضی/قائم/مورب از مختصات مدل استخراج می‌شود. محور مرجع موازی عضو نامعتبر است، زیرا تبدیل حل‌گر آن را با محور جایگزین می‌کند. referenceAxis و تأیید چرخش واقعی مقطع باید از نقشه ساخت/نصب یا مشخصات مستند وارد شوند."};
 }
 function analyze(model,options){
  options=options||{};
