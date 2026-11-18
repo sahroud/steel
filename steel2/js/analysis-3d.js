@@ -110,6 +110,8 @@ function frameLocalStiffness(p,L){
 function makeTransform(a,b,reference){
  const d=sub(b,a),L=norm(d);if(!(L>0))throw Error("عضو با طول صفر در مدل وجود دارد.");
  const ex=scale(d,1/L);let ref=reference||[0,0,1];
+ if(!Array.isArray(ref)||ref.length!==3||ref.some(v=>!Number.isFinite(Number(v)))||!(norm(ref)>EPS))
+  throw Error("محور مرجع عضو باید سه مؤلفه متناهی و بردار غیرصفر باشد.");
  if(Math.abs(dot(ex,ref)/norm(ref))>0.95)ref=[0,1,0];
  const ey=scale(cross(ref,ex),1/norm(cross(ref,ex)));
  const ez=cross(ex,ey);
