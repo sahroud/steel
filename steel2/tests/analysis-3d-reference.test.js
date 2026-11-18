@@ -933,7 +933,7 @@ test("geometric load assignment falls back to rafters only without purlins and r
 
 test("integrated assigned purlin line load closes global force and moment against cantilever reactions",()=>{
   const assign=extractModelLoadAssignment();
-  const member={id:"PURLIN-CANTILEVER",sectionKey:"roofPurlin",side:"left",tributaryWidth:1.5};
+  const member={id:"PURLIN-CANTILEVER",start:"FIX",end:"TIP",sectionKey:"roofPurlin",side:"left",tributaryWidth:1.5};
   assign([member],{span:12,rise:2},[2],{
     deadLeft:2,deadRight:0,liveLeft:0,snowLeft:0,
     deadAreaBasis:"sloped-surface",liveAreaBasis:"sloped-surface",snowAreaBasis:"sloped-surface"
