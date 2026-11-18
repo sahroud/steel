@@ -130,6 +130,6 @@
   }
   root.SteelLoadTransfer = Object.freeze({
     surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant,
-    triangularGablePostEquivalentLoads, preliminaryWindCombinations
+    triangularGablePostEquivalentLoads, calculateWindZonePressures, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
