@@ -637,6 +637,33 @@ test("polygonal C&C centroid is invariant under reversed vertex winding", () => 
   assert.ok(Math.abs(forward.centroid.y-reverse.centroid.y)<1e-12);
 });
 
+test("C&C polygon-zone overlap supports concave footprint and returns exact overlap area", () => {
+  const result = globalThis.SteelLoadTransfer.calculatePolygonWindZoneOverlap({
+    component:"roof-purlin-footprint",
+    zoneId:"illustrative-zone-not-code-verified",
+    areaBasis:"projected",
+    footprintVertices:[{x:0,y:0},{x:3,y:0},{x:3,y:1},{x:1,y:1},{x:1,y:3},{x:0,y:3}],
+    zoneVertices:[{x:0.5,y:0.5},{x:2,y:0.5},{x:2,y:2},{x:0.5,y:2}]
+  });
+  assert.equal(result.footprintAreaM2,5);
+  assert.equal(result.zoneAreaM2,2.25);
+  assert.ok(Math.abs(result.overlapAreaM2-1.25)<1e-10);
+  assert.ok(Math.abs(result.footprintOverlapRatio-0.25)<1e-10);
+  assert.equal(result.pressureReady,false);
+  assert.equal(result.coefficientSource,null);
+});
+
+test("C&C polygon-zone overlap returns zero for disjoint regions and rejects mismatched area bases", () => {
+  const helper=globalThis.SteelLoadTransfer.calculatePolygonWindZoneOverlap;
+  const base={
+    areaBasis:"sloped-surface",
+    footprintVertices:[{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}],
+    zoneVertices:[{x:3,y:3},{x:4,y:3},{x:4,y:4},{x:3,y:4}]
+  };
+  assert.equal(helper(base).overlapAreaM2,0);
+  assert.throws(()=>helper({...base,areaBasis:"projected",zoneAreaBasis:"sloped-surface"}),/مبنای سطح/);
+});
+
 test("polygonal C&C tributary patch requires finite coordinates and explicit area basis", () => {
   const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
   assert.throws(() => helper({
