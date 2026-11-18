@@ -479,6 +479,12 @@
     });
     // Assign tributary line loads to the geometric members from current area-load inputs.
     const loads=window.SteelLoads?.getData?.()||{};
+    const roofAngle=Math.atan2(rise,half);
+    const roofLoadAreaBasis=loads.roofLoadAreaBasis||"unspecified";
+    const roofLoadBasisReady=["horizontal-projection","sloped-surface"].includes(roofLoadAreaBasis);
+    const roofLineLoad=(pressure,width)=>roofLoadBasisReady
+      ?SteelLoadTransfer.roofSurfacePressureToLineLoad(pressure,width,roofAngle,roofLoadAreaBasis).lineLoadKNm
+      :0;
     const frameTrib=frames.map((z,i)=>i===0?(frames[1]-z)/2:i===frames.length-1?(z-frames[i-1])/2:(frames[i+1]-frames[i-1])/2);
     // Roof area loads must enter the 3D model through roof purlins when they exist.
     // Applying the same area load directly to rafters as well would double-count it.
@@ -487,24 +493,24 @@
       if(m.axis==="transverse"){
         const fi=(m.frame||1)-1,tw=frameTrib[fi]||spacing;
         const directRafterLoadFactor=roofPurlinsPresent?0:1;
-        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:(loads.deadLeft||0)*tw*directRafterLoadFactor,live:(loads.liveLeft||0)*tw*directRafterLoadFactor,snow:(loads.snowLeft||0)*tw*directRafterLoadFactor,wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"};
-        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw*directRafterLoadFactor,live:(loads.liveRight||0)*tw*directRafterLoadFactor,snow:(loads.snowRight||0)*tw*directRafterLoadFactor,wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"};
+        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:roofLineLoad(loads.deadLeft||0,tw)*directRafterLoadFactor,live:roofLineLoad(loads.liveLeft||0,tw)*directRafterLoadFactor,snow:roofLineLoad(loads.snowLeft||0,tw)*directRafterLoadFactor,wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadAreaBasis,roofLoadBasisReady,roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"};
+        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:roofLineLoad(loads.deadRight||0,tw)*directRafterLoadFactor,live:roofLineLoad(loads.liveRight||0,tw)*directRafterLoadFactor,snow:roofLineLoad(loads.snowRight||0,tw)*directRafterLoadFactor,wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadAreaBasis,roofLoadBasisReady,roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"};
         else m.lineLoads={wind:0,unit:"kN/m",tributaryWidth:tw};
       } else if(m.sectionKey==="roofPurlin"){
         const w=m.tributaryWidth||0;
         if(m.side==="ridge"){
           const wl=m.tributaryWidthLeft||0,wr=m.tributaryWidthRight||0;
           m.lineLoads={
-            dead:SteelLoadTransfer.surfacePressureToLineLoad(loads.deadLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.deadRight||0,wr),
-            live:SteelLoadTransfer.surfacePressureToLineLoad(loads.liveLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.liveRight||0,wr),
-            snow:SteelLoadTransfer.surfacePressureToLineLoad(loads.snowLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.snowRight||0,wr),
+            dead:roofLineLoad(loads.deadLeft||0,wl)+roofLineLoad(loads.deadRight||0,wr),
+            live:roofLineLoad(loads.liveLeft||0,wl)+roofLineLoad(loads.liveRight||0,wr),
+            snow:roofLineLoad(loads.snowLeft||0,wl)+roofLineLoad(loads.snowRight||0,wr),
             wind:SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,wr),
             windLeft:SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,wl),windRight:SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,wr),
-            unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr
+            unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr,roofLoadAreaBasis,roofLoadBasisReady
           };
         }else{
           const side=m.side==="left"?"Left":"Right";
-          m.lineLoads={dead:SteelLoadTransfer.surfacePressureToLineLoad(loads["dead"+side]||0,w),live:SteelLoadTransfer.surfacePressureToLineLoad(loads["live"+side]||0,w),snow:SteelLoadTransfer.surfacePressureToLineLoad(loads["snow"+side]||0,w),wind:SteelLoadTransfer.surfacePressureToLineLoad(loads["wind"+side]||0,w),windLeft:m.side==="left"?SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,w):0,windRight:m.side==="right"?SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,w):0,unit:"kN/m",tributaryWidth:w};
+          m.lineLoads={dead:roofLineLoad(loads["dead"+side]||0,w),live:roofLineLoad(loads["live"+side]||0,w),snow:roofLineLoad(loads["snow"+side]||0,w),wind:SteelLoadTransfer.surfacePressureToLineLoad(loads["wind"+side]||0,w),windLeft:m.side==="left"?SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,w):0,windRight:m.side==="right"?SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,w):0,unit:"kN/m",tributaryWidth:w,roofLoadAreaBasis,roofLoadBasisReady};
         }
       } else if(m.sectionKey==="wallGirt"){
         const h=m.tributaryHeight||0;
@@ -686,7 +692,11 @@
     });
   }
   async function analyze3D(loadCase){
-    if(!model)build();
+    build();
+    const roofLoadInputs=window.SteelLoads?.getData?.()||{};
+    const hasRoofGravityLoad=[roofLoadInputs.deadLeft,roofLoadInputs.deadRight,roofLoadInputs.liveLeft,roofLoadInputs.liveRight,roofLoadInputs.snowLeft,roofLoadInputs.snowRight].some(v=>Number(v)>0);
+    if(hasRoofGravityLoad&&!["horizontal-projection","sloped-surface"].includes(roofLoadInputs.roofLoadAreaBasis))
+      throw new Error("مبنای سطح بارهای ثقلی سقف انتخاب نشده است. گزینه تصویر افقی یا سطح شیب‌دار را در بخش بارگذاری مشخص کنید؛ تحلیل برای جلوگیری از خطای بار متوقف شد.");
     if(!window.SteelFrame3D||typeof window.SteelFrame3D.makeTransform!=="function")
       throw new Error("هسته هندسی حل‌گر سه‌بعدی بارگذاری نشده است.");
     const readiness=validate3DSections();
