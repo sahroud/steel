@@ -275,6 +275,7 @@ test("wind-zone pressure helper calculates both internal-pressure signs", () => 
     "end-wall-front": 0.9, "end-wall-back": -0.4
   };
   const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
     basicWindKmh: 360,
     coefficients: {
       importance: 1, exposure: 1, topography: 1, gust: 1,
@@ -298,7 +299,7 @@ test("wind-zone pressure helper fails closed when required coefficients or zone 
       importance: 1, exposure: 1, topography: 1, gust: 1,
       directionality: 1, internalGust: 1
     },
-    zones: { "roof-left": 0.8, "roof-right": "" }
+    zones: { "roof-left": 0.8, "roof-right": 0.5, "long-wall-left": 0.7, "long-wall-right": -0.6, "end-wall-front": 0.9, "end-wall-back": -0.4 }
   };
   const result = globalThis.SteelLoadTransfer.calculateWindZonePressures(input);
   assert.equal(result.ready, false);
@@ -308,12 +309,13 @@ test("wind-zone pressure helper fails closed when required coefficients or zone 
 
 test("wind-zone pressure helper rejects negative wind speed without producing pressures", () => {
   const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
     basicWindKmh: -10,
     coefficients: {
       importance: 1, exposure: 1, topography: 1, gust: 1,
       directionality: 1, internalGust: 1, internalPressure: 0.2
     },
-    zones: { "roof-left": 0.8 }
+    zones: { "roof-left": 0.8, "roof-right": -0.5, "long-wall-left": 0.7, "long-wall-right": -0.6, "end-wall-front": 0.9, "end-wall-back": -0.4 }
   });
   assert.equal(result.ready, false);
   assert.equal(result.q, null);
@@ -322,6 +324,7 @@ test("wind-zone pressure helper rejects negative wind speed without producing pr
 
 test("wind-zone pressure helper rejects negative amplification factors", () => {
   const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
     basicWindKmh: 360,
     coefficients: {
       importance: 1, exposure: -1, topography: 1, gust: 1,
@@ -335,6 +338,7 @@ test("wind-zone pressure helper rejects negative amplification factors", () => {
 
 test("wind-zone pressure helper preserves signed internal pressure while validating factors", () => {
   const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
     basicWindKmh: 360,
     coefficients: {
       importance: 1, exposure: 1, topography: 1, gust: 1,
@@ -349,6 +353,7 @@ test("wind-zone pressure helper preserves signed internal pressure while validat
 
 test("wind-zone pressure helper accepts zero basic wind as zero pressure", () => {
   const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
     basicWindKmh: 0,
     coefficients: {
       importance: 1, exposure: 1, topography: 1, gust: 1,
@@ -394,7 +399,9 @@ test("crane design readiness fails closed until geometry duty and verified sourc
 
 
 test("six-zone pressure mapping transfers signed pressures to roof, side-wall and end-wall members",()=>{
-  const p=globalThis.SteelLoadTransfer.calculateWindZonePressures({basicWindKmh:360,coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}});
+  const p=globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
+    basicWindKmh:360,coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}});
   const model={members:[
     {id:"PL",sectionKey:"roofPurlin",side:"left",tributaryWidth:2},{id:"PR",sectionKey:"roofPurlin",side:"right",tributaryWidth:3},
     {id:"PG",sectionKey:"roofPurlin",side:"ridge",tributaryWidth:4,tributaryWidthLeft:1.5,tributaryWidthRight:2.5},
@@ -414,7 +421,9 @@ test("six-zone pressure mapping transfers signed pressures to roof, side-wall an
 
 test("six-zone pressure mapping fails closed for incomplete data, bad scenario or missing member groups",()=>{
   assert.throws(()=>globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers({},null,"positive"),/فشارهای شش‌ناحیه‌ای/);
-  const p=globalThis.SteelLoadTransfer.calculateWindZonePressures({basicWindKmh:360,coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}});
+  const p=globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
+    basicWindKmh:360,coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}});
   assert.throws(()=>globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers({members:[]},p,"unspecified"),/positive یا negative/);
   assert.throws(()=>globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers({members:[{id:"x",sectionKey:"roofPurlin",side:"left",tributaryWidth:-1}]},p,"positive"),/عرض بارگیر/);
   assert.throws(()=>globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers({members:[{id:"x",sectionKey:"roofPurlin",side:"left",tributaryWidth:1}]},p,"positive"),/نیازمند پرلین/);
@@ -422,6 +431,7 @@ test("six-zone pressure mapping fails closed for incomplete data, bad scenario o
 
 test("six-zone application adapter replaces only wind line loads and preserves gravity loads",()=>{
   const pressure=globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
     basicWindKmh:360,
     coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},
     zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}
@@ -444,6 +454,7 @@ test("six-zone application adapter replaces only wind line loads and preserves g
 
 test("six-zone negative internal-pressure scenario keeps zone signs independently",()=>{
   const pressure=globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"transverse-positive",
     basicWindKmh:360,
     coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},
     zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}
@@ -463,4 +474,29 @@ test("six-zone negative internal-pressure scenario keeps zone signs independentl
   assert.ok(Math.abs(result.model.members[3].lineLoads.wind-(-2.452))<1e-12);
   assert.ok(Math.abs(result.mapping.endFacePressures.front-6.13)<1e-12);
   assert.ok(Math.abs(result.mapping.endFacePressures.rear-(-1.226))<1e-12);
+});
+
+test("wind pressure calculation requires one of four wind directions and all six surface coefficients",()=>{
+  const base={basicWindKmh:360,coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},
+    zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}};
+  assert.equal(globalThis.SteelLoadTransfer.calculateWindZonePressures(base).ready,false);
+  assert.equal(globalThis.SteelLoadTransfer.calculateWindZonePressures({...base,direction:"transverse-positive",zones:{"roof-left":0.8}}).ready,false);
+  const complete=globalThis.SteelLoadTransfer.calculateWindZonePressures({...base,direction:"longitudinal-negative"});
+  assert.equal(complete.ready,true);
+  assert.equal(complete.direction,"longitudinal-negative");
+});
+
+test("wind mapper records the explicit wind axis and direction",()=>{
+  const pressure=globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    direction:"longitudinal-positive",basicWindKmh:360,
+    coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},
+    zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}
+  });
+  const model={members:[
+    {id:"P",sectionKey:"roofPurlin",side:"left",tributaryWidth:1},
+    {id:"W",sectionKey:"wallGirt",side:"left",tributaryHeight:1},
+    {id:"E",sectionKey:"endGirt",endFace:"front",tributaryHeight:1}
+  ]};
+  const mapped=globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers(model,pressure,"positive");
+  assert.equal(mapped.windDirection,"longitudinal-positive");
 });
