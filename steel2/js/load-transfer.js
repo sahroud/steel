@@ -126,6 +126,35 @@
     return Object.freeze({q,rows:Object.freeze(rows),ready,direction,zones:Object.freeze({...zones})});
   }
 
+  // Mabhas 6 (1398), clauses 6-10-8/9: choose the coefficient procedure
+  // from the mean roof height and the smaller plan dimension. This helper
+  // classifies the path only; it deliberately does not invent/read Cp values.
+  function classifyWindProcedure(geometry) {
+    const g=geometry||{};
+    const span=Number(g.span), length=Number(g.length), eave=Number(g.height), rise=Number(g.rise);
+    if (![span,length,eave,rise].every(Number.isFinite) || span<=0 || length<=0 || eave<=0 || rise<0) {
+      return Object.freeze({ready:false,method:"undetermined",reason:"ابعاد معتبر دهانه، طول، ارتفاع لبه و خیز بام برای انتخاب روش باد لازم است.",codeEdition:"مبحث ششم، ویرایش ۱۳۹۸"});
+    }
+    const meanRoofHeight=eave+rise/2;
+    const smallerPlanDimension=Math.min(span,length);
+    const ratio=meanRoofHeight/smallerPlanDimension;
+    const lowRise=meanRoofHeight<20 && ratio<1;
+    return Object.freeze({
+      ready:true,
+      method:lowRise?"low-rise-combined-coefficients":"general-or-other-applicable-method",
+      coefficientConvention:lowRise?"combined-GCp; do-not-apply-G-separately":"separate-Cg-and-Cp-or-other-applicable-method",
+      codeClause:lowRise?"6-10-9":"6-10-8-and-applicable-following-provisions",
+      meanRoofHeightM:meanRoofHeight,
+      smallerPlanDimensionM:smallerPlanDimension,
+      heightToSmallerPlanRatio:ratio,
+      cAndCRequiredIndependently:true,
+      codeComplianceStatus:"method-screening-only",
+      warning:lowRise
+        ?"برای این هندسه شاخه ساختمان کم‌ارتفاع بند ۶-۱۰-۹ محتمل است؛ ضرایب ترکیبی CgCp باید از شکل متناظر و برای C&C جداگانه استخراج شوند. Cg جداگانه دوباره اعمال نشود."
+        :"شاخه کم‌ارتفاع بند ۶-۱۰-۹ احراز نشد؛ روش عمومی/سایر ضوابط باد باید با متن مبحث و شرایط پروژه تعیین شود. طراحی مستقل C&C همچنان الزامی است."
+    });
+  }
+
   function mapWindZonePressuresToMembers(model, pressureResult, internalScenario) {
     if (!model || !Array.isArray(model.members)) throw new TypeError("مدل دارای فهرست اعضای معتبر نیست.");
     if (!pressureResult || pressureResult.ready !== true || !pressureResult.rows || !WIND_DIRECTIONS.includes(pressureResult.direction))
@@ -169,7 +198,7 @@
       }
     });
     if(!mappedRoof||!mappedWalls||!mappedEndWalls)throw new Error("نگاشت باد نیازمند پرلین سقف، دیوارگیر طولی و تیر دیوار انتهایی است.");
-    return Object.freeze({schemaVersion:"1.2.0",windDirection:pressureResult.direction,internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",applicationScope:"preliminary-global-surface-pressure",componentsCladdingStatus:"not-independently-designed",codeComplianceStatus:"not-established",designWarning:"Six broad surface pressures are not a substitute for separate MWFRS and components-and-cladding procedures, including local edge/corner zones and applicable effective wind areas.",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
+    return Object.freeze({schemaVersion:"1.3.0",windDirection:pressureResult.direction,internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",windProcedure:classifyWindProcedure(model.geometry),applicationScope:"preliminary-global-surface-pressure",componentsCladdingStatus:"not-independently-designed",codeComplianceStatus:"not-established",designWarning:"Six broad surface pressures are not a substitute for separate MWFRS and components-and-cladding procedures, including local edge/corner zones and applicable effective wind areas.",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
   }
 
   function checkWindDrift(model, displacementRecords, windDirection, limitRatio) {
@@ -235,7 +264,7 @@
     ].map(item=>Object.freeze(item)));
   }
   root.SteelLoadTransfer = Object.freeze({
-    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES,
+    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure,
     triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, checkWindDrift, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
