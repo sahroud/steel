@@ -268,6 +268,100 @@
     });
   }
 
+
+  // Exact planar overlap area for two simple polygons. Concave inputs are
+  // ear-clipped into triangles, then convex triangle intersections are summed.
+  // This is geometry only: it does not assign code zones or wind coefficients.
+  function calculatePolygonWindZoneOverlap(input) {
+    const data=input||{};
+    const basis=data.areaBasis;
+    if(basis!=="projected"&&basis!=="sloped-surface")
+      throw new RangeError("مبنای سطح هم‌پوشانی باید projected یا sloped-surface باشد.");
+    const footprint=calculatePolygonEffectiveWindArea({vertices:data.footprintVertices,areaBasis:basis,component:"footprint"});
+    const zone=calculatePolygonEffectiveWindArea({vertices:data.zoneVertices,areaBasis:basis,component:"zone"});
+    const toPoints=vertices=>vertices.map(p=>({x:Number(p.x),y:Number(p.y)}));
+    const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+    const signedArea=points=>points.reduce((sum,p,i)=>{
+      const q=points[(i+1)%points.length];return sum+p.x*q.y-q.x*p.y;
+    },0)/2;
+    const triangulate=raw=>{
+      const points=toPoints(raw);
+      const orientation=Math.sign(signedArea(points));
+      if(!orientation)throw new RangeError("چندضلعی برای مثلث‌بندی مساحت ندارد.");
+      const indices=points.map((_,i)=>i), triangles=[];
+      const insideStrict=(p,a,b,c)=>{
+        const x=cross(a,b,p)*orientation,y=cross(b,c,p)*orientation,z=cross(c,a,p)*orientation;
+        return x>1e-10&&y>1e-10&&z>1e-10;
+      };
+      let guard=0;
+      while(indices.length>3&&guard++<points.length*points.length){
+        let clipped=false;
+        for(let k=0;k<indices.length;k++){
+          const ia=indices[(k+indices.length-1)%indices.length],ib=indices[k],ic=indices[(k+1)%indices.length];
+          const a=points[ia],b=points[ib],c=points[ic];
+          if(cross(a,b,c)*orientation<=1e-10)continue;
+          let occupied=false;
+          for(const ix of indices){
+            if(ix===ia||ix===ib||ix===ic)continue;
+            if(insideStrict(points[ix],a,b,c)){occupied=true;break;}
+          }
+          if(occupied)continue;
+          triangles.push([a,b,c]);indices.splice(k,1);clipped=true;break;
+        }
+        if(!clipped)throw new Error("مثلث‌بندی چندضلعی ناموفق است؛ هندسه باید ساده و بدون ابهام باشد.");
+      }
+      if(indices.length!==3)throw new Error("مثلث‌بندی چندضلعی کامل نشد.");
+      triangles.push(indices.map(i=>points[i]));
+      return triangles;
+    };
+    const clipConvex=(subject,clip)=>{
+      let output=subject;
+      const orient=Math.sign(signedArea(clip));
+      for(let i=0;i<clip.length&&output.length;i++){
+        const a=clip[i],b=clip[(i+1)%clip.length],inputPoints=output;output=[];
+        const inside=p=>cross(a,b,p)*orient>=-1e-10;
+        const intersection=(p,q)=>{
+          const rx=q.x-p.x,ry=q.y-p.y,sx=b.x-a.x,sy=b.y-a.y;
+          const denominator=rx*sy-ry*sx;
+          if(Math.abs(denominator)<=1e-14)return {x:(p.x+q.x)/2,y:(p.y+q.y)/2};
+          const t=((a.x-p.x)*sy-(a.y-p.y)*sx)/denominator;
+          return {x:p.x+t*rx,y:p.y+t*ry};
+        };
+        for(let j=0;j<inputPoints.length;j++){
+          const current=inputPoints[j],previous=inputPoints[(j+inputPoints.length-1)%inputPoints.length];
+          const ci=inside(current),pi=inside(previous);
+          if(ci){if(!pi)output.push(intersection(previous,current));output.push(current);}
+          else if(pi)output.push(intersection(previous,current));
+        }
+      }
+      return output;
+    };
+    const polygonArea=points=>points.length<3?0:Math.abs(signedArea(points));
+    const ft=triangulate(data.footprintVertices),zt=triangulate(data.zoneVertices);
+    let overlap=0;
+    for(const a of ft)for(const b of zt)overlap+=polygonArea(clipConvex(a,b));
+    const tolerance=Math.max(1,footprint.effectiveAreaM2)*1e-9;
+    if(overlap<0&&overlap>-tolerance)overlap=0;
+    if(overlap>footprint.effectiveAreaM2&&overlap-footprint.effectiveAreaM2<=tolerance)
+      overlap=footprint.effectiveAreaM2;
+    if(!Number.isFinite(overlap)||overlap<0||overlap>footprint.effectiveAreaM2+tolerance)
+      throw new Error("نتیجه هم‌پوشانی از حدود سطح بارگیر عضو خارج است.");
+    return Object.freeze({
+      component:typeof data.component==="string"&&data.component.trim()?data.component.trim():"unspecified",
+      zoneId:typeof data.zoneId==="string"&&data.zoneId.trim()?data.zoneId.trim():null,
+      areaBasis:basis,
+      footprintAreaM2:footprint.effectiveAreaM2,
+      zoneAreaM2:zone.effectiveAreaM2,
+      overlapAreaM2:overlap,
+      footprintOverlapRatio:overlap/footprint.effectiveAreaM2,
+      geometryMethod:"ear-clipping-plus-triangle-convex-clipping",
+      verificationStatus:"geometry-only-not-code-verified",
+      coefficientSource:null,
+      pressureReady:false,
+      warning:"هم‌پوشانی صرفاً هندسی است؛ اعتبار zoneId، مرز ناحیه، ضریب C&C، حدود سطح مؤثر و فشار طراحی باید مستقل از منبع رسمی احراز شود."
+    });
+  }
+
   function mapWindZonePressuresToMembers(model, pressureResult, internalScenario) {
     if (!model || !Array.isArray(model.members)) throw new TypeError("مدل دارای فهرست اعضای معتبر نیست.");
     if (!pressureResult || pressureResult.ready !== true || !pressureResult.rows || !WIND_DIRECTIONS.includes(pressureResult.direction))
@@ -377,7 +471,7 @@
     ].map(item=>Object.freeze(item)));
   }
   root.SteelLoadTransfer = Object.freeze({
-    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, calculatePolygonEffectiveWindArea,
+    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, calculatePolygonEffectiveWindArea, calculatePolygonWindZoneOverlap,
     triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, checkWindDrift, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
