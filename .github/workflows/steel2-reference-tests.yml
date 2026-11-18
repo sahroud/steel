@@ -33,5 +33,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Check syntax of active model and load modules
+        run: |
+          node --check steel2/js/model-3d.js
+          node --check steel2/js/load-transfer.js
+          node --check steel2/js/climate-load-engine.js
       - name: Run independent 3D solver reference tests
         run: node --test steel2/tests/analysis-3d-reference.test.js
