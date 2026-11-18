@@ -522,3 +522,10 @@ Status: regression cases have been added but are not yet CI-verified. The built-
 - [ ] Validate local-axis signs and section-property mapping against independent beam-element benchmarks before using member forces for code design.
 
 Status: orientation auditing is now explicit and machine-readable; the production model still does not contain verified installation-roll evidence, so it is not ready for code design on this basis.
+
+
+### CI feedback and compatibility correction — 2026-11-18
+
+- [x] Preserve geometry-builder operation when the optional orientation-audit helper is not loaded in isolated test fixtures; report audit unavailable/unverified rather than throwing.
+- [x] Correct the reference-axis precedence test fixture so the member-specific vector is not parallel to the member axis and does not trigger the solver fallback.
+- [ ] Confirm the latest full workflow passes on the current PR head. Earlier CI attempts exposed 5 failures (4 fixture compatibility failures and 1 incorrect test vector); the compatibility and test-vector fixes are committed, but final CI remains pending.
