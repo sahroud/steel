@@ -576,3 +576,15 @@ Status: numerical completeness can be audited, but current UI values have no ver
 - [ ] Populate and verify actual production section properties and installation axes before code design.
 
 Status: implementation is CI-verified; project-specific section data and design compliance remain unverified.
+
+
+### Section provenance UI and member-model connection — 2026-11-18
+
+- [x] Add per-group profile/model, manufacturer, drawing/catalog reference, and page fields for all nine section groups.
+- [x] Persist and restore section provenance and the explicit verification flag through the existing section data model.
+- [x] Carry provenance metadata from the section resolver into each member's 3D-analysis property record.
+- [x] Keep code-design readiness false unless both a source reference and explicit verification are present.
+- [x] Add regression coverage for verification without a source, a source without verification, and both together.
+- [ ] Independently verify actual section properties, source-document authenticity, local axes, and installed orientation against project/shop drawings.
+
+Status: the evidence-entry workflow is implemented; user-entered provenance is not automatic document authentication or engineering approval.
