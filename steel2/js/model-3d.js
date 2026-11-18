@@ -2,12 +2,12 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id), NS = "http://www.w3.org/2000/svg";
-  let model = null, originalDrawFrame = null, progressRunning = false;
+  let model = null, originalDrawFrame = null, progressRunning = false, combinationResults = [], combinationEnvelope = null;
   function runWithProgress(startLabel, task, onError) {
     if (progressRunning) return;
     progressRunning = true;
     const panel = $("modelProgress"), text = $("modelProgressText"), elapsed = $("modelProgressElapsed");
-    const buttons = ["btnBuildFullModel", "btnCheck3DSections", "btnRunFull3D", "btnTestSpan10"];
+    const buttons = ["btnBuildFullModel", "btnCheck3DSections", "btnRunFull3D", "btnRunAll3DCombinations", "btnTestSpan10"];
     const started = performance.now();
     buttons.forEach(id => { if ($(id)) $(id).disabled = true; });
     if (panel) panel.hidden = false;
@@ -56,9 +56,10 @@
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
       '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="zoneWind_tp_ip">باد عرضی +X ـ فشار داخلی مثبت</option><option value="zoneWind_tp_in">باد عرضی +X ـ فشار داخلی منفی</option><option value="zoneWind_tn_ip">باد عرضی −X ـ فشار داخلی مثبت</option><option value="zoneWind_tn_in">باد عرضی −X ـ فشار داخلی منفی</option><option value="zoneWind_lp_ip">باد طولی +Z ـ فشار داخلی مثبت</option><option value="zoneWind_lp_in">باد طولی +Z ـ فشار داخلی منفی</option><option value="zoneWind_ln_ip">باد طولی −Z ـ فشار داخلی مثبت</option><option value="zoneWind_ln_in">باد طولی −Z ـ فشار داخلی منفی</option><optgroup label="باد سطح بهره‌برداری (تقریب ۰٫۸V)"><option value="serviceWind_tp_ip">باد بهره‌برداری عرضی +X ـ فشار داخلی مثبت</option><option value="serviceWind_tp_in">باد بهره‌برداری عرضی +X ـ فشار داخلی منفی</option><option value="serviceWind_tn_ip">باد بهره‌برداری عرضی −X ـ فشار داخلی مثبت</option><option value="serviceWind_tn_in">باد بهره‌برداری عرضی −X ـ فشار داخلی منفی</option><option value="serviceWind_lp_ip">باد بهره‌برداری طولی +Z ـ فشار داخلی مثبت</option><option value="serviceWind_lp_in">باد بهره‌برداری طولی +Z ـ فشار داخلی منفی</option><option value="serviceWind_ln_ip">باد بهره‌برداری طولی −Z ـ فشار داخلی مثبت</option><option value="serviceWind_ln_in">باد بهره‌برداری طولی −Z ـ فشار داخلی منفی</option></optgroup><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option><option value="comboWind08P">آزمایشی باد: 0.8D+1.6W (جهت +)</option><option value="comboWind08N">آزمایشی باد: 0.8D+1.6W (جهت −)</option><option value="comboLiveWind08P">آزمایشی: 1.2D+1.6L+0.5S+0.8W (+)</option><option value="comboLiveWind08N">آزمایشی: 1.2D+1.6L+0.5S+0.8W (−)</option><option value="comboSnowWind08P">آزمایشی: 1.2D+1.6S+0.5L+0.8W (+)</option><option value="comboSnowWind08N">آزمایشی: 1.2D+1.6S+0.5L+0.8W (−)</option></select></div></div>' +
-      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
+      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnRunAll3DCombinations" class="btn primary">اجرای همه ترکیبات ثقلی سه‌بعدی</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
-      '<div id="fullModel3DDemand" class="notice">پس از تحلیل، جدول نیروهای داخلی تمام اعضا در این قسمت نمایش داده می‌شود.</div>' +
+      '<div id="fullModel3DDemand" class="notice">پس از تحلیل، جدول نیروهای داخلی تمام اعضا در این قسمت نمایش داده می‌شود.</div>
+      '<div id="fullModel3DCombinationResult" class="notice">پس از اجرای همه ترکیبات، نتایج جداگانه و پوش تقاضا اینجا نمایش داده می‌شود.</div>' +' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
     $("btnBuildFullModel").addEventListener("click", function () {
@@ -66,6 +67,39 @@
         build(); draw(); showSummary();
         stage("ترسیم مدل و تکمیل خلاصه هندسی انجام شد.");
       }, e => { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; });
+    });
+    $("btnRunAll3DCombinations").addEventListener("click", function () {
+      const output=$("fullModel3DCombinationResult");
+      runWithProgress("در حال آماده‌سازی ترکیبات بار سه‌بعدی…",async stage=>{
+        try{
+          build();draw();showSummary();
+          stage("در حال اجرای تحلیل مستقل ترکیبات ثقلی؛ هر ترکیب با حل‌گر سه‌بعدی جداگانه حل می‌شود…");
+          const result=await analyze3DCombinations();
+          const lines=[
+            "اجرای ترکیبات ثقلی سه‌بعدی کامل شد: "+result.caseCount+" ترکیب؛ "+result.envelope.memberCount+" عضو.",
+            "هر ترکیب یک تحلیل مستقل است. پوش مؤلفه‌ای برای تعیین نقاط بحرانی است؛ برای اندرکنش باید بردارهای هم‌زمان هر ترکیب استفاده شوند.",
+            "ضرایب ورودی کاربر هستند و هنوز تأیید نهایی آیین‌نامه‌ای ندارند.",""
+          ];
+          result.combinationResults.forEach(c=>{
+            lines.push(c.label+" | D="+c.factors.dead+" L="+c.factors.live+" S="+c.factors.snow+
+              " | گره="+c.analysis.nodeCount+" عضو="+c.members.length+
+              " | بیشینه جابه‌جایی="+(c.maxTranslation===null?"—":(c.maxTranslation*1000).toFixed(2)+" mm"));
+          });
+          lines.push("","پوش تقاضا ـ واحد نیرو kN، گشتاور kN.m، مختصات m:");
+          const fmt=(v,f,d=2)=>Number.isFinite(Number(v))?(Number(v)*f).toFixed(d):"—";
+          result.envelope.members.forEach(member=>{
+            const parts=["N","Vy","Vz","T","My","Mz"].map(k=>{
+              const e=member.components[k],f=["N","Vy","Vz"].includes(k)?0.001:0.000001;
+              return k+"="+fmt(e?.value,f)+" ("+(e?.combination||"—")+") @ "+fmt(e?.x,1,3)+"m";
+            });
+            lines.push(member.id+" ["+member.sectionKey+"] "+parts.join(" | "));
+          });
+          output.textContent=lines.join("\n");
+        }catch(error){
+          combinationResults=[];combinationEnvelope=null;
+          output.textContent="اجرای همه ترکیبات متوقف شد؛ هیچ پوش ناقصی برای طراحی پذیرفته نشد.\n"+error.message;
+        }
+      },error=>{if(output)output.textContent="خطا در اجرای ترکیبات سه‌بعدی: "+error.message;});
     });
     $("btnRunFull3D").addEventListener("click", function () {
       const box=$("fullModel3DResult");
@@ -1091,6 +1125,19 @@
     result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. حالت باد، فشار خالص دستی واردشده را به پرلین‌های سقف، قیدهای طولی دو دیوار جانبی و ناحیه مثلثی دیوارهای انتهایی منتقل می‌کند؛ ناحیه مثلثی با نیروها و لنگرهای گره‌ای معادل ایستایی مدل شده است. فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، بازشوهای غالب و پیچش کلی هنوز کامل مدل نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
+  async function analyze3DCombinations(){
+    if(!window.Sahroud3DCombinationRunner)throw new Error("ماژول اجرای ترکیبات سه‌بعدی بارگذاری نشده است.");
+    if(!window.SahroudMemberDemand3D)throw new Error("موتور تقاضای اعضا بارگذاری نشده است.");
+    build();
+    const source=window.SteelLoads?.getData?.();
+    if(!source||!Array.isArray(source.combinations))throw new Error("فهرست ترکیبات بار در بخش بارگذاری موجود نیست.");
+    const result=await window.Sahroud3DCombinationRunner.run(
+      source.combinations,spec=>analyze3D(spec),model,window.SahroudMemberDemand3D
+    );
+    combinationResults=result.combinationResults;
+    combinationEnvelope=result.envelope;
+    return result;
+  }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members,windFootprints:model.windFootprints||[],orientationAudit:model.orientationAudit||null}:null;}
   function setData(data){
     if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});}
@@ -1109,6 +1156,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,getProposedUnbracedLengths,buildRoofPurlinWindFootprints,assignGeometricMemberLineLoads,windMemberLineLoadGlobal,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyze3DCombinations,getProposedUnbracedLengths,buildRoofPurlinWindFootprints,assignGeometricMemberLineLoads,windMemberLineLoadGlobal,get combinationResults(){return combinationResults.slice();},get combinationEnvelope(){return combinationEnvelope;},get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
