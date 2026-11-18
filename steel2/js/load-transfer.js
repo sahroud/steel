@@ -216,9 +216,18 @@
     };
     const n=points.length;
     for(let i=0;i<n;i++) {
+      const previous=points[(i+n-1)%n], current=points[i], nextPoint=points[(i+1)%n];
       const next=(i+1)%n;
-      if(Math.hypot(points[i].x-points[next].x,points[i].y-points[next].y)<=1e-10)
+      if(Math.hypot(current.x-nextPoint.x,current.y-nextPoint.y)<=1e-10)
         throw new RangeError("دو رأس متوالی چندضلعی نباید تکراری باشند.");
+      // Adjacent collinear edges may be valid when they continue in opposite
+      // directions, but a reversal overlaps the preceding edge and is invalid.
+      const incoming={x:previous.x-current.x,y:previous.y-current.y};
+      const outgoing={x:nextPoint.x-current.x,y:nextPoint.y-current.y};
+      const turn=cross(previous,current,nextPoint);
+      const dot=incoming.x*outgoing.x+incoming.y*outgoing.y;
+      if(Math.abs(turn)<=1e-10 && dot>1e-10)
+        throw new RangeError("دو ضلع مجاور چندضلعی روی هم افتاده‌اند؛ رأس برگشتی معتبر نیست.");
       for(let j=i+1;j<n;j++) {
         const jNext=(j+1)%n;
         if(i===j||next===j||jNext===i) continue;
