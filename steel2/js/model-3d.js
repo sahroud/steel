@@ -888,7 +888,6 @@
         group.count++;group.lengthM+=memberLength;group.totalKN+=memberWeight;
       }
       const totalLineLoad=lineLoad+selfWeightLineLoad;
-      const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z],m.referenceAxis||undefined);
       let global;
       if(selected.key==="wind"||selected.windFactor>0){
         // Wind inputs are signed NET pressures (kN/m²), not basic wind speed.
@@ -903,8 +902,9 @@
       }else{
         global=selected.direction.map(v=>v*totalLineLoad*1000);
       }
-      const axes=[tr.axes.x,tr.axes.y,tr.axes.z];
-      const local=axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*global[i],0));
+      const local=window.SteelFrame3D.globalVectorToLocal(
+        [a.x,a.y,a.z],[b.x,b.y,b.z],global,m.referenceAxis||undefined
+      );
       m.analysisLoad={uniformLocal:local,globalUniform:global};
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
