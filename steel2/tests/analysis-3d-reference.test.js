@@ -955,3 +955,57 @@ test("integrated assigned purlin line load closes global force and moment agains
   assert.ok(Math.hypot(...result.equilibrium.forceResidualN)<1e-6);
   assert.ok(Math.hypot(...result.equilibrium.momentResidualNm)<1e-6);
 });
+
+
+test("production geometry builder conserves roof dead-load tributary area across all generated purlin segments",()=>{
+  const fs=require("node:fs"),path=require("node:path");
+  const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
+  const extract=name=>{
+    const start=source.indexOf("function "+name+"(");
+    assert.ok(start>=0,name+" must exist in production model");
+    const open=source.indexOf("{",start);let depth=0,end=-1;
+    for(let i=open;i<source.length;i++){
+      if(source[i]==="{")depth++;
+      else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}
+    }
+    assert.ok(end>open,name+" must have a complete body");
+    return source.slice(start,end);
+  };
+  const addNode=(nodes,x,y,z,kind)=>{
+    const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7);
+    if(old){if(kind==="roof-edge")old.kind="roof-edge";return old;}
+    const node={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"};nodes.push(node);return node;
+  };
+  const addMember=(members,a,b,type,sectionKey,extra)=>{
+    members.push({id:"M"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",
+      length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
+  };
+  const loads={deadLeft:2,deadRight:2,liveLeft:0.5,liveRight:0.5,snowLeft:0.8,snowRight:0.8,
+    windLeft:0.3,windRight:-0.2,windWall:0.25,windEndFront:0.4,windEndBack:-0.35,
+    deadAreaBasis:"sloped-surface",liveAreaBasis:"horizontal-projection",snowAreaBasis:"horizontal-projection"};
+  const values={span:4,length:4,spacing:4,height:3,rise:1,modelPurlinSpacing:1.4,
+    modelGirtSpacing:1.5,modelEndPostSpacing:4,modelBraceBays:1,modelPurlinClipDeduction:0,modelPurlinAssemblyGap:0};
+  const val=(id,fallback)=>Number.isFinite(Number(values[id]))?Number(values[id]):fallback;
+  const transfer=globalThis.SteelLoadTransfer;
+  const footprint=new Function("return ("+extract("buildRoofPurlinWindFootprints")+")")();
+  const assign=new Function("SteelLoadTransfer","return ("+extract("assignGeometricMemberLineLoads")+")")(transfer);
+  const build=new Function("val","addNode","addMember","SteelLoadTransfer","window","buildRoofPurlinWindFootprints","assignGeometricMemberLineLoads",
+    "return ("+extract("build")+")")(val,addNode,addMember,transfer,{SteelLoads:{getData:()=>loads}},footprint,assign);
+  const model=build();
+  const purlins=model.members.filter(m=>m.sectionKey==="roofPurlin");
+  const rafters=model.members.filter(m=>m.sectionKey==="rafter"&&m.axis==="transverse");
+  assert.ok(purlins.length>0);
+  assert.ok(rafters.length>0);
+  assert.ok(rafters.every(m=>m.lineLoads.dead===0&&m.lineLoads.live===0&&m.lineLoads.snow===0),
+    "roof area loads must not be duplicated onto rafters when production purlins exist");
+  const actualDeadKN=purlins.reduce((sum,m)=>sum+m.lineLoads.dead*m.length,0);
+  const expectedDeadKN=2*2*model.geometry.totalRoofSlope*(model.geometry.length+1.6);
+  assert.ok(Math.abs(actualDeadKN-expectedDeadKN)<1e-8,
+    "sum of purlin line-load resultants must equal both roof-face pressure times generated tributary area");
+  const ridge=purlins.find(m=>m.side==="ridge");
+  assert.ok(ridge);
+  assert.ok(Math.abs(ridge.lineLoads.dead-(2*ridge.tributaryWidthLeft+2*ridge.tributaryWidthRight))<1e-10);
+  assert.ok(model.members.filter(m=>m.sectionKey==="wallGirt").every(m=>m.lineLoads.wind===0.25*m.tributaryHeight));
+  assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="front"&&m.lineLoads.windEnd===0.4*m.tributaryHeight));
+  assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="back"&&m.lineLoads.windEnd===-0.35*m.tributaryHeight));
+});
