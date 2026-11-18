@@ -881,8 +881,8 @@ function extractModelLoadAssignment() {
 test("geometric load assignment sends roof D/L/S to purlins once and combines both ridge tributaries",()=>{
   const assign=extractModelLoadAssignment(),angle=Math.atan2(2,6),c=Math.cos(angle);
   const members=[
-    {id:"RAFTER-L",axis:"transverse",frame:1,type:"رفتر چپ"},
-    {id:"RAFTER-R",axis:"transverse",frame:1,type:"رفتر راست"},
+    {id:"RAFTER-L",axis:"transverse",sectionKey:"rafter",side:"left",frame:1,type:"رفتر قاب"},
+    {id:"RAFTER-R",axis:"transverse",sectionKey:"rafter",side:"right",frame:1,type:"رفتر قاب"},
     {id:"PURLIN-L",sectionKey:"roofPurlin",side:"left",tributaryWidth:2},
     {id:"PURLIN-R",sectionKey:"roofPurlin",side:"right",tributaryWidth:3},
     {id:"PURLIN-RIDGE",sectionKey:"roofPurlin",side:"ridge",tributaryWidth:5,tributaryWidthLeft:2,tributaryWidthRight:3}
