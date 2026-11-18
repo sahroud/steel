@@ -122,6 +122,52 @@
     return Object.freeze({q,rows:Object.freeze(rows),ready});
   }
 
+  function mapWindZonePressuresToMembers(model, pressureResult, internalScenario) {
+    if (!model || !Array.isArray(model.members)) throw new TypeError("مدل دارای فهرست اعضای معتبر نیست.");
+    if (!pressureResult || pressureResult.ready !== true || !pressureResult.rows)
+      throw new Error("فشارهای شش‌ناحیه‌ای کامل و معتبر نیستند؛ انتقال بار متوقف شد.");
+    const scenario = internalScenario === "negative" ? "netInternalNegative" :
+      internalScenario === "positive" ? "netInternalPositive" : null;
+    if (!scenario) throw new RangeError("حالت فشار داخلی باید positive یا negative باشد.");
+    const zoneBySide = {roofLeft:"roof-left",roofRight:"roof-right",wallLeft:"long-wall-left",wallRight:"long-wall-right",endFront:"end-wall-front",endRear:"end-wall-back"};
+    const pressureFor = zone => {
+      const row=pressureResult.rows[zone], value=row&&Number(row[scenario]);
+      if(!Number.isFinite(value))throw new Error("فشار ناحیه "+zone+" معتبر یا کامل نیست.");
+      return value;
+    };
+    const memberLoads={};
+    const endFacePressures={front:pressureFor(zoneBySide.endFront),rear:pressureFor(zoneBySide.endRear)};
+    let mappedRoof=0,mappedWalls=0,mappedEndWalls=0;
+    model.members.forEach(member=>{
+      const id=String(member.id||"");
+      if(!id)throw new Error("عضو بدون شناسه در نگاشت فشار باد وجود دارد.");
+      if(Object.prototype.hasOwnProperty.call(memberLoads,id))throw new Error("شناسه عضو تکراری در نگاشت فشار باد: "+id);
+      if(member.sectionKey==="roofPurlin"){
+        const leftWidth=Number(member.tributaryWidthLeft||(member.side==="left"?member.tributaryWidth:0)||0);
+        const rightWidth=Number(member.tributaryWidthRight||(member.side==="right"?member.tributaryWidth:0)||0);
+        if(!Number.isFinite(leftWidth)||leftWidth<0||!Number.isFinite(rightWidth)||rightWidth<0||leftWidth+rightWidth<=0)throw new Error("عرض بارگیر پرلین "+id+" معتبر نیست.");
+        memberLoads[id]=Object.freeze({windLeft:surfacePressureToLineLoad(pressureFor(zoneBySide.roofLeft),leftWidth),windRight:surfacePressureToLineLoad(pressureFor(zoneBySide.roofRight),rightWidth),sourceZones:Object.freeze(["roof-left","roof-right"])});
+        mappedRoof++;
+      }else if(member.sectionKey==="wallGirt"){
+        const zone=member.side==="left"?zoneBySide.wallLeft:member.side==="right"?zoneBySide.wallRight:null;
+        if(!zone)throw new Error("سمت دیوارگیر "+id+" مشخص نیست.");
+        const height=Number(member.tributaryHeight);
+        if(!Number.isFinite(height)||height<=0)throw new Error("ارتفاع بارگیر دیوارگیر "+id+" معتبر نیست.");
+        memberLoads[id]=Object.freeze({wind:surfacePressureToLineLoad(pressureFor(zone),height),sourceZones:Object.freeze([zone])});
+        mappedWalls++;
+      }else if(member.sectionKey==="endGirt"){
+        const zone=member.endFace==="front"?zoneBySide.endFront:member.endFace==="rear"?zoneBySide.endRear:null;
+        if(!zone)throw new Error("وجه دیوار انتهایی عضو "+id+" مشخص نیست.");
+        const height=Number(member.tributaryHeight);
+        if(!Number.isFinite(height)||height<=0)throw new Error("ارتفاع بارگیر تیر انتهایی "+id+" معتبر نیست.");
+        memberLoads[id]=Object.freeze({windEnd:surfacePressureToLineLoad(pressureFor(zone),height),sourceZones:Object.freeze([zone])});
+        mappedEndWalls++;
+      }
+    });
+    if(!mappedRoof||!mappedWalls||!mappedEndWalls)throw new Error("نگاشت باد نیازمند پرلین سقف، دیوارگیر طولی و تیر دیوار انتهایی است.");
+    return Object.freeze({schemaVersion:"1.0.0",internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
+  }
+
   function preliminaryWindCombinations() {
     return Object.freeze([
       {key:"comboWind08P",label:"آزمایشی 0.8D+1.6W (جهت +)",dead:0.8,live:0,snow:0,wind:1.6,sign:1},
@@ -134,6 +180,6 @@
   }
   root.SteelLoadTransfer = Object.freeze({
     surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant,
-    triangularGablePostEquivalentLoads, calculateWindZonePressures, preliminaryWindCombinations
+    triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
