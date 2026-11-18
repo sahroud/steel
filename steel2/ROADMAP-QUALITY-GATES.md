@@ -509,3 +509,16 @@ Status: regression cases have been added but are not yet CI-verified. The built-
 - آزمون رگرسیون متناظر از قبل در فایل مرجع وجود دارد؛ تا زمان اجرای Node test suite یا CI، این گام از نظر اجرا تأییدشده محسوب نمی‌شود.
 - commit: `f23347de037e70702be9f57afb0bcfaf378fe347`.
 - گام باز بعدی: ممیزی جهت نصب و محور مقطع اعضای واقعی مدل‌ساز؛ محور مرجع عددی برای پرلین Z، قیدها و مهاربندها بدون داده نصب/مقطع تعیین نشود.
+
+
+### Member orientation audit — 2026-11-18
+
+- [x] Add a solver-level audit that reports geometric member direction separately from section roll/reference-axis evidence.
+- [x] Mark solver-default axes as unverified; require both an explicit valid member reference axis and documented section-orientation verification before the audit can report a member as verified.
+- [x] Attach the audit to generated model data and 3D analysis results; keep code-design readiness false while any member orientation remains unverified.
+- [x] Add regression tests for default-axis reporting, missing section-roll evidence, verified metadata, and invalid/disconnected geometry.
+- [ ] Populate actual orientation metadata from verified fabrication/installation drawings and section catalogs for each active group (column, rafter, Z-purlin, girts, end posts, braces, roof edge).
+- [ ] Execute the full Node test suite and confirm GitHub Actions on the updated head.
+- [ ] Validate local-axis signs and section-property mapping against independent beam-element benchmarks before using member forces for code design.
+
+Status: orientation auditing is now explicit and machine-readable; the production model still does not contain verified installation-roll evidence, so it is not ready for code design on this basis.
