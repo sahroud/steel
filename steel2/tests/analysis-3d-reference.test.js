@@ -1684,3 +1684,47 @@ test("orientation audit summarizes generated member direction classes without ap
   assert.equal(report.groups.wallGirt.directionCounts.transverse,1);
   assert.deepEqual(report.groups.roofPurlin.unverifiedMemberIds,["PUR"]);
 });
+
+
+test("section-property audit accepts positive inputs but does not claim provenance verification",()=>{
+  const report=solver.auditMemberSectionProperties({
+    members:[{id:"C1",sectionKey:"column"}]
+  },{
+    C1:{sectionKey:"column",E:200e9,G:80e9,A:0.02,Iy:1e-4,Iz:2e-4,J:1e-6,profile:"built-up I"}
+  });
+  assert.equal(report.readyForAnalysis,true);
+  assert.equal(report.validInputCount,1);
+  assert.equal(report.provenanceVerifiedCount,0);
+  assert.equal(report.readyForCodeDesign,false);
+  assert.equal(report.members[0].status,"inputs-valid-provenance-unverified");
+});
+
+test("section-property audit identifies missing, non-positive and mismatched group properties",()=>{
+  const report=solver.auditMemberSectionProperties({
+    members:[
+      {id:"MISSING",sectionKey:"roofPurlin"},
+      {id:"BAD",sectionKey:"wallGirt"},
+      {id:"WRONG",sectionKey:"column"}
+    ]
+  },{
+    BAD:{sectionKey:"wallGirt",E:200e9,G:80e9,A:0,Iy:1e-5,Iz:1e-5,J:1e-6},
+    WRONG:{sectionKey:"rafter",E:200e9,G:80e9,A:0.01,Iy:1e-5,Iz:1e-5,J:1e-6}
+  });
+  assert.equal(report.members[0].status,"section-properties-missing");
+  assert.equal(report.members[1].status,"section-properties-invalid");
+  assert.equal(report.members[1].invalidProperties.includes("A"),true);
+  assert.equal(report.members[2].status,"section-key-mismatch");
+  assert.equal(report.readyForAnalysis,false);
+  assert.equal(report.readyForCodeDesign,false);
+});
+
+test("section-property audit requires a documented source and explicit verification flag for code-design readiness",()=>{
+  const report=solver.auditMemberSectionProperties({
+    members:[{id:"P1",sectionKey:"roofPurlin"}]
+  },{
+    P1:{sectionKey:"roofPurlin",E:200e9,G:80e9,A:0.003,Iy:2e-6,Iz:3e-6,J:1e-7,
+      profile:"Z200",sourceDocumentId:"catalog-page-12",sectionDataVerified:true}
+  });
+  assert.equal(report.provenanceVerifiedCount,1);
+  assert.equal(report.readyForCodeDesign,true);
+});
