@@ -1078,7 +1078,7 @@ test("12x36 production shed roof dead-load resultant and global moments match ho
   const expectedForceY=-expectedKN*1000;
   const expectedMomentX=-(model.geometry.length/2)*expectedForceY;
   const expectedMomentZ=(model.geometry.span/2)*expectedForceY;
-  assert.ok(Math.abs(result.forceN[1]-expectedForceY)<1e-5);
+  assert.ok(Math.abs(result.forceN[1]-expectedForceY)<1e-5,JSON.stringify({actualForceN:result.forceN,expectedForceY,expectedKN,roofCos,totalRoofSlope:model.geometry.totalRoofSlope,length:model.geometry.length,span:model.geometry.span,loadedMembers:loaded.length}));
   assert.ok(Math.abs(result.forceN[0])<1e-7&&Math.abs(result.forceN[2])<1e-7);
   assert.ok(Math.abs(result.momentNm[0]-expectedMomentX)<1e-4);
   assert.ok(Math.abs(result.momentNm[2]-expectedMomentZ)<1e-4);
