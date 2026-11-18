@@ -1264,7 +1264,7 @@ test("12x36 production model reports dense-solver degree-of-freedom and memory s
   console.log("12x36 production model sizing:",JSON.stringify({
     nodes:model.nodes.length,members:model.members.length,roofPurlinPieces:extra.size,
     totalDof:nDof,pinnedSupportNodes:supportNodes,estimatedFreeDof:freeDof,
-    singleDenseMatrixLowerBoundMiB:Math.round(denseLowerBoundBytes/1024/1024*10)/10,
+    denseEquivalentMatrixLowerBoundMiB:Math.round(denseLowerBoundBytes/1024/1024*10)/10,
     solver:"automatic sparse conjugate-gradient for 600+ DOFs; dense path below threshold"
   }));
   assert.ok(model.nodes.length>0&&model.members.length>0);
