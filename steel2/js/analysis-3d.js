@@ -73,6 +73,37 @@ function equivalentUniformLoad(q,L){
  f[2]=qz*L/2;f[8]=qz*L/2;f[4]=-qz*L*L/12;f[10]=qz*L*L/12;
  return f;
 }
+function calculateGlobalLoadResultants(model,nodalLoads){
+ if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل برای ممیزی برآیند بار معتبر نیست.");
+ const nodeMap=new Map(model.nodes.map(n=>[n.id,n]));
+ if(nodeMap.size!==model.nodes.length)throw Error("شناسه گره تکراری در ممیزی برآیند بار.");
+ const force=[0,0,0],moment=[0,0,0];
+ const addAt=(f,m,r)=>{
+  for(let i=0;i<3;i++){force[i]+=f[i];moment[i]+=m[i];}
+  moment[0]+=r[1]*f[2]-r[2]*f[1];
+  moment[1]+=r[2]*f[0]-r[0]*f[2];
+  moment[2]+=r[0]*f[1]-r[1]*f[0];
+ };
+ model.members.forEach(member=>{
+  const q=member.analysisLoad&&member.analysisLoad.uniformLocal;
+  if(!q)return;
+  if(!Array.isArray(q)||q.length!==3||q.some(v=>!Number.isFinite(Number(v))))throw Error("بار گسترده محلی عضو "+member.id+" برای ممیزی نامعتبر است.");
+  const a=nodeMap.get(member.start),b=nodeMap.get(member.end);
+  if(!a||!b)throw Error("گره عضو "+member.id+" در ممیزی برآیند بار یافت نشد.");
+  const tr=makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
+  const qGlobal=[0,1,2].map(i=>tr.axes.x[i]*q[0]+tr.axes.y[i]*q[1]+tr.axes.z[i]*q[2]);
+  const resultant=qGlobal.map(v=>v*tr.L);
+  addAt(resultant,[0,0,0],[(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2]);
+ });
+ (nodalLoads||[]).forEach(load=>{
+  const node=nodeMap.get(load.nodeId),v=load.values||[];
+  if(!node)throw Error("گره بار گره‌ای در ممیزی یافت نشد: "+load.nodeId);
+  if(v.length!==6||v.some(x=>!Number.isFinite(Number(x))))throw Error("بار گره‌ای "+load.nodeId+" برای ممیزی نامعتبر است.");
+  addAt(v.slice(0,3).map(Number),v.slice(3,6).map(Number),[node.x,node.y,node.z]);
+ });
+ return {forceN:force,momentNm:moment,method:"direct distributed-load resultant at member midpoint plus nodal actions"};
+}
+
 function analyze(model,options){
  options=options||{};
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل هندسی معتبر ارائه نشده است.");
@@ -200,6 +231,16 @@ function analyze(model,options){
   const nodeIndex=nodeMap.get(nodeId);
   if(nodeIndex!==undefined)addGlobal([0,0,0],[F[ids[0]],F[ids[1]],0],nodes[nodeIndex],appliedForce,appliedMoment);
  });
+ const loadResultantAudit=calculateGlobalLoadResultants({nodes,members},options.nodalLoads||[]);
+ const loadForceDifference=appliedForce.map((v,i)=>v-loadResultantAudit.forceN[i]);
+ const loadMomentDifference=appliedMoment.map((v,i)=>v-loadResultantAudit.momentNm[i]);
+ const loadForceRelative=Math.hypot(...loadForceDifference)/Math.max(Math.hypot(...appliedForce),1);
+ const loadMomentRelative=Math.hypot(...loadMomentDifference)/Math.max(Math.hypot(...appliedMoment),1);
+ const loadAssemblyAudit={...loadResultantAudit,assembledForceN:appliedForce,assembledMomentNm:appliedMoment,
+  forceDifferenceN:loadForceDifference,momentDifferenceNm:loadMomentDifference,
+  relativeForceDifference:loadForceRelative,relativeMomentDifference:loadMomentRelative,
+  ok:loadForceRelative<=1e-8&&loadMomentRelative<=1e-8};
+ if(!loadAssemblyAudit.ok)throw Error("ممیزی مستقل برآیند بارهای گسترده/گره‌ای با بردار بار مونتاژشده حل‌گر سازگار نیست.");
  const momentResidual=appliedMoment.map((v,i)=>v+supportMoment[i]);
  const vectorNorm=v=>Math.hypot(...v);
  const relativeForceResidual=vectorNorm(forceResidual)/Math.max(vectorNorm(appliedForce),vectorNorm(supportForce),1);
@@ -223,7 +264,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",loadAssemblyAudit,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
-root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
+root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,calculateGlobalLoadResultants,solve};
 })(typeof window!=="undefined"?window:globalThis);
