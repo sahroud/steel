@@ -11,6 +11,24 @@
     if (!Number.isFinite(w) || w < 0) throw new RangeError("عرض بارگیر باید عدد محدود و نامنفی باشد.");
     return p * w;
   }
+  function roofSurfacePressureToLineLoad(pressureKPa, slopedTributaryWidthM, roofAngleRad, areaBasis) {
+    const p = Number(pressureKPa), w = Number(slopedTributaryWidthM), angle = Number(roofAngleRad);
+    if (!Number.isFinite(p)) throw new TypeError("فشار سقف باید عدد محدود باشد.");
+    if (!Number.isFinite(w) || w < 0) throw new RangeError("عرض بارگیر شیب‌دار باید محدود و نامنفی باشد.");
+    if (!Number.isFinite(angle) || angle < 0 || angle >= Math.PI / 2)
+      throw new RangeError("زاویه سقف باید محدود و بین صفر تا ۹۰ درجه باشد.");
+    if (areaBasis !== "horizontal-projection" && areaBasis !== "sloped-surface")
+      throw new Error("مبنای سطح بار سقف مشخص نشده است؛ تحلیل بار ثقلی متوقف شد.");
+    const projectionFactor = areaBasis === "horizontal-projection" ? Math.cos(angle) : 1;
+    const effectiveWidthM = w * projectionFactor;
+    return Object.freeze({
+      lineLoadKNm: p * effectiveWidthM,
+      slopedTributaryWidthM: w,
+      effectiveTributaryWidthM: effectiveWidthM,
+      projectionFactor,
+      areaBasis
+    });
+  }
   function equalStationTributaryWidths(totalWidthM, intervalCount) {
     const width = Number(totalWidthM);
     const count = Number(intervalCount);
@@ -634,7 +652,7 @@
     ].map(item=>Object.freeze(item)));
   }
   root.SteelLoadTransfer = Object.freeze({
-    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, buildMemberTributaryFootprint, calculatePolygonEffectiveWindArea, calculatePolygonWindZoneOverlap, auditPolygonWindZoneCoverage,
+    surfacePressureToLineLoad, roofSurfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, buildMemberTributaryFootprint, calculatePolygonEffectiveWindArea, calculatePolygonWindZoneOverlap, auditPolygonWindZoneCoverage,
     triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, checkWindDrift, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
