@@ -501,3 +501,11 @@ Status: regression cases have been added but are not yet CI-verified. The built-
 - [x] Add regression fixtures for transformed load direction, resultant-vs-solver audit agreement, and invalid-axis rejection.
 - [ ] Execute the native Node test suite and confirm the corresponding GitHub Actions run.
 - [ ] Populate member axes from verified production section-installation geometry; until then, no automatic orientation approval for secondary members.
+
+
+### 2026-11-18 — اصلاح هم‌راستایی دستگاه محلی در ممیزی برآیند بار
+
+- اصلاحی در `analysis-3d.js` انجام شد: ممیزی مستقل برآیند بار اکنون `member.referenceAxis` را به `makeTransform` می‌دهد؛ پیش از این، مسیر ممیزی محور پیش‌فرض را به‌کار می‌برد و می‌توانست با دستگاه محلی حل‌گر ناسازگار شود.
+- آزمون رگرسیون متناظر از قبل در فایل مرجع وجود دارد؛ تا زمان اجرای Node test suite یا CI، این گام از نظر اجرا تأییدشده محسوب نمی‌شود.
+- commit: `f23347de037e70702be9f57afb0bcfaf378fe347`.
+- گام باز بعدی: ممیزی جهت نصب و محور مقطع اعضای واقعی مدل‌ساز؛ محور مرجع عددی برای پرلین Z، قیدها و مهاربندها بدون داده نصب/مقطع تعیین نشود.
