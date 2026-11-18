@@ -589,3 +589,42 @@ test("C&C effective-area helper preserves projected versus sloped-surface basis"
   assert.equal(sloped.effectiveAreaM2, 6);
   assert.notEqual(projected.areaBasis, sloped.areaBasis);
 });
+
+
+test("polygonal C&C tributary patch returns concave polygon area and centroid", () => {
+  const result = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea({
+    component:"irregular-cladding-patch",
+    vertices:[{x:0,y:0},{x:4,y:0},{x:4,y:1},{x:1,y:1},{x:1,y:4},{x:0,y:4}],
+    areaBasis:"projected",
+    zoneId:"user-supplied-unverified-zone"
+  });
+  assert.equal(result.effectiveAreaM2, 7);
+  assert.ok(Math.abs(result.centroid.x - 1.3571428571428572) < 1e-12);
+  assert.ok(Math.abs(result.centroid.y - 1.3571428571428572) < 1e-12);
+  assert.equal(result.zoneId, "user-supplied-unverified-zone");
+  assert.equal(result.pressureReady, false);
+  assert.equal(result.verificationStatus, "geometry-only-not-code-verified");
+});
+
+test("polygonal C&C tributary patch rejects self-intersection and degenerate polygons", () => {
+  const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
+  assert.throws(() => helper({
+    vertices:[{x:0,y:0},{x:2,y:2},{x:0,y:2},{x:2,y:0}],
+    areaBasis:"projected"
+  }), /خودمتقاطع|مساحت/);
+  assert.throws(() => helper({
+    vertices:[{x:0,y:0},{x:1,y:0},{x:2,y:0}],
+    areaBasis:"projected"
+  }), /مساحت/);
+});
+
+test("polygonal C&C tributary patch requires finite coordinates and explicit area basis", () => {
+  const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
+  assert.throws(() => helper({
+    vertices:[{x:0,y:0},{x:1,y:0},{x:NaN,y:1}],
+    areaBasis:"projected"
+  }), /مختصات/);
+  assert.throws(() => helper({
+    vertices:[{x:0,y:0},{x:1,y:0},{x:0,y:1}]
+  }), /مبنای سطح/);
+});
