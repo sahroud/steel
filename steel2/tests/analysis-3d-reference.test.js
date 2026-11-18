@@ -680,6 +680,18 @@ test("wind-zone coverage audit accepts a complete non-overlapping partition", ()
   assert.equal(audit.pressureReady,false);
 });
 
+test("wind-zone coverage audit rejects zone geometry outside member footprint", () => {
+  const result=globalThis.SteelLoadTransfer.auditPolygonWindZoneCoverage({
+    areaBasis:"projected",
+    footprintVertices:[{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}],
+    zones:[{id:"inside",vertices:[{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}]},
+      {id:"outside",vertices:[{x:3,y:0},{x:4,y:0},{x:4,y:1},{x:3,y:1}]}]
+  });
+  assert.equal(result.coverageStatus,"incomplete-or-outside");
+  assert.equal(result.geometricPartitionValid,false);
+  assert.equal(result.zonesOutsideFootprintAreaM2,1);
+});
+
 test("wind-zone coverage audit identifies gaps and overlapping zones", () => {
   const helper=globalThis.SteelLoadTransfer.auditPolygonWindZoneCoverage;
   const footprint=[{x:0,y:0},{x:4,y:0},{x:4,y:2},{x:0,y:2}];
