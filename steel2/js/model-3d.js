@@ -882,7 +882,11 @@
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
       const section=window.SteelSections.resolveAnalysis3DSection(m);
-      sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile};
+      sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,
+        sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile,
+        manufacturer:section.manufacturer,sourceDocumentId:section.sourceDocumentId,
+        catalogReference:section.catalogReference,sourcePage:section.sourcePage,
+        sectionDataVerified:section.sectionDataVerified===true};
       let selfWeightLineLoad=0;
       if(selected.deadFactor>0){
         const memberLength=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
