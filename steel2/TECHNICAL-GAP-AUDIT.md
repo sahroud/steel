@@ -87,3 +87,13 @@
 - Roof left/right pressures remain separate, including two-sided ridge purlin tributaries; left/right longitudinal wall girts and front/rear end-wall girts are mapped independently.
 - The mapper rejects incomplete zone results, unspecified internal-pressure scenario, invalid tributary dimensions, and missing required member groups.
 - Scope limit: this is a tested mapping contract only. It is not yet wired into model-3d.js, triangular gable nodal actions, or the 3D solver. Existing manual wind inputs remain the active analysis path.
+
+## 2026-11-18 — بازبینی اتصال باد شش‌ناحیه‌ای
+
+- مسیر فعال تحلیل اکنون دو حالت جدید فشار داخلی مثبت/منفی دارد که فشارهای شش سطح را از `SteelClimateLoadEngine.calculateWindZones()` می‌خواند.
+- انتقال بار روی کپی اعضای مدل انجام می‌شود؛ بارهای ثقلی موجود حفظ می‌شوند و مقادیر باد قبلی برای اعضای نگاشت‌شده جایگزین می‌شوند، نه اینکه با آنها جمع شوند.
+- فشار دیوار انتهایی در قسمت مثلثی نیز از همان نتیجه ناحیه‌ای گرفته می‌شود تا مسیر دستی قبلی هم‌زمان فعال نشود.
+- اگر داده ناقص باشد، حالت ناحیه‌ای اجرا نمی‌شود.
+- تست جدید آداپتور حفظ بارهای ثقلی، جایگزینی بار باد، علامت فشار وجه عقب و عدم تغییر مدل مبنا را پوشش می‌دهد.
+- هنوز نتیجه CI آخرین commit در دسترس نیست؛ هیچ Pass اعلام نشده است.
+- این مرحله تأیید آیین‌نامه‌ای نیست: Cpها، ضرایب Iw/Ce/Ct/Cg/Cgi/Cd و جهت‌گیری فشار باید از مراجع رسمی و مستندات پروژه کنترل شوند؛ سپس تعادل کلی نیرو/لنگر برای مدل کامل و سناریوهای باد تأیید شود.
