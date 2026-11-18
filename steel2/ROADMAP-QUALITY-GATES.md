@@ -602,3 +602,15 @@ Status: the evidence-entry workflow is implemented; user-entered provenance is n
 - [ ] پیاده‌سازی اندرکنش هم‌زمان N-M-V-T و کنترل‌های پایداری/مرتبه دوم با مرجع آیین‌نامه‌ای معتبر.
 
 اولویت توسعه از این نقطه موتور طراحی اعضا و اتصالات است؛ فرم‌ها و ممیزی‌های مدیریتی تا وقتی مانع صحت محاسبات نباشند در صف بعدی می‌مانند.
+
+
+### تأیید CI — بازیابی تقاضای اعضای سه‌بعدی — 2026-11-18
+
+- [x] CI run #418 (44336256170) passed on commit d99e72018178939bb9524c61fb50b8eb05da9916.
+- [x] Syntax checks passed; 107/107 reference tests passed, 0 failed.
+- [x] Cantilever reference fixture confirms recovered local shear and bending actions close at the free tip under local-y and local-z uniform loads.
+- [x] Recovered six-component internal-force summary is displayed for all model members after a 3D analysis.
+- [ ] Automate multi-combination 3D runs and create a governing demand envelope without mixing non-concurrent component maxima.
+- [ ] Connect member demand to sourced capacities and code-referenced interaction checks.
+
+Status: demand recovery is CI-verified for the reference fixtures; code capacity, full load combinations, second-order effects and design compliance remain open.
