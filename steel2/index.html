@@ -307,6 +307,7 @@
     capacity.disabled=!on;
     ["craneSpan","craneRunwayLength","craneHookLift","craneDuty","craneCycles"].forEach(id=>{byId(id).disabled=!on;});
     if(!on){status.textContent="جرثقیل خاموش است؛ هیچ بار یا عضوی از جرثقیل نباید وارد تحلیل سوله شود.";return;}
+    if(!capacity.value){status.textContent="جرثقیل فعال است؛ ابتدا ظرفیت نامی ۵، ۱۰ یا ۲۰ تن را انتخاب کنید. تا انتخاب ظرفیت، هیچ بار جرثقیل وارد تحلیل نمی‌شود.";return;}
     try{
       const cfg=window.SahroudCraneDesign.createConfiguration({
         enabled:true,capacityTonnes:capacity.value,
