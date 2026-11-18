@@ -187,6 +187,44 @@
   }
 
 
+  // Build a member's rectangular tributary footprint in a local 2D basis.
+  // The caller supplies the full tributary-width vector in the same 3D plane/basis
+  // as the endpoints; this helper never guesses purlin spacing or roof orientation.
+  function buildMemberTributaryFootprint(input) {
+    const data=input||{}, start=data.start, end=data.end, widthVector=data.tributaryWidthVector;
+    const vector=value=>{
+      if(!value||![value.x,value.y,value.z].every(v=>Number.isFinite(Number(v))))
+        throw new TypeError("مختصات سه‌بعدی ابتدا، انتها و بردار عرض بارگیر باید محدود باشند.");
+      return {x:Number(value.x),y:Number(value.y),z:Number(value.z)};
+    };
+    const a=vector(start), b=vector(end), w=vector(widthVector);
+    const axis={x:b.x-a.x,y:b.y-a.y,z:b.z-a.z};
+    const length=Math.hypot(axis.x,axis.y,axis.z), width=Math.hypot(w.x,w.y,w.z);
+    if(!(length>1e-9)||!(width>1e-9))
+      throw new RangeError("طول عضو و عرض بارگیر باید مثبت و غیرصفر باشند.");
+    const dot=axis.x*w.x+axis.y*w.y+axis.z*w.z;
+    if(Math.abs(dot)>length*width*1e-8)
+      throw new RangeError("بردار عرض بارگیر باید بر محور عضو عمود باشد؛ هندسه بارگیر مبهم است.");
+    const basis=data.areaBasis;
+    if(basis!=="projected"&&basis!=="sloped-surface")
+      throw new RangeError("مبنای footprint باید projected یا sloped-surface مشخص شود.");
+    const vertices=[
+      {x:0,y:-width/2},{x:length,y:-width/2},
+      {x:length,y:width/2},{x:0,y:width/2}
+    ];
+    const area=length*width;
+    return Object.freeze({
+      memberId:typeof data.memberId==="string"?data.memberId:null,
+      vertices:Object.freeze(vertices.map(p=>Object.freeze(p))),
+      memberLengthM:length,tributaryWidthM:width,footprintAreaM2:area,
+      areaBasis:basis,localBasis:"member-axis / supplied-perpendicular-tributary-width",
+      geometryMethod:"3d-member-axis-and-explicit-width-vector-to-local-rectangle",
+      verificationStatus:"geometry-only-not-code-verified",
+      pressureReady:false,
+      warning:"عرض بارگیر و بردار آن باید از هندسه/فواصل واقعی مدل استخراج و روی مبنای سطح انتخابی تعریف شوند؛ این تابع فاصله پرلین، ناحیه C&C یا ضریب آیین‌نامه‌ای را حدس نمی‌زند."
+    });
+  }
+
   // Polygonal tributary patch area and centroid; geometry only, not a code-zone selector.
   function calculatePolygonEffectiveWindArea(input) {
     const data = input || {};
@@ -540,7 +578,7 @@
     ].map(item=>Object.freeze(item)));
   }
   root.SteelLoadTransfer = Object.freeze({
-    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, calculatePolygonEffectiveWindArea, calculatePolygonWindZoneOverlap, auditPolygonWindZoneCoverage,
+    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, buildMemberTributaryFootprint, calculatePolygonEffectiveWindArea, calculatePolygonWindZoneOverlap, auditPolygonWindZoneCoverage,
     triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, checkWindDrift, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
