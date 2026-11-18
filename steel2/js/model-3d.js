@@ -273,8 +273,8 @@
     const bounds=(row,fromRidge)=>{
       if(!Number.isInteger(row)||row<1||row>rows+1)throw new Error("شماره ردیف پرلین خارج از ایستگاه‌بندی سقف است.");
       const center=fromRidge?total-(row-1)*step:(row-1)*step;
-      const lo=row===1?(fromRidge?total-step/2:0):center-step/2;
-      const hi=row===rows+1?(fromRidge?total:total):center+step/2;
+      const lo=center-step/2;
+      const hi=center+step/2;
       return [Math.max(0,lo),Math.min(total,hi)];
     };
     const footprints=[];
