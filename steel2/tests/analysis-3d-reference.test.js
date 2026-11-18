@@ -9,6 +9,7 @@ const assert = require("node:assert/strict");
 require("../js/analysis-3d.js");
 require("../js/load-transfer.js");
 require("../js/built-up-section.js");
+require("../js/member-demand-3d.js");
 const loadTransfer = globalThis.SteelLoadTransfer;
 
 const solver = globalThis.SteelFrame3D;
@@ -1760,11 +1761,13 @@ test("3D member-demand recovery includes axial, biaxial shear, torsion and both 
   assert.equal(mid.Vy,-30);
   assert.equal(mid.Vz,34);
   assert.equal(mid.T,-4);
-  assert.equal(mid.My, -50);
-  assert.equal(mid.Mz, -50);
+  assert.equal(mid.My, -114);
+  assert.equal(mid.Mz, 110);
   assert.equal(end.N,-140);
   assert.equal(end.Vy,-40);
   assert.equal(end.Vz,38);
+  assert.equal(end.My,-186);
+  assert.equal(end.Mz,180);
   assert.equal(demand.recoverMember(member).sampleCount,21);
 });
 
