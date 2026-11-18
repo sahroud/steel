@@ -8,7 +8,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 require("../js/analysis-3d.js");
 require("../js/load-transfer.js");
-const loadTransfer=globalThis.SteelLoadTransfer;
+const loadTransfer = globalThis.SteelLoadTransfer;
 
 const solver = globalThis.SteelFrame3D;
 const section = {
@@ -164,8 +164,6 @@ test("solver rejects an unstable unsupported model", () => {
   }), /تکین|نامعتبر|DOF_SINGULAR/);
 });
 
-
-const loadTransfer = require("../js/load-transfer.js");
 
 test("surface pressure converts to tributary line load with kN/m units", () => {
   assert.equal(globalThis.SteelLoadTransfer.surfacePressureToLineLoad(1.25, 2.4), 3);
