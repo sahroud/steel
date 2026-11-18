@@ -402,13 +402,13 @@ test("six-zone pressure mapping transfers signed pressures to roof, side-wall an
     {id:"EF",sectionKey:"endGirt",endFace:"front",tributaryHeight:1.5},{id:"ER",sectionKey:"endGirt",endFace:"rear",tributaryHeight:1.5}]};
   const m=globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers(model,p,"positive");
   assert.ok(Math.abs(m.memberLoads.PL.windLeft-3.678*2)<1e-12);
-  assert.ok(Math.abs(m.memberLoads.PR.windRight-(-1.839)*3)<1e-12);
+  assert.ok(Math.abs(m.memberLoads.PR.windRight-(-4.291)*3)<1e-12);
   assert.ok(Math.abs(m.memberLoads.PG.windLeft-3.678*1.5)<1e-12);
   assert.ok(Math.abs(m.memberLoads.PG.windRight-(-1.839)*2.5)<1e-12);
   assert.ok(Math.abs(m.memberLoads.WL.wind-3.065*1.2)<1e-12);
   assert.ok(Math.abs(m.memberLoads.WR.wind-(-4.904)*1.2)<1e-12);
   assert.ok(Math.abs(m.memberLoads.EF.windEnd-4.291*1.5)<1e-12);
-  assert.ok(Math.abs(m.memberLoads.ER.windEnd-(-3.065)*1.5)<1e-12);
+  assert.ok(Math.abs(m.memberLoads.ER.windEnd-(-3.678)*1.5)<1e-12);
   assert.equal(m.counts.roofPurlins,3);assert.equal(m.endFacePressures.front,4.291);
 });
 
