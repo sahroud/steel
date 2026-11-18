@@ -1047,6 +1047,36 @@ test("independent global load resultant audit matches assembled solver load vect
   assert.ok(Math.hypot(...direct.momentNm.map((v,i)=>v-solved.equilibrium.appliedMomentNm[i]))<1e-7);
 });
 
+test("member-specific axis is honored by independent global load resultant audit and solver", () => {
+  const model = {
+    nodes: [{id:"BASE",x:0,y:0,z:0},{id:"TOP",x:0,y:0,z:4}],
+    members: [{
+      id:"VERTICAL",start:"BASE",end:"TOP",sectionKey:"reference",
+      referenceAxis:[0,1,0],analysisLoad:{uniformLocal:[0,0,-12]}
+    }]
+  };
+  const direct = solver.calculateGlobalLoadResultants(model, []);
+  const solved = solver.analyze(model, {
+    sectionResolver:()=>section,
+    supports:[{nodeId:"BASE",fixedDofs:[0,1,2,3,4,5]}]
+  });
+  assert.ok(Math.abs(direct.forceN[1]+48)<1e-9);
+  assert.ok(Math.abs(direct.forceN[0])<1e-9 && Math.abs(direct.forceN[2])<1e-9);
+  assert.equal(solved.loadAssemblyAudit.ok,true);
+  assert.ok(Math.hypot(...direct.forceN.map((v,i)=>v-solved.equilibrium.appliedForceN[i]))<1e-7);
+  assert.ok(Math.hypot(...direct.momentNm.map((v,i)=>v-solved.equilibrium.appliedMomentNm[i]))<1e-7);
+});
+
+test("solver rejects a malformed member reference axis", () => {
+  assert.throws(() => solver.analyze({
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:1}],
+    members:[{id:"M",start:"A",end:"B",sectionKey:"reference",referenceAxis:[0,0,0]}]
+  },{
+    sectionResolver:()=>section,
+    supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]}]
+  }), /محور مرجع عضو/);
+});
+
 test("12x36 production shed roof dead-load resultant and global moments match horizontal projected roof area",()=>{
   const fs=require("node:fs"),path=require("node:path");
   const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
