@@ -78,3 +78,12 @@
 - Added three reference tests: negative multiplier rejection, signed internal-pressure handling, and the zero-wind limiting case. The authored reference suite now contains 23 tests.
 - This is input-validation hardening only. It does not establish official coefficient values, resolve opening/dominant-opening classifications, or connect the six-zone results to the active 3D member-load assembly. The 3D model still consumes manually entered signed net pressures for its wind load path.
 - Native node test execution and GitHub Actions execution must be checked after this commit; no pass is claimed here.
+
+
+
+### Six-zone wind member-mapping contract — 2026-11-18
+
+- Added a pure load-transfer mapper that converts the selected internal-pressure scenario for each of six wind zones into member line loads using explicit tributary widths/heights.
+- Roof left/right pressures remain separate, including two-sided ridge purlin tributaries; left/right longitudinal wall girts and front/rear end-wall girts are mapped independently.
+- The mapper rejects incomplete zone results, unspecified internal-pressure scenario, invalid tributary dimensions, and missing required member groups.
+- Scope limit: this is a tested mapping contract only. It is not yet wired into model-3d.js, triangular gable nodal actions, or the 3D solver. Existing manual wind inputs remain the active analysis path.
