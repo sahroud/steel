@@ -404,6 +404,65 @@
   }
 
 
+  function polygonTripleOverlapWithinFootprint(footprintVertices,zoneAVertices,zoneBVertices) {
+    const polygons=[footprintVertices,zoneAVertices,zoneBVertices].map(vertices=>
+      calculatePolygonEffectiveWindArea({vertices,areaBasis:"projected"}));
+    const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+    const signedArea=points=>points.reduce((sum,p,i)=>{
+      const q=points[(i+1)%points.length];return sum+p.x*q.y-q.x*p.y;
+    },0)/2;
+    const triangulate=raw=>{
+      const points=raw.map(p=>({x:Number(p.x),y:Number(p.y)}));
+      const orientation=Math.sign(signedArea(points));
+      if(!orientation)throw new RangeError("چندضلعی هم‌پوشانی مساحت ندارد.");
+      const indices=points.map((_,i)=>i),triangles=[];
+      const insideStrict=(p,a,b,c)=>{
+        const x=cross(a,b,p)*orientation,y=cross(b,c,p)*orientation,z=cross(c,a,p)*orientation;
+        return x>1e-10&&y>1e-10&&z>1e-10;
+      };
+      let guard=0;
+      while(indices.length>3&&guard++<points.length*points.length){
+        let clipped=false;
+        for(let k=0;k<indices.length;k++){
+          const ia=indices[(k+indices.length-1)%indices.length],ib=indices[k],ic=indices[(k+1)%indices.length];
+          const a=points[ia],b=points[ib],d=points[ic];
+          if(cross(a,b,d)*orientation<=1e-10)continue;
+          if(indices.some(ix=>ix!==ia&&ix!==ib&&ix!==ic&&insideStrict(points[ix],a,b,d)))continue;
+          triangles.push([a,b,d]);indices.splice(k,1);clipped=true;break;
+        }
+        if(!clipped)throw new Error("مثلث‌بندی برای ممیزی هم‌پوشانی نواحی باد ناموفق است.");
+      }
+      if(indices.length!==3)throw new Error("مثلث‌بندی نواحی باد کامل نشد.");
+      triangles.push(indices.map(i=>points[i]));return triangles;
+    };
+    const clip=(subject,clipTriangle)=>{
+      let output=subject;const orient=Math.sign(signedArea(clipTriangle));
+      for(let i=0;i<clipTriangle.length&&output.length;i++){
+        const a=clipTriangle[i],b=clipTriangle[(i+1)%clipTriangle.length],input=output;output=[];
+        const inside=p=>cross(a,b,p)*orient>=-1e-10;
+        const intersection=(p,q)=>{
+          const rx=q.x-p.x,ry=q.y-p.y,sx=b.x-a.x,sy=b.y-a.y,den=rx*sy-ry*sx;
+          if(Math.abs(den)<=1e-14)return{x:(p.x+q.x)/2,y:(p.y+q.y)/2};
+          const t=((a.x-p.x)*sy-(a.y-p.y)*sx)/den;return{x:p.x+t*rx,y:p.y+t*ry};
+        };
+        for(let j=0;j<input.length;j++){
+          const cur=input[j],prev=input[(j+input.length-1)%input.length],ci=inside(cur),pi=inside(prev);
+          if(ci){if(!pi)output.push(intersection(prev,cur));output.push(cur);}
+          else if(pi)output.push(intersection(prev,cur));
+        }
+      }
+      return output;
+    };
+    const area=points=>points.length<3?0:Math.abs(signedArea(points));
+    const [ft,at,bt]=[footprintVertices,zoneAVertices,zoneBVertices].map(triangulate);
+    let total=0;
+    for(const f of ft)for(const a of at){
+      const fa=clip(f,a);if(fa.length<3)continue;
+      for(const b of bt)total+=area(clip(fa,b));
+    }
+    return total;
+  }
+
   // Audits whether a supplied set of geometric wind zones partitions a member
   // footprint without gaps or overlaps. Zone boundaries remain user-supplied;
   // this function never declares them code-compliant.
@@ -432,10 +491,9 @@
     });
     let pairwiseOverlap=0, overlapPairs=0;
     for(let i=0;i<zones.length;i++)for(let j=i+1;j<zones.length;j++){
-      const common=calculatePolygonWindZoneOverlap({
-        footprintVertices:zones[i].vertices,zoneVertices:zones[j].vertices,
-        areaBasis:basis,component:"zone-pair"
-      }).overlapAreaM2;
+      const common=polygonTripleOverlapWithinFootprint(
+        data.footprintVertices,zones[i].vertices,zones[j].vertices
+      );
       if(common>Math.max(1,footprint.effectiveAreaM2)*1e-9){
         pairwiseOverlap+=common;overlapPairs++;
       }
