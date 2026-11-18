@@ -43,7 +43,7 @@ test("unit conversions for area, inertia and section modulus are explicit",()=>{
     bottomFlangeWidthMm:100,bottomFlangeThicknessMm:10,
     webClearHeightMm:180,webThicknessMm:8
   });
-  assert.equal(r.areaCm2,35.4);
+  assert.equal(r.areaCm2,34.4);
   assert.ok(r.strongAxis.inertiaCm4>0);
   assert.ok(r.strongAxis.sectionModulusTopCm3>0);
   assert.equal(r.units.area,"cm2");
