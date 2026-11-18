@@ -8,6 +8,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 require("../js/analysis-3d.js");
 require("../js/load-transfer.js");
+require("../js/built-up-section.js");
 const loadTransfer = globalThis.SteelLoadTransfer;
 
 const solver = globalThis.SteelFrame3D;
@@ -1445,3 +1446,36 @@ test("built-up I-section strong-axis assignment matches transverse frame bending
     assert.ok(Math.abs(tr.axes.y[2])<1e-12);
   }
 });
+
+
+test("built-up section geometry declares the correct frame solver axis mapping",()=>{
+  const r=globalThis.SahroudBuiltUpSection.calculateBuiltUpISection({
+    topFlangeWidthMm:300,topFlangeThicknessMm:16,
+    bottomFlangeWidthMm:300,bottomFlangeThicknessMm:16,
+    webClearHeightMm:600,webThicknessMm:10
+  });
+  assert.equal(r.analysisSolverMapping.strongAxis,"Iz");
+  assert.equal(r.analysisSolverMapping.weakAxis,"Iy");
+  assert.match(r.analysisSolverMapping.validFor,/global-XY/);
+  assert.match(r.analysisSolverMapping.longitudinalMembers,/independently/);
+});
+
+test("built-up section calculator returns symmetric gross geometry and distinct unit scales",()=>{
+  const r=globalThis.SahroudBuiltUpSection.calculateBuiltUpISection({
+    topFlangeWidthMm:300,topFlangeThicknessMm:16,
+    bottomFlangeWidthMm:300,bottomFlangeThicknessMm:16,
+    webClearHeightMm:600,webThicknessMm:10
+  });
+  assert.equal(r.areaCm2,156);
+  assert.equal(r.centroidYFromBottomMm,316);
+  assert.equal(r.strongAxis.sectionModulusTopCm3,r.strongAxis.sectionModulusBottomCm3);
+  assert.ok(r.strongAxis.inertiaCm4>r.weakAxis.inertiaCm4);
+  assert.equal(r.designStatus,"geometry-only-not-code-verified");
+});
+
+test("built-up section calculator rejects invalid plate dimensions",()=>{
+  const base={topFlangeWidthMm:300,topFlangeThicknessMm:16,bottomFlangeWidthMm:300,bottomFlangeThicknessMm:16,webClearHeightMm:600,webThicknessMm:10};
+  assert.throws(()=>globalThis.SahroudBuiltUpSection.calculateBuiltUpISection({...base,webThicknessMm:0}),/مثبت/);
+  assert.throws(()=>globalThis.SahroudBuiltUpSection.calculateBuiltUpISection({...base,webThicknessMm:400}),/عرض/);
+});
+
