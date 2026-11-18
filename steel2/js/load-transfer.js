@@ -186,6 +186,79 @@
     });
   }
 
+
+  // Polygonal tributary patch area and centroid; geometry only, not a code-zone selector.
+  function calculatePolygonEffectiveWindArea(input) {
+    const data = input || {};
+    const vertices = data.vertices;
+    if (!Array.isArray(vertices) || vertices.length < 3) {
+      throw new RangeError("برای سطح مؤثر چندضلعی حداقل سه رأس لازم است.");
+    }
+    const points = vertices.map((point, index) => {
+      const x = Number(point && point.x), y = Number(point && point.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        throw new TypeError("مختصات رأس " + index + " باید عدد محدود باشد.");
+      }
+      return { x, y };
+    });
+    const cross = (a,b,c) => (b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+    const onSegment = (a,b,p) =>
+      Math.min(a.x,b.x)-1e-10 <= p.x && p.x <= Math.max(a.x,b.x)+1e-10 &&
+      Math.min(a.y,b.y)-1e-10 <= p.y && p.y <= Math.max(a.y,b.y)+1e-10;
+    const intersects = (a,b,c,d) => {
+      const abC=cross(a,b,c), abD=cross(a,b,d), cdA=cross(c,d,a), cdB=cross(c,d,b);
+      if (((abC>1e-10&&abD< -1e-10)||(abC< -1e-10&&abD>1e-10)) &&
+          ((cdA>1e-10&&cdB< -1e-10)||(cdA< -1e-10&&cdB>1e-10))) return true;
+      return (Math.abs(abC)<=1e-10&&onSegment(a,b,c)) ||
+        (Math.abs(abD)<=1e-10&&onSegment(a,b,d)) ||
+        (Math.abs(cdA)<=1e-10&&onSegment(c,d,a)) ||
+        (Math.abs(cdB)<=1e-10&&onSegment(c,d,b));
+    };
+    const n=points.length;
+    for(let i=0;i<n;i++) {
+      const next=(i+1)%n;
+      if(Math.hypot(points[i].x-points[next].x,points[i].y-points[next].y)<=1e-10)
+        throw new RangeError("دو رأس متوالی چندضلعی نباید تکراری باشند.");
+      for(let j=i+1;j<n;j++) {
+        const jNext=(j+1)%n;
+        if(i===j||next===j||jNext===i) continue;
+        if(intersects(points[i],points[next],points[j],points[jNext]))
+          throw new RangeError("مرز سطح مؤثر خودمتقاطع است؛ چندضلعی معتبر لازم است.");
+      }
+    }
+    let twiceArea=0, cxNumerator=0, cyNumerator=0;
+    for(let i=0;i<n;i++) {
+      const a=points[i], b=points[(i+1)%n];
+      const term=a.x*b.y-b.x*a.y;
+      twiceArea+=term;
+      cxNumerator+=(a.x+b.x)*term;
+      cyNumerator+=(a.y+b.y)*term;
+    }
+    const signedArea=twiceArea/2, area=Math.abs(signedArea);
+    if(!Number.isFinite(area)||area<=1e-10)
+      throw new RangeError("مساحت چندضلعی باید مثبت و غیرصفر باشد.");
+    const basis=data.areaBasis;
+    if(basis!=="sloped-surface"&&basis!=="projected")
+      throw new RangeError("مبنای سطح مؤثر باید sloped-surface یا projected مشخص شود.");
+    return Object.freeze({
+      component:typeof data.component==="string"&&data.component.trim()?data.component.trim():"unspecified",
+      zoneId:typeof data.zoneId==="string"&&data.zoneId.trim()?data.zoneId.trim():null,
+      effectiveAreaM2:area,
+      centroid:Object.freeze({
+        x:cxNumerator/(3*twiceArea),
+        y:cyNumerator/(3*twiceArea)
+      }),
+      vertexCount:n,
+      areaBasis:basis,
+      geometryMethod:"simple-polygon-shoelace",
+      codeEdition:"مبحث ششم، ویرایش ۱۳۹۸",
+      coefficientSource:null,
+      verificationStatus:"geometry-only-not-code-verified",
+      pressureReady:false,
+      warning:"مساحت و مرکز هندسی محاسبه شده‌اند؛ zoneId صرفاً برچسب ورودی است و تأیید ناحیه آیین‌نامه‌ای نیست. تعیین مرز ناحیه، حدود سطح مؤثر و ضرایب C&C باید جداگانه از متن و شکل رسمی احراز شود."
+    });
+  }
+
   function mapWindZonePressuresToMembers(model, pressureResult, internalScenario) {
     if (!model || !Array.isArray(model.members)) throw new TypeError("مدل دارای فهرست اعضای معتبر نیست.");
     if (!pressureResult || pressureResult.ready !== true || !pressureResult.rows || !WIND_DIRECTIONS.includes(pressureResult.direction))
@@ -295,7 +368,7 @@
     ].map(item=>Object.freeze(item)));
   }
   root.SteelLoadTransfer = Object.freeze({
-    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea,
+    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, calculatePolygonEffectiveWindArea,
     triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, checkWindDrift, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
