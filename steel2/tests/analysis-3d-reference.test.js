@@ -1629,9 +1629,16 @@ test("member orientation audit marks a member verified only with explicit axis a
   assert.equal(report.members[0].status,"verified");
 });
 
-test("member orientation audit rejects zero-length or disconnected member geometry",()=>{
-  assert.throws(()=>solver.auditMemberOrientation({
+test("member orientation audit flags zero-length or disconnected member geometry",()=>{
+  const report=solver.auditMemberOrientation({
     nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:0}],
     members:[{id:"ZERO",start:"A",end:"B",sectionKey:"brace"}]
-  }),/invalid|معتبر/);
+  });
+  assert.equal(report.readyForCodeDesign,false);
+  assert.equal(report.members[0].status,"invalid-member-geometry");
+  const disconnected=solver.auditMemberOrientation({
+    nodes:[{id:"A",x:0,y:0,z:0}],
+    members:[{id:"LOST",start:"A",end:"MISSING",sectionKey:"brace"}]
+  });
+  assert.equal(disconnected.members[0].status,"invalid-member-geometry");
 });
