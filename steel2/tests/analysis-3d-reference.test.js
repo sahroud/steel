@@ -169,6 +169,40 @@ test("surface pressure converts to tributary line load with kN/m units", () => {
   assert.equal(globalThis.SteelLoadTransfer.surfacePressureToLineLoad(1.25, 2.4), 3);
   assert.ok(Math.abs(globalThis.SteelLoadTransfer.surfacePressureToLineLoad(-0.8, 1.5) + 1.2) < 1e-12);
 });
+test("roof load on horizontal projected area uses cosine projection for sloped tributary width", () => {
+  const angle = Math.atan2(2, 3);
+  const result = globalThis.SteelLoadTransfer.roofSurfacePressureToLineLoad(2, 5, angle, "horizontal-projection");
+  assert.ok(Math.abs(result.effectiveTributaryWidthM - 3 * 5 / Math.sqrt(13)) < 1e-12);
+  assert.ok(Math.abs(result.lineLoadKNm - 2 * 5 * 3 / Math.sqrt(13)) < 1e-12);
+  assert.equal(result.areaBasis, "horizontal-projection");
+});
+
+test("roof load on actual sloped area does not apply a second cosine projection", () => {
+  const angle = Math.atan2(2, 3);
+  const result = globalThis.SteelLoadTransfer.roofSurfacePressureToLineLoad(2, 5, angle, "sloped-surface");
+  assert.equal(result.effectiveTributaryWidthM, 5);
+  assert.equal(result.lineLoadKNm, 10);
+  assert.equal(result.projectionFactor, 1);
+});
+
+test("roof tributary line loads conserve pressure times horizontal plan width", () => {
+  const spanHalf = 3, rise = 2, angle = Math.atan2(rise, spanHalf);
+  const slopedWidth = Math.hypot(spanHalf, rise), pressure = 1.7;
+  const count = 8;
+  const widths = globalThis.SteelLoadTransfer.equalStationTributaryWidths(slopedWidth, count);
+  const totalLineLoad = widths.reduce((sum, width) =>
+    sum + globalThis.SteelLoadTransfer.roofSurfacePressureToLineLoad(
+      pressure, width, angle, "horizontal-projection"
+    ).lineLoadKNm, 0);
+  assert.ok(Math.abs(totalLineLoad - pressure * spanHalf) < 1e-12);
+});
+
+test("roof load transfer rejects an unspecified area basis and invalid slope angle", () => {
+  const convert = globalThis.SteelLoadTransfer.roofSurfacePressureToLineLoad;
+  assert.throws(() => convert(1, 2, 0.2, "unspecified"), /مبنای سطح/);
+  assert.throws(() => convert(1, 2, Math.PI / 2, "horizontal-projection"), /زاویه سقف/);
+});
+
 
 test("roof purlin tributary widths conserve the full sloped roof area width", () => {
   const slopeLength = 6.5;
