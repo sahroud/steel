@@ -1191,3 +1191,31 @@ test("triangular end-wall pressure is conserved by equivalent post forces and no
     assert.ok(Math.abs(actions.reduce((s,a)=>s+a.resultantKN,0)-expected.resultantKN)<1e-10);
   });
 });
+
+
+test("production-equivalent triangular gable nodal forces and couples conserve global force and moments on front and rear planes",()=>{
+  const span=12,rise=2,eave=6,length=36,intervals=6;
+  const model={nodes:[],members:[]},nodalLoads=[];
+  const cases=[{face:"front",rawPressure:0.62,z:0,faceSign:1},{face:"rear",rawPressure:-0.31,z:length,faceSign:-1}];
+  cases.forEach(item=>{
+    const pressure=item.rawPressure*item.faceSign;
+    const actions=loadTransfer.triangularGablePostEquivalentLoads(pressure,span,rise,eave,intervals);
+    actions.forEach(action=>{
+      const baseId=item.face+"-base-"+action.post,headId=item.face+"-head-"+action.post;
+      model.nodes.push({id:baseId,x:action.xM,y:0,z:item.z},{id:headId,x:action.xM,y:action.supportHeightM,z:item.z});
+      nodalLoads.push(
+        {nodeId:baseId,values:[0,0,action.baseForceKN*1000,0,action.momentYAboutSupportKNm*1000,0]},
+        {nodeId:headId,values:[0,0,action.topForceKN*1000,0,0,0]}
+      );
+    });
+  });
+  const result=solver.calculateGlobalLoadResultants(model,nodalLoads);
+  const expectedFz=cases.reduce((s,item)=>s+item.rawPressure*item.faceSign*0.5*span*rise,0)*1000;
+  const expectedMx=cases.reduce((s,item)=>s+item.rawPressure*item.faceSign*span*rise*(eave+rise/3)/2,0)*1000;
+  const expectedMy=cases.reduce((s,item)=>s-item.rawPressure*item.faceSign*0.5*span*rise*span/2,0)*1000;
+  assert.ok(Math.abs(result.forceN[2]-expectedFz)<1e-7);
+  assert.ok(Math.abs(result.forceN[0])<1e-9&&Math.abs(result.forceN[1])<1e-9);
+  assert.ok(Math.abs(result.momentNm[0]-expectedMx)<1e-6);
+  assert.ok(Math.abs(result.momentNm[1]-expectedMy)<1e-6);
+  assert.ok(Math.abs(result.momentNm[2])<1e-7);
+});
