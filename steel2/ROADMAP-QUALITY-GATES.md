@@ -461,3 +461,16 @@
 - [ ] تعریف زاویه چرخش مقطع (section roll) و قرارداد جهت‌گیری واقعی مقاطع Z/C/نبشی/قوطی/مهاربند پیش از تخصیص خواص به اعضای طولی.
 
 وضعیت: نگاشت مقطع تیرورق برای ستون/رفتر در صفحه قاب از نظر هندسی سازگار است؛ برای اعضای طولی و مقاطع با roll angle متفاوت هنوز باید صریحاً تعریف و آزمون شود.
+
+
+### 2026-11-18 — Regression coverage for built-up I-section geometry
+
+- [x] Added automated Node test cases for symmetric built-up I geometry, centroid location, equal top/bottom section moduli, unequal-flange asymmetry, strong/weak axis ordering, gross-area accounting, and invalid/non-finite dimensions.
+- [x] Test file committed on `refactor/stepwise-shed-workflow` (commit `8ef2e48822c7c260b69193edc8cbe4ab4313fe98`).
+- [ ] Execute the test suite locally or through GitHub Actions and confirm the new cases pass; no successful workflow run is currently associated with this commit.
+- [ ] Validate built-up section geometry against an independent section-property calculator / hand calculation before using it for member design.
+- [ ] Add explicit section-roll and local-axis mapping for Z/C/angle/tube and built-up members; do not infer orientation from section group alone.
+- [ ] Supply traceable real section properties for every active member group and run the full 12×36 model with those properties.
+- [ ] Complete member resistance, local/global buckling, P-Delta, connection, cladding, seismic, crane and foundation gates before any construction-ready claim.
+
+Status: regression cases have been added but are not yet CI-verified. The built-up calculator remains gross-geometry-only; it does not establish code compliance or a usable design section.
