@@ -528,4 +528,4 @@ Status: orientation auditing is now explicit and machine-readable; the productio
 
 - [x] Preserve geometry-builder operation when the optional orientation-audit helper is not loaded in isolated test fixtures; report audit unavailable/unverified rather than throwing.
 - [x] Correct the reference-axis precedence test fixture so the member-specific vector is not parallel to the member axis and does not trigger the solver fallback.
-- [ ] Confirm the latest full workflow passes on the current PR head. Earlier CI attempts exposed 5 failures (4 fixture compatibility failures and 1 incorrect test vector); the compatibility and test-vector fixes are committed, but final CI remains pending.
+- [x] GitHub Actions run 377 passed on code/test commit c4fdd1c85a2a1065c9fcc7d0882a6fcd346db601: syntax checks succeeded and all 96 reference tests passed (96 passed, 0 failed). Two subsequent commits only updated audit/roadmap documentation; no code or test files changed after the passing run.
