@@ -360,3 +360,33 @@ test("wind-zone pressure helper accepts zero basic wind as zero pressure", () =>
   assert.equal(result.q, 0);
   assert.equal(result.rows["roof-left"].netInternalPositive, 0);
 });
+
+
+const craneDesign = require("../js/crane-design.js");
+
+test("crane subsystem offers only selectable 5, 10 and 20 tonne rated capacities", () => {
+  assert.deepEqual(craneDesign.CAPACITIES_TONNES, [5, 10, 20]);
+  for (const capacityTonnes of [5, 10, 20]) {
+    const config = craneDesign.createConfiguration({capacityTonnes});
+    assert.equal(config.capacity.value, capacityTonnes);
+    assert.equal(config.capacity.unit, "t");
+    assert.equal(config.enabled, false);
+    assert.equal(craneDesign.assessReadiness(config).ready, false);
+  }
+});
+
+test("crane subsystem rejects unsupported capacities and invalid positive dimensions", () => {
+  assert.throws(() => craneDesign.createConfiguration({capacityTonnes: 15}), /۵، ۱۰ یا ۲۰/);
+  assert.throws(() => craneDesign.createConfiguration({capacityTonnes: 10, craneSpanM: -4}), /مثبت و محدود/);
+});
+
+test("crane design readiness fails closed until geometry duty and verified source exist", () => {
+  const incomplete = craneDesign.createConfiguration({capacityTonnes: 20});
+  assert.equal(craneDesign.assessReadiness(incomplete).ready, false);
+  const complete = craneDesign.createConfiguration({
+    capacityTonnes: 10, craneSpanM: 20, runwayLengthM: 36, hookLiftM: 6,
+    dutyClass: "documented-duty-class", cyclesPerHour: 12,
+    provenanceMode: "manufacturer", verified: true, sourceReference: "supplier-load-chart.pdf"
+  });
+  assert.equal(craneDesign.assessReadiness(complete).ready, true);
+});
