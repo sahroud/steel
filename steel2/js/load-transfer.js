@@ -405,8 +405,6 @@
 
 
   function polygonTripleOverlapWithinFootprint(footprintVertices,zoneAVertices,zoneBVertices) {
-    const polygons=[footprintVertices,zoneAVertices,zoneBVertices].map(vertices=>
-      calculatePolygonEffectiveWindArea({vertices,areaBasis:"projected"}));
     const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
     const signedArea=points=>points.reduce((sum,p,i)=>{
       const q=points[(i+1)%points.length];return sum+p.x*q.y-q.x*p.y;
