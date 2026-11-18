@@ -577,8 +577,9 @@
     assignGeometricMemberLineLoads(members,{span,rise},frameTrib,loads);
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8,
       roofRows,totalRoofSlope:totalRoofSlope,roofStationSpacing:totalRoofSlope/roofRows},nodes,members,generatedAt:new Date().toISOString()};
-    if(typeof window.SteelFrame3D?.auditMemberOrientation!=="function")throw new Error("ممیزی جهت‌گیری اعضا در حل‌گر سه‌بعدی بارگذاری نشده است؛ ساخت مدل متوقف شد.");
-    model.orientationAudit=window.SteelFrame3D.auditMemberOrientation(model);
+    model.orientationAudit=typeof window.SteelFrame3D?.auditMemberOrientation==="function"
+      ?window.SteelFrame3D.auditMemberOrientation(model)
+      :{memberCount:members.length,verifiedCount:0,unverifiedCount:members.length,readyForCodeDesign:false,unavailable:true,groups:{},note:"ممیزی جهت‌گیری در این محیط بارگذاری نشده است؛ محورهای نصب تأییدنشده تلقی می‌شوند."};
     model.windFootprints=buildRoofPurlinWindFootprints(model);
     return model;
   }
