@@ -664,6 +664,40 @@ test("C&C polygon-zone overlap returns zero for disjoint regions and rejects mis
   assert.throws(()=>helper({...base,areaBasis:"projected",zoneAreaBasis:"sloped-surface"}),/مبنای سطح/);
 });
 
+test("wind-zone coverage audit accepts a complete non-overlapping partition", () => {
+  const audit=globalThis.SteelLoadTransfer.auditPolygonWindZoneCoverage({
+    areaBasis:"projected",
+    footprintVertices:[{x:0,y:0},{x:4,y:0},{x:4,y:2},{x:0,y:2}],
+    zones:[
+      {id:"left",vertices:[{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}]},
+      {id:"right",vertices:[{x:2,y:0},{x:4,y:0},{x:4,y:2},{x:2,y:2}]}
+    ]
+  });
+  assert.equal(audit.coverageStatus,"covered-without-overlap");
+  assert.equal(audit.geometricPartitionValid,true);
+  assert.equal(audit.uncoveredFootprintAreaM2,0);
+  assert.equal(audit.pairwiseOverlapAreaM2,0);
+  assert.equal(audit.pressureReady,false);
+});
+
+test("wind-zone coverage audit identifies gaps and overlapping zones", () => {
+  const helper=globalThis.SteelLoadTransfer.auditPolygonWindZoneCoverage;
+  const footprint=[{x:0,y:0},{x:4,y:0},{x:4,y:2},{x:0,y:2}];
+  const gap=helper({areaBasis:"projected",footprintVertices:footprint,zones:[
+    {id:"left",vertices:[{x:0,y:0},{x:1.5,y:0},{x:1.5,y:2},{x:0,y:2}]},
+    {id:"right",vertices:[{x:2.5,y:0},{x:4,y:0},{x:4,y:2},{x:2.5,y:2}]}
+  ]});
+  assert.equal(gap.coverageStatus,"incomplete-or-outside");
+  assert.ok(Math.abs(gap.uncoveredFootprintAreaM2-2)<1e-10);
+  const overlap=helper({areaBasis:"projected",footprintVertices:footprint,zones:[
+    {id:"a",vertices:[{x:0,y:0},{x:2.5,y:0},{x:2.5,y:2},{x:0,y:2}]},
+    {id:"b",vertices:[{x:1.5,y:0},{x:4,y:0},{x:4,y:2},{x:1.5,y:2}]}
+  ]});
+  assert.equal(overlap.coverageStatus,"overlapping-zones");
+  assert.equal(overlap.geometricPartitionValid,false);
+  assert.equal(overlap.uncoveredFootprintAreaM2,null);
+});
+
 test("polygonal C&C tributary patch requires finite coordinates and explicit area basis", () => {
   const helper = globalThis.SteelLoadTransfer.calculatePolygonEffectiveWindArea;
   assert.throws(() => helper({
