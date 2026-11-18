@@ -1594,7 +1594,7 @@ test("member-specific reference axis controls local section roll without changin
 
 test("member-specific reference axis takes precedence over global solver default", () => {
   const a = [0, 0, 0], b = [0, 0, 3];
-  const member = solver.makeTransform(a, b, [0, 1, 0]);
+  const member = solver.makeTransform(a, b, [1, 0, 0]);
   const fallback = solver.makeTransform(a, b, [0, 0, 1]);
   assert.notDeepEqual(member.axes.y, fallback.axes.y);
 });
