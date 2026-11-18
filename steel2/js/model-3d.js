@@ -974,6 +974,10 @@
     }
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads);
     result.orientationAudit=window.SteelFrame3D.auditMemberOrientation(analysisModel);
+    result.sectionPropertyAudit=window.SteelFrame3D.auditMemberSectionProperties(analysisModel,sectionsByMemberId);
+    result.codeDesignInputReadiness={ready:result.orientationAudit.readyForCodeDesign&&result.sectionPropertyAudit.readyForCodeDesign,
+      orientationReady:result.orientationAudit.readyForCodeDesign,sectionPropertiesReady:result.sectionPropertyAudit.readyForCodeDesign,
+      note:"آمادگی ورودی به معنی تأیید طراحی نیست؛ تحلیل مرتبه اول، مقاومت اعضا، پایداری، اتصالات، بارگذاری و فونداسیون همچنان باید جداگانه کنترل شوند."};
     result.gableWindTransfer=gableWindTransfer;
     if(zoneWindMapping)result.windZoneTransfer={windDirection:zoneWindMapping.windDirection,internalScenario:zoneWindMapping.internalScenario,pressureScale:selected.windFactor,serviceability:!!selected.serviceability,applicationScope:zoneWindMapping.applicationScope,windProcedure:zoneWindMapping.windProcedure,componentsCladdingStatus:zoneWindMapping.componentsCladdingStatus,codeComplianceStatus:zoneWindMapping.codeComplianceStatus,designWarning:zoneWindMapping.designWarning,counts:zoneWindMapping.counts,endFacePressures:zoneWindMapping.endFacePressures};
     if(selected.serviceability)result.windServiceability=window.SteelLoadTransfer.checkWindDrift(
