@@ -58,6 +58,7 @@
       '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="zoneWind_tp_ip">باد عرضی +X ـ فشار داخلی مثبت</option><option value="zoneWind_tp_in">باد عرضی +X ـ فشار داخلی منفی</option><option value="zoneWind_tn_ip">باد عرضی −X ـ فشار داخلی مثبت</option><option value="zoneWind_tn_in">باد عرضی −X ـ فشار داخلی منفی</option><option value="zoneWind_lp_ip">باد طولی +Z ـ فشار داخلی مثبت</option><option value="zoneWind_lp_in">باد طولی +Z ـ فشار داخلی منفی</option><option value="zoneWind_ln_ip">باد طولی −Z ـ فشار داخلی مثبت</option><option value="zoneWind_ln_in">باد طولی −Z ـ فشار داخلی منفی</option><optgroup label="باد سطح بهره‌برداری (تقریب ۰٫۸V)"><option value="serviceWind_tp_ip">باد بهره‌برداری عرضی +X ـ فشار داخلی مثبت</option><option value="serviceWind_tp_in">باد بهره‌برداری عرضی +X ـ فشار داخلی منفی</option><option value="serviceWind_tn_ip">باد بهره‌برداری عرضی −X ـ فشار داخلی مثبت</option><option value="serviceWind_tn_in">باد بهره‌برداری عرضی −X ـ فشار داخلی منفی</option><option value="serviceWind_lp_ip">باد بهره‌برداری طولی +Z ـ فشار داخلی مثبت</option><option value="serviceWind_lp_in">باد بهره‌برداری طولی +Z ـ فشار داخلی منفی</option><option value="serviceWind_ln_ip">باد بهره‌برداری طولی −Z ـ فشار داخلی مثبت</option><option value="serviceWind_ln_in">باد بهره‌برداری طولی −Z ـ فشار داخلی منفی</option></optgroup><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option><option value="comboWind08P">آزمایشی باد: 0.8D+1.6W (جهت +)</option><option value="comboWind08N">آزمایشی باد: 0.8D+1.6W (جهت −)</option><option value="comboLiveWind08P">آزمایشی: 1.2D+1.6L+0.5S+0.8W (+)</option><option value="comboLiveWind08N">آزمایشی: 1.2D+1.6L+0.5S+0.8W (−)</option><option value="comboSnowWind08P">آزمایشی: 1.2D+1.6S+0.5L+0.8W (+)</option><option value="comboSnowWind08N">آزمایشی: 1.2D+1.6S+0.5L+0.8W (−)</option></select></div></div>' +
       '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
+      '<div id="fullModel3DDemand" class="notice">پس از تحلیل، جدول نیروهای داخلی تمام اعضا در این قسمت نمایش داده می‌شود.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
     $("btnBuildFullModel").addEventListener("click", function () {
@@ -76,6 +77,24 @@
         stage("مرحله ۲ از ۳: مونتاژ ماتریس سختی و بارگذاری اعضا…");
         stage("مرحله ۳ از ۳: حل دستگاه معادلات سه‌بعدی؛ لطفاً صفحه را نبندید…");
         const result=await analyze3D(lc);
+        const demandBox=$("fullModel3DDemand");
+        if(demandBox&&result.memberDemand){
+          const f3=(v,factor,d=2)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
+          const labels={N:"N",Vy:"Vy",Vz:"Vz",T:"T",My:"My",Mz:"Mz"};
+          const rows=result.memberDemand.members.map(m=>{
+            const actions=["N","Vy","Vz","T","My","Mz"].map(k=>{
+              const e=m.extrema[k],factor=["N","Vy","Vz"].includes(k)?0.001:0.000001;
+              return k+"="+f3(e.value,factor)+" @ "+f3(e.x,1,3)+"m";
+            });
+            return m.id+" ["+m.sectionKey+"] | "+actions.join(" | ");
+          });
+          demandBox.textContent="تقاضای بازیابی‌شده اعضا — "+result.memberDemand.memberCount+
+            " عضو | نیرو: kN | گشتاور: kN.m | محل: m\\n"+
+            rows.join("\\n")+
+            "\\nروش: تعادل قطعه چپ عضو با بار گسترده یکنواخت محلی؛ نقاط صفر برش نیز در نمونه‌برداری منظور شده‌اند. این جدول فقط تقاضای تحلیل خطی است، نه کنترل ظرفیت یا تأیید آیین‌نامه‌ای.";
+        }else if(demandBox){
+          demandBox.textContent="استخراج نیروهای داخلی اعضا در دسترس نیست؛ نتیجه طراحی نباید از نیروهای انتهایی تنها استنتاج شود.";
+        }
         box.textContent="تحلیل سه‌بعدی با موفقیت حل شد. حالت بار: "+result.loadCaseLabel+
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
