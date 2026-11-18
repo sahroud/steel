@@ -18,6 +18,7 @@
         liveRight: 0.75,
         snowLeft: 1.0,
         snowRight: 1.0,
+        roofLoadAreaBasis: "horizontal-projection",
         windLeft: 0,
         windRight: 0,
         windWall: 0,
@@ -195,6 +196,21 @@
                 فشار مبنای باد پس از بارگذاری اطلاعات محاسبه می‌شود.
             </div>
 
+            <h4>مبنای سطح بارهای ثقلی سقف</h4>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="roofLoadAreaBasis">مبنای تعریف بار مرده، زنده و برف</label>
+                    <select id="roofLoadAreaBasis">
+                        <option value="unspecified">انتخاب نشده؛ تحلیل مجاز نیست</option>
+                        <option value="horizontal-projection" selected>تصویر افقی سقف</option>
+                        <option value="sloped-surface">سطح واقعی شیب‌دار سقف</option>
+                    </select>
+                </div>
+            </div>
+            <div class="notice">
+                مبنا باید با منبع بار ورودی یکسان باشد. در حالت تصویر افقی، نرم‌افزار عرض بارگیر روی شیب را در cos(زاویه سقف) ضرب می‌کند؛ در حالت سطح شیب‌دار این تبدیل انجام نمی‌شود. پروژه‌های قدیمی فاقد این فیلد با وضعیت «انتخاب نشده» باز می‌شوند تا مبنا بی‌صدا حدس زده نشود.
+            </div>
+
             <h4>د ـ بار مرده سقف</h4>
             <div class="form-grid">
                 ${input("loadDeadLeft", "بار مرده سمت چپ", state.deadLeft, false)}
@@ -334,6 +350,8 @@
             if (el) state[key] = number(el.value);
         });
 
+        if ($("roofLoadAreaBasis")) state.roofLoadAreaBasis = $("roofLoadAreaBasis").value;
+
         if ($("loadWindDirection")) {
             state.windDirection = $("loadWindDirection").value;
         }
@@ -422,6 +440,11 @@
             if (!Number.isFinite(item[1]) || item[1] < 0) {
                 return item[0] + " نمی‌تواند منفی باشد.";
             }
+        }
+
+        const hasRoofGravityLoad = [data.deadLeft, data.deadRight, data.liveLeft, data.liveRight, data.snowLeft, data.snowRight].some(v => Number(v) > 0);
+        if (hasRoofGravityLoad && !["horizontal-projection", "sloped-surface"].includes(data.roofLoadAreaBasis)) {
+            return "مبنای سطح بارهای ثقلی سقف انتخاب نشده است؛ برای جلوگیری از تبدیل اشتباه بار، تحلیل متوقف شد.";
         }
 
         const signed = [
@@ -551,6 +574,7 @@
             liveRight: 0.75,
             snowLeft: 1.0,
             snowRight: 1.0,
+            roofLoadAreaBasis: "horizontal-projection",
             windLeft: 0,
             windRight: 0,
             windWall: 0,
@@ -580,6 +604,8 @@
             }
         });
 
+        if ($("roofLoadAreaBasis")) $("roofLoadAreaBasis").value = state.roofLoadAreaBasis;
+
         if ($("loadWindDirection")) {
             $("loadWindDirection").value = "left-to-right";
         }
@@ -606,6 +632,9 @@
             "snowLeft", "snowRight",
             "windLeft", "windRight", "windWall", "windEndFront", "windEndBack"
         ];
+
+        state.roofLoadAreaBasis = ["horizontal-projection", "sloped-surface"].includes(data.roofLoadAreaBasis)
+            ? data.roofLoadAreaBasis : "unspecified";
 
         keys.forEach(key => {
             if (Number.isFinite(Number(data[key]))) {
@@ -687,6 +716,7 @@
                 if ($(climateIds[key])) $(climateIds[key]).value = state.climate[key];
             });
 
+            if ($("roofLoadAreaBasis")) $("roofLoadAreaBasis").value = state.roofLoadAreaBasis;
             renderCombinations();
 
             if (data.combinations) {
