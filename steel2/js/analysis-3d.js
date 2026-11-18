@@ -163,6 +163,45 @@ function calculateGlobalLoadResultants(model,nodalLoads){
  return {forceN:force,momentNm:moment,method:"direct distributed-load resultant at member midpoint plus nodal actions"};
 }
 
+function auditMemberOrientation(model){
+  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))
+    throw Error("مدل برای ممیزی جهت‌گیری اعضا معتبر نیست.");
+  const nodes=new Map(model.nodes.map(n=>[String(n.id),n]));
+  if(nodes.size!==model.nodes.length)throw Error("شناسه گره تکراری در ممیزی جهت‌گیری.");
+  const groups=Object.create(null),members=[];
+  model.members.forEach(member=>{
+    const key=String(member.sectionKey||"unassigned");
+    const a=nodes.get(String(member.start)),b=nodes.get(String(member.end));
+    let direction=null,geometryValid=!!(a&&b);
+    if(geometryValid){
+      const d=[b.x-a.x,b.y-a.y,b.z-a.z].map(Number),L=Math.hypot(...d);
+      geometryValid=Number.isFinite(L)&&L>EPS;
+      if(geometryValid)direction=d.map(v=>v/L);
+    }
+    const axis=member.referenceAxis;
+    const explicitAxisValid=Array.isArray(axis)&&axis.length===3&&axis.every(v=>Number.isFinite(Number(v)))&&Math.hypot(...axis.map(Number))>EPS;
+    const sectionOrientationVerified=member.sectionOrientationVerified===true;
+    const status=!geometryValid?"invalid-member-geometry":
+      (!explicitAxisValid?"reference-axis-unverified":
+      (!sectionOrientationVerified?"section-roll-unverified":"verified"));
+    const item={id:member.id,sectionKey:key,status,memberDirection:direction,
+      referenceAxis:explicitAxisValid?axis.map(Number):null,
+      referenceAxisSource:explicitAxisValid?"member-metadata":"solver-default",
+      sectionOrientationVerified};
+    members.push(item);
+    if(!groups[key])groups[key]={count:0,verified:0,missingReferenceAxis:0,unverifiedSectionRoll:0,invalidGeometry:0};
+    const g=groups[key];g.count++;
+    if(status==="verified")g.verified++;
+    if(status==="reference-axis-unverified")g.missingReferenceAxis++;
+    if(status==="section-roll-unverified")g.unverifiedSectionRoll++;
+    if(status==="invalid-member-geometry")g.invalidGeometry++;
+  });
+  const verified=members.filter(m=>m.status==="verified").length;
+  return {memberCount:members.length,verifiedCount:verified,
+    unverifiedCount:members.length-verified,readyForCodeDesign:members.length>0&&verified===members.length,
+    groups,members,
+    note:"جهت هندسی محور عضو از مختصات گره‌ها استخراج می‌شود؛ referenceAxis و تأیید چرخش واقعی مقطع باید از نقشه ساخت/نصب یا مشخصات مستند وارد شوند. محور پیش‌فرض حل‌گر به معنی تأیید جهت نصب نیست."};
+}
 function analyze(model,options){
  options=options||{};
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل هندسی معتبر ارائه نشده است.");
@@ -326,5 +365,5 @@ function analyze(model,options){
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
  return {success:true,method:"3D linear elastic direct stiffness",solverAlgorithm:useSparse?"diagonally-scaled-sparse-conjugate-gradient":"dense-gaussian-elimination",units:"N,m,Pa",loadAssemblyAudit,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
-root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,globalVectorToLocal,equivalentUniformLoad,calculateGlobalLoadResultants,solve,solveSparseConjugateGradient};
+root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,globalVectorToLocal,equivalentUniformLoad,calculateGlobalLoadResultants,auditMemberOrientation,solve,solveSparseConjugateGradient};
 })(typeof window!=="undefined"?window:globalThis);
