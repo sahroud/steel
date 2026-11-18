@@ -474,3 +474,12 @@
 - [ ] Complete member resistance, local/global buckling, P-Delta, connection, cladding, seismic, crane and foundation gates before any construction-ready claim.
 
 Status: regression cases have been added but are not yet CI-verified. The built-up calculator remains gross-geometry-only; it does not establish code compliance or a usable design section.
+
+
+### 2026-11-18 — Solver infrastructure for per-member local section orientation
+
+- [x] 3D frame assembly now passes each member's optional `referenceAxis` to the local transformation; if absent, the existing global solver default remains in effect for backward compatibility.
+- [x] Added regression tests for a longitudinal member whose local y/z axes are established by a member-specific reference axis, including orthogonality and precedence over the global default.
+- [ ] Populate and verify `referenceAxis` for each real member family (rafters/columns, purlins, girts, braces, end posts) from actual section installation geometry. No family orientation is inferred by this infrastructure change.
+- [ ] Confirm sign conventions for local axes and local load components against independent beam-element benchmarks before production use.
+- [ ] Run full CI and the complete 12×36 model with traceable real section properties. This commit is not a CI pass or design verification.
