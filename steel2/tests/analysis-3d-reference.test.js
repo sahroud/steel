@@ -1728,3 +1728,23 @@ test("section-property audit requires a documented source and explicit verificat
   assert.equal(report.provenanceVerifiedCount,1);
   assert.equal(report.readyForCodeDesign,true);
 });
+
+
+test("section provenance requires both a source reference and explicit verification",()=>{
+  const properties={E:200e9,G:80e9,A:0.003,Iy:2e-6,Iz:3e-6,J:1e-7,sectionKey:"roofPurlin"};
+  const report=solver.auditMemberSectionProperties({members:[
+    {id:"NO_SOURCE",sectionKey:"roofPurlin"},
+    {id:"NO_CHECK",sectionKey:"roofPurlin"},
+    {id:"BOTH",sectionKey:"roofPurlin"}
+  ]},{
+    NO_SOURCE:{...properties,sectionDataVerified:true},
+    NO_CHECK:{...properties,sourceDocumentId:"catalog.pdf#page=4",sectionDataVerified:false},
+    BOTH:{...properties,sourceDocumentId:"catalog.pdf#page=4",catalogReference:"Maker | Z-200 | 4",sourcePage:"4",sectionDataVerified:true}
+  });
+  assert.equal(report.readyForAnalysis,true);
+  assert.equal(report.readyForCodeDesign,false);
+  assert.deepEqual(report.members.map(x=>x.sourceDocumentProvided),[false,true,true]);
+  assert.deepEqual(report.members.map(x=>x.sectionDataVerified),[true,false,true]);
+  assert.deepEqual(report.groups.roofPurlin.unverifiedMemberIds,["NO_SOURCE","NO_CHECK"]);
+  assert.equal(report.provenanceVerifiedCount,1);
+});
