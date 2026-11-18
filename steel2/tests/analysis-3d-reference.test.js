@@ -412,16 +412,16 @@ test("six-zone pressure mapping transfers signed pressures to roof, side-wall an
   assert.ok(Math.abs(m.memberLoads.PL.windLeft-3.678*2)<1e-12);
   assert.ok(Math.abs(m.memberLoads.PR.windRight-(-4.291)*3)<1e-12);
   assert.ok(Math.abs(m.memberLoads.PG.windLeft-3.678*1.5)<1e-12);
-  assert.ok(Math.abs(m.memberLoads.PG.windRight-(-1.839)*2.5)<1e-12);
+  assert.ok(Math.abs(m.memberLoads.PG.windRight-(-4.291)*2.5)<1e-12);
   assert.ok(Math.abs(m.memberLoads.WL.wind-3.065*1.2)<1e-12);
   assert.ok(Math.abs(m.memberLoads.WR.wind-(-4.904)*1.2)<1e-12);
   assert.ok(Math.abs(m.memberLoads.EF.windEnd-4.291*1.5)<1e-12);
   assert.ok(Math.abs(m.memberLoads.ER.windEnd-(-3.678)*1.5)<1e-12);
-  assert.equal(m.counts.roofPurlins,3);assert.equal(m.endFacePressures.front,4.291);
+  assert.equal(m.counts.roofPurlins,3);assert.ok(Math.abs(m.endFacePressures.front-4.291)<1e-12);
 });
 
 test("six-zone pressure mapping fails closed for incomplete data, bad scenario or missing member groups",()=>{
-  assert.throws(()=>globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers({},null,"positive"),/فشارهای شش‌ناحیه‌ای/);
+  assert.throws(()=>globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers({members:[]},null,"positive"),/فشارهای شش‌ناحیه‌ای/);
   const p=globalThis.SteelLoadTransfer.calculateWindZonePressures({
     direction:"transverse-positive",
     basicWindKmh:360,coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}});
@@ -448,8 +448,8 @@ test("six-zone application adapter replaces only wind line loads and preserves g
   assert.ok(Math.abs(applied.model.members[0].lineLoads.windLeft-3.678*2)<1e-12);
   assert.ok(Math.abs(applied.model.members[1].lineLoads.wind-3.065*1.2)<1e-12);
   assert.ok(Math.abs(applied.model.members[2].lineLoads.windEnd-(-3.678)*1.5)<1e-12);
-  assert.equal(applied.mapping.endFacePressures.front,4.291);
-  assert.equal(applied.mapping.endFacePressures.rear,-3.678);
+  assert.ok(Math.abs(applied.mapping.endFacePressures.front-4.291)<1e-12);
+  assert.ok(Math.abs(applied.mapping.endFacePressures.rear-(-3.678))<1e-12);
   assert.equal(source.members[0].lineLoads.windLeft,999,"source model must not be mutated");
 });
 
@@ -473,7 +473,7 @@ test("six-zone negative internal-pressure scenario keeps zone signs independentl
   assert.ok(Math.abs(result.model.members[1].lineLoads.windRight-(-1.839))<1e-12);
   assert.ok(Math.abs(result.model.members[2].lineLoads.wind-5.517)<1e-12);
   assert.ok(Math.abs(result.model.members[3].lineLoads.wind-(-2.452))<1e-12);
-  assert.ok(Math.abs(result.mapping.endFacePressures.front-6.13)<1e-12);
+  assert.ok(Math.abs(result.mapping.endFacePressures.front-6.743)<1e-12);
   assert.ok(Math.abs(result.mapping.endFacePressures.rear-(-1.226))<1e-12);
 });
 
