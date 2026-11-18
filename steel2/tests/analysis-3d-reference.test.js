@@ -710,6 +710,21 @@ test("wind-zone coverage audit identifies gaps and overlapping zones", () => {
   assert.equal(overlap.uncoveredFootprintAreaM2,null);
 });
 
+test("wind-zone overlaps outside the member footprint do not count as member overlap", () => {
+  const footprint=[{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}];
+  const zoneA=[{x:0,y:0},{x:1,y:0},{x:1,y:2},{x:2,y:3},{x:0,y:3}];
+  const zoneB=[{x:1,y:0},{x:2,y:0},{x:2,y:2},{x:2,y:3},{x:0,y:3},{x:1,y:2}];
+  const result=globalThis.SteelLoadTransfer.auditPolygonWindZoneCoverage({
+    areaBasis:"projected",footprintVertices:footprint,
+    zones:[{id:"A",vertices:zoneA},{id:"B",vertices:zoneB}]
+  });
+  assert.equal(result.pairwiseOverlapAreaM2,0);
+  assert.equal(result.overlappingZonePairs,0);
+  assert.equal(result.summedOverlapAreaM2,4);
+  assert.equal(result.uncoveredFootprintAreaM2,0);
+  assert.equal(result.pressureReady,false);
+});
+
 test("member tributary footprint uses actual 3D endpoints and explicit perpendicular width vector", () => {
   const helper=globalThis.SteelLoadTransfer.buildMemberTributaryFootprint;
   const result=helper({
