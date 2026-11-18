@@ -39,7 +39,58 @@ function mul(A,B){
  for(let i=0;i<A.length;i++)for(let k=0;k<B.length;k++)if(A[i][k]!==0)for(let j=0;j<B[0].length;j++)C[i][j]+=A[i][k]*B[k][j];
  return C;
 }
-function addBlock(K,ids,ke){for(let i=0;i<ids.length;i++)for(let j=0;j<ids.length;j++)K[ids[i]][ids[j]]+=ke[i][j];}
+function addBlock(K,ids,ke){
+ const sparse=K[0] instanceof Map;
+ for(let i=0;i<ids.length;i++)for(let j=0;j<ids.length;j++){
+  const value=ke[i][j];if(value===0)continue;
+  if(sparse){const row=K[ids[i]];row.set(ids[j],(row.get(ids[j])||0)+value);}
+  else K[ids[i]][ids[j]]+=value;
+ }
+}
+function matrixVector(K,x){
+ if(K[0] instanceof Map)return K.map(row=>{let sum=0;row.forEach((value,j)=>{sum+=value*x[j];});return sum;});
+ return K.map(row=>dot(row,x));
+}
+function solveSparseConjugateGradient(K,free,b){
+ const n=free.length;if(!n)throw Error("تمام درجات آزادی مقید شده‌اند.");
+ const reduced=new Int32Array(K.length);reduced.fill(-1);
+ free.forEach((global,i)=>{reduced[global]=i;});
+ const scaleD=new Float64Array(n),rhs=new Float64Array(n);
+ for(let i=0;i<n;i++){
+  const diagonal=K[free[i]].get(free[i]);
+  if(!(Number.isFinite(diagonal)&&diagonal>0))throw Error("DOF_SINGULAR:"+i+":قطر صفر یا نامعتبر در ماتریس سختی تنک");
+  scaleD[i]=1/Math.sqrt(diagonal);rhs[i]=b[i]*scaleD[i];
+ }
+ const multiply=v=>{
+  const out=new Float64Array(n);
+  for(let i=0;i<n;i++){
+   let sum=0;
+   K[free[i]].forEach((value,globalJ)=>{
+    const j=reduced[globalJ];if(j>=0)sum+=value*scaleD[i]*scaleD[j]*v[j];
+   });
+   out[i]=sum;
+  }
+  return out;
+ };
+ const dotV=(a,bv)=>{let sum=0;for(let i=0;i<a.length;i++)sum+=a[i]*bv[i];return sum;};
+ const normV=v=>Math.sqrt(dotV(v,v));
+ const x=new Float64Array(n),r=Float64Array.from(rhs),p=Float64Array.from(rhs);
+ let rz=dotV(r,r),rhsNorm=Math.max(normV(rhs),1);
+ if(normV(r)<=1e-12*rhsNorm)return Array.from(x,(v,i)=>v*scaleD[i]);
+ const tolerance=1e-9,maxIterations=Math.min(30000,Math.max(1000,n*12));
+ for(let iteration=0;iteration<maxIterations;iteration++){
+  const Ap=multiply(p),curvature=dotV(p,Ap);
+  if(!(Number.isFinite(curvature)&&curvature>1e-30))
+   throw Error("DOF_SINGULAR:"+iteration+":ماتریس سختی تنک مثبت‌معین نیست یا مدل ناپایدار است");
+  const alpha=rz/curvature;
+  for(let i=0;i<n;i++){x[i]+=alpha*p[i];r[i]-=alpha*Ap[i];}
+  if(normV(r)<=tolerance*rhsNorm)return Array.from(x,(v,i)=>v*scaleD[i]);
+  const next=dotV(r,r),beta=next/rz;
+  for(let i=0;i<n;i++)p[i]=r[i]+beta*p[i];
+  rz=next;
+ }
+ throw Error("SPARSE_CG_NOT_CONVERGED:"+maxIterations+":حل تکراری ماتریس سختی تنک به تلرانس نرسید.");
+}
 function frameLocalStiffness(p,L){
  const {E,A,Iy,Iz,G,J}=p;
  const k=zeros(12,12),ax=E*A/L,t=G*J/L;
@@ -131,7 +182,8 @@ function analyze(model,options){
    });
   });
  }
- const K=zeros(nDof,nDof),F=Array(nDof).fill(0),elements=[];
+ const useSparse=options.sparseSolver===true||nDof>=600;
+ const K=useSparse?Array.from({length:nDof},()=>new Map()):zeros(nDof,nDof),F=Array(nDof).fill(0),elements=[];
  const props=options.sectionResolver;
  if(typeof props!=="function")throw Error("تابع تخصیص خواص مقطع برای همه اعضا تعریف نشده است؛ تحلیل متوقف شد.");
  for(const m of members){
@@ -165,9 +217,9 @@ function analyze(model,options){
  });
  const free=Array.from({length:nDof},(_,i)=>i).filter(i=>!fixed.has(i));
  if(!free.length)throw Error("تمام درجات آزادی مقید شده‌اند.");
- const Kff=free.map(i=>free.map(j=>K[i][j])),Ff=free.map(i=>F[i]);
+ const Ff=free.map(i=>F[i]);
  let df;
- try{df=solve(Kff,Ff);}
+ try{df=useSparse?solveSparseConjugateGradient(K,free,Ff):solve(free.map(i=>free.map(j=>K[i][j])),Ff);}
  catch(err){
   const match=String(err.message||err).match(/DOF_SINGULAR:(\d+):(.*)/);
   if(match){
@@ -202,7 +254,7 @@ function analyze(model,options){
  }
  const D=Array(nDof).fill(0);
  free.forEach((id,i)=>D[id]=df[i]);
- const KD=K.map(r=>dot(r,D)),R=KD.map((v,i)=>v-F[i]);
+ const KD=matrixVector(K,D),R=KD.map((v,i)=>v-F[i]);
  // Global equilibrium is evaluated from assembled equivalent nodal loads and
  // support reactions. Do not sum force and moment components into one scalar.
  const appliedForce=[0,0,0],appliedMoment=[0,0,0];
@@ -266,5 +318,5 @@ function analyze(model,options){
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
  return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",loadAssemblyAudit,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
-root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,calculateGlobalLoadResultants,solve};
+root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,calculateGlobalLoadResultants,solve,solveSparseConjugateGradient};
 })(typeof window!=="undefined"?window:globalThis);
