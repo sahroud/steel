@@ -245,3 +245,24 @@ test("triangular gable post-equivalent actions preserve suction sign and reject 
     /ارتفاع لبه بام/
   );
 });
+
+
+test("preliminary 3D wind combinations expose both signs and all existing gravity patterns", () => {
+  const combos = globalThis.SteelLoadTransfer.preliminaryWindCombinations();
+  assert.equal(combos.length, 6);
+  assert.deepEqual(combos.map(item => item.key), [
+    "comboWind08P", "comboWind08N",
+    "comboLiveWind08P", "comboLiveWind08N",
+    "comboSnowWind08P", "comboSnowWind08N"
+  ]);
+  assert.deepEqual(combos.map(item => item.sign), [1, -1, 1, -1, 1, -1]);
+  assert.deepEqual(combos[0] && [combos[0].dead, combos[0].wind], [0.8, 1.6]);
+  assert.deepEqual(combos[2] && [combos[2].dead, combos[2].live, combos[2].snow, combos[2].wind], [1.2, 1.6, 0.5, 0.8]);
+  assert.deepEqual(combos[4] && [combos[4].dead, combos[4].live, combos[4].snow, combos[4].wind], [1.2, 0.5, 1.6, 0.8]);
+});
+
+test("preliminary 3D wind combination definitions are immutable", () => {
+  const combos = globalThis.SteelLoadTransfer.preliminaryWindCombinations();
+  assert.equal(Object.isFrozen(combos), true);
+  assert.equal(Object.isFrozen(combos[0]), true);
+});
