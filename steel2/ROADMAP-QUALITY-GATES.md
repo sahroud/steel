@@ -542,3 +542,14 @@ Status: orientation auditing is now explicit and machine-readable; the productio
 - [ ] Validate local-axis signs and section-property mapping against independent beam-element benchmarks before code design.
 
 Status: audit diagnostics are more discriminating, but production orientation metadata remains unverified and code-design readiness remains false.
+
+
+### CI confirmation — orientation audit hardening (2026-11-18)
+
+- [x] GitHub Actions run #383 (`44319169267`) passed after the stricter orientation-audit changes.
+- [x] Syntax checks passed; 99/99 reference tests passed, 0 failed.
+- [x] Regression coverage includes parallel-to-member reference axes, malformed axis metadata, and per-group member-direction summaries.
+- [ ] Populate production member orientation and section-roll metadata from verified fabrication/installation drawings and section catalogs.
+- [ ] Run generated 12×36 production-model orientation inventory with actual assigned sections; keep code-design readiness false until every active member is evidenced.
+
+Status: CI verifies the audit implementation, not the physical installation orientation or structural design.
