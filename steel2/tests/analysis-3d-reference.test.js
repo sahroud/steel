@@ -1530,3 +1530,23 @@ test("built-up I section: invalid and non-finite dimensions fail closed", () => 
     webClearHeightMm: 400, webThicknessMm: Infinity
   }));
 });
+
+
+test("member-specific reference axis controls local section roll without changing member axis", () => {
+  const a = [0, 0, 0], b = [0, 0, 4];
+  const tr = solver.makeTransform(a, b, [0, 1, 0]);
+  const dot = (u, v) => u.reduce((s, x, i) => s + x * v[i], 0);
+  assert.ok(Math.abs(dot(tr.axes.x, [0, 0, 1]) - 1) < 1e-12);
+  assert.ok(Math.abs(dot(tr.axes.y, [1, 0, 0]) - 1) < 1e-12);
+  assert.ok(Math.abs(dot(tr.axes.z, [0, 1, 0]) - 1) < 1e-12);
+  assert.ok(Math.abs(dot(tr.axes.x, tr.axes.y)) < 1e-12);
+  assert.ok(Math.abs(dot(tr.axes.y, tr.axes.z)) < 1e-12);
+  assert.ok(Math.abs(dot(tr.axes.z, tr.axes.x)) < 1e-12);
+});
+
+test("member-specific reference axis takes precedence over global solver default", () => {
+  const a = [0, 0, 0], b = [0, 0, 3];
+  const member = solver.makeTransform(a, b, [0, 1, 0]);
+  const fallback = solver.makeTransform(a, b, [0, 0, 1]);
+  assert.notDeepEqual(member.axes.y, fallback.axes.y);
+});
