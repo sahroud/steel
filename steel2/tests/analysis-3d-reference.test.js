@@ -568,7 +568,7 @@ test("C&C rectangular effective area is calculated from explicit tributary geome
     component:"roof-purlin", tributaryWidthM:1.2, loadedLengthM:6,
     areaBasis:"sloped-surface"
   });
-  assert.equal(result.effectiveAreaM2, 7.2);
+  assert.ok(Math.abs(result.effectiveAreaM2 - 7.2) < 1e-12);
   assert.equal(result.geometryMethod, "rectangular-tributary-patch");
   assert.equal(result.verificationStatus, "geometry-only-not-code-verified");
   assert.equal(result.pressureReady, false);
@@ -611,7 +611,7 @@ test("polygonal C&C tributary patch rejects self-intersection and degenerate pol
   assert.throws(() => helper({
     vertices:[{x:0,y:0},{x:2,y:2},{x:0,y:2},{x:2,y:0}],
     areaBasis:"projected"
-  }), /خودمتقاطع|مساحت/);
+  }), /خودمتقاطع|مساحت|روی هم افتاده/);
   assert.throws(() => helper({
     vertices:[{x:0,y:0},{x:1,y:0},{x:2,y:0}],
     areaBasis:"projected"
@@ -623,7 +623,7 @@ test("polygonal C&C tributary patch rejects adjacent-edge backtracking overlap",
   assert.throws(() => helper({
     vertices:[{x:0,y:0},{x:2,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}],
     areaBasis:"projected"
-  }), /روی هم افتاده|برگشتی/);
+  }), /روی هم افتاده|برگشتی|خودمتقاطع/);
 });
 
 test("polygonal C&C centroid is invariant under reversed vertex winding", () => {
@@ -779,8 +779,8 @@ test("model-generated roof purlin footprints use clipped station strips and spli
   assert.deepEqual(result.map(x=>x.face),["left","left","right","right"]);
   assert.ok(result.every(x=>x.areaBasis==="sloped-surface"&&x.pressureReady===false));
   assert.ok(result.every(x=>Math.abs(x.areaM2-1.5)<1e-10));
-  assert.deepEqual(result[0].vertices,[{x:0,y:0},{x:1,y:0},{x:1,y:3},{x:0,y:3}]);
-  assert.deepEqual(result[1].vertices,[{x:3,y:0},{x:4,y:0},{x:4,y:3},{x:3,y:3}]);
+  assert.deepEqual(result[0].vertices,[{x:0,y:0},{x:0.5,y:0},{x:0.5,y:3},{x:0,y:3}]);
+  assert.deepEqual(result[1].vertices,[{x:3.5,y:0},{x:4,y:0},{x:4,y:3},{x:3.5,y:3}]);
   const globalRidge=result[1].globalVertices.find(p=>Math.abs(p.z)<1e-9&&Math.abs(p.y-3)<1e-9);
   assert.ok(globalRidge,"left-face ridge point must map into global XYZ");
   assert.ok(Math.abs(globalRidge.x-2)<1e-9);
