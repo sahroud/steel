@@ -365,6 +365,72 @@
     });
   }
 
+
+  // Audits whether a supplied set of geometric wind zones partitions a member
+  // footprint without gaps or overlaps. Zone boundaries remain user-supplied;
+  // this function never declares them code-compliant.
+  function auditPolygonWindZoneCoverage(input) {
+    const data=input||{}, zones=data.zones;
+    if(!Array.isArray(zones)||zones.length<1)
+      throw new RangeError("حداقل یک ناحیه هندسی برای ممیزی پوشش لازم است.");
+    const basis=data.areaBasis;
+    if(basis!=="projected"&&basis!=="sloped-surface")
+      throw new RangeError("مبنای سطح پوشش باید projected یا sloped-surface باشد.");
+    const footprint=calculatePolygonEffectiveWindArea({
+      vertices:data.footprintVertices,areaBasis:basis,component:"audited-footprint"
+    });
+    const overlaps=zones.map((zone,index)=>{
+      if(!zone||!Array.isArray(zone.vertices))
+        throw new TypeError("هندسه ناحیه شماره "+index+" معتبر نیست.");
+      const result=calculatePolygonWindZoneOverlap({
+        footprintVertices:data.footprintVertices,
+        zoneVertices:zone.vertices,
+        areaBasis:basis,
+        component:zone.component||"unspecified",
+        zoneId:zone.id||("zone-"+(index+1))
+      });
+      return Object.freeze({zoneId:zone.id||("zone-"+(index+1)),overlapAreaM2:result.overlapAreaM2,
+        footprintOverlapRatio:result.footprintOverlapRatio});
+    });
+    let pairwiseOverlap=0, overlapPairs=0;
+    for(let i=0;i<zones.length;i++)for(let j=i+1;j<zones.length;j++){
+      const common=calculatePolygonWindZoneOverlap({
+        footprintVertices:zones[i].vertices,zoneVertices:zones[j].vertices,
+        areaBasis:basis,component:"zone-pair"
+      }).overlapAreaM2;
+      if(common>Math.max(1,footprint.effectiveAreaM2)*1e-9){
+        pairwiseOverlap+=common;overlapPairs++;
+      }
+    }
+    const sumCovered=overlaps.reduce((sum,item)=>sum+item.overlapAreaM2,0);
+    const tolerance=Math.max(1,footprint.effectiveAreaM2)*1e-8;
+    const hasOverlap=overlapPairs>0;
+    const uncoveredArea=hasOverlap?null:Math.max(0,footprint.effectiveAreaM2-sumCovered);
+    const outsideFootprintArea=zones.reduce((sum,zone)=>{
+      const z=calculatePolygonEffectiveWindArea({vertices:zone.vertices,areaBasis:basis});
+      const inside=calculatePolygonWindZoneOverlap({footprintVertices:data.footprintVertices,
+        zoneVertices:zone.vertices,areaBasis:basis}).overlapAreaM2;
+      return sum+Math.max(0,z.effectiveAreaM2-inside);
+    },0);
+    const fullyCovered=!hasOverlap&&uncoveredArea<=tolerance;
+    const partitionValid=fullyCovered&&outsideFootprintArea<=tolerance;
+    return Object.freeze({
+      areaBasis:basis,
+      footprintAreaM2:footprint.effectiveAreaM2,
+      zones:overlaps,
+      summedOverlapAreaM2:sumCovered,
+      pairwiseOverlapAreaM2:pairwiseOverlap,
+      overlappingZonePairs:overlapPairs,
+      uncoveredFootprintAreaM2:uncoveredArea,
+      zonesOutsideFootprintAreaM2:outsideFootprintArea,
+      coverageStatus:hasOverlap?"overlapping-zones":fullyCovered?"covered-without-overlap":"incomplete-or-outside",
+      geometricPartitionValid:partitionValid,
+      verificationStatus:"geometry-only-not-code-verified",
+      pressureReady:false,
+      warning:"این ممیزی فقط چندضلعی‌های ورودی را از نظر پوشش و هم‌پوشانی بررسی می‌کند؛ مرزها و شناسه نواحی باید از منبع رسمی آیین‌نامه احراز شوند و نتیجه مجوز تولید فشار طراحی نیست."
+    });
+  }
+
   function mapWindZonePressuresToMembers(model, pressureResult, internalScenario) {
     if (!model || !Array.isArray(model.members)) throw new TypeError("مدل دارای فهرست اعضای معتبر نیست.");
     if (!pressureResult || pressureResult.ready !== true || !pressureResult.rows || !WIND_DIRECTIONS.includes(pressureResult.direction))
@@ -474,7 +540,7 @@
     ].map(item=>Object.freeze(item)));
   }
   root.SteelLoadTransfer = Object.freeze({
-    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, calculatePolygonEffectiveWindArea, calculatePolygonWindZoneOverlap,
+    surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant, WIND_DIRECTIONS, REQUIRED_WIND_ZONES, classifyWindProcedure, calculateRectangularEffectiveWindArea, calculatePolygonEffectiveWindArea, calculatePolygonWindZoneOverlap, auditPolygonWindZoneCoverage,
     triangularGablePostEquivalentLoads, calculateWindZonePressures, mapWindZonePressuresToMembers, applyWindZonePressureMapping, checkWindDrift, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
