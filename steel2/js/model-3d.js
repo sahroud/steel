@@ -59,7 +59,7 @@
       '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnRunAll3DCombinations" class="btn primary">اجرای همه ترکیبات ثقلی سه‌بعدی</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
       '<div id="fullModel3DDemand" class="notice">پس از تحلیل، جدول نیروهای داخلی تمام اعضا در این قسمت نمایش داده می‌شود.</div>' +
-      '<div id="fullModel3DCombinationResult" class="notice">پس از اجرای همه ترکیبات، نتایج جداگانه و پوش تقاضا اینجا نمایش داده می‌شود.</div>' +' +
+      '<div id="fullModel3DCombinationResult" class="notice">پس از اجرای همه ترکیبات، نتایج جداگانه و پوش تقاضا اینجا نمایش داده می‌شود.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
     $("btnBuildFullModel").addEventListener("click", function () {
