@@ -1007,5 +1007,5 @@ test("production geometry builder conserves roof dead-load tributary area across
   assert.ok(Math.abs(ridge.lineLoads.dead-(2*ridge.tributaryWidthLeft+2*ridge.tributaryWidthRight))<1e-10);
   assert.ok(model.members.filter(m=>m.sectionKey==="wallGirt").every(m=>m.lineLoads.wind===0.25*m.tributaryHeight));
   assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="front"&&m.lineLoads.windEnd===0.4*m.tributaryHeight));
-  assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="back"&&m.lineLoads.windEnd===-0.35*m.tributaryHeight));
+  assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="rear"&&m.lineLoads.windEnd===-0.35*m.tributaryHeight));
 });
