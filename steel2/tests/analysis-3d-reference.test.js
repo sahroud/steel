@@ -10,6 +10,7 @@ require("../js/analysis-3d.js");
 require("../js/load-transfer.js");
 require("../js/built-up-section.js");
 require("../js/member-demand-3d.js");
+require("../js/load-combination-runner-3d.js");
 const loadTransfer = globalThis.SteelLoadTransfer;
 
 const solver = globalThis.SteelFrame3D;
@@ -1807,4 +1808,38 @@ test("3D recovered transverse shear and bending close to zero at a free cantilev
   });
   const tip=recovered.samples.find(x=>Math.abs(x.x-4)<1e-10);
   for(const key of ["N","Vy","Vz","T","My","Mz"])assert.ok(Math.abs(tip[key])<1e-6,key+" tip action should close to zero; got "+tip[key]);
+});
+
+test("3D combination runner solves every configured gravity case sequentially and preserves simultaneous end actions", async () => {
+  const runner=globalThis.Sahroud3DCombinationRunner;
+  const model={members:[{id:"M1",sectionKey:"column"}]};
+  const calls=[];
+  const result=await runner.run([
+    {name:"U1",dead:1.4,live:0,snow:0},
+    {name:"U2",dead:1.2,live:1.6,snow:0.5}
+  ],async spec=>{
+    calls.push(spec.label);
+    return {success:true,members:[{id:"M1",localEndForces:[spec.factors.dead,spec.factors.live,spec.factors.snow,0,0,0,-spec.factors.dead,0,0,0,0,0]}]};
+  },model,{envelope(cases){assert.equal(cases.length,2);return {success:true,caseCount:2,memberCount:1,cases};}});
+  assert.deepEqual(calls,["U1","U2"]);
+  assert.equal(result.caseCount,2);
+  assert.equal(result.combinationResults[1].members[0].localEndForces[1],1.6);
+  assert.equal(result.combinationResults[1].members[0].localEndForces[2],0.5);
+});
+
+test("3D combination runner fails closed when any combination fails", async () => {
+  const runner=globalThis.Sahroud3DCombinationRunner;
+  let calls=0;
+  await assert.rejects(()=>runner.run([
+    {name:"U1",dead:1.4,live:0,snow:0},{name:"U2",dead:1.2,live:1.6,snow:0.5}
+  ],async()=>{calls++;return calls===1?{success:true,members:[{id:"M1",localEndForces:Array(12).fill(0)}]}:{success:false};},
+  {members:[{id:"M1"}]},{envelope(){throw new Error("must not build a partial envelope");}}),/تحلیل ترکیب/);
+  assert.equal(calls,2);
+});
+
+test("3D combination runner rejects invalid and empty factor sets", () => {
+  const runner=globalThis.Sahroud3DCombinationRunner;
+  assert.throws(()=>runner.normalize([]),/هیچ ترکیب/);
+  assert.throws(()=>runner.normalize([{name:"bad",dead:-1,live:0,snow:0}]),/غیرمنفی/);
+  assert.throws(()=>runner.normalize([{name:"empty",dead:0,live:0,snow:0}]),/ضریب بار فعالی/);
 });
