@@ -772,6 +772,25 @@ test("model-generated roof purlin footprints use clipped station strips and spli
   assert.ok(result.every(x=>x.globalVertices.length===4));
 });
 
+test("sloped gable roof footprint maps its ridge point to the global apex", () => {
+  const fs=require("node:fs"),path=require("node:path");
+  const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
+  const start=source.indexOf("function buildRoofPurlinWindFootprints(sourceModel)");
+  const open=source.indexOf("{",start);let depth=0,end=-1;
+  for(let i=open;i<source.length;i++){if(source[i]==="{")depth++;else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}}
+  const build=new Function("return ("+source.slice(start,end)+")")();
+  const halfSlope=Math.hypot(2,1),overhang=0.8,total=halfSlope+overhang;
+  const result=build({
+    geometry:{roofRows:1,roofStationSpacing:total,totalRoofSlope:total,span:4,height:3,rise:1,roofOverhang:overhang},
+    nodes:[{id:"A",x:2,y:4,z:0},{id:"B",x:2,y:4,z:2}],
+    members:[{id:"RIDGE",sectionKey:"roofPurlin",start:"A",end:"B",side:"left",row:2,rowLeft:2,tributaryWidth:total/2}]
+  });
+  const apex=result[0].globalVertices.find(p=>Math.abs(p.z)<1e-9&&Math.abs(p.x-2)<1e-9);
+  assert.ok(apex,"roof ridge coordinate must be present");
+  assert.ok(Math.abs(apex.y-4)<1e-9);
+  assert.ok(Math.abs(result[0].areaM2-(total/2)*2)<1e-9);
+});
+
 test("model-generated roof purlin footprints reject missing member endpoints", () => {
   const fs=require("node:fs");
   const source=fs.readFileSync(require("node:path").join(__dirname,"../js/model-3d.js"),"utf8");
