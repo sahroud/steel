@@ -341,9 +341,21 @@
         const fi=(m.frame||1)-1,tw=Number(frameTrib[fi]||0);
         if(!(tw>0))throw new Error("عرض بارگیر قاب برای عضو "+(m.id||"نامشخص")+" معتبر نیست.");
         const directRafterLoadFactor=roofPurlinsPresent?0:1;
-        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:roofLineLoad(loads.deadLeft||0,tw,"dead")*directRafterLoadFactor,live:roofLineLoad(loads.liveLeft||0,tw,"live")*directRafterLoadFactor,snow:roofLineLoad(loads.snowLeft||0,tw,"snow")*directRafterLoadFactor,wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadAreaBasis,roofLoadBasisReady,roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"};
-        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:roofLineLoad(loads.deadRight||0,tw,"dead")*directRafterLoadFactor,live:roofLineLoad(loads.liveRight||0,tw,"live")*directRafterLoadFactor,snow:roofLineLoad(loads.snowRight||0,tw,"snow")*directRafterLoadFactor,wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadAreaBasis,roofLoadBasisReady,roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"};
-        else m.lineLoads={wind:0,unit:"kN/m",tributaryWidth:tw};
+        const legacyLeft=typeof m.type==="string"&&m.type.indexOf("رفتر چپ")>=0;
+        const legacyRight=typeof m.type==="string"&&m.type.indexOf("رفتر راست")>=0;
+        const isMainRafter=m.sectionKey==="rafter"||legacyLeft||legacyRight;
+        if(isMainRafter){
+          const side=m.side||(legacyLeft?"left":legacyRight?"right":null);
+          if(side!=="left"&&side!=="right")throw new Error("وجه رفتر عرضی "+(m.id||"نامشخص")+" مشخص نیست.");
+          const key=side==="left"?"Left":"Right";
+          m.lineLoads={
+            dead:roofLineLoad(loads["dead"+key]||0,tw,"dead")*directRafterLoadFactor,
+            live:roofLineLoad(loads["live"+key]||0,tw,"live")*directRafterLoadFactor,
+            snow:roofLineLoad(loads["snow"+key]||0,tw,"snow")*directRafterLoadFactor,
+            wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadAreaBasis,roofLoadBasisReady,
+            roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"
+          };
+        }else m.lineLoads={wind:0,unit:"kN/m",tributaryWidth:tw};
       } else if(m.sectionKey==="roofPurlin"){
         const w=Number(m.tributaryWidth||0);
         if(!(w>0))throw new Error("عرض بارگیر پرلین "+(m.id||"نامشخص")+" معتبر نیست.");
@@ -410,7 +422,7 @@
       for(let j=0;j<roofLine.length-1;j++){
         const a=roofLine[j],b=roofLine[j+1],mid=(a.x+b.x)/2;
         const isOverhang=mid<0||mid>span;
-        addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",segment:j+1,connectedPurlinNodes:true});
+        addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",side:mid<half?"left":"right",segment:j+1,connectedPurlinNodes:true});
       }
       frameNodes.push({z,bl,el,r,er,br,lt,rt});
     });
