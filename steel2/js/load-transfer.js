@@ -169,7 +169,7 @@
       }
     });
     if(!mappedRoof||!mappedWalls||!mappedEndWalls)throw new Error("نگاشت باد نیازمند پرلین سقف، دیوارگیر طولی و تیر دیوار انتهایی است.");
-    return Object.freeze({schemaVersion:"1.1.0",windDirection:pressureResult.direction,internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
+    return Object.freeze({schemaVersion:"1.2.0",windDirection:pressureResult.direction,internalScenario,convention:"signed net pressure; kN/m2 multiplied by member tributary width/height to kN/m",applicationScope:"preliminary-global-surface-pressure",componentsCladdingStatus:"not-independently-designed",codeComplianceStatus:"not-established",designWarning:"Six broad surface pressures are not a substitute for separate MWFRS and components-and-cladding procedures, including local edge/corner zones and applicable effective wind areas.",memberLoads:Object.freeze(memberLoads),endFacePressures:Object.freeze(endFacePressures),counts:Object.freeze({roofPurlins:mappedRoof,longitudinalWallGirts:mappedWalls,endWallGirts:mappedEndWalls})});
   }
 
   function checkWindDrift(model, displacementRecords, windDirection, limitRatio) {
