@@ -1748,3 +1748,42 @@ test("section provenance requires both a source reference and explicit verificat
   assert.deepEqual(report.groups.roofPurlin.unverifiedMemberIds,["NO_SOURCE","NO_CHECK"]);
   assert.equal(report.provenanceVerifiedCount,1);
 });
+
+
+test("3D member-demand recovery includes axial, biaxial shear, torsion and both bending axes",()=>{
+  const demand=globalThis.SahroudMemberDemand3D;
+  assert.ok(demand);
+  const member={id:"D1",sectionKey:"rafter",length:4,localEndForces:[100,20,-30,4,50,-60,-100,-20,30,-4,-50,60],analysisLoad:{uniformLocal:[10,5,-2]}};
+  const start=demand.sectionForcesAt(member,0),mid=demand.sectionForcesAt(member,2),end=demand.sectionForcesAt(member,4);
+  assert.deepEqual([start.N,start.Vy,start.Vz,start.T,start.My,start.Mz],[ -100,-20,30,-4,50,60 ]);
+  assert.equal(mid.N,-120);
+  assert.equal(mid.Vy,-30);
+  assert.equal(mid.Vz,34);
+  assert.equal(mid.T,-4);
+  assert.equal(mid.My, -50);
+  assert.equal(mid.Mz, -50);
+  assert.equal(end.N,-140);
+  assert.equal(end.Vy,-40);
+  assert.equal(end.Vz,38);
+  assert.equal(demand.recoverMember(member).sampleCount,21);
+});
+
+test("3D member-demand envelope preserves governing combination for every action component",()=>{
+  const demand=globalThis.SahroudMemberDemand3D;
+  const model={members:[{id:"M1",sectionKey:"column",analysisLoad:{uniformLocal:[0,0,0]}}]};
+  const make=(label,forces)=>({success:true,loadCase:label,loadCaseLabel:label,members:[{id:"M1",length:3,localEndForces:forces}]});
+  const a=make("U1",[10,0,0,0,0,0,-10,0,0,0,0,0]);
+  const b=make("U2",[20,0,0,0,0,0,-20,0,0,0,0,0]);
+  const result=demand.envelope([a,b],model);
+  assert.equal(result.success,true);
+  assert.equal(result.memberCount,1);
+  assert.equal(result.members[0].components.N.combination,"U2");
+  assert.equal(result.members[0].components.N.absolute,20);
+});
+
+test("3D member-demand extraction fails closed for missing model members and malformed force vectors",()=>{
+  const demand=globalThis.SahroudMemberDemand3D;
+  const source={members:[{id:"M1",analysisLoad:{uniformLocal:[0,0,0]}}]};
+  assert.throws(()=>demand.extractCase({success:true,members:[]},source),/عضو/);
+  assert.throws(()=>demand.recoverMember({id:"M1",length:2,localEndForces:[1,2],analysisLoad:{uniformLocal:[0,0,0]}}),/۱۲ مؤلفه/);
+});
