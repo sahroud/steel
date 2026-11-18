@@ -158,6 +158,58 @@
         const validationButtons=panel.querySelector(".button-grid");
         if(validationButtons) panel.insertBefore(extraHost,validationButtons);
         else panel.appendChild(extraHost);
+
+        const girderBuilder=document.createElement("details");
+        girderBuilder.className="sub-panel";
+        girderBuilder.id="builtUpGirderBuilder";
+        girderBuilder.innerHTML=`
+          <summary>محاسبه هندسی تیرورق ستون و رفتر از روی ابعاد ورق‌ها</summary>
+          <div class="notice">ابعاد واقعی را بر حسب میلی‌متر وارد کنید. ابزار، مساحت، مرکز سطح، ممان‌های اینرسی و مدول‌های مقطع ناخالص را محاسبه و در فیلدهای ستون/رفتر درج می‌کند. مقدار J فقط تقریب مقطع نازک‌جداره باز است و خودکار وارد تحلیل نمی‌شود.</div>
+          ${["column","rafter"].map((key)=>`
+            <h4>${key==="column"?"تیرورق ستون":"تیرورق رفتر"}</h4>
+            <div class="form-grid">
+              <div class="field"><label for="bg_${key}_bt">عرض بال بالا (mm)</label><input id="bg_${key}_bt" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_tt">ضخامت بال بالا (mm)</label><input id="bg_${key}_tt" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_bb">عرض بال پایین (mm)</label><input id="bg_${key}_bb" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_tb">ضخامت بال پایین (mm)</label><input id="bg_${key}_tb" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_hw">ارتفاع خالص جان (mm)</label><input id="bg_${key}_hw" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_tw">ضخامت جان (mm)</label><input id="bg_${key}_tw" type="number" min="1" step="0.1"></div>
+            </div>
+            <button type="button" class="btn secondary" id="bg_${key}_calculate">محاسبه و درج خواص هندسی ${key==="column"?"ستون":"رفتر"}</button>
+            <div class="notice" id="bg_${key}_result">هنوز محاسبه نشده است.</div>
+          `).join("")}
+        `;
+        if(validationButtons) panel.insertBefore(girderBuilder,validationButtons);
+        else panel.appendChild(girderBuilder);
+
+        function calculateBuiltUpFor(prefix){
+          const readDim=suffix=>Number($("bg_"+prefix+"_"+suffix).value);
+          const input={
+            profile:"تیرورق I ساخته‌شده",
+            topFlangeWidthMm:readDim("bt"),topFlangeThicknessMm:readDim("tt"),
+            bottomFlangeWidthMm:readDim("bb"),bottomFlangeThicknessMm:readDim("tb"),
+            webClearHeightMm:readDim("hw"),webThicknessMm:readDim("tw")
+          };
+          const resultBox=$("bg_"+prefix+"_result");
+          try{
+            if(!window.SahroudBuiltUpSection?.calculateBuiltUpISection)
+              throw new Error("ماژول محاسبه هندسی تیرورق بارگذاری نشده است.");
+            const r=window.SahroudBuiltUpSection.calculateBuiltUpISection(input);
+            $(prefix+"Profile").value=input.profile;
+            $(prefix+"A").value=r.areaCm2.toFixed(4);
+            $(prefix+"Ix").value=r.strongAxis.inertiaCm4.toFixed(4);
+            $(prefix+"Iy").value=r.weakAxis.inertiaCm4.toFixed(4);
+            $(prefix+"SxTop").value=r.strongAxis.sectionModulusTopCm3.toFixed(4);
+            $(prefix+"SxBottom").value=r.strongAxis.sectionModulusBottomCm3.toFixed(4);
+            $(prefix+"Sy").value=r.weakAxis.sectionModulusCm3.toFixed(4);
+            resultBox.textContent="محاسبه هندسی انجام شد: A="+r.areaCm2.toFixed(3)+" cm²؛ مرکز سطح از پایین="+r.centroidYFromBottomMm.toFixed(2)+" mm؛ Ix قوی="+r.strongAxis.inertiaCm4.toFixed(3)+" cm⁴؛ Iy ضعیف="+r.weakAxis.inertiaCm4.toFixed(3)+" cm⁴؛ J تقریبی="+r.torsion.JApproxCm4.toFixed(3)+" cm⁴. J به فیلد تحلیل منتقل نشده است؛ مقدار معتبر آن باید جداگانه تعیین شود. این نتیجه کنترل مقاومت یا انطباق آیین‌نامه‌ای نیست.";
+            resultBox.style.color="#92400e";
+          }catch(error){
+            resultBox.textContent="محاسبه انجام نشد: "+error.message;
+            resultBox.style.color="#b45309";
+          }
+        }
+        ["column","rafter"].forEach(key=>$("bg_"+key+"_calculate").addEventListener("click",()=>calculateBuiltUpFor(key)));
         $("btnCheckSections").addEventListener("click", validate);
     }
 
