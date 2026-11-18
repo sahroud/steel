@@ -120,3 +120,11 @@
 - Syntax parsing succeeded for the updated load-transfer, climate-load-engine, model-3d, and reference-test files.
 - All 34 test callbacks were executed through an isolated JavaScript harness: 34 passed, 0 failed. This is not a substitute for the repository's native `node --test` or GitHub Actions run.
 - GitHub Actions for final test commit `5288fb0198728e6e24185f2ffea28c4bff3ad568` remains queued; CI is not marked passed.
+
+
+## 2026-11-18 — تفکیک دامنه باد MWFRS و C&C (مانع تأیید نهایی)
+
+- ممیزی مسیر تحلیل نشان داد نگاشت شش فشار کلی سطح به پرلین‌ها و دیوارگیرها، به‌تنهایی روش مستقل طراحی اجزای پوششی (Components & Cladding) نیست. فشارهای کلی سطح نباید بدون تعیین روش، ناحیه موضعی لبه/گوشه و سطح مؤثر بارگیر به‌عنوان بار نهایی پرلین/گرت تأیید شوند.
+- خروجی mapper نسخه 1.2.0 اکنون صریحاً `applicationScope=preliminary-global-surface-pressure`، `componentsCladdingStatus=not-independently-designed` و `codeComplianceStatus=not-established` را ثبت می‌کند. هشدار دامنه در نتیجه تحلیل سه‌بعدی نیز نمایش داده می‌شود.
+- این اصلاح عمداً ضریب یا ناحیه موضعی حدسی تولید نمی‌کند و ادعای انطباق را محدود می‌سازد؛ تحلیل شش‌ناحیه‌ای فعلی صرفاً مقدماتی است و برای طراحی نهایی پرلین/دیوارگیر/پوشش کافی نیست.
+- گام باز: پیاده‌سازی مستقل روش MWFRS و C&C بر اساس متن رسمی مبحث ششم ۱۳۹۸، تعیین نواحی لبه/گوشه و سطح مؤثر، و اتصال بارهای C&C به اجزای مربوط با آزمون تعادل نیرو/لنگر و مثال مرجع. تا آن زمان P2/P5 باز می‌مانند.
