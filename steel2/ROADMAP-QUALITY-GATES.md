@@ -483,3 +483,11 @@ Status: regression cases have been added but are not yet CI-verified. The built-
 - [ ] Populate and verify `referenceAxis` for each real member family (rafters/columns, purlins, girts, braces, end posts) from actual section installation geometry. No family orientation is inferred by this infrastructure change.
 - [ ] Confirm sign conventions for local axes and local load components against independent beam-element benchmarks before production use.
 - [ ] Run full CI and the complete 12×36 model with traceable real section properties. This commit is not a CI pass or design verification.
+
+
+### Local-axis consistency gate — 2026-11-18
+
+- [x] Ensure the load assembler uses the member-specific reference axis when transforming global member loads into local coordinates, matching the solver's element transformation.
+- [ ] Populate member-specific axes only from verified section installation geometry; do not infer unverified axes for secondary members.
+- [ ] Add a generated-model integration fixture that checks load-vector transformation and solver stiffness use identical axes for representative member groups.
+- [ ] Run the native reference suite and confirm a GitHub Actions run for the resulting commit before closing this gate.
