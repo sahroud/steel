@@ -274,11 +274,18 @@
         const map={importance:"windCoeffIw",exposure:"windCoeffCe",topography:"windCoeffCt",gust:"windCoeffCg",externalPressure:"windCoeffCp",directionality:"windCoeffCd",internalGust:"windCoeffCgi",internalPressure:"windCoeffCpi"};
         if($(map[key])) $(map[key]).value=coeff[key];
       });
-      const zones=restoredMeta&&restoredMeta.windZones;
-      if(zones)Object.keys(zones).forEach(key=>{
-        const el=document.querySelector('.wind-zone-cp[data-zone="'+key+'"]');
+      const zonesByDirection=restoredMeta&&restoredMeta.windZonesByDirection;
+      if(zonesByDirection)Object.entries(zonesByDirection).forEach(([direction,zones])=>Object.keys(zones||{}).forEach(key=>{
+        const el=document.querySelector('.wind-zone-cp[data-direction="'+direction+'"][data-zone="'+key+'"]');
         if(el)el.value=zones[key];
-      });
+      }));
+      else {
+        const zones=restoredMeta&&restoredMeta.windZones;
+        if(zones)Object.keys(zones).forEach(key=>{
+          const el=document.querySelector('.wind-zone-cp[data-direction="transverse-positive"][data-zone="'+key+'"]');
+          if(el)el.value=zones[key];
+        });
+      }
     }
     updateSummary();
   }
