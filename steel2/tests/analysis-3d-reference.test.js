@@ -1265,7 +1265,7 @@ test("12x36 production model reports dense-solver degree-of-freedom and memory s
     nodes:model.nodes.length,members:model.members.length,roofPurlinPieces:extra.size,
     totalDof:nDof,pinnedSupportNodes:supportNodes,estimatedFreeDof:freeDof,
     singleDenseMatrixLowerBoundMiB:Math.round(denseLowerBoundBytes/1024/1024*10)/10,
-    solver:"dense Gaussian elimination; K and Kff are separately materialized"
+    solver:"automatic sparse conjugate-gradient for 600+ DOFs; dense path below threshold"
   }));
   assert.ok(model.nodes.length>0&&model.members.length>0);
   assert.ok(nDof>=model.nodes.length*6);
@@ -1317,4 +1317,62 @@ test("automatic sparse solver activates above 600 DOFs and matches analytical lo
   const expected=P*totalLength**3/(3*section.E*section.Iz);
   assert.ok(Math.abs(actual-expected)<=Math.max(1e-10,expected*2e-5),
     "expected "+expected+" m, received "+actual+" m");
+});
+
+
+test("full 12x36 production geometry solves with sparse stiffness and closes global load equilibrium using diagnostic sections",()=>{
+  const fs=require("node:fs"),path=require("node:path");
+  const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
+  const extract=name=>{
+    const start=source.indexOf("function "+name+"(");assert.ok(start>=0,name+" exists");
+    const open=source.indexOf("{",start);let depth=0,end=-1;
+    for(let i=open;i<source.length;i++){if(source[i]==="{")depth++;else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}}
+    assert.ok(end>open);return source.slice(start,end);
+  };
+  const addNode=(nodes,x,y,z,kind)=>{
+    const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7);
+    if(old)return old;
+    const node={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"};nodes.push(node);return node;
+  };
+  const addMember=(members,a,b,type,sectionKey,extra)=>{
+    members.push({id:"M"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",
+      length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
+  };
+  const loads={deadLeft:2,deadRight:2,liveLeft:0,liveRight:0,snowLeft:0,snowRight:0,
+    windLeft:0,windRight:0,windWall:0,windEndFront:0,windEndBack:0,
+    deadAreaBasis:"horizontal-projection",liveAreaBasis:"horizontal-projection",snowAreaBasis:"horizontal-projection"};
+  const values={span:12,length:36,spacing:6,height:6,rise:2,modelPurlinSpacing:1.4,
+    modelGirtSpacing:1.5,modelEndPostSpacing:4,modelBraceBays:1,modelPurlinClipDeduction:0,modelPurlinAssemblyGap:0};
+  const val=(id,fallback)=>Number.isFinite(Number(values[id]))?Number(values[id]):fallback;
+  const footprint=new Function("return ("+extract("buildRoofPurlinWindFootprints")+")")();
+  const assign=new Function("SteelLoadTransfer","return ("+extract("assignGeometricMemberLineLoads")+")")(loadTransfer);
+  const build=new Function("val","addNode","addMember","SteelLoadTransfer","window","buildRoofPurlinWindFootprints","assignGeometricMemberLineLoads",
+    "return ("+extract("build")+")")(val,addNode,addMember,loadTransfer,{SteelLoads:{getData:()=>loads}},footprint,assign);
+  const model=build(),nodeMap=new Map(model.nodes.map(n=>[n.id,n]));
+  const diagnosticSection={...section};
+  model.members.forEach(member=>{
+    const a=nodeMap.get(member.start),b=nodeMap.get(member.end);
+    const tr=solver.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
+    const dead=Number(member.lineLoads&&member.lineLoads.dead||0);
+    const qGlobal=[0,-(dead+diagnosticSection.A*78.5)*1000,0];
+    const qLocal=[tr.axes.x,tr.axes.y,tr.axes.z].map(axis=>axis.reduce((sum,v,i)=>sum+v*qGlobal[i],0));
+    member.analysisLoad={uniformLocal:qLocal};
+  });
+  const supports=model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base")
+    .map(n=>({nodeId:n.id,fixedDofs:[0,1,2]}));
+  const result=solver.analyze(model,{
+    sectionResolver:()=>diagnosticSection,supports,releasePurlinRafterRotation:true
+  });
+  assert.equal(result.solverAlgorithm,"diagonally-scaled-sparse-conjugate-gradient");
+  assert.equal(result.nodeCount,model.nodes.length);
+  assert.equal(result.memberCount,model.members.length);
+  assert.equal(result.loadAssemblyAudit.ok,true);
+  assert.equal(result.equilibrium.ok,true);
+  assert.ok(Number.isFinite(result.maxTranslation)&&result.maxTranslation>=0);
+  console.log("12x36 full diagnostic sparse analysis:",JSON.stringify({
+    nodes:result.nodeCount,members:result.memberCount,freeDofs:result.equilibrium.freeDofCount,
+    maxTranslationM:result.maxTranslation,relativeForceResidual:result.equilibrium.relativeForceResidual,
+    relativeMomentResidual:result.equilibrium.relativeMomentResidual,
+    note:"synthetic diagnostic sections; not a design verification"
+  }));
 });
