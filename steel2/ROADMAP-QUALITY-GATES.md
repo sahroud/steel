@@ -553,3 +553,16 @@ Status: audit diagnostics are more discriminating, but production orientation me
 - [ ] Run generated 12×36 production-model orientation inventory with actual assigned sections; keep code-design readiness false until every active member is evidenced.
 
 Status: CI verifies the audit implementation, not the physical installation orientation or structural design.
+
+
+### Member section-property evidence gate — 2026-11-18
+
+- [x] Audit every member's assigned E, G, A, Iy, Iz and J values for presence, finiteness and positive magnitude.
+- [x] Distinguish missing, incomplete, invalid and section-group-mismatched property records.
+- [x] Report valid numeric inputs separately from source-documented and explicitly verified section data.
+- [x] Attach section-property audit and combined input-readiness status to each 3D analysis result.
+- [ ] Add user-editable catalog/drawing source reference and explicit verification workflow for each section group/member.
+- [ ] Validate section property axes and strong/weak-axis mapping against actual installed orientation and independent section references.
+- [ ] Run CI for the new member-level section audit.
+
+Status: numerical completeness can be audited, but current UI values have no verified source-document provenance; code-design readiness must remain false until evidence is entered and checked.
