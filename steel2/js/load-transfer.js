@@ -85,8 +85,18 @@
     }
     return Object.freeze(supports);
   }
+  function preliminaryWindCombinations() {
+    return Object.freeze([
+      {key:"comboWind08P",label:"آزمایشی 0.8D+1.6W (جهت +)",dead:0.8,live:0,snow:0,wind:1.6,sign:1},
+      {key:"comboWind08N",label:"آزمایشی 0.8D+1.6W (جهت −)",dead:0.8,live:0,snow:0,wind:1.6,sign:-1},
+      {key:"comboLiveWind08P",label:"آزمایشی 1.2D+1.6L+0.5S+0.8W (جهت +)",dead:1.2,live:1.6,snow:0.5,wind:0.8,sign:1},
+      {key:"comboLiveWind08N",label:"آزمایشی 1.2D+1.6L+0.5S+0.8W (جهت −)",dead:1.2,live:1.6,snow:0.5,wind:0.8,sign:-1},
+      {key:"comboSnowWind08P",label:"آزمایشی 1.2D+1.6S+0.5L+0.8W (جهت +)",dead:1.2,live:0.5,snow:1.6,wind:0.8,sign:1},
+      {key:"comboSnowWind08N",label:"آزمایشی 1.2D+1.6S+0.5L+0.8W (جهت −)",dead:1.2,live:0.5,snow:1.6,wind:0.8,sign:-1}
+    ].map(item=>Object.freeze(item)));
+  }
   root.SteelLoadTransfer = Object.freeze({
     surfacePressureToLineLoad, equalStationTributaryWidths, triangularGableWindResultant,
-    triangularGablePostEquivalentLoads
+    triangularGablePostEquivalentLoads, preliminaryWindCombinations
   });
 })(typeof globalThis !== "undefined" ? globalThis : window);
