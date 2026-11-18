@@ -781,7 +781,7 @@ test("model-generated roof purlin footprints use clipped station strips and spli
   assert.ok(result.every(x=>Math.abs(x.areaM2-1.5)<1e-10));
   assert.deepEqual(result[0].vertices,[{x:0,y:0},{x:0.5,y:0},{x:0.5,y:3},{x:0,y:3}]);
   assert.deepEqual(result[1].vertices,[{x:1.5,y:0},{x:2,y:0},{x:2,y:3},{x:1.5,y:3}]);
-  const globalRidge=result[1].globalVertices.find(p=>Math.abs(p.z)<1e-9&&Math.abs(p.y-3)<1e-9);
+  const globalRidge=result[1].globalVertices.find(p=>Math.abs(p.z)<1e-9&&Math.abs(p.y-3)<1e-9&&Math.abs(p.x-2)<1e-9);
   assert.ok(globalRidge,"left-face ridge point must map into global XYZ");
   assert.ok(Math.abs(globalRidge.x-2)<1e-9);
   assert.ok(result.every(x=>x.globalVertices.length===4));
