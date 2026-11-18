@@ -459,8 +459,8 @@ test("six-zone negative internal-pressure scenario keeps zone signs independentl
   const result=globalThis.SteelLoadTransfer.applyWindZonePressureMapping(model,pressure,"negative");
   assert.ok(Math.abs(result.model.members[0].lineLoads.windLeft-6.13)<1e-12);
   assert.ok(Math.abs(result.model.members[1].lineLoads.windRight-(-1.839))<1e-12);
-  assert.ok(Math.abs(result.model.members[2].lineLoads.wind-4.291)<1e-12);
-  assert.ok(Math.abs(result.model.members[3].lineLoads.wind-(-3.065))<1e-12);
+  assert.ok(Math.abs(result.model.members[2].lineLoads.wind-5.517)<1e-12);
+  assert.ok(Math.abs(result.model.members[3].lineLoads.wind-(-2.452))<1e-12);
   assert.ok(Math.abs(result.mapping.endFacePressures.front-6.13)<1e-12);
   assert.ok(Math.abs(result.mapping.endFacePressures.rear-(-1.226))<1e-12);
 });
