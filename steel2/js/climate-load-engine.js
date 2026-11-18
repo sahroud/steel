@@ -98,7 +98,9 @@
     return result;
   }
   function calculateWindZones(direction) {
-    const selected=windDirections.some(x=>x.id===direction)?direction:"transverse-positive";
+    const selected=direction===undefined?"transverse-positive":
+      (windDirections.some(x=>x.id===direction)?direction:null);
+    if(!selected)return {q:null,rows:{},zones:{},ready:false,direction:null};
     const loads=window.SteelLoads&&window.SteelLoads.getData?window.SteelLoads.getData():{};
     const climate=loads.climate||{};
     if(!window.SteelLoadTransfer||typeof window.SteelLoadTransfer.calculateWindZonePressures!=="function")
@@ -113,7 +115,7 @@
   function buildWindDirectionTables() {
     return windDirections.map((direction,index)=>{
       const rows=windZoneRows.map(([key,label])=>{
-        const token=zoneToken(key),plus=zoneResultId(direction.id,key,"plus"),minus=zoneResultId(direction.id,key,"minus");
+        const plus=zoneResultId(direction.id,key,"plus"),minus=zoneResultId(direction.id,key,"minus");
         return '<tr><td>'+label+'</td><td><input class="wind-zone-cp" data-direction="'+direction.id+'" data-zone="'+key+'" type="number" step="0.01" placeholder="Cp"></td><td id="'+plus+'">—</td><td id="'+minus+'">—</td></tr>';
       }).join("");
       return '<details class="wind-direction-block"'+(index===0?" open":"")+'><summary>'+direction.label+'</summary><div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>Cp خارجی</th><th>فشار خالص با فشار داخلی مثبت</th><th>فشار خالص با فشار داخلی منفی</th></tr></thead><tbody>'+rows+'</tbody></table></div></details>';
