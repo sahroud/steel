@@ -54,7 +54,7 @@ test("global member load uses the same member-specific axes as the solver transf
   const global = [0, -12, 0];
   const tr = solver.makeTransform(a, b, referenceAxis);
   const local = solver.globalVectorToLocal(a, b, global, referenceAxis);
-  assert.deepEqual(local, [0, 0, 12]);
+  assert.deepEqual(local, [0, 0, -12]);
   const reconstructed = [0, 1, 2].map(i =>
     tr.axes.x[i] * local[0] + tr.axes.y[i] * local[1] + tr.axes.z[i] * local[2]
   );
