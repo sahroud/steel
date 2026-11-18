@@ -9,6 +9,7 @@ on:
       - "steel2/js/analysis-3d-worker.js"
       - "steel2/js/model-3d.js"
       - "steel2/js/load-transfer.js"
+      - "steel2/js/climate-load-engine.js"
       - "steel2/index.html"
       - "steel2/tests/**"
       - ".github/workflows/steel2-reference-tests.yml"
@@ -18,6 +19,7 @@ on:
       - "steel2/js/analysis-3d-worker.js"
       - "steel2/js/model-3d.js"
       - "steel2/js/load-transfer.js"
+      - "steel2/js/climate-load-engine.js"
       - "steel2/tests/**"
       - ".github/workflows/steel2-reference-tests.yml"
 
