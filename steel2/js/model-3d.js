@@ -80,7 +80,6 @@
         const demandBox=$("fullModel3DDemand");
         if(demandBox&&result.memberDemand){
           const f3=(v,factor,d=2)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
-          const labels={N:"N",Vy:"Vy",Vz:"Vz",T:"T",My:"My",Mz:"Mz"};
           const rows=result.memberDemand.members.map(m=>{
             const actions=["N","Vy","Vz","T","My","Mz"].map(k=>{
               const e=m.extrema[k],factor=["N","Vy","Vz"].includes(k)?0.001:0.000001;
