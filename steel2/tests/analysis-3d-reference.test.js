@@ -47,6 +47,24 @@ function axialBar(load) {
   });
 }
 
+
+test("global member load uses the same member-specific axes as the solver transform", () => {
+  const a = [0, 0, 0], b = [0, 0, 4];
+  const referenceAxis = [0, 1, 0];
+  const global = [0, -12, 0];
+  const tr = solver.makeTransform(a, b, referenceAxis);
+  const local = solver.globalVectorToLocal(a, b, global, referenceAxis);
+  assert.deepEqual(local, [0, 0, 12]);
+  const reconstructed = [0, 1, 2].map(i =>
+    tr.axes.x[i] * local[0] + tr.axes.y[i] * local[1] + tr.axes.z[i] * local[2]
+  );
+  assert.deepEqual(reconstructed, global);
+});
+
+test("global-to-local member load conversion rejects malformed vectors", () => {
+  assert.throws(() => solver.globalVectorToLocal([0,0,0],[0,0,1],[1,2]), /سه مؤلفه/);
+});
+
 test("axial nodal load: displacement equals PL/EA and reaction balances", () => {
   const P = 1000;
   const L = 2;
