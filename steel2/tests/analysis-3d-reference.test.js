@@ -7,6 +7,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 require("../js/analysis-3d.js");
+require("../js/load-transfer.js");
+const loadTransfer=globalThis.SteelLoadTransfer;
 
 const solver = globalThis.SteelFrame3D;
 const section = {
@@ -1111,4 +1113,83 @@ test("production wind member vector mapping preserves roof normals and wall-face
   assert.deepEqual(map({sectionKey:"column",lineLoads:{}},geometry,factor,sign),[0,0,0]);
   assert.throws(()=>map({sectionKey:"wallGirt",side:"unknown",lineLoads:{wind:1}},geometry,1,1),/سمت دیوارگیر/);
   assert.throws(()=>map({sectionKey:"roofPurlin",lineLoads:{windLeft:1}},geometry,-1,1),/ضریب یا علامت باد/);
+});
+
+
+test("all four wind directions and both internal-pressure signs transfer six signed zones to the correct member groups",()=>{
+  const source=require("node:fs").readFileSync(require("node:path").join(__dirname,"../js/model-3d.js"),"utf8");
+  const start=source.indexOf("function windMemberLineLoadGlobal(");
+  const open=source.indexOf("{",start);let depth=0,end=-1;
+  for(let i=open;i<source.length;i++){if(source[i]==="{")depth++;else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}}
+  assert.ok(start>=0&&end>open);
+  const windVector=new Function("return ("+source.slice(start,end)+")")();
+  const directions=["transverse-positive","transverse-negative","longitudinal-positive","longitudinal-negative"];
+  const zones=["roof-left","roof-right","long-wall-left","long-wall-right","end-wall-front","end-wall-back"];
+  const members=[
+    {id:"PL",sectionKey:"roofPurlin",side:"left",tributaryWidthLeft:2,tributaryWidthRight:0},
+    {id:"PR",sectionKey:"roofPurlin",side:"right",tributaryWidthLeft:0,tributaryWidthRight:2},
+    {id:"WL",sectionKey:"wallGirt",side:"left",tributaryHeight:1.5},
+    {id:"WR",sectionKey:"wallGirt",side:"right",tributaryHeight:1.5},
+    {id:"EF",sectionKey:"endGirt",endFace:"front",tributaryHeight:1.25},
+    {id:"ER",sectionKey:"endGirt",endFace:"rear",tributaryHeight:1.25}
+  ];
+  const coefficients={importance:1,exposure:1,topography:1,gust:1.2,directionality:0.85,internalGust:1,internalPressure:0.18};
+  const geometry={span:12,rise:2};
+  const records=[];
+  directions.forEach((direction,directionIndex)=>{
+    const cp=Object.fromEntries(zones.map((zone,index)=>[zone,((directionIndex+1)*(index+1)%7-3)*0.17]));
+    const pressure=loadTransfer.calculateWindZonePressures({direction,basicWindKmh:100,coefficients,zones:cp});
+    assert.equal(pressure.ready,true,direction);
+    ["positive","negative"].forEach(scenario=>{
+      const mapped=loadTransfer.mapWindZonePressuresToMembers({members,geometry},pressure,scenario);
+      assert.equal(mapped.windDirection,direction);
+      assert.equal(mapped.internalScenario,scenario);
+      assert.equal(Object.keys(mapped.memberLoads).length,6);
+      members.forEach(member=>{
+        const load=mapped.memberLoads[member.id];
+        let vector;
+        if(member.sectionKey==="roofPurlin"){
+          vector=windVector({ ...member,lineLoads:load},geometry,1,1);
+          const expectedLeft=pressure.rows["roof-left"][scenario==="positive"?"netInternalPositive":"netInternalNegative"];
+          const expectedRight=pressure.rows["roof-right"][scenario==="positive"?"netInternalPositive":"netInternalNegative"];
+          assert.ok(Math.abs(load.windLeft-expectedLeft*member.tributaryWidthLeft)<1e-10);
+          assert.ok(Math.abs(load.windRight-expectedRight*member.tributaryWidthRight)<1e-10);
+        }else if(member.sectionKey==="wallGirt"){
+          vector=windVector({...member,lineLoads:load},geometry,1,1);
+          const zone=member.side==="left"?"long-wall-left":"long-wall-right";
+          const expected=pressure.rows[zone][scenario==="positive"?"netInternalPositive":"netInternalNegative"];
+          assert.ok(Math.abs(load.wind-expected*member.tributaryHeight)<1e-10);
+        }else{
+          vector=windVector({...member,lineLoads:load},geometry,1,1);
+          const zone=member.endFace==="front"?"end-wall-front":"end-wall-back";
+          const expected=pressure.rows[zone][scenario==="positive"?"netInternalPositive":"netInternalNegative"];
+          assert.ok(Math.abs(load.windEnd-expected*member.tributaryHeight)<1e-10);
+        }
+        assert.equal(vector.length,3);
+        assert.ok(vector.every(Number.isFinite));
+      });
+      records.push({direction,scenario,front:mapped.endFacePressures.front,rear:mapped.endFacePressures.rear});
+    });
+  });
+  assert.equal(records.length,8);
+  assert.ok(records.some(x=>x.scenario==="positive"&&x.front!==records.find(y=>y.direction===x.direction&&y.scenario==="negative").front));
+});
+
+test("triangular end-wall pressure is conserved by equivalent post forces and nodal couples on both faces",()=>{
+  const span=12,rise=2,eave=6,intervals=6;
+  const triangle=loadTransfer.triangularGableWindResultant(0.73,span,rise);
+  const expectedForce=0.73*0.5*span*rise;
+  assert.ok(Math.abs(triangle.resultantKN-expectedForce)<1e-12);
+  const integrate=loadTransfer.triangularGablePostEquivalentLoads;
+  [0.73,-0.73].forEach(pressure=>{
+    const actions=integrate(pressure,span,rise,eave,intervals);
+    const force=actions.reduce((s,a)=>s+a.baseForceKN+a.topForceKN,0);
+    const momentX=actions.reduce((s,a)=>s+a.topForceKN*a.supportHeightM,0);
+    const momentY=actions.reduce((s,a)=>s+a.momentYAboutSupportKNm-a.xM*a.resultantKN,0);
+    const expected=loadTransfer.triangularGableWindResultant(pressure,span,rise);
+    assert.ok(Math.abs(force-expected.resultantKN)<1e-10);
+    assert.ok(Math.abs(momentX-pressure*span*rise*(eave+rise/3)/2)<1e-9);
+    assert.ok(Math.abs(momentY+expected.resultantKN*span/2)<1e-9);
+    assert.ok(Math.abs(actions.reduce((s,a)=>s+a.resultantKN,0)-expected.resultantKN)<1e-10);
+  });
 });
