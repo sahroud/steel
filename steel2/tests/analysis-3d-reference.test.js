@@ -1219,3 +1219,55 @@ test("production-equivalent triangular gable nodal forces and couples conserve g
   assert.ok(Math.abs(result.momentNm[1]-expectedMy)<1e-6);
   assert.ok(Math.abs(result.momentNm[2])<1e-7);
 });
+
+
+test("12x36 production model reports dense-solver degree-of-freedom and memory scaling before full solve",()=>{
+  const fs=require("node:fs"),path=require("node:path");
+  const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
+  const extract=name=>{
+    const start=source.indexOf("function "+name+"(");assert.ok(start>=0,name+" exists");
+    const open=source.indexOf("{",start);let depth=0,end=-1;
+    for(let i=open;i<source.length;i++){if(source[i]==="{")depth++;else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}}
+    assert.ok(end>open);return source.slice(start,end);
+  };
+  const addNode=(nodes,x,y,z,kind)=>{
+    const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7);
+    if(old)return old;
+    const node={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"};nodes.push(node);return node;
+  };
+  const addMember=(members,a,b,type,sectionKey,extra)=>{
+    members.push({id:"M"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",
+      length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
+  };
+  const loads={deadLeft:2,deadRight:2,liveLeft:0,liveRight:0,snowLeft:0,snowRight:0,
+    windLeft:0,windRight:0,windWall:0,windEndFront:0,windEndBack:0,
+    deadAreaBasis:"horizontal-projection",liveAreaBasis:"horizontal-projection",snowAreaBasis:"horizontal-projection"};
+  const values={span:12,length:36,spacing:6,height:6,rise:2,modelPurlinSpacing:1.4,
+    modelGirtSpacing:1.5,modelEndPostSpacing:4,modelBraceBays:1,modelPurlinClipDeduction:0,modelPurlinAssemblyGap:0};
+  const val=(id,fallback)=>Number.isFinite(Number(values[id]))?Number(values[id]):fallback;
+  const footprint=new Function("return ("+extract("buildRoofPurlinWindFootprints")+")")();
+  const assign=new Function("SteelLoadTransfer","return ("+extract("assignGeometricMemberLineLoads")+")")(loadTransfer);
+  const build=new Function("val","addNode","addMember","SteelLoadTransfer","window","buildRoofPurlinWindFootprints","assignGeometricMemberLineLoads",
+    "return ("+extract("build")+")")(val,addNode,addMember,loadTransfer,{SteelLoads:{getData:()=>loads}},footprint,assign);
+  const model=build();
+  const rafterNodes=new Set(model.members.filter(m=>m.sectionKey==="rafter").flatMap(m=>[m.start,m.end]));
+  const extra=new Set();
+  model.members.filter(m=>m.sectionKey==="roofPurlin").forEach(m=>{
+    [["i",m.start],["j",m.end]].forEach(([end,node])=>{
+      if(rafterNodes.has(node))extra.add(String(m.pieceId||m.id)+":"+node);
+    });
+  });
+  const nDof=model.nodes.length*6+extra.size*2;
+  const supportNodes=model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").length;
+  const freeDof=nDof-supportNodes*3;
+  const denseLowerBoundBytes=freeDof*freeDof*8;
+  console.log("12x36 production model sizing:",JSON.stringify({
+    nodes:model.nodes.length,members:model.members.length,roofPurlinPieces:extra.size,
+    totalDof:nDof,pinnedSupportNodes:supportNodes,estimatedFreeDof:freeDof,
+    singleDenseMatrixLowerBoundMiB:Math.round(denseLowerBoundBytes/1024/1024*10)/10,
+    solver:"dense Gaussian elimination; K and Kff are separately materialized"
+  }));
+  assert.ok(model.nodes.length>0&&model.members.length>0);
+  assert.ok(nDof>=model.nodes.length*6);
+  assert.ok(freeDof>0);
+});
