@@ -419,3 +419,25 @@ test("six-zone pressure mapping fails closed for incomplete data, bad scenario o
   assert.throws(()=>globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers({members:[{id:"x",sectionKey:"roofPurlin",side:"left",tributaryWidth:-1}]},p,"positive"),/عرض بارگیر/);
   assert.throws(()=>globalThis.SteelLoadTransfer.mapWindZonePressuresToMembers({members:[{id:"x",sectionKey:"roofPurlin",side:"left",tributaryWidth:1}]},p,"positive"),/نیازمند پرلین/);
 });
+
+test("six-zone application adapter replaces only wind line loads and preserves gravity loads",()=>{
+  const pressure=globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    basicWindKmh:360,
+    coefficients:{importance:1,exposure:1,topography:1,gust:1,directionality:1,internalGust:1,internalPressure:0.2},
+    zones:{"roof-left":0.8,"roof-right":-0.5,"long-wall-left":0.7,"long-wall-right":-0.6,"end-wall-front":0.9,"end-wall-back":-0.4}
+  });
+  const source={members:[
+    {id:"P1",sectionKey:"roofPurlin",side:"left",tributaryWidth:2,lineLoads:{dead:8,live:2,windLeft:999}},
+    {id:"W1",sectionKey:"wallGirt",side:"left",tributaryHeight:1.2,lineLoads:{dead:3,wind:999}},
+    {id:"E1",sectionKey:"endGirt",endFace:"rear",tributaryHeight:1.5,lineLoads:{dead:4,windEnd:999}}
+  ]};
+  const applied=globalThis.SteelLoadTransfer.applyWindZonePressureMapping(source,pressure,"positive");
+  assert.equal(applied.model.members[0].lineLoads.dead,8);
+  assert.equal(applied.model.members[0].lineLoads.live,2);
+  assert.ok(Math.abs(applied.model.members[0].lineLoads.windLeft-3.678*2)<1e-12);
+  assert.ok(Math.abs(applied.model.members[1].lineLoads.wind-3.065*1.2)<1e-12);
+  assert.ok(Math.abs(applied.model.members[2].lineLoads.windEnd-(-3.678)*1.5)<1e-12);
+  assert.equal(applied.mapping.endFacePressures.front,4.291);
+  assert.equal(applied.mapping.endFacePressures.rear,-3.678);
+  assert.equal(source.members[0].lineLoads.windLeft,999,"source model must not be mutated");
+});
