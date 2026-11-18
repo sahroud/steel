@@ -34,7 +34,7 @@
       Vy:-f[1]-qy*a,
       Vz:-f[2]-qz*a,
       T:-f[3],
-      My:-f[4]+f[2]*a+0.5*qz*a*a,
+      My:-f[4]-f[2]*a-0.5*qz*a*a,
       Mz:-f[5]+f[1]*a+0.5*qy*a*a
     };
   }
