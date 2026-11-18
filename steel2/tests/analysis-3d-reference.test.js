@@ -266,3 +266,55 @@ test("preliminary 3D wind combination definitions are immutable", () => {
   assert.equal(Object.isFrozen(combos), true);
   assert.equal(Object.isFrozen(combos[0]), true);
 });
+
+
+test("wind-zone pressure helper calculates both internal-pressure signs", () => {
+  const zones = {
+    "roof-left": 0.8, "roof-right": -0.5,
+    "long-wall-left": 0.7, "long-wall-right": -0.6,
+    "end-wall-front": 0.9, "end-wall-back": -0.4
+  };
+  const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    basicWindKmh: 360,
+    coefficients: {
+      importance: 1, exposure: 1, topography: 1, gust: 1,
+      directionality: 1, internalGust: 1, internalPressure: 0.2
+    },
+    zones
+  });
+  assert.equal(result.ready, true);
+  assert.ok(Math.abs(result.q - 6.13) < 1e-12);
+  assert.ok(Math.abs(result.rows["roof-left"].external - 4.904) < 1e-12);
+  assert.ok(Math.abs(result.rows["roof-left"].netInternalPositive - 3.678) < 1e-12);
+  assert.ok(Math.abs(result.rows["roof-left"].netInternalNegative - 6.13) < 1e-12);
+  assert.ok(Math.abs(result.rows["roof-right"].netInternalPositive + 4.291) < 1e-12);
+  assert.ok(Math.abs(result.rows["roof-right"].netInternalNegative + 1.839) < 1e-12);
+});
+
+test("wind-zone pressure helper fails closed when required coefficients or zone Cp are missing", () => {
+  const input = {
+    basicWindKmh: 360,
+    coefficients: {
+      importance: 1, exposure: 1, topography: 1, gust: 1,
+      directionality: 1, internalGust: 1
+    },
+    zones: { "roof-left": 0.8, "roof-right": "" }
+  };
+  const result = globalThis.SteelLoadTransfer.calculateWindZonePressures(input);
+  assert.equal(result.ready, false);
+  assert.equal(result.rows["roof-left"], null);
+  assert.equal(result.rows["roof-right"], null);
+});
+
+test("wind-zone pressure helper rejects negative wind speed without producing pressures", () => {
+  const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    basicWindKmh: -10,
+    coefficients: {
+      importance: 1, exposure: 1, topography: 1, gust: 1,
+      directionality: 1, internalGust: 1, internalPressure: 0.2
+    },
+    zones: { "roof-left": 0.8 }
+  });
+  assert.equal(result.ready, false);
+  assert.equal(result.q, null);
+});
