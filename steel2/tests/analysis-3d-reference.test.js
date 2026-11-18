@@ -318,3 +318,45 @@ test("wind-zone pressure helper rejects negative wind speed without producing pr
   assert.equal(result.ready, false);
   assert.equal(result.q, null);
 });
+
+
+test("wind-zone pressure helper rejects negative amplification factors", () => {
+  const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    basicWindKmh: 360,
+    coefficients: {
+      importance: 1, exposure: -1, topography: 1, gust: 1,
+      directionality: 1, internalGust: 1, internalPressure: 0.2
+    },
+    zones: { "roof-left": 0.8 }
+  });
+  assert.equal(result.ready, false);
+  assert.equal(result.rows["roof-left"], null);
+});
+
+test("wind-zone pressure helper preserves signed internal pressure while validating factors", () => {
+  const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    basicWindKmh: 360,
+    coefficients: {
+      importance: 1, exposure: 1, topography: 1, gust: 1,
+      directionality: 1, internalGust: 1, internalPressure: -0.2
+    },
+    zones: { "roof-left": 0.8 }
+  });
+  assert.equal(result.ready, true);
+  assert.ok(Math.abs(result.rows["roof-left"].netInternalPositive - 3.678) < 1e-12);
+  assert.ok(Math.abs(result.rows["roof-left"].netInternalNegative - 6.13) < 1e-12);
+});
+
+test("wind-zone pressure helper accepts zero basic wind as zero pressure", () => {
+  const result = globalThis.SteelLoadTransfer.calculateWindZonePressures({
+    basicWindKmh: 0,
+    coefficients: {
+      importance: 1, exposure: 1, topography: 1, gust: 1,
+      directionality: 1, internalGust: 1, internalPressure: 0.2
+    },
+    zones: { "roof-left": 0.8 }
+  });
+  assert.equal(result.ready, true);
+  assert.equal(result.q, 0);
+  assert.equal(result.rows["roof-left"].netInternalPositive, 0);
+});
