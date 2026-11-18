@@ -263,6 +263,50 @@
   function addMember(members,a,b,type,sectionKey,extra) {
     members.push({id:type.toUpperCase().replace(/[^A-Z0-9]+/g,"_")+"_"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
   }
+  function buildRoofPurlinWindFootprints(sourceModel) {
+    if(!sourceModel||!sourceModel.geometry||!Array.isArray(sourceModel.members)||!Array.isArray(sourceModel.nodes))
+      throw new TypeError("مدل هندسی کامل برای footprint پرلین سقف موجود نیست.");
+    const g=sourceModel.geometry, rows=Number(g.roofRows), step=Number(g.roofStationSpacing), total=Number(g.totalRoofSlope);
+    if(!Number.isInteger(rows)||rows<1||!(step>0)||!(total>0))
+      throw new Error("اطلاعات واقعی ایستگاه‌بندی سقف برای ساخت footprint موجود نیست.");
+    const nodeById=new Map(sourceModel.nodes.map(n=>[String(n.id),n]));
+    const bounds=(row,fromRidge)=>{
+      if(!Number.isInteger(row)||row<1||row>rows+1)throw new Error("شماره ردیف پرلین خارج از ایستگاه‌بندی سقف است.");
+      const center=fromRidge?total-(row-1)*step:(row-1)*step;
+      const lo=row===1?(fromRidge?total-step/2:0):center-step/2;
+      const hi=row===rows+1?(fromRidge?total:total):center+step/2;
+      return [Math.max(0,lo),Math.min(total,hi)];
+    };
+    const footprints=[];
+    sourceModel.members.filter(m=>m.sectionKey==="roofPurlin").forEach(member=>{
+      const a=nodeById.get(String(member.start)),b=nodeById.get(String(member.end));
+      if(!a||!b)throw new Error("گره عضو پرلین "+member.id+" پیدا نشد.");
+      if(Math.abs(a.x-b.x)>1e-7||Math.abs(a.y-b.y)>1e-7||Math.abs(a.z-b.z)<=1e-9)
+        throw new Error("هندسه عضو پرلین "+member.id+" با فرض قطعه طولی ثابت سازگار نیست.");
+      const z0=Math.min(a.z,b.z),z1=Math.max(a.z,b.z);
+      const faces=member.side==="ridge"?[
+        {face:"left",row:member.rowLeft,width:member.tributaryWidthLeft,fromRidge:false},
+        {face:"right",row:member.rowRight,width:member.tributaryWidthRight,fromRidge:true}
+      ]:[{face:member.side,row:member.side==="left"?(member.rowLeft||member.row):(member.rowRight||member.row),
+          width:member.tributaryWidth,fromRidge:member.side==="right"}];
+      faces.forEach(item=>{
+        if(!(Number(item.width)>0))return;
+        const [u0,u1]=bounds(Number(item.row),item.fromRidge);
+        if(!(u1-u0>1e-9)||!(z1-z0>1e-9))throw new Error("ابعاد footprint پرلین "+member.id+" صفر یا نامعتبر است.");
+        const vertices=[{x:u0,y:z0},{x:u1,y:z0},{x:u1,y:z1},{x:u0,y:z1}];
+        footprints.push(Object.freeze({
+          id:member.id+"_"+item.face,memberId:member.id,face:item.face,
+          vertices:Object.freeze(vertices.map(p=>Object.freeze(p))),
+          areaM2:(u1-u0)*(z1-z0),areaBasis:"sloped-surface",
+          localCoordinateSystem:"roof-face-u-from-eave-edge-and-global-z",
+          tributaryWidthM:u1-u0,longitudinalLengthM:z1-z0,
+          geometrySource:"actual-model-member-endpoints-and-roof-station-grid",
+          verificationStatus:"geometry-only-not-code-verified",pressureReady:false
+        }));
+      });
+    });
+    return Object.freeze(footprints);
+  }
   function build() {
     const span=val("span",20), length=val("length",30), spacing=val("spacing",5), height=val("height",6), rise=val("rise",2);
     const psp=val("modelPurlinSpacing",1.2), gsp=val("modelGirtSpacing",1.5), endsp=val("modelEndPostSpacing",4);
@@ -315,10 +359,12 @@
         const existing=purlinStations.get(key);
         if(existing){
           existing.side="ridge";
+          existing.rowRight=ri+1;
           existing.tributaryWidthRight=width;
           existing.tributaryWidth+=width;
         }else{
           purlinStations.set(key,{x,side:side<0?"left":"right",row:ri+1,
+            rowLeft:side<0?ri+1:null,rowRight:side>0?ri+1:null,
             tributaryWidth:width,
             tributaryWidthLeft:side<0?width:0,
             tributaryWidthRight:side>0?width:0});
@@ -342,7 +388,7 @@
           const na=addNode(nodes,station.x,roofY(station.x),za,"roof-secondary-support");
           const nb=addNode(nodes,station.x,roofY(station.x),zb,"roof-secondary-support");
           addMember(members,na,nb,"پرلین مستقل عبوری از قاب انتهایی","roofPurlin",{
-            side:station.side,row:station.row,bay:bay+1,pieceId,
+            side:station.side,row:station.row,rowLeft:station.rowLeft,rowRight:station.rowRight,bay:bay+1,pieceId,
             tributaryWidth:station.tributaryWidth,tributaryWidthLeft:station.tributaryWidthLeft,
             tributaryWidthRight:station.tributaryWidthRight,supportAxisLengthM:axisLength,
             clipDeductionM:clipDeduction,assemblyGapM:assemblyGap,
@@ -457,7 +503,9 @@
         m.lineLoads={windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure};
       }
     });
-    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
+    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8,
+      roofRows,totalRoofSlope:totalRoofSlope,roofStationSpacing:totalRoofSlope/roofRows},nodes,members,generatedAt:new Date().toISOString()};
+    model.windFootprints=buildRoofPurlinWindFootprints(model);
     return model;
   }
   function draw() {
@@ -961,6 +1009,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,getProposedUnbracedLengths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,getProposedUnbracedLengths,buildRoofPurlinWindFootprints,get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
