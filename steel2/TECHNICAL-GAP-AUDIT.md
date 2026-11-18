@@ -237,3 +237,10 @@
 - سازنده footprint واقعی پرلین برای ممیزی هندسه C&C وجود دارد، اما هنوز به فشارهای رسمی موضعی لبه/گوشه و بارگذاری مستقل پوشش/پیچ متصل نیست. mapper شش‌ناحیه‌ای صریحاً componentsCladdingStatus=not-independently-designed و codeComplianceStatus=not-established برمی‌گرداند.
 - CI مربوط به commit c00e32c با ۵۵ تست اجرا شد و ۴ تست شکست خورد: برابری دقیق اعشاری مساحت ۷٫۲، دو الگوی regex پیام خطای چندضلعی، و انتظار اشتباه عرض footprint لبه در fixture. فایل آزمون برای رفع این چهار مورد اصلاح شد؛ نتیجه CI commit اصلاحی هنوز باید بررسی شود.
 - گیت‌های باز: آزمون انتهابه‌انتهای بار پرلین→رفتر→ستون→پایه با تعادل؛ کنترل پایداری و آزادسازی واقعی اتصال پرلین؛ طراحی اتصالات و صفحه‌ستون/مهاری؛ تحلیل P-Delta؛ طراحی فونداسیون و خاک؛ C&C رسمی و تعادل تمام سناریوهای باد.
+
+
+### Member-specific local axes are shared by solver and load transformation — 2026-11-18
+
+- The 3D load assembly now passes each member's optional `referenceAxis` to the same `makeTransform` routine used by the solver. This keeps global-to-local distributed-load conversion consistent with the element stiffness transformation whenever a member-specific orientation is supplied.
+- Members without an explicit `referenceAxis` retain the solver's existing default-axis behavior; no unverified orientation is inferred or assigned to purlins, girts, braces, or other groups.
+- This is a consistency fix, not evidence that production member orientations have been fully specified. Actual section installation axes and restraint details remain to be verified from fabrication/design data. No new end-to-end structural validation or CI pass is claimed.
