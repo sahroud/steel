@@ -43,3 +43,7 @@
 - Syntax parsing passed for `model-3d.js`, `load-transfer.js`, `analysis-3d-worker.js`, `analysis-3d.js`, and the reference test file.
 - These combinations mirror the existing controller's preliminary patterns; they are not a certification of Mabhas 6 factors or load applicability. Wind pressure derivation, internal/external pressure scenarios, load direction cases, and governing code edition still need authoritative validation.
 - Full 3D end-to-end analysis of all six cases was not completed in this pass; the headless full-model solver attempt exceeded the execution time limit. No whole-shed analysis result is claimed.
+
+
+- UI diagnostics were updated so the 3D analysis result reports the signed front/rear triangular-gable wind resultant when applied. The long-form warning no longer incorrectly claims that the triangular end-wall region is omitted; it now states that this region uses statically equivalent nodal actions and explicitly lists remaining wind-model limitations.
+- Final local recheck after the UI change: syntax parsing passed for all five core JS/test files and all 17 reference tests passed in the local harness. The full native GitHub Actions run remains queued/unconfirmed; the previous observed run was still queued when last checked.
