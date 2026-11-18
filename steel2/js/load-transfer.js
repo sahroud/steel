@@ -412,8 +412,8 @@
         zoneVertices:zone.vertices,areaBasis:basis}).overlapAreaM2;
       return sum+Math.max(0,z.effectiveAreaM2-inside);
     },0);
-    const fullyCovered=!hasOverlap&&uncoveredArea<=tolerance;
-    const partitionValid=fullyCovered&&outsideFootprintArea<=tolerance;
+    const fullyCovered=!hasOverlap&&uncoveredArea<=tolerance&&outsideFootprintArea<=tolerance;
+    const partitionValid=fullyCovered;
     return Object.freeze({
       areaBasis:basis,
       footprintAreaM2:footprint.effectiveAreaM2,
