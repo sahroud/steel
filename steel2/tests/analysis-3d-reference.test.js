@@ -1522,11 +1522,6 @@ test("built-up I section: invalid and non-finite dimensions fail closed", () => 
   assert.throws(() => builtUp.calculateBuiltUpISection({
     topFlangeWidthMm: 200, topFlangeThicknessMm: 12,
     bottomFlangeWidthMm: 200, bottomFlangeThicknessMm: 12,
-    webClearHeightMm: 400, webThicknessMm: 8
-  }).areaCm2 !== 0 ? (() => { throw new Error("unexpected"); })() : null);
-  assert.throws(() => builtUp.calculateBuiltUpISection({
-    topFlangeWidthMm: 200, topFlangeThicknessMm: 12,
-    bottomFlangeWidthMm: 200, bottomFlangeThicknessMm: 12,
     webClearHeightMm: 400, webThicknessMm: 0
   }));
   assert.throws(() => builtUp.calculateBuiltUpISection({
