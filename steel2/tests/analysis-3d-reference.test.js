@@ -561,3 +561,31 @@ test("service wind drift check fails closed when base-to-top displacement pairs 
   assert.equal(result.ready,false);
   assert.equal(result.ok,false);
 });
+
+
+test("C&C rectangular effective area is calculated from explicit tributary geometry only", () => {
+  const result = globalThis.SteelLoadTransfer.calculateRectangularEffectiveWindArea({
+    component:"roof-purlin", tributaryWidthM:1.2, loadedLengthM:6,
+    areaBasis:"sloped-surface"
+  });
+  assert.equal(result.effectiveAreaM2, 7.2);
+  assert.equal(result.geometryMethod, "rectangular-tributary-patch");
+  assert.equal(result.verificationStatus, "geometry-only-not-code-verified");
+  assert.equal(result.pressureReady, false);
+  assert.equal(result.coefficientSource, null);
+});
+
+test("C&C effective-area helper rejects missing dimensions and ambiguous area basis", () => {
+  const helper = globalThis.SteelLoadTransfer.calculateRectangularEffectiveWindArea;
+  assert.throws(() => helper({tributaryWidthM:0,loadedLengthM:6,areaBasis:"sloped-surface"}), /عرض بارگیر/);
+  assert.throws(() => helper({tributaryWidthM:1,loadedLengthM:6}), /مبنای سطح مؤثر/);
+});
+
+test("C&C effective-area helper preserves projected versus sloped-surface basis", () => {
+  const helper = globalThis.SteelLoadTransfer.calculateRectangularEffectiveWindArea;
+  const projected = helper({component:"wall-girt",tributaryWidthM:2,loadedLengthM:3,areaBasis:"projected"});
+  const sloped = helper({component:"roof-purlin",tributaryWidthM:2,loadedLengthM:3,areaBasis:"sloped-surface"});
+  assert.equal(projected.effectiveAreaM2, 6);
+  assert.equal(sloped.effectiveAreaM2, 6);
+  assert.notEqual(projected.areaBasis, sloped.areaBasis);
+});
