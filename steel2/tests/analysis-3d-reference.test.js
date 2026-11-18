@@ -1013,14 +1013,14 @@ test("production geometry builder conserves roof dead-load tributary area across
 
 test("independent global load resultant audit matches assembled solver load vector for inclined member and nodal actions",()=>{
   const model={
-    nodes:[{id:"A",x:1,y:2,z:3},{id:"B",x:5,y:5,z:7},{id:"C",x:0,y:0,z:0}],
+    nodes:[{id:"A",x:1,y:2,z:3},{id:"B",x:5,y:5,z:7}],
     members:[{id:"INCLINED",start:"A",end:"B",analysisLoad:{uniformLocal:[0,-1250,340]}}]
   };
-  const nodalLoads=[{nodeId:"C",values:[300,-400,500,120,230,-340]}];
+  const nodalLoads=[{nodeId:"A",values:[300,-400,500,120,230,-340]}];
   const direct=solver.calculateGlobalLoadResultants(model,nodalLoads);
   const solved=solver.analyze(model,{
     sectionResolver:()=>section,
-    supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]},{nodeId:"C",fixedDofs:[0,1,2,3,4,5]}],
+    supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[1,2,3,4,5]}],
     nodalLoads
   });
   assert.equal(solved.loadAssemblyAudit.ok,true);
