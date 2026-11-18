@@ -1414,3 +1414,34 @@ test("built-up I section calculator uses explicit cm area, inertia and modulus c
   assert.equal(r.units.inertia,"cm4");
   assert.equal(r.units.sectionModulus,"cm3");
 });
+
+
+test("local frame axes are consistent for columns and both roof slopes",()=>{
+  const column=solver.makeTransform([0,0,0],[0,6,0]);
+  assert.ok(Math.abs(column.axes.z[2]-1)<1e-12);
+  assert.ok(Math.abs(column.axes.y[0]+1)<1e-12);
+  const left=solver.makeTransform([0,6,0],[6,8,0]);
+  assert.ok(Math.abs(left.axes.z[2]-1)<1e-12);
+  assert.ok(left.axes.y[1]>0,"left rafter local +y must point toward roof top");
+  const right=solver.makeTransform([6,8,0],[12,6,0]);
+  assert.ok(Math.abs(right.axes.z[2]-1)<1e-12);
+  assert.ok(right.axes.y[1]>0,"right rafter local +y must point toward roof top");
+});
+
+test("longitudinal member local vertical axis is local z under default transform",()=>{
+  const purlin=solver.makeTransform([2,6,0],[2,6,6]);
+  assert.ok(Math.abs(purlin.axes.x[2]-1)<1e-12);
+  assert.ok(Math.abs(purlin.axes.y[0]-1)<1e-12);
+  assert.ok(Math.abs(purlin.axes.z[1]-1)<1e-12);
+  assert.ok(Math.abs(purlin.axes.z[0])<1e-12);
+});
+
+test("built-up I-section strong-axis assignment matches transverse frame bending axis",()=>{
+  const column=solver.makeTransform([0,0,0],[0,6,0]);
+  const rafter=solver.makeTransform([0,6,0],[6,8,0]);
+  // In the frame plane, local-y transverse bending is resisted by local-z moment.
+  for(const tr of [column,rafter]){
+    assert.ok(Math.abs(tr.axes.z[2]-1)<1e-12);
+    assert.ok(Math.abs(tr.axes.y[2])<1e-12);
+  }
+});
