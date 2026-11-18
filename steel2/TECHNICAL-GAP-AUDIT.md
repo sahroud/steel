@@ -33,3 +33,13 @@
 
 
 - Geometry smoke check: built the current 12 m × 36 m × 6 m shed geometry (2 m rise, 4 m end-post spacing) from the actual `model-3d.js` builder in a headless DOM stub. All eight front/rear base/head station pairs resolved to existing shared nodes and had the expected column/end-post/rafter connectivity. This confirms node mapping for that test geometry only; it is not a structural analysis run.
+
+
+### 3D wind combination cases — 2026-11-18
+
+- Added six selectable preliminary 3D wind cases, covering both wind signs for the three wind-containing factor patterns already present in the legacy combination controller: (0.8D+1.6W), (1.2D+1.6L_r+0.5S+0.8W), and (1.2D+1.6S+0.5L_r+0.8W).
+- The factor definitions are centralized in `SteelLoadTransfer.preliminaryWindCombinations()` and consumed by the 3D load-case selector/analysis path. This avoids duplicating factor literals between UI and solver dispatch.
+- Added two tests for all six case keys, both wind signs, the gravity/wind factor patterns, and immutability. The reference suite now contains 17 tests; all 17 passed in the local JavaScript harness after loading the actual solver and load-transfer modules.
+- Syntax parsing passed for `model-3d.js`, `load-transfer.js`, `analysis-3d-worker.js`, `analysis-3d.js`, and the reference test file.
+- These combinations mirror the existing controller's preliminary patterns; they are not a certification of Mabhas 6 factors or load applicability. Wind pressure derivation, internal/external pressure scenarios, load direction cases, and governing code edition still need authoritative validation.
+- Full 3D end-to-end analysis of all six cases was not completed in this pass; the headless full-model solver attempt exceeded the execution time limit. No whole-shed analysis result is claimed.
