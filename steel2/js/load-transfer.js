@@ -183,7 +183,6 @@
     if(!Number.isFinite(height)||height<=0)
       return Object.freeze({ready:false,ok:false,reason:"ارتفاع مبنای کنترل دریفت معتبر نیست."});
     const axis=windDirection.startsWith("transverse-")?0:2;
-    const nodeById=new Map(model.nodes.map(node=>[String(node.id),node]));
     const dispById=new Map(displacementRecords.map(item=>[String(item.nodeId),item.values]));
     const tolerance=1e-7, topCandidates=[];
     model.nodes.forEach(node=>{
