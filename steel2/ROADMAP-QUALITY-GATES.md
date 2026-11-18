@@ -566,3 +566,13 @@ Status: CI verifies the audit implementation, not the physical installation orie
 - [ ] Run CI for the new member-level section audit.
 
 Status: numerical completeness can be audited, but current UI values have no verified source-document provenance; code-design readiness must remain false until evidence is entered and checked.
+
+
+### CI confirmation — member section-property audit (2026-11-18)
+
+- [x] GitHub Actions run #391 (`44321873571`) passed after the member section-property audit was added.
+- [x] Active-module syntax checks passed; 102/102 reference tests passed, 0 failed.
+- [ ] Add source-document/catalog reference and explicit reviewer verification to project section inputs.
+- [ ] Populate and verify actual production section properties and installation axes before code design.
+
+Status: implementation is CI-verified; project-specific section data and design compliance remain unverified.
