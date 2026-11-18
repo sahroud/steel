@@ -862,3 +862,70 @@ test("polygonal C&C tributary patch requires finite coordinates and explicit are
     vertices:[{x:0,y:0},{x:1,y:0},{x:0,y:1}]
   }), /مبنای سطح/);
 });
+
+
+function extractModelLoadAssignment() {
+  const fs=require("node:fs"),path=require("node:path");
+  const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
+  const start=source.indexOf("function assignGeometricMemberLineLoads(");
+  assert.ok(start>=0,"model load assignment helper must exist");
+  const open=source.indexOf("{",start);let depth=0,end=-1;
+  for(let i=open;i<source.length;i++){
+    if(source[i]==="{")depth++;
+    else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}
+  }
+  assert.ok(end>open,"model load assignment helper must have a complete body");
+  return new Function("SteelLoadTransfer","return ("+source.slice(start,end)+")")(globalThis.SteelLoadTransfer);
+}
+
+test("geometric load assignment sends roof D/L/S to purlins once and combines both ridge tributaries",()=>{
+  const assign=extractModelLoadAssignment(),angle=Math.atan2(2,6),c=Math.cos(angle);
+  const members=[
+    {id:"RAFTER-L",axis:"transverse",frame:1,type:"رفتر چپ"},
+    {id:"RAFTER-R",axis:"transverse",frame:1,type:"رفتر راست"},
+    {id:"PURLIN-L",sectionKey:"roofPurlin",side:"left",tributaryWidth:2},
+    {id:"PURLIN-R",sectionKey:"roofPurlin",side:"right",tributaryWidth:3},
+    {id:"PURLIN-RIDGE",sectionKey:"roofPurlin",side:"ridge",tributaryWidth:5,tributaryWidthLeft:2,tributaryWidthRight:3}
+  ];
+  const loads={
+    deadLeft:2,deadRight:3,liveLeft:1,liveRight:1.5,snowLeft:0.8,snowRight:1.2,
+    windLeft:0.5,windRight:-0.25,
+    deadAreaBasis:"horizontal-projection",liveAreaBasis:"sloped-surface",snowAreaBasis:"horizontal-projection"
+  };
+  const result=assign(members,{span:12,rise:2},[6],loads);
+  assert.equal(result.roofPurlinsPresent,true);
+  assert.equal(members[0].lineLoads.dead,0);
+  assert.equal(members[1].lineLoads.live,0);
+  assert.equal(members[0].lineLoads.roofLoadPath,"roof-purlins");
+  assert.ok(Math.abs(members[2].lineLoads.dead-2*2*c)<1e-10);
+  assert.ok(Math.abs(members[3].lineLoads.dead-3*3*c)<1e-10);
+  assert.ok(Math.abs(members[4].lineLoads.dead-(2*2*c+3*3*c))<1e-10);
+  assert.ok(Math.abs(members[4].lineLoads.live-(1*2+1.5*3))<1e-10);
+  assert.ok(Math.abs(members[4].lineLoads.snow-(0.8*2*c+1.2*3*c))<1e-10);
+  assert.ok(Math.abs(members[4].lineLoads.wind-(0.5*2-0.25*3))<1e-10);
+  assert.equal(members[4].lineLoads.tributaryWidthLeft,2);
+  assert.equal(members[4].lineLoads.tributaryWidthRight,3);
+});
+
+test("geometric load assignment falls back to rafters only without purlins and routes wall wind to correct girts",()=>{
+  const assign=extractModelLoadAssignment();
+  const members=[
+    {id:"RAFTER-L",axis:"transverse",frame:1,type:"رفتر چپ"},
+    {id:"RAFTER-R",axis:"transverse",frame:1,type:"رفتر راست"},
+    {id:"WALL-L",sectionKey:"wallGirt",tributaryHeight:1.5,side:"left"},
+    {id:"END-F",sectionKey:"endGirt",tributaryHeight:2,endFace:"front"},
+    {id:"END-B",sectionKey:"endGirt",tributaryHeight:2,endFace:"back"}
+  ];
+  const loads={deadLeft:2,deadRight:3,liveLeft:1,liveRight:1.5,snowLeft:0.8,snowRight:1.2,
+    windWall:0.4,windEndFront:0.6,windEndBack:-0.3,
+    deadAreaBasis:"sloped-surface",liveAreaBasis:"horizontal-projection",snowAreaBasis:"sloped-surface"};
+  const result=assign(members,{span:12,rise:2},[6],loads);
+  assert.equal(result.roofPurlinsPresent,false);
+  assert.equal(members[0].lineLoads.roofLoadPath,"direct-rafter");
+  assert.ok(members[0].lineLoads.dead>0);
+  assert.ok(members[1].lineLoads.live>0);
+  assert.ok(Math.abs(members[2].lineLoads.wind-0.6)<1e-12);
+  assert.ok(Math.abs(members[3].lineLoads.windEnd-1.2)<1e-12);
+  assert.ok(Math.abs(members[4].lineLoads.windEnd+0.6)<1e-12);
+  assert.throws(()=>assign([{id:"BAD",axis:"transverse",frame:1,type:"رفتر چپ"}],{span:12,rise:2},[0],loads),/عرض بارگیر قاب/);
+});
