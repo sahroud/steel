@@ -14,7 +14,7 @@
   return rows.find(k=>k.id===id)||rows[0]||null;
  }
  function emptyRecord(k){
-  const members=k?[k.column,k.rafter]:[];
+  const members=k?[{role:"column",member:k.column},{role:"rafter",member:k.rafter}]:[];
   return {
    schema:root.SahroudKneeConnectionDetail.SCHEMA,
    connectionId:"",
@@ -22,7 +22,7 @@
    drawingReference:"",
    units:"mm",
    connectionFrame:{originM:null,axes:{x:null,y:null,z:null},verifiedByDrawing:false},
-   memberForceTransferPoints:members.map(m=>({memberId:m.id,pointMm:null})),
+   memberForceTransferPoints:members.map(item=>({role:item.role,memberId:item.member.id,pointMm:null})),
    plates:[],
    bolts:[],
    welds:[],
@@ -60,8 +60,23 @@
    try{
     const value=JSON.parse($("kneeDetailJson").value);
     const result=root.SahroudKneeConnectionDetail.validate(value);
-    $("kneeDetailValidationResult").innerHTML=statusMarkup(result);
-    $("kneeDetailValidationResult").dataset.valid=result.valid?"true":"false";
+    const selected=selectedKnee();
+    if(!selected){
+     result.valid=false;
+     result.errors.push("گره زانویی انتخاب‌شده در مدل جاری در دسترس نیست؛ تطبیق شناسه‌ها انجام نشد.");
+    }else{
+     if(String(value.jointId)!==String(selected.node.id)){
+      result.valid=false;result.errors.push("شناسه گره JSON با گره زانویی انتخاب‌شده در مدل جاری یکسان نیست.");
+     }
+     const expected=[{role:"column",id:selected.column.id},{role:"rafter",id:selected.rafter.id}];
+     expected.forEach(item=>{
+      if(!(value.memberForceTransferPoints||[]).some(point=>point.role===item.role&&String(point.memberId)===String(item.id))){
+       result.valid=false;result.errors.push("عضو "+item.role+" در نقاط انتقال نیرو با عضو واقعی مدل ("+item.id+") تطبیق ندارد.");
+      }
+     });
+    }
+    $( "kneeDetailValidationResult" ).innerHTML=statusMarkup(result);
+    $( "kneeDetailValidationResult" ).dataset.valid=result.valid?"true":"false";
    }catch(e){
     $("kneeDetailValidationResult").textContent="JSON قابل‌خواندن نیست: "+e.message;
     $("kneeDetailValidationResult").dataset.valid="false";
