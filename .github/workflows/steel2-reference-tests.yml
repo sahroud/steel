@@ -84,6 +84,7 @@ jobs:
           node --check steel2/js/foundation-uls-action-mapping.js
           node --check steel2/js/foundation-uls-action-mapping-ui.js
           node --check steel2/js/foundation-design-input.js
+          node --check steel2/js/foundation-design-input.js
           node --check steel2/js/load-path-audit.js
           node --check steel2/js/seismic-load-path.js
           node --check steel2/js/crane-design.js
@@ -94,4 +95,4 @@ jobs:
           node --check steel2/js/connection-readiness.js
           node --check steel2/js/knee-connection-geometry.js
       - name: Run independent 3D solver reference tests
-        run: node --test steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js steel2/tests/load-path-audit.test.js steel2/tests/wall-foundation-transfer.test.js steel2/tests/foundation-soil-check.test.js steel2/tests/foundation-soil-panel-ui.test.js steel2/tests/foundation-reaction-export.test.js steel2/tests/foundation-reaction-batch.test.js steel2/tests/foundation-reaction-batch-ui.test.js steel2/tests/foundation-action-mapping.test.js steel2/tests/foundation-action-mapping-ui.test.js steel2/tests/foundation-sizing.test.js steel2/tests/foundation-sizing-ui.test.js steel2/tests/foundation-uls-reaction-batch.test.js steel2/tests/foundation-uls-action-mapping.test.js steel2/tests/foundation-uls-action-mapping-ui.test.js
+        run: node --test steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js steel2/tests/load-path-audit.test.js steel2/tests/wall-foundation-transfer.test.js steel2/tests/foundation-soil-check.test.js steel2/tests/foundation-soil-panel-ui.test.js steel2/tests/foundation-reaction-export.test.js steel2/tests/foundation-reaction-batch.test.js steel2/tests/foundation-reaction-batch-ui.test.js steel2/tests/foundation-action-mapping.test.js steel2/tests/foundation-action-mapping-ui.test.js steel2/tests/foundation-sizing.test.js steel2/tests/foundation-sizing-ui.test.js steel2/tests/foundation-uls-reaction-batch.test.js steel2/tests/foundation-uls-action-mapping.test.js steel2/tests/foundation-uls-action-mapping-ui.test.js steel2/tests/foundation-design-input.test.js
