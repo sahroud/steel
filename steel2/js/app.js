@@ -540,14 +540,21 @@
         }
         const original = loadsApi.getData();
         if (!original) throw new Error("اطلاعات بارگذاری پروژه خوانده نشد.");
-        const hasWind = ["windLeft","windRight","windWall","windEndFront","windEndBack"]
-            .some(k => Math.abs(Number(original[k]) || 0) > 1e-12);
+        if (!window.SahroudDesignScope) throw new Error("ماژول انتخاب و تأیید دامنه بارگذاری در دسترس نیست.");
+        const approvedScope = window.SahroudDesignScope.getApprovedSelection();
+        const selectedLoads = new Set(approvedScope.selected);
+        const hasWind = selectedLoads.has("wind") &&
+            ["windLeft","windRight","windWall","windEndFront","windEndBack"]
+                .some(k => Math.abs(Number(original[k]) || 0) > 1e-12);
         const signs = hasWind ? [1,-1] : [1];
         const cases = [{
             label:"ترکیب ۱ ـ 1.4D",
             factors:{dead:1.4,live:0,snow:0,wind:0},windSign:1
         }];
-        [{key:"live",title:"Lr"},{key:"snow",title:"S"}].forEach(action => {
+        const variableActions = [];
+        if (selectedLoads.has("live")) variableActions.push({key:"live",title:"Lr"});
+        if (selectedLoads.has("snow")) variableActions.push({key:"snow",title:"S"});
+        variableActions.forEach(action => {
             signs.forEach(sign => cases.push({
                 label:"ترکیب ۳ ـ 1.2D + 1.6"+action.title+" + 0.8W"+(hasWind?(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"):""),
                 factors:{dead:1.2,live:action.key==="live"?1.6:0,
@@ -559,6 +566,7 @@
             label:"ترکیب ۶ ـ 0.8D + 1.6W"+(sign>0?" ـ جهت اول باد":" ـ جهت معکوس باد"),
             factors:{dead:0.8,live:0,snow:0,wind:1.6},windSign:sign
         }));
+        if(cases.length===1&&!selectedLoads.has("dead"))throw new Error("بار مرده اجباری در دامنه طراحی وجود ندارد.");
 
         const rows=[];
         const summaries=[];
