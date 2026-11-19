@@ -34,6 +34,7 @@ on:
       - "steel2/js/final-report.js"
       - "steel2/js/initial-member-sections.js"
       - "steel2/js/member-initial-section-ui.js"
+      - "steel2/js/project.js"
       - "steel2/tests/initial-member-sections.test.js steel2/tests/member-initial-section-ui.test.js"
       - "steel2/js/connection-readiness.js"
       - "steel2/js/knee-connection-geometry.js"
@@ -98,6 +99,7 @@ jobs:
           node --check steel2/js/final-report.js
           node --check steel2/js/initial-member-sections.js
           node --check steel2/js/member-initial-section-ui.js
+          node --check steel2/js/project.js
           node --check steel2/js/connection-readiness.js
           node --check steel2/js/knee-connection-geometry.js
       - name: Run independent 3D solver reference tests
