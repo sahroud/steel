@@ -112,7 +112,7 @@ test("knee geometry self-test passes",()=>{
 });
 
 function analysisResult(roll=0){
- const columnAxes={x:[0,1,0],y:[-1,0,0],z:[0,0,-1]};
+ const columnAxes={x:[0,1,0],y:[-1,0,0],z:[0,0,1]};
  const rafterAxes={x:[1/Math.sqrt(2.44),1.2/Math.sqrt(2.44),0],y:[-1.2/Math.sqrt(2.44),1/Math.sqrt(2.44),0],z:[0,0,1]};
  return {members:[{id:"COL",localAxes:columnAxes,sectionRollDeg:roll},{id:"RAF",localAxes:rafterAxes,sectionRollDeg:roll}]};
 }
@@ -120,7 +120,7 @@ test("knee geometry consumes solver local axes by member id without inferring se
  const m=model({column:{sectionRollDeg:0,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:0,sectionOrientationConfirmed:true})},rafter:{sectionRollDeg:0,sectionOrientationVerified:true,sectionProperties:section({topFlangeWidthMm:180,sectionRollDeg:0,sectionOrientationConfirmed:true})}});
  const k=knee.extract(m,analysisResult())[0];
  assert.equal(k.column.solverAxes.available,true);
- assert.deepEqual(k.column.solverAxes.axes,{x:[0,1,0],y:[0,0,1],z:[1,0,0]});
+ assert.deepEqual(k.column.solverAxes.axes,{x:[0,1,0],y:[-1,0,0],z:[0,0,1]});
  assert.equal(k.rafter.solverAxes.source,"analysisResult.members.localAxes");
  assert.equal(knee.check(k).capacityDesigned,false);
 });
