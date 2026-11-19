@@ -17,7 +17,7 @@ test("exports every base support with global reactions converted from N and Nm",
 });
 
 test("retains support coordinates and fixed degrees of freedom",()=>{
- const out=exportSupportReactions({nodes,supports,reactions:[],loadCase:"live"});
+ const out=exportSupportReactions({nodes,supports,reactions:[{nodeId:"B1",values:[0,0,0,0,0,0]},{nodeId:"B2",values:[0,0,0,0,0,0]}],loadCase:"live"});
  assert.deepEqual(out.supports[1].coordinatesM,{x:6,y:0,z:0});
  assert.deepEqual(out.supports[1].fixedDofs,[0,1,2]);
 });
@@ -33,7 +33,7 @@ test("rejects support identifiers not found in model geometry",()=>{
 });
 
 test("marks output as one analysis case, not an approved SLS envelope",()=>{
- const out=exportSupportReactions({nodes,supports,reactions:[],loadCase:"combo0",loadCaseLabel:"ULS-1"});
+ const out=exportSupportReactions({nodes,supports,reactions:[{nodeId:"B1",values:[0,0,0,0,0,0]},{nodeId:"B2",values:[0,0,0,0,0,0]}],loadCase:"combo0",loadCaseLabel:"ULS-1"});
  assert.match(out.limitations[0],/ترکیب SLS/);
  assert.match(out.sourceReference,/حل‌گر سه‌بعدی/);
 });
