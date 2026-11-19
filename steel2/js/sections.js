@@ -329,7 +329,8 @@
         const required=[["A_cm2","مساحت A (cm²)"],["Iy_cm4","ممان اینرسی Iy (cm⁴)"],["Iz_cm4","ممان اینرسی Iz (cm⁴)"],["J_cm4","ثابت پیچشی J (cm⁴)"]];
         const missing=required.find(([field])=>!(Number.isFinite(Number(p[field]))&&Number(p[field])>0));
         if(missing) throw new Error("برای گروه " + labels[key] + "، مقدار " + missing[1] + " خالی یا نامعتبر است. مقدار واقعی مقطع را وارد کنید.");
-        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile:p.profile||(key==="column"?d.column.profile:key==="rafter"?d.rafter.profile:""),manufacturer:p.manufacturer||"",sourceDocumentId:p.sourceDocumentId||"",catalogReference:p.catalogReference||"",sourcePage:p.sourcePage||"",sectionDataVerified:p.sectionDataVerified===true};
+        const profile=p.profile||(key==="column"||key==="rafter"?d[key].profile:"");
+        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile,manufacturer:p.manufacturer||"",sourceDocumentId:p.sourceDocumentId||"",catalogReference:p.catalogReference||"",sourcePage:p.sourcePage||"",sectionDataVerified:p.sectionDataVerified===true};
     }
     function setData(data) {
         if (!data || typeof data !== "object") return;
@@ -447,6 +448,46 @@
         validateMember("column", d.column, "ستون");
         validateMember("rafter", d.rafter, "رفتر");
 
+        // A green result must cover every 3D section group and its source evidence.
+        const groups = [
+            ["column","ستون"],["rafter","رفتر"],["roofPurlin","پرلین سقف"],
+            ["wallGirt","قید دیوار"],["endPost","ستونک انتهایی"],["endGirt","تیر انتهایی"],
+            ["wallBrace","مهاربند دیوار"],["roofBrace","مهاربند سقف"],["roofEdge","تیر لبه سقف"]
+        ];
+        groups.forEach(([key,title]) => {
+            const provenance = readSectionProvenance(key);
+            const isMain = key === "column" || key === "rafter";
+            const props = isMain ? {
+                A: d[key].A_cm2, Iy: d[key].Iy_cm4, Iz: d[key].Ix_cm4,
+                J: Number($(key + "J3D")?.value)
+            } : {
+                A: Number($("p3_" + key + "_A")?.value),
+                Iy: Number($("p3_" + key + "_Iy")?.value),
+                Iz: Number($("p3_" + key + "_Iz")?.value),
+                J: Number($("p3_" + key + "_J")?.value)
+            };
+            const profile = provenance.profile || (isMain ? d[key].profile : "");
+            check(isMain ? key + "Profile" : "sp_" + key + "_profile",
+                !!profile, "نام دقیق مقطع " + title + " ثبت نشده است.");
+            Object.entries(props).forEach(([name,value]) => {
+                const id = isMain
+                    ? key + (name === "A" ? "A" : name === "Iy" ? "Iy" : name === "Iz" ? "Ix" : "J3D")
+                    : "p3_" + key + "_" + name;
+                check(id, Number.isFinite(value) && value > 0,
+                    name + " مقطع " + title + " ناقص یا نامعتبر است.");
+            });
+            check("sp_" + key + "_manufacturer", !!provenance.manufacturer,
+                "سازنده مقطع " + title + " مشخص نشده است.");
+            check("sp_" + key + "_document", !!provenance.sourceDocumentId,
+                "سند/نقشه مرجع مقطع " + title + " مشخص نشده است.");
+            check("sp_" + key + "_catalog", !!provenance.catalogReference,
+                "شماره کاتالوگ/استاندارد مقطع " + title + " مشخص نشده است.");
+            check("sp_" + key + "_page", !!provenance.sourcePage,
+                "صفحه/جزئیات مرجع مقطع " + title + " مشخص نشده است.");
+            check("sp_" + key + "_verified", provenance.sectionDataVerified === true,
+                "تطبیق مقطع " + title + " با مدرک واقعی تأیید نشده است.");
+        });
+
         const message = $("sectionMessage");
 
         if (message) {
@@ -456,8 +497,8 @@
                 message.style.color = "#b45309";
             } else {
                 message.textContent =
-                    "اطلاعات مصالح و مشخصات هندسی مقاطع کامل است. " +
-                    "صحت مقادیر باید با مدارک واقعی مقطع تطبیق داده شود.";
+                    "ورودی هندسی، خواص و شناسنامه همه ۹ گروه مقطع تکمیل و تیک تطبیق ثبت شده است. " +
+                    "این کنترل، محاسبه ظرفیت یا تأیید آیین‌نامه‌ای نیست.";
                 message.style.color = "#15803d";
             }
         }
