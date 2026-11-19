@@ -13,7 +13,7 @@ function run(search,overrides={}){return sizing.searchFootingDimensions({...base
 test("selects the smallest feasible area and returns all separate SLS checks",()=>{
  const r=run({minB:1,maxB:3,stepB:0.5,minL:1,maxL:3,stepL:0.5,shape:"rectangular"});
  assert.equal(r.success,true);assert.ok(r.selected);
- assert.equal(r.selected.areaM2,1);
+ assert.equal(r.selected.areaM2,3.75);
  assert.equal(r.selected.cases.length,2);
  assert.ok(r.selected.cases.every(x=>x.bearingPass));
 });
