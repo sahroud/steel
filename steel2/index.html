@@ -159,6 +159,7 @@
         <label class="field"><span><input id="soilControlEnabled" type="checkbox"> کنترل باربری خاک در این پروژه فعال شود</span></label>
         <div class="notice">با فعال‌سازی، باید ظرفیت مجاز از گزارش ژئوتکنیک و واکنش‌های ترکیبات بهره‌برداری تأییدشده وارد شود. این نسخه فشار تماس خطی پی مستطیلی با فرض تماس کامل را کنترل می‌کند؛ داده ساختگی یا ظرفیت پیش‌فرض ندارد.</div>
         <div class="form-grid">
+            <div class="field"><label for="soilType">تیپ خاک طبق گزارش ژئوتکنیک / استاندارد ۲۸۰۰</label><select id="soilType" disabled><option value="">انتخاب تیپ خاک</option><option value="I">تیپ ۱ (I)</option><option value="II">تیپ ۲ (II)</option><option value="III">تیپ ۳ (III)</option></select></div>
             <div class="field"><label for="soilQa">ظرفیت مجاز باربری خاک (kPa)</label><input id="soilQa" type="number" min="1" step="1" placeholder="از گزارش ژئوتکنیک" disabled></div>
             <div class="field"><label for="soilSource">مرجع گزارش ژئوتکنیک / شماره صفحه</label><input id="soilSource" type="text" placeholder="نام گزارش، شماره و صفحه" disabled></div>
             <div class="field"><label for="soilFootingB">عرض پی در راستای X (m)</label><input id="soilFootingB" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
