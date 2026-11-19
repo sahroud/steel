@@ -43,7 +43,7 @@ test("orthogonal intersecting plates are detected by 3D separating-axis tests",(
  p.polygonMm=[{x:-100,y:-100},{x:100,y:-100},{x:100,y:100},{x:-100,y:100}];
  d.plates.push(p);
  d.bolts.push({...d.bolts[0],id:"P2-B1",plateId:"P2"},{...d.bolts[1],id:"P2-B2",plateId:"P2"});
- d.welds.push({...d.welds[0],id:"P2-W1",plateId:"P2",startMm:[-60,-60,0],endMm:[60,-60,0]});
+ d.welds.push({...d.welds[0],id:"P2-W1",plateId:"P2",startMm:[0,-60,-60],endMm:[0,-60,60]});
  const r=collision.audit(d);
  assert.equal(r.pairs[0].state,"overlap");
 });
