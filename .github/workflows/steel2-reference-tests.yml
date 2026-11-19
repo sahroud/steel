@@ -32,6 +32,8 @@ on:
       - "steel2/js/climate-load-engine.js"
       - "steel2/js/sections.js"
       - "steel2/js/final-report.js"
+      - "steel2/js/initial-member-sections.js"
+      - "steel2/tests/initial-member-sections.test.js"
       - "steel2/js/connection-readiness.js"
       - "steel2/js/knee-connection-geometry.js"
       - "steel2/index.html"
@@ -93,7 +95,8 @@ jobs:
           node --check steel2/js/climate-load-engine.js
           node --check steel2/js/sections.js
           node --check steel2/js/final-report.js
+          node --check steel2/js/initial-member-sections.js
           node --check steel2/js/connection-readiness.js
           node --check steel2/js/knee-connection-geometry.js
       - name: Run independent 3D solver reference tests
-        run: node --test steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js steel2/tests/load-path-audit.test.js steel2/tests/wall-foundation-transfer.test.js steel2/tests/foundation-soil-check.test.js steel2/tests/foundation-soil-panel-ui.test.js steel2/tests/foundation-reaction-export.test.js steel2/tests/foundation-reaction-batch.test.js steel2/tests/foundation-reaction-batch-ui.test.js steel2/tests/foundation-action-mapping.test.js steel2/tests/foundation-action-mapping-ui.test.js steel2/tests/foundation-sizing.test.js steel2/tests/foundation-sizing-ui.test.js steel2/tests/foundation-uls-reaction-batch.test.js steel2/tests/foundation-uls-action-mapping.test.js steel2/tests/foundation-uls-action-mapping-ui.test.js steel2/tests/foundation-design-input.test.js steel2/tests/foundation-design-input-ui.test.js
+        run: node --test steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js steel2/tests/load-path-audit.test.js steel2/tests/wall-foundation-transfer.test.js steel2/tests/foundation-soil-check.test.js steel2/tests/foundation-soil-panel-ui.test.js steel2/tests/foundation-reaction-export.test.js steel2/tests/foundation-reaction-batch.test.js steel2/tests/foundation-reaction-batch-ui.test.js steel2/tests/foundation-action-mapping.test.js steel2/tests/foundation-action-mapping-ui.test.js steel2/tests/foundation-sizing.test.js steel2/tests/foundation-sizing-ui.test.js steel2/tests/foundation-uls-reaction-batch.test.js steel2/tests/foundation-uls-action-mapping.test.js steel2/tests/foundation-uls-action-mapping-ui.test.js steel2/tests/foundation-design-input.test.js steel2/tests/foundation-design-input-ui.test.js steel2/tests/initial-member-sections.test.js
