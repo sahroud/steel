@@ -5,13 +5,34 @@
   if(!supports.length)throw new Error("فهرست تکیه‌گاه‌های تحلیل برای استخراج واکنش پی خالی است.");
   if(!Array.isArray(nodes)||!nodes.length)throw new Error("هندسه گره‌های مدل برای استخراج واکنش پی موجود نیست.");
   if(typeof d.loadCase!=="string"||!d.loadCase.trim())throw new Error("شناسه حالت بار تحلیل الزامی است.");
-  const nodeById=new Map(nodes.map(n=>[String(n.id),n]));
-  const reactionById=new Map(reactions.map(r=>[String(r.nodeId),r]));
+  const nodeById=new Map();
+  nodes.forEach(n=>{
+   if(!n||n.id===undefined||n.id===null||!String(n.id).trim())throw new Error("شناسه گره هندسه خالی است.");
+   const id=String(n.id);
+   if(nodeById.has(id))throw new Error("شناسه گره هندسه تکراری است: "+id);
+   const xyz=[n.x,n.y,n.z].map(Number);
+   if(xyz.some(v=>!Number.isFinite(v)))throw new Error("مختصات گره "+id+" باید سه عدد محدود باشد.");
+   nodeById.set(id,{id,x:xyz[0],y:xyz[1],z:xyz[2]});
+  });
+  const reactionById=new Map();
+  reactions.forEach(r=>{
+   if(!r||r.nodeId===undefined||r.nodeId===null)throw new Error("شناسه گره در واکنش حل‌گر خالی است.");
+   const id=String(r.nodeId);
+   if(reactionById.has(id))throw new Error("واکنش تکراری برای گره "+id+" دریافت شد.");
+   reactionById.set(id,r);
+  });
+  const supportIds=new Set();
   const rows=supports.map(s=>{
-   const id=String(s.nodeId),node=nodeById.get(id);
+   const id=String(s&&s.nodeId===undefined?"":s.nodeId);
+   if(!id.trim()||supportIds.has(id))throw new Error("شناسه تکیه‌گاه خالی یا تکراری است.");
+   supportIds.add(id);
+   const node=nodeById.get(id);
    if(!node)throw new Error("گره تکیه‌گاهی "+id+" در هندسه مدل یافت نشد.");
-   const r=reactionById.get(id),v=r&&Array.isArray(r.values)?r.values:Array(6).fill(0);
-   if(v.length!==6||v.some(x=>!Number.isFinite(Number(x))))throw new Error("واکنش گره "+id+" باید شش مؤلفه محدود داشته باشد.");
+   const r=reactionById.get(id);
+   if(!r)throw new Error("واکنش حل‌گر برای تکیه‌گاه "+id+" موجود نیست؛ مقدار صفر به‌صورت خودکار فرض نمی‌شود.");
+   const v=Array.isArray(r.values)?r.values:[];
+   if(v.length!==6||v.some(x=>x===null||x===undefined||typeof x==="boolean"||(typeof x==="string"&&!x.trim())||!Number.isFinite(Number(x))))
+    throw new Error("واکنش گره "+id+" باید شش مؤلفه عددی محدود و صریح داشته باشد.");
    const dofs=Array.isArray(s.fixedDofs)?s.fixedDofs.slice():[];
    return Object.freeze({nodeId:id,coordinatesM:Object.freeze({x:Number(node.x),y:Number(node.y),z:Number(node.z)}),
     fixedDofs:Object.freeze(dofs),FxkN:Number(v[0])/1000,FykN:Number(v[1])/1000,FzkN:Number(v[2])/1000,
