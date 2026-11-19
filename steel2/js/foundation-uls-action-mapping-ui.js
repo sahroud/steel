@@ -6,7 +6,7 @@
   if(!panel||panel.dataset.ulsActionUiInitialized==="true")return;
   panel.dataset.ulsActionUiInitialized="true";
   const $=id=>root.document.getElementById(id);
-  const button=$("btnMapFoundationUlsActions"),input=$("foundationUlsBatchInput"),out=$("foundationUlsActionResult");
+  const button=$("btnMapFoundationUlsActions"),input=$("foundationUlsBatchInput"),out=$("foundationUlsActionResult"),mappedOut=$("foundationUlsMappedJson");
   if(!button||!input||!out)return;
   button.addEventListener("click",()=>{
    try{
@@ -17,6 +17,8 @@
     const mapped=root.SahroudFoundationUlsActionMapping.mapUlsReactionBatchToFootingActions({
      batch,reactionSense:$("foundationReactionSense").value,foundations:geometry.foundations
     });
+    root.SahroudLastFoundationUlsActions=mapped;
+    if(mappedOut)mappedOut.value=JSON.stringify(mapped,null,2);
     const nodeId=String($("selectedFoundationNodeId").value||"").trim();
     if(!nodeId)throw new Error("شناسه پایه موردنظر را وارد کنید.");
     const footing=mapped.foundations.find(x=>x.nodeId===nodeId);
