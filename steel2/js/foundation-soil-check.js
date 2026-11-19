@@ -48,7 +48,7 @@
   if(!panel||panel.dataset.soilCheckInitialized==="true")return;
   panel.dataset.soilCheckInitialized="true";
   const $=id=>root.document.getElementById(id);
-  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilSource","soilFootingB","soilFootingL","soilReactionCases","btnRunSoilCheck"];
+  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilSource","soilFootingB","soilFootingL","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch"];
   const update=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled.checked;});};
   enabled.addEventListener("change",update);update();
   $("btnRunSoilCheck").addEventListener("click",()=>{
