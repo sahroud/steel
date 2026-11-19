@@ -143,8 +143,8 @@
     const dot=vc.x*vr.x+vc.y*vr.y+vc.z*vr.z;
     out.push({id:"F"+(raf.frame??"؟")+"-"+(n.x<=Number(model.geometry?.span||0)/2?"left":"right"),
      frame:raf.frame??null,side:n.x<=Number(model.geometry?.span||0)/2?"left":"right",node:n,
-     column:{id:col.id,length:Math.hypot(cn.x-n.x,cn.y-n.y,cn.z-n.z),vector:vc,sectionGeometry:sectionGeometry(col),solverAxes:solverAxes(col,analysisResult)},
-     rafter:{id:raf.id,length:Math.hypot(rn.x-n.x,rn.y-n.y,rn.z-n.z),vector:vr,sectionGeometry:sectionGeometry(raf),solverAxes:solverAxes(raf,analysisResult)},
+     column:{id:col.id,start:col.start,end:col.end,length:Math.hypot(cn.x-n.x,cn.y-n.y,cn.z-n.z),vector:vc,sectionGeometry:sectionGeometry(col),solverAxes:solverAxes(col,analysisResult)},
+     rafter:{id:raf.id,start:raf.start,end:raf.end,length:Math.hypot(rn.x-n.x,rn.y-n.y,rn.z-n.z),vector:vr,sectionGeometry:sectionGeometry(raf),solverAxes:solverAxes(raf,analysisResult)},
      angle:Math.acos(Math.max(-1,Math.min(1,dot)))*180/Math.PI});
     const item=out[out.length-1];
     item.column.sectionSolids=extrudeBuiltUpI(col,item.column.solverAxes,model);
