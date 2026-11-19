@@ -53,9 +53,15 @@
     ((Number(result.loadPathCoverage.wallDeadLongitudinalInput||0)>0&&wallDeadLongitudinal===0)||
      (Number(result.loadPathCoverage.wallDeadEndInput||0)>0&&wallDeadEnd===0)))
    blockers.push("وزن دیوار برای انتقال به قیدها وارد شده ولی عضو باربر متناظر بار دریافت نکرده است");
-  if(result.loadPathCoverage?.wallDeadSupportPath==="foundation")
-   warnings.push("وزن دیوار با مسیر باربری روی شناژ/فونداسیون انتخاب شده و عمداً به قیدهای فلزی منتقل نشده است؛ تا مدل‌سازی شناژ و پی، این وزن در تحلیل قاب منظور نمی‌شود.");
-  else if(Number(result.loadPathCoverage?.wallDeadEndInput||0)>0&&Number(model.geometry?.rise||0)>0&&
+  if(result.loadPathCoverage?.wallDeadSupportPath==="foundation"){
+   const transfer=result.loadPathCoverage?.wallFoundationTransfer;
+   const wallInput=Number(result.loadPathCoverage?.wallDeadLongitudinalInput||0)+Number(result.loadPathCoverage?.wallDeadEndInput||0);
+   if(wallInput>0&&(!transfer||!(Number(transfer.resultantKN)>0)))
+    blockers.push("وزن دیوار با مسیر شناژ/فونداسیون انتخاب شده اما جمع‌کننده بار پوسته واکنش پایه تولید نکرده است");
+   else if(transfer&&Number(transfer.resultantKN)>0)
+    warnings.push("وزن دیوار از جمع‌کننده بار معادل پوسته به گره‌های پایه قاب منتقل شده و در تحلیل حاضر منظور شده است؛ این جمع‌کننده المان پوسته‌ای اجزای محدود نیست و طراحی شناژ، پی و خاک همچنان باز است.");
+   else warnings.push("مسیر دیوار باربر روی شناژ/فونداسیون انتخاب شده است؛ چون وزن سطحی دیوار صفر است، واکنش پوسته‌ای در این حالت وجود ندارد.");
+  }else if(Number(result.loadPathCoverage?.wallDeadEndInput||0)>0&&Number(model.geometry?.rise||0)>0&&
     result.loadPathCoverage?.wallDeadGableTriangle!=="applied")
    warnings.push("وزن دیوار مثلثی بالای قاب انتهایی هنوز در این حالت بار اعمال نشده است.");
   warnings.push("بازشوها، وزن پیچ/جوش، ورق‌های اتصال و جزئیات پوشش باید جداگانه وارد و ممیزی شوند.");
@@ -67,6 +73,7 @@
    wallDead:{longitudinalGirtCount:wallDeadLongitudinal,endWallGirtCount:wallDeadEnd,
     supportPath:result.loadPathCoverage?.wallDeadSupportPath||"foundation",
     gableTriangle:result.loadPathCoverage?.wallDeadGableTriangle||"not-applied",
+    foundationTransfer:result.loadPathCoverage?.wallFoundationTransfer||null,
     foundationLoadsPending:result.loadPathCoverage?.foundationWallLoadsPending!==false},
    wind:{caseApplied:loadCase.toLowerCase().includes("wind")||loadCase==="zoneWind",fullCodePathVerified:false},
    seismic:{caseApplied:seismicApplied,sourceReference:result.externalLoadSource||null,codePathVerified:false},
