@@ -18,6 +18,10 @@
   const combinationMembers=(analysisResult?.combinationResults||[]).flatMap(item=>item?.memberDemand?.members||item?.analysis?.memberDemand?.members||[]);
   const candidates=[...caseMembers,...combinationMembers,...direct];
   const matches=candidates.filter(item=>String(item.id)===String(member.id));
+  if(envelopeCases.length){
+   const rows=envelopeCases.map(item=>(item?.members||[]).find(row=>String(row.id)===String(member.id)));
+   if(rows.some(row=>!row?.localAxes))return{available:false,status:"solver-axes-incomplete-combinations",axes:null,source:"analysisResult.envelope.cases",issues:["محورهای حل‌گر این عضو در همه ترکیبات بار موجود نیست؛ اکسترود هندسه متوقف شد."]};
+  }
   const solved=matches.find(item=>item.localAxes)||matches[0];
   const axes=solved?.localAxes;
   if(!axes)return{available:false,status:"solver-axes-missing",axes:null,source:null,issues:["محورهای محلی حل‌گر برای این عضو در نتیجه تحلیل موجود نیست."]};
@@ -37,7 +41,7 @@
    cross(vectors[0],vectors[1]).every((v,i)=>Math.abs(v-vectors[2][i])<=1e-6);
   if(!valid)return{available:false,status:"solver-axes-invalid",axes:null,source:"analysisResult.members.localAxes",issues:["محورهای حل‌گر یکه، متعامد و راست‌گرد نیستند."]};
   const sameAxes=(a,b)=>["x","y","z"].every(key=>a?.[key]?.every((v,i)=>Math.abs(Number(v)-Number(b?.[key]?.[i]))<=1e-7));
-  if(matches.some(item=>item.localAxes&&!sameAxes(axes,item.localAxes)))return{available:false,status:"solver-axes-inconsistent",axes:null,source:"analysisResult",issues:["دستگاه محورهای عضو بین ترکیبات بار یکسان نیست؛ هندسه اکسترود نمی‌شود."]};
+  if(matches.some(item=>item.localAxes&&!sameAxes(axes,item.localAxes))||matches.some(item=>item.sectionRollDeg!==undefined&&item.sectionRollDeg!==null&&solved.sectionRollDeg!==undefined&&Math.abs(Number(item.sectionRollDeg)-Number(solved.sectionRollDeg))>1e-8))return{available:false,status:"solver-axes-inconsistent",axes:null,source:"analysisResult",issues:["دستگاه محور یا زاویه چرخش عضو بین ترکیبات بار یکسان نیست؛ هندسه اکسترود نمی‌شود."]};
   const source=envelopeCases.length?"analysisResult.envelope.cases[].members.localAxes":combinationMembers.length?"analysisResult.combinationResults[].memberDemand.members.localAxes":"analysisResult.members.localAxes";
   return{available:true,status:"solver-axes-valid",axes:{x:vectors[0],y:vectors[1],z:vectors[2]},sectionRollDeg:solved?.sectionRollDeg??null,source,issues:[]};
  }
