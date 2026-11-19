@@ -13,7 +13,7 @@
    if(!id||seenCases.has(id))throw new Error("شناسه حالت بار باید غیرخالی و یکتا باشد.");
    seenCases.add(id);
    if(String(item.classification||"").toUpperCase()!=="ULS")
-    throw new Error("حالت «"+(label||id)+"» صریحاً به‌عنوان ULS علامت‌گذاری نشده است؛ ULS یا حالت بار منفرد پذیرفته نیست.");
+    throw new Error("حالت «"+(label||id)+"» صریحاً به‌عنوان ULS علامت‌گذاری نشده است؛ SLS یا حالت بار منفرد پذیرفته نیست.");
    if(item.solverEquilibriumOK!==true)throw new Error("تعادل حل‌گر برای حالت «"+(label||id)+"» تأیید نشده است.");
    if(typeof item.sourceReference!=="string"||!item.sourceReference.trim())
     throw new Error("مرجع مستند ترکیب ULS «"+(label||id)+"» الزامی است.");
