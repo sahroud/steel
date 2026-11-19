@@ -50,7 +50,7 @@ test("knee demand report includes the physical transfer point column",()=>{
 });
 test("knee detail editor button layout keeps all actions in one button grid",()=>{
  assert.match(source,/<div class='button-grid'><button id='btnKneeDetailTemplate'/);
- assert.match(source,/btnKneeDetailMapDemand[\s\S]*?انتقال تقاضای ترکیبات بار به دستگاه اتصال<\/button><\/div>/);
+ assert.match(source,/btnKneeDetailMapDemand[\s\S]*?انتقال تقاضای ترکیبات بار به دستگاه اتصال<\/button>[\s\S]*?btnKneeDetailCollision[\s\S]*?ممیزی برخورد سه‌بعدی ورق‌ها<\/button><\/div>/);
 });
 
 test("knee detail UI exports global 3D geometry through the validated geometry builder",()=>{
