@@ -152,6 +152,7 @@
   $("kneeSelect").addEventListener("change",render);
   $("btnKneeCsv").addEventListener("click",exportCsv);
   root.addEventListener("sahroud:connection-demand-ready",()=>{if(knees.length)refresh();});
+  root.addEventListener("sahroud:3d-analysis-ready",()=>{if(knees.length)refresh();});
   refresh();
  }
  function refresh(){
