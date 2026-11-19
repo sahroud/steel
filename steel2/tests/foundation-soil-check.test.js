@@ -54,3 +54,8 @@ test("ultimate or unsourced reaction cases are rejected",()=>{
  assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"ULS-1",sourceReference:"R-1",NkN:100}]}),/ترکیب بهره‌برداری SLS/);
  assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-1",NkN:100}]}),/مرجع گزارش تحلیل/);
 });
+
+test("rejects null axial reaction and blank moments instead of silently treating them as zero",()=>{
+ assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-null",sourceReference:"R-1",NkN:null,MxkNm:0,MzkNm:0}]}),/نباید خالی باشد/);
+ assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-blank",sourceReference:"R-1",NkN:100,MxkNm:"",MzkNm:0}]}),/نباید خالی باشد/);
+});
