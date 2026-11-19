@@ -12,7 +12,9 @@ function fixture(){
  materials:{concreteFcMPa:25,rebarFyMPa:400,concreteSourceReference:"C25 report",rebarSourceReference:"A3 certificate"},
  cover:{bottomM:0.075,sideM:0.075},geometrySourceReference:"Drawing S1",ulsLocalActions:actions};
  elements.footingDesignInputJson.value=JSON.stringify(payload);
- global.window={document:{readyState:"complete",getElementById:id=>elements[id]||null},SahroudFootingDesignInput:require("../js/foundation-design-input.js")};
+ global.window={document:{readyState:"complete",getElementById:id=>elements[id]||null}};
+ delete require.cache[require.resolve("../js/foundation-design-input.js")];
+ global.window.SahroudFootingDesignInput=require("../js/foundation-design-input.js");
  delete require.cache[require.resolve("../js/foundation-design-input-ui.js")];
  require("../js/foundation-design-input-ui.js");
  return {elements,listeners};
