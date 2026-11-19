@@ -1,4 +1,5 @@
 name: SAHROUD STEEL reference tests
+# Weld capacity UI must remain safe when resistance is not assessable.
 
 on:
   push:
