@@ -38,3 +38,11 @@ test("registry rejects invalid or incomplete engineering properties",()=>{
  assert.throws(()=>registry.normalize({...section(),J:0},"C1"),/J/);
  assert.throws(()=>registry.normalize({...section(),E:null},"C1"),/E/);
 });
+
+test("section fingerprints include profile and geometric dimensions",()=>{
+ const a=registry.normalize({...section(),profile:"Plate girder",geometryType:"built-up-I",geometryDimensionsMm:{webClearHeightMm:500}},"G1");
+ const b=registry.normalize({...section(),profile:"Plate girder",geometryType:"built-up-I",geometryDimensionsMm:{webClearHeightMm:600}},"G1");
+ const c=registry.normalize({...section(),profile:"IPE 300"},"G1");
+ assert.notEqual(a.sectionPropertyFingerprint,b.sectionPropertyFingerprint);
+ assert.notEqual(a.sectionPropertyFingerprint,c.sectionPropertyFingerprint);
+});
