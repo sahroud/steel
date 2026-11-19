@@ -15,9 +15,19 @@
   const actions=d.ulsLocalActions;
   if(!actions||actions.schema!=="SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0"||actions.success!==true)
    throw new Error("بسته تبدیل‌شده و معتبر کنش‌های محلی ULS لازم است.");
+  if(actions.sourceSchema!=="SAHROUD-FOUNDATION-ULS-REACTION-BATCH-1.0")
+   throw new Error("منشأ بسته کنش‌ها باید بسته واکنش ULS شناخته‌شده باشد.");
   if(!["on-structure","on-foundation"].includes(actions.reactionSense))
    throw new Error("جهت تبدیل واکنش ULS باید صریحاً مشخص باشد.");
-  if(!Array.isArray(actions.foundations))throw new Error("فهرست پایه‌های بسته ULS معتبر نیست.");
+  if(!Array.isArray(actions.foundations)||!actions.foundations.length)
+   throw new Error("فهرست پایه‌های بسته ULS معتبر نیست.");
+  const actionNodeIds=new Set();
+  actions.foundations.forEach(item=>{
+   const id=String(item&&item.nodeId||"").trim();
+   if(!id||actionNodeIds.has(id))throw new Error("شناسه پایه در بسته کنش ULS خالی یا تکراری است.");
+   actionNodeIds.add(id);
+   if(!Array.isArray(item.cases)||!item.cases.length)throw new Error("فهرست ترکیبات ULS برای پایه "+id+" خالی است.");
+  });
   const base=actions.foundations.find(x=>String(x.nodeId)===nodeId);
   if(!base||!Array.isArray(base.cases)||!base.cases.length)throw new Error("برای این گره، کنش محلی ULS موجود نیست.");
   const caseIds=new Set();
