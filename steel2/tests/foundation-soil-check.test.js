@@ -10,13 +10,13 @@ test("rectangular footing pressure check uses biaxial eccentricity and SLS input
  assert.equal(x.eccentricityX_m,0.015);
  assert.equal(x.eccentricityZ_m,0.02);
  assert.equal(x.qAverageKPa,250);
- assert.ok(Math.abs(x.qMaxKPa-291.25)<1e-10);
- assert.ok(Math.abs(x.qMinKPa-208.75)<1e-10);
+ assert.ok(Math.abs(x.qMaxKPa-276.25)<1e-10);
+ assert.ok(Math.abs(x.qMinKPa-223.75)<1e-10);
  assert.equal(x.bearingPass,true);
 });
 test("bearing pressure exceeding allowable capacity fails",()=>{
  const r=soil.checkRectangularFooting({soil:{allowableBearingKPa:280,sourceReference:"Report p.12"},Bm:2,Lm:2,
-  cases:[{name:"SLS-1",NkN:1000,MxkNm:20,MzkNm:15}]});
+  cases:[{name:"SLS-1",sourceReference:"Structural reaction report R-01 p.4",NkN:1000,MxkNm:20,MzkNm:15}]});
  assert.equal(r.success,false);assert.equal(r.results[0].status,"fail-bearing-pressure");
 });
 test("tension under linear full-contact assumption is blocked rather than accepted",()=>{
@@ -32,7 +32,7 @@ test("missing geotechnical source and non-compressive vertical force are rejecte
 });
 test("missing service cases and invalid footing dimensions are rejected",()=>{
  assert.throws(()=>soil.checkRectangularFooting({soil:{allowableBearingKPa:200,sourceReference:"Report p.2"},Bm:2,Lm:2,cases:[]}),/حداقل یک حالت بار/);
- assert.throws(()=>soil.checkRectangularFooting({soil:{allowableBearingKPa:200,sourceReference:"Report p.2"},Bm:0,Lm:2,cases:[{NkN:100}]}),/ابعاد پی/);
+ assert.throws(()=>soil.checkRectangularFooting({soil:{allowableBearingKPa:200,sourceReference:"Report p.2"},Bm:0,Lm:2,cases:[{name:"SLS-1",sourceReference:"R-1",NkN:100}]}),/ابعاد پی/);
 });
 
 test("ultimate or unsourced reaction cases are rejected",()=>{
