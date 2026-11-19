@@ -7,39 +7,67 @@
   const soilType=String(d.soilType||"").trim().toUpperCase();
   if(!["I","II","III"].includes(soilType))throw new Error("تیپ خاک باید طبق گزارش ژئوتکنیک یکی از I، II یا III انتخاب شود.");
   if(!(qa>0))throw new RangeError("ظرفیت مجاز باربری خاک باید مثبت باشد.");
+  if(!["gross","net"].includes(d.allowableBearingBasis))
+   throw new Error("مبنای ظرفیت مجاز باید از گزارش ژئوتکنیک به‌صورت gross (ناخالص) یا net (خالص) مشخص شود.");
   if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())throw new Error("مرجع گزارش ژئوتکنیک و شماره صفحه/بند الزامی است.");
-  return Object.freeze({soilType,allowableBearingKPa:qa,sourceReference:d.sourceReference.trim()});
+  return Object.freeze({soilType,allowableBearingKPa:qa,allowableBearingBasis:d.allowableBearingBasis,sourceReference:d.sourceReference.trim()});
  }
  function checkRectangularFooting(input){
   const d=input||{},soil=validateSoil(d.soil);
   const B=finite(d.Bm,"عرض پی"),L=finite(d.Lm,"طول پی");
   if(!(B>0&&L>0))throw new RangeError("ابعاد پی باید مثبت باشند.");
+  const loads=d.footingLoads||{};
+  const thickness=finite(loads.thicknessM,"ضخامت پی");
+  const cover=finite(loads.soilCoverAboveFootingM,"ارتفاع خاک روی پی");
+  const gammaConcrete=finite(loads.concreteUnitWeightKNm3,"وزن مخصوص بتن");
+  const gammaSoil=finite(loads.soilUnitWeightKNm3,"وزن مخصوص خاک");
+  if(!(thickness>0)||cover<0||!(gammaConcrete>0)||!(gammaSoil>0))
+   throw new RangeError("ضخامت پی و وزن مخصوص مصالح باید مثبت و ارتفاع خاک روی پی نامنفی باشد.");
   if(!Array.isArray(d.cases)||!d.cases.length)throw new Error("حداقل یک حالت بار بهره‌برداری تأییدشده لازم است.");
+  const A=B*L,footingWeight=A*thickness*gammaConcrete,soilCoverWeight=A*cover*gammaSoil;
+  const overburden=gammaSoil*(cover+thickness);
   const results=d.cases.map((c,index)=>{
    const name=String(c.name||("case-"+(index+1)));
    if(!/^SLS(?:[-_ ]|$)/i.test(name)&&!name.includes("بهره‌برداری"))
     throw new Error("حالت "+name+" ترکیب بهره‌برداری SLS مشخص‌شده نیست؛ بارهای ULS یا بار منفرد پذیرفته نمی‌شوند.");
    if(typeof c.sourceReference!=="string"||!c.sourceReference.trim())
     throw new Error("مرجع گزارش تحلیل/جدول واکنش برای حالت "+name+" الزامی است.");
-   const N=finite(c.NkN,"نیروی قائم "+name),Mx=finite(c.MxkNm||0,"لنگر Mx "+name),Mz=finite(c.MzkNm||0,"لنگر Mz "+name);
-   if(!(N>0))throw new Error("نیروی قائم فشاری در "+name+" باید مثبت باشد؛ کشش/بلندشدگی نیازمند کنترل جداگانه است.");
-   const A=B*L,ex=Mz/N,ez=Mx/N;
-   const qAvg=N/A,qMax=qAvg*(1+6*Math.abs(ex)/B+6*Math.abs(ez)/L),qMin=qAvg*(1-6*Math.abs(ex)/B-6*Math.abs(ez)/L);
-   const fullContact=qMin>=-1e-9;
-   return Object.freeze({name,sourceReference:c.sourceReference.trim(),NkN:N,MxkNm:Mx,MzkNm:Mz,areaM2:A,eccentricityX_m:ex,eccentricityZ_m:ez,
-    qAverageKPa:qAvg,qMaxKPa:qMax,qMinKPa:qMin,fullContact,
-    bearingPass:fullContact&&qMax<=soil.allowableBearingKPa+1e-9,
-    status:!fullContact?"blocked-no-tension-contact":qMax>soil.allowableBearingKPa?"fail-bearing-pressure":"pass-bearing-pressure"});
+   const reactionN=finite(c.NkN,"نیروی قائم واکنش "+name);
+   const Mx=finite(c.MxkNm||0,"لنگر Mx "+name),Mz=finite(c.MzkNm||0,"لنگر Mz "+name);
+   const N=reactionN+footingWeight+soilCoverWeight;
+   if(!(N>0))throw new Error("مجموع نیروی قائم شامل واکنش، وزن پی و خاک روی پی در "+name+" باید فشاری و مثبت باشد.");
+   const ex=Mz/N,ez=Mx/N,qAvg=N/A;
+   const qMaxGross=qAvg*(1+6*Math.abs(ex)/B+6*Math.abs(ez)/L);
+   const qMinGross=qAvg*(1-6*Math.abs(ex)/B-6*Math.abs(ez)/L);
+   const qMaxNet=qMaxGross-overburden,qMinNet=qMinGross-overburden;
+   const fullContact=qMinGross>=-1e-9;
+   const qMaxChecked=soil.allowableBearingBasis==="gross"?qMaxGross:qMaxNet;
+   const qMinChecked=soil.allowableBearingBasis==="gross"?qMinGross:qMinNet;
+   const bearingPass=fullContact&&qMaxChecked<=soil.allowableBearingKPa+1e-9;
+   return Object.freeze({name,sourceReference:c.sourceReference.trim(),reactionNkN:reactionN,NkN:N,MxkNm:Mx,MzkNm:Mz,
+    footingWeightKN:footingWeight,soilCoverWeightKN:soilCoverWeight,totalAddedWeightKN:footingWeight+soilCoverWeight,
+    overburdenAtBaseKPa:overburden,areaM2:A,eccentricityX_m:ex,eccentricityZ_m:ez,
+    qAverageGrossKPa:qAvg,qMaxGrossKPa:qMaxGross,qMinGrossKPa:qMinGross,
+    qMaxNetKPa:qMaxNet,qMinNetKPa:qMinNet,qMaxCheckedKPa:qMaxChecked,qMinCheckedKPa:qMinChecked,
+    fullContact,bearingPass,
+    status:!fullContact?"blocked-no-tension-contact":qMaxChecked>soil.allowableBearingKPa?"fail-bearing-pressure":"pass-bearing-pressure"});
   });
-  return Object.freeze({success:results.every(x=>x.bearingPass),method:"linear-elastic rectangular footing pressure; full-contact only",
-   soil,footing:Object.freeze({B_m:B,L_m:L,areaM2:B*L}),results:Object.freeze(results),
+  return Object.freeze({success:results.every(x=>x.bearingPass),
+   method:"linear-elastic rectangular footing pressure; full-contact only; centered footing and soil-cover weights included",
+   soil,footing:Object.freeze({B_m:B,L_m:L,areaM2:A,thicknessM:thickness,soilCoverAboveFootingM:cover,
+    concreteUnitWeightKNm3:gammaConcrete,soilUnitWeightKNm3:gammaSoil,footingWeightKN:footingWeight,
+    soilCoverWeightKN:soilCoverWeight,overburdenAtBaseKPa:overburden}),
+   results:Object.freeze(results),
    limitations:Object.freeze([
-    "این کنترل فقط فشار تماس قائم پی مستطیلی با توزیع خطی و فرض تماس کامل را بررسی می‌کند.",
-    "اگر qmin منفی شود، نتیجه باطل و تحلیل تماس جزئی/بلندشدگی لازم است؛ فشار کششی به خاک مجاز فرض نشده است.",
+    "وزن پی و وزن خاک روی آن به‌صورت بار قائم متمرکز در مرکز هندسی پی منظور شده‌اند؛ خروج از مرکزیت این وزن‌ها صفر فرض شده است.",
+    "مبنای gross/net باید دقیقاً با تعریف ظرفیت مجاز در گزارش ژئوتکنیک یکسان باشد؛ برای net، سربار اولیه خاک تا زیر پی از فشار ناخالص کسر شده است.",
+    "این کنترل فقط فشار تماس قائم پی مستطیلی با توزیع خطی و فرض تماس کامل را بررسی می‌کند؛ qmin ناخالص معیار تشخیص جداشدگی است.",
+    "اگر qmin ناخالص منفی شود، تحلیل تماس جزئی/بلندشدگی لازم است؛ فشار کششی به خاک مجاز فرض نشده است.",
     "کنترل نشست، ظرفیت نهایی، لغزش، واژگونی، آب زیرزمینی، اثر لایه‌بندی، اندرکنش پی‌ها و طراحی آرماتور/برش پانچ در این ماژول انجام نمی‌شود.",
+    "وزن شناژ، پدستال، دیوار، خاک جانبی، بارهای افقی و لنگر ناشی از اجزای خارج از مرکز در این محاسبه منظور نشده‌اند.",
+    "وزن مخصوص بتن و خاک و ارتفاع پوشش باید از مشخصات واقعی پروژه/گزارش ژئوتکنیک وارد شوند؛ مقادیر پیش‌فرض ساخته نشده‌اند.",
     "بارهای ورودی باید ترکیبات بهره‌برداری (SLS) تأییدشده از تحلیل سازه باشند؛ نتایج ULS یا یک حالت بار منفرد جایگزین آن نیستند.",
-    "تیپ I/II/III فقط رده‌بندی لرزه‌ای/ژئوتکنیکی ثبت‌شده است و جایگزین ظرفیت باربری، پارامترهای مقاومت یا کنترل نشست گزارش ژئوتکنیک نیست.",
-    "ظرفیت مجاز خاک باید از گزارش ژئوتکنیک همان پروژه و با لحاظ عمق و ابعاد پی اخذ شود."
+    "تیپ I/II/III جایگزین ظرفیت باربری، پارامترهای مقاومت یا کنترل نشست گزارش ژئوتکنیک نیست."
    ])});
  }
  function render(){
@@ -48,24 +76,27 @@
   if(!panel||panel.dataset.soilCheckInitialized==="true")return;
   panel.dataset.soilCheckInitialized="true";
   const $=id=>root.document.getElementById(id);
-  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilSource","soilFootingB","soilFootingL","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch","foundationReactionSense","selectedFoundationNodeId","foundationLocalGeometryInput","btnMapFoundationActions"];
+  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilQaBasis","soilSource","soilFootingB","soilFootingL","soilFootingThickness","soilCoverAboveFooting","concreteUnitWeight","soilUnitWeight","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch","foundationReactionSense","selectedFoundationNodeId","foundationLocalGeometryInput","btnMapFoundationActions"];
   const update=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled.checked;});};
   enabled.addEventListener("change",update);update();
   $("btnRunSoilCheck").addEventListener("click",()=>{
    const out=$("soilCheckResult");
    try{
     const cases=JSON.parse($("soilReactionCases").value||"[]");
-    const result=checkRectangularFooting({soil:{soilType:$("soilType").value,allowableBearingKPa:$("soilQa").value,sourceReference:$("soilSource").value},
-     Bm:$("soilFootingB").value,Lm:$("soilFootingL").value,cases});
+    const result=checkRectangularFooting({soil:{soilType:$("soilType").value,allowableBearingKPa:$("soilQa").value,
+     allowableBearingBasis:$("soilQaBasis").value,sourceReference:$("soilSource").value},
+     Bm:$("soilFootingB").value,Lm:$("soilFootingL").value,
+     footingLoads:{thicknessM:$("soilFootingThickness").value,soilCoverAboveFootingM:$("soilCoverAboveFooting").value,
+      concreteUnitWeightKNm3:$("concreteUnitWeight").value,soilUnitWeightKNm3:$("soilUnitWeight").value},cases});
     const fmt=n=>Number(n).toFixed(2);
     out.textContent=[
      result.success?"کنترل فشار باربری در همه حالت‌های واردشده قبول شد.":"کنترل فشار باربری مردود یا مسدود است.",
-     "تیپ خاک: "+result.soil.soilType+" | مرجع خاک: "+result.soil.sourceReference+" | qa="+fmt(result.soil.allowableBearingKPa)+" kPa | مساحت پی="+fmt(result.footing.areaM2)+" m²",
-     ...result.results.map(x=>x.name+" | N="+fmt(x.NkN)+" kN | ex="+fmt(x.eccentricityX_m)+" m | ez="+fmt(x.eccentricityZ_m)+" m | qmin="+fmt(x.qMinKPa)+" kPa | qmax="+fmt(x.qMaxKPa)+" kPa | "+x.status),
+     "تیپ خاک: "+result.soil.soilType+" | مبنای qa: "+result.soil.allowableBearingBasis+" | مرجع: "+result.soil.sourceReference+" | qa="+fmt(result.soil.allowableBearingKPa)+" kPa",
+     "ابعاد پی: "+fmt(result.footing.B_m)+" × "+fmt(result.footing.L_m)+" m | وزن پی="+fmt(result.footing.footingWeightKN)+" kN | وزن خاک روی پی="+fmt(result.footing.soilCoverWeightKN)+" kN",
+     ...result.results.map(x=>x.name+" | N کل="+fmt(x.NkN)+" kN | qmax ناخالص="+fmt(x.qMaxGrossKPa)+" | qmax خالص="+fmt(x.qMaxNetKPa)+" kPa | "+x.status),
      "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
     ].join("\n");
-    out.style.color=result.success?"#15803d":"#b45309";
-    lastResult=result;
+    out.style.color=result.success?"#15803d":"#b45309";lastResult=result;
    }catch(error){out.textContent="کنترل خاک انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
   });
  }
