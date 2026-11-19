@@ -15,6 +15,21 @@
   // Exact consistent nodal loads for a linearly varying distributed load.
   return [L*(2*qA+qB)/6,L*(qA+2*qB)/6];
  }
+ function distributePiecewiseLinearLoad(qAtX,x0,x1,breaks){
+  const L=x1-x0;if(!(L>TOL))throw new Error("طول قطعه دیوار برای انتگرال‌گیری بار معتبر نیست.");
+  const cuts=[x0,...breaks.filter(x=>x>x0+TOL&&x<x1-TOL).sort((a,b)=>a-b),x1];
+  const gp=1/Math.sqrt(3);let ra=0,rb=0;
+  for(let i=0;i<cuts.length-1;i++){
+   const a=cuts[i],b=cuts[i+1],mid=(a+b)/2,half=(b-a)/2;
+   for(const xi of [-gp,gp]){
+    const x=mid+half*xi,q=Number(qAtX(x));
+    if(!Number.isFinite(q)||q<0)throw new Error("بار خطی دیوار در انتگرال‌گیری نامعتبر است.");
+    const na=1-(x-x0)/L,nb=(x-x0)/L;
+    ra+=half*q*na;rb+=half*q*nb;
+   }
+  }
+  return [ra,rb];
+ }
  function createWallFoundationLoadTransfer(input){
   const d=input||{},model=d.model||{},g=model.geometry||{},nodes=Array.isArray(model.nodes)?model.nodes:[];
   const loads=d.loads||{},factor=finitePositive(d.deadFactor,"ضریب بار مرده",true);
@@ -60,7 +75,8 @@
    for(let i=0;i<supports.length-1;i++){
     const a=supports[i],b=supports[i+1],x0=Number(a.x),x1=Number(b.x),L=x1-x0;
     if(!(L>TOL))throw new Error("ایستگاه‌های پایه "+face.label+" تکراری یا نامرتب هستند.");
-    const qA=p*roofY(x0),qB=p*roofY(x1),[ra,rb]=distributeSegment(qA,qB,L);
+    const breaks=span/2>x0+TOL&&span/2<x1-TOL?[span/2]:[];
+    const [ra,rb]=distributePiecewiseLinearLoad(x=>p*roofY(x),x0,x1,breaks);
     add(a,ra,face.label,x0);add(b,rb,face.label,x1);
    }
   });
