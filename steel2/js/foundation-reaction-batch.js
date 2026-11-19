@@ -50,6 +50,28 @@
     "هیچ پوش مؤلفه‌ای جایگزین بردار کامل نیرو و لنگر هر ترکیب نشده است.",
     "وزن پی، خاک روی پی، شناژ، اثر اندرکنش پی‌ها، نشست و طراحی بتن‌آرمه در این مرحله محاسبه نمی‌شود."])});
  }
- root.SahroudFoundationReactionBatch=Object.freeze({collectSlsReactionCases});
- if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudFoundationReactionBatch;
+ function render(){
+  if(!root.document)return;
+  const panel=root.document.getElementById("foundationSoilPanel");
+  if(!panel||panel.dataset.slsBatchInitialized==="true")return;
+  panel.dataset.slsBatchInitialized="true";
+  const input=root.document.getElementById("foundationSlsBatchInput");
+  const button=root.document.getElementById("btnValidateFoundationSlsBatch");
+  const output=root.document.getElementById("foundationSlsBatchResult");
+  if(!input||!button||!output)return;
+  button.addEventListener("click",()=>{
+   try{
+    const payload=JSON.parse(input.value||"{}");
+    const result=collectSlsReactionCases(payload);
+    output.textContent="بسته واکنش معتبر از نظر ساختار: "+result.caseCount+" ترکیب SLS و "+result.supportCount+" پایه.\n"+
+     "این اعتبارسنجی، آیین‌نامه‌ای بودن ترکیبات را تأیید نمی‌کند و هنوز تبدیل علامت/محور برای طراحی پی انجام نشده است.\n"+
+     JSON.stringify(result,null,2);
+    output.style.color="#15803d";
+   }catch(error){output.textContent="بسته واکنش پذیرفته نشد: "+error.message;output.style.color="#b45309";}
+  });
+ }
+ const api=Object.freeze({collectSlsReactionCases,render});
+ root.SahroudFoundationReactionBatch=api;
+ if(typeof module!=="undefined"&&module.exports)module.exports=api;
+ if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",render);else render();}
 })(typeof window!=="undefined"?window:globalThis);
