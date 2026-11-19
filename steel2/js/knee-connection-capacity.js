@@ -65,8 +65,8 @@
    (c.weldActions||[]).forEach(a=>{
     if(!weldIds.has(String(a.weldId))||weldActionIds.has(String(a.weldId)))fail(errors,"شناسه تقاضای خط جوش نامعتبر یا تکراری است.");
     weldActionIds.add(String(a.weldId));
-    if(!finite(a.demandKN)||a.demandKN<0||a.direction!=="shear-on-effective-throat"||!text(a.sourceReference))
-     fail(errors,"تقاضای جوش باید نامنفی، برشی روی گلویی مؤثر و دارای مرجع مستند باشد.");
+    if(!finite(a.demandKN)||a.demandKN<0||a.direction!=="axial-parallel-to-weld-axis"||!text(a.sourceReference))
+     fail(errors,"تقاضای جوش باید نامنفی، کششی/فشاری موازی محور جوش و دارای مرجع مستند باشد.");
    });
    (detail?.welds||[]).forEach(w=>{
     if(w.type!=="fillet")fail(errors,"این نسخه فقط جوش گوشه را کنترل می‌کند؛ جوش شیاری نیازمند ماژول مستقل است.");
@@ -139,10 +139,10 @@
     const nominalStressMPa=0.6*weld.electrodeFexxMPa;
     const nominalCapacityKN=nominalStressMPa*throatMm*lengthMm/1000;
     const designCapacity=factor(method,0.75,2.0)*nominalCapacityKN;
-    const check=demandCheck(c.id+":"+weld.id,"fillet-weld-metal-shear",a.demandKN,designCapacity,method,"جدول ۱۰-۲-۹-۳؛ Fnw=0.6FEXX، Aw=0.707aL");
+    const check=demandCheck(c.id+":"+weld.id,"fillet-weld-axial-parallel",a.demandKN,designCapacity,method,"جدول ۱۰-۲-۹-۳؛ کشش/فشار موازی محور جوش: Fnw=0.6FEXX، Aw=0.707aL");
     weldChecks.push({caseId:c.id,weldId:weld.id,lengthMm,legSizeMm:weld.legSizeMm,effectiveThroatMm:throatMm,
      FexxMPa:weld.electrodeFexxMPa,effectiveAreaMm2:throatMm*lengthMm,nominalStressMPa,nominalCapacityKN,
-     designCapacityKN:designCapacity,check,limitations:["این کنترل فقط مقاومت فلز جوش را در برش گلویی مؤثر می‌سنجد.","ظرفیت فلز پایه، بارگذاری موازی محور جوش، گروه جوش با خروج از مرکزیت، حداقل/حداکثر بعد و طول مؤثر جوش، و جوش شیاری کنترل نشده‌اند."]});
+     designCapacityKN:designCapacity,check,limitations:["این کنترل فقط مقاومت فلز جوش را برای کشش/فشار موازی محور جوش می‌سنجد.","ظرفیت فلز پایه، بارگذاری موازی محور جوش، گروه جوش با خروج از مرکزیت، حداقل/حداکثر بعد و طول مؤثر جوش، و جوش شیاری کنترل نشده‌اند."]});
    }
    const actions=new Map(c.boltActions.map(a=>[String(a.boltId),a]));
    for(const bolt of detail.bolts){
@@ -226,7 +226,7 @@
    notEvaluated:[
     "توزیع نیرو در پیچ‌ها از مدل سه‌بعدی به‌طور خودکار محاسبه نشده؛ بسته نیروهای هر پیچ باید با روش مستند و تأیید مهندس وارد شود.",
     "اثر اهرمی فقط به‌صورت نیروی افزوده ورودی پذیرفته می‌شود؛ سختی ورق انتهایی، prying و اندرکنش تماس/پیچ حل نشده است.",
-    "تنش برداری گروه جوش با خروج از مرکزیت، ظرفیت فلز پایه، بارگذاری موازی محور جوش، حداقل/حداکثر بعد و طول مؤثر جوش هنوز محاسبه نشده است؛ فقط مقاومت فلز جوش در برش گلویی مؤثر جوش گوشه با تقاضای خطی مستند بررسی می‌شود.",
+    "تنش برداری گروه جوش با خروج از مرکزیت، ظرفیت فلز پایه برای برش روی گلویی مؤثر، حداقل/حداکثر بعد و طول مؤثر جوش هنوز محاسبه نشده است؛ فقط مقاومت فلز جوش برای کشش/فشار موازی محور جوش گوشه بررسی می‌شود.",
     "خمش ورق، تسلیم موضعی، کمانش/پایداری اجزای اتصال، ظرفیت اعضای ستون و رفتر در محل اتصال و اثر خروج از مرکزیت‌های واقعی کامل نیست.",
     "اتصالات لغزش بحرانی/پیش‌تنیده، لغزش، خستگی، الزامات لرزه‌ای و طراحی ظرفیت‌محور در این ماژول محاسبه نمی‌شوند.",
     "قبولی این کنترل‌های جزئی به معنی قبولی کل اتصال یا آمادگی ساخت و اجرا نیست."
