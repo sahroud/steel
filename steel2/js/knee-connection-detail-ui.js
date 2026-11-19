@@ -46,7 +46,8 @@
    "<div class='notice'>این فرم هیچ اندازه، تعداد پیچ، ضخامت ورق یا جوش پیش‌فرض تولید نمی‌کند. ابتدا قالب شناسه‌ها را بسازید، سپس مختصات و مشخصات را دقیقاً از نقشه مصوب وارد کنید. مختصات چندضلعی و پیچ در دستگاه محلی هر ورق (mm) ثبت می‌شود؛ مبدأ و محورهای هر ورق در دستگاه اتصال سه‌بعدی و mm هستند؛ مبدأ دستگاه اتصال m است.</div>"+
    "<div class='button-grid'><button id='btnKneeDetailTemplate' class='btn secondary' type='button'>ساخت قالب برای زانویی انتخاب‌شده</button>"+
    "<button id='btnKneeDetailValidate' class='btn primary' type='button'>اعتبارسنجی جزئیات واردشده</button>"+
-   "<button id='btnKneeDetailExport' class='btn secondary' type='button'>دریافت JSON ورودی</button></div>"+
+   "<button id='btnKneeDetailExport' class='btn secondary' type='button'>دریافت JSON ورودی</button>"+
+   "<button id='btnKneeDetailExportGlobal' class='btn secondary' type='button'>دریافت هندسه سه‌بعدی جهانی</button>"+
    "<button id='btnKneeDetailMapDemand' class='btn primary' type='button'>انتقال تقاضای ترکیبات بار به دستگاه اتصال</button></div>"+
    "<div class='field'><label for='kneeDetailJson'>جزئیات اتصال (JSON)</label><textarea id='kneeDetailJson' rows='18' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
    "<div id='kneeDetailValidationResult' aria-live='polite' class='notice'>قالب اولیه هنوز ساخته نشده است.</div>"+
@@ -103,6 +104,16 @@
     $("kneeDetailMappedDemand").textContent="انتقال تقاضا متوقف شد: "+e.message;
     $("kneeDetailMappedDemand").dataset.valid="false";
    }
+  });
+  $("btnKneeDetailExportGlobal").addEventListener("click",()=>{
+   try{
+    const value=JSON.parse($("kneeDetailJson").value);
+    const geometry=root.SahroudKneeConnectionDetail.buildGlobalGeometry(value);
+    const source=JSON.stringify(geometry,null,2);
+    const url=root.URL.createObjectURL(new Blob([source],{type:"application/json;charset=utf-8"}));
+    const a=root.document.createElement("a");a.href=url;a.download="sahroud-knee-connection-global-geometry.json";a.click();root.URL.revokeObjectURL(url);
+    $("kneeDetailValidationResult").textContent="هندسه ورق‌ها، مراکز پیچ‌ها و خطوط جوش به مختصات جهانی تبدیل و صادر شد؛ ظرفیت طراحی نشده است.";
+   }catch(e){$("kneeDetailValidationResult").textContent="خروجی هندسه جهانی صادر نشد: "+e.message;}
   });
   $("btnKneeDetailExport").addEventListener("click",()=>{
    const source=$("kneeDetailJson").value.trim();
