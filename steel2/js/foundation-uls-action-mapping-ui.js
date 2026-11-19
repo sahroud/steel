@@ -12,17 +12,18 @@
    try{
     if(!root.SahroudFoundationUlsReactionBatch||!root.SahroudFoundationUlsActionMapping)
      throw new Error("ماژول‌های اعتبارسنجی و تبدیل واکنش ULS بارگذاری نشده‌اند.");
+    const nodeId=String($("selectedFoundationNodeId").value||"").trim();
+    if(!nodeId)throw new Error("شناسه پایه موردنظر را وارد کنید.");
     const batch=root.SahroudFoundationUlsReactionBatch.collectUlsReactionCases(JSON.parse(input.value||"{}"));
     const geometry=JSON.parse($("foundationLocalGeometryInput").value||"{}");
     const mapped=root.SahroudFoundationUlsActionMapping.mapUlsReactionBatchToFootingActions({
      batch,reactionSense:$("foundationReactionSense").value,foundations:geometry.foundations
     });
-    root.SahroudLastFoundationUlsActions=mapped;
-    if(mappedOut)mappedOut.value=JSON.stringify(mapped,null,2);
-    const nodeId=String($("selectedFoundationNodeId").value||"").trim();
-    if(!nodeId)throw new Error("شناسه پایه موردنظر را وارد کنید.");
     const footing=mapped.foundations.find(x=>x.nodeId===nodeId);
     if(!footing)throw new Error("پایه انتخاب‌شده در بسته واکنش ULS وجود ندارد.");
+    // Commit the mapped package to shared state only after every required selection is valid.
+    if(mappedOut)mappedOut.value=JSON.stringify(mapped,null,2);
+    root.SahroudLastFoundationUlsActions=mapped;
     out.textContent="بسته کنش‌های ULS برای پایه "+nodeId+" تبدیل شد: "+footing.cases.length+
      " ترکیب مستقل. این خروجی برای کنترل‌های مقاومت پی است و جایگزین ترکیبات مصوب نیست.\n"+
      "کنش‌های محلی کامل (بدون envelope مؤلفه‌ای):\n"+JSON.stringify(footing,null,2)+
