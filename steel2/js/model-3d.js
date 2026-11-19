@@ -1070,7 +1070,7 @@
         global=selected.direction.map(v=>v*totalLineLoad*1000);
       }
       const local=window.SteelFrame3D.globalVectorToLocal(
-        [a.x,a.y,a.z],[b.x,b.y,b.z],global,m.referenceAxis||undefined
+        [a.x,a.y,a.z],[b.x,b.y,b.z],global,m.referenceAxis||undefined,m.sectionRollDeg
       );
       m.analysisLoad={uniformLocal:local,globalUniform:global};
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
