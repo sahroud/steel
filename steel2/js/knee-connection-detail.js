@@ -124,6 +124,21 @@
    if(!vec(w.startMm,3)||!vec(w.endMm,3)||Math.hypot(...w.startMm.map((v,j)=>v-w.endMm[j]))<=1e-8)
     fail(errors,"ابتدا و انتهای خط جوش "+(w.id||i)+" باید دو نقطه سه‌بعدی متفاوت باشند.");
    if(!text(w.plateId)||!plateIds.has(String(w.plateId)))fail(errors,"شناسه ورق متصل به خط جوش "+(w.id||i)+" باید صریح و معتبر باشد.");
+   else{
+    const plate=input.plates.find(p=>String(p.id)===String(w.plateId));
+    const frame=plate.frame,poly=plate.polygonMm;
+    if(frame&&vec(frame.originMm,3)&&frame.axes&&["u","v","n"].every(k=>vec(frame.axes[k],3))&&Array.isArray(poly)&&poly.length>=3){
+     const dot=(a,b)=>a.reduce((sum,v,j)=>sum+v*b[j],0);
+     [w.startMm,w.endMm].forEach((point,endIndex)=>{
+      if(!vec(point,3))return;
+      const delta=point.map((v,j)=>v-frame.originMm[j]);
+      const local={x:dot(delta,frame.axes.u),y:dot(delta,frame.axes.v)};
+      const offset=dot(delta,frame.axes.n);
+      if(Math.abs(offset)>0.1)fail(errors,"انتهای "+(endIndex?"دوم":"اول")+" خط جوش "+(w.id||i)+" روی صفحه ورق "+plate.id+" قرار ندارد.");
+      if(!pointInPolygon(local,poly))fail(errors,"انتهای "+(endIndex?"دوم":"اول")+" خط جوش "+(w.id||i)+" خارج از محدوده چندضلعی ورق "+plate.id+" است.");
+     });
+    }
+   }
    if(!text(w.faceReference))fail(errors,"سطح/وجه اتصال خط جوش "+(w.id||i)+" باید با ارجاع نقشه مشخص شود.");
    if(!positive(w.electrodeFexxMPa)||!["fillet","groove"].includes(w.type))
     fail(errors,"نوع جوش و FEXX خط جوش "+(w.id||i)+" باید صریح و معتبر باشد.");
