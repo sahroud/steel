@@ -16,8 +16,14 @@
     {id:"craneRail",label:"اتصال ریل جرثقیل به ستون",scope:"wheel loads, bracket, local web/flange and fatigue",status:"not-designed"},
     {id:"endWall",label:"اتصالات قاب و مهاربندی دیوار انتهایی",scope:"end-post, girt and bracing joints",status:"not-designed"}
   ];
-  function assess(){
-    const items=ITEMS.map(x=>({...x,verifiedDesign:false,executionReady:false}));
+  function assess(demand){
+    const demandFamilies=new Map((demand?.families||[]).map(x=>[x.id,x]));
+    const items=ITEMS.map(x=>{
+      const source=demandFamilies.get(x.id);
+      return {...x,verifiedDesign:false,executionReady:false,
+        demandJointCount:source?.jointCount||0,
+        demandStatus:source?.jointCount>0?"نیروهای گره از تحلیل منتقل شده؛ ظرفیت طراحی نشده":"گره/نیروی متناظر در مدل فعلی شناسایی نشده"};
+    });
     const missing=items.filter(x=>!x.verifiedDesign);
     return {
       readyForExecution:missing.length===0,
@@ -30,15 +36,17 @@
       ]
     };
   }
-  function render(){
-    if(!root.document||root.document.getElementById("connectionReadinessPanel"))return;
+  function render(demand){
+    if(!root.document)return;
+    const existing=root.document.getElementById("connectionReadinessPanel");
+    if(existing)existing.remove();
     const panel=root.document.createElement("section");
     panel.className="panel";panel.id="connectionReadinessPanel";
-    const result=assess();
-    const rows=result.items.map(x=>"<tr><td>"+x.label+"</td><td>"+x.status+"</td><td>"+x.scope+"</td></tr>").join("");
+    const result=assess(demand||root.SteelStructuralModel?.lastConnectionDemand);
+    const rows=result.items.map(x=>"<tr><td>"+x.label+"</td><td>"+x.status+"</td><td>"+x.demandJointCount+"</td><td>"+x.demandStatus+"</td><td>"+x.scope+"</td></tr>").join("");
     panel.innerHTML="<div class='panel-title'><h3>ممیزی تکمیل اتصالات سازه</h3><span class='status'>گیت ایمنی خروجی</span></div>"+
       "<div class='notice'>وضعیت فعلی: "+result.verified+" از "+result.total+" اتصال دارای طراحی و جزئیات تأییدشده است. تا تکمیل همه ردیف‌ها، گزارش اجرایی نهایی مسدود می‌ماند.</div>"+
-      "<div style='overflow-x:auto'><table style='width:100%;min-width:680px;border-collapse:collapse'><thead><tr><th>اتصال</th><th>وضعیت</th><th>دامنه لازم</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
+      "<div style='overflow-x:auto'><table style='width:100%;min-width:820px;border-collapse:collapse'><thead><tr><th>اتصال</th><th>وضعیت طراحی</th><th>گره دارای تقاضا</th><th>وضعیت انتقال نیرو</th><th>دامنه لازم</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
       "<div class='notice'>"+result.limitations.map(x=>"<p>"+x+"</p>").join("")+"</div>";
     const target=root.document.getElementById("finalReportPanel")||root.document.querySelector("main");
     if(target&&target.parentNode)target.parentNode.insertBefore(panel,target);
@@ -56,7 +64,8 @@
   }
   root.SahroudConnectionReadiness={assess,render,selfTest};
   if(root.document){
-    if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",render);
+    if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",()=>render());
     else render();
+    root.addEventListener("sahroud:connection-demand-ready",event=>render(event.detail));
   }
 })(typeof window!=="undefined"?window:globalThis);
