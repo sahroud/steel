@@ -120,3 +120,14 @@ test("ASD uses the specified safety factors and reports the method",()=>{
  assert.equal(r.method,"ASD");
  assert.ok(Math.abs(r.boltChecks[0].tension.capacityKN-(0.75*800*Ab/2/1000))<1e-10);
 });
+
+test("bearing connection rejects oversized holes and slots parallel to the force",()=>{
+ const d=detailFixture(),c=designFixture();
+ d.bolts[0].holeType="oversized";c.loadCases[0].bearingChecks[0].holeType="oversized";
+ assert.equal(capacity.validate(d,c).valid,false);
+ const e=detailFixture(),x=designFixture();
+ e.bolts[0].holeType="short-slotted";e.bolts[0].slotLengthMm=40;e.bolts[0].slotWidthMm=22;e.bolts[0].slotAngleDeg=90;
+ x.loadCases[0].bearingChecks[0].holeType="short-slotted";
+ x.loadCases[0].bearingChecks[0].forceDirectionToSlot="parallel";
+ assert.equal(capacity.validate(e,x).valid,false);
+});
