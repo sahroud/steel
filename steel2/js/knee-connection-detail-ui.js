@@ -36,6 +36,8 @@
    drawingReference:detail?.drawingReference||"",
    boltDemandDistributionVerifiedByEngineer:false,
    boltDemandDistributionReference:"",
+   weldDemandDistributionVerifiedByEngineer:false,
+   weldDemandDistributionReference:"",
    axialEndConnection:false,boltGroupAxialSpanMm:null,
    boltProperties:(detail?.bolts||[]).map(b=>({boltId:b.id,boltClass:""})),
    loadCases:[]
@@ -62,7 +64,7 @@
    "<button id='btnKneeDetailExportGlobal' class='btn secondary' type='button'>دریافت هندسه سه‌بعدی جهانی</button>"+
    "<button id='btnKneeDetailMapDemand' class='btn primary' type='button'>انتقال تقاضای ترکیبات بار به دستگاه اتصال</button>"+
    "<button id='btnKneeDetailCollision' class='btn secondary' type='button'>ممیزی برخورد سه‌بعدی ورق‌ها</button></div>"+
-   "<div class='notice'>محاسبات زیر فقط حالت‌های حدی پیچی اتکایی و ورق را که داده‌های هندسی/تقاضای آن‌ها صریح وارد شده باشد بررسی می‌کند. توزیع نیرو بین پیچ‌ها، سطوح مقطع خالص، مسیر برش قالبی و اثر اهرمی باید مستند باشند. جوش، خمش ورق، لغزش بحرانی و تأیید نهایی اتصال هنوز پوشش داده نمی‌شوند.</div>"+
+   "<div class='notice'>محاسبات زیر فقط حالت‌های حدی پیچی اتکایی و ورق را که داده‌های هندسی/تقاضای آن‌ها صریح وارد شده باشد بررسی می‌کند. توزیع نیرو بین پیچ‌ها و خطوط جوش، سطوح مقطع خالص، مسیر برش قالبی و اثر اهرمی باید مستند باشند. کنترل جوش فعلاً فقط فلز جوش گوشه در برش گلویی مؤثر را پوشش می‌دهد. جوش، خمش ورق، لغزش بحرانی و تأیید نهایی اتصال هنوز پوشش داده نمی‌شوند.</div>"+
    "<div class='button-grid'><button id='btnKneeCapacityTemplate' class='btn secondary' type='button'>ساخت قالب داده‌های ظرفیت</button><button id='btnKneeCapacityRun' class='btn primary' type='button'>محاسبه ظرفیت‌های پیچی/ورق</button></div>"+
    "<div class='field'><label for='kneeCapacityJson'>تقاضاها، سطوح مقطع و مسیرهای گسیختگی (JSON)</label><textarea id='kneeCapacityJson' rows='16' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
    "<div id='kneeCapacityResult' aria-live='polite' class='notice'>محاسبه ظرفیت هنوز اجرا نشده است.</div>"+
@@ -161,6 +163,7 @@
     report.bearingChecks.forEach(b=>[b.bearing,b.tear].forEach(x=>rows.push("<tr><td>"+esc(b.caseId)+"</td><td>"+esc(b.boltId)+" / "+esc(b.plateId)+"</td><td>"+esc(x.limitState)+"</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>")));
     report.plateChecks.forEach(p=>p.checks.forEach(x=>rows.push("<tr><td>"+esc(p.caseId)+"</td><td>"+esc(p.plateId)+"</td><td>"+esc(x.limitState)+"</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>")));
     report.blockShearChecks.forEach(p=>{const x=p.check;rows.push("<tr><td>"+esc(p.caseId)+"</td><td>"+esc(p.plateId)+"</td><td>برش قالبی</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>");});
+    report.weldChecks.forEach(w=>{const x=w.check;rows.push("<tr><td>"+esc(w.caseId)+"</td><td>جوش "+esc(w.weldId)+"</td><td>برش فلز جوش</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>");});
     $("kneeCapacityResult").innerHTML="<p><b>نتیجه کنترل‌های جزئی: "+(report.overallStatus==="FAIL"?"حداقل یک کنترل رد شده است":"کنترل‌های اجراشده بدون رد ثبت شده‌اند، اما طراحی اتصال ناقص است")+"</b></p>"+
      "<p>روش: "+esc(report.method)+"؛ تعداد کنترل: "+report.summary.checks+"؛ قبول: "+report.summary.passed+"؛ رد: "+report.summary.failed+"؛ بیشینه نسبت تقاضا به ظرفیت: "+(report.summary.maximumUtilization*100).toFixed(1)+"%</p>"+
      "<table><thead><tr><th>ترکیب</th><th>جزء</th><th>حالت حدی</th><th>تقاضا (kN)</th><th>ظرفیت موجود (kN)</th><th>نسبت</th><th>نتیجه</th></tr></thead><tbody>"+rows.join("")+"</tbody></table>"+
