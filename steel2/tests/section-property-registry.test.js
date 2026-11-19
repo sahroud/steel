@@ -59,7 +59,7 @@ test("steel takeoff sums each unique member actual length times its section mass
  const result=registry.takeoff(model);
  assert.equal(result.memberCount,3);
  assert.equal(result.totalLengthM,19);
- assert.equal(result.totalMassKg,19*157+5*78.5);
+ assert.equal(result.totalMassKg,14*157+5*78.5);
  assert.equal(result.items.length,3);
  assert.equal(result.groups.length,2);
 });
