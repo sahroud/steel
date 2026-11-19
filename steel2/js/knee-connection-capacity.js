@@ -1,5 +1,5 @@
 /* SAHROUD STEEL — Mabhath 10 (1401) partial connection resistance checks.
- * Computes only explicitly supported LRFD bolt and plate limit states.
+ * Computes only explicitly supported LRFD/ASD bolt and plate limit states.
  * It does not distribute joint actions, design welds, solve prying, or approve a connection.
  */
 (function(root){
