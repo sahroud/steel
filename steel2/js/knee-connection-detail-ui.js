@@ -57,7 +57,7 @@
   const panel=root.document.createElement("section");
   panel.className="panel";panel.id="kneeConnectionDetailIntake";
   panel.innerHTML="<div class='panel-title'><h3>ورود جزئیات واقعی اتصال زانویی</h3><span class='status'>ورودی نقشه ساخت</span></div>"+
-   "<div class='notice'>این فرم هیچ اندازه، تعداد پیچ، ضخامت ورق یا جوش پیش‌فرض تولید نمی‌کند. ابتدا قالب شناسه‌ها را بسازید، سپس مختصات و مشخصات را دقیقاً از نقشه مصوب وارد کنید. مختصات چندضلعی و پیچ در دستگاه محلی هر ورق (mm) ثبت می‌شود؛ مبدأ و محورهای هر ورق در دستگاه اتصال سه‌بعدی و mm هستند؛ مرجع ضخامت هر ورق باید صریحاً mid-plane باشد تا دو سطح جامد به‌صورت متقارن ساخته شوند؛ مبدأ دستگاه اتصال m است.</div>"+
+   "<div class='notice'>این فرم هیچ اندازه، تعداد پیچ، ضخامت ورق یا جوش پیش‌فرض تولید نمی‌کند. ابتدا قالب شناسه‌ها را بسازید، سپس مختصات و مشخصات را دقیقاً از نقشه مصوب وارد کنید. مختصات چندضلعی و پیچ در دستگاه محلی هر ورق (mm) ثبت می‌شود؛ مبدأ و محورهای هر ورق در دستگاه اتصال سه‌بعدی و mm هستند؛ مرجع ضخامت هر ورق باید صریحاً mid-plane باشد تا دو سطح جامد به‌صورت متقارن ساخته شوند؛ مبدأ دستگاه اتصال m است. برای کنترل جوش گوشه، ضخامت قطعه متصل‌شونده، وضعیت بار پرتکرار، لبه‌ای یا سطحی بودن جوش و پیوسته/منقطع بودن هر خط را در رکورد weld وارد کنید. اگر نسبت طول به ساق از ۱۰۰ بیشتر شود، اتصال انتهایی محوری و بارگذاری طولی نیز باید صریحاً تعیین شوند؛ هیچ‌یک به‌صورت خودکار فرض نمی‌شود.</div>"+
    "<div class='button-grid'><button id='btnKneeDetailTemplate' class='btn secondary' type='button'>ساخت قالب برای زانویی انتخاب‌شده</button>"+
    "<button id='btnKneeDetailValidate' class='btn primary' type='button'>اعتبارسنجی جزئیات واردشده</button>"+
    "<button id='btnKneeDetailExport' class='btn secondary' type='button'>دریافت JSON ورودی</button>"+
@@ -234,7 +234,7 @@
     $("kneeWeldDemandResult").innerHTML="<p><b>تقاضای الاستیک گروه جوش محاسبه شد؛ ظرفیت و قبولی اتصال محاسبه نشده است.</b></p>"+
      "<p>روش: "+esc(report.demandModel)+"؛ طول کل جوش: "+Number(report.results[0]?.lineDemand.totalLength||0).toFixed(2)+
      " mm؛ تعداد سناریوهای مستقل: "+report.results.length+"</p>"+
-     "<div style='overflow-x:auto'><table><thead><tr><th>ترکیب</th><th>عضو</th><th>ورق مرجع</th><th>N (kN)</th><th>V (kN)</th><th>Mz (kN.mm)</th><th>qmax (kN/mm)</th><th>نقطه بحرانی</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
+     "<div style='overflow-x:auto'><table><thead><tr><th>ترکیب</th><th>عضو</th><th>ورق مرجع</th><th>N (kN)</th><th>V (kN)</th><th>Mz (kN.mm)</th><th>qmax (kN/mm)</th><th>موازی محور جوش</th><th>عمود بر محور جوش</th><th>نقطه بحرانی</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
      "<p>مؤلفه‌های خارج از صفحه رد می‌شوند. فرض‌ها: سختی خطی یکنواخت و ورق صلب. ظرفیت فلز جوش/پایه، اثر انعطاف ورق، اندرکنش پیچ و جوش و ضوابط اجرایی هنوز بررسی نشده‌اند.</p>";
     $("kneeWeldDemandResult").dataset.valid="true";
    }catch(e){
