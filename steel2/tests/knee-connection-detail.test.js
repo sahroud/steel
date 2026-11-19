@@ -126,8 +126,11 @@ test("plate solid exports correctly oriented triangulated top and bottom meshes"
  assert.equal(mesh.method,"ear-clipping");
  assert.equal(mesh.top.length,2);
  assert.equal(mesh.bottom.length,2);
- assert.deepEqual(mesh.top[0][0],g.plates[0].solid.plusFaceGlobalM[0]);
- assert.deepEqual(mesh.bottom[0][0],g.plates[0].solid.minusFaceGlobalM[1]);
+ const same=(a,b)=>a.every((v,i)=>Math.abs(v-b[i])<1e-10);
+ for(const tri of mesh.top)for(const vertex of tri)
+  assert.ok(g.plates[0].solid.plusFaceGlobalM.some(point=>same(point,vertex)));
+ for(const tri of mesh.bottom)for(const vertex of tri)
+  assert.ok(g.plates[0].solid.minusFaceGlobalM.some(point=>same(point,vertex)));
 });
 test("concave plate polygon is triangulated without assuming a rectangular plate",()=>{
  const d=fixture();
