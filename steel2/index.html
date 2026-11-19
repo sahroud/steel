@@ -154,6 +154,22 @@
         </div>
     </section>
 
+    <section class="panel" id="foundationSoilPanel">
+        <div class="panel-title"><h3>کنترل ژئوتکنیکی پی (اختیاری)</h3><span class="status">کنترل فشار تماس؛ نه طراحی کامل پی</span></div>
+        <label class="field"><span><input id="soilControlEnabled" type="checkbox"> کنترل باربری خاک در این پروژه فعال شود</span></label>
+        <div class="notice">با فعال‌سازی، باید ظرفیت مجاز از گزارش ژئوتکنیک و واکنش‌های ترکیبات بهره‌برداری تأییدشده وارد شود. این نسخه فشار تماس خطی پی مستطیلی با فرض تماس کامل را کنترل می‌کند؛ داده ساختگی یا ظرفیت پیش‌فرض ندارد.</div>
+        <div class="form-grid">
+            <div class="field"><label for="soilQa">ظرفیت مجاز باربری خاک (kPa)</label><input id="soilQa" type="number" min="1" step="1" placeholder="از گزارش ژئوتکنیک" disabled></div>
+            <div class="field"><label for="soilSource">مرجع گزارش ژئوتکنیک / شماره صفحه</label><input id="soilSource" type="text" placeholder="نام گزارش، شماره و صفحه" disabled></div>
+            <div class="field"><label for="soilFootingB">عرض پی در راستای X (m)</label><input id="soilFootingB" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
+            <div class="field"><label for="soilFootingL">طول پی در راستای Z (m)</label><input id="soilFootingL" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
+        </div>
+        <div class="field"><label for="soilReactionCases">واکنش‌های هر پی در ترکیبات بهره‌برداری (JSON)</label><textarea id="soilReactionCases" rows="5" placeholder='[{"name":"SLS-1","NkN":1000,"MxkNm":20,"MzkNm":15}]' disabled></textarea></div>
+        <div class="notice">N بر حسب kN و Mx/Mz بر حسب kN.m است. برای هر پی و هر ترکیب بهره‌برداری، کنترل باید جداگانه تکرار شود. خروجی تحلیل خطی منفرد یا ترکیب ULS را به‌جای واکنش SLS وارد نکنید.</div>
+        <button id="btnRunSoilCheck" class="btn primary" type="button" disabled>اجرای کنترل فشار باربری خاک</button>
+        <pre id="soilCheckResult" class="notice" aria-live="polite">کنترل خاک غیرفعال است.</pre>
+    </section>
+
     <section class="panel" id="craneDesignPanel">
         <div class="panel-title"><h3>۵ ـ جرثقیل سقفی اختیاری</h3><span class="status">پیش‌طرح؛ نیازمند داده فنی</span></div>
         <div class="form-grid">
@@ -267,6 +283,7 @@
 <script src="js/seismic-load-path.js?v=20261119seismic2"></script>
 <script src="js/load-path-audit.js?v=20261119wallfoundation1"></script>
 <script src="js/crane-design.js?v=20261119crane2"></script>
+<script src="js/foundation-soil-check.js?v=20261119soil1"></script>
 <script src="js/project.js?v=20261112purlinmigration1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/member-demand-3d.js?v=20261118demand1"></script>
