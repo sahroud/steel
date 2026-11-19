@@ -165,6 +165,13 @@
             <div class="field"><label for="soilSource">مرجع گزارش ژئوتکنیک / شماره صفحه</label><input id="soilSource" type="text" placeholder="نام گزارش، شماره و صفحه" disabled></div>
             <div class="field"><label for="soilFootingB">عرض پی در راستای X (m)</label><input id="soilFootingB" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
             <div class="field"><label for="soilFootingL">طول پی در راستای Z (m)</label><input id="soilFootingL" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
+            <div class="field"><label for="sizingShape">شکل پلان پی</label><select id="sizingShape" disabled><option value="rectangular">مستطیل</option><option value="square">مربع</option></select></div>
+            <div class="field"><label for="sizingMinB">حداقل عرض B (m)</label><input id="sizingMinB" type="number" min="0.1" step="0.05" disabled></div>
+            <div class="field"><label for="sizingMaxB">حداکثر عرض B (m)</label><input id="sizingMaxB" type="number" min="0.1" step="0.05" disabled></div>
+            <div class="field"><label for="sizingStepB">گام تغییر عرض B (m)</label><input id="sizingStepB" type="number" min="0.01" step="0.01" disabled></div>
+            <div class="field"><label for="sizingMinL">حداقل طول L (m)</label><input id="sizingMinL" type="number" min="0.1" step="0.05" disabled></div>
+            <div class="field"><label for="sizingMaxL">حداکثر طول L (m)</label><input id="sizingMaxL" type="number" min="0.1" step="0.05" disabled></div>
+            <div class="field"><label for="sizingStepL">گام تغییر طول L (m)</label><input id="sizingStepL" type="number" min="0.01" step="0.01" disabled></div>
             <div class="field"><label for="soilFootingThickness">ضخامت پی (m)</label><input id="soilFootingThickness" type="number" min="0.1" step="0.05" placeholder="طبق طرح پی" disabled></div>
             <div class="field"><label for="soilCoverAboveFooting">ارتفاع خاک روی پی تا تراز زمین (m)</label><input id="soilCoverAboveFooting" type="number" min="0" step="0.05" placeholder="اندازه واقعی" disabled></div>
             <div class="field"><label for="concreteUnitWeight">وزن مخصوص بتن (kN/m³)</label><input id="concreteUnitWeight" type="number" min="1" step="0.5" placeholder="از مشخصات مصالح" disabled></div>
@@ -184,6 +191,8 @@
         <pre id="foundationActionMappingResult" class="notice" aria-live="polite">برای تبدیل، جهت واکنش، شناسه پایه و هندسه محلی تمام پی‌ها را وارد کنید.</pre>
         <div class="field"><label for="soilReactionCases">واکنش‌های هر پی در ترکیبات بهره‌برداری (JSON)</label><textarea id="soilReactionCases" rows="5" placeholder='[{"name":"SLS-1","sourceReference":"گزارش تحلیل R-01 صفحه ۴","NkN":1000,"MxkNm":20,"MzkNm":15}]' disabled></textarea></div>
         <div class="notice">N بر حسب kN و Mx/Mz بر حسب kN.m است. وزن خود پی و خاک روی آن با مقادیر صریح واردشده به نیروی قائم افزوده می‌شود. مبنای gross/net باید دقیقاً مطابق تعریف گزارش ژئوتکنیک انتخاب شود. وزن شناژ، پدستال و اثر آب زیرزمینی هنوز در این کنترل منظور نشده‌اند.</div>
+        <button id="btnSearchFootingDimensions" class="btn primary" type="button" disabled>جست‌وجوی خودکار ابعاد مقدماتی پی</button>
+        <pre id="foundationSizingResult" class="notice" aria-live="polite">برای جست‌وجو، محدوده و گام ابعاد، نوع پلان، بارهای SLS و داده‌های ژئوتکنیک را وارد کنید.</pre>
         <button id="btnRunSoilCheck" class="btn primary" type="button" disabled>اجرای کنترل فشار باربری خاک</button>
         <pre id="soilCheckResult" class="notice" aria-live="polite">کنترل خاک غیرفعال است.</pre>
     </section>
@@ -306,6 +315,8 @@
 <script src="js/foundation-reaction-batch.js?v=20261119slsbatch1"></script>
 <script src="js/foundation-action-mapping.js?v=20261119actionmap1"></script>
 <script src="js/foundation-action-mapping-ui.js?v=20261119actionmapui1"></script>
+<script src="js/foundation-sizing.js?v=20261119size1"></script>
+<script src="js/foundation-sizing-ui.js?v=20261119sizeui1"></script>
 <script src="js/project.js?v=20261112purlinmigration1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/member-demand-3d.js?v=20261118demand1"></script>
