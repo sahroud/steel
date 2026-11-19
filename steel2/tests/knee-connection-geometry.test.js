@@ -57,3 +57,27 @@ test("knee geometry self-test passes",()=>{
  const result=knee.selfTest();
  assert.equal(result.failed,0);
 });
+
+function analysisResult(){
+ const axes={x:[0,1,0],y:[0,0,1],z:[1,0,0]};
+ return {members:[{id:"COL",localAxes:axes},{id:"RAF",localAxes:axes}]};
+}
+test("knee geometry consumes solver local axes by member id without inferring section roll",()=>{
+ const k=knee.extract(model(),analysisResult())[0];
+ assert.equal(k.column.solverAxes.available,true);
+ assert.deepEqual(k.column.solverAxes.axes,{x:[0,1,0],y:[0,0,1],z:[1,0,0]});
+ assert.equal(k.rafter.solverAxes.source,"analysisResult.members.localAxes");
+ assert.equal(knee.check(k).capacityDesigned,false);
+});
+test("missing solver result axes remain explicitly unavailable",()=>{
+ const k=knee.extract(model())[0];
+ assert.equal(k.column.solverAxes.available,false);
+ assert.equal(k.column.solverAxes.status,"solver-axes-missing");
+});
+test("invalid solver axes are rejected rather than used for section geometry",()=>{
+ const result={members:[{id:"COL",localAxes:{x:[1,0,0],y:[1,0,0],z:[0,0,1]}},{id:"RAF",localAxes:{x:[0,1,0],y:[0,0,1],z:[1,0,0]}}]};
+ const k=knee.extract(model(),result)[0];
+ assert.equal(k.column.solverAxes.available,false);
+ assert.equal(k.column.solverAxes.status,"solver-axes-invalid");
+ assert.equal(knee.check(k).capacityDesigned,false);
+});
