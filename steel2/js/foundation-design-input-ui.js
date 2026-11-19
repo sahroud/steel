@@ -10,11 +10,19 @@
   if(!button||!input||!out)return;
   if(useUls)useUls.addEventListener("click",()=>{
    try{
-    if(!root.SahroudLastFoundationUlsActions)throw new Error("ابتدا بسته واکنش ULS را در مرحله قبل اعتبارسنجی و تبدیل کنید.");
+    const actions=root.SahroudLastFoundationUlsActions;
+    if(!actions||actions.success!==true||actions.schema!=="SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0"||
+       actions.sourceSchema!=="SAHROUD-FOUNDATION-ULS-REACTION-BATCH-1.0"||
+       !Array.isArray(actions.foundations))
+     throw new Error("ابتدا بسته معتبر واکنش ULS را در مرحله قبل تبدیل کنید.");
     const payload=JSON.parse(input.value||"{}");
-    payload.ulsLocalActions=root.SahroudLastFoundationUlsActions;
+    const nodeId=String(payload.nodeId||"").trim();
+    if(!nodeId)throw new Error("ابتدا شناسه گره پایه را در فرم مشخصات پی وارد کنید.");
+    if(!actions.foundations.some(item=>item&&item.nodeId===nodeId))
+     throw new Error("بسته ULS متعلق به پایه "+nodeId+" نیست؛ شناسه پایه را با مرحله تبدیل تطبیق دهید.");
+    payload.ulsLocalActions=actions;
     input.value=JSON.stringify(payload,null,2);
-    out.textContent="بسته کامل ULS به ورودی طراحی پی منتقل شد. مشخصات هندسه، مصالح و پوشش بتن را تکمیل و سپس اعتبارسنجی کنید.";
+    out.textContent="بسته کامل ULS مربوط به پایه "+nodeId+" به ورودی طراحی پی منتقل شد. مشخصات هندسه، مصالح و پوشش بتن را تکمیل و سپس اعتبارسنجی کنید.";
     out.style.color="#15803d";
    }catch(error){out.textContent="انتقال بسته ULS انجام نشد: "+error.message;out.style.color="#b45309";}
   });
