@@ -96,28 +96,6 @@
             </div>`;
         }).join("") + "<small>برای کنترل گروه جوش، نیروهای هم‌زمان هر ترکیب بار جداگانه بررسی می‌شوند؛ بیشینه‌های مستقل با هم جمع نشده‌اند.</small>";
     }
-    function weldGroup(width, height, leg, fexx, N, V, M) {
-        const perimeter = 2 * (width + height);
-        const throat = 0.707 * leg;
-        // Polar line moment J' = integral(r^2 ds) for a closed rectangle.
-        const J = 2 * (height * width * width / 4 + height * height * height / 12)
-                + 2 * (width * height * height / 4 + width * width * width / 12);
-        const phi = 0.75;
-        const capacityPerLength = phi * 0.60 * fexx * throat / 1000; // kN/mm
-        const corners = [
-            [-width/2,-height/2],[-width/2,height/2],
-            [width/2,-height/2],[width/2,height/2]
-        ];
-        let maxQ = 0, critical = "";
-        corners.forEach(([x,y],i) => {
-            const qx = N/perimeter - M*y/J;
-            const qy = V/perimeter + M*x/J;
-            const q = Math.hypot(qx,qy);
-            if (q > maxQ) { maxQ=q; critical="گوشه "+(i+1); }
-        });
-        return {perimeter,throat,J,phiRn:capacityPerLength,maxQ,
-            ratio:capacityPerLength>0?maxQ/capacityPerLength:Infinity,critical};
-    }
     function calculate() {
         const out = $("connectionCheckResults");
         try {
@@ -139,8 +117,8 @@
                 let worst=null;
                 cases.forEach(c => {
                     // Convert M from kN.m to kN.mm; N and V remain kN.
-                    const g=weldGroup(b,h,leg,fexx,Math.abs(c.N),Math.abs(c.V),Math.abs(c.M)*1000);
-                    if (!worst || g.ratio>worst.g.ratio) worst={c,g};
+                    const g=window.SahroudWeldGroupDemand.analyze({width:b,height:h,N:c.N,V:c.V,M:c.M*1000});
+                    if (!worst || g.maxLineDemand>worst.g.maxLineDemand) worst={c,g};
                 });
                 return {name,worst};
             });
@@ -148,23 +126,21 @@
                 const {c,g}=o.worst;
                 return `<tr><td>${o.name}</td><td>${c.combination}</td>
                     <td>${fmt(c.M)} / ${fmt(c.V)} / ${fmt(c.N)}</td>
-                    <td>${fmt(g.maxQ,4)}</td><td>${fmt(g.phiRn,4)}</td>
-                    <td>${fmt(g.ratio,3)}</td><td>${g.ratio<=1?"قبول در مدل محدود گروه جوش":"نیازمند بازطراحی"}</td></tr>`;
+                    <td>${fmt(g.maxLineDemand,4)}</td><td>${g.criticalPoint}</td></tr>`;
             }).join("");
             const first=outputs[0].worst.g;
             out.innerHTML=`
                 <h4>نتیجه تحلیل الاستیک گروه جوش مستطیلی</h4>
-                <p>محیط مؤثر جوش: ${fmt(first.perimeter,1)} mm؛ گلویی مؤثر: ${fmt(first.throat,2)} mm</p>
+                <p>محیط مؤثر جوش: ${fmt(first.perimeter,1)} mm؛ ممان قطبی خطی J′: ${fmt(first.linePolarMoment,0)} mm³</p>
                 <p>ممان قطبی خطی گروه جوش J′: ${fmt(first.J,0)} mm³</p>
-                <p>ظرفیت طراحی بر واحد طول جوش φ·0.60·FEXX·0.707w: ${fmt(first.phiRn,4)} kN/mm</p>
+                <p>این خروجی فقط تقاضای خطی الاستیک را گزارش می‌کند؛ ظرفیت طراحی جوش محاسبه نشده است.</p>
                 <div style="overflow-x:auto"><table style="width:100%;min-width:760px;border-collapse:collapse">
                     <thead><tr><th>عضو</th><th>ترکیب حاکم گروه جوش</th><th>M (kN.m) / V (kN) / N (kN)</th>
-                    <th>تقاضای خطی بیشینه (kN/mm)</th><th>ظرفیت خطی (kN/mm)</th><th>نسبت</th><th>نتیجه</th></tr></thead>
+                    <th>تقاضای خطی بیشینه (kN/mm)</th><th>نقطه بحرانی</th></tr></thead>
                     <tbody>${rows}</tbody></table></div>
                 <p>ابعاد ورق واردشده: ضخامت ${fmt(t,1)}، عرض ${fmt(b,1)}، ارتفاع ${fmt(h,1)} میلی‌متر.</p>
                 <div class="notice" style="color:#a65d16">
-                    بارها با قدرمطلق و به‌صورت هم‌زمان از هر ترکیب بار بررسی شده‌اند؛ اثر علامت و جهت ممکن است در هندسه‌های نامتقارن مهم باشد.
-                    این محاسبه فقط مدل الاستیک گروه جوش درون‌صفحه‌ای مستطیلی است و ظرفیت کامل اتصال را نشان نمی‌دهد.
+                    علامت N، V و M حفظ شده و هر ترکیب بار جداگانه ارزیابی شده است. این خروجی فقط تقاضا است، نه قبولی اتصال.
                 </div>`;
         } catch(e) {
             out.innerHTML='<div class="notice" style="color:#a65d16">'+String(e.message)+'</div>';
