@@ -115,3 +115,10 @@ test("knee weld demand is invalidated when a new 3D combination analysis arrives
  assert.match(source,/const current=selectedKnee\(\)/);
  assert.match(source,/تقاضای قدیمی/);
 });
+
+test("knee detail UI exposes Part 10 fillet weld geometry checks",()=>{
+ assert.match(source,/btnKneeWeldDetailCheck/);
+ assert.match(source,/SahroudKneeWeldDetailCheck\.assess/);
+ assert.match(source,/10-2-9-2-2/);
+ assert.match(source,/ظرفیت جوش و فلز پایه یا تأیید اجرایی را نشان نمی‌دهد/);
+});
