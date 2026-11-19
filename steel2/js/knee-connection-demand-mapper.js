@@ -23,6 +23,11 @@
   if(!Array.isArray(joint.cases)||!joint.cases.length)fail("هیچ ترکیب بار قابل انتقال برای گره انتخاب‌شده وجود ندارد.");
   const origin=detail.connectionFrame.originM.map(Number);
   const axes=detail.connectionFrame.axes;
+  const transferPoints=new Map(detail.memberForceTransferPoints.map(p=>[String(p.memberId),p]));
+  const toGlobalPoint=pointMm=>{
+   const local=pointMm.map(v=>Number(v)/1000);
+   return [0,1,2].map(i=>origin[i]+axes.x[i]*local[0]+axes.y[i]*local[1]+axes.z[i]*local[2]);
+  };
   const mapped=joint.cases.map(c=>{
    const actions=expected.map(item=>{
     const rows=(c.memberActions||[]).filter(a=>String(a.memberId)===String(item.id));
@@ -32,12 +37,14 @@
      fail("کنش جهانی عضو "+item.id+" در ترکیب "+c.combination+" ناقص است.");
     const transformed=root.SahroudConnectionDemandRegistry.toConnectionFrame(
      a.global,[joint.coordinatesM.x,joint.coordinatesM.y,joint.coordinatesM.z],origin,axes);
-    return{role:item.role,memberId:String(item.id),end:a.end,globalAtConnectionOrigin:transformed.globalAtConnectionOrigin,
-     connectionFrame:transformed};
+    const transferPoint=transferPoints.get(String(item.id));
+    return{role:item.role,memberId:String(item.id),end:a.end,
+     transferPoint:{connectionFrameMm:transferPoint.pointMm.map(Number),globalCoordinatesM:toGlobalPoint(transferPoint.pointMm)},
+     globalAtConnectionOrigin:transformed.globalAtConnectionOrigin,connectionFrame:transformed};
    });
    return{combinationId:c.combinationId,combination:c.combination,memberActions:actions};
   });
-  return{success:true,schema:"SAHROUD-KNEE-CONNECTION-MAPPED-DEMAND-1.0",jointId:String(detail.jointId),
+  return{success:true,schema:"SAHROUD-KNEE-CONNECTION-MAPPED-DEMAND-1.1",jointId:String(detail.jointId),
    connectionId:String(detail.connectionId),originM:origin,axes,
    units:{force:"N",moment:"N.m",length:"m"},cases:mapped,
    capacityDesigned:false,executionReady:false,
