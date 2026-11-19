@@ -33,3 +33,14 @@ test("resolver gives a single member's explicit input priority over its group se
  assert.equal(result.records[1].source,"group-default");
  assert.equal(result.records[1].initialSection.profile,"Group I");
 });
+
+test("stores and restores per-member overrides as project data",()=>{
+ const base={profile:"I group",E:200e9,G:77e9,A:0.01,Iy:1e-5,Iz:2e-5,J:1e-6};
+ const saved={memberId:"C-22",section:{...base,profile:"I user",A:0.015},sourceReference:"project"};
+ ui.setData([saved]);
+ assert.equal(ui.getData().length,1);
+ assert.equal(ui.getData()[0].memberId,"C-22");
+ assert.equal(ui.getData()[0].section.A,0.015);
+ ui.setData([]);
+ assert.equal(ui.getData().length,0);
+});
