@@ -28,7 +28,7 @@
     const cases=footing.cases.map(c=>({
      name:/^SLS(?:[-_ ]|$)/i.test(c.loadCase)?c.loadCase:"SLS-"+c.loadCase,
      nameLabel:c.loadCaseLabel,sourceReference:c.sourceReference,
-     NkN:c.NkN,MxkNm:c.MxkNm,MzkNm:c.MzkNm
+     NkN:c.NkN,MxkNm:c.MxkNm,MzkNm:c.MzkNm,HxkN:c.FxLocalkN,HzkN:c.FzLocalkN
     }));
     soilCases.value=JSON.stringify(cases,null,2);
     out.textContent="تبدیل واکنش‌ها برای پایه "+nodeId+" انجام شد. "+cases.length+
