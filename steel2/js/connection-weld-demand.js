@@ -38,7 +38,7 @@
    }
   });
   const critical=samples.reduce((a,p)=>p.q>a.q?p:a,samples[0]);
-  return{totalLength:L,centroid:{x:cx,y:cy},linePolarMoment:J,segments:parsed,
+  return{totalLength:L,perimeter:L,centroid:{x:cx,y:cy},linePolarMoment:J,segments:parsed,
    samples,maxLineDemand:critical.q,criticalPoint:critical,
    components:{N,V,Mz},assumptions:["All weld segments are coplanar.","Uniform line stiffness and rigid connected plate are assumed.","Plate flexibility, local weld orientation effects, base-metal resistance and weld resistance are not evaluated."],
    units:{lineDemand:"kN/mm",length:"mm",moment:"kN.mm"}};
