@@ -178,3 +178,20 @@ test("missing weld action distribution or non-fillet weld prevents claiming a we
  const y=designFixture();y.loadCases[0].weldActions=[];
  assert.equal(capacity.validate(detailFixture(),y).valid,false);
 });
+
+test("rejects duplicate plate-section checks that hide an omitted plate",()=>{
+ const d=detailFixture(),c=designFixture();
+ d.plates.push({...d.plates[0],id:"P2"});
+ c.loadCases[0].plateSectionChecks[0].plateId="P1";
+ c.loadCases[0].plateSectionChecks.push({...c.loadCases[0].plateSectionChecks[0]});
+ assert.equal(capacity.validate(d,c).valid,false);
+ assert.match(capacity.validate(d,c).errors.join(" "),/تکراری/);
+});
+test("rejects duplicate block-shear checks that hide an omitted plate",()=>{
+ const d=detailFixture(),c=designFixture();
+ d.plates.push({...d.plates[0],id:"P2"});
+ c.loadCases[0].blockShearChecks[0].plateId="P1";
+ c.loadCases[0].blockShearChecks.push({...c.loadCases[0].blockShearChecks[0]});
+ assert.equal(capacity.validate(d,c).valid,false);
+ assert.match(capacity.validate(d,c).errors.join(" "),/تکراری/);
+});
