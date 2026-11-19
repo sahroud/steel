@@ -59,3 +59,18 @@ test("joint demand preserves simultaneous actions separately for every combinati
  assert.equal(knee.cases[0].memberActions[1].localActions.N,20000);
  assert.equal(knee.cases[1].memberActions[1].localActions.N,40000);
 });
+
+test("joint action transform rotates all six actions and applies correct i/j end signs",()=>{
+ const axes={x:[0,1,0],y:[-1,0,0],z:[0,0,1]};
+ const section={N:100,Vy:20,Vz:30,T:4,My:5,Mz:6};
+ const atI=registry.toGlobalJointActions(section,axes,"i");
+ const atJ=registry.toGlobalJointActions(section,axes,"j");
+ assert.deepEqual(atI.local,{N:-100,Vy:-20,Vz:-30,T:-4,My:-5,Mz:-6});
+ assert.deepEqual(atI.global,{Fx:20,Fy:-100,Fz:-30,Mx:5,My:-4,Mz:-6});
+ assert.deepEqual(atJ.global,{Fx:-20,Fy:100,Fz:30,Mx:-5,My:4,Mz:6});
+});
+test("joint action transform rejects non-orthonormal local axes",()=>{
+ assert.throws(()=>registry.toGlobalJointActions(
+  {N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},
+  {x:[1,0,0],y:[1,0,0],z:[0,0,1]},"j"),/متعامد/);
+});
