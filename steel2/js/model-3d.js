@@ -968,6 +968,7 @@
     let selfWeightKN=0, selfWeightMemberCount=0;
     const selfWeightByGroup=Object.create(null);
     const sectionsByMemberId=Object.create(null);
+    const initialSectionOverrides=[];
     analysisModel.members.forEach(m=>{
       const lineLoad=selected.factors
         ? (Number(m.lineLoads?.dead||0)*selected.factors.dead+
@@ -986,6 +987,7 @@
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
       const section=window.SteelSections.resolveAnalysis3DSection(m);
+      initialSectionOverrides.push({memberId:String(m.id),section,sourceReference:section.catalogReference||("ورودی گروه "+String(m.sectionKey)+" از فرم مشخصات مقاطع")});
       sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,
         sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile,
         manufacturer:section.manufacturer,sourceDocumentId:section.sourceDocumentId,
@@ -1022,6 +1024,14 @@
       );
       m.analysisLoad={uniformLocal:local,globalUniform:global};
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
+    });
+    if(!window.SahroudInitialMemberSections?.resolve)
+      throw new Error("ماژول ثبت مقاطع اولیه اعضا بارگذاری نشده است.");
+    const initialSectionResolution=window.SahroudInitialMemberSections.resolve(analysisModel,{overrides:initialSectionOverrides});
+    initialSectionResolution.records.forEach(record=>{
+      const member=analysisModel.members.find(item=>String(item.id)===record.memberId);
+      if(member)member.initialSection=JSON.parse(JSON.stringify(record.initialSection));
+      sectionsByMemberId[record.memberId]=JSON.parse(JSON.stringify(record.initialSection));
     });
     const fixed= $("baseConnection")?.value==="fixed";
     const supports=analysisModel.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>({
@@ -1130,6 +1140,7 @@
      });
     if(!window.SahroudMemberDemand3D)throw new Error("موتور استخراج تقاضای اعضای سه‌بعدی بارگذاری نشده است.");
     result.memberDemand=window.SahroudMemberDemand3D.extractCase(result,analysisModel);
+    result.initialSectionResolution=initialSectionResolution;
     result.orientationAudit=window.SteelFrame3D.auditMemberOrientation(analysisModel);
     result.sectionPropertyAudit=window.SteelFrame3D.auditMemberSectionProperties(analysisModel,sectionsByMemberId);
     result.codeDesignInputReadiness={ready:result.orientationAudit.readyForCodeDesign&&result.sectionPropertyAudit.readyForCodeDesign,
