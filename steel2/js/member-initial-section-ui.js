@@ -49,7 +49,7 @@
   if(host&&host.parentNode)host.parentNode.insertBefore(panel,host.nextSibling);
   $("initialSectionMember").addEventListener("change",e=>{selectedId=e.target.value;loadSelected();});
   $("initialSectionMode").addEventListener("change",e=>{ $("initialSectionGeometry").hidden=e.target.value!=="builtUpI"; if(e.target.value==="builtUpI") updateBuiltUpFromDimensions(); });
-  ["sectionTopB","sectionTopT","sectionBottomB","sectionBottomT","sectionWebH","sectionWebT"].forEach(id=>$ (id).addEventListener("input",updateBuiltUpFromDimensions));
+  ["sectionTopB","sectionTopT","sectionBottomB","sectionBottomT","sectionWebH","sectionWebT"].forEach(id=>$(id).addEventListener("input",updateBuiltUpFromDimensions));
   $("btnSaveInitialMemberSection").addEventListener("click",()=>{
    try{
     if($("initialSectionMode")?.value==="builtUpI"){
@@ -97,9 +97,16 @@
    item.section.geometryType="built-up-I";
    item.section.geometryDimensionsMm={...geometry};
    item.section.geometricProperties=result;
+   item.section.SxTop=result.strongAxis.sectionModulusTopCm3*1e-6;
+   item.section.SxBottom=result.strongAxis.sectionModulusBottomCm3*1e-6;
+   item.section.Sy=result.weakAxis.sectionModulusCm3*1e-6;
+   item.section.rx=Math.sqrt(Iz/A)*0.01;
+   item.section.ry=Math.sqrt(Iy/A)*0.01;
+   item.section.massPerMeterKg=A*0.785;
    dirty.set(selectedId,item);
-   $("initialSectionGeometrySummary").textContent="به‌روزرسانی زنده انجام شد: A="+A.toFixed(2)+" cm²، Iy="+Iy.toFixed(2)+" cm⁴، Iz="+Iz.toFixed(2)+" cm⁴، J≈"+J.toFixed(2)+" cm⁴، وزن="+(A*0.785).toFixed(2)+" kg/m. خواص در مدل تحلیلی بعدی جایگزین می‌شوند؛ تحلیل قبلی تا اجرای مجدد معتبر نیست.";
-   message("خواص مقطع از ابعاد جدید محاسبه و برای همین عضو ثبت شد؛ تحلیل باید دوباره اجرا شود.");
+   ["fullModel3DResult","fullModel3DDemand","fullModel3DCombinationResult","criticalRafterDiagram"].forEach(id=>{const el=$(id);if(el)el.textContent="مقطع عضو "+selectedId+" تغییر کرده است؛ نتایج قبلی نامعتبرند. مدل و تمام ترکیبات بار را دوباره تحلیل کنید.";});
+   $("initialSectionGeometrySummary").textContent="به‌روزرسانی زنده انجام شد: A="+A.toFixed(2)+" cm²، Iy="+Iy.toFixed(2)+" cm⁴، Iz="+Iz.toFixed(2)+" cm⁴، J≈"+J.toFixed(2)+" cm⁴، Sx بالا/پایین="+result.strongAxis.sectionModulusTopCm3.toFixed(2)+"/"+result.strongAxis.sectionModulusBottomCm3.toFixed(2)+" cm³، Sy="+result.weakAxis.sectionModulusCm3.toFixed(2)+" cm³، وزن="+(A*0.785).toFixed(2)+" kg/m. خواص در مدل تحلیلی بعدی جایگزین می‌شوند؛ تحلیل قبلی تا اجرای مجدد معتبر نیست.";
+   message("خواص کامل هندسی و وزن مقطع از ابعاد جدید محاسبه و برای همین عضو ثبت شد؛ تحلیل باید دوباره اجرا شود.");
   }catch(e){$("initialSectionGeometrySummary").textContent="خطا در هندسه مقطع: "+e.message;message(e.message,true);}
  }
  function message(text,error){const el=$("initialMemberSectionMessage");if(el){el.textContent=text;el.style.color=error?"#b45309":"";}}
