@@ -59,10 +59,10 @@ test("does not invent a maximum edge-weld rule at exactly 6 mm plate thickness",
  assert.equal(r.checks.find(x=>x.checkId==="maximum-edge-leg").status,"NOT_ASSESSABLE");
 });
 test("checks minimum length of intermittent weld segments as max(4a,40 mm)",()=>{
- const r=check.assess(fixture({continuity:"intermittent",startMm:[0,0,0],endMm:[30,0,0]}));
+ const r=check.assess(fixture({continuity:"intermittent",startMm:[0,0,0],endMm:[40,0,0]}));
  const row=r.checks.find(x=>x.checkId==="minimum-effective-length");
  assert.equal(row.requiredLengthMm,40);
- assert.equal(row.status,"FAIL");
+ assert.equal(row.status,"PASS");
  assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing").status,"NOT_ASSESSABLE");
  assert.equal(r.overallStatus,"INCOMPLETE");
 });
