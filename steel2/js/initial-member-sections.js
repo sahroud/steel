@@ -26,13 +26,14 @@ function resolve(model,inputs){
   ids.add(id);
   const user=byId.get(id);
   const existing=m.initialSection||m.sectionData||m.section;
-  const fallback=defaults[String(m.group||m.type||"")];
+  const groupKey=String(m.group||m.sectionKey||m.type||"");
+  const fallback=defaults[groupKey]||defaults[String(m.sectionKey||"")];
   const picked=user?.section?{section:user.section,source:"user-input"}:
     existing?{section:existing,source:"existing-model-section"}:
     fallback?{section:fallback,source:"group-default"}:null;
   if(!picked||!picked.section||!nonblank(picked.section.designation||picked.section.name||picked.section.profile))
    throw new Error("برای عضو "+id+" مقطع اولیه مشخص نیست؛ ورودی کاربر یا پیش‌فرض گروه لازم است.");
-  return {memberId:id,group:String(m.group||m.type||"unspecified"),
+  return {memberId:id,group:String(m.group||m.sectionKey||m.type||"unspecified"),
    initialSection:clone(picked.section),source:picked.source,
    sourceReference:user?.sourceReference||m.sectionSourceReference||null,
    optimizationStatus:"not-yet-checked"};
