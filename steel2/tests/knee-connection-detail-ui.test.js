@@ -100,3 +100,11 @@ test("knee detail UI displays the limited fillet weld metal capacity checks",()=
  assert.ok(source.includes("کشش/فشار موازی محور جوش"));
  assert.match(source,/weldDemandDistributionVerifiedByEngineer/);
 });
+
+test("knee detail UI runs and displays the elastic weld-group demand report",()=>{
+ assert.match(source,/btnKneeWeldDemand/);
+ assert.match(source,/SahroudKneeWeldDemand\.analyze/);
+ assert.match(source,/lastKneeMappedDemand=mapped/);
+ assert.match(source,/qmax \(kN\/mm\)/);
+ assert.match(source,/ظرفیت و قبولی اتصال محاسبه نشده است/);
+});
