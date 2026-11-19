@@ -66,3 +66,16 @@ test("all knee detail actions are inside one balanced button grid",()=>{
  assert.ok(block.includes("btnKneeDetailMapDemand"));
  assert.ok(block.includes("btnKneeDetailExportGlobal"));
 });
+
+test("knee detail UI exposes the SAT plate collision audit and explicit tolerance",()=>{
+ assert.match(source,/btnKneeDetailCollision/);
+ assert.match(source,/SahroudKneeConnectionCollision\.audit/);
+ assert.match(source,/kneeCollisionTolerance/);
+ assert.match(source,/این گزارش فقط ممیزی هندسی است/);
+});
+test("collision module loads before the knee detail UI",()=>{
+ const html=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
+ const collision=html.indexOf("js/knee-connection-collision.js");
+ const ui=html.indexOf("js/knee-connection-detail-ui.js");
+ assert.ok(collision>=0&&ui>collision);
+});
