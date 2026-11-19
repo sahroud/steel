@@ -129,3 +129,30 @@ test("joint registry attaches knee-frame actions without changing global actions
  assert.deepEqual(action.kneeFrameActions.globalAtConnectionOrigin,action.global);
  assert.equal(action.kneeFrameActions.eccentricityIncluded,false);
 });
+
+test("member demand recovery preserves the solver local-axis contract without inferring section roll",()=>{
+ const model={members:[{id:"M1",length:2,sectionKey:"rafter"}]};
+ const axes={x:[1,0,0],y:[0,0,1],z:[0,-1,0]};
+ const recovered=demand.extractCase({success:true,members:[{
+  id:"M1",length:2,localEndForces:Array(12).fill(0),localAxes:axes,
+  analysisLoad:{uniformLocal:[0,0,0]}
+ }]},model);
+ assert.deepEqual(recovered.members[0].localAxes,axes);
+ assert.equal(recovered.members[0].localAxesVerified,true);
+ assert.equal(recovered.members[0].sectionOrientationVerified,false);
+ assert.equal(recovered.members[0].sectionOrientationSource,null);
+});
+
+test("member demand recovery never invents missing local axes and rejects invalid solver axes",()=>{
+ const model={members:[{id:"M1",length:2,sectionKey:"column"}]};
+ const missing=demand.extractCase({success:true,members:[{
+  id:"M1",length:2,localEndForces:Array(12).fill(0),analysisLoad:{uniformLocal:[0,0,0]}
+ }]},model);
+ assert.equal(missing.members[0].localAxes,null);
+ assert.equal(missing.members[0].localAxesVerified,false);
+ assert.throws(()=>demand.extractCase({success:true,members:[{
+  id:"M1",length:2,localEndForces:Array(12).fill(0),
+  localAxes:{x:[1,0,0],y:[1,0,0],z:[0,0,1]},
+  analysisLoad:{uniformLocal:[0,0,0]}
+ }]},model),/یکه، متعامد و راست‌گرد/);
+});
