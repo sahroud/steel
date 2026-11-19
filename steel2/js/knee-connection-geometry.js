@@ -80,6 +80,12 @@
    return{available:false,status:"solver-roll-mismatch",issues:["زاویه ثبت‌شده مقطع با زاویه به‌کاررفته در نتیجه تحلیل یکسان نیست؛ تحلیل مجدد لازم است."],solids:[]};
   const start=node(model,member.start),end=node(model,member.end);
   if(!start||!end)return{available:false,status:"member-endpoints-missing",issues:["گره‌های ابتدا و انتهای عضو برای اکسترود هندسه موجود نیستند."],solids:[]};
+  const ref=member.referenceAxis;
+  if(!Array.isArray(ref)||ref.length!==3||ref.some(v=>!finite(v))||!(Math.hypot(...ref.map(Number))>1e-10))return{available:false,status:"reference-axis-unverified",issues:["محور مرجع جهانی صریح و معتبر عضو ثبت نشده است."],solids:[]};
+  const direction=[end.x-start.x,end.y-start.y,end.z-start.z],lengthDirection=Math.hypot(...direction);
+  if(!(lengthDirection>0))return{available:false,status:"member-direction-invalid",issues:["بردار طولی عضو معتبر نیست."],solids:[]};
+  const parallel=Math.abs(direction.reduce((sum,v,i)=>sum+v*Number(ref[i]),0)/(lengthDirection*Math.hypot(...ref.map(Number))));
+  if(parallel>0.95)return{available:false,status:"reference-axis-parallel-to-member",issues:["محور مرجع جهانی تقریباً موازی محور عضو است؛ دستگاه مقطع قابل تأیید نیست."],solids:[]};
   const d=g.dimensionsMm,bt=d.topFlangeWidthMm,tt=d.topFlangeThicknessMm,bb=d.bottomFlangeWidthMm,tb=d.bottomFlangeThicknessMm,hw=d.webClearHeightMm,tw=d.webThicknessMm;
   const areaB=bb*tb,areaW=tw*hw,areaT=bt*tt,depth=tb+hw+tt;
   const cy=(areaB*(tb/2)+areaW*(tb+hw/2)+areaT*(tb+hw+tt/2))/(areaB+areaW+areaT);
