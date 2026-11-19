@@ -89,6 +89,7 @@ test("weld endpoints must lie on and within the referenced plate",()=>{
 test("weld geometry is checked against its own plate coordinate frame",()=>{
  const d=fixture();
  d.plates[0].frame.originMm=[-100,-100,0];
+ d.plates[0].polygonMm=[{x:0,y:0},{x:400,y:0},{x:400,y:200},{x:0,y:200}];
  d.welds[0].startMm=[-100,-60,0];d.welds[0].endMm=[-100,60,0];
  const r=detail.validate(d);assert.equal(r.valid,true);
 });
