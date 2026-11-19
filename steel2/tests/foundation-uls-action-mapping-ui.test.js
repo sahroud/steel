@@ -60,3 +60,17 @@ test("ULS UI registers its click handler only once",()=>{
  assert.equal(listeners.size,before);
  delete global.window;
 });
+
+test("ULS UI clears a previously successful package when a later mapping attempt fails",()=>{
+ const {elements,listeners}=setup();
+ const click=listeners.get("btnMapFoundationUlsActions:click");
+ click();
+ assert.equal(global.window.SahroudLastFoundationUlsActions.success,true);
+ assert.notEqual(elements.foundationUlsMappedJson.value,"");
+ elements.selectedFoundationNodeId.value="";
+ click();
+ assert.match(elements.foundationUlsActionResult.textContent,/شناسه پایه موردنظر/);
+ assert.equal(elements.foundationUlsMappedJson.value,"");
+ assert.equal(global.window.SahroudLastFoundationUlsActions,undefined);
+ delete global.window;
+});
