@@ -74,6 +74,7 @@
    connectionId:String(detail.connectionId),jointId:String(detail.jointId),
    method:"independent member-action scenarios; no summation between column and rafter actions",
    outOfPlaneTolerance:tol,
+   demandModel:"elastic-line-group; uniform stiffness; rigid plate",
    units:{force:"kN",moment:"kN.mm",coordinates:"mm",lineDemand:"kN/mm"},
    results,capacityDesigned:false,executionReady:false,
    limitations:["تقاضای ستون و رفتر جداگانه گزارش می‌شود؛ جمع آن‌ها یا سهم‌بندی نیرو میان اجزای اتصال انجام نشده است.",
