@@ -63,6 +63,7 @@
    "<button id='btnKneeDetailExport' class='btn secondary' type='button'>دریافت JSON ورودی</button>"+
    "<button id='btnKneeDetailExportGlobal' class='btn secondary' type='button'>دریافت هندسه سه‌بعدی جهانی</button>"+
    "<button id='btnKneeDetailMapDemand' class='btn primary' type='button'>انتقال تقاضای ترکیبات بار به دستگاه اتصال</button>"+
+   "<button id='btnKneeWeldDetailCheck' class='btn secondary' type='button'>کنترل ضوابط هندسی جوش گوشه</button>"+
    "<button id='btnKneeWeldDemand' class='btn primary' type='button'>محاسبه تقاضای خطوط جوش</button>"+
    "<button id='btnKneeDetailCollision' class='btn secondary' type='button'>ممیزی برخورد سه‌بعدی ورق‌ها</button></div>"+
    "<div class='notice'>محاسبات زیر فقط حالت‌های حدی پیچی اتکایی و ورق را که داده‌های هندسی/تقاضای آن‌ها صریح وارد شده باشد بررسی می‌کند. توزیع نیرو بین پیچ‌ها و خطوط جوش، سطوح مقطع خالص، مسیر برش قالبی و اثر اهرمی باید مستند باشند. کنترل جوش فعلاً فقط فلز جوش گوشه در برش گلویی مؤثر را پوشش می‌دهد. جوش، خمش ورق، لغزش بحرانی و تأیید نهایی اتصال هنوز پوشش داده نمی‌شوند.</div>"+
@@ -72,6 +73,7 @@
    "<div class='field'><label for='kneeDetailJson'>جزئیات اتصال (JSON)</label><textarea id='kneeDetailJson' rows='18' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
    "<div id='kneeDetailValidationResult' aria-live='polite' class='notice'>قالب اولیه هنوز ساخته نشده است.</div>"+
    "<div id='kneeDetailMappedDemand' aria-live='polite' class='notice'>تقاضای منتقل‌شده هنوز محاسبه نشده است.</div>"+
+   "<div id='kneeWeldDetailCheckResult' aria-live='polite' class='notice'>کنترل جزئیات آیین‌نامه‌ای جوش هنوز اجرا نشده است.</div>"+
    "<div id='kneeWeldDemandResult' aria-live='polite' class='notice'>برای محاسبه تقاضای جوش، ابتدا تقاضای ترکیبات بار را منتقل کنید.</div>"+
    "<div class='field'><label for='kneeCollisionTolerance'>تلرانس طبقه‌بندی تماس هندسی (mm)</label><input id='kneeCollisionTolerance' type='number' min='0' step='0.01' value='0.1'></div>"+
    "<div id='kneeDetailCollisionResult' aria-live='polite' class='notice'>ممیزی برخورد هنوز اجرا نشده است.</div>";
@@ -192,6 +194,24 @@
    }catch(e){
     $("kneeDetailMappedDemand").textContent="انتقال تقاضا متوقف شد: "+e.message;
     $("kneeDetailMappedDemand").dataset.valid="false";
+   }
+  });
+  $("btnKneeWeldDetailCheck").addEventListener("click",()=>{
+   try{
+    const value=JSON.parse($("kneeDetailJson").value);
+    const report=root.SahroudKneeWeldDetailCheck.assess(value);
+    const label=s=>s==="PASS"?"قبول":s==="FAIL"?"رد":s==="NOT_APPLICABLE"?"نامرتبط":"قابل ارزیابی نیست";
+    const rows=report.checks.map(x=>"<tr><td>"+esc(x.weldId)+"</td><td>"+esc(x.checkId)+"</td><td>"+label(x.status)+
+     "</td><td>"+esc(x.detail)+"</td><td>"+(Number.isFinite(x.requiredLegMm)?x.requiredLegMm+" mm":Number.isFinite(x.effectiveLengthMm)?x.effectiveLengthMm.toFixed(2)+" mm":"—")+"</td></tr>").join("");
+    $("kneeWeldDetailCheckResult").innerHTML="<p><b>نتیجه کنترل جزئیات جوش گوشه: "+label(report.overallStatus)+"</b></p>"+
+     "<p>مبنای بررسی: "+esc(report.codeBasis.document)+"، بند "+esc(report.codeBasis.clause)+
+     "؛ تعیین طول مؤثر برای تحلیل گروه جوش: "+(report.lineDemandGeometryComplete?"کامل":"ناقص")+"</p>"+
+     "<div style='overflow-x:auto'><table><thead><tr><th>جوش</th><th>کنترل</th><th>وضعیت</th><th>شرح</th><th>مقدار</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
+     "<p>این کنترل فقط جزئیات هندسی جوش گوشه است؛ ظرفیت جوش و فلز پایه یا تأیید اجرایی را نشان نمی‌دهد.</p>";
+    $("kneeWeldDetailCheckResult").dataset.valid=report.overallStatus==="PASS"?"true":"false";
+   }catch(e){
+    $("kneeWeldDetailCheckResult").textContent="کنترل جزئیات جوش اجرا نشد: "+e.message;
+    $("kneeWeldDetailCheckResult").dataset.valid="false";
    }
   });
   $("btnKneeWeldDemand").addEventListener("click",()=>{
