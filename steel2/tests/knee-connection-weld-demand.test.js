@@ -15,7 +15,7 @@ function fixture(){
  bolts:[{id:"B1",plateId:"P1",xMm:0,yMm:0,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,
  axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",
  threadsInShearPlane:true,shearPlaneCount:1}],
- welds:[{id:"W1",plateId:"P1",faceReference:"DWG-1/F1",startMm:[-50,-50,0],endMm:[50,-50,0],type:"fillet",legSizeMm:6,electrodeFexxMPa:490},
+ welds:[{id:"W1",plateId:"P1",faceReference:"DWG-1/F1",startMm:[-50,-50,0],endMm:[50,-50,0],type:"fillet",legSizeMm:6,connectedPartThicknessMm:10,highCycleDynamic:false,edgeWeld:false,continuity:"continuous",electrodeFexxMPa:490},
  {id:"W2",plateId:"P1",faceReference:"DWG-1/F1",startMm:[50,-50,0],endMm:[50,50,0],type:"fillet",legSizeMm:6,electrodeFexxMPa:490}]};
  const action=(id,role,force,moment)=>({memberId:id,role,connectionFrame:{
   force,moment,connectionOriginM:{x:0,y:0,z:0},units:{force:"N",moment:"N.m",length:"m"}}});
@@ -98,6 +98,6 @@ test("blocks line-demand analysis when any weld detail check fails",()=>{
 });
 test("does not treat groove welds as fillet-weld line segments",()=>{
  const {d,mapped}=fixture();
- d.welds[0].type="groove";
+ d.welds[0].type="groove";d.welds[0].grooveType="CJP";d.welds[0].effectiveThroatMm=6;
  assert.throws(()=>kneeWeld.analyze(d,mapped),/فقط برای جوش گوشه/);
 });
