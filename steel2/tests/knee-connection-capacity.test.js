@@ -156,14 +156,19 @@ test("shear is reduced by tension even when shear stress is below 30 percent",()
  assert.equal(r.interactionApplied,true);
 });
 
-test("fillet weld axial-parallel resistance uses effective throat, length and Table 10-2-9-3 factors",()=>{
+test("does not claim fillet-weld resistance before official table and effective-length verification",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c),w=r.weldChecks[0];
- const L=Math.hypot(...d.welds[0].startMm.map((v,i)=>v-d.welds[0].endMm[i]));
- const Aw=0.707*d.welds[0].legSizeMm*L;
- const expected=0.75*0.6*d.welds[0].electrodeFexxMPa*Aw/1000;
- assert.ok(Math.abs(w.designCapacityKN-expected)<1e-10);
- assert.equal(w.check.limitState,"fillet-weld-axial-parallel");
+ assert.equal(w.check.status,"NOT_ASSESSABLE");
+ assert.equal(w.check.capacityKN,null);
+ assert.equal(w.check.utilization,null);
+ assert.equal(r.overallStatus,"INCOMPLETE");
  assert.equal(r.connectionApproved,false);
+});
+test("keeps weld resistance not assessable for ASD as well as LRFD",()=>{
+ const d=detailFixture(),c=designFixture();c.method="ASD";
+ const w=capacity.calculate(d,c).weldChecks[0];
+ assert.equal(w.check.status,"NOT_ASSESSABLE");
+ assert.equal(w.check.capacityKN,null);
 });
 test("missing weld action distribution or non-fillet weld prevents claiming a weld design",()=>{
  const d=detailFixture(),c=designFixture();c.weldDemandDistributionVerifiedByEngineer=false;
