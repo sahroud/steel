@@ -1005,7 +1005,7 @@ test("production geometry builder conserves roof dead-load tributary area across
     windLeft:0.3,windRight:-0.2,windWall:0.25,windEndFront:0.4,windEndBack:-0.35,
     deadAreaBasis:"sloped-surface",liveAreaBasis:"horizontal-projection",snowAreaBasis:"horizontal-projection"};
   const values={span:4,length:4,spacing:4,height:3,rise:1,modelPurlinSpacing:1.4,
-    modelGirtSpacing:1.5,modelEndPostSpacing:4,modelBraceBays:1,modelPurlinClipDeduction:0,modelPurlinAssemblyGap:0};
+    modelGirtSpacing:1.5,modelEndPostSpacing:2,modelBraceBays:1,modelPurlinClipDeduction:0,modelPurlinAssemblyGap:0};
   const val=(id,fallback)=>Number.isFinite(Number(values[id]))?Number(values[id]):fallback;
   const transfer=globalThis.SteelLoadTransfer;
   const footprint=new Function("return ("+extract("buildRoofPurlinWindFootprints")+")")();
@@ -1029,6 +1029,20 @@ test("production geometry builder conserves roof dead-load tributary area across
   assert.ok(model.members.filter(m=>m.sectionKey==="wallGirt").every(m=>m.lineLoads.wind===0.25*m.tributaryHeight));
   assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="front"&&m.lineLoads.windEnd===0.4*m.tributaryHeight));
   assert.ok(model.members.filter(m=>m.sectionKey==="endGirt").some(m=>m.endFace==="rear"&&m.lineLoads.windEnd===-0.35*m.tributaryHeight));
+
+  // The end portal rafter is the one physical roof chord at each end face.
+  // End-wall posts must connect to its nodes, not to a duplicate coincident chord.
+  assert.equal(model.members.filter(m=>m.sectionKey==="rafter"&&m.axis==="endwall").length,0);
+  const nodeById=new Map(model.nodes.map(n=>[n.id,n]));
+  const endRafters=model.members.filter(m=>m.sectionKey==="rafter"&&m.axis==="transverse"&&
+    (Math.abs(nodeById.get(m.start).z)<1e-8||Math.abs(nodeById.get(m.start).z-model.geometry.length)<1e-8));
+  for(const post of model.members.filter(m=>m.sectionKey==="endPost")){
+    const head=nodeById.get(post.end);
+    if(Math.abs(head.y-(3+Math.max(0,1-Math.abs(head.x-2)/2)))<1e-7){
+      assert.ok(endRafters.some(r=>r.start===head.id||r.end===head.id),
+        "each end-wall post head must share a node with the end portal rafter");
+    }
+  }
 });
 
 
