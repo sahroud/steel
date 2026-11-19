@@ -76,3 +76,25 @@ test("preserves explicit non-compression warning instead of silently assuming co
  const r=validateFootingDesignInput(s);
  assert.ok(r.warnings.some(x=>x.includes("غیر فشاری")));
 });
+
+test("validates every ULS case on every foundation, not only the selected footing",()=>{
+ const s=sample();
+ s.ulsLocalActions.foundations.push({nodeId:"B2",cases:[{loadCase:"ULS-1",sourceReference:"گزارش صفحه ۲۱",
+  FxLocalkN:1,FylocalkN:2,FzLocalkN:3,MxkNm:4,MykNm:5,MzkNm:6,NkN:7}]});
+ assert.equal(validateFootingDesignInput(s).ulsActions.cases.length,1);
+ s.ulsLocalActions.foundations[1].cases[0].NkN=NaN;
+ assert.throws(()=>validateFootingDesignInput(s),/عدد محدود/);
+});
+test("rejects duplicate ULS case ids and missing provenance on an unselected foundation",()=>{
+ const duplicate=sample();
+ duplicate.ulsLocalActions.foundations.push({nodeId:"B2",cases:[
+  {loadCase:"ULS-1",sourceReference:"گزارش صفحه ۲۱",FxLocalkN:0,FylocalkN:1,FzLocalkN:0,MxkNm:0,MykNm:0,MzkNm:0,NkN:1},
+  {loadCase:"ULS-1",sourceReference:"گزارش صفحه ۲۲",FxLocalkN:0,FylocalkN:1,FzLocalkN:0,MxkNm:0,MykNm:0,MzkNm:0,NkN:1}
+ ]});
+ assert.throws(()=>validateFootingDesignInput(duplicate),/خالی یا تکراری/);
+ const missing=sample();
+ missing.ulsLocalActions.foundations.push({nodeId:"B2",cases:[
+  {loadCase:"ULS-1",sourceReference:" ",FxLocalkN:0,FylocalkN:1,FzLocalkN:0,MxkNm:0,MykNm:0,MzkNm:0,NkN:1}
+ ]});
+ assert.throws(()=>validateFootingDesignInput(missing),/مرجع مستند/);
+});
