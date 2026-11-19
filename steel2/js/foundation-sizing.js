@@ -5,6 +5,7 @@
   min=finite(min,label+" حداقل");max=finite(max,label+" حداکثر");step=finite(step,label+" گام");
   if(!(min>0&&max>=min&&step>0))throw new RangeError("حدود و گام "+label+" معتبر نیستند.");
   const count=Math.floor((max-min)/step+1e-9)+1;
+  if(!Number.isSafeInteger(count))throw new RangeError("تعداد گام‌های "+label+" بیش از محدوده امن محاسبات است.");
   return {min,max,step,count,at:i=>Number((min+i*step).toFixed(10))};
  }
  function searchFootingDimensions(input){
@@ -15,11 +16,22 @@
   const shape=s.shape||"rectangular";
   if(!["rectangular","square"].includes(shape))throw new Error("نوع پلان باید square یا rectangular باشد.");
   const pairs=[];
-  for(let i=0;i<b.count;i++)for(let j=0;j<l.count;j++){
-   const B=b.at(i),L=l.at(j);
-   if(shape==="square"&&Math.abs(B-L)>1e-9)continue;
+  const addPair=(B,L)=>{
    pairs.push({B,L,area:B*L});
    if(pairs.length>maxCandidates)throw new RangeError("تعداد حالات ممکن از سقف "+maxCandidates+" بیشتر است؛ محدوده یا گام را اصلاح کنید.");
+  };
+  if(shape==="rectangular"){
+   if(b.count*l.count>maxCandidates)throw new RangeError("تعداد حالات ممکن از سقف "+maxCandidates+" بیشتر است؛ محدوده یا گام را اصلاح کنید.");
+   for(let i=0;i<b.count;i++)for(let j=0;j<l.count;j++)addPair(b.at(i),l.at(j));
+  }else{
+   const iterateB=b.count<=l.count;
+   const count=iterateB?b.count:l.count,iter=iterateB?b:l,other=iterateB?l:b;
+   if(count>maxCandidates)throw new RangeError("تعداد حالات مربع ممکن است از سقف "+maxCandidates+" بیشتر شود؛ محدوده را محدود کنید.");
+   for(let i=0;i<count;i++){
+    const side=iter.at(i),rawIndex=(side-other.min)/other.step,index=Math.round(rawIndex);
+    if(index>=0&&index<other.count&&Math.abs(rawIndex-index)<=1e-8&&Math.abs(side-other.at(index))<=1e-8)
+     addPair(side,side);
+   }
   }
   if(!pairs.length)throw new Error("در محدوده و گام تعیین‌شده هیچ جفت‌ابعاد مجازی برای این نوع پلان وجود ندارد.");
   const ranked=pairs.sort((a,c)=>a.area-c.area||
