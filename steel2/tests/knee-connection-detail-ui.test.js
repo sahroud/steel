@@ -37,3 +37,9 @@ test("knee detail validation cross-checks selected joint and actual member IDs",
  assert.match(source,/شناسه گره JSON با گره زانویی انتخاب‌شده/);
  assert.match(source,/با عضو واقعی مدل/);
 });
+
+test("knee detail UI exposes signed per-combination connection-frame demand mapping",()=>{
+ assert.match(source,/btnKneeDetailMapDemand/);
+ assert.match(source,/SahroudKneeConnectionDemandMapper\.map/);
+ assert.match(source,/ظرفیت طراحی نشده؛ جمع نیروهای گره/);
+});
