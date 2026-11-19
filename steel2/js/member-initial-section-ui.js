@@ -33,16 +33,16 @@
    '<div class="field"><label for="initialSectionA">مساحت A (cm²)</label><input id="initialSectionA" type="number" min="0" step="0.01"></div>'+
    '<div class="field"><label for="initialSectionIy">ممان اینرسی Iy (cm⁴)</label><input id="initialSectionIy" type="number" min="0" step="0.01"></div>'+
    '<div class="field"><label for="initialSectionIz">ممان اینرسی Iz (cm⁴)</label><input id="initialSectionIz" type="number" min="0" step="0.01"></div>'+
-   '<div class="field"><label for="initialSectionJ">ثابت پیچشی J (cm⁴)</label><input id="initialSectionJ" type="number" min="0" step="0.01"></div>
-   <div class="field"><label for="initialSectionMode">روش تعریف مقطع</label><select id="initialSectionMode"><option value="properties">ورود مستقیم خواص مقطع</option><option value="builtUpI">تیرورق I ـ محاسبه خودکار از ابعاد</option></select></div></div>
-   <div id="initialSectionGeometry" hidden><h4>ابعاد هندسی تیرورق (mm)</h4><div class="form-grid">
-   <div class="field"><label for="sectionTopB">عرض بال بالا</label><input id="sectionTopB" type="number" min="1" step="1"></div>
-   <div class="field"><label for="sectionTopT">ضخامت بال بالا</label><input id="sectionTopT" type="number" min="1" step="1"></div>
-   <div class="field"><label for="sectionBottomB">عرض بال پایین</label><input id="sectionBottomB" type="number" min="1" step="1"></div>
-   <div class="field"><label for="sectionBottomT">ضخامت بال پایین</label><input id="sectionBottomT" type="number" min="1" step="1"></div>
-   <div class="field"><label for="sectionWebH">ارتفاع خالص جان</label><input id="sectionWebH" type="number" min="1" step="1"></div>
-   <div class="field"><label for="sectionWebT">ضخامت جان</label><input id="sectionWebT" type="number" min="1" step="1"></div></div>
-   <div id="initialSectionGeometrySummary" class="notice">با تغییر هر بعد، خواص هندسی به‌صورت خودکار محاسبه و در ورودی همین عضو به‌روزرسانی می‌شود.</div></div>'+
+   '<div class="field"><label for="initialSectionJ">ثابت پیچشی J (cm⁴)</label><input id="initialSectionJ" type="number" min="0" step="0.01"></div>'+
+   '<div class="field"><label for="initialSectionMode">روش تعریف مقطع</label><select id="initialSectionMode"><option value="properties">ورود مستقیم خواص مقطع</option><option value="builtUpI">تیرورق I ـ محاسبه خودکار از ابعاد</option></select></div></div>'+
+   '<div id="initialSectionGeometry" hidden><h4>ابعاد هندسی تیرورق (mm)</h4><div class="form-grid">'+
+   '<div class="field"><label for="sectionTopB">عرض بال بالا</label><input id="sectionTopB" type="number" min="1" step="1"></div>'+
+   '<div class="field"><label for="sectionTopT">ضخامت بال بالا</label><input id="sectionTopT" type="number" min="1" step="1"></div>'+
+   '<div class="field"><label for="sectionBottomB">عرض بال پایین</label><input id="sectionBottomB" type="number" min="1" step="1"></div>'+
+   '<div class="field"><label for="sectionBottomT">ضخامت بال پایین</label><input id="sectionBottomT" type="number" min="1" step="1"></div>'+
+   '<div class="field"><label for="sectionWebH">ارتفاع خالص جان</label><input id="sectionWebH" type="number" min="1" step="1"></div>'+
+   '<div class="field"><label for="sectionWebT">ضخامت جان</label><input id="sectionWebT" type="number" min="1" step="1"></div></div>'+
+   '<div id="initialSectionGeometrySummary" class="notice">با تغییر هر بعد، خواص هندسی به‌صورت خودکار محاسبه و در ورودی همین عضو به‌روزرسانی می‌شود.</div></div>'+
    '<div class="button-grid"><button type="button" class="btn primary" id="btnSaveInitialMemberSection">ثبت مقطع برای همین عضو</button><button type="button" class="btn secondary" id="btnClearInitialMemberSection">بازگشت به پیش‌فرض گروه</button></div>'+
    '<div id="initialMemberSectionMessage" class="notice" aria-live="polite">مقطع‌های مستقل هنوز وارد نشده‌اند.</div>';
   const host=$("shedLayoutPanel")||document.querySelector("main");
