@@ -4,12 +4,13 @@ const assert=require("node:assert/strict");
 
 function loadWithFakeDOM(){
   const listeners=new Map();
-  const ids=["foundationSoilPanel","soilControlEnabled","soilQa","soilSource","soilFootingB","soilFootingL","soilReactionCases","btnRunSoilCheck","soilCheckResult"];
+  const ids=["foundationSoilPanel","soilControlEnabled","soilType","soilQa","soilSource","soilFootingB","soilFootingL","soilReactionCases","btnRunSoilCheck","soilCheckResult"];
   const elements=Object.fromEntries(ids.map(id=>[id,{
     id,dataset:{},disabled:false,checked:false,value:"",textContent:"",style:{},
     addEventListener(type,fn){listeners.set(id+":"+type,fn);}
   }]));
   elements.soilControlEnabled.checked=false;
+  elements.soilType.value="II";
   elements.soilReactionCases.value=JSON.stringify([{name:"SLS-1",sourceReference:"Reaction report p.2",NkN:400,MxkNm:0,MzkNm:0}]);
   elements.soilQa.value="300";
   elements.soilSource.value="Geotechnical report G-1 p.4";
@@ -42,7 +43,7 @@ test("enabling and running the soil panel executes the documented check",()=>{
   assert.equal(elements.btnRunSoilCheck.disabled,false);
   listeners.get("btnRunSoilCheck:click")();
   assert.match(elements.soilCheckResult.textContent,/کنترل فشار باربری در همه حالت‌های واردشده قبول شد/);
-  assert.match(elements.soilCheckResult.textContent, /\nمرجع خاک:/);
+  assert.match(elements.soilCheckResult.textContent, /تیپ خاک: II \| مرجع خاک:/);
   assert.equal(api.lastResult.results[0].bearingPass,true);
   delete global.window;
 });
