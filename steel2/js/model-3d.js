@@ -499,7 +499,11 @@
     const roofY=x=>height+(x<=half?rise*x/half:rise*(span-x)/half);
     const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp)),roofStationWidths=SteelLoadTransfer.equalStationTributaryWidths(totalRoofSlope,roofRows);
     // Every purlin/rafter crossing is a shared structural node, not two coincident but disconnected nodes.
-    const roofXs=[0,span];
+    // End-wall post heads must share the actual end-frame rafter nodes.
+    // Otherwise a second coincident gable chord duplicates stiffness and steel self-weight.
+    const endPostCount=Math.max(1,Math.ceil(span/endsp));
+    const endPostXs=Array.from({length:endPostCount+1},(_,i)=>span*i/endPostCount);
+    const roofXs=[0,span,...endPostXs];
     [-1,1].forEach(side=>{for(let ri=0;ri<=roofRows;ri++){
       const t=ri/roofRows;
       roofXs.push(side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t));
@@ -600,7 +604,7 @@
       for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"قید افقی طولی دیوار","wallGirt",{side:si===0?"left":"right",row:gi+1,tributaryHeight:upper-lower});
     }));
     [0,length].forEach((z,endIndex)=>{
-      const count=Math.max(1,Math.ceil(span/endsp)), xs=Array.from({length:count+1},(_,i)=>span*i/count);
+      const xs=endPostXs;
       const face=endIndex===0?"front":"rear";
       // End-wall posts are split at every girt intersection so the secondary
       // members share actual nodes instead of crossing disconnected lines.
@@ -612,10 +616,8 @@
         for(let j=0;j<vertical.length-1;j++)
           addMember(members,vertical[j],vertical[j+1],"ستونک میانی دیوار انتهایی","endPost",{endFace:face,post:i,segment:j+1});
       }
-      // Gable top chord connects the heads of the end posts to the main eaves/ridge.
-      const topChord=xs.map(x=>addNode(nodes,x,roofY(x),z,"endwall-head"));
-      for(let i=0;i<topChord.length-1;i++)
-        addMember(members,topChord[i],topChord[i+1],"رفتر قاب دیوار انتهایی","rafter",{endFace:face,axis:"endwall"});
+      // Post heads reuse the split end-frame rafter nodes created above.
+      // Do not add a second coincident gable chord: the portal rafter is the load path.
       girtHeights.forEach((y,gi)=>{
         const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
         const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
