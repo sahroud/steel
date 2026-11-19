@@ -36,6 +36,7 @@
    '<div class="field"><label for="initialSectionJ">ثابت پیچشی J (cm⁴)</label><input id="initialSectionJ" type="number" min="0" step="0.01"></div>'+
    '<div class="field"><label for="initialSectionMode">روش تعریف مقطع</label><select id="initialSectionMode"><option value="properties">ورود مستقیم خواص مقطع</option><option value="builtUpI">تیرورق I ـ محاسبه خودکار از ابعاد</option></select></div>'+
    '<div class="field"><label for="initialSectionRollDeg">چرخش حول محور محلی +X عضو (درجه)</label><input id="initialSectionRollDeg" type="number" step="0.1" placeholder="زاویه صریح؛ صفر نیز باید ثبت شود"></div>'+
+   '<div class="field"><label>محور مرجع جهانی عضو (X, Y, Z)</label><div class="form-grid"><input id="sectionReferenceAxisX" type="number" step="0.001" placeholder="X"><input id="sectionReferenceAxisY" type="number" step="0.001" placeholder="Y"><input id="sectionReferenceAxisZ" type="number" step="0.001" placeholder="Z"></div></div>'+
    '<div class="field"><label><input id="initialSectionOrientationConfirmed" type="checkbox"> جهت جان و بال با نقشه ساخت/نصب تطبیق داده شده است</label></div></div>'+
    '<div id="initialSectionGeometry" hidden><h4>ابعاد هندسی تیرورق (mm)</h4><div class="form-grid">'+
    '<div class="field"><label for="sectionTopB">عرض بال بالا</label><input id="sectionTopB" type="number" min="1" step="1"></div>'+
@@ -120,13 +121,28 @@
    message("خواص کامل هندسی و وزن مقطع از ابعاد جدید محاسبه و برای همین عضو ثبت شد؛ تحلیل باید دوباره اجرا شود.");
   }catch(e){$("initialSectionGeometrySummary").textContent="خطا در هندسه مقطع: "+e.message;message(e.message,true);}
  }
+ function readReferenceAxis(){
+  const ids=["sectionReferenceAxisX","sectionReferenceAxisY","sectionReferenceAxisZ"],raw=ids.map(id=>$(id)?.value??"");
+  if(raw.every(v=>v===""))return null;
+  if(raw.some(v=>v===""))throw new Error("هر سه مؤلفه محور مرجع جهانی X/Y/Z باید با هم وارد شوند.");
+  const axis=raw.map(Number),length=Math.hypot(...axis);
+  if(axis.some(v=>!Number.isFinite(v))||!(length>1e-10))throw new Error("محور مرجع جهانی باید سه مؤلفه متناهی و بردار غیرصفر داشته باشد.");
+  return axis.map(v=>v/length);
+ }
  function applyOrientationInput(section){
   const raw=$("initialSectionRollDeg")?.value;
-  if(raw===""||raw===undefined){delete section.sectionRollDeg;section.sectionOrientationConfirmed=false;return;}
-  const angle=Number(raw);
-  if(!Number.isFinite(angle))throw new Error("زاویه چرخش مقطع باید عددی متناهی بر حسب درجه باشد.");
-  section.sectionRollDeg=angle;
-  section.sectionOrientationConfirmed=$("initialSectionOrientationConfirmed")?.checked===true;
+  if(raw===""||raw===undefined){delete section.sectionRollDeg;section.sectionOrientationConfirmed=false;}
+  else{
+   const angle=Number(raw);
+   if(!Number.isFinite(angle))throw new Error("زاویه چرخش مقطع باید عددی متناهی بر حسب درجه باشد.");
+   section.sectionRollDeg=angle;
+   section.sectionOrientationConfirmed=$("initialSectionOrientationConfirmed")?.checked===true;
+  }
+  const axis=readReferenceAxis();
+  if(axis)section.sectionReferenceAxis=axis;
+  else if(!currentModel?.members?.find(m=>String(m.id)===selectedId)?.referenceAxis)delete section.sectionReferenceAxis;
+  if(section.sectionOrientationConfirmed&&!axis&&!currentModel?.members?.find(m=>String(m.id)===selectedId)?.referenceAxis&&!section.sectionReferenceAxis)
+   throw new Error("برای تأیید جهت نصب، محور مرجع جهانی X/Y/Z را نیز وارد کنید.");
  }
  function saveOrientation(){
   try{
@@ -139,6 +155,10 @@
    const existing=dirty.get(selectedId),base=existing?.section||baseFor(member);
    if(!base)throw new Error("مقطع پایه عضو در دسترس نیست؛ ابتدا مقطع اولیه را تخصیص دهید.");
    const section={...base,sectionRollDeg:angle,sectionOrientationConfirmed:$("initialSectionOrientationConfirmed")?.checked===true};
+   const axis=readReferenceAxis();
+   if(axis)section.sectionReferenceAxis=axis;
+   else if(member.referenceAxis)section.sectionReferenceAxis=member.referenceAxis.slice();
+   if(section.sectionOrientationConfirmed&&!section.sectionReferenceAxis)throw new Error("برای تأیید جهت نصب، محور مرجع جهانی X/Y/Z را وارد کنید.");
    const item={memberId:selectedId,section,sourceReference:"جهت نصب و چرخش صریح کاربر برای عضو "+selectedId};
    dirty.set(selectedId,item);
    if(root.SahroudSectionPropertyRegistry?.applyOne)root.SahroudSectionPropertyRegistry.applyOne(member,section);
@@ -165,6 +185,8 @@
   const saved=dirty.get(selectedId),base=saved?.section||baseFor(member)||{};
   $("initialSectionProfile").value=base.profile||"";
   $("initialSectionRollDeg").value=base.sectionRollDeg??"";
+  const refAxis=base.sectionReferenceAxis||member.referenceAxis||[];
+  ["sectionReferenceAxisX","sectionReferenceAxisY","sectionReferenceAxisZ"].forEach((id,i)=>{$(id).value=refAxis[i]??"";});
   $("initialSectionOrientationConfirmed").checked=base.sectionOrientationConfirmed===true;
   $("initialSectionA").value=toDisplay(base.A,1e-4);
   $("initialSectionIy").value=toDisplay(base.Iy,1e-8);
