@@ -82,6 +82,9 @@
     if(!["standard","oversized","short-slotted","long-slotted"].includes(b.holeType))fail(errors,"نوع سوراخ در کنترل اتکایی نامعتبر است.");
     const sourceBolt=(detail?.bolts||[]).find(q=>String(q.id)===String(b.boltId));
     if(sourceBolt&&sourceBolt.holeType!==b.holeType)fail(errors,"نوع سوراخ در کنترل اتکایی با هندسه پیچ "+b.boltId+" یکسان نیست.");
+    if(b.holeType==="oversized")fail(errors,"سوراخ بزرگ‌شده در اتصال اتکایی مجاز نیست؛ این حالت فقط در اتصال لغزش بحرانی قابل بررسی است.");
+    if(["short-slotted","long-slotted"].includes(b.holeType)&&b.forceDirectionToSlot!=="transverse")
+     fail(errors,"در اتصال اتکایی، محور طولی سوراخ لوبیایی باید عمود بر راستای نیرو باشد.");
     if(b.holeType==="long-slotted"&&!["parallel","transverse"].includes(b.forceDirectionToSlot))
      fail(errors,"جهت نیرو نسبت به محور سوراخ لوبیایی بلند باید تعیین شود.");
    });
