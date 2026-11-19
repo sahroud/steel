@@ -5,7 +5,7 @@ const detail=require("../js/knee-connection-detail.js");
 function fixture(){
  return {schema:detail.SCHEMA,connectionId:"KNEE-01",jointId:"EAVE-1",drawingReference:"DWG-S-101-REV2",units:"mm",
   connectionFrame:{originM:[0,6,0],axes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},verifiedByDrawing:true},
-  memberForceTransferPoints:[{memberId:"COL-1",pointMm:[0,0,0]},{memberId:"RAF-1",pointMm:[120,0,0]}],
+  memberForceTransferPoints:[{role:"column",memberId:"COL-1",pointMm:[0,0,0]},{role:"rafter",memberId:"RAF-1",pointMm:[120,0,0]}],
   plates:[{id:"END-PLATE",thicknessMm:16,material:{grade:"ST37",FyMPa:235,FuMPa:360},
    polygonMm:[{x:-100,y:-100},{x:300,y:-100},{x:300,y:100},{x:-100,y:100}]}],
   bolts:[{id:"B1",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
@@ -37,4 +37,13 @@ test("coincident bolts and zero-length welds are rejected",()=>{
 });
 test("no connection capacity or execution approval is inferred",()=>{
  const d=fixture();const r=detail.validate(d);assert.equal(r.capacityDesigned,false);assert.equal(r.executionReady,false);assert.equal(r.geometryOnly,true);
+});
+
+test("force transfer points must identify one column and one rafter",()=>{
+ const d=fixture();d.memberForceTransferPoints[1].role="column";
+ const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("column و یک rafter")));
+});
+test("knee detail requires exactly two member transfer points",()=>{
+ const d=fixture();d.memberForceTransferPoints.pop();
+ const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("دقیقاً دو نقطه")));
 });
