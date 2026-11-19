@@ -1,6 +1,6 @@
 (function(root){
  "use strict";
- const finite=(v,label)=>{const n=Number(v);if(!Number.isFinite(n))throw new Error(label+" باید عدد محدود باشد.");return n;};
+ const finite=(v,label)=>{if(v===null||v===undefined||typeof v==="boolean"||(typeof v==="string"&&!v.trim()))throw new Error(label+" نباید خالی باشد.");const n=Number(v);if(!Number.isFinite(n))throw new Error(label+" باید عدد محدود باشد.");return n;};
  const key=s=>String(s==null?"":s);
  function collectSlsReactionCases(input){
   const d=input||{},cases=Array.isArray(d.cases)?d.cases:[];
