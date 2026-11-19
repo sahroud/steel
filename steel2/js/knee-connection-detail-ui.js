@@ -47,8 +47,10 @@
    "<div class='button-grid'><button id='btnKneeDetailTemplate' class='btn secondary' type='button'>ساخت قالب برای زانویی انتخاب‌شده</button>"+
    "<button id='btnKneeDetailValidate' class='btn primary' type='button'>اعتبارسنجی جزئیات واردشده</button>"+
    "<button id='btnKneeDetailExport' class='btn secondary' type='button'>دریافت JSON ورودی</button></div>"+
+   "<button id='btnKneeDetailMapDemand' class='btn primary' type='button'>انتقال تقاضای ترکیبات بار به دستگاه اتصال</button></div>"+
    "<div class='field'><label for='kneeDetailJson'>جزئیات اتصال (JSON)</label><textarea id='kneeDetailJson' rows='18' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
-   "<div id='kneeDetailValidationResult' aria-live='polite' class='notice'>قالب اولیه هنوز ساخته نشده است.</div>";
+   "<div id='kneeDetailValidationResult' aria-live='polite' class='notice'>قالب اولیه هنوز ساخته نشده است.</div>"+
+   "<div id='kneeDetailMappedDemand' aria-live='polite' class='notice'>تقاضای منتقل‌شده هنوز محاسبه نشده است.</div>";
   $("kneeConnectionGeometryPanel").appendChild(panel);
   $("btnKneeDetailTemplate").addEventListener("click",()=>{
    const k=selectedKnee();
@@ -80,6 +82,25 @@
    }catch(e){
     $("kneeDetailValidationResult").textContent="JSON قابل‌خواندن نیست: "+e.message;
     $("kneeDetailValidationResult").dataset.valid="false";
+   }
+  });
+
+  $("btnKneeDetailMapDemand").addEventListener("click",()=>{
+   try{
+    const value=JSON.parse($("kneeDetailJson").value);
+    const mapped=root.SahroudKneeConnectionDemandMapper.map(value,root.SteelStructuralModel?.lastConnectionDemand||null,selectedKnee());
+    const rows=mapped.cases.map(c=>c.memberActions.map(a=>
+     "<tr><td>"+esc(c.combination)+"</td><td>"+esc(a.role)+" / "+esc(a.memberId)+"</td>"+
+     [a.connectionFrame.force.x,a.connectionFrame.force.y,a.connectionFrame.force.z].map(v=>"<td>"+(Number(v)/1000).toFixed(3)+"</td>").join("")+
+     [a.connectionFrame.moment.x,a.connectionFrame.moment.y,a.connectionFrame.moment.z].map(v=>"<td>"+(Number(v)/1000).toFixed(3)+"</td>").join("")+"</tr>"
+    ).join("")).join("");
+    $("kneeDetailMappedDemand").innerHTML="<p>تقاضای هر عضو جداگانه به مبدأ و محورهای اتصال منتقل شد. نیرو kN و لنگر kN.m است.</p>"+
+     "<table><thead><tr><th>ترکیب بار</th><th>عضو</th><th>Fx</th><th>Fy</th><th>Fz</th><th>Mx</th><th>My</th><th>Mz</th></tr></thead><tbody>"+rows+"</tbody></table>"+
+     "<p>ظرفیت طراحی نشده؛ جمع نیروهای گره و کنترل تعادل کامل انجام نشده است.</p>";
+    $("kneeDetailMappedDemand").dataset.valid="true";
+   }catch(e){
+    $("kneeDetailMappedDemand").textContent="انتقال تقاضا متوقف شد: "+e.message;
+    $("kneeDetailMappedDemand").dataset.valid="false";
    }
   });
   $("btnKneeDetailExport").addEventListener("click",()=>{
