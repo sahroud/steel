@@ -11,6 +11,9 @@ test("approved seismic base shear distributes by supplied verified weights and c
  assert.ok(Math.abs(r.nodalLoads.reduce((s,x)=>s+x.values[0],0)-120000)<1e-8);
  assert.deepEqual(r.nodalLoads.map(x=>x.values[0]),[20000,40000,60000]);
  assert.equal(r.codeDesignApproved,false);
+ assert.equal(r.type,"seismic");
+ assert.equal(r.sourceVerified,true);
+ assert.equal(r.nodalLoads.length,3);
 });
 test("seismic distribution rejects missing approval, bad weights and duplicate nodes",()=>{
  assert.throws(()=>seismic.distributeApprovedBaseShear({baseShearKN:100,axisIndex:0,points:[{nodeId:"A",weight:1}]}),/منبع مستند/);
@@ -45,4 +48,20 @@ test("crane load case without physical runway members is blocked",()=>{
  const model={nodes:[{id:"B",x:0,y:0,z:0}],members:[]};
  const r=audit.audit({model,result:{selfWeight:{deadLoadFactor:0},externalLoadSource:"manufacturer sheet"},sectionsByMemberId:{},supports:[{nodeId:"B"}],loadCase:"crane"});
  assert.ok(r.blockers.some(x=>x.includes("تیر حمال")));
+});
+
+const crane=require("../js/crane-design.js");
+test("crane wheel reactions are passed to solver only with verified manufacturer data",()=>{
+ const configuration=crane.createConfiguration({capacityTonnes:10,enabled:true,craneSpanM:12,runwayLengthM:36,hookLiftM:6,
+  dutyClass:"M4",cyclesPerHour:10,verified:true,manufacturer:"Manufacturer",model:"Model-X",sourceReference:"catalogue.pdf page 12"});
+ const result=crane.createVerifiedWheelLoadCase({configuration,sourceVerified:true,sourceReference:"catalogue.pdf page 12",
+  wheelReactions:[{nodeId:"CRANE_COL_1",verticalKN:85,longitudinalKN:4,transverseKN:7}]});
+ assert.equal(result.type,"crane");
+ assert.deepEqual(result.nodalLoads[0].values,[4000,-85000,7000,0,0,0]);
+});
+test("crane wheel reaction transfer rejects unverified and malformed data",()=>{
+ const configuration=crane.createConfiguration({capacityTonnes:5,craneSpanM:12,runwayLengthM:36,hookLiftM:5,
+  dutyClass:"M3",cyclesPerHour:5,verified:true,manufacturer:"M",model:"X",sourceReference:"source"});
+ assert.throws(()=>crane.createVerifiedWheelLoadCase({configuration,sourceVerified:false,sourceReference:"source",wheelReactions:[{nodeId:"N",verticalKN:10}]}),/منبع معتبر/);
+ assert.throws(()=>crane.createVerifiedWheelLoadCase({configuration,sourceVerified:true,sourceReference:"source",wheelReactions:[{nodeId:"N",verticalKN:-10}]}),/محدود/);
 });
