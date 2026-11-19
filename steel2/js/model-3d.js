@@ -1024,6 +1024,27 @@
       });
     }
     const currentWindInputs=window.SteelLoads?.getData?.()||{};
+    const gableWallDeadTransfer=[];
+    if(Number(selected.deadFactor)>0){
+      const intervals=Math.max(1,Math.ceil(Number(model.geometry.span)/Number(model.geometry.endPostSpacing||4)));
+      ["front","rear"].forEach(face=>{
+        const pressure=Number(face==="front"?currentWindInputs.endWallDeadFront:currentWindInputs.endWallDeadBack)||0;
+        if(!(pressure>0))return;
+        const actions=window.SteelLoadTransfer.triangularGablePostEquivalentLoads(
+          pressure*Number(selected.deadFactor),Number(model.geometry.span),Number(model.geometry.rise),
+          Number(model.geometry.height),intervals
+        );
+        actions.forEach(action=>{
+          const z=face==="front"?0:Number(model.geometry.length);
+          const head=analysisModel.nodes.find(n=>Math.abs(n.x-action.xM)<1e-7&&
+            Math.abs(n.y-action.supportHeightM)<1e-7&&Math.abs(n.z-z)<1e-7);
+          if(!head)throw new Error("گره سر ستونک برای وزن دیوار مثلثی "+face+" پیدا نشد.");
+          nodalLoads.push({nodeId:head.id,values:[0,-action.resultantKN*1000,0,0,0,0]});
+        });
+        gableWallDeadTransfer.push({face,pressureKPa:pressure*Number(selected.deadFactor),
+          resultantKN:actions.reduce((sum,item)=>sum+item.resultantKN,0),postStations:actions.length});
+      });
+    }
     const gableWindTransfer=[];
     const windFactor=selected.key==="wind"?1:Number(selected.windFactor||0);
     const windSign=selected.key==="wind"?1:Number(selected.windSign||1);
@@ -1170,7 +1191,8 @@
     result.loadPathCoverage={
       wallDeadLongitudinalMembers:analysisModel.members.filter(m=>m.sectionKey==="wallGirt"&&Number(m.lineLoads?.dead)>0).length,
       wallDeadEndMembers:analysisModel.members.filter(m=>m.sectionKey==="endGirt"&&Number(m.lineLoads?.dead)>0).length,
-      wallDeadGableTriangle:"not-applied",
+      wallDeadGableTriangle:gableWallDeadTransfer.length?"applied":"not-applied",
+      gableWallDeadTransfer,
       seismicApplied:selected.key==="seismic",
       craneApplied:selected.key==="crane",
       craneRunwayMembers:analysisModel.members.filter(m=>["craneRunway","craneRail","craneBracket"].includes(m.sectionKey)).length
