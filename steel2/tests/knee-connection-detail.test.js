@@ -178,3 +178,23 @@ test("bolt axis, grip length and drawing verification are mandatory",()=>{
  const g=fixture();g.bolts[0].axisVerifiedByDrawing=false;
  assert.equal(detail.validate(g).valid,false);
 });
+
+test("builds only drawing-defined bolt head nut and washer geometry",()=>{
+ const d=fixture();
+ d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[0].hardware=[
+  {id:"H1",kind:"head",centerOffsetMm:-24,thicknessMm:12,acrossFlatsMm:30},
+  {id:"N1",kind:"nut",centerOffsetMm:24,thicknessMm:16,acrossFlatsMm:30},
+  {id:"W1",kind:"washer",centerOffsetMm:15,thicknessMm:3,outerDiameterMm:36,innerDiameterMm:22}
+ ];
+ const g=detail.buildGlobalGeometry(d),hw=g.plates[0].bolts[0].hardware;
+ assert.equal(hw.length,3);
+ assert.equal(hw[0].geometry.method,"regular-hex-prism");
+ assert.equal(hw[1].geometry.topFaceGlobalM.length,6);
+ assert.equal(hw[2].geometry.method,"32-segment-annulus");
+ assert.equal(hw[2].geometry.innerTopFaceGlobalM.length,32);
+});
+test("rejects bolt hardware without an explicit transverse drawing reference",()=>{
+ const d=fixture();d.bolts[0].hardware=[{id:"H1",kind:"head",centerOffsetMm:-24,thicknessMm:12,acrossFlatsMm:30}];
+ assert.equal(detail.validate(d).valid,false);
+});
