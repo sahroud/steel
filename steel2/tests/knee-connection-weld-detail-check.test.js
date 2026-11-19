@@ -65,14 +65,18 @@ test("checks minimum length of intermittent weld segments as max(4a,40 mm)",()=>
  assert.equal(row.status,"FAIL");
 });
 test("applies beta reduction to a longitudinally loaded axial end weld longer than 100a",()=>{
- const r=check.assess(fixture({startMm:[0,0,0],endMm:[1000,0,0],axialEndConnection:true,longitudinallyLoaded:true}));
+ const d=fixture({startMm:[0,0,0],endMm:[1000,0,0],axialEndConnection:true,longitudinallyLoaded:true});
+ d.plates[0].polygonMm=[{x:-1100,y:-100},{x:1100,y:-100},{x:1100,y:100},{x:-1100,y:100}];
+ const r=check.assess(d);
  const row=r.checks.find(x=>x.checkId==="long-weld-reduction");
  assert.equal(row.status,"PASS");
  assert.equal(row.beta,1.0); // beta=1.2-0.002(1000/6), capped at 1.0
  assert.ok(Math.abs(r.effectiveWelds[0].effectiveLengthMm-(1000*(1.2-0.002*(1000/6))))<1e-8);
 });
 test("flags unknown long-weld applicability and blocks effective-length demand mapping",()=>{
- const r=check.assess(fixture({startMm:[0,0,0],endMm:[1000,0,0],axialEndConnection:undefined,longitudinallyLoaded:undefined}));
+ const d=fixture({startMm:[0,0,0],endMm:[1000,0,0],axialEndConnection:undefined,longitudinallyLoaded:undefined});
+ d.plates[0].polygonMm=[{x:-1100,y:-100},{x:1100,y:-100},{x:1100,y:100},{x:-1100,y:100}];
+ const r=check.assess(d);
  assert.equal(r.checks.find(x=>x.checkId==="long-weld-reduction").status,"NOT_ASSESSABLE");
  assert.equal(r.lineDemandGeometryComplete,false);
 });
