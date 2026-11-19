@@ -1,7 +1,7 @@
 (function(root){
  "use strict";
  let lastResult=null;
- const finite=(v,label)=>{const n=Number(v);if(!Number.isFinite(n))throw new Error(label+" باید عدد محدود باشد.");return n;};
+ const finite=(v,label)=>{if(v===null||v===undefined||typeof v==="boolean"||(typeof v==="string"&&!v.trim()))throw new Error(label+" نباید خالی باشد.");const n=Number(v);if(!Number.isFinite(n))throw new Error(label+" باید عدد محدود باشد.");return n;};
  function validateSoil(input){
   const d=input||{},qa=finite(d.allowableBearingKPa,"ظرفیت مجاز باربری خاک");
   const soilType=String(d.soilType||"").trim().toUpperCase();
@@ -33,7 +33,7 @@
    if(typeof c.sourceReference!=="string"||!c.sourceReference.trim())
     throw new Error("مرجع گزارش تحلیل/جدول واکنش برای حالت "+name+" الزامی است.");
    const reactionN=finite(c.NkN,"نیروی قائم واکنش "+name);
-   const Mx=finite(c.MxkNm||0,"لنگر Mx "+name),Mz=finite(c.MzkNm||0,"لنگر Mz "+name);
+   const Mx=finite(c.MxkNm===undefined?0:c.MxkNm,"لنگر Mx "+name),Mz=finite(c.MzkNm===undefined?0:c.MzkNm,"لنگر Mz "+name);
    const N=reactionN+footingWeight+soilCoverWeight;
    if(!(N>0))throw new Error("مجموع نیروی قائم شامل واکنش، وزن پی و خاک روی پی در "+name+" باید فشاری و مثبت باشد.");
    const ex=Mz/N,ez=Mx/N,qAvg=N/A;
