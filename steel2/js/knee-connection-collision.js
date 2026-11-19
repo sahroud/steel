@@ -47,13 +47,13 @@
   const g=hw.geometry;
   if(g.method==="regular-hex-prism")return triangulatedPrisms(g.topFaceGlobalM,g.bottomFaceGlobalM);
   if(g.method==="32-segment-annulus"){
-   const out=[],n=g.outerTopFaceGlobalM?.length;
-   if(n!==32||g.outerBottomFaceGlobalM?.length!==32||g.innerTopFaceGlobalM?.length!==32||g.innerBottomFaceGlobalM?.length!==32)
+   const out=[],n=g.topFaceGlobalM?.length;
+   if(n!==32||g.bottomFaceGlobalM?.length!==32||g.innerTopFaceGlobalM?.length!==32||g.innerBottomFaceGlobalM?.length!==32)
     throw new Error("هندسه حلقوی واشر برای ممیزی کامل نیست.");
    for(let i=0;i<n;i++){
     const j=(i+1)%n;
-    const ot=[g.outerTopFaceGlobalM[i],g.outerTopFaceGlobalM[j],g.innerTopFaceGlobalM[j],g.innerTopFaceGlobalM[i]];
-    const ob=[g.outerBottomFaceGlobalM[i],g.outerBottomFaceGlobalM[j],g.innerBottomFaceGlobalM[j],g.innerBottomFaceGlobalM[i]];
+    const ot=[g.topFaceGlobalM[i],g.topFaceGlobalM[j],g.innerTopFaceGlobalM[j],g.innerTopFaceGlobalM[i]];
+    const ob=[g.bottomFaceGlobalM[i],g.bottomFaceGlobalM[j],g.innerBottomFaceGlobalM[j],g.innerBottomFaceGlobalM[i]];
     out.push(prism([ot[0],ot[1],ot[2]],[ob[0],ob[1],ob[2]]),prism([ot[0],ot[2],ot[3]],[ob[0],ob[2],ob[3]]));
    }
    return out;
