@@ -169,6 +169,14 @@
         <div class="field"><label for="foundationSlsBatchInput">بسته واکنش ترکیبات SLS برای همه پایه‌ها (JSON)</label><textarea id="foundationSlsBatchInput" rows="7" placeholder='{"cases":[{"loadCase":"SLS-1","loadCaseLabel":"ترکیب بهره‌برداری ۱","classification":"SLS","solverEquilibriumOK":true,"sourceReference":"گزارش مصوب ترکیبات SLS، صفحه ...","supports":[{"nodeId":"B1","coordinatesM":{"x":0,"y":0,"z":0},"fixedDofs":[0,1,2],"FxkN":0,"FykN":100,"FzkN":0,"MxkNm":0,"MykNm":0,"MzkNm":0}]}]}' disabled></textarea></div>
         <button id="btnValidateFoundationSlsBatch" class="btn secondary" type="button" disabled>اعتبارسنجی بسته واکنش‌های SLS</button>
         <pre id="foundationSlsBatchResult" class="notice" aria-live="polite">هنوز بسته واکنش SLS بارگذاری نشده است.</pre>
+        <div class="notice">گام بعد: تعریف صریح محور و مرکز هر پی و تبدیل واکنش‌های حل‌گر به نیروهای وارد بر پی. اگر واکنش از خروجی تکیه‌گاهی سازه است، گزینه «واکنش سازه» را انتخاب کنید تا علامت کنش/واکنش برعکس شود. هیچ محور یا علامتی خودکار حدس زده نمی‌شود.</div>
+        <div class="form-grid">
+            <div class="field"><label for="foundationReactionSense">ماهیت بردارهای ورودی</label><select id="foundationReactionSense" disabled><option value="">انتخاب کنید</option><option value="on-structure">واکنش تکیه‌گاهی وارد بر سازه</option><option value="on-foundation">نیروی وارد بر پی (از قبل تبدیل‌شده)</option></select></div>
+            <div class="field"><label for="selectedFoundationNodeId">شناسه پایه برای کنترل خاک</label><input id="selectedFoundationNodeId" type="text" placeholder="مثلاً B1" disabled></div>
+        </div>
+        <div class="field"><label for="foundationLocalGeometryInput">مرکز هندسی و محورهای محلی پی همه پایه‌ها (JSON)</label><textarea id="foundationLocalGeometryInput" rows="8" placeholder='{"foundations":[{"nodeId":"B1","footingCentroidGlobalM":{"x":0,"y":0,"z":0},"localAxes":{"x":{"x":1,"y":0,"z":0},"y":{"x":0,"y":1,"z":0},"z":{"x":0,"y":0,"z":1}},"verticalLocalAxis":"y","compressionSign":-1}]}' disabled></textarea></div>
+        <button id="btnMapFoundationActions" class="btn secondary" type="button" disabled>تبدیل واکنش‌ها به نیروهای وارد بر پی</button>
+        <pre id="foundationActionMappingResult" class="notice" aria-live="polite">برای تبدیل، جهت واکنش، شناسه پایه و هندسه محلی تمام پی‌ها را وارد کنید.</pre>
         <div class="field"><label for="soilReactionCases">واکنش‌های هر پی در ترکیبات بهره‌برداری (JSON)</label><textarea id="soilReactionCases" rows="5" placeholder='[{"name":"SLS-1","sourceReference":"گزارش تحلیل R-01 صفحه ۴","NkN":1000,"MxkNm":20,"MzkNm":15}]' disabled></textarea></div>
         <div class="notice">N بر حسب kN و Mx/Mz بر حسب kN.m است. برای هر پی و هر ترکیب بهره‌برداری، کنترل باید جداگانه تکرار شود. خروجی تحلیل خطی منفرد یا ترکیب ULS را به‌جای واکنش SLS وارد نکنید.</div>
         <button id="btnRunSoilCheck" class="btn primary" type="button" disabled>اجرای کنترل فشار باربری خاک</button>
@@ -292,6 +300,7 @@
   <script src="js/foundation-reaction-export.js?v=20261119reaction1"></script>
 <script src="js/foundation-reaction-batch.js?v=20261119slsbatch1"></script>
 <script src="js/foundation-action-mapping.js?v=20261119actionmap1"></script>
+<script src="js/foundation-action-mapping-ui.js?v=20261119actionmapui1"></script>
 <script src="js/project.js?v=20261112purlinmigration1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/member-demand-3d.js?v=20261118demand1"></script>
