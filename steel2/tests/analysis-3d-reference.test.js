@@ -78,7 +78,7 @@ test("global load projection uses the same explicit section roll as the stiffnes
  const local=solver.globalVectorToLocal(a,b,global,ref,90);
  const reconstructed=[0,1,2].map(i=>tr.axes.x[i]*local[0]+tr.axes.y[i]*local[1]+tr.axes.z[i]*local[2]);
  reconstructed.forEach((v,i)=>assert.ok(Math.abs(v-global[i])<1e-12));
- assert.ok(Math.abs(local[2]+1)<1e-12);
+ assert.ok(Math.abs(local[1]-1)<1e-12);
 });
 test("explicit section roll changes anisotropic member stiffness orientation",()=>{
  const L=3,P=500,a={id:"FIX",x:0,y:0,z:0},b={id:"TIP",x:L,y:0,z:0};
@@ -1670,7 +1670,7 @@ test("member orientation audit marks a member verified only with explicit axis a
   const report=solver.auditMemberOrientation({
     nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:2,z:0}],
     members:[{id:"COL1",start:"A",end:"B",sectionKey:"column",
-      referenceAxis:[0,0,1],sectionOrientationVerified:true}]
+      referenceAxis:[0,0,1],sectionRollDeg:0,sectionOrientationVerified:true}]
   });
   assert.equal(report.verifiedCount,1);
   assert.equal(report.unverifiedCount,0);
