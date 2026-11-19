@@ -105,16 +105,24 @@
    });
    (detail?.bolts||[]).forEach(b=>{if(!bearingKeys.has(String(b.id)+":"+String(b.plateId)))fail(errors,"کنترل اتکایی ورق میزبان برای پیچ "+b.id+" ثبت نشده است.");});
    if(!Array.isArray(c.plateSectionChecks)||c.plateSectionChecks.length!==plateIds.size)
-    fail(errors,"کنترل مقطع کلی/خالص کششی و برشی تمام ورق‌ها باید ارائه شود.");
+    fail(errors,"کنترل مقطع کلی/خالص کششی و برشی تمام ورق‌ها باید دقیقاً یک‌بار ارائه شود.");
+   const plateSectionIds=new Set();
    (c.plateSectionChecks||[]).forEach(p=>{
-    if(!plateIds.has(String(p.plateId)))fail(errors,"شناسه ورق در کنترل مقطع نامعتبر است.");
+    const plateId=String(p.plateId);
+    if(!plateIds.has(plateId))fail(errors,"شناسه ورق در کنترل مقطع نامعتبر است.");
+    if(plateSectionIds.has(plateId))fail(errors,"کنترل مقطع ورق "+plateId+" تکراری است.");
+    plateSectionIds.add(plateId);
     ["tensionKN","shearKN","AgTensionMm2","AeTensionMm2","AgvMm2","AnvMm2"].forEach(k=>{if(!finite(p[k])||p[k]<0)fail(errors,"مقدار "+k+" در کنترل مقطع ورق نامعتبر است.");});
     if(!text(p.areaReference))fail(errors,"مرجع هندسی محاسبه سطوح مقطع کلی/خالص ورق الزامی است.");
    });
    if(!Array.isArray(c.blockShearChecks)||c.blockShearChecks.length!==plateIds.size)
-    fail(errors,"مسیر برش قالبی هر ورق باید با سطوح و مرجع نقشه صریح تعریف شود.");
+    fail(errors,"مسیر برش قالبی هر ورق باید دقیقاً یک‌بار و با سطوح و مرجع نقشه صریح تعریف شود.");
+   const blockShearIds=new Set();
    (c.blockShearChecks||[]).forEach(p=>{
-    if(!plateIds.has(String(p.plateId))||!text(p.pathReference)||!text(p.ubsBasis))fail(errors,"مرجع مسیر برش قالبی/مقدار Ubs ناقص است.");
+    const plateId=String(p.plateId);
+    if(!plateIds.has(plateId)||!text(p.pathReference)||!text(p.ubsBasis))fail(errors,"مرجع مسیر برش قالبی/مقدار Ubs ناقص است.");
+    if(blockShearIds.has(plateId))fail(errors,"کنترل برش قالبی ورق "+plateId+" تکراری است.");
+    blockShearIds.add(plateId);
     ["demandKN","AgvMm2","AnvMm2","AntMm2"].forEach(k=>{if(!positive(p[k]))fail(errors,"مقدار "+k+" در برش قالبی باید مثبت و صریح باشد.");});
     if(![0.5,1].includes(p.Ubs))fail(errors,"Ubs فقط می‌تواند 0.5 یا 1 باشد و مبنای انتخاب باید مستند شود.");
    });
