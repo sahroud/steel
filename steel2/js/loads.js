@@ -471,7 +471,11 @@
             ["بار زنده چپ", data.liveLeft],
             ["بار زنده راست", data.liveRight],
             ["بار برف چپ", data.snowLeft],
-            ["بار برف راست", data.snowRight]
+            ["بار برف راست", data.snowRight],
+            ["وزن دیوار طولی چپ", data.wallDeadLeft],
+            ["وزن دیوار طولی راست", data.wallDeadRight],
+            ["وزن دیوار انتهایی جلو", data.endWallDeadFront],
+            ["وزن دیوار انتهایی عقب", data.endWallDeadBack]
         ];
 
         for (const item of nonNegative) {
@@ -751,7 +755,11 @@
                     windRight: "loadWindRight",
                     windWall: "loadWindWall",
                     windEndFront: "loadWindEndFront",
-                    windEndBack: "loadWindEndBack"
+                    windEndBack: "loadWindEndBack",
+                    wallDeadLeft: "loadWallDeadLeft",
+                    wallDeadRight: "loadWallDeadRight",
+                    endWallDeadFront: "loadEndWallDeadFront",
+                    endWallDeadBack: "loadEndWallDeadBack"
                 };
 
                 if ($(map[key])) $(map[key]).value = state[key];
