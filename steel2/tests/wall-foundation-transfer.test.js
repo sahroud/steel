@@ -5,8 +5,7 @@ function fixture(){
  const nodes=[
   {id:"L0",x:0,y:0,z:0,kind:"base"},{id:"L1",x:0,y:0,z:5,kind:"base"},{id:"L2",x:0,y:0,z:10,kind:"base"},
   {id:"R0",x:10,y:0,z:0,kind:"base"},{id:"R1",x:10,y:0,z:5,kind:"base"},{id:"R2",x:10,y:0,z:10,kind:"base"},
-  {id:"F0",x:0,y:0,z:0,kind:"base"},{id:"F1",x:5,y:0,z:0,kind:"endwall-base"},{id:"F2",x:10,y:0,z:0,kind:"base"},
-  {id:"B0",x:0,y:0,z:10,kind:"base"},{id:"B1",x:5,y:0,z:10,kind:"endwall-base"},{id:"B2",x:10,y:0,z:10,kind:"base"}
+  {id:"F1",x:5,y:0,z:0,kind:"endwall-base"},{id:"B1",x:5,y:0,z:10,kind:"endwall-base"}
  ];
  return {model:{geometry:{span:10,length:10,height:4,rise:2},nodes},deadFactor:1,loads:{wallDeadLeft:0,wallDeadRight:0,endWallDeadFront:0,endWallDeadBack:0}};
 }
