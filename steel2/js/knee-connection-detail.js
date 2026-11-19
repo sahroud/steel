@@ -4,7 +4,7 @@
  */
 (function(root){
  "use strict";
- const SCHEMA="SAHROUD-KNEE-CONNECTION-DETAIL-1.1";
+ const SCHEMA="SAHROUD-KNEE-CONNECTION-DETAIL-1.2";
  const finite=v=>typeof v==="number"&&Number.isFinite(v);
  const positive=v=>finite(v)&&v>0;
  const text=v=>typeof v==="string"&&v.trim().length>0;
@@ -71,6 +71,15 @@
    if(!positive(p.thicknessMm))fail(errors,"ضخامت ورق "+(p.id||i)+" باید مثبت و صریح باشد.");
    if(!text(p.material?.grade)||!positive(p.material?.FyMPa)||!positive(p.material?.FuMPa)||p.material.FuMPa<p.material.FyMPa)
     fail(errors,"گرید، Fy و Fu معتبر ورق "+(p.id||i)+" الزامی است.");
+   const pf=p.frame;
+   if(!pf||!vec(pf.originMm,3)||!pf.axes||!["u","v","n"].every(k=>vec(pf.axes[k],3))){
+    fail(errors,"مبدأ و محورهای محلی سه‌بعدی ورق "+(p.id||i)+" الزامی است.");
+   }else{
+    const [u,v,n]=[pf.axes.u,pf.axes.v,pf.axes.n],dot=(a,b)=>a.reduce((sum,x,j)=>sum+x*b[j],0),norm=a=>Math.hypot(...a);
+    const cr=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+    if([u,v,n].some(a=>Math.abs(norm(a)-1)>1e-6)||Math.abs(dot(u,v))>1e-6||Math.abs(dot(u,n))>1e-6||Math.abs(dot(v,n))>1e-6||cr.some((x,j)=>Math.abs(x-n[j])>1e-6))
+     fail(errors,"محورهای محلی ورق "+(p.id||i)+" باید یکه، متعامد و راست‌گرد باشند.");
+   }
    const poly=p.polygonMm;
    if(!Array.isArray(poly)||poly.length<3||poly.some(v=>!v||!finite(v.x)||!finite(v.y))){
     fail(errors,"چندضلعی ورق "+(p.id||i)+" باید حداقل سه رأس دوبعدی معتبر داشته باشد.");return;
@@ -88,7 +97,7 @@
    if(!text(b.id)||boltIds.has(String(b.id)))fail(errors,"شناسه پیچ خالی یا تکراری است.");boltIds.add(String(b.id));
    if(!finite(b.xMm)||!finite(b.yMm)||!positive(b.diameterMm)||!positive(b.holeDiameterMm)||b.holeDiameterMm<b.diameterMm)
     fail(errors,"مختصات، قطر پیچ و قطر سوراخ پیچ "+(b.id||i)+" نامعتبر است.");
-   const key=String(b.xMm)+","+String(b.yMm);if(boltPoints.has(key))fail(errors,"دو پیچ در مختصات یکسان ثبت شده‌اند.");boltPoints.add(key);
+   const key=String(b.plateId)+":"+String(b.xMm)+","+String(b.yMm);if(boltPoints.has(key))fail(errors,"دو پیچ در مختصات یکسان ثبت شده‌اند.");boltPoints.add(key);
    if(!text(b.grade)||!positive(b.FuMPa))fail(errors,"گرید و Fu پیچ "+(b.id||i)+" باید صریح باشد.");
    if(!text(b.plateId)||!plateIds.has(String(b.plateId)))fail(errors,"شناسه ورق میزبان پیچ "+(b.id||i)+" باید صریح و معتبر باشد.");
    if(!["standard","oversized","short-slotted","long-slotted"].includes(b.holeType))fail(errors,"نوع سوراخ پیچ "+(b.id||i)+" باید از گزینه‌های تعریف‌شده انتخاب شود.");
