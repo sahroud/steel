@@ -28,7 +28,7 @@
    const plate=plates.get(String(w.plateId));
    const L=length(w.startMm,w.endMm),a=w.legSizeMm;
    if(w.type!=="fillet"){
-    add(w,"fillet-detail","NOT_APPLICABLE","این کنترل‌ها فقط برای جوش گوشه هستند.");
+    add(w,"fillet-detail","NOT_ASSESSABLE","این موتور فقط جزئیات جوش گوشه را پوشش می‌دهد؛ جوش شیاری نیازمند کنترل مستقل است.");
     effectiveWelds.push({...w,effectiveStartMm:w.startMm.slice(),effectiveEndMm:w.endMm.slice(),effectiveLengthMm:L,effectiveLengthFactor:1});
     continue;
    }
@@ -106,6 +106,7 @@
   const overallStatus=statuses.includes("FAIL")?"FAIL":statuses.includes("NOT_ASSESSABLE")?"INCOMPLETE":"PASS";
   return{success:true,schema:"SAHROUD-FILLET-WELD-DETAIL-CHECK-1.0",
    codeBasis:{document:"مبحث دهم مقررات ملی ساختمان، ویرایش ۱۴۰۱",clause:"10-2-9-2-2",
+    sourceVerification:"متن بند از بازنشر برخط استخراج شده و فایل رسمی ناشر مستقلاً تطبیق نشده است؛ پیش از تأیید نهایی باید با نسخه رسمی کنترل شود.",
     note:"کنترل‌های این ماژول محدود به جزئیات هندسی جوش گوشه هستند؛ مقاومت موجود جوش طبق 10-2-9-2-4 جداگانه لازم است."},
    overallStatus,checks,effectiveWelds,lineDemandGeometryComplete,
    capacityDesigned:false,executionReady:false,
