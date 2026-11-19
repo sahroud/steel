@@ -195,3 +195,19 @@ test("rejects duplicate block-shear checks that hide an omitted plate",()=>{
  assert.equal(capacity.validate(d,c).valid,false);
  assert.match(capacity.validate(d,c).errors.join(" "),/تکراری/);
 });
+
+
+test("checks multiple distinct block-shear paths on the same plate independently",()=>{
+ const d=detailFixture(),c=designFixture();
+ c.loadCases[0].blockShearChecks.push({...c.loadCases[0].blockShearChecks[0],
+  demandKN:9,AgvMm2:450,AnvMm2:360,AntMm2:180,pathReference:"DWG-01 / path BS-2"});
+ const r=capacity.calculate(d,c);
+ assert.equal(r.blockShearChecks.length,2);
+ assert.deepEqual(r.blockShearChecks.map(x=>x.pathReference),["DWG-01 / path BS-1","DWG-01 / path BS-2"]);
+});
+
+test("rejects a duplicated block-shear path reference on the same plate",()=>{
+ const d=detailFixture(),c=designFixture();
+ c.loadCases[0].blockShearChecks.push({...c.loadCases[0].blockShearChecks[0]});
+ assert.equal(capacity.validate(d,c).valid,false);
+});
