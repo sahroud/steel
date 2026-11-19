@@ -10,8 +10,8 @@ function fixture(){
   plates:[{id:"P1",thicknessMm:16,thicknessReference:"mid-plane",material:{grade:"ST37",FyMPa:235,FuMPa:360},
    frame:{originMm:[0,0,0],axes:{u:[1,0,0],v:[0,1,0],n:[0,0,1]}},
    polygonMm:[{x:-100,y:-100},{x:100,y:-100},{x:100,y:100},{x:-100,y:100}]}],
-  bolts:[{id:"B1",plateId:"P1",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
-   {id:"B2",plateId:"P1",xMm:0,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1}],
+  bolts:[{id:"B1",plateId:"P1",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
+   {id:"B2",plateId:"P1",xMm:0,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1}],
   welds:[{id:"W1",plateId:"P1",faceReference:"DWG-S-101-REV2/DETAIL-A",startMm:[-100,-60,0],endMm:[-100,60,0],type:"fillet",legSizeMm:8,electrodeFexxMPa:490}]};
 }
 function addParallelPlate(d,id,z){
@@ -52,4 +52,12 @@ test("collision audit rejects invalid geometry and invalid tolerance",()=>{
  const d=fixture();d.plates[0].thicknessMm=0;
  assert.throws(()=>collision.audit(d),/برای ممیزی برخورد معتبر نیست/);
  assert.throws(()=>collision.audit(fixture(),{toleranceMm:-1}),/تلرانس تماس/);
+});
+
+test("bolt shank geometry follows explicit axis and grip length",()=>{
+ const d=fixture();const g=detail.buildGlobalGeometry(d);
+ const bolt=g.plates[0].bolts[0];
+ assert.deepEqual(bolt.shank.startGlobalM,[0,5.942,0]);
+ assert.deepEqual(bolt.shank.endGlobalM,[0,5.978,0]);
+ assert.equal(bolt.shank.radiusMm,10);
 });
