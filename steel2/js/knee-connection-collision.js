@@ -47,7 +47,7 @@
   const tolerance=options.toleranceMm===undefined?0.1:options.toleranceMm;
   if(!finite(tolerance)||tolerance<0)throw new Error("تلرانس تماس باید عدد متناهی و نامنفی بر حسب mm باشد.");
   const geometry=detail.buildGlobalGeometry(input);
-  const pieces=geometry.plates.map(plate=>({id:plate.id,prisms:plate.solid.triangulation.top.map((top,i)=>prism(top,plate.solid.triangulation.bottom[i]))}));
+  const pieces=geometry.plates.map(plate=>({id:plate.id,prisms:plate.solid.triangulation.top.map((top,i)=>prism(top,plate.solid.triangulation.bottom[i].slice().reverse()))}));
   const pairs=[];
   for(let i=0;i<pieces.length;i++)for(let j=i+1;j<pieces.length;j++){
    const a=pieces[i],b=pieces[j];let best={state:"clear",minimumPenetrationMm:-Infinity};
