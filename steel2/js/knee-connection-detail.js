@@ -4,7 +4,7 @@
  */
 (function(root){
  "use strict";
- const SCHEMA="SAHROUD-KNEE-CONNECTION-DETAIL-1.2";
+ const SCHEMA="SAHROUD-KNEE-CONNECTION-DETAIL-1.3";
  const finite=v=>typeof v==="number"&&Number.isFinite(v);
  const positive=v=>finite(v)&&v>0;
  const text=v=>typeof v==="string"&&v.trim().length>0;
@@ -135,6 +135,12 @@
     fail(errors,"مختصات، قطر پیچ و قطر سوراخ پیچ "+(b.id||i)+" نامعتبر است.");
    const key=String(b.plateId)+":"+String(b.xMm)+","+String(b.yMm);if(boltPoints.has(key))fail(errors,"دو پیچ در مختصات یکسان ثبت شده‌اند.");boltPoints.add(key);
    if(!text(b.grade)||!positive(b.FuMPa))fail(errors,"گرید و Fu پیچ "+(b.id||i)+" باید صریح باشد.");
+   if(!vec(b.axisConnectionFrame,3)||!positive(b.gripLengthMm)||b.axisVerifiedByDrawing!==true)
+    fail(errors,"محور سه‌بعدی پیچ در دستگاه اتصال، طول واقعی بدنه/گیرایی و تأیید جهت از نقشه برای پیچ "+(b.id||i)+" الزامی است.");
+   else{
+    const axisLength=Math.hypot(...b.axisConnectionFrame);
+    if(Math.abs(axisLength-1)>1e-6)fail(errors,"محور پیچ "+(b.id||i)+" باید بردار یکه باشد؛ جهت از نقشه وارد شود.");
+   }
    if(!text(b.plateId)||!plateIds.has(String(b.plateId)))fail(errors,"شناسه ورق میزبان پیچ "+(b.id||i)+" باید صریح و معتبر باشد.");
    if(!["standard","oversized","short-slotted","long-slotted"].includes(b.holeType))fail(errors,"نوع سوراخ پیچ "+(b.id||i)+" باید از گزینه‌های تعریف‌شده انتخاب شود.");
    if(["short-slotted","long-slotted"].includes(b.holeType)&&(!positive(b.slotLengthMm)||!positive(b.slotWidthMm)||!finite(b.slotAngleDeg)||b.slotLengthMm<b.slotWidthMm||Math.abs(b.slotWidthMm-b.holeDiameterMm)>1e-6))
@@ -222,7 +228,14 @@
       bottom:triangles.map(t=>t.slice().reverse().map(i=>vertices[i].minusFaceGlobalM))}},
     bolts:input.bolts.filter(b=>String(b.plateId)===String(plate.id)).map(b=>{
      const point=localToConnection(b.xMm,b.yMm);
+     const axis=b.axisConnectionFrame.map(Number);
+     const halfLength=Number(b.gripLengthMm)/2;
+     const start=point.map((v,i)=>v-axis[i]*halfLength);
+     const end=point.map((v,i)=>v+axis[i]*halfLength);
+     const axisGlobal=axis.map((_,i)=>axes.x[i]*axis[0]+axes.y[i]*axis[1]+axes.z[i]*axis[2]);
      return{id:String(b.id),centerLocalMm:{x:b.xMm,y:b.yMm},centerGlobalM:toGlobal(point),
+      axisConnectionFrame:axis,axisGlobal,gripLengthMm:b.gripLengthMm,
+      shank:{startGlobalM:toGlobal(start),endGlobalM:toGlobal(end),radiusMm:b.diameterMm/2},
       diameterMm:b.diameterMm,holeDiameterMm:b.holeDiameterMm,holeType:b.holeType};
     })};
   });
@@ -234,7 +247,7 @@
     weldEndpoints:"connection-frame mm",output:"global m"},
    plates,welds,capacityDesigned:false,executionReady:false,
    limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ تماس بین ورق‌های مختلف هنوز کنترل نشده است.",
-    "محور پیچ، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا در این خروجی محاسبه نمی‌شوند."]};
+    "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ سر پیچ، مهره، واشر، رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
  }
  const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildGlobalGeometry};
  root.SahroudKneeConnectionDetail=api;
