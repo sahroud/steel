@@ -106,9 +106,25 @@
    }
    const area=poly.reduce((s,a,j)=>{const b=poly[(j+1)%poly.length];return s+a.x*b.y-b.x*a.y;},0)/2;
    if(Math.abs(area)<1e-6)fail(errors,"مساحت چندضلعی ورق "+p.id+" صفر است.");
+   // Reject ambiguous vertices before ear clipping: duplicate vertices, zero-length edges,
+   // and consecutive collinear points can otherwise create zero-area triangles or stalls.
+   const samePoint=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<=1e-8;
+   for(let a=0;a<poly.length;a++){
+    const next=(a+1)%poly.length,prev=(a+poly.length-1)%poly.length;
+    if(samePoint(poly[a],poly[next]))fail(errors,"دو رأس متوالی چندضلعی ورق "+p.id+" تکراری یا دارای ضلع با طول صفر هستند.");
+    for(let b=a+1;b<poly.length;b++)if(samePoint(poly[a],poly[b]))
+     fail(errors,"رأس تکراری در چندضلعی ورق "+p.id+" مجاز نیست.");
+    const turn=Math.abs(cross2(poly[prev],poly[a],poly[next]));
+    const scale=Math.max(1,edgeDistance(poly[a],poly[prev],poly[next]));
+    if(turn<=1e-9*scale)fail(errors,"سه رأس متوالی چندضلعی ورق "+p.id+" هم‌خط یا تقریباً هم‌خط هستند؛ نقشه هندسی را اصلاح کنید.");
+   }
    for(let a=0;a<poly.length;a++)for(let b=a+1;b<poly.length;b++){
     if(b===a+1||(a===0&&b===poly.length-1))continue;
     if(intersects(poly[a],poly[(a+1)%poly.length],poly[b],poly[(b+1)%poly.length]))fail(errors,"مرز چندضلعی ورق "+p.id+" خودمتقاطع است.");
+   }
+   if(Math.abs(area)>=1e-6){
+    try{triangulatePolygon(poly);}
+    catch(error){fail(errors,"مثلث‌بندی چندضلعی ورق "+p.id+" ناموفق است: "+error.message);}
    }
   });
   if(!Array.isArray(input.bolts)||!input.bolts.length)fail(errors,"آرایش واقعی پیچ‌ها باید به‌صورت مختصات تک‌تک پیچ‌ها ثبت شود.");
