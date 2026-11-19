@@ -48,10 +48,13 @@
    "<button id='btnKneeDetailValidate' class='btn primary' type='button'>اعتبارسنجی جزئیات واردشده</button>"+
    "<button id='btnKneeDetailExport' class='btn secondary' type='button'>دریافت JSON ورودی</button>"+
    "<button id='btnKneeDetailExportGlobal' class='btn secondary' type='button'>دریافت هندسه سه‌بعدی جهانی</button>"+
-   "<button id='btnKneeDetailMapDemand' class='btn primary' type='button'>انتقال تقاضای ترکیبات بار به دستگاه اتصال</button></div>"+
+   "<button id='btnKneeDetailMapDemand' class='btn primary' type='button'>انتقال تقاضای ترکیبات بار به دستگاه اتصال</button>"+
+   "<button id='btnKneeDetailCollision' class='btn secondary' type='button'>ممیزی برخورد سه‌بعدی ورق‌ها</button></div>"+
    "<div class='field'><label for='kneeDetailJson'>جزئیات اتصال (JSON)</label><textarea id='kneeDetailJson' rows='18' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
    "<div id='kneeDetailValidationResult' aria-live='polite' class='notice'>قالب اولیه هنوز ساخته نشده است.</div>"+
-   "<div id='kneeDetailMappedDemand' aria-live='polite' class='notice'>تقاضای منتقل‌شده هنوز محاسبه نشده است.</div>";
+   "<div id='kneeDetailMappedDemand' aria-live='polite' class='notice'>تقاضای منتقل‌شده هنوز محاسبه نشده است.</div>"+
+   "<div class='field'><label for='kneeCollisionTolerance'>تلرانس طبقه‌بندی تماس هندسی (mm)</label><input id='kneeCollisionTolerance' type='number' min='0' step='0.01' value='0.1'></div>"+
+   "<div id='kneeDetailCollisionResult' aria-live='polite' class='notice'>ممیزی برخورد هنوز اجرا نشده است.</div>";
   $("kneeConnectionGeometryPanel").appendChild(panel);
   $("btnKneeDetailTemplate").addEventListener("click",()=>{
    const k=selectedKnee();
@@ -86,6 +89,25 @@
    }
   });
 
+  $("btnKneeDetailCollision").addEventListener("click",()=>{
+   try{
+    const value=JSON.parse($("kneeDetailJson").value);
+    const tolerance=Number($("kneeCollisionTolerance").value);
+    const report=root.SahroudKneeConnectionCollision.audit(value,{toleranceMm:tolerance});
+    const rows=report.pairs.map(p=>"<tr><td>"+esc(p.plateA)+"</td><td>"+esc(p.plateB)+"</td><td>"+
+     (p.state==="overlap"?"هم‌پوشانی حجمی":p.state==="contact"?"تماس در محدوده تلرانس":"بدون برخورد")+
+     "</td><td>"+Number(p.minimumPenetrationMm).toFixed(3)+"</td></tr>").join("");
+    $("kneeDetailCollisionResult").innerHTML="<p>روش: SAT روی منشورهای مثلثی؛ تلرانس طبقه‌بندی: "+report.toleranceMm+
+     " mm. هم‌پوشانی: "+report.overlapCount+"؛ تماس: "+report.contactCount+"؛ فاصله: "+report.clearCount+"</p>"+
+     "<table><thead><tr><th>ورق اول</th><th>ورق دوم</th><th>نتیجه هندسی</th><th>نفوذ/فاصله علامت‌دار (mm)</th></tr></thead><tbody>"+rows+"</tbody></table>"+
+     "<p>این گزارش فقط ممیزی هندسی است؛ تماس مجاز سازه‌ای، ظرفیت، جوش، پیچ، مهره، واشر و آمادگی اجرا را تأیید نمی‌کند.</p>"+
+     "<ul>"+report.limitations.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
+    $("kneeDetailCollisionResult").dataset.valid="true";
+   }catch(e){
+    $("kneeDetailCollisionResult").textContent="ممیزی برخورد اجرا نشد: "+e.message;
+    $("kneeDetailCollisionResult").dataset.valid="false";
+   }
+  });
   $("btnKneeDetailMapDemand").addEventListener("click",()=>{
    try{
     const value=JSON.parse($("kneeDetailJson").value);
