@@ -152,6 +152,7 @@
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
           " | گره‌های دارای واکنش تکیه‌گاهی: "+result.reactions.length+
+          (result.foundationReactionExport?" | خروجی واکنش پی: "+result.foundationReactionExport.supports.length+" تکیه‌گاه؛ "+result.foundationReactionExport.units+"؛ حالت "+result.foundationReactionExport.loadCase+"؛ تعادل "+(result.foundationReactionExport.solverEquilibriumOK?"تأیید":"تأییدنشده")+"؛ برای مشاهده بردارها از result.foundationReactionExport.supports استفاده کنید":" | خروجی واکنش پی در دسترس نیست")+
           (result.criticalDisplacement
             ? " | گره بحرانی: "+result.criticalDisplacement.nodeId+" ("+result.criticalDisplacement.kind+")"+
               " | مختصات X/Y/Z: "+[result.criticalDisplacement.coordinates.x,result.criticalDisplacement.coordinates.y,result.criticalDisplacement.coordinates.z].map(v=>v.toFixed(3)).join(" / ")+" متر"+
