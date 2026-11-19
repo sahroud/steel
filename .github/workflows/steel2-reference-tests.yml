@@ -12,6 +12,8 @@ on:
       - "steel2/js/loads.js"
       - "steel2/index.html"
       - "steel2/js/load-transfer.js"
+      - "steel2/js/load-path-audit.js"
+      - "steel2/js/seismic-load-path.js"
       - "steel2/js/climate-load-engine.js"
       - "steel2/js/sections.js"
       - "steel2/js/final-report.js"
@@ -25,6 +27,9 @@ on:
       - "steel2/js/analysis-3d.js"
       - "steel2/js/analysis-3d-worker.js"
       - "steel2/js/model-3d.js"
+      - "steel2/js/loads.js"
+      - "steel2/js/load-path-audit.js"
+      - "steel2/js/seismic-load-path.js"
       - "steel2/js/load-transfer.js"
       - "steel2/js/climate-load-engine.js"
       - "steel2/js/sections.js"
@@ -47,6 +52,9 @@ jobs:
       - name: Check syntax of active model and load modules
         run: |
           node --check steel2/js/model-3d.js
+          node --check steel2/js/loads.js
+          node --check steel2/js/load-path-audit.js
+          node --check steel2/js/seismic-load-path.js
           node --check steel2/js/load-transfer.js
           node --check steel2/js/climate-load-engine.js
           node --check steel2/js/sections.js
@@ -54,4 +62,4 @@ jobs:
           node --check steel2/js/connection-readiness.js
           node --check steel2/js/knee-connection-geometry.js
       - name: Run independent 3D solver reference tests
-        run: node --test steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js
+        run: node --test steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js steel2/tests/load-path-audit.test.js
