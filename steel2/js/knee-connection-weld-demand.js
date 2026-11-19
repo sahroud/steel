@@ -28,6 +28,13 @@
   const weldDetail=detailCheck.assess(detail);
   if(!weldDetail.success||!weldDetail.lineDemandGeometryComplete)
    fail("طول مؤثر خطوط جوش به علت داده ناقص/نامشخص قابل تعیین نیست؛ ابتدا کنترل جزئیات جوش را تکمیل کنید.");
+  // This line-group kernel is validated only for fillet-weld detail geometry.
+  // Groove welds must never silently enter the same elastic line model.
+  const unsupportedWelds=detail.welds.filter(w=>w.type!=="fillet");
+  if(unsupportedWelds.length)
+   fail("تحلیل تقاضای خطی این مرحله فقط برای جوش گوشه تعریف شده است؛ جوش شیاری/نوع پشتیبانی‌نشده: "+unsupportedWelds.map(w=>String(w.id)).join(", "));
+  if(weldDetail.overallStatus!=="PASS")
+   fail("کنترل جزئیات جوش گوشه دارای FAIL یا NOT_ASSESSABLE است؛ تحلیل تقاضا تا رفع همه موارد قابل ارزیابی/نامنطبق متوقف شد. وضعیت: "+weldDetail.overallStatus);
   const conn=detail.connectionFrame, connAxes=conn.axes;
   if(!sameVector(mappedDemand.originM,conn.originM)||!["x","y","z"].every(k=>sameVector(mappedDemand.axes?.[k]||[],connAxes[k])))
    fail("مبدأ یا محورهای بسته تقاضا با دستگاه تأییدشده جزئیات اتصال تطابق ندارد.");
