@@ -22,6 +22,16 @@ test("requires exact schema and a mapped ULS action package",()=>{
  assert.throws(()=>validateFootingDesignInput({...sample(),schema:"wrong"}),/ساختار ورودی/);
  assert.throws(()=>validateFootingDesignInput({...sample(),ulsLocalActions:{schema:"SLS",success:true}}),/بسته تبدیل‌شده/);
 });
+test("requires the recognized ULS reaction-batch source schema",()=>{
+ const s=sample();s.ulsLocalActions.sourceSchema="SAHROUD-FOUNDATION-SLS-REACTION-BATCH-1.0";
+ assert.throws(()=>validateFootingDesignInput(s),/منشأ بسته کنش‌ها/);
+});
+test("rejects duplicate or empty support ids in mapped action packages",()=>{
+ const s=sample();s.ulsLocalActions.foundations.push({nodeId:"B1",cases:[{loadCase:"ULS-2"}]});
+ assert.throws(()=>validateFootingDesignInput(s),/خالی یا تکراری/);
+ const e=sample();e.ulsLocalActions.foundations[0].nodeId="";
+ assert.throws(()=>validateFootingDesignInput(e),/خالی یا تکراری/);
+});
 test("rejects missing node, foundation ID and missing action records",()=>{
  assert.throws(()=>validateFootingDesignInput({...sample(),nodeId:"B2"}),/کنش محلی ULS/);
  assert.throws(()=>validateFootingDesignInput({...sample(),foundationId:""}),/شناسه پی/);
