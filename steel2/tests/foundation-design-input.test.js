@@ -3,7 +3,7 @@ const test=require("node:test");
 const assert=require("node:assert/strict");
 const {validateFootingDesignInput}=require("../js/foundation-design-input.js");
 function sample(overrides={}){
- const actions={schema:"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0",success:true,reactionSense:"on-structure",
+ const actions={schema:"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0",sourceSchema:"SAHROUD-FOUNDATION-ULS-REACTION-BATCH-1.0",success:true,reactionSense:"on-structure",
  foundations:[{nodeId:"B1",cases:[{loadCase:"ULS-1",loadCaseLabel:"ترکیب نهایی ۱",sourceReference:"گزارش تحلیل صفحه ۲۰",
  FxLocalkN:0,FylocalkN:100,FzLocalkN:0,MxkNm:10,MykNm:0,MzkNm:15,NkN:100}]}]};
  return {schema:"SAHROUD-FOOTING-DESIGN-INPUT-1.0",foundationId:"F-01",nodeId:"B1",
