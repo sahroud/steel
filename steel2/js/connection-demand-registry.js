@@ -91,6 +91,7 @@
       globalAtConnectionOrigin:{Fx:force[0],Fy:force[1],Fz:force[2],
         Mx:shiftedMoment[0],My:shiftedMoment[1],Mz:shiftedMoment[2]},
       connectionOriginM:{x:origin[0],y:origin[1],z:origin[2]},
+      eccentricityIncluded:arm.some(v=>Math.abs(v)>1e-10),
       units:{force:"N",moment:"N.m",length:"m"},
       convention:"M_connection = M_node + (r_node - r_connection) cross F"};
   }
