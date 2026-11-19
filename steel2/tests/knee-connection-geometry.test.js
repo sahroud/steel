@@ -109,6 +109,13 @@ test("aggregate connection geometry rejects axes missing from one load combinati
  assert.equal(k.column.solverAxes.status,"solver-axes-incomplete-combinations");
  assert.equal(k.column.sectionSolids.available,false);
 });
+test("member solid extrusion rejects a reference axis parallel to the member",()=>{
+ const roll=0;
+ const m=model({column:{referenceAxis:[0,1,0],sectionRollDeg:roll,sectionOrientationVerified:true,
+  sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true,sectionReferenceAxis:[0,1,0]})}});
+ const k=knee.extract(m,analysisResult(roll))[0];
+ assert.equal(k.column.sectionSolids.status,"reference-axis-parallel-to-member");
+});
 test("section solid extrusion blocks mismatch between stored and analyzed roll",()=>{
  const roll=45;
  const m=model({column:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true})}});
