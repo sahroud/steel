@@ -117,6 +117,7 @@
    });
    if(!Array.isArray(c.blockShearChecks)||c.blockShearChecks.length<plateIds.size)
     fail(errors,"برای هر ورق حداقل یک مسیر برش قالبی با سطوح و مرجع نقشه صریح لازم است؛ مسیرهای متعدد یک ورق نیز باید جداگانه کنترل شوند.");
+   // A plate can have several physically distinct candidate shear paths; check each path once.
    const blockShearPaths=new Set(),blockShearPlateIds=new Set();
    (c.blockShearChecks||[]).forEach(p=>{
     const plateId=String(p.plateId),pathReference=String(p.pathReference??"").trim();
