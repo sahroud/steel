@@ -449,14 +449,14 @@
       } else if(m.sectionKey==="wallGirt"){
         const h=Number(m.tributaryHeight||0);
         if(!(h>0))throw new Error("ارتفاع بارگیر دیوار طولی معتبر نیست.");
-        const wallDead=m.side==="left"?Number(loads.wallDeadLeft||0):Number(loads.wallDeadRight||0);
+        const wallDead=loads.wallDeadSupportPath==="girts"?(m.side==="left"?Number(loads.wallDeadLeft||0):Number(loads.wallDeadRight||0)):0;
         if(!Number.isFinite(wallDead)||wallDead<0)throw new Error("وزن سطحی دیوار طولی معتبر نیست.");
         m.lineLoads={dead:wallDead*h,wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h,wallDeadPressureKPa:wallDead};
       } else if(m.sectionKey==="endGirt"){
         const h=Number(m.tributaryHeight||0);
         if(!(h>0))throw new Error("ارتفاع بارگیر دیوار انتهایی معتبر نیست.");
         const pressure=m.endFace==="front"?(loads.windEndFront||0):(loads.windEndBack||0);
-        const wallDead=m.endFace==="front"?Number(loads.endWallDeadFront||0):Number(loads.endWallDeadBack||0);
+        const wallDead=loads.wallDeadSupportPath==="girts"?(m.endFace==="front"?Number(loads.endWallDeadFront||0):Number(loads.endWallDeadBack||0)):0;
         if(!Number.isFinite(wallDead)||wallDead<0)throw new Error("وزن سطحی دیوار انتهایی معتبر نیست.");
         m.lineLoads={dead:wallDead*h,windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure,wallDeadPressureKPa:wallDead};
       }
@@ -1028,7 +1028,7 @@
     }
     const currentWindInputs=window.SteelLoads?.getData?.()||{};
     const gableWallDeadTransfer=[];
-    if(Number(selected.deadFactor)>0){
+    if(Number(selected.deadFactor)>0&&currentWindInputs.wallDeadSupportPath==="girts"){
       const intervals=Math.max(1,Math.ceil(Number(model.geometry.span)/Number(model.geometry.endPostSpacing||4)));
       ["front","rear"].forEach(face=>{
         const pressure=Number(face==="front"?currentWindInputs.endWallDeadFront:currentWindInputs.endWallDeadBack)||0;
@@ -1194,7 +1194,9 @@
     result.loadPathCoverage={
       wallDeadLongitudinalMembers:analysisModel.members.filter(m=>m.sectionKey==="wallGirt"&&Number(m.lineLoads?.dead)>0).length,
       wallDeadEndMembers:analysisModel.members.filter(m=>m.sectionKey==="endGirt"&&Number(m.lineLoads?.dead)>0).length,
-      wallDeadGableTriangle:gableWallDeadTransfer.length?"applied":"not-applied",
+      wallDeadSupportPath:currentWindInputs.wallDeadSupportPath||"foundation",
+      wallDeadGableTriangle:gableWallDeadTransfer.length?"applied":(currentWindInputs.wallDeadSupportPath==="girts"?"not-applied":"foundation-path-pending"),
+      foundationWallLoadsPending:(currentWindInputs.wallDeadSupportPath||"foundation")==="foundation",
       gableWallDeadTransfer,
       seismicApplied:selected.key==="seismic",
       craneApplied:selected.key==="crane",
