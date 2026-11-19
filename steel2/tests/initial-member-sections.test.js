@@ -33,4 +33,10 @@ test("keeps the starting section as a snapshot and does not claim design approva
  assert.equal(r.records[0].initialSection.designation,"I-400");
  assert.equal(r.records[0].optimizationStatus,"not-yet-checked");
 });
-test("accepts actual 3D section records identified by profile and preserves SI properties",()=>{\n const section={profile:"Built-up I",A:0.02,Iy:0.0001,Iz:0.0008,J:0.000002,E:200e9,G:77e9,sectionKey:"column"};\n const r=resolve({members:[{id:"C1",group:"column"}]},{overrides:[{memberId:"C1",section,sourceReference:"فرم مشخصات مقاطع"}]});\n assert.equal(r.records[0].initialSection.profile,"Built-up I");\n assert.equal(r.records[0].initialSection.A,0.02);\n assert.equal(r.records[0].source,"user-input");\n});\n
+test("accepts actual 3D section records identified by profile and preserves SI properties",()=>{
+ const section={profile:"Built-up I",A:0.02,Iy:0.0001,Iz:0.0008,J:0.000002,E:200e9,G:77e9,sectionKey:"column"};
+ const r=resolve({members:[{id:"C1",group:"column"}]},{overrides:[{memberId:"C1",section,sourceReference:"فرم مشخصات مقاطع"}]});
+ assert.equal(r.records[0].initialSection.profile,"Built-up I");
+ assert.equal(r.records[0].initialSection.A,0.02);
+ assert.equal(r.records[0].source,"user-input");
+});
