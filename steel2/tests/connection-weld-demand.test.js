@@ -45,3 +45,12 @@ test("arbitrary weld segment model rejects zero length and non-coplanar coordina
  assert.throws(()=>analyzeSegments({segments:[{start:[0,0],end:[0,0]}],N:0,V:0,Mz:0}));
  assert.throws(()=>analyzeSegments({segments:[{start:[0,0,0],end:[1,0,0]}],N:0,V:0,Mz:0}));
 });
+
+test("resolves line demand into weld-axis-parallel and transverse components",()=>{
+ const axial=analyzeSegments({segments:[{id:"horizontal",start:[0,0],end:[100,0]}],N:10,V:0,Mz:0});
+ assert.ok(axial.samples.every(p=>Math.abs(p.qParallel-0.1)<1e-12));
+ assert.ok(axial.samples.every(p=>Math.abs(p.qTransverse)<1e-12));
+ const transverse=analyzeSegments({segments:[{id:"horizontal",start:[0,0],end:[100,0]}],N:0,V:10,Mz:0});
+ assert.ok(transverse.samples.every(p=>Math.abs(p.qParallel)<1e-12));
+ assert.ok(transverse.samples.every(p=>Math.abs(p.qTransverse-0.1)<1e-12));
+});
