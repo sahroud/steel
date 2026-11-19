@@ -14,12 +14,16 @@
   if(!Array.isArray(d.cases)||!d.cases.length)throw new Error("حداقل یک حالت بار بهره‌برداری تأییدشده لازم است.");
   const results=d.cases.map((c,index)=>{
    const name=String(c.name||("case-"+(index+1)));
+   if(!/^SLS(?:[-_ ]|$)/i.test(name)&&!name.includes("بهره‌برداری"))
+    throw new Error("حالت "+name+" ترکیب بهره‌برداری SLS مشخص‌شده نیست؛ بارهای ULS یا بار منفرد پذیرفته نمی‌شوند.");
+   if(typeof c.sourceReference!=="string"||!c.sourceReference.trim())
+    throw new Error("مرجع گزارش تحلیل/جدول واکنش برای حالت "+name+" الزامی است.");
    const N=finite(c.NkN,"نیروی قائم "+name),Mx=finite(c.MxkNm||0,"لنگر Mx "+name),Mz=finite(c.MzkNm||0,"لنگر Mz "+name);
    if(!(N>0))throw new Error("نیروی قائم فشاری در "+name+" باید مثبت باشد؛ کشش/بلندشدگی نیازمند کنترل جداگانه است.");
    const A=B*L,ex=Mz/N,ez=Mx/N;
    const qAvg=N/A,qMax=qAvg*(1+6*Math.abs(ex)/B+6*Math.abs(ez)/L),qMin=qAvg*(1-6*Math.abs(ex)/B-6*Math.abs(ez)/L);
    const fullContact=qMin>=-1e-9;
-   return Object.freeze({name,NkN:N,MxkNm:Mx,MzkNm:Mz,areaM2:A,eccentricityX_m:ex,eccentricityZ_m:ez,
+   return Object.freeze({name,sourceReference:c.sourceReference.trim(),NkN:N,MxkNm:Mx,MzkNm:Mz,areaM2:A,eccentricityX_m:ex,eccentricityZ_m:ez,
     qAverageKPa:qAvg,qMaxKPa:qMax,qMinKPa:qMin,fullContact,
     bearingPass:fullContact&&qMax<=soil.allowableBearingKPa+1e-9,
     status:!fullContact?"blocked-no-tension-contact":qMax>soil.allowableBearingKPa?"fail-bearing-pressure":"pass-bearing-pressure"});
