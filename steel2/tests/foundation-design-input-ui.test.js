@@ -48,14 +48,19 @@ test("design input UI refuses to transfer a ULS package belonging to another foo
  const previous=payload.ulsLocalActions;elements.footingDesignInputJson.value=JSON.stringify(payload);
  listeners.get("btnUseMappedUlsActions:click")();
  assert.match(elements.footingDesignInputResult.textContent,/متعلق به پایه B2 نیست/);
- assert.deepEqual(JSON.parse(elements.footingDesignInputJson.value).ulsLocalActions,previous);
+ assert.equal(Object.hasOwn(JSON.parse(elements.footingDesignInputJson.value),"ulsLocalActions"),false);
  assert.equal(elements.footingDesignInputResult.style.color,"#b45309");
+ listeners.get("btnValidateFootingDesignInput:click")();
+ assert.match(elements.footingDesignInputResult.textContent,/بسته تبدیل‌شده و معتبر کنش‌های محلی ULS لازم است/);
  delete global.window;
 });
-test("design input UI refuses a stale or unvalidated global ULS package",()=>{
+test("design input UI refuses a stale global ULS package and removes the previously embedded package",()=>{
  const {elements,listeners}=fixture();
  global.window.SahroudLastFoundationUlsActions={schema:"wrong",success:true,foundations:[]};
  listeners.get("btnUseMappedUlsActions:click")();
  assert.match(elements.footingDesignInputResult.textContent,/بسته معتبر واکنش ULS/);
+ assert.equal(Object.hasOwn(JSON.parse(elements.footingDesignInputJson.value),"ulsLocalActions"),false);
+ listeners.get("btnValidateFootingDesignInput:click")();
+ assert.match(elements.footingDesignInputResult.textContent,/بسته تبدیل‌شده و معتبر کنش‌های محلی ULS لازم است/);
  delete global.window;
 });
