@@ -94,6 +94,28 @@
       units:{force:"N",moment:"N.m",length:"m"},
       convention:"M_connection = M_node + (r_node - r_connection) cross F"};
   }
+  function deriveKneeConnectionFrame(node,columnMember,rafterMember,nodes){
+    const lookup=new Map(nodes.map(n=>[String(n.id),n]));
+    const away=(member)=>{
+      const start=lookup.get(String(member.start)),end=lookup.get(String(member.end));
+      if(!start||!end)fail("هندسه عضو زانویی به گره معتبر متصل نیست.");
+      const atStart=String(member.start)===String(node.id),atEnd=String(member.end)===String(node.id);
+      if(atStart===atEnd)fail("عضو زانویی باید دقیقاً یک انتهای مشترک با گره داشته باشد.");
+      const other=atStart?end:start;
+      const v=[Number(other.x)-Number(node.x),Number(other.y)-Number(node.y),Number(other.z)-Number(node.z)];
+      if(v.some(x=>!Number.isFinite(x))||Math.hypot(...v)<=1e-10)fail("بردار هندسی عضو زانویی نامعتبر است.");
+      const n=Math.hypot(...v);return v.map(x=>x/n);
+    };
+    const x=away(columnMember),r=away(rafterMember);
+    const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+    const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+    const projection=dot(r,x),rawY=r.map((v,i)=>v-projection*x[i]),ny=Math.hypot(...rawY);
+    if(ny<=1e-8)fail("محور ستون و رفتر برای تعریف صفحه قاب تقریباً موازی‌اند؛ دستگاه اتصال یکتا نیست.");
+    const y=rawY.map(v=>v/ny),z=cross(x,y);
+    return {originM:[Number(node.x),Number(node.y),Number(node.z)],
+      axes:{x,y,z},definition:"portal-frame plane: x follows column away from joint; y is the orthogonalized rafter direction; z is the right-handed plane normal",
+      geometryOnly:true,platePlaneVerified:false,eccentricityIncluded:false};
+  }
   function build(combinationRun,model,demandApi){
     if(!combinationRun||combinationRun.success!==true||
        !Array.isArray(combinationRun.combinationResults)||
@@ -149,18 +171,27 @@
       const connected=connections.map(x=>x.member);
       const families=classify(node,connected);
       if(!families.length)continue;
+      const kneePair=families.includes("knee")?{
+        column:connections.find(x=>x.member.sectionKey==="column")?.member,
+        rafter:connections.find(x=>x.member.sectionKey==="rafter")?.member
+      }:null;
+      const kneeFrame=kneePair?.column&&kneePair?.rafter?
+        deriveKneeConnectionFrame(node,kneePair.column,kneePair.rafter,model.nodes):null;
       const cases=caseData.map(c=>({
         combinationId:c.id,combination:c.label,
         memberActions:connections.map(({member,end})=>{
           const action=c.actions.get(String(member.id));
           const sectionActions=end==="i"?action.start:action.end;
           const transformed=toGlobalJointActions(sectionActions,action.localAxes,end);
+          const connectionFrame=kneeFrame?toConnectionFrame(transformed.global,
+            [Number(node.x),Number(node.y),Number(node.z)],kneeFrame.originM,kneeFrame.axes):null;
           return {memberId:String(member.id),sectionKey:action.sectionKey,end,
-            sectionActions,localActions:sectionActions,localAxes:action.localAxes,...transformed};
+            sectionActions,localActions:sectionActions,localAxes:action.localAxes,...transformed,
+            ...(connectionFrame?{kneeFrameActions:connectionFrame}: {})};
         })
       }));
       joints.push({nodeId,kind:node.kind||null,coordinatesM:{x:Number(node.x),y:Number(node.y),z:Number(node.z)},
-        connectedMemberIds:connected.map(m=>String(m.id)),families,cases,
+        connectedMemberIds:connected.map(m=>String(m.id)),families,cases,\n        ...(kneeFrame?{connectionFrame:kneeFrame}:{}),
         caseCount:cases.length,completeConcurrentActions:cases.every(c=>c.memberActions.length===connected.length),
         capacityDesigned:false,executionReady:false});
     }
@@ -178,6 +209,6 @@
         "تا تکمیل بارگذاری زلزله، جرثقیل، خستگی و تحلیل‌های لازم، این بسته برای تأیید اجرایی کافی نیست."
       ]};
   }
-  root.SahroudConnectionDemandRegistry={components:COMPONENTS.slice(),families:FAMILIES.map(x=>({...x})),classify,toGlobalJointActions,toConnectionFrame,build};
+  root.SahroudConnectionDemandRegistry={components:COMPONENTS.slice(),families:FAMILIES.map(x=>({...x})),classify,toGlobalJointActions,toConnectionFrame,deriveKneeConnectionFrame,build};
   if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudConnectionDemandRegistry;
 })(typeof window!=="undefined"?window:globalThis);
