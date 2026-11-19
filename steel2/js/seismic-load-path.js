@@ -9,7 +9,7 @@
     if(d.sourceVerified!==true||typeof d.sourceReference!=="string"||!d.sourceReference.trim())
       throw new Error("منبع مستند و تأییدشده نیروی برش پایه الزامی است.");
     if(!Number.isFinite(V)||V<=0)throw new RangeError("برش پایه باید مثبت و بر حسب kN باشد.");
-    if(![0,1,2].includes(axis))throw new RangeError("محور توزیع باید X=0، Y=1 یا Z=2 باشد.");
+    if(![0,2].includes(axis))throw new RangeError("نیروی جانبی زلزله باید در محور افقی X یا Z توزیع شود.");
     if(!Array.isArray(d.points)||!d.points.length)throw new Error("نقاط توزیع نیروی جانبی تعریف نشده‌اند.");
     const seen=new Set(),points=d.points.map(p=>{
       if(!p||typeof p.nodeId!=="string"||!p.nodeId.trim()||seen.has(p.nodeId))
