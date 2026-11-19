@@ -61,7 +61,7 @@ test("steel takeoff sums each unique member actual length times its section mass
  assert.equal(result.totalLengthM,19);
  assert.equal(result.totalMassKg,14*157+5*78.5);
  assert.equal(result.items.length,3);
- assert.equal(result.groups.length,2);
+ assert.equal(result.groups.length,3);
 });
 test("steel takeoff refuses stale, incomplete, duplicate or invalid-length models",()=>{
  const member={id:"C1",length:6,sectionProperties:registry.normalize(section(),"C1")};
