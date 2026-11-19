@@ -66,7 +66,7 @@
    return Object.freeze({nodeId:base.nodeId,footingCentroidGlobalM:Object.freeze(footing.footingCentroidGlobalM),
     cases:Object.freeze(cases)});
   });
-  return Object.freeze({schema:"SAHROUD-FOUNDATION-LOCAL-ACTIONS-1.0",success:true,
+  return Object.freeze({schema:"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0",success:true,
    sourceSchema:batch.schema,reactionSense:d.reactionSense,
    axisConvention:"محورها از بردارهای یکه راست‌گرد ورودی ساخته شده‌اند؛ گشتاور به مرکز هندسی پی منتقل شده است.",
    foundations:Object.freeze(mapped),
