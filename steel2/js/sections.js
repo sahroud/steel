@@ -481,7 +481,8 @@
                 "سازنده مقطع " + title + " مشخص نشده است.");
             check("sp_" + key + "_document", !!provenance.sourceDocumentId,
                 "سند/نقشه مرجع مقطع " + title + " مشخص نشده است.");
-            check("sp_" + key + "_catalog", !!provenance.catalogReference,
+            check("sp_" + key + "_catalog",
+                !!String($("sp_" + key + "_catalog")?.value || "").trim(),
                 "شماره کاتالوگ/استاندارد مقطع " + title + " مشخص نشده است.");
             check("sp_" + key + "_page", !!provenance.sourcePage,
                 "صفحه/جزئیات مرجع مقطع " + title + " مشخص نشده است.");
