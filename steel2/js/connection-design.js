@@ -8,9 +8,9 @@
     const $ = id => document.getElementById(id);
     const fmt = (v, d = 2) => Number.isFinite(Number(v))
         ? Number(v).toLocaleString("fa-IR", {minimumFractionDigits:d, maximumFractionDigits:d}) : "—";
-    function field(id, label, unit, value) {
+    function field(id, label, unit) {
         return `<div class="field"><label for="${id}">${label} (${unit})</label>
-        <input id="${id}" type="number" min="0" step="0.1" value="${value}" placeholder="وارد کنید"></div>`;
+        <input id="${id}" type="number" min="0" step="0.1" placeholder="فقط مقدار واقعی نقشه را وارد کنید"></div>`;
     }
     function bindConnectionShortcut() {
         const button = $("btnOpenConnection");
@@ -42,15 +42,13 @@
             </div>
             <h4>۱ ـ نیروهای محل اتصال</h4>
             <div id="connectionActions" class="notice">ابتدا تحلیل ترکیبات بار و کنترل کنسول‌ها را اجرا کنید.</div>
-            <h4>۲ ـ هندسه ورق و گروه جوش مستطیلی</h4>
+            <h4>۲ ـ ابعاد واقعی گروه جوش مستطیلی</h4>
             <div class="form-grid">
-                ${field("connPlateThickness", "ضخامت ورق اتصال ـ مقدار آزمایشی", "mm", 10)}
-                ${field("connPlateWidth", "عرض ورق / فاصله خطوط جوش ـ آزمایشی", "mm", 200)}
-                ${field("connPlateHeight", "ارتفاع گروه جوش ـ آزمایشی", "mm", 300)}
+                ${field("connPlateWidth", "عرض واقعی گروه جوش", "mm")}
+                ${field("connPlateHeight", "ارتفاع واقعی گروه جوش", "mm")}
             </div>
             <div class="notice">
-                مدل محاسباتی: چهار خط جوش پیوسته روی محیط مستطیل، با مرکز هندسی در مرکز ورق.
-                ابعاد و اندازه جوش باید از نقشه یا طرح واقعی وارد شود؛ مقدار پیش‌فرضی فرض نشده است.
+                مدل تقاضا: چهار خط جوش پیوسته روی محیط مستطیل، با مرکز هندسی در مرکز گروه. عرض و ارتفاع فقط از نقشه واقعی وارد شوند؛ هیچ مقدار پیش‌فرضی اعمال نمی‌شود. این محاسبه ظرفیت جوش یا ورق را تعیین نمی‌کند.
             </div>
             <div class="button-grid">
                 <button id="btnConnectionCheck" class="btn primary" type="button">تحلیل گروه جوش تحت نیروهای ترکیبی</button>
@@ -100,11 +98,10 @@
             refreshActions();
             const sides = getSides();
             if (!sides || sides.some(x => !x[1])) throw new Error("ابتدا تحلیل ترکیبات بار و کنترل کنسول‌ها را اجرا کنید.");
-            const t=Number($("connPlateThickness").value);
             const b=Number($("connPlateWidth").value);
             const h=Number($("connPlateHeight").value);
-            if (!(t>0 && b>0 && h>0)) {
-                throw new Error("ضخامت، عرض و ارتفاع هندسه را با مقادیر مثبت وارد کنید.");
+            if (!(b>0 && h>0)) {
+                throw new Error("عرض و ارتفاع واقعی گروه جوش را از نقشه اتصال وارد کنید؛ مقدار پیش‌فرض وجود ندارد.");
             }
             if (b<=0 || h<=0) throw new Error("عرض و ارتفاع گروه جوش باید مثبت باشند.");
             const outputs = sides.map(([name,r]) => {
@@ -134,7 +131,7 @@
                     <thead><tr><th>عضو</th><th>ترکیب حاکم گروه جوش</th><th>M (kN.m) / V (kN) / N (kN)</th>
                     <th>تقاضای خطی بیشینه (kN/mm)</th><th>نقطه بحرانی</th></tr></thead>
                     <tbody>${rows}</tbody></table></div>
-                <p>ابعاد ورق واردشده: ضخامت ${fmt(t,1)}، عرض ${fmt(b,1)}، ارتفاع ${fmt(h,1)} میلی‌متر.</p>
+                <p>ابعاد گروه جوش واردشده: عرض ${fmt(b,1)} و ارتفاع ${fmt(h,1)} میلی‌متر. ضخامت ورق در این تحلیل تقاضای خطی وارد محاسبه نمی‌شود.</p>
                 <div class="notice" style="color:#a65d16">
                     علامت N، V و M در ورودی حفظ شده و هر ترکیب بار جداگانه ارزیابی شده است؛ اما این سه مؤلفه هنوز به دستگاه مختصات واقعی اتصال تبدیل نشده‌اند. خروجی صرفاً تقاضای مقدماتی است، نه قبولی اتصال.
                 </div>`;
