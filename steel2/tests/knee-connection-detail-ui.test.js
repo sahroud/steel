@@ -52,3 +52,17 @@ test("knee detail editor button layout keeps all actions in one button grid",()=
  assert.match(source,/<div class='button-grid'><button id='btnKneeDetailTemplate'/);
  assert.match(source,/btnKneeDetailMapDemand[\s\S]*?انتقال تقاضای ترکیبات بار به دستگاه اتصال<\/button><\/div>/);
 });
+
+test("knee detail UI exports global 3D geometry through the validated geometry builder",()=>{
+ assert.match(source,/btnKneeDetailExportGlobal/);
+ assert.match(source,/SahroudKneeConnectionDetail\.buildGlobalGeometry/);
+ assert.match(source,/sahroud-knee-connection-global-geometry\.json/);
+});
+test("all knee detail actions are inside one balanced button grid",()=>{
+ const start=source.indexOf("<div class='button-grid'>");
+ const end=source.indexOf("</div>",start);
+ const block=source.slice(start,end);
+ assert.ok(block.includes("btnKneeDetailTemplate"));
+ assert.ok(block.includes("btnKneeDetailMapDemand"));
+ assert.ok(block.includes("btnKneeDetailExportGlobal"));
+});
