@@ -2,6 +2,7 @@
 const test=require("node:test");
 const assert=require("node:assert/strict");
 require("../js/member-initial-section-ui.js");
+require("../js/built-up-section.js");
 require("../js/initial-member-sections.js");
 const ui=global.SahroudMemberInitialSectionUI;
 const resolver=global.SahroudInitialMemberSections;
@@ -56,4 +57,25 @@ test("feeds persisted per-member section override into the initial resolver",()=
  assert.equal(result.records[0].initialSection.profile,"Z custom");
  assert.equal(result.records[1].source,"group-default");
  ui.setData([]);
+});
+
+test("built-up I geometry recalculates area, both inertias and torsion from dimensions",()=>{
+ const result=global.SahroudBuiltUpSection.calculateBuiltUpISection({
+  profile:"Plate girder",
+  topFlangeWidthMm:200,topFlangeThicknessMm:12,
+  bottomFlangeWidthMm:220,bottomFlangeThicknessMm:14,
+  webClearHeightMm:500,webThicknessMm:8
+ });
+ assert.ok(result.areaCm2>0);
+ assert.ok(result.strongAxis.inertiaCm4>result.weakAxis.inertiaCm4);
+ assert.ok(result.torsion.JApproxCm4>0);
+ assert.equal(result.dimensionsMm.totalDepthMm,526);
+ assert.equal(result.designStatus,"geometry-only-not-code-verified");
+});
+test("changing a built-up section dimension changes its derived properties",()=>{
+ const calc=global.SahroudBuiltUpSection.calculateBuiltUpISection;
+ const base={topFlangeWidthMm:200,topFlangeThicknessMm:12,bottomFlangeWidthMm:220,bottomFlangeThicknessMm:14,webClearHeightMm:500,webThicknessMm:8};
+ const first=calc(base), changed=calc({...base,webClearHeightMm:650});
+ assert.notEqual(first.areaCm2,changed.areaCm2);
+ assert.notEqual(first.strongAxis.inertiaCm4,changed.strongAxis.inertiaCm4);
 });
