@@ -115,17 +115,20 @@
     ["tensionKN","shearKN","AgTensionMm2","AeTensionMm2","AgvMm2","AnvMm2"].forEach(k=>{if(!finite(p[k])||p[k]<0)fail(errors,"مقدار "+k+" در کنترل مقطع ورق نامعتبر است.");});
     if(!text(p.areaReference))fail(errors,"مرجع هندسی محاسبه سطوح مقطع کلی/خالص ورق الزامی است.");
    });
-   if(!Array.isArray(c.blockShearChecks)||c.blockShearChecks.length!==plateIds.size)
-    fail(errors,"مسیر برش قالبی هر ورق باید دقیقاً یک‌بار و با سطوح و مرجع نقشه صریح تعریف شود.");
-   const blockShearIds=new Set();
+   if(!Array.isArray(c.blockShearChecks)||c.blockShearChecks.length<plateIds.size)
+    fail(errors,"برای هر ورق حداقل یک مسیر برش قالبی با سطوح و مرجع نقشه صریح لازم است؛ مسیرهای متعدد یک ورق نیز باید جداگانه کنترل شوند.");
+   const blockShearPaths=new Set(),blockShearPlateIds=new Set();
    (c.blockShearChecks||[]).forEach(p=>{
-    const plateId=String(p.plateId);
-    if(!plateIds.has(plateId)||!text(p.pathReference)||!text(p.ubsBasis))fail(errors,"مرجع مسیر برش قالبی/مقدار Ubs ناقص است.");
-    if(blockShearIds.has(plateId))fail(errors,"کنترل برش قالبی ورق "+plateId+" تکراری است.");
-    blockShearIds.add(plateId);
+    const plateId=String(p.plateId),pathReference=String(p.pathReference??"").trim();
+    if(!plateIds.has(plateId)||!pathReference||!text(p.ubsBasis))fail(errors,"مرجع مسیر برش قالبی/مقدار Ubs ناقص است.");
+    const pathKey=plateId+":"+pathReference;
+    if(blockShearPaths.has(pathKey))fail(errors,"مسیر برش قالبی "+pathReference+" برای ورق "+plateId+" تکراری است.");
+    blockShearPaths.add(pathKey);
+    if(plateIds.has(plateId))blockShearPlateIds.add(plateId);
     ["demandKN","AgvMm2","AnvMm2","AntMm2"].forEach(k=>{if(!positive(p[k]))fail(errors,"مقدار "+k+" در برش قالبی باید مثبت و صریح باشد.");});
     if(![0.5,1].includes(p.Ubs))fail(errors,"Ubs فقط می‌تواند 0.5 یا 1 باشد و مبنای انتخاب باید مستند شود.");
    });
+   for(const plateId of plateIds){if(!blockShearPlateIds.has(plateId))fail(errors,"برای ورق "+plateId+" هیچ مسیر برش قالبی ارائه نشده است.");}
   });
   return{valid:errors.length===0,errors,warnings,schema:SCHEMA,capacityDesigned:false,connectionApproved:false,executionReady:false};
  }
