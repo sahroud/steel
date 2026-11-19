@@ -88,9 +88,10 @@ test("rejects invalid base detail without claiming a weld check",()=>{
  assert.equal(r.success,false);assert.equal(r.overallStatus,"INCOMPLETE");
 });
 
-test("fails when a weld leg exceeds the thinner connected part thickness",()=>{
- const r=check.assess(fixture({legSizeMm:6,connectedPartThicknessMm:4}));
- assert.equal(r.checks.find(x=>x.checkId==="minimum-leg").status,"FAIL");
+test("does not apply a generic maximum weld-leg limit away from an edge",()=>{
+ const r=check.assess(fixture({legSizeMm:6,connectedPartThicknessMm:4,edgeWeld:false}));
+ assert.equal(r.checks.find(x=>x.checkId==="minimum-leg").status,"PASS");
+ assert.equal(r.checks.find(x=>x.checkId==="maximum-edge-leg").status,"NOT_APPLICABLE");
 });
 
 test("does not report groove welds as passed by the fillet-only detail checker",()=>{
