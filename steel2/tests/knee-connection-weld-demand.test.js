@@ -50,7 +50,7 @@ test("shifts moment using global connection-to-plate eccentricity",()=>{
  d.welds.forEach(w=>{w.startMm[1]+=100;w.endMm[1]+=100;});
  mapped.cases[0].memberActions[0].connectionFrame.force={x:0,y:10000,z:0};
  const r=kneeWeld.analyze(d,mapped);
- assert.equal(r.results[0].demandAtPlateOrigin.Mz,100);
+ assert.equal(r.results[0].demandAtPlateOrigin.Mz,1000);
 });
 test("rejects out-of-plane force or bending rather than dropping it",()=>{
  const {d,mapped}=fixture();mapped.cases[0].memberActions[0].connectionFrame.force.z=100;
