@@ -142,7 +142,7 @@ test("rejects non-collinear beads from one intermittent weld spacing group as no
 });
 
 test("does not approve intermittent welds when their application is not identified",()=>{
- const d=fixture({continuity:"intermittent",intermittentUseCase:"built-up-member-component",intermittentGroupId:"G1",corrosionCondition:"protected"});
+ const d=fixture({continuity:"intermittent",intermittentGroupId:"G1",corrosionCondition:"protected"});
  d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
  d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[180,0,0]});
  const r=check.assess(d);
