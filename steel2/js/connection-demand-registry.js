@@ -34,6 +34,35 @@
     if(/end.?wall|endwall/.test(kind)||connected.some(m=>m.endFace===true))add("endWall");
     return types;
   }
+  function toGlobalJointActions(sectionActions,localAxes,end){
+    if(!sectionActions||!localAxes||!["i","j"].includes(end))fail("داده نیرو یا دستگاه محلی عضو برای تبدیل گره‌ای ناقص است.");
+    const axes=["x","y","z"].map(name=>{
+      const v=localAxes[name];
+      if(!Array.isArray(v)||v.length!==3||v.some(n=>!Number.isFinite(Number(n))))fail("دستگاه مختصات محلی عضو ناقص است: "+name);
+      return v.map(Number);
+    });
+    const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+    const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+    const norm=v=>Math.hypot(...v);
+    if(axes.some(a=>Math.abs(norm(a)-1)>1e-6)||
+       Math.abs(dot(axes[0],axes[1]))>1e-6||
+       Math.abs(dot(axes[0],axes[2]))>1e-6||
+       Math.abs(dot(axes[1],axes[2]))>1e-6||
+       cross(axes[0],axes[1]).some((v,i)=>Math.abs(v-axes[2][i])>1e-6))
+      fail("محورهای محلی عضو متعامد، یکه و راست‌گرد نیستند؛ تبدیل نیرو متوقف شد.");
+    const sign=end==="i"?-1:1;
+    const local=COMPONENTS.map(k=>sign*finiteAction(sectionActions[k],k));
+    const toGlobal=(v)=>[0,1,2].map(i=>axes[0][i]*v[0]+axes[1][i]*v[1]+axes[2][i]*v[2]);
+    const force=toGlobal(local.slice(0,3)),moment=toGlobal(local.slice(3,6));
+    return {local:{N:local[0],Vy:local[1],Vz:local[2],T:local[3],My:local[4],Mz:local[5]},
+      global:{Fx:force[0],Fy:force[1],Fz:force[2],Mx:moment[0],My:moment[1],Mz:moment[2]},
+      convention:"member-on-joint nodal action; i-end sign reversed from left-segment section action, j-end sign retained"};
+  }
+  function finiteAction(value,label){
+    const n=Number(value);
+    if(!Number.isFinite(n))fail("مؤلفه "+label+" برای تبدیل دستگاه مختصات متناهی نیست.");
+    return n;
+  }
   function build(combinationRun,model,demandApi){
     if(!combinationRun||combinationRun.success!==true||
        !Array.isArray(combinationRun.combinationResults)||
@@ -93,8 +122,10 @@
         combinationId:c.id,combination:c.label,
         memberActions:connections.map(({member,end})=>{
           const action=c.actions.get(String(member.id));
+          const sectionActions=end==="i"?action.start:action.end;
+          const transformed=toGlobalJointActions(sectionActions,action.localAxes,end);
           return {memberId:String(member.id),sectionKey:action.sectionKey,end,
-            localActions:end==="i"?action.start:action.end,localAxes:action.localAxes};
+            sectionActions,localAxes:action.localAxes,...transformed};
         })
       }));
       joints.push({nodeId,kind:node.kind||null,coordinatesM:{x:Number(node.x),y:Number(node.y),z:Number(node.z)},
@@ -111,11 +142,11 @@
       joints,capacityDesigned:false,executionReady:false,
       limitations:[
         "این رجیستری فقط تقاضای هم‌زمان انتهای اعضا را از نتایج حل‌گر منتقل می‌کند؛ ظرفیت اتصال را محاسبه نمی‌کند.",
-        "بردارهای محلی اعضای متصل جداگانه نگهداری می‌شوند و بدون تبدیل دستگاه مختصات و تعادل گره با هم جمع نمی‌شوند.",
+        "کنش گره‌ای هر عضو با قرارداد عضو-بر-گره و تبدیل دستگاه محلی به جهانی گزارش می‌شود؛ جمع نهایی گره بدون افزودن بار گره‌ای، واکنش تکیه‌گاهی و کنترل تعادل انجام نمی‌شود.",
         "اتصالاتی که عضو یا گره آن‌ها در مدل سه‌بعدی وجود ندارد، از جمله ریل جرثقیل مدل‌نشده، تقاضای قابل طراحی تولید نمی‌کنند.",
         "تا تکمیل بارگذاری زلزله، جرثقیل، خستگی و تحلیل‌های لازم، این بسته برای تأیید اجرایی کافی نیست."
       ]};
   }
-  root.SahroudConnectionDemandRegistry={components:COMPONENTS.slice(),families:FAMILIES.map(x=>({...x})),classify,build};
+  root.SahroudConnectionDemandRegistry={components:COMPONENTS.slice(),families:FAMILIES.map(x=>({...x})),classify,toGlobalJointActions,build};
   if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudConnectionDemandRegistry;
 })(typeof window!=="undefined"?window:globalThis);
