@@ -234,8 +234,41 @@
         $("btnCheckSections").addEventListener("click", validate);
     }
 
+    function deriveBuiltUpGeometryRecord(prefix, member) {
+        const readDim = suffix => Number($("bg_" + prefix + "_" + suffix)?.value);
+        const geometry = {
+            topFlangeWidthMm: readDim("bt"),
+            topFlangeThicknessMm: readDim("tt"),
+            bottomFlangeWidthMm: readDim("bb"),
+            bottomFlangeThicknessMm: readDim("tb"),
+            webClearHeightMm: readDim("hw"),
+            webThicknessMm: readDim("tw")
+        };
+        if (Object.values(geometry).some(v => !Number.isFinite(v) || v <= 0)) return null;
+        const calculate = window.SahroudBuiltUpSection?.calculateBuiltUpISection;
+        if (typeof calculate !== "function") return null;
+        try {
+            const result = calculate({...geometry, profile: member.profile || "تیرورق I"});
+            const pairs = [
+                [member.A_cm2, result.areaCm2],
+                [member.Ix_cm4, result.strongAxis.inertiaCm4],
+                [member.Iy_cm4, result.weakAxis.inertiaCm4],
+                [member.SxTop_cm3, result.strongAxis.sectionModulusTopCm3],
+                [member.SxBottom_cm3, result.strongAxis.sectionModulusBottomCm3],
+                [member.Sy_cm3, result.weakAxis.sectionModulusCm3]
+            ];
+            const matches = pairs.every(([actual, expected]) =>
+                Number.isFinite(Number(actual)) &&
+                Math.abs(Number(actual) - expected) <= 1e-6 * Math.max(1, Math.abs(expected))
+            );
+            return matches ? {geometryType: "built-up-I", geometryDimensionsMm: geometry} : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
     function readMember(prefix) {
-        return {
+        const member = {
             profile: $(prefix + "Profile").value.trim(),
             A_cm2: Number($(prefix + "A").value),
             Ix_cm4: Number($(prefix + "Ix").value),
@@ -244,6 +277,9 @@
             SxBottom_cm3: Number($(prefix + "SxBottom").value),
             Sy_cm3: Number($(prefix + "Sy").value)
         };
+        const geometry = deriveBuiltUpGeometryRecord(prefix, member);
+        if (geometry) Object.assign(member, geometry);
+        return member;
     }
 
     function readSectionProvenance(key) {
@@ -277,6 +313,8 @@
                             Iy_cm4:m.Iy_cm4,
                             Iz_cm4:m.Ix_cm4,
                             J_cm4:Number($(key+"J3D")?.value),
+                            geometryType:m.geometryType||"",
+                            geometryDimensionsMm:m.geometryDimensionsMm||null,
                             ...readSectionProvenance(key)
                         }];
                     }
@@ -300,7 +338,9 @@
             Iy: member.Iy_cm4 * 1e-8,
             SxTop: member.SxTop_cm3 * 1e-6,
             SxBottom: member.SxBottom_cm3 * 1e-6,
-            Sy: member.Sy_cm3 * 1e-6
+            Sy: member.Sy_cm3 * 1e-6,
+            geometryType: member.geometryType || "",
+            geometryDimensionsMm: member.geometryDimensionsMm || null
         };
     }
 
@@ -331,7 +371,7 @@
         const missing=required.find(([field])=>!(Number.isFinite(Number(p[field]))&&Number(p[field])>0));
         if(missing) throw new Error("برای گروه " + labels[key] + "، مقدار " + missing[1] + " خالی یا نامعتبر است. مقدار واقعی مقطع را وارد کنید.");
         const profile=p.profile||(key==="column"||key==="rafter"?d[key].profile:"");
-        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile,manufacturer:p.manufacturer||"",sourceDocumentId:p.sourceDocumentId||"",catalogReference:p.catalogReference||"",sourcePage:p.sourcePage||"",sectionDataVerified:p.sectionDataVerified===true};
+        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile,geometryType:p.geometryType||"",geometryDimensionsMm:p.geometryDimensionsMm?{...p.geometryDimensionsMm}:null,manufacturer:p.manufacturer||"",sourceDocumentId:p.sourceDocumentId||"",catalogReference:p.catalogReference||"",sourcePage:p.sourcePage||"",sectionDataVerified:p.sectionDataVerified===true};
     }
     function setData(data) {
         if (!data || typeof data !== "object") return;
@@ -609,11 +649,14 @@
                 A:toSI(p.A_cm2,1e-4),
                 Iy:toSI(p.Iy_cm4,1e-8),
                 Iz:toSI(p.Iz_cm4,1e-8),
-                J:toSI(p.J_cm4,1e-8)
+                J:toSI(p.J_cm4,1e-8),
+                geometryType:p.geometryType||"",
+                geometryDimensionsMm:p.geometryDimensionsMm?{...p.geometryDimensionsMm}:null
             });
             return {G:Number.isFinite(a.G_GPa)&&a.G_GPa>0?a.G_GPa*1e9:null,groups};
         },
         resolveAnalysis3DSection,
+        deriveBuiltUpGeometryRecord,
         setData,
         validate,
         validateForFrameAnalysis,
