@@ -78,7 +78,7 @@ test("bolt nut penetrating the plate solid is classified as hardware interferenc
 });
 test("washer annulus is evaluated with its inner opening and bolt shank is explicitly not assessable",()=>{
  const d=fixture();d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
- d.bolts[0].hardware=[{id:"WASHER-1",kind:"washer",centerOffsetMm:14.5,thicknessMm:3,outerDiameterMm:36,innerDiameterMm:22}];
+ d.bolts[0].hardware=[{id:"WASHER-1",kind:"washer",centerOffsetMm:9.5,thicknessMm:3,outerDiameterMm:36,innerDiameterMm:22}];
  const r=collision.audit(d);
  assert.equal(r.hardwarePlatePairs.find(x=>x.hardwareId==="WASHER-1").state,"contact-intent-unverified");
  assert.equal(r.shankStatus.find(x=>x.boltId==="B1").state,"not-assessable");
