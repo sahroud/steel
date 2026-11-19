@@ -118,7 +118,7 @@ test("passes intermittent weld spacing for protected steel using min(24t,300 mm)
  assert.deepEqual(row.gapsMm,[90]);
 });
 test("fails weather-exposed unpainted intermittent weld spacing above min(14t,180 mm)",()=>{
- const d=fixture({continuity:"intermittent",intermittentGroupId:"G1",corrosionCondition:"weather-exposed-unpainted"});
+ const d=fixture({continuity:"intermittent",intermittentUseCase:"built-up-member-component",intermittentGroupId:"G1",corrosionCondition:"weather-exposed-unpainted"});
  d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
  d.welds.push({...d.welds[0],id:"W2",startMm:[180,0,0],endMm:[230,0,0]});
  const r=check.assess(d),row=r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="group:G1");
@@ -134,7 +134,7 @@ test("does not infer intermittent weld grouping or corrosion exposure",()=>{
  assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="W1").status,"NOT_ASSESSABLE");
 });
 test("rejects non-collinear beads from one intermittent weld spacing group as not assessable",()=>{
- const d=fixture({continuity:"intermittent",intermittentGroupId:"G1",corrosionCondition:"protected"});
+ const d=fixture({continuity:"intermittent",intermittentUseCase:"built-up-member-component",intermittentGroupId:"G1",corrosionCondition:"protected"});
  d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
  d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[140,50,0]});
  const r=check.assess(d);
@@ -142,12 +142,12 @@ test("rejects non-collinear beads from one intermittent weld spacing group as no
 });
 
 test("does not approve intermittent welds when their application is not identified",()=>{
- const d=fixture({continuity:"intermittent",intermittentGroupId:"G1",corrosionCondition:"protected"});
+ const d=fixture({continuity:"intermittent",intermittentUseCase:"built-up-member-component",intermittentGroupId:"G1",corrosionCondition:"protected"});
  d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
  d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[180,0,0]});
  const r=check.assess(d);
  assert.equal(r.checks.find(x=>x.checkId==="intermittent-use"&&x.weldId==="W1").status,"NOT_ASSESSABLE");
- assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="group:G1").status,"PASS");
+ assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="group:G1").status,"NOT_ASSESSABLE");
  assert.equal(r.overallStatus,"INCOMPLETE");
 });
 test("accepts explicit permitted intermittent weld use and painted or non-corrosive categories",()=>{
