@@ -28,3 +28,12 @@ test("knee detail UI exports the entered JSON without changing its geometry",()=
  assert.match(source,/sahroud-knee-connection-detail\.json/);
  assert.match(source,/Blob\(\[source\]/);
 });
+
+test("knee detail template assigns actual column and rafter roles",()=>{
+ assert.match(source,/role:"column"/);
+ assert.match(source,/role:"rafter"/);
+});
+test("knee detail validation cross-checks selected joint and actual member IDs",()=>{
+ assert.match(source,/شناسه گره JSON با گره زانویی انتخاب‌شده/);
+ assert.match(source,/با عضو واقعی مدل/);
+});
