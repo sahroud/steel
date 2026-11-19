@@ -87,3 +87,14 @@ test("wall surface dead loads transfer to longitudinal and end girts using tribu
  actual.forEach((value,index)=>assert.ok(Math.abs(value-expected[index])<1e-12));
  assert.equal(r.roofPurlinsPresent,false);
 });
+
+test("foundation-bearing wall weight is not silently assigned to steel girts",()=>{
+ const members=[{id:"WL",sectionKey:"wallGirt",side:"left",tributaryHeight:2},
+  {id:"EF",sectionKey:"endGirt",endFace:"front",tributaryHeight:1}];
+ global.SteelStructuralModel.assignGeometricMemberLineLoads(members,{span:12,rise:2},[3],{
+  wallDeadSupportPath:"foundation",wallDeadLeft:1.5,endWallDeadFront:2,
+  wallDeadRight:0,endWallDeadBack:0,windWall:0,windEndFront:0,windEndBack:0,
+  deadAreaBasis:"unspecified",liveAreaBasis:"unspecified",snowAreaBasis:"unspecified"
+ });
+ assert.deepEqual(members.map(m=>m.lineLoads.dead),[0,0]);
+});
