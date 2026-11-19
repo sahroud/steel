@@ -113,15 +113,18 @@
                     }
 
                     const left = name.includes("چپ");
-                    const supportM = Math.abs(Number(left ? member.momentEnd : member.momentStart) || 0);
-                    const supportV = Math.abs(Number(left ? member.shearEnd : member.shearStart) || 0);
-                    const supportN = Math.abs(Number(left ? member.axialEnd : member.axialStart) || 0);
-                    // Keep simultaneous connection actions from each individual load combination.
+                    const signedSupportM = Number(left ? member.momentEnd : member.momentStart) || 0;
+                    const signedSupportV = Number(left ? member.shearEnd : member.shearStart) || 0;
+                    const signedSupportN = Number(left ? member.axialEnd : member.axialStart) || 0;
+                    const supportM = Math.abs(signedSupportM);
+                    const supportV = Math.abs(signedSupportV);
+                    const supportN = Math.abs(signedSupportN);
+                    // Keep simultaneous signed actions from each individual load combination.
                     w.connectionCases.push({
                         combination: item.name,
-                        M: supportM,
-                        V: supportV,
-                        N: supportN
+                        M: signedSupportM,
+                        V: signedSupportV,
+                        N: signedSupportN
                     });
                     if (supportM > w.supportMoment) {
                         w.supportMoment = supportM;
