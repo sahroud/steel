@@ -109,3 +109,9 @@ test("knee detail UI runs and displays the elastic weld-group demand report",()=
  assert.match(source,/ظرفیت و قبولی اتصال محاسبه نشده است/);
 });
 
+
+test("knee weld demand is invalidated when a new 3D combination analysis arrives",()=>{
+ assert.match(source,/lastKneeMappedDemand=null/);
+ assert.match(source,/const current=selectedKnee\(\)/);
+ assert.match(source,/تقاضای قدیمی/);
+});
