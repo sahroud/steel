@@ -42,6 +42,15 @@ test("design input UI imports the full mapped ULS package for the matching footi
  assert.match(elements.footingDesignInputResult.textContent,/پایه B1 به ورودی/);
  delete global.window;
 });
+test("design input UI normalizes surrounding whitespace in the footing node identity",()=>{
+ const {elements,listeners}=fixture();
+ const payload=JSON.parse(elements.footingDesignInputJson.value);payload.nodeId=" B1 ";
+ elements.footingDesignInputJson.value=JSON.stringify(payload);
+ listeners.get("btnUseMappedUlsActions:click")();
+ assert.equal(JSON.parse(elements.footingDesignInputJson.value).ulsLocalActions.schema,"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0");
+ assert.match(elements.footingDesignInputResult.textContent,/پایه B1 به ورودی/);
+ delete global.window;
+});
 test("design input UI refuses to transfer a ULS package belonging to another footing",()=>{
  const {elements,listeners}=fixture();
  const payload=JSON.parse(elements.footingDesignInputJson.value);payload.nodeId="B2";
