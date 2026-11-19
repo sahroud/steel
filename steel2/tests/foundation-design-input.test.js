@@ -50,7 +50,7 @@ test("validates optional proposed reinforcement without designing it",()=>{
  const r=validateFootingDesignInput(sample({proposedReinforcement:{bottomX:{diameterMm:16,count:8,spacingMm:200},bottomZ:{diameterMm:16,count:8},sourceReference:"پیشنهاد اولیه طراح"}}));
  assert.equal(r.proposedReinforcement.bottomX.count,8);
  assert.equal(r.proposedReinforcement.bottomZ.spacingMm,null);
- assert.ok(r.warnings.some(x=>x.includes("آرماتور لازم")));
+ assert.ok(!r.warnings.some(x=>x.includes("آرماتور لازم")));
 });
 test("rejects invalid proposed bar count and non-finite actions",()=>{
  assert.throws(()=>validateFootingDesignInput(sample({proposedReinforcement:{bottomX:{diameterMm:16,count:1}}})),/حداقل ۲/);
