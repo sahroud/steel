@@ -66,3 +66,10 @@ test("candidate cap must be a safe positive integer",()=>{
  assert.throws(()=>run({minB:1,maxB:2,stepB:1,minL:1,maxL:2,stepL:1,maxCandidates:0}),/بین ۱ و ۱۰۰۰۰/);
  assert.throws(()=>run({minB:1,maxB:2,stepB:1,minL:1,maxL:2,stepL:1,maxCandidates:10001}),/بین ۱ و ۱۰۰۰۰/);
 });
+
+test("square search rejects oversized candidate grids before nested iteration",()=>{
+ assert.throws(()=>run({minB:0.1,maxB:1000,stepB:0.1,minL:0.1,maxL:1000,stepL:0.1,shape:"square",maxCandidates:10}),/سقف/);
+});
+test("rectangular search rejects oversized grid from its computed product",()=>{
+ assert.throws(()=>run({minB:0.1,maxB:100,stepB:0.1,minL:0.1,maxL:100,stepL:0.1,shape:"rectangular",maxCandidates:10}),/سقف/);
+});
