@@ -102,8 +102,8 @@ test("builds global 3D plate polygon, bolt and weld coordinates from declared fr
  assert.deepEqual(g.plates[0].bolts[0].centerGlobalM,[0,5.96,0]);
  assert.deepEqual(g.plates[0].bolts[0].axisGlobal,[0,0,1]);
  assert.equal(g.plates[0].bolts[0].shank.radiusMm,10);
- assert.deepEqual(g.plates[0].bolts[0].shank.startGlobalM,[0,5.942,0]);
- assert.deepEqual(g.plates[0].bolts[0].shank.endGlobalM,[0,5.978,0]);
+ assert.deepEqual(g.plates[0].bolts[0].shank.startGlobalM,[0,5.96,-0.018]);
+ assert.deepEqual(g.plates[0].bolts[0].shank.endGlobalM,[0,5.96,0.018]);
  assert.deepEqual(g.welds[0].startGlobalM,[-0.1,5.94,0]);
  assert.equal(g.capacityDesigned,false);
 });
