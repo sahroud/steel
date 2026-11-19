@@ -34,7 +34,9 @@
    '<div class="field"><label for="initialSectionIy">ممان اینرسی Iy (cm⁴)</label><input id="initialSectionIy" type="number" min="0" step="0.01"></div>'+
    '<div class="field"><label for="initialSectionIz">ممان اینرسی Iz (cm⁴)</label><input id="initialSectionIz" type="number" min="0" step="0.01"></div>'+
    '<div class="field"><label for="initialSectionJ">ثابت پیچشی J (cm⁴)</label><input id="initialSectionJ" type="number" min="0" step="0.01"></div>'+
-   '<div class="field"><label for="initialSectionMode">روش تعریف مقطع</label><select id="initialSectionMode"><option value="properties">ورود مستقیم خواص مقطع</option><option value="builtUpI">تیرورق I ـ محاسبه خودکار از ابعاد</option></select></div></div>'+
+   '<div class="field"><label for="initialSectionMode">روش تعریف مقطع</label><select id="initialSectionMode"><option value="properties">ورود مستقیم خواص مقطع</option><option value="builtUpI">تیرورق I ـ محاسبه خودکار از ابعاد</option></select></div>'+
+   '<div class="field"><label for="initialSectionRollDeg">چرخش حول محور محلی +X عضو (درجه)</label><input id="initialSectionRollDeg" type="number" step="0.1" placeholder="زاویه صریح؛ صفر نیز باید ثبت شود"></div>'+
+   '<div class="field"><label><input id="initialSectionOrientationConfirmed" type="checkbox"> جهت جان و بال با نقشه ساخت/نصب تطبیق داده شده است</label></div></div>'+
    '<div id="initialSectionGeometry" hidden><h4>ابعاد هندسی تیرورق (mm)</h4><div class="form-grid">'+
    '<div class="field"><label for="sectionTopB">عرض بال بالا</label><input id="sectionTopB" type="number" min="1" step="1"></div>'+
    '<div class="field"><label for="sectionTopT">ضخامت بال بالا</label><input id="sectionTopT" type="number" min="1" step="1"></div>'+
@@ -43,7 +45,7 @@
    '<div class="field"><label for="sectionWebH">ارتفاع خالص جان</label><input id="sectionWebH" type="number" min="1" step="1"></div>'+
    '<div class="field"><label for="sectionWebT">ضخامت جان</label><input id="sectionWebT" type="number" min="1" step="1"></div></div>'+
    '<div id="initialSectionGeometrySummary" class="notice">با تغییر هر بعد، خواص هندسی به‌صورت خودکار محاسبه و در ورودی همین عضو به‌روزرسانی می‌شود.</div></div>'+
-   '<div class="button-grid"><button type="button" class="btn primary" id="btnSaveInitialMemberSection">ثبت مقطع برای همین عضو</button><button type="button" class="btn secondary" id="btnClearInitialMemberSection">بازگشت به پیش‌فرض گروه</button></div>'+
+   '<div class="button-grid"><button type="button" class="btn primary" id="btnSaveInitialMemberSection">ثبت مقطع برای همین عضو</button><button type="button" class="btn secondary" id="btnClearInitialMemberSection">بازگشت به پیش‌فرض گروه</button><button type="button" class="btn secondary" id="btnSaveSectionOrientation">ثبت چرخش و جهت نصب مقطع</button></div>'+
    '<div id="initialMemberSectionMessage" class="notice" aria-live="polite">مقطع‌های مستقل هنوز وارد نشده‌اند.</div>';
   const host=$("shedLayoutPanel")||document.querySelector("main");
   if(host&&host.parentNode)host.parentNode.insertBefore(panel,host.nextSibling);
@@ -65,17 +67,19 @@
      profile:$("initialSectionProfile").value,A_cm2:$("initialSectionA").value,
      Iy_cm4:$("initialSectionIy").value,Iz_cm4:$("initialSectionIz").value,J_cm4:$("initialSectionJ").value
     });
+    applyOrientationInput(item.section);
     dirty.set(selectedId,item);
     if(root.SahroudSectionPropertyRegistry?.applyOne)root.SahroudSectionPropertyRegistry.applyOne(member,item.section);
     invalidateAnalysis(selectedId);
     message("مقطع اولیه مستقل عضو "+selectedId+" ثبت و در مشخصات یکپارچه عضو به‌روزرسانی شد. تحلیل مجدد لازم است.");
    }catch(e){message(e.message,true);}
   });
+  $("btnSaveSectionOrientation").addEventListener("click",saveOrientation);
   $("btnClearInitialMemberSection").addEventListener("click",()=>{
    if(!selectedId)return;
    dirty.delete(selectedId);
    const member=currentModel?.members?.find(m=>String(m.id)===selectedId);
-   if(member){delete member.sectionProperties;delete member.sectionPropertyFingerprint;delete member.sectionPropertySource;}
+   if(member){delete member.sectionProperties;delete member.sectionPropertyFingerprint;delete member.sectionPropertySource;delete member.sectionRollDeg;delete member.sectionOrientationVerified;}
    invalidateAnalysis(selectedId);loadSelected();message("ورودی مستقل حذف شد؛ مقطع پیش‌فرض گروه برای این عضو استفاده می‌شود و تحلیل مجدد لازم است.");
   });
   return panel;
@@ -115,6 +119,32 @@
    message("خواص کامل هندسی و وزن مقطع از ابعاد جدید محاسبه و برای همین عضو ثبت شد؛ تحلیل باید دوباره اجرا شود.");
   }catch(e){$("initialSectionGeometrySummary").textContent="خطا در هندسه مقطع: "+e.message;message(e.message,true);}
  }
+ function applyOrientationInput(section){
+  const raw=$("initialSectionRollDeg")?.value;
+  if(raw===""||raw===undefined){delete section.sectionRollDeg;section.sectionOrientationConfirmed=false;return;}
+  const angle=Number(raw);
+  if(!Number.isFinite(angle))throw new Error("زاویه چرخش مقطع باید عددی متناهی بر حسب درجه باشد.");
+  section.sectionRollDeg=angle;
+  section.sectionOrientationConfirmed=$("initialSectionOrientationConfirmed")?.checked===true;
+ }
+ function saveOrientation(){
+  try{
+   const member=currentModel?.members?.find(m=>String(m.id)===selectedId);
+   if(!member)throw new Error("ابتدا یک عضو معتبر انتخاب کنید.");
+   const raw=$("initialSectionRollDeg")?.value;
+   if(raw===""||raw===undefined)throw new Error("زاویه صریح بر حسب درجه وارد کنید؛ صفر نیز باید صریح ثبت شود.");
+   const angle=Number(raw);
+   if(!Number.isFinite(angle))throw new Error("زاویه چرخش مقطع باید عددی متناهی باشد.");
+   const existing=dirty.get(selectedId),base=existing?.section||baseFor(member);
+   if(!base)throw new Error("مقطع پایه عضو در دسترس نیست؛ ابتدا مقطع اولیه را تخصیص دهید.");
+   const section={...base,sectionRollDeg:angle,sectionOrientationConfirmed:$("initialSectionOrientationConfirmed")?.checked===true};
+   const item={memberId:selectedId,section,sourceReference:"جهت نصب و چرخش صریح کاربر برای عضو "+selectedId};
+   dirty.set(selectedId,item);
+   if(root.SahroudSectionPropertyRegistry?.applyOne)root.SahroudSectionPropertyRegistry.applyOne(member,section);
+   invalidateAnalysis(selectedId);
+   message("چرخش "+angle+" درجه حول محور محلی +X ثبت شد. "+(section.sectionOrientationConfirmed?"تطبیق جهت نصب با نقشه تأیید شد.":"زاویه ثبت شد، اما جهت نصب با نقشه تأیید نشده و هندسه اتصال قابل تأیید نیست.")+" تحلیل مجدد لازم است.");
+  }catch(e){message(e.message,true);}
+ }
  function invalidateAnalysis(memberId){
   // A section edit invalidates every cached result based on the previous stiffness matrix.
   if(root.SteelStructuralModel){root.SteelStructuralModel.last3DResult=null;root.SteelStructuralModel.lastConnectionDemand=null;}
@@ -133,6 +163,8 @@
   const member=currentModel?.members?.find(m=>String(m.id)===selectedId);if(!member)return;
   const saved=dirty.get(selectedId),base=saved?.section||baseFor(member)||{};
   $("initialSectionProfile").value=base.profile||"";
+  $("initialSectionRollDeg").value=base.sectionRollDeg??"";
+  $("initialSectionOrientationConfirmed").checked=base.sectionOrientationConfirmed===true;
   $("initialSectionA").value=toDisplay(base.A,1e-4);
   $("initialSectionIy").value=toDisplay(base.Iy,1e-8);
   $("initialSectionIz").value=toDisplay(base.Iz,1e-8);
