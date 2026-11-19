@@ -66,10 +66,16 @@
   const cases=mappedDemand.cases;
   if(!Array.isArray(cases)||!cases.length)fail("هیچ ترکیب بار نگاشت‌شده‌ای وجود ندارد.");
   const expected=new Map(detail.memberForceTransferPoints.map(p=>[String(p.memberId),p.role]));
+  const caseIds=new Set();
+  for(const c of cases){
+   const caseId=String(c?.combinationId??"");
+   if(!caseId||caseIds.has(caseId))fail("شناسه ترکیب بار در بسته تقاضای جوش خالی یا تکراری است.");
+   caseIds.add(caseId);
+   if(!Array.isArray(c.memberActions)||c.memberActions.length!==expected.size)
+    fail("ترکیب بار باید دقیقاً شامل کنش‌های ستون و رفتر باشد.");
+  }
   const results=[];
   for(const c of cases){
-   if(!c.combinationId||!Array.isArray(c.memberActions)||c.memberActions.length!==expected.size)
-    fail("ترکیب بار باید دقیقاً شامل کنش‌های ستون و رفتر باشد.");
    const seen=new Set();
    for(const action of c.memberActions){
     const id=String(action.memberId);
