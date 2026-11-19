@@ -191,6 +191,7 @@
         }
         box.style.color="#15803d";
         window.SteelStructuralModel.last3DResult=result;
+        window.dispatchEvent(new CustomEvent("sahroud:3d-analysis-ready",{detail:result}));
         renderCriticalRafterDiagram(result,"تحلیل مدل اصلی");
       } catch(e) {
         box.textContent="تحلیل سه‌بعدی انجام نشد: "+e.message+
@@ -1344,6 +1345,8 @@
     );
     combinationResults=result.combinationResults;
     combinationEnvelope=result.envelope;
+    // Publish only the completed aggregate result; per-combination intermediate results must not leak as current.
+    window.SteelStructuralModel.last3DResult=result;
     if(!window.SahroudConnectionDemandRegistry)
       throw new Error("ماژول انتقال تقاضای اتصالات بارگذاری نشده است.");
     result.connectionDemand=window.SahroudConnectionDemandRegistry.build(result,model,window.SahroudMemberDemand3D);
