@@ -30,6 +30,50 @@
   normalized.propertyUnits={A:"m2",inertia:"m4",torsion:"m4",sectionModulus:"m3",massPerMeter:"kg/m",radius:"m",E:"Pa",G:"Pa"};
   return normalized;
  }
+ function auditGeometry(model){
+  const errors=[],nodes=model&&Array.isArray(model.nodes)?model.nodes:[],members=model&&Array.isArray(model.members)?model.members:[];
+  const units=model&&model.units||{};
+  if(units.length!=="m"||units.coordinates!=="m"||units.memberLength!=="m")
+   errors.push("واحد مختصات و طول اعضا باید صریحاً متر (m) ثبت شده باشد.");
+  if(!nodes.length)errors.push("گره‌های هندسی مدل موجود نیستند.");
+  if(!members.length)errors.push("اعضای هندسی مدل موجود نیستند.");
+  const nodeMap=new Map();
+  for(const node of nodes){
+   const id=String(node&&node.id||"");
+   if(!id||nodeMap.has(id)){errors.push("شناسه گره خالی یا تکراری است: "+id);continue;}
+   const xyz=[node.x,node.y,node.z].map(Number);
+   if(xyz.some(v=>!Number.isFinite(v))){errors.push("مختصات گره "+id+" نامعتبر است.");continue;}
+   nodeMap.set(id,{x:xyz[0],y:xyz[1],z:xyz[2]});
+  }
+  const seen=new Set(),items=[];
+  let maxAbsErrorM=0,totalLengthM=0;
+  for(const member of members){
+   const id=String(member&&member.id||"");
+   if(!id||seen.has(id)){errors.push("شناسه عضو خالی یا تکراری است: "+id);continue;}
+   seen.add(id);
+   const a=nodeMap.get(String(member.start??"")),b=nodeMap.get(String(member.end??""));
+   if(!a||!b){errors.push("گره ابتدا/انتها برای عضو "+id+" موجود نیست.");continue;}
+   const geometricLengthM=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+   const storedLengthM=Number(member.length);
+   if(!(geometricLengthM>0)||!Number.isFinite(geometricLengthM)){errors.push("طول هندسی عضو "+id+" صفر یا نامعتبر است.");continue;}
+   if(!Number.isFinite(storedLengthM)||storedLengthM<=0){errors.push("طول ذخیره‌شده عضو "+id+" معتبر نیست.");continue;}
+   const errorM=Math.abs(storedLengthM-geometricLengthM);
+   const toleranceM=1e-6+1e-8*Math.max(1,geometricLengthM);
+   maxAbsErrorM=Math.max(maxAbsErrorM,errorM);
+   if(errorM>toleranceM)errors.push("طول ذخیره‌شده عضو "+id+" با فاصله مختصاتی اختلاف دارد: "+errorM.toExponential(3)+" m.");
+   items.push({memberId:id,storedLengthM,geometricLengthM,absoluteErrorM:errorM,toleranceM});
+   totalLengthM+=geometricLengthM;
+  }
+  const result={complete:errors.length===0,unit:"m",memberCount:members.length,checkedCount:items.length,totalGeometricLengthM:totalLengthM,maxAbsoluteLengthErrorM:maxAbsErrorM,items,errors,
+   method:"3D Euclidean distance between referenced start/end node coordinates; compared against member.length"};
+  if(model&&typeof model==="object")model.geometryAudit=result;
+  return result;
+ }
+ function requireGeometryAudit(model,operation){
+  const audit=auditGeometry(model);
+  if(!audit.complete)throw new Error((operation||"عملیات")+" متوقف شد؛ ممیزی هندسه اعضا کامل نیست: "+audit.errors.slice(0,8).join("؛ "));
+  return audit;
+ }
  function apply(model,records){
   if(!model||!Array.isArray(model.members)||!model.members.length)throw new Error("مدل اعضا برای تخصیص خواص مقطع موجود نیست.");
   if(!Array.isArray(records))throw new Error("رکوردهای مقاطع باید آرایه باشند.");
@@ -75,6 +119,7 @@
  }
  function schedule(model){
   if(!model||!Array.isArray(model.members))throw new Error("مدل اعضا برای تهیه جدول مقاطع موجود نیست.");
+  requireGeometryAudit(model,"تهیه جدول مقاطع");
   return model.members.map(member=>{
    const p=member.sectionProperties;
    if(!p)throw new Error("خواص مقطع عضو "+member.id+" هنوز تخصیص نیافته است.");
@@ -88,6 +133,7 @@
  function takeoff(model){
   if(!model||!Array.isArray(model.members)||!model.members.length)throw new Error("مدل اعضا برای متره فولاد موجود نیست.");
   if(model.sectionPropertiesDirty===true)throw new Error("متره متوقف شد؛ مقاطع پس از آخرین تغییر هنوز در مدل بازسازی نشده‌اند.");
+  requireGeometryAudit(model,"متره فولاد");
   const audit=model.sectionPropertyAudit;
   if(!audit||audit.complete!==true||audit.memberCount!==model.members.length)throw new Error("متره متوقف شد؛ ممیزی خواص مقاطع کامل نیست.");
   const seen=new Set(),groups=new Map(),items=[];
@@ -110,6 +156,6 @@
   }
   return {method:"sum(member.lengthM * member.section.massPerMeterKg)",memberCount:items.length,totalLengthM,totalMassKg,totalMassTon:totalMassKg/1000,items,groups:[...groups.values()]};
  }
- root.SahroudSectionPropertyRegistry={normalize,apply,applyOne,get,schedule,takeoff,fingerprint};
+ root.SahroudSectionPropertyRegistry={normalize,apply,applyOne,get,schedule,takeoff,fingerprint,auditGeometry};
  if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudSectionPropertyRegistry;
 })(typeof globalThis!=="undefined"?globalThis:this);
