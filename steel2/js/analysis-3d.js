@@ -186,7 +186,8 @@ function auditMemberOrientation(model){
     const axisLength=axisShapeValid?Math.hypot(...axis.map(Number)):0;
     const explicitAxisValid=axisShapeValid&&axisLength>EPS;
     const axisParallel=!!(explicitAxisValid&&direction&&Math.abs(direction.reduce((sum,v,i)=>sum+v*Number(axis[i]),0)/axisLength)>0.95);
-    const roll=member.sectionRollDeg??member.sectionProperties?.sectionRollDeg;\n     const sectionOrientationVerified=member.sectionOrientationVerified===true&&Number.isFinite(Number(roll));
+    const roll=member.sectionRollDeg??member.sectionProperties?.sectionRollDeg;
+     const sectionOrientationVerified=member.sectionOrientationVerified===true&&Number.isFinite(Number(roll));
     const directionClass=!direction?"invalid":Math.abs(direction[1])>=0.95?"vertical":
       Math.abs(direction[2])>=0.95?"longitudinal":Math.abs(direction[0])>=0.95?"transverse":"diagonal-or-oblique";
     const status=!geometryValid?"invalid-member-geometry":
