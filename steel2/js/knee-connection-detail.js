@@ -4,7 +4,7 @@
  */
 (function(root){
  "use strict";
- const SCHEMA="SAHROUD-KNEE-CONNECTION-DETAIL-1.0";
+ const SCHEMA="SAHROUD-KNEE-CONNECTION-DETAIL-1.1";
  const finite=v=>typeof v==="number"&&Number.isFinite(v);
  const positive=v=>finite(v)&&v>0;
  const text=v=>typeof v==="string"&&v.trim().length>0;
@@ -55,14 +55,15 @@
   if(!Array.isArray(members)||members.length!==2)fail(errors,"برای اتصال زانویی باید دقیقاً دو نقطه انتقال نیرو، یکی برای ستون و دیگری برای رفتر، ثبت شود.");
   else{
    const ids=new Set(),roles=new Set();
+   const roles=new Set();
    members.forEach((m,i)=>{
     if(!text(m.memberId)||ids.has(String(m.memberId)))fail(errors,"شناسه عضو در نقاط انتقال نیرو خالی یا تکراری است.");
     ids.add(String(m.memberId));
-    if(!["column","rafter"].includes(m.role)||roles.has(m.role))fail(errors,"نقش عضو باید دقیقاً شامل یک column و یک rafter باشد.");
+    if(!["column","rafter"].includes(m.role)||roles.has(m.role))fail(errors,"نقش نقاط انتقال نیرو باید دقیقاً شامل یک column و یک rafter باشد.");
     roles.add(m.role);
     if(!vec(m.pointMm,3))fail(errors,"نقطه انتقال نیروی عضو "+(m.memberId||i)+" باید مختصات سه‌بعدی mm داشته باشد.");
    });
-   if(roles.size===2&&(!roles.has("column")||!roles.has("rafter")))fail(errors,"نقش‌های ستون و رفتر هر دو باید حضور داشته باشند.");
+   if(!roles.has("column")||!roles.has("rafter"))fail(errors,"نقاط انتقال نیروی ستون و رفتر باید هر دو ثبت شوند.");
   }
   if(!Array.isArray(input.plates)||!input.plates.length)fail(errors,"حداقل یک ورق واقعی با هندسه و مصالح صریح لازم است.");
   const plateIds=new Set();
@@ -90,15 +91,22 @@
     fail(errors,"مختصات، قطر پیچ و قطر سوراخ پیچ "+(b.id||i)+" نامعتبر است.");
    const key=String(b.xMm)+","+String(b.yMm);if(boltPoints.has(key))fail(errors,"دو پیچ در مختصات یکسان ثبت شده‌اند.");boltPoints.add(key);
    if(!text(b.grade)||!positive(b.FuMPa))fail(errors,"گرید و Fu پیچ "+(b.id||i)+" باید صریح باشد.");
+   if(!text(b.plateId)||!plateIds.has(String(b.plateId)))fail(errors,"شناسه ورق میزبان پیچ "+(b.id||i)+" باید صریح و معتبر باشد.");
    if(!["standard","oversized","short-slotted","long-slotted"].includes(b.holeType))fail(errors,"نوع سوراخ پیچ "+(b.id||i)+" باید از گزینه‌های تعریف‌شده انتخاب شود.");
+   if(["short-slotted","long-slotted"].includes(b.holeType)&&(!positive(b.slotLengthMm)||!positive(b.slotWidthMm)||!finite(b.slotAngleDeg)||b.slotLengthMm<b.slotWidthMm||Math.abs(b.slotWidthMm-b.holeDiameterMm)>1e-6))
+    fail(errors,"طول، عرض و زاویه شیار پیچ "+(b.id||i)+" باید صریح باشد و عرض شیار با قطر سوراخ تطابق داشته باشد.");
+   if(!["short-slotted","long-slotted"].includes(b.holeType)&&[b.slotLengthMm,b.slotWidthMm,b.slotAngleDeg].some(v=>v!==undefined&&v!==null))
+    fail(errors,"ابعاد شیار فقط برای سوراخ‌های شیاردار قابل ثبت است.");
    if(typeof b.threadsInShearPlane!=="boolean"||!Number.isInteger(b.shearPlaneCount)||b.shearPlaneCount<1)
     fail(errors,"وضعیت رزوه در صفحه برش و تعداد صفحات برش پیچ "+(b.id||i)+" الزامی است.");
    if(Array.isArray(input.plates)&&input.plates.length&&finite(b.xMm)&&finite(b.yMm)&&positive(b.holeDiameterMm)){
-    const p=input.plates.find(q=>Array.isArray(q.polygonMm)&&q.polygonMm.length>=3&&pointInPolygon({x:b.xMm,y:b.yMm},q.polygonMm));
-    if(!p)fail(errors,"مرکز سوراخ پیچ "+(b.id||i)+" داخل هیچ‌یک از ورق‌های تعریف‌شده نیست.");
+    const p=input.plates.find(q=>String(q.id)===String(b.plateId));
+    if(!p||!Array.isArray(p.polygonMm)||p.polygonMm.length<3||!pointInPolygon({x:b.xMm,y:b.yMm},p.polygonMm))
+     fail(errors,"مرکز سوراخ پیچ "+(b.id||i)+" داخل ورق میزبان تعیین‌شده نیست.");
     else{
      const poly=p.polygonMm,clear=Math.min(...poly.map((a,j)=>edgeDistance({x:b.xMm,y:b.yMm},a,poly[(j+1)%poly.length])));
      if(clear+1e-8<b.holeDiameterMm/2)fail(errors,"سوراخ پیچ "+(b.id||i)+" از مرز ورق عبور می‌کند.");
+    }
     }
    }
   });
@@ -108,9 +116,15 @@
    if(!text(w.id)||weldIds.has(String(w.id)))fail(errors,"شناسه خط جوش خالی یا تکراری است.");weldIds.add(String(w.id));
    if(!vec(w.startMm,3)||!vec(w.endMm,3)||Math.hypot(...w.startMm.map((v,j)=>v-w.endMm[j]))<=1e-8)
     fail(errors,"ابتدا و انتهای خط جوش "+(w.id||i)+" باید دو نقطه سه‌بعدی متفاوت باشند.");
-   if(!positive(w.legSizeMm)||!positive(w.electrodeFexxMPa)||!["fillet","groove"].includes(w.type))
-    fail(errors,"نوع جوش، اندازه مؤثر/ساق و FEXX خط جوش "+(w.id||i)+" باید صریح و معتبر باشد.");
-   if(w.type==="groove"&&!["CJP","PJP"].includes(w.grooveType))fail(errors,"نوع شیار جوش نفوذی باید CJP یا PJP مشخص شود.");
+   if(!text(w.plateId)||!plateIds.has(String(w.plateId)))fail(errors,"شناسه ورق متصل به خط جوش "+(w.id||i)+" باید صریح و معتبر باشد.");
+   if(!text(w.faceReference))fail(errors,"سطح/وجه اتصال خط جوش "+(w.id||i)+" باید با ارجاع نقشه مشخص شود.");
+   if(!positive(w.electrodeFexxMPa)||!["fillet","groove"].includes(w.type))
+    fail(errors,"نوع جوش و FEXX خط جوش "+(w.id||i)+" باید صریح و معتبر باشد.");
+   if(w.type==="fillet"&&!positive(w.legSizeMm))fail(errors,"اندازه ساق جوش گوشه "+(w.id||i)+" باید مثبت باشد.");
+   if(w.type==="groove"&&(!["CJP","PJP"].includes(w.grooveType)||!positive(w.effectiveThroatMm)))
+    fail(errors,"نوع شیار CJP/PJP و گلویی مؤثر جوش شیاری "+(w.id||i)+" باید صریح باشد.");
+   if(w.type==="fillet"&&(w.effectiveThroatMm!==undefined&&w.effectiveThroatMm!==null||w.grooveType!==undefined&&w.grooveType!==null))
+    fail(errors,"پارامترهای جوش شیاری نباید برای جوش گوشه ثبت شوند.");
   });
   if(!text(input.fabricationStatus))warnings.push("وضعیت ساخت/بازرسی اتصال ثبت نشده است؛ این داده برای تأیید اجرایی جداگانه لازم خواهد بود.");
   return{valid:errors.length===0,errors,warnings,schema:SCHEMA,connectionId:input.connectionId||null,
