@@ -34,12 +34,24 @@ test("ULS UI validates and maps complete local actions for the selected footing"
  assert.equal(global.window.SahroudLastFoundationUlsActions.success,true);
  delete global.window;
 });
-test("ULS UI refuses missing footing identity or invalid JSON without claiming success",()=>{
+test("ULS UI does not publish a mapped package when footing identity is missing",()=>{
  const {elements,listeners}=setup();
  elements.selectedFoundationNodeId.value="";
  listeners.get("btnMapFoundationUlsActions:click")();
  assert.match(elements.foundationUlsActionResult.textContent,/شناسه پایه موردنظر/);
  assert.equal(elements.foundationUlsActionResult.style.color,"#b45309");
+ assert.equal(elements.foundationUlsMappedJson.value,"");
+ assert.equal(global.window.SahroudLastFoundationUlsActions,undefined);
+ delete global.window;
+});
+test("ULS UI does not publish a mapped package when selected footing is absent",()=>{
+ const {elements,listeners}=setup();
+ elements.selectedFoundationNodeId.value="B-UNKNOWN";
+ listeners.get("btnMapFoundationUlsActions:click")();
+ assert.match(elements.foundationUlsActionResult.textContent,/در بسته واکنش ULS وجود ندارد/);
+ assert.equal(elements.foundationUlsActionResult.style.color,"#b45309");
+ assert.equal(elements.foundationUlsMappedJson.value,"");
+ assert.equal(global.window.SahroudLastFoundationUlsActions,undefined);
  delete global.window;
 });
 test("ULS UI registers its click handler only once",()=>{
