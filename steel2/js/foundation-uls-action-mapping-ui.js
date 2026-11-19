@@ -9,6 +9,9 @@
   const button=$("btnMapFoundationUlsActions"),input=$("foundationUlsBatchInput"),out=$("foundationUlsActionResult"),mappedOut=$("foundationUlsMappedJson");
   if(!button||!input||!out)return;
   button.addEventListener("click",()=>{
+   // Invalidate any earlier success before attempting a new mapping.
+   root.SahroudLastFoundationUlsActions=undefined;
+   if(mappedOut)mappedOut.value="";
    try{
     if(!root.SahroudFoundationUlsReactionBatch||!root.SahroudFoundationUlsActionMapping)
      throw new Error("ماژول‌های اعتبارسنجی و تبدیل واکنش ULS بارگذاری نشده‌اند.");
