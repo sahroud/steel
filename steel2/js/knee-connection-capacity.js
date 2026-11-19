@@ -64,9 +64,9 @@
     actionIds.add(String(a.boltId));
     if(!finite(a.tensionKN)||a.tensionKN<0||!finite(a.shearKN)||a.shearKN<0)
      fail(errors,"تقاضای کشش و برش هر پیچ باید متناهی و نامنفی باشد.");
-    if(c.pryingAssessment.status==="calculated"&&(!finite(a.pryingTensionKN)||a.pryingTensionKN<0))
+    if(c.pryingAssessment?.status==="calculated"&&(!finite(a.pryingTensionKN)||a.pryingTensionKN<0))
      fail(errors,"نیروی کششی افزوده ناشی از اثر اهرمی باید برای هر پیچ صریح باشد.");
-    if(c.pryingAssessment.status==="not-applicable"&&a.pryingTensionKN!==undefined&&a.pryingTensionKN!==0)
+    if(c.pryingAssessment?.status==="not-applicable"&&a.pryingTensionKN!==undefined&&a.pryingTensionKN!==0)
      fail(errors,"وقتی اثر اهرمی غیرقابل‌اعمال اعلام شده، نیروی افزوده آن باید صفر باشد.");
    });
    const plateIds=new Set((detail?.plates||[]).map(p=>String(p.id)));
