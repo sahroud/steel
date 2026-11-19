@@ -1042,6 +1042,15 @@
       });
     }
     const currentWindInputs=window.SteelLoads?.getData?.()||{};
+    let wallFoundationTransfer=null;
+    if(Number(selected.deadFactor)>0&&(currentWindInputs.wallDeadSupportPath||"foundation")==="foundation"&&
+      ["wallDeadLeft","wallDeadRight","endWallDeadFront","endWallDeadBack"].some(k=>Number(currentWindInputs[k]||0)>0)){
+      if(!window.SahroudWallFoundationTransfer)throw new Error("ماژول انتقال بار پوسته دیوار به پایه‌ها بارگذاری نشده است.");
+      wallFoundationTransfer=window.SahroudWallFoundationTransfer.createWallFoundationLoadTransfer({
+        model:analysisModel,loads:currentWindInputs,deadFactor:Number(selected.deadFactor)
+      });
+      nodalLoads.push(...wallFoundationTransfer.nodalLoads);
+    }
     const gableWallDeadTransfer=[];
     if(Number(selected.deadFactor)>0&&currentWindInputs.wallDeadSupportPath==="girts"){
       const intervals=Math.max(1,Math.ceil(Number(model.geometry.span)/Number(model.geometry.endPostSpacing||4)));
@@ -1214,6 +1223,15 @@
       wallDeadEndInput:Number(currentWindInputs.endWallDeadFront||0)+Number(currentWindInputs.endWallDeadBack||0),
       wallDeadGableTriangle:gableWallDeadTransfer.length?"applied":(currentWindInputs.wallDeadSupportPath==="girts"?"not-applied":"foundation-path-pending"),
       foundationWallLoadsPending:(currentWindInputs.wallDeadSupportPath||"foundation")==="foundation",
+      wallFoundationTransfer:wallFoundationTransfer?{
+        method:wallFoundationTransfer.method,isFiniteElementShell:wallFoundationTransfer.isFiniteElementShell,
+        foundationElementModelled:wallFoundationTransfer.foundationElementModelled,
+        foundationDesignPending:wallFoundationTransfer.foundationDesignPending,
+        sourceAreaKN:wallFoundationTransfer.sourceAreaKN,resultantKN:wallFoundationTransfer.resultantKN,
+        equilibriumResidualKN:wallFoundationTransfer.equilibriumResidualKN,
+        supportReactionCount:wallFoundationTransfer.nodalLoads.length,ledger:wallFoundationTransfer.ledger,
+        note:wallFoundationTransfer.note
+      }:null,
       gableWallDeadTransfer,
       seismicApplied:selected.key==="seismic",
       craneApplied:selected.key==="crane",
