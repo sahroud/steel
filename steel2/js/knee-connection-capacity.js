@@ -46,6 +46,8 @@
    propIds.add(String(p.boltId));
    if(!["ordinary","high-strength"].includes(p.boltClass))fail(errors,"کلاس پیچ باید ordinary یا high-strength باشد.");
   });
+  if(design.weldDemandDistributionVerifiedByEngineer!==true||!text(design.weldDemandDistributionReference))
+   fail(errors,"توزیع تقاضا بین خطوط جوش باید توسط مهندس و با مرجع محاسبات مستند شود.");
   if(!Array.isArray(design.loadCases)||!design.loadCases.length)fail(errors,"حداقل یک ترکیب ULS با تقاضای صریح لازم است.");
   const caseIds=new Set();
   (design.loadCases||[]).forEach(c=>{
@@ -56,6 +58,19 @@
     fail(errors,"ارزیابی اثر اهرمی هر ترکیب باید calculated یا not-applicable و دارای مرجع مستند باشد.");
    if(c.pryingAssessment?.status==="not-applicable"&&!text(c.pryingAssessment.reason))
     fail(errors,"عدم کاربرد اثر اهرمی باید با دلیل مهندسی ثبت شود.");
+   const weldIds=new Set((detail?.welds||[]).map(w=>String(w.id)));
+   if(!Array.isArray(c.weldActions)||c.weldActions.length!==weldIds.size)
+    fail(errors,"تقاضای هر خط جوش باید در هر ترکیب، حتی با مقدار صفر، ثبت شود.");
+   const weldActionIds=new Set();
+   (c.weldActions||[]).forEach(a=>{
+    if(!weldIds.has(String(a.weldId))||weldActionIds.has(String(a.weldId)))fail(errors,"شناسه تقاضای خط جوش نامعتبر یا تکراری است.");
+    weldActionIds.add(String(a.weldId));
+    if(!finite(a.demandKN)||a.demandKN<0||a.direction!=="shear-on-effective-throat"||!text(a.sourceReference))
+     fail(errors,"تقاضای جوش باید نامنفی، برشی روی گلویی مؤثر و دارای مرجع مستند باشد.");
+   });
+   (detail?.welds||[]).forEach(w=>{
+    if(w.type!=="fillet")fail(errors,"این نسخه فقط جوش گوشه را کنترل می‌کند؛ جوش شیاری نیازمند ماژول مستقل است.");
+   });
    const actions=c.boltActions;
    if(!Array.isArray(actions)||actions.length!==boltIds.size)fail(errors,"تقاضای هر پیچ باید در هر ترکیب، حتی با مقدار صفر، ثبت شود.");
    const actionIds=new Set();
@@ -109,12 +124,26 @@
  function calculate(detail,design){
   const checked=validate(detail,design);
   if(!checked.valid)throw new Error("ورودی طراحی ظرفیت کامل/معتبر نیست: "+checked.errors.join(" | "));
-  const method=design.method,boltChecks=[],bearingChecks=[],plateChecks=[],blockShearChecks=[];
+  const method=design.method,boltChecks=[],bearingChecks=[],plateChecks=[],blockShearChecks=[],weldChecks=[];
   const props=new Map(design.boltProperties.map(p=>[String(p.boltId),p]));
   const boltById=new Map(detail.bolts.map(b=>[String(b.id),b]));
   const plateById=new Map(detail.plates.map(p=>[String(p.id),p]));
   const all=[];
   for(const c of design.loadCases){
+   const weldActions=new Map(c.weldActions.map(a=>[String(a.weldId),a]));
+   for(const weld of detail.welds){
+    const a=weldActions.get(String(weld.id));
+    const start=weld.startMm,end=weld.endMm;
+    const lengthMm=Math.hypot(...start.map((v,i)=>v-end[i]));
+    const throatMm=0.707*weld.legSizeMm;
+    const nominalStressMPa=0.6*weld.electrodeFexxMPa;
+    const nominalCapacityKN=nominalStressMPa*throatMm*lengthMm/1000;
+    const designCapacity=factor(method,0.75,2.0)*nominalCapacityKN;
+    const check=demandCheck(c.id+":"+weld.id,"fillet-weld-metal-shear",a.demandKN,designCapacity,method,"جدول ۱۰-۲-۹-۳؛ Fnw=0.6FEXX، Aw=0.707aL");
+    weldChecks.push({caseId:c.id,weldId:weld.id,lengthMm,legSizeMm:weld.legSizeMm,effectiveThroatMm:throatMm,
+     FexxMPa:weld.electrodeFexxMPa,effectiveAreaMm2:throatMm*lengthMm,nominalStressMPa,nominalCapacityKN,
+     designCapacityKN:designCapacity,check,limitations:["این کنترل فقط مقاومت فلز جوش را در برش گلویی مؤثر می‌سنجد.","ظرفیت فلز پایه، بارگذاری موازی محور جوش، گروه جوش با خروج از مرکزیت، حداقل/حداکثر بعد و طول مؤثر جوش، و جوش شیاری کنترل نشده‌اند."]});
+   }
    const actions=new Map(c.boltActions.map(a=>[String(a.boltId),a]));
    for(const bolt of detail.bolts){
     const a=actions.get(String(bolt.id)),bp=props.get(String(bolt.id));
@@ -185,11 +214,11 @@
     blockShearChecks.push({caseId:c.id,plateId:p.plateId,check,pathReference:p.pathReference,Ubs:p.Ubs,ubsBasis:p.ubsBasis});
    }
   }
-  const every=[...boltChecks,...bearingChecks,...plateChecks.flatMap(p=>p.checks),...blockShearChecks.map(p=>p.check)];
+  const every=[...boltChecks,...bearingChecks,...plateChecks.flatMap(p=>p.checks),...blockShearChecks.map(p=>p.check),...weldChecks.map(p=>p.check)];
   const hasFail=every.some(x=>x.status==="FAIL");
   return{schema:SCHEMA,codeEdition:"مبحث دهم مقررات ملی ساختمان، ویرایش پنجم ۱۴۰۱",
    method,connectionType:design.connectionType,connectionId:detail.connectionId,drawingReference:design.drawingReference,
-   boltChecks,bearingChecks,plateChecks,blockShearChecks,
+   boltChecks,bearingChecks,plateChecks,blockShearChecks,weldChecks,
    summary:{checks:every.length,passed:every.filter(x=>x.status==="PASS").length,failed:every.filter(x=>x.status==="FAIL").length,
     maximumUtilization:Math.max(...every.map(x=>x.utilization||0))},
    overallStatus:hasFail?"FAIL":"INCOMPLETE",
@@ -197,7 +226,7 @@
    notEvaluated:[
     "توزیع نیرو در پیچ‌ها از مدل سه‌بعدی به‌طور خودکار محاسبه نشده؛ بسته نیروهای هر پیچ باید با روش مستند و تأیید مهندس وارد شود.",
     "اثر اهرمی فقط به‌صورت نیروی افزوده ورودی پذیرفته می‌شود؛ سختی ورق انتهایی، prying و اندرکنش تماس/پیچ حل نشده است.",
-    "ظرفیت گروه جوش، تنش برداری جوش و شکست فلز پایه/فلز جوش هنوز محاسبه نشده است.",
+    "تنش برداری گروه جوش با خروج از مرکزیت، ظرفیت فلز پایه، بارگذاری موازی محور جوش، حداقل/حداکثر بعد و طول مؤثر جوش هنوز محاسبه نشده است؛ فقط مقاومت فلز جوش در برش گلویی مؤثر جوش گوشه با تقاضای خطی مستند بررسی می‌شود.",
     "خمش ورق، تسلیم موضعی، کمانش/پایداری اجزای اتصال، ظرفیت اعضای ستون و رفتر در محل اتصال و اثر خروج از مرکزیت‌های واقعی کامل نیست.",
     "اتصالات لغزش بحرانی/پیش‌تنیده، لغزش، خستگی، الزامات لرزه‌ای و طراحی ظرفیت‌محور در این ماژول محاسبه نمی‌شوند.",
     "قبولی این کنترل‌های جزئی به معنی قبولی کل اتصال یا آمادگی ساخت و اجرا نیست."
