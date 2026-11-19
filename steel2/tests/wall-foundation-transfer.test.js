@@ -36,3 +36,15 @@ test("collector explicitly does not claim a finite element shell or completed fo
  const x=fixture();const r=createWallFoundationLoadTransfer(x);
  assert.equal(r.isFiniteElementShell,false);assert.equal(r.foundationDesignPending,true);
 });
+
+test("integrates triangular gable area exactly when no post is located at the ridge",()=>{
+ const nodes=[];
+ [0,6,12].forEach((z,i)=>{nodes.push({id:"L"+i,x:0,y:0,z,kind:"base"},{id:"R"+i,x:12,y:0,z,kind:"base"});});
+ [4,8].forEach((x,i)=>{nodes.push({id:"F"+i,x,y:0,z:0,kind:"endwall-base"});});
+ const x={model:{geometry:{span:12,length:12,height:4,rise:2},nodes},deadFactor:1,
+  loads:{wallDeadLeft:0,wallDeadRight:0,endWallDeadFront:0.4,endWallDeadBack:0}};
+ const r=createWallFoundationLoadTransfer(x);
+ assert.ok(Math.abs(r.expectedKN-24)<1e-10);
+ assert.ok(Math.abs(r.resultantKN-24)<1e-10);
+ assert.ok(Math.abs(r.equilibriumResidualKN)<1e-10);
+});
