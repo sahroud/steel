@@ -191,7 +191,8 @@
         })
       }));
       joints.push({nodeId,kind:node.kind||null,coordinatesM:{x:Number(node.x),y:Number(node.y),z:Number(node.z)},
-        connectedMemberIds:connected.map(m=>String(m.id)),families,cases,\n        ...(kneeFrame?{connectionFrame:kneeFrame}:{}),
+        connectedMemberIds:connected.map(m=>String(m.id)),families,cases,
+        ...(kneeFrame?{connectionFrame:kneeFrame}:{}),
         caseCount:cases.length,completeConcurrentActions:cases.every(c=>c.memberActions.length===connected.length),
         capacityDesigned:false,executionReady:false});
     }
