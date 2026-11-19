@@ -6,8 +6,18 @@
   if(!panel||panel.dataset.footingDesignInputUiInitialized==="true")return;
   panel.dataset.footingDesignInputUiInitialized="true";
   const $=id=>root.document.getElementById(id);
-  const button=$("btnValidateFootingDesignInput"),input=$("footingDesignInputJson"),out=$("footingDesignInputResult");
+  const button=$("btnValidateFootingDesignInput"),input=$("footingDesignInputJson"),out=$("footingDesignInputResult"),useUls=$("btnUseMappedUlsActions");
   if(!button||!input||!out)return;
+  if(useUls)useUls.addEventListener("click",()=>{
+   try{
+    if(!root.SahroudLastFoundationUlsActions)throw new Error("ابتدا بسته واکنش ULS را در مرحله قبل اعتبارسنجی و تبدیل کنید.");
+    const payload=JSON.parse(input.value||"{}");
+    payload.ulsLocalActions=root.SahroudLastFoundationUlsActions;
+    input.value=JSON.stringify(payload,null,2);
+    out.textContent="بسته کامل ULS به ورودی طراحی پی منتقل شد. مشخصات هندسه، مصالح و پوشش بتن را تکمیل و سپس اعتبارسنجی کنید.";
+    out.style.color="#15803d";
+   }catch(error){out.textContent="انتقال بسته ULS انجام نشد: "+error.message;out.style.color="#b45309";}
+  });
   button.addEventListener("click",()=>{
    try{
     if(!root.SahroudFootingDesignInput)throw new Error("ماژول اعتبارسنجی ورودی طراحی پی بارگذاری نشده است.");
