@@ -198,6 +198,11 @@
    try{
     const value=JSON.parse($("kneeDetailJson").value);
     if(!root.lastKneeMappedDemand)throw new Error("ابتدا دکمه انتقال تقاضای ترکیبات بار به دستگاه اتصال را اجرا کنید.");
+    const current=selectedKnee();
+    if(!current||String(value.jointId)!==String(current.node.id)||
+       !(value.memberForceTransferPoints||[]).some(p=>p.role==="column"&&String(p.memberId)===String(current.column.id))||
+       !(value.memberForceTransferPoints||[]).some(p=>p.role==="rafter"&&String(p.memberId)===String(current.rafter.id)))
+     throw new Error("جزئیات و تقاضای ذخیره‌شده با گره و اعضای زانویی انتخاب‌شده در مدل جاری تطابق ندارند.");
     const report=root.SahroudKneeWeldDemand.analyze(value,root.lastKneeMappedDemand);
     const rows=report.results.map(r=>{
      const p=r.lineDemand.criticalPoint||{};
@@ -234,7 +239,7 @@
    const url=root.URL.createObjectURL(new Blob([source],{type:"application/json;charset=utf-8"}));
    const a=root.document.createElement("a");a.href=url;a.download="sahroud-knee-connection-detail.json";a.click();root.URL.revokeObjectURL(url);
   });
-  root.addEventListener("sahroud:connection-demand-ready",()=>{if(!$("kneeDetailJson").value.trim())$("kneeDetailValidationResult").textContent="تحلیل جدید موجود است؛ قالب را برای گره انتخابی بسازید و جزئیات نقشه را وارد کنید.";});
+  root.addEventListener("sahroud:connection-demand-ready",()=>{root.lastKneeMappedDemand=null;$("kneeWeldDemandResult").textContent="تحلیل سه‌بعدی جدید ثبت شد؛ برای جلوگیری از استفاده از تقاضای قدیمی، انتقال تقاضا را دوباره اجرا کنید.";if(!$("kneeDetailJson").value.trim())$("kneeDetailValidationResult").textContent="تحلیل جدید موجود است؛ قالب را برای گره انتخابی بسازید و جزئیات نقشه را وارد کنید.";});
  }
  if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
  root.SahroudKneeConnectionDetailUI={emptyRecord,statusMarkup};
