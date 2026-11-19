@@ -76,7 +76,7 @@
   if(!panel||panel.dataset.soilCheckInitialized==="true")return;
   panel.dataset.soilCheckInitialized="true";
   const $=id=>root.document.getElementById(id);
-  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilQaBasis","soilSource","soilFootingB","soilFootingL","soilFootingThickness","soilCoverAboveFooting","concreteUnitWeight","soilUnitWeight","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch","foundationReactionSense","selectedFoundationNodeId","foundationLocalGeometryInput","btnMapFoundationActions"];
+  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilQaBasis","soilSource","soilFootingB","soilFootingL","sizingMinB","sizingMaxB","sizingStepB","sizingMinL","sizingMaxL","sizingStepL","sizingShape","btnSearchFootingDimensions","soilFootingThickness","soilCoverAboveFooting","concreteUnitWeight","soilUnitWeight","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch","foundationReactionSense","selectedFoundationNodeId","foundationLocalGeometryInput","btnMapFoundationActions"];
   const update=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled.checked;});};
   enabled.addEventListener("change",update);update();
   $("btnRunSoilCheck").addEventListener("click",()=>{
