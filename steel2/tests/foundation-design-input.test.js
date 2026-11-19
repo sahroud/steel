@@ -98,3 +98,12 @@ test("rejects duplicate ULS case ids and missing provenance on an unselected fou
  ]});
  assert.throws(()=>validateFootingDesignInput(missing),/مرجع مستند/);
 });
+
+test("rejects malformed support entries and empty ULS case lists anywhere in the batch",()=>{
+ const malformed=sample();
+ malformed.ulsLocalActions.foundations.push(null);
+ assert.throws(()=>validateFootingDesignInput(malformed),/شناسه پایه/);
+ const empty=sample();
+ empty.ulsLocalActions.foundations.push({nodeId:"B2",cases:[]});
+ assert.throws(()=>validateFootingDesignInput(empty),/خالی است/);
+});
