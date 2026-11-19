@@ -28,13 +28,14 @@ test("load-path audit independently verifies steel self-weight and connected pat
  assert.equal(r.readyForCodeDesign,false);
 });
 test("load-path audit blocks disconnected members and duplicate roof dead load",()=>{
- const model={nodes:[{id:"B",x:0,y:0,z:0},{id:"T",x:0,y:3,z:0},{id:"X",x:4,y:0,z:0},{id:"Y",x:4,y:3,z:0}],
+ const model={nodes:[{id:"B",x:0,y:0,z:0},{id:"T",x:0,y:3,z:0},{id:"X",x:4,y:0,z:0},{id:"Y",x:4,y:3,z:0},{id:"Q",x:8,y:0,z:0}],
  members:[
   {id:"C1",start:"B",end:"T",sectionKey:"column",lineLoads:{}},
-  {id:"P1",start:"X",end:"Y",sectionKey:"roofPurlin",lineLoads:{}},
-  {id:"R1",start:"T",end:"Y",sectionKey:"rafter",lineLoads:{dead:1}}
+  {id:"P1",start:"T",end:"Y",sectionKey:"roofPurlin",lineLoads:{}},
+  {id:"R1",start:"T",end:"Y",sectionKey:"rafter",lineLoads:{dead:1}},
+  {id:"ISOLATED",start:"X",end:"Q",sectionKey:"wallGirt",lineLoads:{}}
  ]};
- const sections={C1:{A:.01},P1:{A:.01},R1:{A:.01}};
+ const sections={C1:{A:.01},P1:{A:.01},R1:{A:.01},ISOLATED:{A:.01}};
  const r=audit.audit({model,result:{selfWeight:{deadLoadFactor:0}},sectionsByMemberId:sections,supports:[{nodeId:"B"}],loadCase:"dead"});
  assert.equal(r.success,false);
  assert.ok(r.blockers.some(x=>x.includes("راه ندارد")));
