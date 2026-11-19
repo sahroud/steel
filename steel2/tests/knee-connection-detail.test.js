@@ -120,3 +120,19 @@ test("plate solid generation rejects an unspecified thickness reference plane",(
  const r=detail.validate(d);assert.equal(r.valid,false);
  assert.ok(r.errors.some(x=>x.includes("مرجع ضخامت")));
 });
+
+test("plate solid exports correctly oriented triangulated top and bottom meshes",()=>{
+ const d=fixture();const g=detail.buildGlobalGeometry(d);const mesh=g.plates[0].solid.triangulation;
+ assert.equal(mesh.method,"ear-clipping");
+ assert.equal(mesh.top.length,2);
+ assert.equal(mesh.bottom.length,2);
+ assert.deepEqual(mesh.top[0][0],g.plates[0].solid.plusFaceGlobalM[0]);
+ assert.deepEqual(mesh.bottom[0][0],g.plates[0].solid.minusFaceGlobalM[2]);
+});
+test("concave plate polygon is triangulated without assuming a rectangular plate",()=>{
+ const d=fixture();
+ d.plates[0].polygonMm=[{x:-100,y:-100},{x:300,y:-100},{x:100,y:0},{x:300,y:100},{x:-100,y:100}];
+ d.bolts[0].xMm=0;d.bolts[0].yMm=-40;d.bolts[1].xMm=0;d.bolts[1].yMm=40;
+ const g=detail.buildGlobalGeometry(d);
+ assert.equal(g.plates[0].solid.triangulation.top.length,3);
+});
