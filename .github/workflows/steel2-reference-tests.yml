@@ -22,6 +22,7 @@ on:
       - "steel2/js/foundation-uls-reaction-batch.js"
       - "steel2/js/foundation-uls-action-mapping.js"
       - "steel2/js/foundation-uls-action-mapping-ui.js"
+      - "steel2/js/foundation-design-input.js"
       - "steel2/index.html"
       - "steel2/js/load-transfer.js"
       - "steel2/js/load-path-audit.js"
@@ -82,6 +83,7 @@ jobs:
           node --check steel2/js/foundation-uls-reaction-batch.js
           node --check steel2/js/foundation-uls-action-mapping.js
           node --check steel2/js/foundation-uls-action-mapping-ui.js
+          node --check steel2/js/foundation-design-input.js
           node --check steel2/js/load-path-audit.js
           node --check steel2/js/seismic-load-path.js
           node --check steel2/js/crane-design.js
