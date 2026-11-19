@@ -12,7 +12,13 @@
  function node(model,id){return model.nodes.find(n=>String(n.id)===String(id));}
  function unit(v){const l=Math.hypot(v.x,v.y,v.z);if(!(l>0))throw Error("بردار عضو نامعتبر است.");return{x:v.x/l,y:v.y/l,z:v.z/l};}
  function solverAxes(member,analysisResult){
-  const solved=(analysisResult?.members||[]).find(item=>String(item.id)===String(member.id));
+  const direct=analysisResult?.members||[];
+  const envelopeCases=analysisResult?.envelope?.cases||[];
+  const caseMembers=envelopeCases.flatMap(item=>item?.members||[]);
+  const combinationMembers=(analysisResult?.combinationResults||[]).flatMap(item=>item?.memberDemand?.members||item?.analysis?.memberDemand?.members||[]);
+  const candidates=[...direct,...caseMembers,...combinationMembers];
+  const matches=candidates.filter(item=>String(item.id)===String(member.id));
+  const solved=matches[0];
   const axes=solved?.localAxes;
   if(!axes)return{available:false,status:"solver-axes-missing",axes:null,source:null,issues:["محورهای محلی حل‌گر برای این عضو در نتیجه تحلیل موجود نیست."]};
   const names=["x","y","z"],vectors=[];
@@ -30,7 +36,10 @@
    Math.abs(dot(vectors[1],vectors[2]))<=1e-6&&
    cross(vectors[0],vectors[1]).every((v,i)=>Math.abs(v-vectors[2][i])<=1e-6);
   if(!valid)return{available:false,status:"solver-axes-invalid",axes:null,source:"analysisResult.members.localAxes",issues:["محورهای حل‌گر یکه، متعامد و راست‌گرد نیستند."]};
-  return{available:true,status:"solver-axes-valid",axes:{x:vectors[0],y:vectors[1],z:vectors[2]},sectionRollDeg:solved?.sectionRollDeg??null,source:"analysisResult.members.localAxes",issues:[]};
+  const sameAxes=(a,b)=>["x","y","z"].every(key=>a?.[key]?.every((v,i)=>Math.abs(Number(v)-Number(b?.[key]?.[i]))<=1e-7));
+  if(matches.some(item=>item.localAxes&&!sameAxes(axes,item.localAxes)))return{available:false,status:"solver-axes-inconsistent",axes:null,source:"analysisResult",issues:["دستگاه محورهای عضو بین ترکیبات بار یکسان نیست؛ هندسه اکسترود نمی‌شود."]};
+  const source=envelopeCases.length?"analysisResult.envelope.cases[].members.localAxes":combinationMembers.length?"analysisResult.combinationResults[].memberDemand.members.localAxes":"analysisResult.members.localAxes";
+  return{available:true,status:"solver-axes-valid",axes:{x:vectors[0],y:vectors[1],z:vectors[2]},sectionRollDeg:solved?.sectionRollDeg??null,source,issues:[]};
  }
  function sectionGeometry(member){
   const section=member?.sectionProperties;
