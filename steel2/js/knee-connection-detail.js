@@ -27,6 +27,25 @@
   }
   return inside;
  }
+ function triangulatePolygon(poly){
+  const area=poly.reduce((s,a,i)=>{const b=poly[(i+1)%poly.length];return s+a.x*b.y-b.x*a.y;},0)/2;
+  const order=poly.map((_,i)=>i);if(area<0)order.reverse();
+  const triangles=[];let guard=0;
+  const inside=(p,a,b,c)=>cross2(a,b,p)>=-1e-9&&cross2(b,c,p)>=-1e-9&&cross2(c,a,p)>=-1e-9;
+  while(order.length>3&&guard++<poly.length*poly.length){
+   let clipped=false;
+   for(let j=0;j<order.length;j++){
+    const ia=order[(j+order.length-1)%order.length],ib=order[j],ic=order[(j+1)%order.length];
+    const a=poly[ia],b=poly[ib],d=poly[ic];
+    if(cross2(a,b,d)<=1e-9)continue;
+    if(order.some(ix=>ix!==ia&&ix!==ib&&ix!==ic&&inside(poly[ix],a,b,d)))continue;
+    triangles.push([ia,ib,ic]);order.splice(j,1);clipped=true;break;
+   }
+   if(!clipped)throw new Error("چندضلعی ورق برای مثلث‌بندی معتبر نیست یا رأس هم‌خط/تکراری دارد.");
+  }
+  if(order.length===3)triangles.push(order.slice());
+  return triangles;
+ }
  function edgeDistance(p,a,b){
   const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy;
   const t=l2?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/l2)):0;
@@ -167,6 +186,7 @@
    const localToConnection=(x,y)=>[0,1,2].map(i=>o[i]+u[i]*x+v[i]*y);
    const normalGlobal=[0,1,2].map(i=>axes.x[i]*n[0]+axes.y[i]*n[1]+axes.z[i]*n[2]);
    const half=Number(plate.thicknessMm)/2000;
+   const triangles=triangulatePolygon(plate.polygonMm);
    const vertices=plate.polygonMm.map(point=>{
     const center=localToConnection(point.x,point.y);
     const minus=center.map((v,i)=>v-n[i]*half*1000);
@@ -181,7 +201,9 @@
     polygon:plate.polygonMm.map(point=>({localMm:{x:point.x,y:point.y},
      connectionFrameMm:localToConnection(point.x,point.y),
      globalM:toGlobal(localToConnection(point.x,point.y))})),
-    solid:{minusFaceGlobalM:vertices.map(v=>v.minusFaceGlobalM),plusFaceGlobalM:vertices.map(v=>v.plusFaceGlobalM),sideFaces},
+    solid:{minusFaceGlobalM:vertices.map(v=>v.minusFaceGlobalM),plusFaceGlobalM:vertices.map(v=>v.plusFaceGlobalM),sideFaces,
+     triangulation:{method:"ear-clipping",top:triangles.map(t=>t.map(i=>vertices[i].plusFaceGlobalM)),
+      bottom:triangles.map(t=>t.slice().reverse().map(i=>vertices[i].minusFaceGlobalM))}},
     bolts:input.bolts.filter(b=>String(b.plateId)===String(plate.id)).map(b=>{
      const point=localToConnection(b.xMm,b.yMm);
      return{id:String(b.id),centerLocalMm:{x:b.xMm,y:b.yMm},centerGlobalM:toGlobal(point),
