@@ -1210,6 +1210,8 @@
       wallDeadLongitudinalMembers:analysisModel.members.filter(m=>m.sectionKey==="wallGirt"&&Number(m.lineLoads?.dead)>0).length,
       wallDeadEndMembers:analysisModel.members.filter(m=>m.sectionKey==="endGirt"&&Number(m.lineLoads?.dead)>0).length,
       wallDeadSupportPath:currentWindInputs.wallDeadSupportPath||"foundation",
+      wallDeadLongitudinalInput:Number(currentWindInputs.wallDeadLeft||0)+Number(currentWindInputs.wallDeadRight||0),
+      wallDeadEndInput:Number(currentWindInputs.endWallDeadFront||0)+Number(currentWindInputs.endWallDeadBack||0),
       wallDeadGableTriangle:gableWallDeadTransfer.length?"applied":(currentWindInputs.wallDeadSupportPath==="girts"?"not-applied":"foundation-path-pending"),
       foundationWallLoadsPending:(currentWindInputs.wallDeadSupportPath||"foundation")==="foundation",
       gableWallDeadTransfer,
