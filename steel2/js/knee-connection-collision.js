@@ -54,7 +54,8 @@
    for(const pa of a.prisms)for(const pb of b.prisms){
     const r=pairState(pa,pb,tolerance);
     if(r.state==="overlap"){if(best.state!=="overlap"||r.minimumPenetrationMm>best.minimumPenetrationMm)best=r;}
-    else if(r.state==="contact"&&best.state==="clear")best=r;
+    else if(r.state==="contact"&&best.state!=="overlap")best=r;
+    else if(r.state==="clear"&&best.state==="clear"&&r.minimumPenetrationMm>best.minimumPenetrationMm)best=r;
    }
    pairs.push({plateA:a.id,plateB:b.id,state:best.state,minimumPenetrationMm:best.minimumPenetrationMm});
   }
