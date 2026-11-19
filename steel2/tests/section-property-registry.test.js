@@ -2,6 +2,15 @@
 const test=require("node:test");
 const assert=require("node:assert/strict");
 const registry=require("../js/section-property-registry.js");
+function withGeometry(members){
+ const nodes=[];
+ members.forEach((member,i)=>{
+  const x=i*20, start="N"+(i*2+1), end="N"+(i*2+2);
+  member.start=start;member.end=end;
+  nodes.push({id:start,x,y:0,z:0},{id:end,x:x+Number(member.length),y:0,z:0});
+ });
+ return {units:{length:"m",coordinates:"m",memberLength:"m"},nodes,members};
+}
 const section=(extra={})=>({
  profile:"Built-up I",A:0.02,Iy:0.00008,Iz:0.0009,J:0.000001,
  E:200e9,G:77e9,SxTop:0.00008,SxBottom:0.00009,Sy:0.00002,...extra
@@ -65,8 +74,37 @@ test("steel takeoff sums each unique member actual length times its section mass
 });
 test("steel takeoff refuses stale, incomplete, duplicate or invalid-length models",()=>{
  const member={id:"C1",length:6,sectionProperties:registry.normalize(section(),"C1")};
- assert.throws(()=>registry.takeoff({members:[member],sectionPropertiesDirty:true,sectionPropertyAudit:{complete:true,memberCount:1}}),/تغییر/);
- assert.throws(()=>registry.takeoff({members:[member],sectionPropertyAudit:{complete:false,memberCount:1}}),/کامل/);
- assert.throws(()=>registry.takeoff({members:[member,{...member}],sectionPropertyAudit:{complete:true,memberCount:2}}),/تکراری/);
- assert.throws(()=>registry.takeoff({members:[{...member,length:0}],sectionPropertyAudit:{complete:true,memberCount:1}}),/طول واقعی/);
+ const model=withGeometry([member]);
+ model.sectionPropertyAudit={complete:true,memberCount:1};
+ model.sectionPropertiesDirty=true;
+ assert.throws(()=>registry.takeoff(model),/تغییر/);
+ model.sectionPropertiesDirty=false;model.sectionPropertyAudit.complete=false;
+ assert.throws(()=>registry.takeoff(model),/کامل/);
+ const duplicate=withGeometry([{...member},{...member}]);duplicate.sectionPropertyAudit={complete:true,memberCount:2};
+ assert.throws(()=>registry.takeoff(duplicate),/تکراری/);
+ const invalid=withGeometry([{...member,length:0}]);invalid.sectionPropertyAudit={complete:true,memberCount:1};
+ assert.throws(()=>registry.takeoff(invalid),/طول ذخیره‌شده|طول هندسی/);
+});
+
+test("geometry audit verifies explicit metre units and member lengths against endpoint coordinates",()=>{
+ const member={id:"M1",length:5,start:"A",end:"B"};
+ const model={units:{length:"m",coordinates:"m",memberLength:"m"},nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:3,y:4,z:0}],members:[member]};
+ const audit=registry.auditGeometry(model);
+ assert.equal(audit.complete,true);
+ assert.equal(audit.checkedCount,1);
+ assert.equal(audit.items[0].geometricLengthM,5);
+});
+test("geometry audit blocks missing units, missing endpoints and mismatched stored lengths",()=>{
+ const base={units:{length:"m",coordinates:"m",memberLength:"m"},nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:3,y:4,z:0}],members:[{id:"M1",length:6,start:"A",end:"B"}]};
+ assert.equal(registry.auditGeometry(base).complete,false);
+ const missing={...base,units:{},members:[{id:"M2",length:5,start:"A",end:"missing"}]};
+ assert.equal(registry.auditGeometry(missing).complete,false);
+ const noUnits={...base,units:{},members:[{id:"M3",length:5,start:"A",end:"B"}]};
+ assert.equal(registry.auditGeometry(noUnits).complete,false);
+});
+test("takeoff rejects geometry without a complete coordinate audit",()=>{
+ const model=withGeometry([{id:"C1",length:6,sectionProperties:registry.normalize(section(),"C1")}]);
+ model.sectionPropertyAudit={complete:true,memberCount:1};
+ model.members[0].length=7;
+ assert.throws(()=>registry.takeoff(model),/ممیزی هندسه/);
 });
