@@ -103,6 +103,7 @@
    $("initialSectionIz").value=Iz.toFixed(3);$("initialSectionJ").value=J.toFixed(3);
    const base=baseFor(member);if(!base)throw new Error("مقطع پایه و خواص ماده عضو موجود نیست.");
    const item=createOverride(selectedId,base,{profile:$("initialSectionProfile").value||result.profile,A_cm2:A,Iy_cm4:Iy,Iz_cm4:Iz,J_cm4:J});
+   applyOrientationInput(item.section);
    item.section.geometryType="built-up-I";
    item.section.geometryDimensionsMm={...geometry};
    item.section.geometricProperties=result;
