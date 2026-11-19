@@ -47,6 +47,26 @@
     if(Math.abs(q[2])>1e-12){const x=-f[2]/q[2];if(x>0&&x<L)xs.push(x);}
     return [...new Set(xs.map(x=>Number(x.toFixed(12))))].sort((a,b)=>a-b);
   }
+  function validateLocalAxes(axes){
+    if(axes==null)return null;
+    const names=["x","y","z"];
+    const vectors=names.map(name=>{
+      const value=axes[name];
+      if(!Array.isArray(value)||value.length!==3||value.some(v=>!Number.isFinite(Number(v))))
+        throw new Error("دستگاه محورهای محلی عضو ناقص یا نامعتبر است: "+name);
+      return value.map(Number);
+    });
+    const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+    const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+    const norm=v=>Math.hypot(...v);
+    if(vectors.some(v=>Math.abs(norm(v)-1)>1e-6)||
+       Math.abs(dot(vectors[0],vectors[1]))>1e-6||
+       Math.abs(dot(vectors[0],vectors[2]))>1e-6||
+       Math.abs(dot(vectors[1],vectors[2]))>1e-6||
+       cross(vectors[0],vectors[1]).some((v,i)=>Math.abs(v-vectors[2][i])>1e-6))
+      throw new Error("محورهای محلی عضو باید یکه، متعامد و راست‌گرد باشند.");
+    return {x:vectors[0],y:vectors[1],z:vectors[2]};
+  }
   function recoverMember(member,subdivisions){
     const xs=stations(member,subdivisions);
     const samples=xs.map(x=>sectionForcesAt(member,x));
@@ -59,8 +79,14 @@
       });
       extrema[component]={value:governing[component],absolute:maxAbs,x:governing.x};
     });
+    const localAxes=validateLocalAxes(member.localAxes);
     return {id:member.id,sectionKey:member.sectionKey||"unassigned",length:Number(member.length),
-      sampleCount:samples.length,samples,extrema,units:{force:"N",moment:"N.m",length:"m"}};
+      sampleCount:samples.length,samples,extrema,localAxes,
+      localAxesVerified:!!localAxes,
+      localAxesConvention:"unit global direction vectors for solver local x/y/z; local x follows member i-to-j",
+      sectionOrientationVerified:member.sectionOrientationVerified===true,
+      sectionOrientationSource:member.sectionOrientationSource||null,
+      units:{force:"N",moment:"N.m",length:"m"}};
   }
   function extractCase(solverResult,sourceModel,options){
     if(!solverResult||solverResult.success!==true||!Array.isArray(solverResult.members))
