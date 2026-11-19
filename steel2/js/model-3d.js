@@ -1044,6 +1044,20 @@
       if(member)member.initialSection=JSON.parse(JSON.stringify(record.initialSection));
       sectionsByMemberId[record.memberId]=JSON.parse(JSON.stringify(record.initialSection));
     });
+    if(!window.SahroudSectionPropertyRegistry?.apply)
+      throw new Error("مخزن یکپارچه خواص مقاطع اعضا بارگذاری نشده است؛ تحلیل برای جلوگیری از ناسازگاری متوقف شد.");
+    const sectionPropertyRecords=initialSectionResolution.records.map(record=>({
+      memberId:record.memberId,section:record.initialSection
+    }));
+    const propertyAudit=window.SahroudSectionPropertyRegistry.apply(analysisModel,sectionPropertyRecords);
+    window.SahroudSectionPropertyRegistry.apply(model,sectionPropertyRecords);
+    if(!propertyAudit.complete)
+      throw new Error("خواص مقطع برای همه اعضای مدل تحلیل تخصیص نیافت؛ اعضای ناقص: "+propertyAudit.missing.slice(0,8).join("، "));
+    analysisModel.sectionPropertyAudit=propertyAudit;
+    model.sectionPropertyAudit=propertyAudit;
+    analysisModel.members.forEach(member=>{
+      sectionsByMemberId[String(member.id)]=JSON.parse(JSON.stringify(member.sectionProperties));
+    });
     const fixed= $("baseConnection")?.value==="fixed";
     const supports=analysisModel.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>({
       nodeId:n.id,
