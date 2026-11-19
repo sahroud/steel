@@ -100,3 +100,32 @@ test("connection frame rejects invalid axes and missing coordinates",()=>{
   {Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},[0,0],[0,0,0],
   {x:[1,0,0],y:[0,1,0],z:[0,0,1]}),/مختصات گره/);
 });
+
+test("knee frame is derived from actual column and rafter geometry",()=>{
+ const nodes=[{id:"E",x:0,y:6,z:0},{id:"B",x:0,y:0,z:0},{id:"R",x:6,y:7,z:0}];
+ const frame=registry.deriveKneeConnectionFrame(nodes[0],
+  {id:"C",start:"B",end:"E"},{id:"R1",start:"E",end:"R"},nodes);
+ assert.deepEqual(frame.originM,[0,6,0]);
+ assert.ok(Math.abs(Math.hypot(...frame.axes.x)-1)<1e-10);
+ assert.ok(Math.abs(frame.axes.x.reduce((a,v,i)=>a+v*frame.axes.y[i],0))<1e-10);
+ assert.ok(Math.abs(frame.axes.x[0]*frame.axes.y[1]-frame.axes.x[1]*frame.axes.y[0]-frame.axes.z[2])<1e-10);
+ assert.equal(frame.geometryOnly,true);
+ assert.equal(frame.platePlaneVerified,false);
+});
+test("knee frame rejects parallel members and members without a unique shared end",()=>{
+ const n=[{id:"E",x:0,y:0,z:0},{id:"A",x:0,y:1,z:0},{id:"B",x:0,y:2,z:0}];
+ assert.throws(()=>registry.deriveKneeConnectionFrame(n[0],
+  {start:"E",end:"A"},{start:"E",end:"B"},n),/موازی/);
+ assert.throws(()=>registry.deriveKneeConnectionFrame(n[0],
+  {start:"A",end:"B"},{start:"E",end:"A"},n),/دقیقاً یک/);
+});
+test("joint registry attaches knee-frame actions without changing global actions",()=>{
+ const {model,run}=fixture();
+ const out=registry.build(run,model,demand),knee=out.joints.find(j=>j.nodeId==="E");
+ assert.ok(knee.connectionFrame);
+ assert.equal(knee.connectionFrame.platePlaneVerified,false);
+ const action=knee.cases[0].memberActions[0];
+ assert.ok(action.kneeFrameActions);
+ assert.deepEqual(action.kneeFrameActions.globalAtConnectionOrigin,action.global);
+ assert.equal(action.kneeFrameActions.eccentricityIncluded,false);
+});
