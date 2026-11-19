@@ -76,6 +76,13 @@
      {providedLengthMm:L,requiredLengthMm:requiredLength,continuity:w.continuity,
       reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)"});
     if(w.continuity==="intermittent"){
+     const allowedUses=["web-to-flange-built-up-girder","flange-cover-plate","web-stiffener","built-up-member-component"];
+     if(!allowedUses.includes(w.intermittentUseCase)){
+      add(w,"intermittent-use","NOT_ASSESSABLE","کاربرد جوش منقطع باید صریحاً از کاربردهای مجاز بند آیین‌نامه انتخاب و مستند شود؛ این کنترل به‌تنهایی مجاز بودن سایر کاربردها را تأیید نمی‌کند.");
+     }else{
+      add(w,"intermittent-use","PASS","کاربرد اعلام‌شده در فهرست کاربردهای مجاز جوش منقطع قرار دارد؛ انطباق جزئیات و الزامات تکمیلی همچنان لازم است.",
+       {intermittentUseCase:w.intermittentUseCase,reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)"});
+     }
      const groupId=typeof w.intermittentGroupId==="string"?w.intermittentGroupId.trim():"";
      if(!groupId){
       add(w,"intermittent-spacing","NOT_ASSESSABLE","شناسه گروه خط جوش منقطع برای کنترل فاصله آزاد قطعات لازم است.");
@@ -129,7 +136,7 @@
     addGroup("NOT_ASSESSABLE","برای کنترل فاصله آزاد، حداقل دو قطعه جوش منقطع در یک گروه لازم است.",{groupId,beadCount:beads.length});
     continue;
    }
-   if(conditionSet.size!==1||!["protected","weather-exposed-unpainted"].includes(first.corrosionCondition)){
+   if(conditionSet.size!==1||!["protected","painted","unpainted-noncorrosive","weather-exposed-unpainted"].includes(first.corrosionCondition)){
     addGroup("NOT_ASSESSABLE","وضعیت حفاظت/خوردگی باید برای تمام قطعات گروه یکسان و صریح باشد.",{groupId,corrosionConditions:[...conditionSet]});
     continue;
    }
@@ -159,6 +166,11 @@
    for(let i=1;i<intervals.length;i++)gaps.push(intervals[i][0]-intervals[i-1][1]);
    if(gaps.some(g=>g< -0.1)){
     addGroup("NOT_ASSESSABLE","قطعات جوش گروه هم‌پوشانی دارند؛ هندسه گروه برای کنترل فاصله آزاد مبهم است.",{groupId,gapsMm:gaps});
+    continue;
+   }
+   const useCases=new Set(beads.map(w=>w.intermittentUseCase));
+   if(useCases.size!==1||!["web-to-flange-built-up-girder","flange-cover-plate","web-stiffener","built-up-member-component"].includes(first.intermittentUseCase)){
+    addGroup("NOT_ASSESSABLE","کاربرد جوش منقطع در تمام قطعات گروه باید یکسان و از موارد مجاز آیین‌نامه باشد.",{groupId,intermittentUseCases:[...useCases]});
     continue;
    }
    const maximum=first.corrosionCondition==="weather-exposed-unpainted"
