@@ -66,7 +66,8 @@
    "<button id='btnKneeWeldDetailCheck' class='btn secondary' type='button'>کنترل ضوابط هندسی جوش گوشه</button>"+
    "<button id='btnKneeWeldDemand' class='btn primary' type='button'>محاسبه تقاضای خطوط جوش</button>"+
    "<button id='btnKneeDetailCollision' class='btn secondary' type='button'>ممیزی برخورد سه‌بعدی ورق‌ها</button></div>"+
-   "<div class='notice'>محاسبات زیر فقط حالت‌های حدی پیچی اتکایی و ورق را که داده‌های هندسی/تقاضای آن‌ها صریح وارد شده باشد بررسی می‌کند. توزیع نیرو بین پیچ‌ها و خطوط جوش، سطوح مقطع خالص، مسیر برش قالبی و اثر اهرمی باید مستند باشند. کنترل جوش فعلاً فقط فلز جوش گوشه در برش گلویی مؤثر را پوشش می‌دهد. جوش، خمش ورق، لغزش بحرانی و تأیید نهایی اتصال هنوز پوشش داده نمی‌شوند.</div>"+
+   "<div class='notice'>محاسبات زیر فقط حالت‌های حدی پیچی اتکایی و ورق را که داده‌های هندسی/تقاضای آن‌ها صریح وارد شده باشد بررسی می‌کند. توزیع نیرو بین پیچ‌ها و خطوط جوش، سطوح مقطع خالص، مسیر برش قالبی و اثر اهرمی باید مستند باشند. کنترل جوش فعلاً فقط جزئیات هندسی جوش گوشه را پوشش می‌دهد؛ ظرفیت جوش و فلز پایه هنوز تأیید نشده است.</div>"+
+   "<div class='notice'><b>ورودی جوش منقطع:</b> برای هر قطعه، continuity='intermittent'، شناسه مشترک intermittentGroupId، وضعیت خوردگی corrosionCondition و مختصات startMm/endMm را وارد کنید. مقادیر وضعیت خوردگی: protected یا weather-exposed-unpainted. تمام قطعات یک گروه باید روی یک ورق و یک وجه و روی یک خط مستقیم باشند؛ برای هر ردیف یا وجه، گروه جدا تعریف کنید. در صورت نبود اطلاعات، نتیجه قابل ارزیابی نیست و نرم‌افزار فاصله را حدس نمی‌زند. فاصله آزاد بین قطعات متوالی، نه فاصله محور تا محور، سنجیده می‌شود.</div>"+
    "<div class='button-grid'><button id='btnKneeCapacityTemplate' class='btn secondary' type='button'>ساخت قالب داده‌های ظرفیت</button><button id='btnKneeCapacityRun' class='btn primary' type='button'>محاسبه ظرفیت‌های پیچی/ورق</button></div>"+
    "<div class='field'><label for='kneeCapacityJson'>تقاضاها، سطوح مقطع و مسیرهای گسیختگی (JSON)</label><textarea id='kneeCapacityJson' rows='16' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
    "<div id='kneeCapacityResult' aria-live='polite' class='notice'>محاسبه ظرفیت هنوز اجرا نشده است.</div>"+
@@ -204,7 +205,7 @@
     const report=root.SahroudKneeWeldDetailCheck.assess(value);
     const label=s=>s==="PASS"?"قبول":s==="FAIL"?"رد":s==="NOT_APPLICABLE"?"نامرتبط":"قابل ارزیابی نیست";
     const rows=report.checks.map(x=>"<tr><td>"+esc(x.weldId)+"</td><td>"+esc(x.checkId)+"</td><td>"+label(x.status)+
-     "</td><td>"+esc(x.detail)+"</td><td>"+(Number.isFinite(x.requiredLegMm)?x.requiredLegMm+" mm":Number.isFinite(x.maximumFreeSpacingMm)?("حداکثر فاصله "+x.maximumFreeSpacingMm+" mm؛ فاصله واقعی "+x.maximumProvidedGapMm+" mm"):Number.isFinite(x.effectiveLengthMm)?x.effectiveLengthMm.toFixed(2)+" mm":"—")+"</td></tr>").join("");
+     "</td><td>"+esc(x.detail)+"</td><td>"+(Number.isFinite(x.requiredLegMm)?x.requiredLegMm+" mm":Number.isFinite(x.maximumFreeSpacingMm)?("حداکثر فاصله "+x.maximumFreeSpacingMm+" mm؛ فاصله واقعی "+x.maximumProvidedGapMm+" mm؛ فواصل: "+(Array.isArray(x.gapsMm)?x.gapsMm.map(v=>Number(v).toFixed(1)).join(" / ")+" mm":"—")):Number.isFinite(x.effectiveLengthMm)?x.effectiveLengthMm.toFixed(2)+" mm":"—")+"</td></tr>").join("");
     $("kneeWeldDetailCheckResult").innerHTML="<p><b>نتیجه کنترل جزئیات جوش گوشه: "+label(report.overallStatus)+"</b></p>"+
      "<p>مبنای بررسی: "+esc(report.codeBasis.document)+"، بند "+esc(report.codeBasis.clause)+
      "؛ تعیین طول مؤثر برای تحلیل گروه جوش: "+(report.lineDemandGeometryComplete?"کامل":"ناقص")+"</p>"+
