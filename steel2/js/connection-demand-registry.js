@@ -63,6 +63,37 @@
     if(!Number.isFinite(n))fail("مؤلفه "+label+" برای تبدیل دستگاه مختصات متناهی نیست.");
     return n;
   }
+  function toConnectionFrame(globalActions,nodeCoordinates,connectionOrigin,frameAxes){
+    const vector=(v,label)=>{
+      if(!Array.isArray(v)||v.length!==3||v.some(x=>!Number.isFinite(Number(x))))
+        fail(label+" باید بردار سه‌مؤلفه‌ای متناهی باشد.");
+      return v.map(Number);
+    };
+    const axes=["x","y","z"].map(k=>vector(frameAxes&&frameAxes[k],"محور "+k));
+    const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+    const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+    const norm=v=>Math.hypot(...v);
+    if(axes.some(a=>Math.abs(norm(a)-1)>1e-6)||
+       Math.abs(dot(axes[0],axes[1]))>1e-6||
+       Math.abs(dot(axes[0],axes[2]))>1e-6||
+       Math.abs(dot(axes[1],axes[2]))>1e-6||
+       cross(axes[0],axes[1]).some((v,i)=>Math.abs(v-axes[2][i])>1e-6))
+      fail("دستگاه اتصال باید متعامد، یکه و راست‌گرد باشد.");
+    const node=vector(nodeCoordinates,"مختصات گره"),origin=vector(connectionOrigin,"مبدأ اتصال");
+    const force=vector([globalActions?.Fx,globalActions?.Fy,globalActions?.Fz],"نیروی جهانی");
+    const moment=vector([globalActions?.Mx,globalActions?.My,globalActions?.Mz],"لنگر جهانی");
+    // Transfer the action from the solver node to the declared connection origin.
+    const arm=node.map((v,i)=>v-origin[i]);
+    const shiftedMoment=moment.map((v,i)=>v+cross(arm,force)[i]);
+    const project=v=>axes.map(axis=>dot(axis,v));
+    const f=project(force),m=project(shiftedMoment);
+    return {force:{x:f[0],y:f[1],z:f[2]},moment:{x:m[0],y:m[1],z:m[2]},
+      globalAtConnectionOrigin:{Fx:force[0],Fy:force[1],Fz:force[2],
+        Mx:shiftedMoment[0],My:shiftedMoment[1],Mz:shiftedMoment[2]},
+      connectionOriginM:{x:origin[0],y:origin[1],z:origin[2]},
+      units:{force:"N",moment:"N.m",length:"m"},
+      convention:"M_connection = M_node + (r_node - r_connection) cross F"};
+  }
   function build(combinationRun,model,demandApi){
     if(!combinationRun||combinationRun.success!==true||
        !Array.isArray(combinationRun.combinationResults)||
@@ -147,6 +178,6 @@
         "تا تکمیل بارگذاری زلزله، جرثقیل، خستگی و تحلیل‌های لازم، این بسته برای تأیید اجرایی کافی نیست."
       ]};
   }
-  root.SahroudConnectionDemandRegistry={components:COMPONENTS.slice(),families:FAMILIES.map(x=>({...x})),classify,toGlobalJointActions,build};
+  root.SahroudConnectionDemandRegistry={components:COMPONENTS.slice(),families:FAMILIES.map(x=>({...x})),classify,toGlobalJointActions,toConnectionFrame,build};
   if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudConnectionDemandRegistry;
 })(typeof window!=="undefined"?window:globalThis);
