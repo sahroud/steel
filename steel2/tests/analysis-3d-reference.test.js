@@ -1888,7 +1888,7 @@ test("3D design demand uses the real member-force recovery API for each combinat
     members:[{id:"M1",start:"A",end:"B",sectionKey:"reference",length:2,
       analysisLoad:{uniformLocal:[0,-10,-20]}}]};
   const resultFor=(id,label,scale)=>({success:true,loadCase:id,loadCaseLabel:label,
-    members:[{id:"M1",length:2,localEndForces:[0,100*scale,200*scale,3*scale,4*scale,5*scale,0,0,0,0,0,0]}]});
+    members:[{id:"M1",length:2,localEndForces:[100*scale,200*scale,400*scale,6*scale,8*scale,10*scale,0,0,0,0,0,0]}]});
   const run={success:true,caseCount:2,combinationResults:[
     {id:"C1",label:"C1",analysis:resultFor("C1","C1",1)},
     {id:"C2",label:"C2",analysis:resultFor("C2","C2",2)}
