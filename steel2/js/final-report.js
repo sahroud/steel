@@ -105,6 +105,15 @@
         if (!out) return;
 
         try {
+            const connectionAudit = window.SahroudConnectionReadiness?.assess?.();
+            if (!connectionAudit || connectionAudit.readyForExecution !== true) {
+                const count = connectionAudit?.missing ?? "نامشخص";
+                throw new Error(
+                    "گزارش اجرایی نهایی مسدود است؛ " + count +
+                    " گروه اتصال هنوز طراحی ظرفیت و جزئیات تأییدشده ندارند. " +
+                    "گزارش تحلیل مقدماتی را می‌توان جداگانه بررسی کرد، اما این خروجی نباید اجرایی تلقی شود."
+                );
+            }
             const analysis = window.SteelAnalysis;
 
             if (
