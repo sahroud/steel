@@ -198,3 +198,12 @@ test("rejects bolt hardware without an explicit transverse drawing reference",()
  const d=fixture();d.bolts[0].hardware=[{id:"H1",kind:"head",centerOffsetMm:-24,thicknessMm:12,acrossFlatsMm:30}];
  assert.equal(detail.validate(d).valid,false);
 });
+
+test("rejects invalid washer dimensions and non-perpendicular hardware reference",()=>{
+ const d=fixture();d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[0].hardware=[{id:"W1",kind:"washer",centerOffsetMm:15,thicknessMm:3,outerDiameterMm:20,innerDiameterMm:22}];
+ assert.equal(detail.validate(d).valid,false);
+ const e=fixture();e.bolts[0].transverseReferenceConnectionFrame=[0,0,1];
+ e.bolts[0].hardware=[{id:"H1",kind:"head",centerOffsetMm:-24,thicknessMm:12,acrossFlatsMm:30}];
+ assert.equal(detail.validate(e).valid,false);
+});
