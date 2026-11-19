@@ -449,12 +449,16 @@
       } else if(m.sectionKey==="wallGirt"){
         const h=Number(m.tributaryHeight||0);
         if(!(h>0))throw new Error("ارتفاع بارگیر دیوار طولی معتبر نیست.");
-        m.lineLoads={wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h};
+        const wallDead=m.side==="left"?Number(loads.wallDeadLeft||0):Number(loads.wallDeadRight||0);
+        if(!Number.isFinite(wallDead)||wallDead<0)throw new Error("وزن سطحی دیوار طولی معتبر نیست.");
+        m.lineLoads={dead:wallDead*h,wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h,wallDeadPressureKPa:wallDead};
       } else if(m.sectionKey==="endGirt"){
         const h=Number(m.tributaryHeight||0);
         if(!(h>0))throw new Error("ارتفاع بارگیر دیوار انتهایی معتبر نیست.");
         const pressure=m.endFace==="front"?(loads.windEndFront||0):(loads.windEndBack||0);
-        m.lineLoads={windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure};
+        const wallDead=m.endFace==="front"?Number(loads.endWallDeadFront||0):Number(loads.endWallDeadBack||0);
+        if(!Number.isFinite(wallDead)||wallDead<0)throw new Error("وزن سطحی دیوار انتهایی معتبر نیست.");
+        m.lineLoads={dead:wallDead*h,windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure,wallDeadPressureKPa:wallDead};
       }
     });
     return {roofPurlinsPresent,roofLoadAreaBasis,roofLoadBasisReady};
@@ -882,7 +886,17 @@
         windFactor:serviceWind?0.64:1,windSign:1,serviceability:!!serviceWind,
         windZoneDirection:windCase.direction,windZoneScenario:windCase.scenario};
     }
-    if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
+    let approvedExternalNodalLoads=[];
+    if(loadCase&&typeof loadCase==="object"&&Array.isArray(loadCase.nodalLoads)){
+      const type=loadCase.type;
+      if(!["seismic","crane"].includes(type))throw new Error("نوع بار گره‌ای خارجی باید seismic یا crane باشد.");
+      if(loadCase.sourceVerified!==true||typeof loadCase.sourceReference!=="string"||!loadCase.sourceReference.trim())
+        throw new Error("بار زلزله/جرثقیل بدون منبع مستند و تأییدشده قابل تحلیل نیست.");
+      approvedExternalNodalLoads=loadCase.nodalLoads;
+      selected={key:type,label:String(loadCase.label||(type==="seismic"?"زلزله ـ بار گره‌ای مستند":"جرثقیل ـ بار گره‌ای مستند")),
+        direction:[0,0,0],factors:{dead:Number(loadCase.factors?.dead)||0,live:Number(loadCase.factors?.live)||0,snow:Number(loadCase.factors?.snow)||0},
+        deadFactor:Number(loadCase.factors?.dead)||0,externalSource:loadCase.sourceReference};
+    }else if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
       const f=loadCase.factors;
       selected={key:"combo",label:String(loadCase.label||"ترکیب بار سه‌بعدی"),
         direction:[0,-1,0],
@@ -1000,6 +1014,15 @@
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
     const nodalLoads=[];
+    if(approvedExternalNodalLoads.length){
+      const validNodeIds=new Set(analysisModel.nodes.map(n=>n.id));
+      approvedExternalNodalLoads.forEach((item,index)=>{
+        if(!item||!validNodeIds.has(item.nodeId)||!Array.isArray(item.values)||item.values.length!==6||
+          item.values.some(v=>!Number.isFinite(Number(v))))
+          throw new Error("بار گره‌ای مستند شماره "+(index+1)+" باید گره موجود و شش مؤلفه محدود بر حسب N/Nm داشته باشد.");
+        nodalLoads.push({nodeId:item.nodeId,values:item.values.map(Number)});
+      });
+    }
     const currentWindInputs=window.SteelLoads?.getData?.()||{};
     const gableWindTransfer=[];
     const windFactor=selected.key==="wind"?1:Number(selected.windFactor||0);
@@ -1143,6 +1166,18 @@
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
     result.selfWeight={included:selected.deadFactor>0,deadLoadFactor:selected.deadFactor,unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount,bySectionGroup:selfWeightByGroup};
+    result.externalLoadSource=selected.externalSource||null;
+    result.loadPathCoverage={
+      wallDeadLongitudinalMembers:analysisModel.members.filter(m=>m.sectionKey==="wallGirt"&&Number(m.lineLoads?.dead)>0).length,
+      wallDeadEndMembers:analysisModel.members.filter(m=>m.sectionKey==="endGirt"&&Number(m.lineLoads?.dead)>0).length,
+      wallDeadGableTriangle:"not-applied",
+      seismicApplied:selected.key==="seismic",
+      craneApplied:selected.key==="crane",
+      craneRunwayMembers:analysisModel.members.filter(m=>["craneRunway","craneRail","craneBracket"].includes(m.sectionKey)).length
+    };
+    if(window.SahroudLoadPathAudit){
+      result.loadPathAudit=window.SahroudLoadPathAudit.audit({model:analysisModel,result,sectionsByMemberId,supports,loadCase:selected.key});
+    }
     result.connectionModel="اتصال پرلین به رفتر: تقریب کلیپس/نبشی دوپیچه؛ انتقال جابه‌جایی مشترک است، دو دوران خمشی پرلین از رفتر جدا شده‌اند و دوران حول محور طولی پرلین مشترک باقی مانده است. این مدل سختی واقعی اتصال را محاسبه نمی‌کند.";
     result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. حالت باد، فشار خالص دستی واردشده را به پرلین‌های سقف، قیدهای طولی دو دیوار جانبی و ناحیه مثلثی دیوارهای انتهایی منتقل می‌کند؛ ناحیه مثلثی با نیروها و لنگرهای گره‌ای معادل ایستایی مدل شده است. فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، بازشوهای غالب و پیچش کلی هنوز کامل مدل نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
