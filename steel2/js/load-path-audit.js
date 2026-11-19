@@ -49,13 +49,16 @@
   if(seismicApplied&&!result.externalLoadSource)blockers.push("بار زلزله بدون شناسه منبع مستند در نتیجه ثبت شده است");
   const wallDeadLongitudinal=members.filter(m=>m.sectionKey==="wallGirt"&&Number(m.lineLoads?.dead)>0).length;
   const wallDeadEnd=members.filter(m=>m.sectionKey==="endGirt"&&Number(m.lineLoads?.dead)>0).length;
-  warnings.push("وزن دیوار مثلثی بالای قاب انتهایی، بازشوها و جزئیات پوشش/اتصالات هنوز باید جداگانه وارد و ممیزی شوند.");
+  if(!result.loadPathCoverage||result.loadPathCoverage.wallDeadGableTriangle!=="applied")
+   warnings.push("وزن دیوار مثلثی بالای قاب انتهایی هنوز در این حالت بار اعمال نشده است.");
+  warnings.push("بازشوها، وزن پیچ/جوش، ورق‌های اتصال و جزئیات پوشش باید جداگانه وارد و ممیزی شوند.");
   warnings.push("وجود مسیر گره‌ای تا پایه به معنی طراحی اتصال، صفحه‌ستون، مهاری، فونداسیون یا خاک نیست.");
   return Object.freeze({success:blockers.length===0,readyForAnalysis:blockers.length===0,
    readyForCodeDesign:false,loadCase,memberCount:members.length,nodeCount:nodes.length,
    connectedNodeCount:reachable.size,disconnectedMemberIds:Object.freeze(disconnected),
    selfWeight:{included:factor>0,expectedKN:expectedSelfWeightKN,reportedKN:Number(sw.totalKN||0),memberCount:Number(sw.memberCount||0)},
-   wallDead:{longitudinalGirtCount:wallDeadLongitudinal,endWallGirtCount:wallDeadEnd,gableTriangle:"not-applied"},
+   wallDead:{longitudinalGirtCount:wallDeadLongitudinal,endWallGirtCount:wallDeadEnd,
+    gableTriangle:result.loadPathCoverage?.wallDeadGableTriangle||"not-applied"},
    wind:{caseApplied:loadCase.toLowerCase().includes("wind")||loadCase==="zoneWind",fullCodePathVerified:false},
    seismic:{caseApplied:seismicApplied,sourceReference:result.externalLoadSource||null,codePathVerified:false},
    crane:{caseApplied:craneApplied,runwayMemberCount:craneMembers,fullPathVerified:false},
