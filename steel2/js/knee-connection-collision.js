@@ -104,7 +104,7 @@
     minimumPenetrationMm:r.minimumPenetrationMm,intentVerified:false});
   }
   const shankStatus=geometry.plates.flatMap(p=>p.bolts.map(b=>({boltId:b.id,hostPlateId:p.id,state:"not-assessable",
-   reason:"هندسه سه‌بعدی واقعی سوراخ/لقی و مسیر عبور پیچ در تمام ورق‌های درگیر تعریف نشده است؛ از تماس کاذب بدنه پیچ با ورق میزبان نتیجه‌گیری نمی‌شود."}))));
+   reason:"هندسه سه‌بعدی واقعی سوراخ/لقی و مسیر عبور پیچ در تمام ورق‌های درگیر تعریف نشده است؛ از تماس کاذب بدنه پیچ با ورق میزبان نتیجه‌گیری نمی‌شود."})));
   const count=arr=>({interference:arr.filter(x=>x.state==="interference"||x.state==="overlap").length,
    contactUnverified:arr.filter(x=>x.state==="contact-intent-unverified"||x.state==="contact").length,
    clear:arr.filter(x=>x.state==="clear").length});
