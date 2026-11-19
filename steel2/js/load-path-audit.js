@@ -49,7 +49,9 @@
   if(seismicApplied&&!result.externalLoadSource)blockers.push("بار زلزله بدون شناسه منبع مستند در نتیجه ثبت شده است");
   const wallDeadLongitudinal=members.filter(m=>m.sectionKey==="wallGirt"&&Number(m.lineLoads?.dead)>0).length;
   const wallDeadEnd=members.filter(m=>m.sectionKey==="endGirt"&&Number(m.lineLoads?.dead)>0).length;
-  if(!result.loadPathCoverage||result.loadPathCoverage.wallDeadGableTriangle!=="applied")
+  if(result.loadPathCoverage?.wallDeadSupportPath==="foundation")
+   warnings.push("وزن دیوار با مسیر باربری روی شناژ/فونداسیون انتخاب شده و عمداً به قیدهای فلزی منتقل نشده است؛ تا مدل‌سازی شناژ و پی، این وزن در تحلیل قاب منظور نمی‌شود.");
+  else if(!result.loadPathCoverage||result.loadPathCoverage.wallDeadGableTriangle!=="applied")
    warnings.push("وزن دیوار مثلثی بالای قاب انتهایی هنوز در این حالت بار اعمال نشده است.");
   warnings.push("بازشوها، وزن پیچ/جوش، ورق‌های اتصال و جزئیات پوشش باید جداگانه وارد و ممیزی شوند.");
   warnings.push("وجود مسیر گره‌ای تا پایه به معنی طراحی اتصال، صفحه‌ستون، مهاری، فونداسیون یا خاک نیست.");
@@ -58,7 +60,9 @@
    connectedNodeCount:reachable.size,disconnectedMemberIds:Object.freeze(disconnected),
    selfWeight:{included:factor>0,expectedKN:expectedSelfWeightKN,reportedKN:Number(sw.totalKN||0),memberCount:Number(sw.memberCount||0)},
    wallDead:{longitudinalGirtCount:wallDeadLongitudinal,endWallGirtCount:wallDeadEnd,
-    gableTriangle:result.loadPathCoverage?.wallDeadGableTriangle||"not-applied"},
+    supportPath:result.loadPathCoverage?.wallDeadSupportPath||"foundation",
+    gableTriangle:result.loadPathCoverage?.wallDeadGableTriangle||"not-applied",
+    foundationLoadsPending:result.loadPathCoverage?.foundationWallLoadsPending!==false},
    wind:{caseApplied:loadCase.toLowerCase().includes("wind")||loadCase==="zoneWind",fullCodePathVerified:false},
    seismic:{caseApplied:seismicApplied,sourceReference:result.externalLoadSource||null,codePathVerified:false},
    crane:{caseApplied:craneApplied,runwayMemberCount:craneMembers,fullPathVerified:false},
