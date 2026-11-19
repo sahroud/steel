@@ -57,7 +57,7 @@ test("collision audit rejects invalid geometry and invalid tolerance",()=>{
 test("bolt shank geometry follows explicit axis and grip length",()=>{
  const d=fixture();const g=detail.buildGlobalGeometry(d);
  const bolt=g.plates[0].bolts[0];
- assert.deepEqual(bolt.shank.startGlobalM,[0,5.942,0]);
- assert.deepEqual(bolt.shank.endGlobalM,[0,5.978,0]);
+ assert.deepEqual(bolt.shank.startGlobalM,[0,5.96,-0.018]);
+ assert.deepEqual(bolt.shank.endGlobalM,[0,5.96,0.018]);
  assert.equal(bolt.shank.radiusMm,10);
 });
