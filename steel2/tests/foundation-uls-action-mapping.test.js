@@ -12,7 +12,7 @@ const footing={nodeId:"B1",footingCentroidGlobalM:{x:1,y:0,z:0},
  verticalLocalAxis:"y",compressionSign:-1};
 test("maps ULS support reactions to local foundation actions and shifts moment to footing centroid",()=>{
  const out=mapUlsReactionBatchToFootingActions({batch:batch(),reactionSense:"on-structure",foundations:[footing]});
- assert.equal(out.schema,"SAHROUD-FOUNDATION-LOCAL-ACTIONS-1.0");
+ assert.equal(out.schema,"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0");
  assert.equal(out.sourceSchema,"SAHROUD-FOUNDATION-ULS-REACTION-BATCH-1.0");
  assert.equal(out.foundations[0].cases[0].NkN,100);
  assert.equal(out.foundations[0].cases[0].MzkNm,-100);
