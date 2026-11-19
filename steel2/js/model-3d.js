@@ -671,6 +671,10 @@
     assignGeometricMemberLineLoads(members,{span,rise},frameTrib,loads);
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8,
       roofRows,totalRoofSlope:totalRoofSlope,roofStationSpacing:totalRoofSlope/roofRows},nodes,members,generatedAt:new Date().toISOString()};
+    model.units={length:"m",coordinates:"m",memberLength:"m"};
+    if(!window.SahroudSectionPropertyRegistry?.auditGeometry)throw new Error("رجیستری ممیزی هندسه اعضا بارگذاری نشده است؛ ساخت مدل متوقف شد.");
+    model.geometryAudit=window.SahroudSectionPropertyRegistry.auditGeometry(model);
+    if(!model.geometryAudit.complete)throw new Error("ممیزی هندسه مدل ناموفق است: "+model.geometryAudit.errors.slice(0,8).join("؛ "));
     model.orientationAudit=typeof window.SteelFrame3D?.auditMemberOrientation==="function"
       ?window.SteelFrame3D.auditMemberOrientation(model)
       :{memberCount:members.length,verifiedCount:0,unverifiedCount:members.length,readyForCodeDesign:false,unavailable:true,groups:{},note:"ممیزی جهت‌گیری در این محیط بارگذاری نشده است؛ محورهای نصب تأییدنشده تلقی می‌شوند."};
