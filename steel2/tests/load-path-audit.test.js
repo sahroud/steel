@@ -79,7 +79,7 @@ test("wall surface dead loads transfer to longitudinal and end girts using tribu
  ];
  global.SahroudStructuralModel=global.SteelStructuralModel;
  const r=global.SteelStructuralModel.assignGeometricMemberLineLoads(members,{span:12,rise:2},[3],{
-  wallDeadLeft:.8,wallDeadRight:1.2,endWallDeadFront:1.4,endWallDeadBack:1.6,
+  wallDeadSupportPath:"girts",wallDeadLeft:.8,wallDeadRight:1.2,endWallDeadFront:1.4,endWallDeadBack:1.6,
   windWall:0,windEndFront:0,windEndBack:0,
   deadAreaBasis:"unspecified",liveAreaBasis:"unspecified",snowAreaBasis:"unspecified"
  });
