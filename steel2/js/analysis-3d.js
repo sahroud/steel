@@ -107,22 +107,25 @@ function frameLocalStiffness(p,L){
  ]);
  return k;
 }
-function makeTransform(a,b,reference){
+function makeTransform(a,b,reference,sectionRollDeg){
  const d=sub(b,a),L=norm(d);if(!(L>0))throw Error("عضو با طول صفر در مدل وجود دارد.");
  const ex=scale(d,1/L);let ref=reference||[0,0,1];
  if(!Array.isArray(ref)||ref.length!==3||ref.some(v=>!Number.isFinite(Number(v)))||!(norm(ref)>EPS))
   throw Error("محور مرجع عضو باید سه مؤلفه متناهی و بردار غیرصفر باشد.");
  if(Math.abs(dot(ex,ref)/norm(ref))>0.95)ref=[0,1,0];
- const ey=scale(cross(ref,ex),1/norm(cross(ref,ex)));
- const ez=cross(ex,ey);
+ const ey0=scale(cross(ref,ex),1/norm(cross(ref,ex))),ez0=cross(ex,ey0);
+ const roll=sectionRollDeg===undefined||sectionRollDeg===null?0:Number(sectionRollDeg);
+ if(!Number.isFinite(roll))throw Error("زاویه چرخش مقطع باید عددی متناهی بر حسب درجه باشد.");
+ const angle=roll*Math.PI/180,cs=Math.cos(angle),sn=Math.sin(angle);
+ const ey=ey0.map((v,i)=>v*cs+ez0[i]*sn),ez=ez0.map((v,i)=>ez0[i]*cs-ey0[i]*sn);
  const R=[ex,ey,ez],T=zeros(12,12);
  for(let block=0;block<4;block++)for(let i=0;i<3;i++)for(let j=0;j<3;j++)T[block*3+i][block*3+j]=R[i][j];
- return {T,L,axes:{x:ex,y:ey,z:ez}};
+ return {T,L,axes:{x:ex,y:ey,z:ez},sectionRollDeg:roll,baseAxes:{x:ex,y:ey0,z:ez0}};
 }
-function globalVectorToLocal(a,b,vector,reference){
+function globalVectorToLocal(a,b,vector,reference,sectionRollDeg){
  if(!Array.isArray(vector)||vector.length!==3||vector.some(v=>!Number.isFinite(Number(v))))
   throw Error("بردار بار جهانی باید سه مؤلفه عددی متناهی داشته باشد.");
- const tr=makeTransform(a,b,reference);
+ const tr=makeTransform(a,b,reference,sectionRollDeg);
  return [tr.axes.x,tr.axes.y,tr.axes.z].map(axis=>dot(axis,vector));
 }
 function equivalentUniformLoad(q,L){
@@ -149,7 +152,7 @@ function calculateGlobalLoadResultants(model,nodalLoads){
   if(!Array.isArray(q)||q.length!==3||q.some(v=>!Number.isFinite(Number(v))))throw Error("بار گسترده محلی عضو "+member.id+" برای ممیزی نامعتبر است.");
   const a=nodeMap.get(member.start),b=nodeMap.get(member.end);
   if(!a||!b)throw Error("گره عضو "+member.id+" در ممیزی برآیند بار یافت نشد.");
-  const tr=makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z],member.referenceAxis||undefined);
+  const tr=makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z],member.referenceAxis||undefined,member.sectionRollDeg);
   const qGlobal=[0,1,2].map(i=>tr.axes.x[i]*q[0]+tr.axes.y[i]*q[1]+tr.axes.z[i]*q[2]);
   const resultant=qGlobal.map(v=>v*tr.L);
   addAt(resultant,[0,0,0],[(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2]);
@@ -183,7 +186,7 @@ function auditMemberOrientation(model){
     const axisLength=axisShapeValid?Math.hypot(...axis.map(Number)):0;
     const explicitAxisValid=axisShapeValid&&axisLength>EPS;
     const axisParallel=!!(explicitAxisValid&&direction&&Math.abs(direction.reduce((sum,v,i)=>sum+v*Number(axis[i]),0)/axisLength)>0.95);
-    const sectionOrientationVerified=member.sectionOrientationVerified===true;
+    const roll=member.sectionRollDeg??member.sectionProperties?.sectionRollDeg;\n     const sectionOrientationVerified=member.sectionOrientationVerified===true&&Number.isFinite(Number(roll));
     const directionClass=!direction?"invalid":Math.abs(direction[1])>=0.95?"vertical":
       Math.abs(direction[2])>=0.95?"longitudinal":Math.abs(direction[0])>=0.95?"transverse":"diagonal-or-oblique";
     const status=!geometryValid?"invalid-member-geometry":
@@ -288,7 +291,7 @@ function analyze(model,options){
   const p=props(m);if(!p)throw Error("مقطع عضو "+m.id+" ("+m.type+") تخصیص نیافته است.");
   for(const key of ["E","G","A","Iy","Iz","J"])if(!(Number.isFinite(Number(p[key]))&&Number(p[key])>0))throw Error("خاصیت "+key+" برای عضو "+m.id+" ناقص یا نامعتبر است.");
   const a=[nodes[ia].x,nodes[ia].y,nodes[ia].z],b=[nodes[ib].x,nodes[ib].y,nodes[ib].z];
-  const tr=makeTransform(a,b,m.referenceAxis||options.referenceAxis),kl=frameLocalStiffness(p,tr.L),kg=mul(transpose(tr.T),mul(kl,tr.T));
+  const tr=makeTransform(a,b,m.referenceAxis||options.referenceAxis,m.sectionRollDeg),kl=frameLocalStiffness(p,tr.L),kg=mul(transpose(tr.T),mul(kl,tr.T));
   const ids=Array.from({length:6},(_,i)=>ia*6+i).concat(Array.from({length:6},(_,i)=>ib*6+i));
   if(options.releasePurlinRafterRotation===true&&(m.sectionKey||"")==="roofPurlin"){
    const ri=purlinEndRotationDof.get(String(m.id)+":i"),rj=purlinEndRotationDof.get(String(m.id)+":j");
