@@ -13,11 +13,12 @@ function setup(){
   sizingMinB:"1",sizingMaxB:"3",sizingStepB:"0.5",
   sizingMinL:"1",sizingMaxL:"3",sizingStepL:"0.5",sizingShape:"rectangular"
  };
- const ids=["foundationSoilPanel","btnSearchFootingDimensions","foundationSizingResult",...Object.keys(values)];
+ const ids=["foundationSoilPanel","soilControlEnabled","btnRunSoilCheck","btnSearchFootingDimensions","foundationSizingResult",...Object.keys(values)];
  const elements=Object.fromEntries(ids.map(id=>[id,{
   id,dataset:{},disabled:false,value:values[id]||"",textContent:"",style:{},
   addEventListener(type,fn){listeners.set(id+":"+type,fn);}
  }]));
+ elements.soilControlEnabled.checked=false;
  global.window={document:{readyState:"complete",getElementById:id=>elements[id]||null}};
  for(const path of ["../js/foundation-soil-check.js","../js/foundation-sizing.js","../js/foundation-sizing-ui.js"])
   delete require.cache[require.resolve(path)];
