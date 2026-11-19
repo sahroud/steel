@@ -79,3 +79,25 @@ test("changing a built-up section dimension changes its derived properties",()=>
  assert.notEqual(first.areaCm2,changed.areaCm2);
  assert.notEqual(first.strongAxis.inertiaCm4,changed.strongAxis.inertiaCm4);
 });
+
+test("per-member section roll and drawing confirmation persist and reach the resolver",()=>{
+ const base={profile:"Column I",E:200e9,G:77e9,A:0.02,Iy:8e-5,Iz:9e-4,J:1e-6};
+ const saved={memberId:"C-ROLL",section:{...base,sectionRollDeg:-90,sectionOrientationConfirmed:true},sourceReference:"shop drawing"};
+ ui.setData([saved]);
+ const restored=ui.getData()[0];
+ assert.equal(restored.section.sectionRollDeg,-90);
+ assert.equal(restored.section.sectionOrientationConfirmed,true);
+ const model={members:[{id:"C-ROLL",sectionKey:"column"}]};
+ const overrides=ui.readOverrides(model,[{memberId:"C-ROLL",section:base}]);
+ assert.equal(overrides[0].section.sectionRollDeg,-90);
+ assert.equal(overrides[0].section.sectionOrientationConfirmed,true);
+ ui.setData([]);
+});
+test("missing roll is not silently converted into an explicit zero-degree orientation",()=>{
+ const base={profile:"Rafter I",E:200e9,G:77e9,A:0.02,Iy:8e-5,Iz:9e-4,J:1e-6};
+ ui.setData([{memberId:"R-EMPTY",section:{...base},sourceReference:"section only"}]);
+ const result=ui.getData()[0].section;
+ assert.equal(Object.hasOwn(result,"sectionRollDeg"),false);
+ assert.notEqual(result.sectionOrientationConfirmed,true);
+ ui.setData([]);
+});
