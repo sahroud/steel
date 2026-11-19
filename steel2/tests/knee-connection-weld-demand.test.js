@@ -28,6 +28,7 @@ test("maps coplanar weld segments to separate signed member demand scenarios",()
  assert.equal(r.results[0].demandAtPlateOrigin.N,10);
  assert.equal(r.results[1].demandAtPlateOrigin.V,20);
  assert.equal(r.capacityDesigned,false);
+ assert.deepEqual(r.units,{force:"kN",moment:"kN.mm",coordinates:"mm",lineDemand:"kN/mm"});
 });
 test("rejects out-of-plane force or bending rather than dropping it",()=>{
  const {d,mapped}=fixture();mapped.cases[0].memberActions[0].connectionFrame.force.z=100;
