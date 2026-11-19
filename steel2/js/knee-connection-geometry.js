@@ -90,6 +90,12 @@
   }
   return{valid:errors.length===0,errors,warnings,geometryOnly:true,platePlaneVerified:false,capacityDesigned:false,executionReady:false};
  }
+ function axesText(record){
+  if(!record?.available)return '<p class="notice">محورهای حل‌گر موجود نیست: '+esc((record?.issues||["ابتدا تحلیل سه‌بعدی را اجرا کنید."]).join("؛ "))+'</p>';
+  const fmt=v=>v.map(x=>Number(x).toFixed(5)).join("، ");
+  return '<div class="geometry-hint">X = ['+fmt(record.axes.x)+']<br>Y = ['+fmt(record.axes.y)+']<br>Z = ['+fmt(record.axes.z)+
+   ']<br>منبع: '+esc(record.source)+'؛ این دستگاه مختصات تحلیلی است و جهت نصب مقطع را تعیین نمی‌کند.</div>';
+ }
  function dimensionsText(g){
   if(!g?.available)return '<span class="notice">غیرقابل‌تأیید: '+esc((g?.issues||["هندسه مقطع موجود نیست."]).join("؛ "))+"</span>";
   const d=g.dimensionsMm;
@@ -121,7 +127,9 @@
    '؛ مختصات X/Y/Z: '+[k.node.x,k.node.y,k.node.z].map(fmt).join(" / ")+' m<br>ستون: '+esc(k.column.id)+' ('+fmt(k.column.length)+' m)؛ رفتر: '+esc(k.rafter.id)+' ('+fmt(k.rafter.length)+' m)'+
    '<br>زاویه امتداد دو عضو از گره: '+fmt(k.angle)+'°';
   dims.innerHTML='<h4>هندسه ثبت‌شده مقطع ستون</h4>'+dimensionsText(k.column.sectionGeometry)+
-   '<h4>هندسه ثبت‌شده مقطع رفتر</h4>'+dimensionsText(k.rafter.sectionGeometry);
+   '<h4>محورهای حل‌گر ستون</h4>'+axesText(k.column.solverAxes)+
+   '<h4>هندسه ثبت‌شده مقطع رفتر</h4>'+dimensionsText(k.rafter.sectionGeometry)+
+   '<h4>محورهای حل‌گر رفتر</h4>'+axesText(k.rafter.solverAxes);
   draw.innerHTML=drawing(k);
   checks.innerHTML=(v.valid?"هندسه پارامتریک هر دو مقطع از رجیستری عضو بازیابی شد.":"هندسه مقاطع برای ورود به مرحله اتصال کامل نیست.")+
    (v.errors.length?"<ul>"+v.errors.map(e=>"<li>"+esc(e)+"</li>").join("")+"</ul>":"")+
