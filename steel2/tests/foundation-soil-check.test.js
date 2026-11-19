@@ -43,7 +43,7 @@ test("tension under gross linear full-contact assumption is blocked rather than 
 test("missing geotechnical source, invalid qa basis and non-compressive total vertical force are rejected",()=>{
  assert.throws(()=>soil.checkRectangularFooting({...base,soil:{...base.soil,sourceReference:""},cases:[{name:"SLS-1",sourceReference:"R-1",NkN:100}]}),/مرجع گزارش ژئوتکنیک/);
  assert.throws(()=>soil.checkRectangularFooting({...base,soil:{...base.soil,allowableBearingBasis:""},cases:[{name:"SLS-1",sourceReference:"R-1",NkN:100}]}),/مبنای ظرفیت مجاز/);
- assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-1",sourceReference:"R-1",NkN:-100}]}),/مجموع نیروی قائم/);
+ assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-1",sourceReference:"R-1",NkN:-100,MxkNm:0,MzkNm:0}]}),/مجموع نیروی قائم/);
 });
 test("missing service cases and invalid footing dimensions or weight inputs are rejected",()=>{
  assert.throws(()=>soil.checkRectangularFooting({...base,cases:[]}),/حداقل یک حالت بار/);
