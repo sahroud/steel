@@ -16,10 +16,13 @@ function fixture(){
  threadsInShearPlane:true,shearPlaneCount:1}],
  welds:[{id:"W1",plateId:"P1",faceReference:"DWG-1/F1",startMm:[-50,-50,0],endMm:[50,-50,0],type:"fillet",legSizeMm:6,electrodeFexxMPa:490},
  {id:"W2",plateId:"P1",faceReference:"DWG-1/F1",startMm:[50,-50,0],endMm:[50,50,0],type:"fillet",legSizeMm:6,electrodeFexxMPa:490}]};
- const mapped={success:true,connectionId:"K1",cases:[{combinationId:"U1",combination:"ULS-1",memberActions:[
- {memberId:"C1",role:"column",connectionFrame:{force:{x:10000,y:0,z:0},moment:{x:0,y:0,z:0}}},
- {memberId:"R1",role:"rafter",connectionFrame:{force:{x:0,y:20000,z:0},moment:{x:0,y:0,z:0}}}
- ]}]};
+ const action=(id,role,force,moment)=>({memberId:id,role,connectionFrame:{
+  force,moment,connectionOriginM:{x:0,y:0,z:0},units:{force:"N",moment:"N.m",length:"m"}}});
+ const mapped={success:true,connectionId:"K1",jointId:"E",originM:[0,0,0],
+ axes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},units:{force:"N",moment:"N.m",length:"m"},
+ cases:[{combinationId:"U1",combination:"ULS-1",memberActions:[
+ action("C1","column",{x:10000,y:0,z:0},{x:0,y:0,z:0}),
+ action("R1","rafter",{x:0,y:20000,z:0},{x:0,y:0,z:0})]}]};
  return{d,mapped};
 }
 test("maps coplanar weld segments to separate signed member demand scenarios",()=>{
@@ -30,6 +33,24 @@ test("maps coplanar weld segments to separate signed member demand scenarios",()
  assert.equal(r.capacityDesigned,false);
  assert.deepEqual(r.units,{force:"kN",moment:"kN.mm",coordinates:"mm",lineDemand:"kN/mm"});
  assert.equal(r.demandModel,"elastic-line-group; uniform stiffness; rigid plate");
+});
+test("converts connection-frame actions to global before projecting onto rotated weld axes",()=>{
+ const {d,mapped}=fixture();
+ d.connectionFrame.axes={x:[0,1,0],y:[-1,0,0],z:[0,0,1]};
+ mapped.axes={...d.connectionFrame.axes};
+ mapped.cases[0].memberActions[0].connectionFrame.force={x:10000,y:0,z:0};
+ const r=kneeWeld.analyze(d,mapped);
+ assert.equal(r.results[0].demandAtPlateOrigin.V,10);
+});
+test("shifts moment using global connection-to-plate eccentricity",()=>{
+ const {d,mapped}=fixture();
+ d.connectionFrame.originM=[10,0,0];mapped.originM=[10,0,0];
+ mapped.cases[0].memberActions.forEach(a=>a.connectionFrame.connectionOriginM={x:10,y:0,z:0});
+ d.plates[0].frame.originMm=[10000,100,0];
+ d.welds.forEach(w=>{w.startMm[1]+=100;w.endMm[1]+=100;});
+ mapped.cases[0].memberActions[0].connectionFrame.force={x:0,y:10000,z:0};
+ const r=kneeWeld.analyze(d,mapped);
+ assert.equal(r.results[0].demandAtPlateOrigin.Mz,100);
 });
 test("rejects out-of-plane force or bending rather than dropping it",()=>{
  const {d,mapped}=fixture();mapped.cases[0].memberActions[0].connectionFrame.force.z=100;
@@ -44,11 +65,7 @@ test("rejects a mismatched connection identifier",()=>{
  const {d,mapped}=fixture();mapped.connectionId="OTHER";
  assert.throws(()=>kneeWeld.analyze(d,mapped),/شناسه اتصال/);
 });
-test("shifts moment from connection origin to weld-group plane origin",()=>{
- const {d,mapped}=fixture();d.plates[0].frame.originMm=[0,100,0];
- d.welds.forEach(w=>{w.startMm[1]+=100;w.endMm[1]+=100;});
- mapped.cases[0].memberActions[0].connectionFrame.force={x:10000,y:0,z:0};
- const r=kneeWeld.analyze(d,mapped);
- // r_conn-r_plate = [0,-100,0]; cross F = +1,000,000 N.mm = +1000 kN.mm
- assert.equal(r.results[0].demandAtPlateOrigin.Mz,1000);
+test("rejects an action whose connection origin differs from the drawing frame",()=>{
+ const {d,mapped}=fixture();mapped.cases[0].memberActions[0].connectionFrame.connectionOriginM.x=0.01;
+ assert.throws(()=>kneeWeld.analyze(d,mapped),/مبدأ کنش عضو/);
 });
