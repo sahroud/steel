@@ -71,7 +71,7 @@ test("bolt tension-shear interaction is activated above the 30 percent threshold
 });
 test("bearing and tearout checks distinguish the long-slot transverse direction",()=>{
  const d=detailFixture(),c=designFixture();
- d.bolts[0].holeType="long-slotted";
+ d.bolts[0].holeType="long-slotted";d.bolts[0].slotLengthMm=40;d.bolts[0].slotWidthMm=22;d.bolts[0].slotAngleDeg=90;
  c.loadCases[0].bearingChecks[0].holeType="long-slotted";
  c.loadCases[0].bearingChecks[0].forceDirectionToSlot="transverse";
  const r=capacity.calculate(d,c).bearingChecks[0],plate=d.plates[0];
