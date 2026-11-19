@@ -40,3 +40,17 @@ test("rejects incomplete or unvalidated connection geometry",()=>{
  const {d,g,demand}=fixture();d.plates=[];
  assert.throws(()=>mapper.map(d,demand,g),/جزئیات اتصال معتبر نیست/);
 });
+
+test("reports each member physical transfer point in global coordinates",()=>{
+ const {d,g,demand}=fixture();d.memberForceTransferPoints[1].pointMm=[100,0,0];
+ const r=mapper.map(d,demand,g);
+ const row=r.cases[0].memberActions.find(a=>a.role==="rafter");
+ assert.deepEqual(row.transferPoint.connectionFrameMm,[100,0,0]);
+ assert.deepEqual(row.transferPoint.globalCoordinatesM,[0.1,6,0]);
+});
+test("preserves different physical transfer points for column and rafter",()=>{
+ const {d,g,demand}=fixture();d.memberForceTransferPoints[0].pointMm=[0,0,50];
+ const r=mapper.map(d,demand,g);
+ const row=r.cases[0].memberActions.find(a=>a.role==="column");
+ assert.deepEqual(row.transferPoint.globalCoordinatesM,[0,6,0.05]);
+});
