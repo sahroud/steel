@@ -112,20 +112,23 @@ test("takeoff rejects geometry without a complete coordinate audit",()=>{
 
 test("section roll and explicit orientation confirmation are fingerprinted and assigned to members",()=>{
  const member={id:"R-ROLL",sectionKey:"rafter"};
- const a=registry.applyOne(member,section({sectionRollDeg:0,sectionOrientationConfirmed:false}));
+ const a=registry.applyOne(member,section({sectionRollDeg:0,sectionOrientationConfirmed:false,sectionReferenceAxis:[0,0,1]}));
  const first=a.sectionPropertyFingerprint;
  assert.equal(member.sectionRollDeg,0);
  assert.equal(member.sectionOrientationVerified,false);
- const b=registry.applyOne(member,section({sectionRollDeg:90,sectionOrientationConfirmed:true}));
+ const b=registry.applyOne(member,section({sectionRollDeg:90,sectionOrientationConfirmed:true,sectionReferenceAxis:[0,0,1]}));
  assert.notEqual(b.sectionPropertyFingerprint,first);
  assert.equal(member.sectionRollDeg,90);
  assert.equal(member.sectionOrientationVerified,true);
- const c=registry.applyOne(member,section({sectionRollDeg:-90,sectionOrientationConfirmed:true}));
+ assert.deepEqual(member.referenceAxis,[0,0,1]);
+ const c=registry.applyOne(member,section({sectionRollDeg:-90,sectionOrientationConfirmed:true,sectionReferenceAxis:[0,1,0]}));
  assert.notEqual(c.sectionPropertyFingerprint,b.sectionPropertyFingerprint);
  assert.equal(member.sectionRollDeg,-90);
+ assert.deepEqual(member.referenceAxis,[0,1,0]);
 });
 test("section roll rejects non-finite values before solver consumption",()=>{
  const member={id:"R-BAD"};
  assert.throws(()=>registry.normalize(section({sectionRollDeg:NaN}),"R-BAD"),/زاویه چرخش/);
  assert.throws(()=>registry.normalize(section({sectionOrientationConfirmed:true}),"R-BAD"),/بدون زاویه صریح/);
+ assert.throws(()=>registry.normalize(section({sectionReferenceAxis:[0,0,0]}),"R-BAD"),/بردار صفر/);
 });
