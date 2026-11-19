@@ -52,7 +52,7 @@ test("enabling and running the soil panel executes the documented check",()=>{
   assert.equal(elements.btnRunSoilCheck.disabled,false);
   listeners.get("btnRunSoilCheck:click")();
   assert.match(elements.soilCheckResult.textContent,/کنترل فشار باربری در همه حالت‌های واردشده قبول شد/);
-  assert.match(elements.soilCheckResult.textContent, /تتیپ خاک: II | مبنای qa: gross/);
+  assert.match(elements.soilCheckResult.textContent,/تیپ خاک: II \\| مبنای qa: gross/);
   assert.equal(api.lastResult.results[0].bearingPass,true);
   delete global.window;
 });
