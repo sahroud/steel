@@ -4,9 +4,11 @@
  const finite=(v,label)=>{const n=Number(v);if(!Number.isFinite(n))throw new Error(label+" باید عدد محدود باشد.");return n;};
  function validateSoil(input){
   const d=input||{},qa=finite(d.allowableBearingKPa,"ظرفیت مجاز باربری خاک");
+  const soilType=String(d.soilType||"").trim().toUpperCase();
+  if(!["I","II","III"].includes(soilType))throw new Error("تیپ خاک باید طبق گزارش ژئوتکنیک یکی از I، II یا III انتخاب شود.");
   if(!(qa>0))throw new RangeError("ظرفیت مجاز باربری خاک باید مثبت باشد.");
   if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())throw new Error("مرجع گزارش ژئوتکنیک و شماره صفحه/بند الزامی است.");
-  return Object.freeze({allowableBearingKPa:qa,sourceReference:d.sourceReference.trim()});
+  return Object.freeze({soilType,allowableBearingKPa:qa,sourceReference:d.sourceReference.trim()});
  }
  function checkRectangularFooting(input){
   const d=input||{},soil=validateSoil(d.soil);
@@ -36,6 +38,7 @@
     "اگر qmin منفی شود، نتیجه باطل و تحلیل تماس جزئی/بلندشدگی لازم است؛ فشار کششی به خاک مجاز فرض نشده است.",
     "کنترل نشست، ظرفیت نهایی، لغزش، واژگونی، آب زیرزمینی، اثر لایه‌بندی، اندرکنش پی‌ها و طراحی آرماتور/برش پانچ در این ماژول انجام نمی‌شود.",
     "بارهای ورودی باید ترکیبات بهره‌برداری (SLS) تأییدشده از تحلیل سازه باشند؛ نتایج ULS یا یک حالت بار منفرد جایگزین آن نیستند.",
+    "تیپ I/II/III فقط رده‌بندی لرزه‌ای/ژئوتکنیکی ثبت‌شده است و جایگزین ظرفیت باربری، پارامترهای مقاومت یا کنترل نشست گزارش ژئوتکنیک نیست.",
     "ظرفیت مجاز خاک باید از گزارش ژئوتکنیک همان پروژه و با لحاظ عمق و ابعاد پی اخذ شود."
    ])});
  }
@@ -52,12 +55,12 @@
    const out=$("soilCheckResult");
    try{
     const cases=JSON.parse($("soilReactionCases").value||"[]");
-    const result=checkRectangularFooting({soil:{allowableBearingKPa:$("soilQa").value,sourceReference:$("soilSource").value},
+    const result=checkRectangularFooting({soil:{soilType:$("soilType").value,allowableBearingKPa:$("soilQa").value,sourceReference:$("soilSource").value},
      Bm:$("soilFootingB").value,Lm:$("soilFootingL").value,cases});
     const fmt=n=>Number(n).toFixed(2);
     out.textContent=[
      result.success?"کنترل فشار باربری در همه حالت‌های واردشده قبول شد.":"کنترل فشار باربری مردود یا مسدود است.",
-     "مرجع خاک: "+result.soil.sourceReference+" | qa="+fmt(result.soil.allowableBearingKPa)+" kPa | مساحت پی="+fmt(result.footing.areaM2)+" m²",
+     "تیپ خاک: "+result.soil.soilType+" | مرجع خاک: "+result.soil.sourceReference+" | qa="+fmt(result.soil.allowableBearingKPa)+" kPa | مساحت پی="+fmt(result.footing.areaM2)+" m²",
      ...result.results.map(x=>x.name+" | N="+fmt(x.NkN)+" kN | ex="+fmt(x.eccentricityX_m)+" m | ez="+fmt(x.eccentricityZ_m)+" m | qmin="+fmt(x.qMinKPa)+" kPa | qmax="+fmt(x.qMaxKPa)+" kPa | "+x.status),
      "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
     ].join("\n");
