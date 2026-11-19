@@ -55,7 +55,8 @@
    blockers.push("وزن دیوار برای انتقال به قیدها وارد شده ولی عضو باربر متناظر بار دریافت نکرده است");
   if(result.loadPathCoverage?.wallDeadSupportPath==="foundation")
    warnings.push("وزن دیوار با مسیر باربری روی شناژ/فونداسیون انتخاب شده و عمداً به قیدهای فلزی منتقل نشده است؛ تا مدل‌سازی شناژ و پی، این وزن در تحلیل قاب منظور نمی‌شود.");
-  else if(!result.loadPathCoverage||result.loadPathCoverage.wallDeadGableTriangle!=="applied")
+  else if(Number(result.loadPathCoverage?.wallDeadEndInput||0)>0&&Number(model.geometry?.rise||0)>0&&
+    result.loadPathCoverage?.wallDeadGableTriangle!=="applied")
    warnings.push("وزن دیوار مثلثی بالای قاب انتهایی هنوز در این حالت بار اعمال نشده است.");
   warnings.push("بازشوها، وزن پیچ/جوش، ورق‌های اتصال و جزئیات پوشش باید جداگانه وارد و ممیزی شوند.");
   warnings.push("وجود مسیر گره‌ای تا پایه به معنی طراحی اتصال، صفحه‌ستون، مهاری، فونداسیون یا خاک نیست.");
