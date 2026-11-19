@@ -11,6 +11,27 @@
  const DIMENSIONS=["topFlangeWidthMm","topFlangeThicknessMm","bottomFlangeWidthMm","bottomFlangeThicknessMm","webClearHeightMm","webThicknessMm"];
  function node(model,id){return model.nodes.find(n=>String(n.id)===String(id));}
  function unit(v){const l=Math.hypot(v.x,v.y,v.z);if(!(l>0))throw Error("بردار عضو نامعتبر است.");return{x:v.x/l,y:v.y/l,z:v.z/l};}
+ function solverAxes(member,analysisResult){
+  const solved=(analysisResult?.members||[]).find(item=>String(item.id)===String(member.id));
+  const axes=solved?.localAxes;
+  if(!axes)return{available:false,status:"solver-axes-missing",axes:null,source:null,issues:["محورهای محلی حل‌گر برای این عضو در نتیجه تحلیل موجود نیست."]};
+  const names=["x","y","z"],vectors=[];
+  for(const name of names){
+   const v=axes[name];
+   if(!Array.isArray(v)||v.length!==3||v.some(x=>!finite(x)))
+    return{available:false,status:"solver-axes-invalid",axes:null,source:"analysisResult.members.localAxes",issues:["بردار محور "+name+" در نتیجه حل‌گر نامعتبر است."]};
+   vectors.push(v.map(Number));
+  }
+  const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const norm=v=>Math.hypot(...v);
+  const valid=vectors.every(v=>Math.abs(norm(v)-1)<=1e-6)&&
+   Math.abs(dot(vectors[0],vectors[1]))<=1e-6&&Math.abs(dot(vectors[0],vectors[2]))<=1e-6&&
+   Math.abs(dot(vectors[1],vectors[2]))<=1e-6&&
+   cross(vectors[0],vectors[1]).every((v,i)=>Math.abs(v-vectors[2][i])<=1e-6);
+  if(!valid)return{available:false,status:"solver-axes-invalid",axes:null,source:"analysisResult.members.localAxes",issues:["محورهای حل‌گر یکه، متعامد و راست‌گرد نیستند."]};
+  return{available:true,status:"solver-axes-valid",axes:{x:vectors[0],y:vectors[1],z:vectors[2]},source:"analysisResult.members.localAxes",issues:[]};
+ }
  function sectionGeometry(member){
   const section=member?.sectionProperties;
   if(!section)return{available:false,status:"missing-section-properties",issues:["خواص مقطع نهایی عضو در رجیستری وجود ندارد."]};
@@ -33,7 +54,7 @@
    fingerprint:section.sectionPropertyFingerprint||member.sectionPropertyFingerprint||null,
    source:"member.sectionProperties.geometryDimensionsMm",issues};
  }
- function extract(model){
+ function extract(model,analysisResult){
   if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("ابتدا مدل سه‌بعدی را تولید و مقاطع اعضا را تخصیص دهید.");
   const out=[];
   model.nodes.filter(n=>n.kind==="eave").forEach(n=>{
@@ -46,8 +67,8 @@
     const dot=vc.x*vr.x+vc.y*vr.y+vc.z*vr.z;
     out.push({id:"F"+(raf.frame??"؟")+"-"+(n.x<=Number(model.geometry?.span||0)/2?"left":"right"),
      frame:raf.frame??null,side:n.x<=Number(model.geometry?.span||0)/2?"left":"right",node:n,
-     column:{id:col.id,length:Math.hypot(cn.x-n.x,cn.y-n.y,cn.z-n.z),vector:vc,sectionGeometry:sectionGeometry(col)},
-     rafter:{id:raf.id,length:Math.hypot(rn.x-n.x,rn.y-n.y,rn.z-n.z),vector:vr,sectionGeometry:sectionGeometry(raf)},
+     column:{id:col.id,length:Math.hypot(cn.x-n.x,cn.y-n.y,cn.z-n.z),vector:vc,sectionGeometry:sectionGeometry(col),solverAxes:solverAxes(col,analysisResult)},
+     rafter:{id:raf.id,length:Math.hypot(rn.x-n.x,rn.y-n.y,rn.z-n.z),vector:vr,sectionGeometry:sectionGeometry(raf),solverAxes:solverAxes(raf,analysisResult)},
      angle:Math.acos(Math.max(-1,Math.min(1,dot)))*180/Math.PI});
    }));
   });
@@ -55,6 +76,7 @@
  }
  function check(k){
   const errors=[],warnings=[
+   "محورهای محلی X/Y/Z از نتیجه حل‌گر خوانده می‌شوند؛ این محورها به‌تنهایی جهت چرخش/نصب مقطع I یا جان و بال را اثبات نمی‌کنند.",
    "ابعاد مقطع فقط از رکورد sectionProperties عضو خوانده شده‌اند؛ مقطع واقعی، جهت نصب و چرخش مقطع هنوز باید با نقشه/مدرک ساخت تطبیق داده شوند.",
    "صفحه واقعی اتصال، ورق زانویی، ورق مضاعف، پیچ‌ها، سوراخ‌ها، جوش‌ها و خروج از مرکزیت در مدل تعریف نشده‌اند.",
    "این ممیزی ظرفیت، قبولی آیین‌نامه‌ای یا آمادگی اجرا را بررسی نمی‌کند."
@@ -64,6 +86,7 @@
    if(!k.column?.sectionGeometry?.available)errors.push("هندسه واقعی/پارامتریک مقطع ستون قابل تأیید نیست: "+(k.column?.sectionGeometry?.issues||[]).join("؛ "));
    if(!k.rafter?.sectionGeometry?.available)errors.push("هندسه واقعی/پارامتریک مقطع رفتر قابل تأیید نیست: "+(k.rafter?.sectionGeometry?.issues||[]).join("؛ "));
    if(!positive(k.column?.length)||!positive(k.rafter?.length))errors.push("طول هندسی عضو مجاور گره معتبر نیست.");
+   ["column","rafter"].forEach(key=>{if(k[key]?.solverAxes?.status==="solver-axes-invalid")errors.push("محورهای محلی حل‌گر برای عضو "+k[key].id+" نامعتبر است.");});
   }
   return{valid:errors.length===0,errors,warnings,geometryOnly:true,platePlaneVerified:false,capacityDesigned:false,executionReady:false};
  }
@@ -127,7 +150,7 @@
   try{
    const model=root.SteelStructuralModel?.model;
    if(!model)throw Error("مدل جاری موجود نیست؛ ابتدا مدل سه‌بعدی و مقاطع را تولید کنید.");
-   knees=extract(model);
+   knees=extract(model,root.SteelStructuralModel?.last3DResult||null);
    const select=$("kneeSelect"),old=select.value;
    select.innerHTML=knees.map(k=>'<option value="'+esc(k.id)+'">قاب '+esc(k.frame??"؟")+' ـ '+(k.side==="left"?"چپ":"راست")+' ـ '+esc(k.node.id)+'</option>').join("");
    if(!knees.length)throw Error("گره مشترک ستون و رفتر در مدل پیدا نشد.");
@@ -167,7 +190,7 @@
   ];
   return{passed:tests.filter(Boolean).length,failed:tests.filter(x=>!x).length,total:tests.length,tests};
  }
- const api={extract,sectionGeometry,check,drawing,selfTest};
+ const api={extract,sectionGeometry,solverAxes,check,drawing,selfTest};
  root.SteelKneeConnectionGeometry=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
  if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
