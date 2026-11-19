@@ -1011,69 +1011,18 @@
         "؛ تعداد گره‌ها: "+analysisModel.nodes.length);
     }
     // Self-weight is added to the DEAD case only. Steel unit weight = 78.5 kN/m³.
-    // Area A comes from the same assigned section properties used by the 3D solver.
+    // Resolve every member's final starting section before loads/self-weight are assembled.
+    // This ensures per-member area, stiffness and roll are the same inputs used by the solver.
     const steelUnitWeightKNm3=78.5;
-    let selfWeightKN=0, selfWeightMemberCount=0;
+    let selfWeightKN=0,selfWeightMemberCount=0;
     const selfWeightByGroup=Object.create(null);
     const sectionsByMemberId=Object.create(null);
     const initialSectionDefaults=Object.create(null);
     const initialSectionOverrides=[];
-    analysisModel.members.forEach(m=>{
-      const lineLoad=selected.factors
-        ? (Number(m.lineLoads?.dead||0)*selected.factors.dead+
-           Number(m.lineLoads?.live||0)*selected.factors.live+
-           Number(m.lineLoads?.snow||0)*selected.factors.snow)
-        : Number(m.lineLoads&&m.lineLoads[selected.key]||0);
-      if(!Number.isFinite(lineLoad))throw new Error("بار عضو "+m.id+" عدد معتبر نیست.");
-      const a=nodeById.get(m.start);
-      const b=nodeById.get(m.end);
-      if(!a||!b){
-        const missing=[!a?"ابتدا "+String(m.start):"",!b?"انتها "+String(m.end):""].filter(Boolean).join(" و ");
-        const sample=analysisModel.nodes.slice(-8).map(n=>n.id).join("، ");
-        throw new Error("اتصال هندسی عضو "+m.id+" ("+m.type+") ناقص است؛ گره ناموجود: "+
-          missing+"؛ تعداد گره‌های مدل: "+analysisModel.nodes.length+
-          "؛ شناسه‌های پایانی گره‌ها: "+sample+
-          "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
-      }
-      const section=window.SteelSections.resolveAnalysis3DSection(m);
-      initialSectionDefaults[String(m.sectionKey)]=section;
-      if(m.group)initialSectionDefaults[String(m.group)]=section;
-      sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,
-        sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile,
-        manufacturer:section.manufacturer,sourceDocumentId:section.sourceDocumentId,
-        catalogReference:section.catalogReference,sourcePage:section.sourcePage,
-        sectionDataVerified:section.sectionDataVerified===true};
-      let selfWeightLineLoad=0;
-      if(selected.deadFactor>0){
-        const memberLength=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
-        selfWeightLineLoad=section.A*steelUnitWeightKNm3*selected.deadFactor;
-        const memberWeight=selfWeightLineLoad*memberLength;
-        selfWeightKN+=memberWeight;
-        selfWeightMemberCount++;
-        const groupKey=String(m.sectionKey||"unknown");
-        const group=selfWeightByGroup[groupKey]||(selfWeightByGroup[groupKey]={count:0,lengthM:0,areaM2:section.A,totalKN:0});
-        group.count++;group.lengthM+=memberLength;group.totalKN+=memberWeight;
-      }
-      const totalLineLoad=lineLoad+selfWeightLineLoad;
-      let global;
-      if(selected.key==="wind"||selected.windFactor>0){
-        // Wind inputs are signed NET pressures (kN/m²), not basic wind speed.
-        const windFactor=selected.key==="wind"?1:selected.windFactor;
-        const windSign=selected.key==="wind"?1:selected.windSign;
-        // Positive = pressure toward the enclosed building; negative = suction.
-        // Roof pressure is transferred to purlins normal to each roof slope.
-        // Side-wall pressure is transferred to longitudinal wall girts, normal to the wall.
-        global=windMemberLineLoadGlobal(m,model.geometry,windFactor,windSign).map(value=>value*1000);
-        // A wind combination carries its factored gravity actions as well.
-        if(selected.key!=="wind")global[1]-=totalLineLoad*1000;
-      }else{
-        global=selected.direction.map(v=>v*totalLineLoad*1000);
-      }
-      const local=window.SteelFrame3D.globalVectorToLocal(
-        [a.x,a.y,a.z],[b.x,b.y,b.z],global,m.referenceAxis||undefined,m.sectionRollDeg
-      );
-      m.analysisLoad={uniformLocal:local,globalUniform:global};
-      m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
+    analysisModel.members.forEach(member=>{
+      const section=window.SteelSections.resolveAnalysis3DSection(member);
+      initialSectionDefaults[String(member.sectionKey)]=section;
+      if(member.group)initialSectionDefaults[String(member.group)]=section;
     });
     if(window.SahroudMemberInitialSectionUI?.readOverrides){
       const baseRecords=analysisModel.members.map(member=>({memberId:String(member.id),section:initialSectionDefaults[String(member.sectionKey)]}));
@@ -1089,13 +1038,10 @@
     initialSectionResolution.records.forEach(record=>{
       const member=analysisModel.members.find(item=>String(item.id)===record.memberId);
       if(member)member.initialSection=JSON.parse(JSON.stringify(record.initialSection));
-      sectionsByMemberId[record.memberId]=JSON.parse(JSON.stringify(record.initialSection));
     });
     if(!window.SahroudSectionPropertyRegistry?.apply)
       throw new Error("مخزن یکپارچه خواص مقاطع اعضا بارگذاری نشده است؛ تحلیل برای جلوگیری از ناسازگاری متوقف شد.");
-    const sectionPropertyRecords=initialSectionResolution.records.map(record=>({
-      memberId:record.memberId,section:record.initialSection
-    }));
+    const sectionPropertyRecords=initialSectionResolution.records.map(record=>({memberId:record.memberId,section:record.initialSection}));
     const propertyAudit=window.SahroudSectionPropertyRegistry.apply(analysisModel,sectionPropertyRecords);
     window.SahroudSectionPropertyRegistry.apply(model,sectionPropertyRecords);
     if(!propertyAudit.complete)
@@ -1105,6 +1051,51 @@
     renderSectionPropertySchedule();
     analysisModel.members.forEach(member=>{
       sectionsByMemberId[String(member.id)]=JSON.parse(JSON.stringify(member.sectionProperties));
+    });
+    analysisModel.members.forEach(m=>{
+      const lineLoad=selected.factors
+        ? (Number(m.lineLoads?.dead||0)*selected.factors.dead+
+           Number(m.lineLoads?.live||0)*selected.factors.live+
+           Number(m.lineLoads?.snow||0)*selected.factors.snow)
+        : Number(m.lineLoads&&m.lineLoads[selected.key]||0);
+      if(!Number.isFinite(lineLoad))throw new Error("بار عضو "+m.id+" عدد معتبر نیست.");
+      const a=nodeById.get(m.start),b=nodeById.get(m.end);
+      if(!a||!b){
+        const missing=[!a?"ابتدا "+String(m.start):"",!b?"انتها "+String(m.end):""].filter(Boolean).join(" و ");
+        const sample=analysisModel.nodes.slice(-8).map(n=>n.id).join("، ");
+        throw new Error("اتصال هندسی عضو "+m.id+" ("+m.type+") ناقص است؛ گره ناموجود: "+
+          missing+"؛ تعداد گره‌های مدل: "+analysisModel.nodes.length+
+          "؛ شناسه‌های پایانی گره‌ها: "+sample+
+          "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
+      }
+      const section=m.sectionProperties;
+      if(!section)throw new Error("مقطع نهایی عضو "+m.id+" پیش از تشکیل بارها تخصیص نیافته است.");
+      let selfWeightLineLoad=0;
+      if(selected.deadFactor>0){
+        const memberLength=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+        selfWeightLineLoad=section.A*steelUnitWeightKNm3*selected.deadFactor;
+        const memberWeight=selfWeightLineLoad*memberLength;
+        selfWeightKN+=memberWeight;
+        selfWeightMemberCount++;
+        const groupKey=String(m.sectionKey||"unknown");
+        const group=selfWeightByGroup[groupKey]||(selfWeightByGroup[groupKey]={count:0,lengthM:0,areaM2:section.A,totalKN:0});
+        group.count++;group.lengthM+=memberLength;group.totalKN+=memberWeight;
+      }
+      const totalLineLoad=lineLoad+selfWeightLineLoad;
+      let global;
+      if(selected.key==="wind"||selected.windFactor>0){
+        const windFactor=selected.key==="wind"?1:selected.windFactor;
+        const windSign=selected.key==="wind"?1:selected.windSign;
+        global=windMemberLineLoadGlobal(m,model.geometry,windFactor,windSign).map(value=>value*1000);
+        if(selected.key!=="wind")global[1]-=totalLineLoad*1000;
+      }else{
+        global=selected.direction.map(v=>v*totalLineLoad*1000);
+      }
+      const local=window.SteelFrame3D.globalVectorToLocal(
+        [a.x,a.y,a.z],[b.x,b.y,b.z],global,m.referenceAxis||undefined,m.sectionRollDeg
+      );
+      m.analysisLoad={uniformLocal:local,globalUniform:global};
+      m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
     const fixed= $("baseConnection")?.value==="fixed";
     const supports=analysisModel.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>({
