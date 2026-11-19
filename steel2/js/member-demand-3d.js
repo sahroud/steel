@@ -102,7 +102,8 @@
       const original=source.get(id);
       if(!original)throw new Error("عضو حل‌گر در مدل مرجع یافت نشد: "+id);
       return recoverMember({...result,sectionKey:original.sectionKey,
-        analysisLoad:original.analysisLoad},options?.subdivisions);
+        analysisLoad:original.analysisLoad,sectionRollDeg:original.sectionRollDeg??original.sectionProperties?.sectionRollDeg,
+        sectionOrientationVerified:original.sectionOrientationVerified===true},options?.subdivisions);
     });
     const missing=sourceModel.members.filter(m=>!seen.has(String(m.id))).map(m=>String(m.id));
     if(missing.length)throw new Error("نتیجه حل‌گر برای "+missing.length+" عضو مدل وجود ندارد: "+missing.slice(0,8).join("، "));
