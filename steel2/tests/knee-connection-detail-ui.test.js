@@ -122,3 +122,10 @@ test("knee detail UI exposes Part 10 fillet weld geometry checks",()=>{
  assert.match(source,/report\.codeBasis\.clause/);
  assert.match(source,/ظرفیت جوش و فلز پایه یا تأیید اجرایی را نشان نمی‌دهد/);
 });
+
+test("knee weld demand UI reports local parallel and transverse components",()=>{
+ assert.match(source,/qParallel/);
+ assert.match(source,/qTransverse/);
+ assert.match(source,/موازی محور جوش/);
+ assert.match(source,/عمود بر محور جوش/);
+});
