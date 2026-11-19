@@ -65,3 +65,24 @@ test("crane wheel reaction transfer rejects unverified and malformed data",()=>{
  assert.throws(()=>crane.createVerifiedWheelLoadCase({configuration,sourceVerified:false,sourceReference:"source",wheelReactions:[{nodeId:"N",verticalKN:10}]}),/منبع معتبر/);
  assert.throws(()=>crane.createVerifiedWheelLoadCase({configuration,sourceVerified:true,sourceReference:"source",wheelReactions:[{nodeId:"N",verticalKN:-10}]}),/محدود/);
 });
+
+test("wall surface dead loads transfer to longitudinal and end girts using tributary height",()=>{
+ global.window=global;
+ global.document={readyState:"loading",addEventListener(){},getElementById(){return null},querySelectorAll(){return[]}};
+ require("../js/load-transfer.js");
+ require("../js/model-3d.js");
+ const members=[
+  {id:"WL",sectionKey:"wallGirt",side:"left",tributaryHeight:2},
+  {id:"WR",sectionKey:"wallGirt",side:"right",tributaryHeight:1.5},
+  {id:"EF",sectionKey:"endGirt",endFace:"front",tributaryHeight:1},
+  {id:"EB",sectionKey:"endGirt",endFace:"rear",tributaryHeight:1.25}
+ ];
+ global.SahroudStructuralModel=global.SteelStructuralModel;
+ const r=global.SteelStructuralModel.assignGeometricMemberLineLoads(members,{span:12,rise:2},[3],{
+  wallDeadLeft:.8,wallDeadRight:1.2,endWallDeadFront:1.4,endWallDeadBack:1.6,
+  windWall:0,windEndFront:0,windEndBack:0,
+  deadAreaBasis:"unspecified",liveAreaBasis:"unspecified",snowAreaBasis:"unspecified"
+ });
+ assert.deepEqual(members.map(m=>m.lineLoads.dead),[1.6,1.8,1.4,2.0]);
+ assert.equal(r.roofPurlinsPresent,false);
+});
