@@ -109,3 +109,23 @@ test("takeoff rejects geometry without a complete coordinate audit",()=>{
  model.members[0].length=7;
  assert.throws(()=>registry.takeoff(model),/ممیزی هندسه/);
 });
+
+test("section roll and explicit orientation confirmation are fingerprinted and assigned to members",()=>{
+ const member={id:"R-ROLL",sectionKey:"rafter"};
+ const a=registry.applyOne(member,section({sectionRollDeg:0,sectionOrientationConfirmed:false}));
+ const first=a.sectionPropertyFingerprint;
+ assert.equal(member.sectionRollDeg,0);
+ assert.equal(member.sectionOrientationVerified,false);
+ const b=registry.applyOne(member,section({sectionRollDeg:90,sectionOrientationConfirmed:true}));
+ assert.notEqual(b.sectionPropertyFingerprint,first);
+ assert.equal(member.sectionRollDeg,90);
+ assert.equal(member.sectionOrientationVerified,true);
+ const c=registry.applyOne(member,section({sectionRollDeg:-90,sectionOrientationConfirmed:true}));
+ assert.notEqual(c.sectionPropertyFingerprint,b.sectionPropertyFingerprint);
+ assert.equal(member.sectionRollDeg,-90);
+});
+test("section roll rejects non-finite values before solver consumption",()=>{
+ const member={id:"R-BAD"};
+ const invalid=registry.normalize(section({sectionRollDeg:NaN}),"R-BAD");
+ assert.ok(Number.isNaN(invalid.sectionRollDeg));
+});
