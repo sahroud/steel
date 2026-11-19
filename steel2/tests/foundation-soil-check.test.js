@@ -15,7 +15,7 @@ test("rectangular footing pressure check uses biaxial eccentricity and SLS input
  assert.equal(x.bearingPass,true);
 });
 test("bearing pressure exceeding allowable capacity fails",()=>{
- const r=soil.checkRectangularFooting({soil:{allowableBearingKPa:280,sourceReference:"Report p.12"},Bm:2,Lm:2,
+ const r=soil.checkRectangularFooting({soil:{allowableBearingKPa:270,sourceReference:"Report p.12"},Bm:2,Lm:2,
   cases:[{name:"SLS-1",sourceReference:"Structural reaction report R-01 p.4",NkN:1000,MxkNm:20,MzkNm:15}]});
  assert.equal(r.success,false);assert.equal(r.results[0].status,"fail-bearing-pressure");
 });
