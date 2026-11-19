@@ -80,7 +80,7 @@
    if(!selectedId)return;
    dirty.delete(selectedId);
    const member=currentModel?.members?.find(m=>String(m.id)===selectedId);
-   if(member){delete member.sectionProperties;delete member.sectionPropertyFingerprint;delete member.sectionPropertySource;delete member.sectionRollDeg;delete member.sectionOrientationVerified;}
+   if(member){delete member.sectionProperties;delete member.sectionPropertyFingerprint;delete member.sectionPropertySource;delete member.sectionRollDeg;delete member.sectionOrientationVerified;if(member.sectionReferenceAxisSource==="section-property-registry"){delete member.referenceAxis;delete member.sectionReferenceAxisSource;}}
    invalidateAnalysis(selectedId);loadSelected();message("ورودی مستقل حذف شد؛ مقطع پیش‌فرض گروه برای این عضو استفاده می‌شود و تحلیل مجدد لازم است.");
   });
   return panel;
