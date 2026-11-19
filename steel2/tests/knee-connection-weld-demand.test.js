@@ -36,7 +36,7 @@ test("rejects out-of-plane force or bending rather than dropping it",()=>{
 test("rejects weld segments on different plate planes",()=>{
  const {d,mapped}=fixture();d.plates.push({...d.plates[0],id:"P2",frame:{originMm:[0,0,5],axes:{u:[1,0,0],v:[0,1,0],n:[0,0,1]}}});
  d.welds[1].plateId="P2";d.welds[1].startMm=[50,-50,5];d.welds[1].endMm=[50,50,5];
- assert.throws(()=>kneeWeld.analyze(d,mapped),/خارج از صفحه|صفحات/);
+ assert.throws(()=>kneeWeld.analyze(d,mapped),/صفحه مرجع|صفحات/);
 });
 test("rejects a mismatched connection identifier",()=>{
  const {d,mapped}=fixture();mapped.connectionId="OTHER";
