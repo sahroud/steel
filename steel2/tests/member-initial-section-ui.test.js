@@ -44,3 +44,16 @@ test("stores and restores per-member overrides as project data",()=>{
  ui.setData([]);
  assert.equal(ui.getData().length,0);
 });
+
+test("feeds persisted per-member section override into the initial resolver",()=>{
+ const base={profile:"Z group",E:200e9,G:77e9,A:0.01,Iy:1e-5,Iz:2e-5,J:1e-6,sectionKey:"roofPurlin"};
+ const saved={memberId:"P-4",section:{...base,profile:"Z custom",A:0.014},sourceReference:"saved project"};
+ ui.setData([saved]);
+ const model={members:[{id:"P-4",sectionKey:"roofPurlin"},{id:"P-5",sectionKey:"roofPurlin"}]};
+ const overrides=ui.readOverrides(model,[{memberId:"P-4",section:base},{memberId:"P-5",section:base}]);
+ const result=resolver.resolve(model,{defaults:{roofPurlin:base},overrides});
+ assert.equal(result.records[0].source,"user-input");
+ assert.equal(result.records[0].initialSection.profile,"Z custom");
+ assert.equal(result.records[1].source,"group-default");
+ ui.setData([]);
+});
