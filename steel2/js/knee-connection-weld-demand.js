@@ -15,8 +15,8 @@
   return [0,1,2].map(i=>axes.x[i]*q.x+axes.y[i]*q.y+axes.z[i]*q.z);
  }
  function analyze(detail,mappedDemand,options={}){
-  const api=root.SahroudKneeConnectionDetail,solver=root.SahroudWeldGroupDemand;
-  if(!api||!solver)fail("ماژول جزئیات زانویی یا موتور تقاضای گروه جوش بارگذاری نشده است.");
+  const api=root.SahroudKneeConnectionDetail,solver=root.SahroudWeldGroupDemand,detailCheck=root.SahroudKneeWeldDetailCheck;
+  if(!api||!solver||!detailCheck)fail("ماژول جزئیات زانویی، کنترل جزئیات جوش یا موتور تقاضای گروه جوش بارگذاری نشده است.");
   const validation=api.validate(detail);
   if(!validation.valid)fail("جزئیات اتصال معتبر نیست: "+validation.errors.join(" | "));
   if(!mappedDemand||mappedDemand.success!==true||mappedDemand.connectionId!==String(detail.connectionId))
@@ -25,6 +25,9 @@
    fail("واحدهای بسته تقاضای ورودی باید N، N.m و m باشند.");
   const tol=options.outOfPlaneTolerance??1e-6;
   if(!(typeof tol==="number"&&Number.isFinite(tol)&&tol>=0))fail("تلرانس خروج از صفحه نامعتبر است.");
+  const weldDetail=detailCheck.assess(detail);
+  if(!weldDetail.success||!weldDetail.lineDemandGeometryComplete)
+   fail("طول مؤثر خطوط جوش به علت داده ناقص/نامشخص قابل تعیین نیست؛ ابتدا کنترل جزئیات جوش را تکمیل کنید.");
   const conn=detail.connectionFrame, connAxes=conn.axes;
   if(!sameVector(mappedDemand.originM,conn.originM)||!["x","y","z"].every(k=>sameVector(mappedDemand.axes?.[k]||[],connAxes[k])))
    fail("مبدأ یا محورهای بسته تقاضا با دستگاه تأییدشده جزئیات اتصال تطابق ندارد.");
@@ -33,7 +36,10 @@
   const welds=detail.welds;
   const basePlate=plates.get(String(welds[0].plateId));
   const frame=basePlate.frame, u=frame.axes.u, v=frame.axes.v, n=frame.axes.n, plateOrigin=frame.originMm;
+  const effectiveById=new Map(weldDetail.effectiveWelds.map(w=>[String(w.id),w]));
   const segments=welds.map(w=>{
+   const effective=effectiveById.get(String(w.id));
+   if(!effective||effective.effectiveLengthKnown===false)fail("طول مؤثر جوش "+w.id+" نامشخص است.");
    const plate=plates.get(String(w.plateId));
    if(!plate)fail("ورق میزبان جوش "+w.id+" موجود نیست.");
    const pframe=plate.frame;
@@ -48,7 +54,7 @@
     if(Math.abs(z)>0.1)fail("خط جوش "+w.id+" از صفحه مرجع گروه جوش خارج است.");
     return [dot(delta,u),dot(delta,v)];
    };
-   return{id:String(w.id),start:toLocal(w.startMm),end:toLocal(w.endMm)};
+   return{id:String(w.id),start:toLocal(effective.effectiveStartMm),end:toLocal(effective.effectiveEndMm)};
   });
   const cases=mappedDemand.cases;
   if(!Array.isArray(cases)||!cases.length)fail("هیچ ترکیب بار نگاشت‌شده‌ای وجود ندارد.");
@@ -99,6 +105,7 @@
    outOfPlaneTolerance:tol,
    demandModel:"elastic-line-group; uniform stiffness; rigid plate",
    units:{force:"kN",moment:"kN.mm",coordinates:"mm",lineDemand:"kN/mm"},
+   weldDetailCheck:{overallStatus:weldDetail.overallStatus,checks:weldDetail.checks},
    results,capacityDesigned:false,executionReady:false,
    limitations:["تقاضای ستون و رفتر جداگانه گزارش می‌شود؛ جمع آن‌ها یا سهم‌بندی نیرو میان اجزای اتصال انجام نشده است.",
     "مدل فقط گروه جوش هم‌صفحه با سختی خطی یکنواخت و ورق صلب را می‌پذیرد.",
