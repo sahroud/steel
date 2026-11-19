@@ -14,10 +14,25 @@
     const state = {
         deadLeft: 0.50,
         deadRight: 0.50,
+        deadRoofOtherLeft: 0.50,
+        deadRoofOtherRight: 0.50,
+        deadRoofComponents: {
+            covering:{left:0,right:0}, insulation:{left:0,right:0},
+            liner:{left:0,right:0}, ceiling:{left:0,right:0},
+            equipment:{left:0,right:0}, other:{left:0,right:0}
+        },
+        wallDeadLeft: 0,
+        wallDeadRight: 0,
+        wallDeadSupportPath: "foundation",
+        endWallDeadFront: 0,
+        endWallDeadBack: 0,
         liveLeft: 0.75,
         liveRight: 0.75,
         snowLeft: 1.0,
         snowRight: 1.0,
+        deadAreaBasis: "unspecified",
+        liveAreaBasis: "unspecified",
+        snowAreaBasis: "unspecified",
         windLeft: 0,
         windRight: 0,
         windWall: 0,
@@ -195,10 +210,73 @@
                 فشار مبنای باد پس از بارگذاری اطلاعات محاسبه می‌شود.
             </div>
 
-            <h4>د ـ بار مرده سقف</h4>
+            <h4>مبنای سطح هر بار ثقلی سقف</h4>
             <div class="form-grid">
-                ${input("loadDeadLeft", "بار مرده سمت چپ", state.deadLeft, false)}
-                ${input("loadDeadRight", "بار مرده سمت راست", state.deadRight, false)}
+                <div class="field">
+                    <label for="deadAreaBasis">مبنای بار مرده سقف</label>
+                    <select id="deadAreaBasis">
+                        <option value="unspecified">انتخاب نشده</option>
+                        <option value="horizontal-projection">تصویر افقی سقف</option>
+                        <option value="sloped-surface">سطح واقعی شیب‌دار سقف</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="liveAreaBasis">مبنای بار زنده سقف</label>
+                    <select id="liveAreaBasis">
+                        <option value="unspecified">انتخاب نشده</option>
+                        <option value="horizontal-projection">تصویر افقی سقف</option>
+                        <option value="sloped-surface">سطح واقعی شیب‌دار سقف</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="snowAreaBasis">مبنای بار برف سقف</label>
+                    <select id="snowAreaBasis">
+                        <option value="unspecified">انتخاب نشده</option>
+                        <option value="horizontal-projection">تصویر افقی سقف</option>
+                        <option value="sloped-surface">سطح واقعی شیب‌دار سقف</option>
+                    </select>
+                </div>
+            </div>
+            <div class="notice">
+                مبنای هر بار باید با منبع محاسبه همان بار یکسان باشد؛ این سه بار لزوماً مبنای یکسان ندارند. در حالت تصویر افقی، عرض بارگیر روی شیب در cos(زاویه سقف) ضرب می‌شود؛ در حالت سطح شیب‌دار این تبدیل انجام نمی‌شود. پروژه‌های قدیمی فاقد مبنای صریح با وضعیت «انتخاب نشده» باز می‌شوند و تا تعیین مبنا تحلیل آن بار متوقف می‌ماند.
+            </div>
+
+            <h4>د ـ اجزای بار مرده سقف (تفکیک‌شده)</h4>
+            <div class="notice">وزن هر جزء را از کاتالوگ سازنده، نقشه یا صورت‌مشخصات وارد کنید. واحد همه ورودی‌ها kN/m² است و برای شیب چپ و راست جداگانه ثبت می‌شود. بار تجهیزات فقط وقتی به‌صورت بار سطحی معادل‌سازی شده وارد شود؛ بار متمرکز تجهیزات باید جداگانه مدل شود. وزن اعضای فولادی مدل‌شده از خودوزن مقاطع محاسبه می‌شود و نباید دوباره در این جدول وارد شود.</div>
+            <div class="form-grid">
+                ${input("loadDeadLeft", "سایر بار مرده سقف ـ چپ (خارج از اقلام زیر)", state.deadRoofOtherLeft, false)}
+                ${input("loadDeadRight", "سایر بار مرده سقف ـ راست (خارج از اقلام زیر)", state.deadRoofOtherRight, false)}
+            </div>
+            <div class="form-grid">
+                ${input("deadCompCoveringLeft", "پوشش سقف ـ چپ", state.deadRoofComponents.covering.left, false)}
+                ${input("deadCompCoveringRight", "پوشش سقف ـ راست", state.deadRoofComponents.covering.right, false)}
+                ${input("deadCompInsulationLeft", "عایق حرارتی/رطوبتی ـ چپ", state.deadRoofComponents.insulation.left, false)}
+                ${input("deadCompInsulationRight", "عایق حرارتی/رطوبتی ـ راست", state.deadRoofComponents.insulation.right, false)}
+                ${input("deadCompLinerLeft", "لایه زیرین/ورق داخلی ـ چپ", state.deadRoofComponents.liner.left, false)}
+                ${input("deadCompLinerRight", "لایه زیرین/ورق داخلی ـ راست", state.deadRoofComponents.liner.right, false)}
+                ${input("deadCompCeilingLeft", "سقف کاذب و آویزها ـ چپ", state.deadRoofComponents.ceiling.left, false)}
+                ${input("deadCompCeilingRight", "سقف کاذب و آویزها ـ راست", state.deadRoofComponents.ceiling.right, false)}
+                ${input("deadCompEquipmentLeft", "تجهیزات و تأسیسات معادل سطحی ـ چپ", state.deadRoofComponents.equipment.left, false)}
+                ${input("deadCompEquipmentRight", "تجهیزات و تأسیسات معادل سطحی ـ راست", state.deadRoofComponents.equipment.right, false)}
+                ${input("deadCompOtherLeft", "سایر اجزای دائمی مستند ـ چپ", state.deadRoofComponents.other.left, false)}
+                ${input("deadCompOtherRight", "سایر اجزای دائمی مستند ـ راست", state.deadRoofComponents.other.right, false)}
+            </div>
+            <div class="notice" id="deadRoofComponentSummary">جمع بار مرده تفکیکی پس از ورود مقادیر محاسبه می‌شود.</div>
+
+            <h4>هـ ـ وزن سطحی دیوارها و پوسته (بار مرده)</h4>
+            <div class="notice">وزن سطحی دیوارهای طولی و انتهایی را از مشخصات واقعی آجر، ساندویچ‌پنل، زیرسازی و پوشش وارد کنید. مقدار صفر یعنی این بار در این ورودی تعریف نشده است؛ ناحیه مثلثی بالای دیوار انتهایی هنوز به مسیر مستقل نیاز دارد. واحد kN/m² است.</div>
+            <div class="field">
+                <label for="wallDeadSupportPath">مسیر تحمل وزن دیوار</label>
+                <select id="wallDeadSupportPath">
+                    <option value="foundation">دیوار باربر روی شناژ/فونداسیون (پیش‌فرض دیوار آجری)</option>
+                    <option value="girts">دیوار/پنل آویخته و متکی به قیدهای فلزی</option>
+                </select>
+            </div>
+            <div class="form-grid">
+                ${input("loadWallDeadLeft", "وزن سطحی دیوار طولی چپ", state.wallDeadLeft, false)}
+                ${input("loadWallDeadRight", "وزن سطحی دیوار طولی راست", state.wallDeadRight, false)}
+                ${input("loadEndWallDeadFront", "وزن سطحی دیوار انتهایی جلو", state.endWallDeadFront, false)}
+                ${input("loadEndWallDeadBack", "وزن سطحی دیوار انتهایی عقب", state.endWallDeadBack, false)}
             </div>
 
             <h4>ب ـ بار زنده سقف</h4>
@@ -222,10 +300,10 @@
                 ${input("loadWindEndBack", "فشار خالص دیوار انتهایی عقب (وجه z=L)", state.windEndBack, true)}
             </div>
             <div class="notice">
-                برای تحلیل آزمایشی باد، این سه ورودی باید «فشار خالص وارد بر سطح» بر حسب kN/m² باشند، نه سرعت مبنای باد.
+                همه ورودی‌های فشار باد در این بخش باید «فشار خالص وارد بر سطح» بر حسب kN/m² باشند، نه سرعت مبنای باد.
                 مقدار مثبت یعنی فشار به سمت داخل سالن و مقدار منفی یعنی مکش به سمت بیرون.
-                فشار سقف به‌صورت عمود بر هر شیب و فشار دیوار به‌صورت عمود بر دو دیوار طولی به مدل منتقل می‌شود.
-                مقدار دیوار طولی برای دو طرف یکسان فرض می‌شود. دو ورودی جداگانه برای دیوارهای انتهایی جلو و عقب نیز اضافه شده‌اند و به تیرهای افقی endGirt منتقل می‌شوند.
+                فشار سقف به‌صورت عمود بر هر شیب، فشار دیوار طولی با فرض مقدار یکسان برای دو طرف، و فشار دیوارهای انتهایی جلو و عقب به‌صورت جداگانه به اعضای متناظر منتقل می‌شود.
+                مقدار دیوار طولی برای دو طرف یکسان فرض می‌شود؛ در صورت نامتقارن بودن فشار دو طرف، این محدودیت باید پیش از تحلیل برطرف شود.
                 ناحیه مثلثی بالای دیوار انتهایی (زیر سقف شیبدار)، فشارهای موضعی لبه/گوشه و ضرایب بادگیر/بادپناه هنوز در این مرحله منظور نشده‌اند.
                 این ورودی‌ها فشار خالص دستی هستند و باید توسط مهندس محاسب از محاسبه معتبر باد تعیین شوند.
             </div>
@@ -316,8 +394,8 @@
 
     function readInputs() {
         const ids = {
-            deadLeft: "loadDeadLeft",
-            deadRight: "loadDeadRight",
+            deadRoofOtherLeft: "loadDeadLeft",
+            deadRoofOtherRight: "loadDeadRight",
             liveLeft: "loadLiveLeft",
             liveRight: "loadLiveRight",
             snowLeft: "loadSnowLeft",
@@ -326,13 +404,39 @@
             windRight: "loadWindRight",
             windWall: "loadWindWall",
             windEndFront: "loadWindEndFront",
-            windEndBack: "loadWindEndBack"
+            windEndBack: "loadWindEndBack",
+            wallDeadLeft: "loadWallDeadLeft",
+            wallDeadRight: "loadWallDeadRight",
+            endWallDeadFront: "loadEndWallDeadFront",
+            endWallDeadBack: "loadEndWallDeadBack"
         };
 
         Object.keys(ids).forEach(key => {
             const el = $(ids[key]);
             if (el) state[key] = number(el.value);
         });
+
+        const componentInputIds = {
+            covering:["deadCompCoveringLeft","deadCompCoveringRight"],
+            insulation:["deadCompInsulationLeft","deadCompInsulationRight"],
+            liner:["deadCompLinerLeft","deadCompLinerRight"],
+            ceiling:["deadCompCeilingLeft","deadCompCeilingRight"],
+            equipment:["deadCompEquipmentLeft","deadCompEquipmentRight"],
+            other:["deadCompOtherLeft","deadCompOtherRight"]
+        };
+        Object.entries(componentInputIds).forEach(([key,ids])=>{
+            state.deadRoofComponents[key]={left:number($(ids[0])?.value),right:number($(ids[1])?.value)};
+        });
+        const componentTotal=side=>Object.values(state.deadRoofComponents).reduce((sum,item)=>sum+number(item[side]),0);
+        state.deadLeft=number(state.deadRoofOtherLeft)+componentTotal("left");
+        state.deadRight=number(state.deadRoofOtherRight)+componentTotal("right");
+        const componentSummary=$("deadRoofComponentSummary");
+        if(componentSummary)componentSummary.textContent="جمع بار مرده سقف با احتساب اجزای تفکیکی: چپ "+state.deadLeft.toFixed(3)+" و راست "+state.deadRight.toFixed(3)+" kN/m².";
+        ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+            const el = $(key);
+            if (el) state[key] = el.value;
+        });
+        if ($("wallDeadSupportPath")) state.wallDeadSupportPath = $("wallDeadSupportPath").value;
 
         if ($("loadWindDirection")) {
             state.windDirection = $("loadWindDirection").value;
@@ -408,6 +512,9 @@
 
     function validate() {
         const data = readInputs();
+        if (!["foundation","girts"].includes(data.wallDeadSupportPath)) {
+            return "مسیر تحمل وزن دیوار باید شناژ/فونداسیون یا قیدهای فلزی باشد.";
+        }
 
         const nonNegative = [
             ["بار مرده چپ", data.deadLeft],
@@ -415,12 +522,33 @@
             ["بار زنده چپ", data.liveLeft],
             ["بار زنده راست", data.liveRight],
             ["بار برف چپ", data.snowLeft],
-            ["بار برف راست", data.snowRight]
+            ["بار برف راست", data.snowRight],
+            ["وزن دیوار طولی چپ", data.wallDeadLeft],
+            ["وزن دیوار طولی راست", data.wallDeadRight],
+            ["وزن دیوار انتهایی جلو", data.endWallDeadFront],
+            ["وزن دیوار انتهایی عقب", data.endWallDeadBack]
         ];
 
         for (const item of nonNegative) {
             if (!Number.isFinite(item[1]) || item[1] < 0) {
                 return item[0] + " نمی‌تواند منفی باشد.";
+            }
+        }
+
+        const componentValues=Object.entries(data.deadRoofComponents||{}).flatMap(([name,item])=>[
+            ["جزء بار مرده "+name+" چپ",Number(item?.left)],["جزء بار مرده "+name+" راست",Number(item?.right)]
+        ]);
+        for(const item of componentValues)if(!Number.isFinite(item[1])||item[1]<0)return item[0]+" باید عددی و غیرمنفی باشد.";
+
+        const basisChecks = [
+            ["deadAreaBasis", [data.deadLeft, data.deadRight], "بار مرده"],
+            ["liveAreaBasis", [data.liveLeft, data.liveRight], "بار زنده"],
+            ["snowAreaBasis", [data.snowLeft, data.snowRight], "بار برف"]
+        ];
+        for (const [key, values, label] of basisChecks) {
+            if (values.some(v => Number(v) > 0) &&
+                !["horizontal-projection", "sloped-surface"].includes(data[key])) {
+                return "مبنای سطح " + label + " سقف انتخاب نشده است؛ تحلیل این بار متوقف شد.";
             }
         }
 
@@ -547,15 +675,30 @@
         const defaults = {
             deadLeft: 0.50,
             deadRight: 0.50,
+            deadRoofOtherLeft: 0.50,
+            deadRoofOtherRight: 0.50,
+            deadRoofComponents: {
+                covering:{left:0,right:0}, insulation:{left:0,right:0},
+                liner:{left:0,right:0}, ceiling:{left:0,right:0},
+                equipment:{left:0,right:0}, other:{left:0,right:0}
+            },
             liveLeft: 0.75,
             liveRight: 0.75,
             snowLeft: 1.0,
             snowRight: 1.0,
+            deadAreaBasis: "unspecified",
+            liveAreaBasis: "unspecified",
+            snowAreaBasis: "unspecified",
             windLeft: 0,
             windRight: 0,
             windWall: 0,
             windEndFront: 0,
-            windEndBack: 0
+            windEndBack: 0,
+            wallDeadLeft: 0,
+            wallDeadRight: 0,
+            wallDeadSupportPath: "foundation",
+            endWallDeadFront: 0,
+            endWallDeadBack: 0
         };
 
         Object.assign(state, defaults);
@@ -571,7 +714,11 @@
             windRight: "loadWindRight",
             windWall: "loadWindWall",
             windEndFront: "loadWindEndFront",
-            windEndBack: "loadWindEndBack"
+            windEndBack: "loadWindEndBack",
+            wallDeadLeft: "loadWallDeadLeft",
+            wallDeadRight: "loadWallDeadRight",
+            endWallDeadFront: "loadEndWallDeadFront",
+            endWallDeadBack: "loadEndWallDeadBack"
         };
 
         Object.keys(ids).forEach(key => {
@@ -579,6 +726,13 @@
                 $(ids[key]).value = defaults[key];
             }
         });
+
+        const resetComponentIds={covering:["deadCompCoveringLeft","deadCompCoveringRight"],insulation:["deadCompInsulationLeft","deadCompInsulationRight"],liner:["deadCompLinerLeft","deadCompLinerRight"],ceiling:["deadCompCeilingLeft","deadCompCeilingRight"],equipment:["deadCompEquipmentLeft","deadCompEquipmentRight"],other:["deadCompOtherLeft","deadCompOtherRight"]};
+        Object.entries(resetComponentIds).forEach(([k,ids])=>{if($(ids[0]))$(ids[0]).value=0;if($(ids[1]))$(ids[1]).value=0;});
+        ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+            if ($(key)) $(key).value = state[key];
+        });
+        if ($("wallDeadSupportPath")) $("wallDeadSupportPath").value = state.wallDeadSupportPath;
 
         if ($("loadWindDirection")) {
             $("loadWindDirection").value = "left-to-right";
@@ -604,8 +758,26 @@
             "deadLeft", "deadRight",
             "liveLeft", "liveRight",
             "snowLeft", "snowRight",
-            "windLeft", "windRight", "windWall", "windEndFront", "windEndBack"
+            "windLeft", "windRight", "windWall", "windEndFront", "windEndBack",
+            "wallDeadLeft", "wallDeadRight", "endWallDeadFront", "endWallDeadBack"
         ];
+
+        state.deadRoofOtherLeft=Number.isFinite(Number(data.deadRoofOtherLeft))?Number(data.deadRoofOtherLeft):number(data.deadLeft);
+        state.deadRoofOtherRight=Number.isFinite(Number(data.deadRoofOtherRight))?Number(data.deadRoofOtherRight):number(data.deadRight);
+        const componentDefaults={covering:{left:0,right:0},insulation:{left:0,right:0},liner:{left:0,right:0},ceiling:{left:0,right:0},equipment:{left:0,right:0},other:{left:0,right:0}};
+        state.deadRoofComponents=JSON.parse(JSON.stringify(componentDefaults));
+        if(data.deadRoofComponents&&typeof data.deadRoofComponents==="object")
+            Object.keys(componentDefaults).forEach(k=>{const v=data.deadRoofComponents[k];if(v)state.deadRoofComponents[k]={left:number(v.left),right:number(v.right)};});
+        const componentTotal=side=>Object.values(state.deadRoofComponents).reduce((sum,item)=>sum+number(item[side]),0);
+        state.deadLeft=state.deadRoofOtherLeft+componentTotal("left");
+        state.deadRight=state.deadRoofOtherRight+componentTotal("right");
+        state.wallDeadSupportPath = ["foundation","girts"].includes(data.wallDeadSupportPath) ? data.wallDeadSupportPath : "foundation";
+        const legacyBasis = ["horizontal-projection", "sloped-surface"].includes(data.roofLoadAreaBasis)
+            ? data.roofLoadAreaBasis : "unspecified";
+        ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+            state[key] = ["horizontal-projection", "sloped-surface"].includes(data[key])
+                ? data[key] : legacyBasis;
+        });
 
         keys.forEach(key => {
             if (Number.isFinite(Number(data[key]))) {
@@ -660,11 +832,19 @@
                     windRight: "loadWindRight",
                     windWall: "loadWindWall",
                     windEndFront: "loadWindEndFront",
-                    windEndBack: "loadWindEndBack"
+                    windEndBack: "loadWindEndBack",
+                    wallDeadLeft: "loadWallDeadLeft",
+                    wallDeadRight: "loadWallDeadRight",
+                    endWallDeadFront: "loadEndWallDeadFront",
+                    endWallDeadBack: "loadEndWallDeadBack"
                 };
 
                 if ($(map[key])) $(map[key]).value = state[key];
             });
+            if($("loadDeadLeft"))$("loadDeadLeft").value=state.deadRoofOtherLeft;
+            if($("loadDeadRight"))$("loadDeadRight").value=state.deadRoofOtherRight;
+            const componentUiIds={covering:["deadCompCoveringLeft","deadCompCoveringRight"],insulation:["deadCompInsulationLeft","deadCompInsulationRight"],liner:["deadCompLinerLeft","deadCompLinerRight"],ceiling:["deadCompCeilingLeft","deadCompCeilingRight"],equipment:["deadCompEquipmentLeft","deadCompEquipmentRight"],other:["deadCompOtherLeft","deadCompOtherRight"]};
+            Object.entries(componentUiIds).forEach(([k,ids])=>{if($(ids[0]))$(ids[0]).value=state.deadRoofComponents[k].left;if($(ids[1]))$(ids[1]).value=state.deadRoofComponents[k].right;});
 
             if ($("loadWindDirection")) {
                 $("loadWindDirection").value = state.windDirection;
@@ -687,6 +867,10 @@
                 if ($(climateIds[key])) $(climateIds[key]).value = state.climate[key];
             });
 
+            ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+                if ($(key)) $(key).value = state[key];
+            });
+            if ($("wallDeadSupportPath")) $("wallDeadSupportPath").value = state.wallDeadSupportPath;
             renderCombinations();
 
             if (data.combinations) {
@@ -748,6 +932,10 @@
                 }
             });
         }
+
+        ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
+            if ($(key)) $(key).value = state[key];
+        });
 
         const panel = $("advancedLoadPanel");
 

@@ -72,56 +72,69 @@
     "long-wall-left":"windZoneLongLeft","long-wall-right":"windZoneLongRight",
     "end-wall-front":"windZoneEndFront","end-wall-back":"windZoneEndBack"
   };
-  function readWindZones() {
-    const saved=restoredMeta&&restoredMeta.windZones?restoredMeta.windZones:{};
+  const windDirections=Object.freeze([
+    {id:"transverse-positive",label:"عرضی +X (باد از چپ به راست)"},
+    {id:"transverse-negative",label:"عرضی −X (باد از راست به چپ)"},
+    {id:"longitudinal-positive",label:"طولی +Z (باد از جلو به عقب)"},
+    {id:"longitudinal-negative",label:"طولی −Z (باد از عقب به جلو)"}
+  ]);
+  const windZoneRows=[
+    ["roof-left","شیب چپ بام"],["roof-right","شیب راست بام"],
+    ["long-wall-left","دیوار طولی چپ"],["long-wall-right","دیوار طولی راست"],
+    ["end-wall-front","دیوار انتهایی جلو"],["end-wall-back","دیوار انتهایی عقب"]
+  ];
+  const zoneToken=key=>key.replace(/-/g,"_");
+  const zoneResultId=(direction,key,sign)=>"windZone_"+direction+"_"+zoneToken(key)+"_"+sign;
+  function readWindZones(direction) {
+    const saved=restoredMeta&&restoredMeta.windZonesByDirection?restoredMeta.windZonesByDirection:{};
+    const legacy=restoredMeta&&restoredMeta.windZones?restoredMeta.windZones:{};
+    const savedForDirection=saved[direction]||{};
     const result={};
     Object.keys(windZoneIds).forEach(key=>{
-      const el=document.querySelector('.wind-zone-cp[data-zone="'+key+'"]');
-      result[key]=el?el.value:(saved[key]!==undefined?saved[key]:"");
+      const el=document.querySelector('.wind-zone-cp[data-direction="'+direction+'"][data-zone="'+key+'"]');
+      const fallback=direction==="transverse-positive"&&legacy[key]!==undefined?legacy[key]:"";
+      result[key]=el?el.value:(savedForDirection[key]!==undefined?savedForDirection[key]:fallback);
     });
     return result;
   }
-  function calculateWindZones() {
+  function calculateWindZones(direction) {
+    const selected=direction===undefined?"transverse-positive":
+      (windDirections.some(x=>x.id===direction)?direction:null);
+    if(!selected)return {q:null,rows:{},zones:{},ready:false,direction:null};
     const loads=window.SteelLoads&&window.SteelLoads.getData?window.SteelLoads.getData():{};
-    const climate=loads.climate||{},speed=finite(climate.basicWind);
-    const q=speed===null?null:0.000613*Math.pow(speed/3.6,2);
-    const c=readWindCoefficients(),v={};
-    Object.keys(windCoefficientDefaults).forEach(k=>v[k]=finite(c[k]));
-    const zones=readWindZones();
-    const required=["importance","exposure","topography","gust","directionality","internalGust"];
-    const commonReady=q!==null&&required.every(k=>v[k]!==null);
-    const internalMagnitude=v.internalPressure===null?null:Math.abs(v.internalPressure);
-    const rows={};
-    Object.keys(zones).forEach(key=>{
-      const cp=finite(zones[key]);
-      if(!commonReady||cp===null||internalMagnitude===null){rows[key]=null;return;}
-      const common=v.importance*q*v.exposure*v.topography*v.directionality;
-      const ext=common*v.gust*cp;
-      const intMagnitude=common*v.internalGust*internalMagnitude;
-      rows[key]={cp,external:ext,internalPositive:intMagnitude,internalNegative:-intMagnitude,
-        netInternalPositive:ext-intMagnitude,netInternalNegative:ext+intMagnitude};
+    const climate=loads.climate||{};
+    if(!window.SteelLoadTransfer||typeof window.SteelLoadTransfer.calculateWindZonePressures!=="function")
+      return {q:null,rows:{},zones:readWindZones(selected),ready:false,direction:selected};
+    const zones=readWindZones(selected);
+    const result=window.SteelLoadTransfer.calculateWindZonePressures({
+      direction:selected,basicWindKmh:climate.basicWind,
+      coefficients:readWindCoefficients(),zones
     });
-    return {q,rows,zones,ready:Object.values(rows).every(Boolean)};
+    return {...result,zones,direction:selected};
+  }
+  function buildWindDirectionTables() {
+    return windDirections.map((direction,index)=>{
+      const rows=windZoneRows.map(([key,label])=>{
+        const plus=zoneResultId(direction.id,key,"plus"),minus=zoneResultId(direction.id,key,"minus");
+        return '<tr><td>'+label+'</td><td><input class="wind-zone-cp" data-direction="'+direction.id+'" data-zone="'+key+'" type="number" step="0.01" placeholder="Cp"></td><td id="'+plus+'">—</td><td id="'+minus+'">—</td></tr>';
+      }).join("");
+      return '<details class="wind-direction-block"'+(index===0?" open":"")+'><summary>'+direction.label+'</summary><div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>Cp خارجی</th><th>فشار خالص با فشار داخلی مثبت</th><th>فشار خالص با فشار داخلی منفی</th></tr></thead><tbody>'+rows+'</tbody></table></div></details>';
+    }).join("");
   }
   function updateWindZones() {
-    const r=calculateWindZones();
-    const map={
-      "roof-left":["windZoneRoofLeftPlus","windZoneRoofLeftMinus"],
-      "roof-right":["windZoneRoofRightPlus","windZoneRoofRightMinus"],
-      "long-wall-left":["windZoneLongLeftPlus","windZoneLongLeftMinus"],
-      "long-wall-right":["windZoneLongRightPlus","windZoneLongRightMinus"],
-      "end-wall-front":["windZoneEndFrontPlus","windZoneEndFrontMinus"],
-      "end-wall-back":["windZoneEndBackPlus","windZoneEndBackMinus"]
-    };
-    Object.keys(map).forEach(k=>{
-      const x=r.rows[k],ids=map[k];
-      if($(ids[0]))$(ids[0]).textContent=x?x.netInternalPositive.toFixed(3)+" kN/m²":"—";
-      if($(ids[1]))$(ids[1]).textContent=x?x.netInternalNegative.toFixed(3)+" kN/m²":"—";
+    let readyCount=0;
+    windDirections.forEach(direction=>{
+      const r=calculateWindZones(direction.id);
+      if(r.ready)readyCount++;
+      windZoneRows.forEach(([key])=>{
+        const row=r.rows&&r.rows[key];
+        const plus=$(zoneResultId(direction.id,key,"plus")),minus=$(zoneResultId(direction.id,key,"minus"));
+        if(plus)plus.textContent=row?row.netInternalPositive.toFixed(3)+" kN/m²":"—";
+        if(minus)minus.textContent=row?row.netInternalNegative.toFixed(3)+" kN/m²":"—";
+      });
     });
     const out=$("windZoneStatus");
-    if(out)out.textContent=r.ready
-      ?"فشار خالص هر شش سطح برای دو حالت علامت فشار داخلی محاسبه شد. q="+r.q.toFixed(3)+" kN/m². مقادیر هنوز دستی/تأییدنشده‌اند و به تحلیل سه‌بعدی منتقل نمی‌شوند."
-      :"برای محاسبه همه سطوح، ضرایب مشترک Iw، Ce، Ct، Cg، Cd، Cgi، قدرمطلق Cpi و Cp هر شش سطح را وارد کنید.";
+    if(out)out.textContent="جهت‌های کامل‌شده: "+readyCount+" از ۴. برای هر جهت باید Cp شش سطح و ضرایب مشترک وارد شود. فشارهای محاسبه‌شده دستی و تأییدنشده‌اند؛ تا تکمیل کنترل‌های آیین‌نامه‌ای، خروجی نهایی طراحی محسوب نمی‌شوند.";
   }
   function getData() {
     const loads = window.SteelLoads && window.SteelLoads.getData ? window.SteelLoads.getData() : {};
@@ -159,9 +172,11 @@
       note:"این فهرست فقط مقادیر واردشده را سازمان‌دهی می‌کند؛ بار آیین‌نامه‌ای یا ترکیب بار طراحی تولید نمی‌کند.",
       windCalculation:{
         coefficients:readWindCoefficients(),
-        zones:readWindZones(),
-        zoneResults:calculateWindZones(),
-        status:"manual-code-coefficients-calculated-for-multiple-surfaces-not-applied-to-3d-model",
+        zones:readWindZones("transverse-positive"),
+        zonesByDirection:Object.fromEntries(windDirections.map(direction=>[direction.id,readWindZones(direction.id)])),
+        zoneResults:calculateWindZones("transverse-positive"),
+        zoneResultsByDirection:Object.fromEntries(windDirections.map(direction=>[direction.id,calculateWindZones(direction.id)])),
+        status:"manual-directional-six-surface-coefficients-preliminary-unverified",
         formulaExternal:"P = Iw q Ce Ct Cg Cp Cd",
         formulaInternal:"Pi = Iw q Ce Ct Cgi Cpi Cd",
         netConvention:"Pnet = Pexternal - Pinternal"
@@ -213,19 +228,11 @@
       '<div class="field"><label for="windCoeffCgi">ضریب اثر تندباد داخلی Cgi</label><input id="windCoeffCgi" type="number" step="0.01" placeholder="از بند مربوط"></div>' +
       '<div class="field"><label for="windCoeffCpi">ضریب فشار داخلی Cpi</label><input id="windCoeffCpi" type="number" step="0.01" placeholder="علامت‌دار؛ بر اساس بازشوها"></div>' +
       '</div><p id="windPressureCalculationResult" class="notice" aria-live="polite"></p>' +
-      '<hr><b>دفتر فشار بادِ سطوح مختلف ـ ورود ضرایب خارجی به تفکیک سطح</b>' +
-      '<p>برای هر سطح، Cp خارجی را جداگانه و با علامت از متن معتبر وارد کنید. نرم‌افزار دو حالت فشار داخلی مثبت و منفی را جداگانه می‌سازد و فشار خالص هر سطح را گزارش می‌کند. این دفتر هنوز به تحلیل سه‌بعدی متصل نیست.</p>' +
-      '<div class="table-wrap"><table class="data-table"><thead><tr><th>سطح</th><th>جهت باد</th><th>Cp خارجی</th><th>فشار خالص با Cpi مثبت</th><th>فشار خالص با Cpi منفی</th></tr></thead><tbody>' +
-      '<tr><td>شیب چپ بام</td><td>عمود بر قاب</td><td><input class="wind-zone-cp" data-zone="roof-left" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneRoofLeftPlus">—</td><td id="windZoneRoofLeftMinus">—</td></tr>' +
-      '<tr><td>شیب راست بام</td><td>عمود بر قاب</td><td><input class="wind-zone-cp" data-zone="roof-right" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneRoofRightPlus">—</td><td id="windZoneRoofRightMinus">—</td></tr>' +
-      '<tr><td>دیوار طولی چپ</td><td>طولی ±Y</td><td><input class="wind-zone-cp" data-zone="long-wall-left" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneLongLeftPlus">—</td><td id="windZoneLongLeftMinus">—</td></tr>' +
-      '<tr><td>دیوار طولی راست</td><td>طولی ±Y</td><td><input class="wind-zone-cp" data-zone="long-wall-right" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneLongRightPlus">—</td><td id="windZoneLongRightMinus">—</td></tr>' +
-      '<tr><td>دیوار انتهایی جلو</td><td>عرضی ±X</td><td><input class="wind-zone-cp" data-zone="end-wall-front" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneEndFrontPlus">—</td><td id="windZoneEndFrontMinus">—</td></tr>' +
-      '<tr><td>دیوار انتهایی عقب</td><td>عرضی ±X</td><td><input class="wind-zone-cp" data-zone="end-wall-back" type="number" step="0.01" placeholder="Cp"></td><td id="windZoneEndBackPlus">—</td><td id="windZoneEndBackMinus">—</td></tr>' +
-      '</tbody></table></div>' +
-      '<p id="windZoneStatus" class="notice" aria-live="polite">برای محاسبه، ضرایب مشترک و Cp هر سطح باید تکمیل شوند.</p>' +
-      '<p><b>تذکر:</b> انتخاب Cp و علامت آن باید متناسب با جهت باد، نسبت ابعادی، شیب بام و ناحیه لبه/گوشه از جداول و شکل‌های مبحث ششم ۱۳۹۸ انجام شود. این جدول فقط سطوح کلی را تفکیک می‌کند و جایگزین تفکیک نواحی موضعی بام و نما نیست.</p>' +
-      '<p><b>محدودیت این مرحله:</b> نتایج این دفتر فقط گزارش و ذخیره می‌شوند؛ هنوز به اعضای مدل سه‌بعدی منتقل نمی‌شوند و دیوارهای انتهایی نیز در بارگذاری مدل لحاظ نشده‌اند.</p>';
+      '<hr><b>دفتر فشار باد ـ چهار جهت مستقل و دو حالت فشار داخلی</b>' +
+      '<p>ضرایب Cp را برای هر یک از چهار جهت باد و هر شش سطح جداگانه، با علامت و مستند به مبحث ششم وارد کنید. نرم‌افزار هیچ ضریب آیین‌نامه‌ای را حدس نمی‌زند.</p>' +
+      buildWindDirectionTables() +
+      '<p id="windZoneStatus" class="notice" aria-live="polite">برای هر جهت، ضرایب مشترک و Cp هر شش سطح باید تکمیل شوند.</p>' +
+      '<p><b>محدودیت مهم:</b> این جدول فشار متوسط سطحی است؛ نواحی موضعی لبه/گوشه اجزای پوششی، محاسبه خودکار Ce از زبری و ارتفاع، بازشوی غالب و ضرایب رسمی هنوز جداگانه باید تکمیل شوند. داده ناقص یا جهت تعریف‌نشده مجاز به تحلیل نیست.</p>';
     anchor.insertAdjacentElement("afterend",panel);
     Object.keys({
       windCoeffIw:1,windCoeffCe:1,windCoeffCt:1,windCoeffCg:1,
@@ -236,8 +243,13 @@
     });
     panel.querySelectorAll(".wind-zone-cp").forEach(el=>el.addEventListener("input",updateSummary));
     const savedZones=restoredMeta&&restoredMeta.windZones;
-    if(savedZones)Object.keys(savedZones).forEach(key=>{
-      const el=panel.querySelector('.wind-zone-cp[data-zone="'+key+'"]');
+    const savedByDirection=restoredMeta&&restoredMeta.windZonesByDirection;
+    if(savedByDirection)Object.entries(savedByDirection).forEach(([direction,zones])=>Object.keys(zones||{}).forEach(key=>{
+      const el=panel.querySelector('.wind-zone-cp[data-direction="'+direction+'"][data-zone="'+key+'"]');
+      if(el)el.value=zones[key];
+    }));
+    else if(savedZones)Object.keys(savedZones).forEach(key=>{
+      const el=panel.querySelector('.wind-zone-cp[data-direction="transverse-positive"][data-zone="'+key+'"]');
       if(el)el.value=savedZones[key];
     });
     updateSummary();
@@ -255,7 +267,8 @@
     restoredMeta=data&&typeof data==="object"?{
       status:data.status||"",generatedAt:data.generatedAt||"",
       windCalculation:data.windCalculation||null,
-      windZones:data.windCalculation&&data.windCalculation.zones?data.windCalculation.zones:null
+      windZones:data.windCalculation&&data.windCalculation.zones?data.windCalculation.zones:null,
+      windZonesByDirection:data.windCalculation&&data.windCalculation.zonesByDirection?data.windCalculation.zonesByDirection:null
     }:null;
     if (document.readyState !== "loading") {
       const coeff=restoredMeta&&restoredMeta.windCalculation&&restoredMeta.windCalculation.coefficients;
@@ -263,11 +276,18 @@
         const map={importance:"windCoeffIw",exposure:"windCoeffCe",topography:"windCoeffCt",gust:"windCoeffCg",externalPressure:"windCoeffCp",directionality:"windCoeffCd",internalGust:"windCoeffCgi",internalPressure:"windCoeffCpi"};
         if($(map[key])) $(map[key]).value=coeff[key];
       });
-      const zones=restoredMeta&&restoredMeta.windZones;
-      if(zones)Object.keys(zones).forEach(key=>{
-        const el=document.querySelector('.wind-zone-cp[data-zone="'+key+'"]');
+      const zonesByDirection=restoredMeta&&restoredMeta.windZonesByDirection;
+      if(zonesByDirection)Object.entries(zonesByDirection).forEach(([direction,zones])=>Object.keys(zones||{}).forEach(key=>{
+        const el=document.querySelector('.wind-zone-cp[data-direction="'+direction+'"][data-zone="'+key+'"]');
         if(el)el.value=zones[key];
-      });
+      }));
+      else {
+        const zones=restoredMeta&&restoredMeta.windZones;
+        if(zones)Object.keys(zones).forEach(key=>{
+          const el=document.querySelector('.wind-zone-cp[data-direction="transverse-positive"][data-zone="'+key+'"]');
+          if(el)el.value=zones[key];
+        });
+      }
     }
     updateSummary();
   }

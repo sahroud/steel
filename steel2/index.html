@@ -51,11 +51,11 @@
             </div>
             <div class="field">
                 <label for="owner">کارفرما</label>
-                <input id="owner" type="text" placeholder="نام کارفرما">
+                <input id="owner" type="text" value="شرکت شهرکهای صنعتی">
             </div>
             <div class="field">
                 <label for="designer">طراح</label>
-                <input id="designer" type="text" placeholder="نام مهندس">
+                <input id="designer" type="text" value="مهندس احمد نوری">
             </div>
             <div class="field">
                 <label for="city">شهر پروژه</label>
@@ -154,6 +154,72 @@
         </div>
     </section>
 
+    <section class="panel" id="foundationSoilPanel">
+        <div class="panel-title"><h3>کنترل ژئوتکنیکی پی (اختیاری)</h3><span class="status">کنترل فشار تماس؛ نه طراحی کامل پی</span></div>
+        <label class="field"><span><input id="soilControlEnabled" type="checkbox"> کنترل باربری خاک در این پروژه فعال شود</span></label>
+        <div class="notice">با فعال‌سازی، باید ظرفیت مجاز از گزارش ژئوتکنیک و واکنش‌های ترکیبات بهره‌برداری تأییدشده وارد شود. این نسخه فشار تماس خطی پی مستطیلی با فرض تماس کامل را کنترل می‌کند؛ داده ساختگی یا ظرفیت پیش‌فرض ندارد.</div>
+        <div class="form-grid">
+            <div class="field"><label for="soilType">تیپ خاک طبق گزارش ژئوتکنیک / استاندارد ۲۸۰۰</label><select id="soilType" disabled><option value="">انتخاب تیپ خاک</option><option value="I">تیپ ۱ (I)</option><option value="II">تیپ ۲ (II)</option><option value="III">تیپ ۳ (III)</option></select></div>
+            <div class="field"><label for="soilQa">ظرفیت مجاز باربری خاک (kPa)</label><input id="soilQa" type="number" min="1" step="1" placeholder="از گزارش ژئوتکنیک" disabled></div>
+            <div class="field"><label for="soilQaBasis">مبنای ظرفیت مجاز گزارش</label><select id="soilQaBasis" disabled><option value="">انتخاب gross / net</option><option value="gross">ناخالص (Gross)</option><option value="net">خالص (Net)</option></select></div>
+            <div class="field"><label for="soilSource">مرجع گزارش ژئوتکنیک / شماره صفحه</label><input id="soilSource" type="text" placeholder="نام گزارش، شماره و صفحه" disabled></div>
+            <div class="field"><label for="soilFootingB">عرض پی در راستای X (m)</label><input id="soilFootingB" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
+            <div class="field"><label for="soilFootingL">طول پی در راستای Z (m)</label><input id="soilFootingL" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
+            <div class="field"><label for="sizingShape">شکل پلان پی</label><select id="sizingShape" disabled><option value="rectangular">مستطیل</option><option value="square">مربع</option></select></div>
+            <div class="field"><label for="sizingMinB">حداقل عرض B (m)</label><input id="sizingMinB" type="number" min="0.1" step="0.05" disabled></div>
+            <div class="field"><label for="sizingMaxB">حداکثر عرض B (m)</label><input id="sizingMaxB" type="number" min="0.1" step="0.05" disabled></div>
+            <div class="field"><label for="sizingStepB">گام تغییر عرض B (m)</label><input id="sizingStepB" type="number" min="0.01" step="0.01" disabled></div>
+            <div class="field"><label for="sizingMinL">حداقل طول L (m)</label><input id="sizingMinL" type="number" min="0.1" step="0.05" disabled></div>
+            <div class="field"><label for="sizingMaxL">حداکثر طول L (m)</label><input id="sizingMaxL" type="number" min="0.1" step="0.05" disabled></div>
+            <div class="field"><label for="sizingStepL">گام تغییر طول L (m)</label><input id="sizingStepL" type="number" min="0.01" step="0.01" disabled></div>
+            <div class="field"><label for="soilFootingThickness">ضخامت پی (m)</label><input id="soilFootingThickness" type="number" min="0.1" step="0.05" placeholder="طبق طرح پی" disabled></div>
+            <div class="field"><label for="soilCoverAboveFooting">ارتفاع خاک روی پی تا تراز زمین (m)</label><input id="soilCoverAboveFooting" type="number" min="0" step="0.05" placeholder="اندازه واقعی" disabled></div>
+            <div class="field"><label for="concreteUnitWeight">وزن مخصوص بتن (kN/m³)</label><input id="concreteUnitWeight" type="number" min="1" step="0.5" placeholder="از مشخصات مصالح" disabled></div>
+            <div class="field"><label for="soilUnitWeight">وزن مخصوص خاک (kN/m³)</label><input id="soilUnitWeight" type="number" min="1" step="0.5" placeholder="از گزارش ژئوتکنیک" disabled></div>
+        </div>
+        <div class="notice">ورودی زیر بسته واکنش تمام پایه‌ها در تمام ترکیبات SLS است. هر حالت باید با classification برابر SLS، تعادل حل‌گر تأییدشده و مرجع مستند ارائه شود. این مرحله فقط ساختار داده و ثبات هندسه پایه‌ها را کنترل می‌کند.</div>
+        <div class="field"><label for="foundationUlsBatchInput">بسته واکنش ترکیبات نهایی ULS برای همه پایه‌ها (JSON)</label><textarea id="foundationUlsBatchInput" rows="7" placeholder='{"cases":[{"loadCase":"ULS-1","loadCaseLabel":"ترکیب نهایی ۱","classification":"ULS","solverEquilibriumOK":true,"sourceReference":"گزارش مصوب ترکیبات ULS، صفحه ...","supports":[{"nodeId":"B1","coordinatesM":{"x":0,"y":0,"z":0},"fixedDofs":[0,1,2],"FxkN":0,"FykN":100,"FzkN":0,"MxkNm":0,"MykNm":0,"MzkNm":0}]}]}' disabled></textarea></div>
+        <button id="btnMapFoundationUlsActions" class="btn primary" type="button" disabled>اعتبارسنجی و تبدیل کنش‌های ULS به مرکز پی</button>
+        <pre id="foundationUlsActionResult" class="notice" aria-live="polite">برای طراحی بتن‌آرمه، بسته مستقل ترکیبات ULS را وارد کنید.</pre>
+        <div class="field"><label for="foundationUlsMappedJson">بسته کامل کنش‌های محلی ULS تبدیل‌شده (برای انتقال به ورودی طراحی پی)</label><textarea id="foundationUlsMappedJson" rows="8" readonly placeholder="پس از تبدیل موفق ULS، بسته کامل در این قسمت قرار می‌گیرد."></textarea></div>
+        <button id="btnUseMappedUlsActions" class="btn secondary" type="button" disabled>انتقال بسته ULS به فرم مشخصات طراحی پی</button>
+        <div class="field"><label for="foundationSlsBatchInput">بسته واکنش ترکیبات SLS برای همه پایه‌ها (JSON)</label><textarea id="foundationSlsBatchInput" rows="7" placeholder='{"cases":[{"loadCase":"SLS-1","loadCaseLabel":"ترکیب بهره‌برداری ۱","classification":"SLS","solverEquilibriumOK":true,"sourceReference":"گزارش مصوب ترکیبات SLS، صفحه ...","supports":[{"nodeId":"B1","coordinatesM":{"x":0,"y":0,"z":0},"fixedDofs":[0,1,2],"FxkN":0,"FykN":100,"FzkN":0,"MxkNm":0,"MykNm":0,"MzkNm":0}]}]}' disabled></textarea></div>
+        <button id="btnValidateFoundationSlsBatch" class="btn secondary" type="button" disabled>اعتبارسنجی بسته واکنش‌های SLS</button>
+        <pre id="foundationSlsBatchResult" class="notice" aria-live="polite">هنوز بسته واکنش SLS بارگذاری نشده است.</pre>
+        <div class="notice">گام بعد: تعریف صریح محور و مرکز هر پی و تبدیل واکنش‌های حل‌گر به نیروهای وارد بر پی. اگر واکنش از خروجی تکیه‌گاهی سازه است، گزینه «واکنش سازه» را انتخاب کنید تا علامت کنش/واکنش برعکس شود. هیچ محور یا علامتی خودکار حدس زده نمی‌شود.</div>
+        <div class="form-grid">
+            <div class="field"><label for="foundationReactionSense">ماهیت بردارهای ورودی</label><select id="foundationReactionSense" disabled><option value="">انتخاب کنید</option><option value="on-structure">واکنش تکیه‌گاهی وارد بر سازه</option><option value="on-foundation">نیروی وارد بر پی (از قبل تبدیل‌شده)</option></select></div>
+            <div class="field"><label for="selectedFoundationNodeId">شناسه پایه برای کنترل خاک</label><input id="selectedFoundationNodeId" type="text" placeholder="مثلاً B1" disabled></div>
+        </div>
+        <div class="field"><label for="foundationLocalGeometryInput">مرکز هندسی و محورهای محلی پی همه پایه‌ها (JSON)</label><textarea id="foundationLocalGeometryInput" rows="8" placeholder='{"foundations":[{"nodeId":"B1","footingCentroidGlobalM":{"x":0,"y":0,"z":0},"localAxes":{"x":{"x":1,"y":0,"z":0},"y":{"x":0,"y":1,"z":0},"z":{"x":0,"y":0,"z":1}},"verticalLocalAxis":"y","compressionSign":-1}]}' disabled></textarea></div>
+        <button id="btnMapFoundationActions" class="btn secondary" type="button" disabled>تبدیل واکنش‌ها به نیروهای وارد بر پی</button>
+        <pre id="foundationActionMappingResult" class="notice" aria-live="polite">برای تبدیل، جهت واکنش، شناسه پایه و هندسه محلی تمام پی‌ها را وارد کنید.</pre>
+        <div class="field"><label for="soilReactionCases">واکنش‌های هر پی در ترکیبات بهره‌برداری (JSON)</label><textarea id="soilReactionCases" rows="5" placeholder='[{"name":"SLS-1","sourceReference":"گزارش تحلیل R-01 صفحه ۴","NkN":1000,"MxkNm":20,"MzkNm":15}]' disabled></textarea></div>
+        <div class="notice">N بر حسب kN و Mx/Mz بر حسب kN.m است. وزن خود پی و خاک روی آن با مقادیر صریح واردشده به نیروی قائم افزوده می‌شود. مبنای gross/net باید دقیقاً مطابق تعریف گزارش ژئوتکنیک انتخاب شود. وزن شناژ، پدستال و اثر آب زیرزمینی هنوز در این کنترل منظور نشده‌اند.</div>
+        <button id="btnSearchFootingDimensions" class="btn primary" type="button" disabled>جست‌وجوی خودکار ابعاد مقدماتی پی</button>
+        <pre id="foundationSizingResult" class="notice" aria-live="polite">برای جست‌وجو، محدوده و گام ابعاد، نوع پلان، بارهای SLS و داده‌های ژئوتکنیک را وارد کنید.</pre>
+        <button id="btnRunSoilCheck" class="btn primary" type="button" disabled>اجرای کنترل فشار باربری خاک</button>
+        <pre id="soilCheckResult" class="notice" aria-live="polite">کنترل خاک غیرفعال است.</pre>
+        <div class="notice">اعتبارسنجی ورودی طراحی بتن‌آرمه پی (بدون محاسبه مقاومت): داده کامل را به‌صورت JSON وارد کنید. در بخش ulsLocalActions، خروجی تبدیل‌شده مرحله ULS را قرار دهید. مقادیر نمونه یا پیش‌فرض در این قسمت اعمال نمی‌شود.</div>
+        <div class="field"><label for="footingDesignInputJson">مشخصات هندسه، مصالح و کنش‌های ULS پی (JSON)</label><textarea id="footingDesignInputJson" rows="12" placeholder='{"schema":"SAHROUD-FOOTING-DESIGN-INPUT-1.0","foundationId":"شناسه پی","nodeId":"شناسه پایه","footing":{"Bm":null,"Lm":null,"thicknessM":null},"column":{"widthX_m":null,"widthZ_m":null,"offsetX_m":0,"offsetZ_m":0},"pedestal":{"enabled":false},"materials":{"concreteFcMPa":null,"rebarFyMPa":null,"concreteSourceReference":"مرجع واقعی مشخصات بتن","rebarSourceReference":"مرجع واقعی مشخصات میلگرد"},"cover":{"bottomM":null,"sideM":null},"geometrySourceReference":"شماره نقشه یا مدل","ulsLocalActions":{}}' disabled></textarea></div>
+        <button id="btnValidateFootingDesignInput" class="btn primary" type="button" disabled>اعتبارسنجی مشخصات طراحی پی</button>
+        <pre id="footingDesignInputResult" class="notice" aria-live="polite">این بخش فقط داده‌های ورودی را اعتبارسنجی می‌کند؛ طراحی خمش، برش، پانچ و آرماتور هنوز فعال نیست.</pre>
+    </section>
+
+    <section class="panel" id="craneDesignPanel">
+        <div class="panel-title"><h3>۵ ـ جرثقیل سقفی اختیاری</h3><span class="status">پیش‌طرح؛ نیازمند داده فنی</span></div>
+        <div class="form-grid">
+            <div class="field"><label for="craneEnabled">وضعیت جرثقیل</label><select id="craneEnabled"><option value="off" selected>بدون جرثقیل</option><option value="on">دارای جرثقیل سقفی دوپل</option></select></div>
+            <div class="field"><label for="craneCapacity">ظرفیت نامی بالابری</label><select id="craneCapacity" disabled><option value="" selected>انتخاب ظرفیت</option><option value="5">۵ تن</option><option value="10">۱۰ تن</option><option value="20">۲۰ تن</option></select></div>
+            <div class="field"><label for="craneSpan">دهانه جرثقیل (متر)</label><input id="craneSpan" type="number" min="0.1" step="0.1" placeholder="نیازمند اندازه‌گیری" disabled></div>
+            <div class="field"><label for="craneRunwayLength">طول مسیر حرکت پل (متر)</label><input id="craneRunwayLength" type="number" min="0.1" step="0.1" placeholder="نیازمند تعیین" disabled></div>
+            <div class="field"><label for="craneHookLift">ارتفاع بالابری (متر)</label><input id="craneHookLift" type="number" min="0.1" step="0.1" placeholder="نیازمند تعیین" disabled></div>
+            <div class="field"><label for="craneDuty">کلاس کاری / طیف بهره‌برداری</label><input id="craneDuty" type="text" placeholder="طبق سیکل کاری و استاندارد مبنا" disabled></div>
+            <div class="field"><label for="craneCycles">تعداد سیکل در ساعت</label><input id="craneCycles" type="number" min="0.1" step="0.1" placeholder="نیازمند تعیین" disabled></div>
+        </div>
+        <div id="craneDesignStatus" class="notice">جرثقیل خاموش است؛ هیچ بار یا عضوی از جرثقیل نباید وارد تحلیل سوله شود. انتخاب ظرفیت به‌تنهایی برای طراحی و بارگذاری کافی نیست.</div>
+    </section>
+
     <section class="panel">
         <div class="panel-title">
             <h3>۵ ـ نمایش قاب</h3>
@@ -179,7 +245,7 @@
 
     <section class="panel">
         <div class="panel-title">
-            <h3>۶ ـ عملیات پروژه</h3>
+            <h3>۷ ـ عملیات پروژه</h3>
         </div>
         <div class="button-grid">
             <button id="btnDraw" class="btn primary" type="button">
@@ -205,7 +271,7 @@
 
     <section class="panel">
         <div class="panel-title">
-            <h3>۷ ـ نتایج تحلیل</h3>
+            <h3>۸ ـ نتایج تحلیل</h3>
         </div>
         <div id="results">
             <div class="result-card">
@@ -249,36 +315,33 @@
 
 </main>
 
-<script>
-(function () {
-    "use strict";
-    const slope = 0.20;
-    const fmt = value => Number(value).toLocaleString("fa-IR", {minimumFractionDigits:2, maximumFractionDigits:2});
-    window.updateRoofGeometry = function () {
-        const span = Number(document.getElementById("span")?.value);
-        const height = Number(document.getElementById("height")?.value);
-        const riseField = document.getElementById("rise");
-        if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(height) || height <= 0) return;
-        const rise = span * 0.5 * slope;
-        if (riseField) riseField.value = rise.toFixed(6);
-        const slopeEl = document.getElementById("roofSlopeDisplay");
-        const riseEl = document.getElementById("roofRiseDisplay");
-        const totalEl = document.getElementById("roofTotalHeightDisplay");
-        if (slopeEl) slopeEl.textContent = "۲۰٪";
-        if (riseEl) riseEl.textContent = fmt(rise) + " متر";
-        if (totalEl) totalEl.textContent = fmt(height + rise) + " متر";
-    };
-    ["span", "height"].forEach(id => document.getElementById(id)?.addEventListener("input", window.updateRoofGeometry));
-    window.addEventListener("DOMContentLoaded", window.updateRoofGeometry);
-    window.updateRoofGeometry();
-})();
-</script>
+<script src="js/load-transfer.js?v=20261119audit2"></script>
+<script src="js/seismic-load-path.js?v=20261119seismic2"></script>
+<script src="js/load-path-audit.js?v=20261119wallfoundation1"></script>
+<script src="js/crane-design.js?v=20261119crane2"></script>
+<script src="js/foundation-soil-check.js?v=20261119soiltype1"></script>
+  <script src="js/foundation-reaction-export.js?v=20261119reaction1"></script>
+<script src="js/foundation-reaction-batch.js?v=20261119slsbatch1"></script>
+<script src="js/foundation-action-mapping.js?v=20261119actionmap1"></script>
+<script src="js/foundation-action-mapping-ui.js?v=20261119actionmapui1"></script>
+<script src="js/foundation-sizing.js?v=20261119size1"></script>
+<script src="js/foundation-sizing-ui.js?v=20261119sizeui1"></script>
+<script src="js/foundation-uls-reaction-batch.js?v=20261119ulsbatch1"></script>
+<script src="js/foundation-uls-action-mapping.js?v=20261119ulsmapping1"></script>
+<script src="js/foundation-uls-action-mapping-ui.js?v=20261119ulsmappingui1"></script>
+<script src="js/foundation-design-input.js?v=20261119designinput2"></script>
+<script src="js/foundation-design-input-ui.js?v=20261119designinputui1"></script>
 <script src="js/project.js?v=20261112purlinmigration1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
-<script src="js/model-3d.js?v=20261112endwallbase1"></script>
+<script src="js/member-demand-3d.js?v=20261118demand1"></script>
+<script src="js/member-design-demand-3d.js?v=20261119concurrent1"></script>
+<script src="js/load-combination-runner-3d.js?v=20261118combo1"></script>
+<script src="js/wall-foundation-transfer.js?v=20261119wallfoundation2"></script>
+<script src="js/model-3d.js?v=20261119wallfoundation1"></script>
 <script src="js/analysis-3d.js?v=20261112purlintorsion1"></script>
 <script src="js/analysis.js?v=20261111b"></script>
-<script src="js/sections.js?v=20261112z180purlin1"></script>
+<script src="js/built-up-section.js?v=20261118girdergeom1"></script>
+<script src="js/sections.js?v=20261118girderbuilder1"></script>
 <script src="js/girder.js?v=20261109"></script>
 <script src="js/stability.js?v=20261109"></script>
 <script src="js/desing.js?v=2"></script>
@@ -290,22 +353,55 @@
 <script src="js/views.js?v=1"></script>
 <script src="js/bracing.js?v=1"></script>
 <script src="js/ties.js?v=1"></script>
-<script src="js/loads.js?v=20261112endwallinputs2"></script>
+<script src="js/loads.js?v=20261119deadcomponents1"></script>
 <script src="js/climate-database.js?v=20261112windtable90c"></script>
-<script src="js/climate-load-engine.js?v=20261112endwallcases1"></script>
+<script src="js/climate-load-engine.js?v=20261118fourwind2"></script>
 <script src="js/force-diagrams.js?v=3"></script>
 <script src="js/roof-ties.js?v=1"></script>
 <script src="js/roof-purlins.js?v=20261112z180purlin1"></script>
 <script src="js/longitudinal-cantilever.js?v=20261111c"></script>
+<script src="js/design-scope.js?v=20261119scope1"></script>
 <script src="js/app.js?v=20261112diagnostics1"></script>
 <script src="js/cantilever-check.js?v=1"></script>
 <script src="js/connection-design.js?v=20261110d"></script>
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
+<script src="js/member-section-evidence-intake.js?v=20261119audit1"></script>
+<script src="js/knee-connection-geometry.js?v=20261119audit1"></script>
+<script src="js/connection-readiness.js?v=20261119audit1"></script>
 <script src="js/ui-organization.js?v=20261112compact3"></script>
-<script src="js/auto-workflow.js?v=20261111f"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
 <script src="js/dropbox-integration.js?v=20261112projectupload1"></script>
+<script src="js/stepwise-workflow.js?v=20261117a"></script>
 
+<script>
+(function(){
+  const byId=id=>document.getElementById(id);
+  const enabled=byId("craneEnabled"), capacity=byId("craneCapacity"), status=byId("craneDesignStatus");
+  if(!enabled||!capacity||!status||!window.SahroudCraneDesign)return;
+  function refresh(){
+    const on=enabled.value==="on";
+    capacity.disabled=!on;
+    ["craneSpan","craneRunwayLength","craneHookLift","craneDuty","craneCycles"].forEach(id=>{byId(id).disabled=!on;});
+    if(!on){status.textContent="جرثقیل خاموش است؛ هیچ بار یا عضوی از جرثقیل نباید وارد تحلیل سوله شود.";return;}
+    if(!capacity.value){status.textContent="جرثقیل فعال است؛ ابتدا ظرفیت نامی ۵، ۱۰ یا ۲۰ تن را انتخاب کنید. تا انتخاب ظرفیت، هیچ بار جرثقیل وارد تحلیل نمی‌شود.";return;}
+    try{
+      const cfg=window.SahroudCraneDesign.createConfiguration({
+        enabled:true,capacityTonnes:capacity.value,
+        craneSpanM:byId("craneSpan").value,
+        runwayLengthM:byId("craneRunwayLength").value,
+        hookLiftM:byId("craneHookLift").value,
+        dutyClass:byId("craneDuty").value,
+        cyclesPerHour:byId("craneCycles").value
+      });
+      const readiness=window.SahroudCraneDesign.assessReadiness(cfg);
+      status.textContent="جرثقیل "+capacity.value+" تن انتخاب شده است. "+(readiness.ready?"ورودی‌های پایه کامل‌اند؛ هنوز محاسبات سازه‌ای و مکانیکی و تأیید منبع لازم است.":"برای طراحی معتبر هنوز داده‌های هندسی، کلاس کاری و مستندات سازنده/طراحی لازم است. ظرفیت انتخابی به‌تنهایی بار چرخ یا مقاطع را تعیین نمی‌کند.");
+    }catch(e){status.textContent=e.message;}
+  }
+  [enabled,capacity,...["craneSpan","craneRunwayLength","craneHookLift","craneDuty","craneCycles"].map(byId)].forEach(el=>el.addEventListener("change",refresh));
+  refresh();
+})();
+</script>
 </body>
 </html>
+
+

@@ -2,12 +2,12 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id), NS = "http://www.w3.org/2000/svg";
-  let model = null, originalDrawFrame = null, progressRunning = false;
+  let model = null, originalDrawFrame = null, progressRunning = false, combinationResults = [], combinationEnvelope = null;
   function runWithProgress(startLabel, task, onError) {
     if (progressRunning) return;
     progressRunning = true;
     const panel = $("modelProgress"), text = $("modelProgressText"), elapsed = $("modelProgressElapsed");
-    const buttons = ["btnBuildFullModel", "btnCheck3DSections", "btnRunFull3D", "btnTestSpan10"];
+    const buttons = ["btnBuildFullModel", "btnCheck3DSections", "btnRunFull3D", "btnRunAll3DCombinations", "btnTestSpan10"];
     const started = performance.now();
     buttons.forEach(id => { if ($(id)) $(id).disabled = true; });
     if (panel) panel.hidden = false;
@@ -55,9 +55,11 @@
       '<div id="fullModelSummary" class="notice">مدل کامل هنوز تولید نشده است.</div>' +
       '<div id="fullModel3DReadiness" class="notice">آمادگی تحلیل سه‌بعدی هنوز بررسی نشده است.</div>' +
       '<hr><h4>تحلیل واقعی سه‌بعدی مدل</h4>' +
-      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option></select></div></div>' +
-      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
+      '<div class="form-grid"><div class="field"><label for="model3DLoadCase">حالت بار برای تحلیل آزمایشی</label><select id="model3DLoadCase"><option value="dead">بار مرده</option><option value="live">بار زنده</option><option value="snow">بار برف</option><option value="wind">باد ـ فشار خالص ورودی</option><option value="zoneWind_tp_ip">باد عرضی +X ـ فشار داخلی مثبت</option><option value="zoneWind_tp_in">باد عرضی +X ـ فشار داخلی منفی</option><option value="zoneWind_tn_ip">باد عرضی −X ـ فشار داخلی مثبت</option><option value="zoneWind_tn_in">باد عرضی −X ـ فشار داخلی منفی</option><option value="zoneWind_lp_ip">باد طولی +Z ـ فشار داخلی مثبت</option><option value="zoneWind_lp_in">باد طولی +Z ـ فشار داخلی منفی</option><option value="zoneWind_ln_ip">باد طولی −Z ـ فشار داخلی مثبت</option><option value="zoneWind_ln_in">باد طولی −Z ـ فشار داخلی منفی</option><optgroup label="باد سطح بهره‌برداری (تقریب ۰٫۸V)"><option value="serviceWind_tp_ip">باد بهره‌برداری عرضی +X ـ فشار داخلی مثبت</option><option value="serviceWind_tp_in">باد بهره‌برداری عرضی +X ـ فشار داخلی منفی</option><option value="serviceWind_tn_ip">باد بهره‌برداری عرضی −X ـ فشار داخلی مثبت</option><option value="serviceWind_tn_in">باد بهره‌برداری عرضی −X ـ فشار داخلی منفی</option><option value="serviceWind_lp_ip">باد بهره‌برداری طولی +Z ـ فشار داخلی مثبت</option><option value="serviceWind_lp_in">باد بهره‌برداری طولی +Z ـ فشار داخلی منفی</option><option value="serviceWind_ln_ip">باد بهره‌برداری طولی −Z ـ فشار داخلی مثبت</option><option value="serviceWind_ln_in">باد بهره‌برداری طولی −Z ـ فشار داخلی منفی</option></optgroup><option value="combo0">ترکیب ULS-1: 1.4D</option><option value="combo1">ترکیب ULS-2: 1.2D+1.6L+0.5S</option><option value="combo2">ترکیب ULS-3: 1.2D+1.6S+0.5L</option><option value="comboWind08P">آزمایشی باد: 0.8D+1.6W (جهت +)</option><option value="comboWind08N">آزمایشی باد: 0.8D+1.6W (جهت −)</option><option value="comboLiveWind08P">آزمایشی: 1.2D+1.6L+0.5S+0.8W (+)</option><option value="comboLiveWind08N">آزمایشی: 1.2D+1.6L+0.5S+0.8W (−)</option><option value="comboSnowWind08P">آزمایشی: 1.2D+1.6S+0.5L+0.8W (+)</option><option value="comboSnowWind08N">آزمایشی: 1.2D+1.6S+0.5L+0.8W (−)</option></select></div></div>' +
+      '<div class="button-grid"><button type="button" id="btnRunFull3D" class="btn success">اجرای تحلیل سه‌بعدی کل سوله</button><button type="button" id="btnRunAll3DCombinations" class="btn primary">اجرای همه ترکیبات ثقلی سه‌بعدی</button><button type="button" id="btnTestSpan10" class="btn secondary">آزمایش مقایسه‌ای دهانه ۱۰ متر</button><button type="button" id="btnDownloadSpanTest" class="btn secondary" disabled>دانلود گزارش آزمایش دهانه</button></div>' +
       '<div id="fullModel3DResult" class="notice">تحلیل سه‌بعدی هنوز اجرا نشده است.</div>' +
+      '<div id="fullModel3DDemand" class="notice">پس از تحلیل، جدول نیروهای داخلی تمام اعضا در این قسمت نمایش داده می‌شود.</div>' +
+      '<div id="fullModel3DCombinationResult" class="notice">پس از اجرای همه ترکیبات، نتایج جداگانه و پوش تقاضا اینجا نمایش داده می‌شود.</div>' +
       '<div id="criticalRafterDiagram" class="notice" style="margin-top:12px;overflow:hidden">پس از اجرای تحلیل، محل قطعه رفتر متصل به گره بحرانی و مقطع شماتیک تیرورق در این قسمت نمایش داده می‌شود.</div>';
     drawingPanel.parentNode.insertBefore(panel, drawingPanel);
     $("btnBuildFullModel").addEventListener("click", function () {
@@ -65,6 +67,59 @@
         build(); draw(); showSummary();
         stage("ترسیم مدل و تکمیل خلاصه هندسی انجام شد.");
       }, e => { $("fullModelSummary").textContent = "خطا در تولید مدل: " + e.message; });
+    });
+    $("btnRunAll3DCombinations").addEventListener("click", function () {
+      const output=$("fullModel3DCombinationResult");
+      runWithProgress("در حال آماده‌سازی ترکیبات بار سه‌بعدی…",async stage=>{
+        try{
+          build();draw();showSummary();
+          stage("در حال اجرای تحلیل مستقل ترکیبات ثقلی؛ هر ترکیب با حل‌گر سه‌بعدی جداگانه حل می‌شود…");
+          const result=await analyze3DCombinations();
+          const lines=[
+            "اجرای ترکیبات ثقلی سه‌بعدی کامل شد: "+result.caseCount+" ترکیب؛ "+result.envelope.memberCount+" عضو.",
+            "هر ترکیب یک تحلیل مستقل است. پوش مؤلفه‌ای برای تعیین نقاط بحرانی است؛ برای اندرکنش باید بردارهای هم‌زمان هر ترکیب استفاده شوند.",
+            "ضرایب ورودی کاربر هستند و هنوز تأیید نهایی آیین‌نامه‌ای ندارند.",""
+          ];
+          result.combinationResults.forEach(c=>{
+            lines.push(c.label+" | D="+c.factors.dead+" L="+c.factors.live+" S="+c.factors.snow+
+              " | گره="+c.analysis.nodeCount+" عضو="+c.members.length+
+              " | بیشینه جابه‌جایی="+(c.maxTranslation===null?"—":(c.maxTranslation*1000).toFixed(2)+" mm"));
+          });
+          lines.push("","بردارهای هم‌زمان برای کنترل طراحی ـ هر ردیف از یک ترکیب و یک مقطع است؛ واحد نیرو kN و گشتاور kN.m:");
+          result.designDemand.members.forEach(member=>{
+            const byCombination=new Map();
+            member.candidates.forEach(candidate=>{
+              let row=byCombination.get(candidate.combinationId);
+              if(!row){row={label:candidate.combination,actions:{}};byCombination.set(candidate.combinationId,row);}
+              ["N","Vy","Vz","T","My","Mz"].forEach(k=>{
+                const previous=row.actions[k];
+                if(!previous||Math.abs(candidate.values[k])>Math.abs(previous.value))
+                  row.actions[k]={value:candidate.values[k],x:candidate.x};
+              });
+            });
+            byCombination.forEach(row=>{
+              const parts=["N","Vy","Vz","T","My","Mz"].map(k=>{
+                const a=row.actions[k],factor=["N","Vy","Vz"].includes(k)?1000:1000000;
+                return k+"="+(a.value/factor).toFixed(2)+" @ "+a.x.toFixed(3)+"m";
+              });
+              lines.push(member.id+" | "+row.label+" | "+parts.join(" | "));
+            });
+          });
+          lines.push("","پوش تقاضا ـ واحد نیرو kN، گشتاور kN.m، مختصات m:");
+          const fmt=(v,f,d=2)=>Number.isFinite(Number(v))?(Number(v)*f).toFixed(d):"—";
+          result.envelope.members.forEach(member=>{
+            const parts=["N","Vy","Vz","T","My","Mz"].map(k=>{
+              const e=member.components[k],f=["N","Vy","Vz"].includes(k)?0.001:0.000001;
+              return k+"="+fmt(e?.value,f)+" ("+(e?.combination||"—")+") @ "+fmt(e?.x,1,3)+"m";
+            });
+            lines.push(member.id+" ["+member.sectionKey+"] "+parts.join(" | "));
+          });
+          output.textContent=lines.join("\n");
+        }catch(error){
+          combinationResults=[];combinationEnvelope=null;
+          output.textContent="اجرای همه ترکیبات متوقف شد؛ هیچ پوش ناقصی برای طراحی پذیرفته نشد.\n"+error.message;
+        }
+      },error=>{if(output)output.textContent="خطا در اجرای ترکیبات سه‌بعدی: "+error.message;});
     });
     $("btnRunFull3D").addEventListener("click", function () {
       const box=$("fullModel3DResult");
@@ -76,10 +131,28 @@
         stage("مرحله ۲ از ۳: مونتاژ ماتریس سختی و بارگذاری اعضا…");
         stage("مرحله ۳ از ۳: حل دستگاه معادلات سه‌بعدی؛ لطفاً صفحه را نبندید…");
         const result=await analyze3D(lc);
+        const demandBox=$("fullModel3DDemand");
+        if(demandBox&&result.memberDemand){
+          const f3=(v,factor,d=2)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
+          const rows=result.memberDemand.members.map(m=>{
+            const actions=["N","Vy","Vz","T","My","Mz"].map(k=>{
+              const e=m.extrema[k],factor=["N","Vy","Vz"].includes(k)?0.001:0.000001;
+              return k+"="+f3(e.value,factor)+" @ "+f3(e.x,1,3)+"m";
+            });
+            return m.id+" ["+m.sectionKey+"] | "+actions.join(" | ");
+          });
+          demandBox.textContent="تقاضای بازیابی‌شده اعضا — "+result.memberDemand.memberCount+
+            " عضو | نیرو: kN | گشتاور: kN.m | محل: m\\n"+
+            rows.join("\\n")+
+            "\\nروش: تعادل قطعه چپ عضو با بار گسترده یکنواخت محلی؛ نقاط صفر برش نیز در نمونه‌برداری منظور شده‌اند. این جدول فقط تقاضای تحلیل خطی است، نه کنترل ظرفیت یا تأیید آیین‌نامه‌ای.";
+        }else if(demandBox){
+          demandBox.textContent="استخراج نیروهای داخلی اعضا در دسترس نیست؛ نتیجه طراحی نباید از نیروهای انتهایی تنها استنتاج شود.";
+        }
         box.textContent="تحلیل سه‌بعدی با موفقیت حل شد. حالت بار: "+result.loadCaseLabel+
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
           " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
           " | گره‌های دارای واکنش تکیه‌گاهی: "+result.reactions.length+
+          (result.foundationReactionExport?" | خروجی واکنش پی: "+result.foundationReactionExport.supports.length+" تکیه‌گاه؛ "+result.foundationReactionExport.units+"؛ حالت "+result.foundationReactionExport.loadCase+"؛ تعادل "+(result.foundationReactionExport.solverEquilibriumOK?"تأیید":"تأییدنشده")+"؛ برای مشاهده بردارها از result.foundationReactionExport.supports استفاده کنید":" | خروجی واکنش پی در دسترس نیست")+
           (result.criticalDisplacement
             ? " | گره بحرانی: "+result.criticalDisplacement.nodeId+" ("+result.criticalDisplacement.kind+")"+
               " | مختصات X/Y/Z: "+[result.criticalDisplacement.coordinates.x,result.criticalDisplacement.coordinates.y,result.criticalDisplacement.coordinates.z].map(v=>v.toFixed(3)).join(" / ")+" متر"+
@@ -88,6 +161,11 @@
             : " | اطلاعات گره بحرانی در دسترس نیست")+
           (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو"+(result.selfWeight.bySectionGroup?" | تفکیک وزن گروه‌ها: "+Object.entries(result.selfWeight.bySectionGroup).map(([k,v])=>k+"="+v.totalKN.toFixed(2)+"kN، "+v.count+" عضو، "+v.lengthM.toFixed(1)+"m").join("؛ "):""):"")+
           (result.equilibrium?" | کنترل تعادل نیرو: "+(result.equilibrium.relativeForceResidual*100).toExponential(2)+"٪؛ تعادل لنگر: "+(result.equilibrium.relativeMomentResidual*100).toExponential(2)+"٪؛ "+(result.equilibrium.ok?"تعادل کلی برقرار":"هشدار: عدم تعادل کلی"):" | کنترل تعادل در دسترس نیست")+
+          (result.loadPathAudit?" | ممیزی مستقل مسیر بار: "+(result.loadPathAudit.success?"اتصال گرافی به پایه‌ها و حسابداری خودوزن بدون خطای کشف‌شده":"مسدود: "+result.loadPathAudit.blockers.join("؛ "))+"؛ مسیر دیوار: "+result.loadPathAudit.wallDead.supportPath+"؛ زلزله: "+(result.loadPathAudit.seismic.caseApplied?"بار گره‌ای مستند وارد شد":"اعمال نشده")+"؛ جرثقیل: "+(result.loadPathAudit.crane.caseApplied?"بار گره‌ای وارد شد":"اعمال نشده"):" | ممیزی مسیر بار در دسترس نیست")+
+          (result.orientationAudit?" | ممیزی جهت نصب: "+result.orientationAudit.verifiedCount+"/"+result.orientationAudit.memberCount+" عضو تأییدشده؛ "+(result.orientationAudit.readyForCodeDesign?"محورها مستندند":"جهت نصب/چرخش مقطع هنوز مستند نیست"):" | ممیزی جهت نصب در دسترس نیست")+
+          (result.gableWindTransfer&&result.gableWindTransfer.length?" | باد مثلثی دیوار انتهایی: "+result.gableWindTransfer.map(x=>x.face+"="+x.resultantKN.toFixed(3)+"kN").join("، "):"")+
+          (result.windZoneTransfer?" | نگاشت باد شش‌ناحیه‌ای: "+result.windZoneTransfer.windDirection+"؛ فشار داخلی "+result.windZoneTransfer.internalScenario+"؛ پرلین "+result.windZoneTransfer.counts.roofPurlins+"، دیوار طولی "+result.windZoneTransfer.counts.longitudinalWallGirts+"، دیوار انتهایی "+result.windZoneTransfer.counts.endWallGirts+"؛ روش باد: "+(result.windZoneTransfer.windProcedure?.method||"undetermined")+"؛ "+(result.windZoneTransfer.windProcedure?.warning||"هندسه برای انتخاب روش باد موجود نیست.")+"؛ هشدار طراحی: "+result.windZoneTransfer.designWarning:"")+
+          (result.windServiceability?" | کنترل دریفت باد بهره‌برداری: "+(result.windServiceability.ready?(result.windServiceability.driftRatio*100).toFixed(3)+"٪ از ارتفاع؛ حد 0.25٪؛ "+(result.windServiceability.ok?"مجاز":"بیش از حد مجاز"):"قابل ارزیابی نیست: "+result.windServiceability.reason):"")+
           ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل خطی مرتبه اول است، P-Delta و کنترل کمانش در آن لحاظ نشده است. هر پرلین به‌صورت قطعه مستقل بین دو قاب مدل شده است؛ دوران‌های انتهایی هر قطعه از رفتر و از قطعه پرلین دهانه مجاور جدا هستند (فرض مفصل ایده‌آل). سختی واقعی کلیپس و پیچ‌ها، لغزش و خروج از صفحه هنوز مدل نشده و نتیجه تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
         if(Array.isArray(result.criticalMemberReport)&&result.criticalMemberReport.length){
           const fmt=(v,factor=1,d=3)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
@@ -260,6 +338,174 @@
   function addMember(members,a,b,type,sectionKey,extra) {
     members.push({id:type.toUpperCase().replace(/[^A-Z0-9]+/g,"_")+"_"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
   }
+  function buildRoofPurlinWindFootprints(sourceModel) {
+    if(!sourceModel||!sourceModel.geometry||!Array.isArray(sourceModel.members)||!Array.isArray(sourceModel.nodes))
+      throw new TypeError("مدل هندسی کامل برای footprint پرلین سقف موجود نیست.");
+    const g=sourceModel.geometry, rows=Number(g.roofRows), step=Number(g.roofStationSpacing), total=Number(g.totalRoofSlope);
+    if(!Number.isInteger(rows)||rows<1||!(step>0)||!(total>0))
+      throw new Error("اطلاعات واقعی ایستگاه‌بندی سقف برای ساخت footprint موجود نیست.");
+    const nodeById=new Map(sourceModel.nodes.map(n=>[String(n.id),n]));
+    const bounds=(row,fromRidge)=>{
+      if(!Number.isInteger(row)||row<1||row>rows+1)throw new Error("شماره ردیف پرلین خارج از ایستگاه‌بندی سقف است.");
+      const center=fromRidge?total-(row-1)*step:(row-1)*step;
+      const lo=center-step/2;
+      const hi=center+step/2;
+      return [Math.max(0,lo),Math.min(total,hi)];
+    };
+    const footprints=[];
+    sourceModel.members.filter(m=>m.sectionKey==="roofPurlin").forEach(member=>{
+      const a=nodeById.get(String(member.start)),b=nodeById.get(String(member.end));
+      if(!a||!b)throw new Error("گره عضو پرلین "+member.id+" پیدا نشد.");
+      if(Math.abs(a.x-b.x)>1e-7||Math.abs(a.y-b.y)>1e-7||Math.abs(a.z-b.z)<=1e-9)
+        throw new Error("هندسه عضو پرلین "+member.id+" با فرض قطعه طولی ثابت سازگار نیست.");
+      const z0=Math.min(a.z,b.z),z1=Math.max(a.z,b.z);
+      const faces=member.side==="ridge"?[
+        {face:"left",row:member.rowLeft,width:member.tributaryWidthLeft,fromRidge:false},
+        {face:"right",row:member.rowRight,width:member.tributaryWidthRight,fromRidge:true}
+      ]:[{face:member.side,row:member.side==="left"?(member.rowLeft||member.row):(member.rowRight||member.row),
+          width:member.tributaryWidth,fromRidge:member.side==="right"}];
+      faces.forEach(item=>{
+        if(!(Number(item.width)>0))return;
+        const [u0,u1]=bounds(Number(item.row),item.fromRidge);
+        if(!(u1-u0>1e-9)||!(z1-z0>1e-9))throw new Error("ابعاد footprint پرلین "+member.id+" صفر یا نامعتبر است.");
+        const vertices=[{x:u0,y:z0},{x:u1,y:z0},{x:u1,y:z1},{x:u0,y:z1}];
+        const halfSlope=Math.hypot(Number(g.span)/2,Number(g.rise));
+        const cos=(Number(g.span)/2)/halfSlope,sin=Number(g.rise)/halfSlope;
+        const overhang=Number(g.roofOverhang);
+        if(!(halfSlope>0)||!(overhang>=0)||!Number.isFinite(overhang))
+          throw new Error("هندسه شیب و پیش‌آمدگی سقف برای تبدیل مختصات معتبر نیست.");
+        const globalVertices=vertices.map(p=>({
+          x:item.face==="left"?-overhang*cos+p.x*cos:Number(g.span)+overhang*cos-p.x*cos,
+          y:Number(g.height)-overhang*sin+p.x*sin,
+          z:p.y
+        }));
+        footprints.push(Object.freeze({
+          id:member.id+"_"+item.face,memberId:member.id,face:item.face,
+          vertices:Object.freeze(vertices.map(p=>Object.freeze(p))),
+          globalVertices:Object.freeze(globalVertices.map(p=>Object.freeze(p))),
+          areaM2:(u1-u0)*(z1-z0),areaBasis:"sloped-surface",
+          localCoordinateSystem:"roof-face-u-from-eave-edge-and-global-z",
+          globalCoordinateSystem:"building-x-y-z",
+          tributaryWidthM:u1-u0,longitudinalLengthM:z1-z0,
+          geometrySource:"actual-model-member-endpoints-and-roof-station-grid",
+          verificationStatus:"geometry-only-not-code-verified",pressureReady:false
+        }));
+      });
+    });
+    return Object.freeze(footprints);
+  }
+  function assignGeometricMemberLineLoads(members, geometry, frameTrib, loads) {
+    if(!Array.isArray(members)||!geometry||!Array.isArray(frameTrib)||!loads||typeof loads!=="object")
+      throw new Error("ورودی‌های تخصیص بار اعضای هندسی ناقص است.");
+    const span=Number(geometry.span),rise=Number(geometry.rise);
+    if(!(span>0)||!Number.isFinite(rise)||rise<0)throw new Error("هندسه سقف برای تخصیص بار معتبر نیست.");
+    const half=span/2,roofAngle=Math.atan2(rise,half);
+    const roofLoadAreaBasis={
+      dead:loads.deadAreaBasis||"unspecified",
+      live:loads.liveAreaBasis||"unspecified",
+      snow:loads.snowAreaBasis||"unspecified"
+    };
+    const roofLoadBasisReady=Object.fromEntries(Object.entries(roofLoadAreaBasis)
+      .map(([key,basis])=>[key,["horizontal-projection","sloped-surface"].includes(basis)]));
+    const roofLineLoad=(pressure,width,basisKey)=>roofLoadBasisReady[basisKey]
+      ?SteelLoadTransfer.roofSurfacePressureToLineLoad(pressure,width,roofAngle,roofLoadAreaBasis[basisKey]).lineLoadKNm
+      :0;
+    const roofPurlinsPresent=members.some(m=>m.sectionKey==="roofPurlin");
+    const wallSupportPath=loads.wallDeadSupportPath||"foundation";
+    if(!["foundation","girts"].includes(wallSupportPath))
+      throw new Error("مسیر تحمل وزن دیوار باید به‌صورت صریح انتخاب شود.");
+    if(wallSupportPath==="girts"){
+      const requirements=[
+        [Number(loads.wallDeadLeft||0)>0, m=>m.sectionKey==="wallGirt"&&m.side==="left", "قید طولی چپ"],
+        [Number(loads.wallDeadRight||0)>0, m=>m.sectionKey==="wallGirt"&&m.side==="right", "قید طولی راست"],
+        [Number(loads.endWallDeadFront||0)>0, m=>m.sectionKey==="endGirt"&&m.endFace==="front", "تیر دیوار انتهایی جلو"],
+        [Number(loads.endWallDeadBack||0)>0, m=>m.sectionKey==="endGirt"&&m.endFace==="rear", "تیر دیوار انتهایی عقب"]
+      ];
+      requirements.forEach(([active,predicate,label])=>{
+        if(active&&!members.some(predicate))throw new Error("وزن دیوار به مسیر قیدها سپرده شده اما "+label+" در مدل وجود ندارد.");
+      });
+    }
+    members.forEach(m=>{
+      if(m.axis==="transverse"){
+        const fi=(m.frame||1)-1,tw=Number(frameTrib[fi]||0);
+        if(!(tw>0))throw new Error("عرض بارگیر قاب برای عضو "+(m.id||"نامشخص")+" معتبر نیست.");
+        const directRafterLoadFactor=roofPurlinsPresent?0:1;
+        const legacyLeft=typeof m.type==="string"&&m.type.indexOf("رفتر چپ")>=0;
+        const legacyRight=typeof m.type==="string"&&m.type.indexOf("رفتر راست")>=0;
+        const isMainRafter=m.sectionKey==="rafter"||legacyLeft||legacyRight;
+        if(isMainRafter){
+          const side=m.side||(legacyLeft?"left":legacyRight?"right":null);
+          if(side!=="left"&&side!=="right")throw new Error("وجه رفتر عرضی "+(m.id||"نامشخص")+" مشخص نیست.");
+          const key=side==="left"?"Left":"Right";
+          m.lineLoads={
+            dead:roofLineLoad(loads["dead"+key]||0,tw,"dead")*directRafterLoadFactor,
+            live:roofLineLoad(loads["live"+key]||0,tw,"live")*directRafterLoadFactor,
+            snow:roofLineLoad(loads["snow"+key]||0,tw,"snow")*directRafterLoadFactor,
+            wind:0,unit:"kN/m",tributaryWidth:tw,roofLoadAreaBasis,roofLoadBasisReady,
+            roofLoadPath:roofPurlinsPresent?"roof-purlins":"direct-rafter"
+          };
+        }else m.lineLoads={wind:0,unit:"kN/m",tributaryWidth:tw};
+      } else if(m.sectionKey==="roofPurlin"){
+        const w=Number(m.tributaryWidth||0);
+        if(!(w>0))throw new Error("عرض بارگیر پرلین "+(m.id||"نامشخص")+" معتبر نیست.");
+        if(m.side==="ridge"){
+          const wl=Number(m.tributaryWidthLeft||0),wr=Number(m.tributaryWidthRight||0);
+          m.lineLoads={
+            dead:roofLineLoad(loads.deadLeft||0,wl,"dead")+roofLineLoad(loads.deadRight||0,wr,"dead"),
+            live:roofLineLoad(loads.liveLeft||0,wl,"live")+roofLineLoad(loads.liveRight||0,wr,"live"),
+            snow:roofLineLoad(loads.snowLeft||0,wl,"snow")+roofLineLoad(loads.snowRight||0,wr,"snow"),
+            wind:SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,wl)+SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,wr),
+            windLeft:SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,wl),windRight:SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,wr),
+            unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr,roofLoadAreaBasis,roofLoadBasisReady
+          };
+        }else{
+          const side=m.side==="left"?"Left":"Right";
+          m.lineLoads={dead:roofLineLoad(loads["dead"+side]||0,w,"dead"),live:roofLineLoad(loads["live"+side]||0,w,"live"),snow:roofLineLoad(loads["snow"+side]||0,w,"snow"),wind:SteelLoadTransfer.surfacePressureToLineLoad(loads["wind"+side]||0,w),windLeft:m.side==="left"?SteelLoadTransfer.surfacePressureToLineLoad(loads.windLeft||0,w):0,windRight:m.side==="right"?SteelLoadTransfer.surfacePressureToLineLoad(loads.windRight||0,w):0,unit:"kN/m",tributaryWidth:w,roofLoadAreaBasis,roofLoadBasisReady};
+        }
+      } else if(m.sectionKey==="wallGirt"){
+        const h=Number(m.tributaryHeight||0);
+        if(!(h>0))throw new Error("ارتفاع بارگیر دیوار طولی معتبر نیست.");
+        const wallDead=loads.wallDeadSupportPath==="girts"?(m.side==="left"?Number(loads.wallDeadLeft||0):Number(loads.wallDeadRight||0)):0;
+        if(!Number.isFinite(wallDead)||wallDead<0)throw new Error("وزن سطحی دیوار طولی معتبر نیست.");
+        m.lineLoads={dead:wallDead*h,wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h,wallDeadPressureKPa:wallDead};
+      } else if(m.sectionKey==="endGirt"){
+        const h=Number(m.tributaryHeight||0);
+        if(!(h>0))throw new Error("ارتفاع بارگیر دیوار انتهایی معتبر نیست.");
+        const pressure=m.endFace==="front"?(loads.windEndFront||0):(loads.windEndBack||0);
+        const wallDead=loads.wallDeadSupportPath==="girts"?(m.endFace==="front"?Number(loads.endWallDeadFront||0):Number(loads.endWallDeadBack||0)):0;
+        if(!Number.isFinite(wallDead)||wallDead<0)throw new Error("وزن سطحی دیوار انتهایی معتبر نیست.");
+        m.lineLoads={dead:wallDead*h,windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure,wallDeadPressureKPa:wallDead};
+      }
+    });
+    return {roofPurlinsPresent,roofLoadAreaBasis,roofLoadBasisReady};
+  }
+  function windMemberLineLoadGlobal(member,geometry,windFactor,windSign) {
+    if(!member||!geometry)throw new Error("عضو و هندسه برای تبدیل باد به محور جهانی الزامی است.");
+    const factor=Number(windFactor),sign=Number(windSign);
+    if(!Number.isFinite(factor)||factor<0||![1,-1].includes(sign))
+      throw new Error("ضریب یا علامت باد برای تبدیل جهانی نامعتبر است.");
+    const result=[0,0,0],lineLoads=member.lineLoads||{};
+    const pressure=(key)=>{
+      const value=Number(lineLoads[key]??0);
+      if(!Number.isFinite(value))throw new Error("بار باد عضو "+(member.id||"نامشخص")+" در مؤلفه "+key+" معتبر نیست.");
+      return value;
+    };
+    if(member.sectionKey==="roofPurlin"){
+      const span=Number(geometry.span),rise=Number(geometry.rise);
+      if(!(span>0)||!Number.isFinite(rise)||rise<0)throw new Error("هندسه سقف برای تبدیل بردار باد معتبر نیست.");
+      const slope=rise/(span/2),norm=Math.hypot(slope,1);
+      const left=pressure("windLeft"),right=pressure("windRight");
+      result[0]=(left-right)*slope/norm*factor*sign;
+      result[1]=-(left+right)/norm*factor*sign;
+    }else if(member.sectionKey==="wallGirt"){
+      if(member.side!=="left"&&member.side!=="right")throw new Error("سمت دیوارگیر برای تبدیل باد مشخص نیست.");
+      result[0]=(member.side==="left"?1:-1)*pressure("wind")*factor*sign;
+    }else if(member.sectionKey==="endGirt"){
+      if(member.endFace!=="front"&&member.endFace!=="rear")throw new Error("وجه تیر انتهایی برای تبدیل باد مشخص نیست.");
+      result[2]=(member.endFace==="front"?1:-1)*pressure("windEnd")*factor*sign;
+    }
+    return result;
+  }
   function build() {
     const span=val("span",20), length=val("length",30), spacing=val("spacing",5), height=val("height",6), rise=val("rise",2);
     const psp=val("modelPurlinSpacing",1.2), gsp=val("modelGirtSpacing",1.5), endsp=val("modelEndPostSpacing",4);
@@ -271,9 +517,13 @@
     const girtHeights=[],nGirt=Math.max(0,Math.floor(height/gsp));
     for(let i=1;i<=nGirt;i++) if(i*gsp<height-0.25) girtHeights.push(i*gsp);
     const roofY=x=>height+(x<=half?rise*x/half:rise*(span-x)/half);
-    const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp));
+    const totalRoofSlope=slope+over,roofRows=Math.max(1,Math.ceil(totalRoofSlope/psp)),roofStationWidths=SteelLoadTransfer.equalStationTributaryWidths(totalRoofSlope,roofRows);
     // Every purlin/rafter crossing is a shared structural node, not two coincident but disconnected nodes.
-    const roofXs=[0,span];
+    // End-wall post heads must share the actual end-frame rafter nodes.
+    // Otherwise a second coincident gable chord duplicates stiffness and steel self-weight.
+    const endPostCount=Math.max(1,Math.ceil(span/endsp));
+    const endPostXs=Array.from({length:endPostCount+1},(_,i)=>span*i/endPostCount);
+    const roofXs=[0,span,...endPostXs];
     [-1,1].forEach(side=>{for(let ri=0;ri<=roofRows;ri++){
       const t=ri/roofRows;
       roofXs.push(side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t));
@@ -296,7 +546,7 @@
       for(let j=0;j<roofLine.length-1;j++){
         const a=roofLine[j],b=roofLine[j+1],mid=(a.x+b.x)/2;
         const isOverhang=mid<0||mid>span;
-        addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",segment:j+1,connectedPurlinNodes:true});
+        addMember(members,a,b,isOverhang?"کنسول رفتر":"رفتر قاب","rafter",{frame:fi+1,axis:"transverse",side:mid<half?"left":"right",segment:j+1,connectedPurlinNodes:true});
       }
       frameNodes.push({z,bl,el,r,er,br,lt,rt});
     });
@@ -307,15 +557,17 @@
       for(let ri=0;ri<=roofRows;ri++){
         const t=ri/roofRows;
         const x=side<0?(-over*cs+(half+over*cs)*t):(half+(half+over*cs)*t);
-        const width=(totalRoofSlope/roofRows)*(ri===0||ri===roofRows?0.5:1);
+        const width=roofStationWidths[ri];
         const key=x.toFixed(7);
         const existing=purlinStations.get(key);
         if(existing){
           existing.side="ridge";
+          existing.rowRight=ri+1;
           existing.tributaryWidthRight=width;
           existing.tributaryWidth+=width;
         }else{
           purlinStations.set(key,{x,side:side<0?"left":"right",row:ri+1,
+            rowLeft:side<0?ri+1:null,rowRight:side>0?ri+1:null,
             tributaryWidth:width,
             tributaryWidthLeft:side<0?width:0,
             tributaryWidthRight:side>0?width:0});
@@ -339,7 +591,7 @@
           const na=addNode(nodes,station.x,roofY(station.x),za,"roof-secondary-support");
           const nb=addNode(nodes,station.x,roofY(station.x),zb,"roof-secondary-support");
           addMember(members,na,nb,"پرلین مستقل عبوری از قاب انتهایی","roofPurlin",{
-            side:station.side,row:station.row,bay:bay+1,pieceId,
+            side:station.side,row:station.row,rowLeft:station.rowLeft,rowRight:station.rowRight,bay:bay+1,pieceId,
             tributaryWidth:station.tributaryWidth,tributaryWidthLeft:station.tributaryWidthLeft,
             tributaryWidthRight:station.tributaryWidthRight,supportAxisLengthM:axisLength,
             clipDeductionM:clipDeduction,assemblyGapM:assemblyGap,
@@ -372,7 +624,7 @@
       for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"قید افقی طولی دیوار","wallGirt",{side:si===0?"left":"right",row:gi+1,tributaryHeight:upper-lower});
     }));
     [0,length].forEach((z,endIndex)=>{
-      const count=Math.max(1,Math.ceil(span/endsp)), xs=Array.from({length:count+1},(_,i)=>span*i/count);
+      const count=endPostCount, xs=endPostXs;
       const face=endIndex===0?"front":"rear";
       // End-wall posts are split at every girt intersection so the secondary
       // members share actual nodes instead of crossing disconnected lines.
@@ -384,10 +636,8 @@
         for(let j=0;j<vertical.length-1;j++)
           addMember(members,vertical[j],vertical[j+1],"ستونک میانی دیوار انتهایی","endPost",{endFace:face,post:i,segment:j+1});
       }
-      // Gable top chord connects the heads of the end posts to the main eaves/ridge.
-      const topChord=xs.map(x=>addNode(nodes,x,roofY(x),z,"endwall-head"));
-      for(let i=0;i<topChord.length-1;i++)
-        addMember(members,topChord[i],topChord[i+1],"رفتر قاب دیوار انتهایی","rafter",{endFace:face,axis:"endwall"});
+      // Post heads reuse the split end-frame rafter nodes created above.
+      // Do not add a second coincident gable chord: the portal rafter is the load path.
       girtHeights.forEach((y,gi)=>{
         const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
         const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
@@ -416,41 +666,15 @@
         addMember(members,c,d,"مهاربند ضربدری سقف","roofBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true});
       });
     });
-    // Assign tributary line loads to the geometric members from current area-load inputs.
     const loads=window.SteelLoads?.getData?.()||{};
     const frameTrib=frames.map((z,i)=>i===0?(frames[1]-z)/2:i===frames.length-1?(z-frames[i-1])/2:(frames[i+1]-frames[i-1])/2);
-    members.forEach(m=>{
-      if(m.axis==="transverse"){
-        const fi=(m.frame||1)-1,tw=frameTrib[fi]||spacing;
-        if(m.type.indexOf("رفتر چپ")>=0) m.lineLoads={dead:(loads.deadLeft||0)*tw,live:(loads.liveLeft||0)*tw,snow:(loads.snowLeft||0)*tw,wind:0,unit:"kN/m",tributaryWidth:tw};
-        else if(m.type.indexOf("رفتر راست")>=0) m.lineLoads={dead:(loads.deadRight||0)*tw,live:(loads.liveRight||0)*tw,snow:(loads.snowRight||0)*tw,wind:0,unit:"kN/m",tributaryWidth:tw};
-        else m.lineLoads={wind:0,unit:"kN/m",tributaryWidth:tw};
-      } else if(m.sectionKey==="roofPurlin"){
-        const w=m.tributaryWidth||0;
-        if(m.side==="ridge"){
-          const wl=m.tributaryWidthLeft||0,wr=m.tributaryWidthRight||0;
-          m.lineLoads={
-            dead:(loads.deadLeft||0)*wl+(loads.deadRight||0)*wr,
-            live:(loads.liveLeft||0)*wl+(loads.liveRight||0)*wr,
-            snow:(loads.snowLeft||0)*wl+(loads.snowRight||0)*wr,
-            wind:(loads.windLeft||0)*wl+(loads.windRight||0)*wr,
-            windLeft:(loads.windLeft||0)*wl,windRight:(loads.windRight||0)*wr,
-            unit:"kN/m",tributaryWidth:w,tributaryWidthLeft:wl,tributaryWidthRight:wr
-          };
-        }else{
-          const side=m.side==="left"?"Left":"Right";
-          m.lineLoads={dead:(loads["dead"+side]||0)*w,live:(loads["live"+side]||0)*w,snow:(loads["snow"+side]||0)*w,wind:(loads["wind"+side]||0)*w,windLeft:m.side==="left"?(loads.windLeft||0)*w:0,windRight:m.side==="right"?(loads.windRight||0)*w:0,unit:"kN/m",tributaryWidth:w};
-        }
-      } else if(m.sectionKey==="wallGirt"){
-        const h=m.tributaryHeight||0;
-        m.lineLoads={wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h};
-      } else if(m.sectionKey==="endGirt"){
-        const h=m.tributaryHeight||0;
-        const pressure=m.endFace==="front"?(loads.windEndFront||0):(loads.windEndBack||0);
-        m.lineLoads={windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure};
-      }
-    });
-    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
+    assignGeometricMemberLineLoads(members,{span,rise},frameTrib,loads);
+    model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8,
+      roofRows,totalRoofSlope:totalRoofSlope,roofStationSpacing:totalRoofSlope/roofRows},nodes,members,generatedAt:new Date().toISOString()};
+    model.orientationAudit=typeof window.SteelFrame3D?.auditMemberOrientation==="function"
+      ?window.SteelFrame3D.auditMemberOrientation(model)
+      :{memberCount:members.length,verifiedCount:0,unverifiedCount:members.length,readyForCodeDesign:false,unavailable:true,groups:{},note:"ممیزی جهت‌گیری در این محیط بارگذاری نشده است؛ محورهای نصب تأییدنشده تلقی می‌شوند."};
+    model.windFootprints=buildRoofPurlinWindFootprints(model);
     return model;
   }
   function draw() {
@@ -557,7 +781,10 @@
   function showSummary(){
     if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
     const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
-    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی اعضا تبدیل می‌شوند؛ بارهای مرده، زنده و برف و سه ترکیب ثقلی ULS-1 تا ULS-3 در حل‌گر خطی قابل تحلیل‌اند. بار باد و ترکیبات دارای باد/زلزله هنوز در حل‌گر اعمال نمی‌شوند. پرلین‌های سقف به‌صورت قطعات مجزا بین دو قاب ساخته شده‌اند؛ در تحلیل، انتقال جابه‌جایی در محل تکیه‌گاه برقرار و هر سه دوران انتهای هر قطعه آزاد شده است تا پرلین دهانه مجاور پیوسته فرض نشود. این مدل، مفصل ایده‌آل است و سختی واقعی کلیپس/پیچ، لغزش و اثر خروج از مرکزیت را شامل نمی‌شود؛ سایر گره‌های مشترک فعلاً صلب‌اند. مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
+    const orientation=model.orientationAudit||{memberCount:model.members.length,verifiedCount:0,readyForCodeDesign:false,groups:{}};
+    const orientationRows=Object.entries(orientation.groups||{}).map(([key,g])=>key+": "+g.count+" عضو، تأییدشده "+g.verified+"، بدون محور مستند "+g.missingReferenceAxis+"، چرخش مقطع تأییدنشده "+g.unverifiedSectionRoll).join("؛ ");
+    const orientationSummary="ممیزی جهت‌گیری: "+orientation.verifiedCount+" از "+orientation.memberCount+" عضو دارای محور و چرخش مقطع مستند هستند. "+(orientation.readyForCodeDesign?"جهت‌گیری همه اعضا مستند است.":"آمادگی طراحی آیین‌نامه‌ای از نظر جهت نصب تأیید نشده است.")+" "+orientationRows;
+    const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی اعضا تبدیل می‌شوند؛ بارهای مرده، زنده و برف و سه ترکیب ثقلی ULS-1 تا ULS-3 در حل‌گر خطی قابل تحلیل‌اند. باد شش‌ناحیه‌ای برای چهار جهت و دو علامت فشار داخلی به اعضای سقف و دیوار منتقل می‌شود؛ ترکیبات باد موجود هنوز آزمایشی‌اند و جایگزین ترکیبات آیین‌نامه‌ای تأییدشده نیستند. زلزله هنوز در مدل اعمال نشده است. پرلین‌های سقف به‌صورت قطعات مجزا بین دو قاب ساخته شده‌اند؛ در تحلیل، انتقال جابه‌جایی در محل تکیه‌گاه برقرار است؛ دو دوران خمشی انتهای هر قطعه پرلین مستقل شده‌اند، اما دوران پیچشی حول محور طولی مشترک باقی می‌ماند. این تقریب مفصل خمشی است و سختی واقعی کلیپس/پیچ، لغزش و خروج از مرکزیت را مدل نمی‌کند. این مدل، مفصل ایده‌آل است و سختی واقعی کلیپس/پیچ، لغزش و اثر خروج از مرکزیت را شامل نمی‌شود؛ سایر گره‌های مشترک فعلاً صلب‌اند. مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>"+orientationSummary+"</b></p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
   }
   function validate3DSections(){
     if(!model)build();
@@ -580,7 +807,7 @@
     });
     return {ready:missing.length===0,groupCount:groups.size,memberCount:model.members.length,missing};
   }
-  function run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports){
+  function run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads){
     return new Promise((resolve,reject)=>{
       let worker;
       try{
@@ -610,6 +837,7 @@
           model:analysisModel,
           sectionsByMemberId,
           supports,
+          nodalLoads:nodalLoads||[],
           releasePurlinRafterRotation:true
         });
       }catch(error){
@@ -618,7 +846,17 @@
     });
   }
   async function analyze3D(loadCase){
-    if(!model)build();
+    build();
+    const roofLoadInputs=window.SteelLoads?.getData?.()||{};
+    const basisChecks=[
+      {key:"deadAreaBasis",values:[roofLoadInputs.deadLeft,roofLoadInputs.deadRight],label:"بار مرده"},
+      {key:"liveAreaBasis",values:[roofLoadInputs.liveLeft,roofLoadInputs.liveRight],label:"بار زنده"},
+      {key:"snowAreaBasis",values:[roofLoadInputs.snowLeft,roofLoadInputs.snowRight],label:"بار برف"}
+    ];
+    const missingBasis=basisChecks.find(item=>item.values.some(v=>Number(v)>0)&&
+      !["horizontal-projection","sloped-surface"].includes(roofLoadInputs[item.key]));
+    if(missingBasis)
+      throw new Error("مبنای سطح "+missingBasis.label+" سقف انتخاب نشده است. تصویر افقی یا سطح شیب‌دار را در بخش بارگذاری مشخص کنید؛ تحلیل برای جلوگیری از خطای بار متوقف شد.");
     if(!window.SteelFrame3D||typeof window.SteelFrame3D.makeTransform!=="function")
       throw new Error("هسته هندسی حل‌گر سه‌بعدی بارگذاری نشده است.");
     const readiness=validate3DSections();
@@ -634,7 +872,47 @@
       wind:{key:"wind",label:"باد ـ فشار خالص ورودی",direction:null,deadFactor:0}
     };
     let selected=cases[loadCase];
-    if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
+    const directionalWindCases={
+      zoneWind_tp_ip:{direction:"transverse-positive",scenario:"positive",label:"باد عرضی +X ـ فشار داخلی مثبت"},
+      zoneWind_tp_in:{direction:"transverse-positive",scenario:"negative",label:"باد عرضی +X ـ فشار داخلی منفی"},
+      zoneWind_tn_ip:{direction:"transverse-negative",scenario:"positive",label:"باد عرضی −X ـ فشار داخلی مثبت"},
+      zoneWind_tn_in:{direction:"transverse-negative",scenario:"negative",label:"باد عرضی −X ـ فشار داخلی منفی"},
+      zoneWind_lp_ip:{direction:"longitudinal-positive",scenario:"positive",label:"باد طولی +Z ـ فشار داخلی مثبت"},
+      zoneWind_lp_in:{direction:"longitudinal-positive",scenario:"negative",label:"باد طولی +Z ـ فشار داخلی منفی"},
+      zoneWind_ln_ip:{direction:"longitudinal-negative",scenario:"positive",label:"باد طولی −Z ـ فشار داخلی مثبت"},
+      zoneWind_ln_in:{direction:"longitudinal-negative",scenario:"negative",label:"باد طولی −Z ـ فشار داخلی منفی"}
+    };
+    const serviceWindCases={
+      serviceWind_tp_ip:{direction:"transverse-positive",scenario:"positive",label:"باد بهره‌برداری عرضی +X ـ فشار داخلی مثبت"},
+      serviceWind_tp_in:{direction:"transverse-positive",scenario:"negative",label:"باد بهره‌برداری عرضی +X ـ فشار داخلی منفی"},
+      serviceWind_tn_ip:{direction:"transverse-negative",scenario:"positive",label:"باد بهره‌برداری عرضی −X ـ فشار داخلی مثبت"},
+      serviceWind_tn_in:{direction:"transverse-negative",scenario:"negative",label:"باد بهره‌برداری عرضی −X ـ فشار داخلی منفی"},
+      serviceWind_lp_ip:{direction:"longitudinal-positive",scenario:"positive",label:"باد بهره‌برداری طولی +Z ـ فشار داخلی مثبت"},
+      serviceWind_lp_in:{direction:"longitudinal-positive",scenario:"negative",label:"باد بهره‌برداری طولی +Z ـ فشار داخلی منفی"},
+      serviceWind_ln_ip:{direction:"longitudinal-negative",scenario:"positive",label:"باد بهره‌برداری طولی −Z ـ فشار داخلی مثبت"},
+      serviceWind_ln_in:{direction:"longitudinal-negative",scenario:"negative",label:"باد بهره‌برداری طولی −Z ـ فشار داخلی منفی"}
+    };
+    const serviceWind=serviceWindCases[loadCase]||null;
+    const directionalWind=directionalWindCases[loadCase]||
+      (loadCase==="zoneWindPositive"?{direction:"transverse-positive",scenario:"positive",label:"باد عرضی +X ـ فشار داخلی مثبت"}:
+       loadCase==="zoneWindNegative"?{direction:"transverse-positive",scenario:"negative",label:"باد عرضی +X ـ فشار داخلی منفی"}:null);
+    const windCase=serviceWind||directionalWind;
+    if(windCase){
+      selected={key:"zoneWind",label:windCase.label,direction:null,deadFactor:0,
+        windFactor:serviceWind?0.64:1,windSign:1,serviceability:!!serviceWind,
+        windZoneDirection:windCase.direction,windZoneScenario:windCase.scenario};
+    }
+    let approvedExternalNodalLoads=[];
+    if(loadCase&&typeof loadCase==="object"&&Array.isArray(loadCase.nodalLoads)){
+      const type=loadCase.type;
+      if(!["seismic","crane"].includes(type))throw new Error("نوع بار گره‌ای خارجی باید seismic یا crane باشد.");
+      if(loadCase.sourceVerified!==true||typeof loadCase.sourceReference!=="string"||!loadCase.sourceReference.trim())
+        throw new Error("بار زلزله/جرثقیل بدون منبع مستند و تأییدشده قابل تحلیل نیست.");
+      approvedExternalNodalLoads=loadCase.nodalLoads;
+      selected={key:type,label:String(loadCase.label||(type==="seismic"?"زلزله ـ بار گره‌ای مستند":"جرثقیل ـ بار گره‌ای مستند")),
+        direction:[0,0,0],factors:{dead:Number(loadCase.factors?.dead)||0,live:Number(loadCase.factors?.live)||0,snow:Number(loadCase.factors?.snow)||0},
+        deadFactor:Number(loadCase.factors?.dead)||0,externalSource:loadCase.sourceReference};
+    }else if(loadCase&&typeof loadCase==="object"&&loadCase.factors){
       const f=loadCase.factors;
       selected={key:"combo",label:String(loadCase.label||"ترکیب بار سه‌بعدی"),
         direction:[0,-1,0],
@@ -648,12 +926,31 @@
       selected={key:loadCase,label:combo.name,direction:[0,-1,0],
         factors:{dead:Number(combo.dead)||0,live:Number(combo.live)||0,snow:Number(combo.snow)||0},
         deadFactor:Number(combo.dead)||0};
+    }else{
+      const preliminaryWindCombos=Object.fromEntries(
+        window.SteelLoadTransfer.preliminaryWindCombinations().map(combo=>[combo.key,combo])
+      );
+      const combo=preliminaryWindCombos[loadCase];
+      if(combo)selected={key:"combo",label:combo.label,direction:[0,-1,0],
+        factors:{dead:combo.dead,live:combo.live,snow:combo.snow,wind:combo.wind},
+        windFactor:combo.wind,windSign:combo.sign,deadFactor:combo.dead};
     }
     if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود.");
-    const analysisModel={
+    let analysisModel={
       nodes:model.nodes.map(n=>({...n})),
       members:model.members.map(m=>({...m}))
     };
+    let zoneWindMapping=null;
+    if(selected.windZoneScenario){
+      const pressureResult=window.SteelClimateLoadEngine?.calculateWindZones?.(selected.windZoneDirection);
+      if(!pressureResult||pressureResult.ready!==true)
+        throw new Error("دفتر فشار باد شش‌ناحیه‌ای کامل نیست؛ هر شش Cp و ضرایب مشترک را تکمیل کنید.");
+      const applied=window.SteelLoadTransfer.applyWindZonePressureMapping(
+        analysisModel,pressureResult,selected.windZoneScenario
+      );
+      analysisModel=applied.model;
+      zoneWindMapping=applied.mapping;
+    }
     // Build an indexed node registry and validate connectivity before creating element loads.
     const nodeById=new Map();
     const duplicateNodeIds=[];
@@ -689,7 +986,11 @@
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
       const section=window.SteelSections.resolveAnalysis3DSection(m);
-      sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile};
+      sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,
+        sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile,
+        manufacturer:section.manufacturer,sourceDocumentId:section.sourceDocumentId,
+        catalogReference:section.catalogReference,sourcePage:section.sourcePage,
+        sectionDataVerified:section.sectionDataVerified===true};
       let selfWeightLineLoad=0;
       if(selected.deadFactor>0){
         const memberLength=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
@@ -702,7 +1003,6 @@
         group.count++;group.lengthM+=memberLength;group.totalKN+=memberWeight;
       }
       const totalLineLoad=lineLoad+selfWeightLineLoad;
-      const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
       let global;
       if(selected.key==="wind"||selected.windFactor>0){
         // Wind inputs are signed NET pressures (kN/m²), not basic wind speed.
@@ -711,31 +1011,15 @@
         // Positive = pressure toward the enclosed building; negative = suction.
         // Roof pressure is transferred to purlins normal to each roof slope.
         // Side-wall pressure is transferred to longitudinal wall girts, normal to the wall.
-        global=[0,0,0];
+        global=windMemberLineLoadGlobal(m,model.geometry,windFactor,windSign).map(value=>value*1000);
         // A wind combination carries its factored gravity actions as well.
         if(selected.key!=="wind")global[1]-=totalLineLoad*1000;
-        if(m.sectionKey==="roofPurlin"){
-          const half=Number(model.geometry.span)/2;
-          const rise=Number(model.geometry.rise);
-          const slope=rise/half;
-          const norm=Math.hypot(slope,1);
-          const left=Number(m.lineLoads?.windLeft||0)*1000*windFactor*windSign;
-          const right=Number(m.lineLoads?.windRight||0)*1000*windFactor*windSign;
-          global[0]+=left*slope/norm-right*slope/norm;
-          global[1]-=(left+right)/norm;
-        }else if(m.sectionKey==="wallGirt"){
-          const wall=Number(m.lineLoads?.wind||0)*1000*windFactor*windSign;
-          global[0]+=m.side==="left"?wall:-wall;
-        }else if(m.sectionKey==="endGirt"){
-          // Positive pressure acts inward: +Z on the front face and -Z on the rear face.
-          const endWall=Number(m.lineLoads?.windEnd||0)*1000*windFactor*windSign;
-          global[2]+=m.endFace==="front"?endWall:-endWall;
-        }
       }else{
         global=selected.direction.map(v=>v*totalLineLoad*1000);
       }
-      const axes=[tr.axes.x,tr.axes.y,tr.axes.z];
-      const local=axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*global[i],0));
+      const local=window.SteelFrame3D.globalVectorToLocal(
+        [a.x,a.y,a.z],[b.x,b.y,b.z],global,m.referenceAxis||undefined
+      );
       m.analysisLoad={uniformLocal:local,globalUniform:global};
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
@@ -745,7 +1029,117 @@
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
-    const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports);
+    if(selected.key==="crane"&&!analysisModel.members.some(member=>
+      ["craneRunway","craneRail","craneBracket"].includes(member.sectionKey)))
+      throw new Error("تحلیل جرثقیل متوقف شد: تیر حمال، ریل و کنسول جرثقیل هنوز در هندسه سازه مدل نشده‌اند؛ اعمال مستقیم واکنش چرخ به ستون جایگزین مدل مسیر جرثقیل نیست.");
+    const nodalLoads=[];
+    if(approvedExternalNodalLoads.length){
+      const validNodeIds=new Set(analysisModel.nodes.map(n=>n.id));
+      approvedExternalNodalLoads.forEach((item,index)=>{
+        if(!item||!validNodeIds.has(item.nodeId)||!Array.isArray(item.values)||item.values.length!==6||
+          item.values.some(v=>!Number.isFinite(Number(v))))
+          throw new Error("بار گره‌ای مستند شماره "+(index+1)+" باید گره موجود و شش مؤلفه محدود بر حسب N/Nm داشته باشد.");
+        nodalLoads.push({nodeId:item.nodeId,values:item.values.map(Number)});
+      });
+    }
+    const currentWindInputs=window.SteelLoads?.getData?.()||{};
+    let wallFoundationTransfer=null;
+    if(Number(selected.deadFactor)>0&&(currentWindInputs.wallDeadSupportPath||"foundation")==="foundation"&&
+      ["wallDeadLeft","wallDeadRight","endWallDeadFront","endWallDeadBack"].some(k=>Number(currentWindInputs[k]||0)>0)){
+      if(!window.SahroudWallFoundationTransfer)throw new Error("ماژول انتقال بار پوسته دیوار به پایه‌ها بارگذاری نشده است.");
+      wallFoundationTransfer=window.SahroudWallFoundationTransfer.createWallFoundationLoadTransfer({
+        model:analysisModel,loads:currentWindInputs,deadFactor:Number(selected.deadFactor)
+      });
+      nodalLoads.push(...wallFoundationTransfer.nodalLoads);
+    }
+    const gableWallDeadTransfer=[];
+    if(Number(selected.deadFactor)>0&&currentWindInputs.wallDeadSupportPath==="girts"){
+      const intervals=Math.max(1,Math.ceil(Number(model.geometry.span)/Number(model.geometry.endPostSpacing||4)));
+      ["front","rear"].forEach(face=>{
+        const pressure=Number(face==="front"?currentWindInputs.endWallDeadFront:currentWindInputs.endWallDeadBack)||0;
+        if(!(pressure>0))return;
+        const actions=window.SteelLoadTransfer.triangularGablePostEquivalentLoads(
+          pressure*Number(selected.deadFactor),Number(model.geometry.span),Number(model.geometry.rise),
+          Number(model.geometry.height),intervals
+        );
+        actions.forEach(action=>{
+          const z=face==="front"?0:Number(model.geometry.length);
+          const head=analysisModel.nodes.find(n=>Math.abs(n.x-action.xM)<1e-7&&
+            Math.abs(n.y-action.supportHeightM)<1e-7&&Math.abs(n.z-z)<1e-7);
+          if(!head)throw new Error("گره سر ستونک برای وزن دیوار مثلثی "+face+" پیدا نشد.");
+          nodalLoads.push({nodeId:head.id,values:[0,-action.resultantKN*1000,0,0,0,0]});
+        });
+        gableWallDeadTransfer.push({face,pressureKPa:pressure*Number(selected.deadFactor),
+          resultantKN:actions.reduce((sum,item)=>sum+item.resultantKN,0),postStations:actions.length});
+      });
+    }
+    const gableWindTransfer=[];
+    const windFactor=selected.key==="wind"?1:Number(selected.windFactor||0);
+    const windSign=selected.key==="wind"?1:Number(selected.windSign||1);
+    if(windFactor!==0&&Number(model.geometry.rise)>0){
+      const intervals=Math.max(1,Math.ceil(Number(model.geometry.span)/Number(model.geometry.endPostSpacing||4)));
+      const nodeAt=(x,y,z)=>{
+        const found=analysisModel.nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7);
+        if(!found)throw new Error("گره معادل بار باد دیوار انتهایی پیدا نشد: x="+x+", y="+y+", z="+z);
+        return found;
+      };
+      const loadByNode=new Map();
+      const addNodal=(node,values)=>{
+        const current=loadByNode.get(node.id)||[0,0,0,0,0,0];
+        values.forEach((value,i)=>current[i]+=value);
+        loadByNode.set(node.id,current);
+      };
+      ["front","rear"].forEach(face=>{
+        const rawPressure=zoneWindMapping?Number(zoneWindMapping.endFacePressures[face]):Number(face==="front"?currentWindInputs.windEndFront:currentWindInputs.windEndBack)||0;
+        if(rawPressure===0)return;
+        const faceSign=face==="front"?1:-1;
+        const pressureKPa=rawPressure*windFactor*windSign*faceSign;
+        const actions=window.SteelLoadTransfer.triangularGablePostEquivalentLoads(
+          pressureKPa,Number(model.geometry.span),Number(model.geometry.rise),
+          Number(model.geometry.height),intervals
+        );
+        actions.forEach(action=>{
+          const z=face==="front"?0:Number(model.geometry.length);
+          const base=nodeAt(action.xM,0,z);
+          const head=nodeAt(action.xM,action.supportHeightM,z);
+          const baseConnected=analysisModel.members.some(member=>
+            (member.start===base.id||member.end===base.id)&&
+            (member.sectionKey==="column"||member.sectionKey==="endPost"));
+          const headConnected=analysisModel.members.some(member=>
+            (member.start===head.id||member.end===head.id)&&
+            (member.sectionKey==="column"||member.sectionKey==="endPost"||member.sectionKey==="rafter"));
+          if(!baseConnected||!headConnected)
+            throw new Error("مسیر سازه‌ای ستونک باد مثلثی کامل نیست؛ گره پایه/سر ستونک: "+base.id+" / "+head.id);
+          addNodal(base,[0,0,action.baseForceKN*1000,0,action.momentYAboutSupportKNm*1000,0]);
+          addNodal(head,[0,0,action.topForceKN*1000,0,0,0]);
+        });
+        gableWindTransfer.push({
+          face,pressureKPa,postStations:actions.length,
+          resultantKN:actions.reduce((sum,item)=>sum+item.resultantKN,0),
+          momentXAboutGlobalOriginKNm:actions.reduce((sum,item)=>sum+item.topForceKN*item.supportHeightM,0),
+          momentYAboutGlobalOriginKNm:actions.reduce((sum,item)=>sum+item.momentYAboutSupportKNm-item.xM*item.resultantKN,0)
+        });
+      });
+      nodalLoads.push(...Array.from(loadByNode,([nodeId,values])=>({nodeId,values})));
+    }
+    const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads);
+     if(!window.SahroudFoundationReactionExport)throw new Error("ماژول خروجی واکنش تکیه‌گاهی فونداسیون بارگذاری نشده است.");
+     result.foundationReactionExport=window.SahroudFoundationReactionExport.exportSupportReactions({
+       nodes:analysisModel.nodes,supports,reactions:result.reactions,loadCase:selected.key,
+       loadCaseLabel:selected.label,equilibrium:result.equilibrium
+     });
+    if(!window.SahroudMemberDemand3D)throw new Error("موتور استخراج تقاضای اعضای سه‌بعدی بارگذاری نشده است.");
+    result.memberDemand=window.SahroudMemberDemand3D.extractCase(result,analysisModel);
+    result.orientationAudit=window.SteelFrame3D.auditMemberOrientation(analysisModel);
+    result.sectionPropertyAudit=window.SteelFrame3D.auditMemberSectionProperties(analysisModel,sectionsByMemberId);
+    result.codeDesignInputReadiness={ready:result.orientationAudit.readyForCodeDesign&&result.sectionPropertyAudit.readyForCodeDesign,
+      orientationReady:result.orientationAudit.readyForCodeDesign,sectionPropertiesReady:result.sectionPropertyAudit.readyForCodeDesign,
+      note:"آمادگی ورودی به معنی تأیید طراحی نیست؛ تحلیل مرتبه اول، مقاومت اعضا، پایداری، اتصالات، بارگذاری و فونداسیون همچنان باید جداگانه کنترل شوند."};
+    result.gableWindTransfer=gableWindTransfer;
+    if(zoneWindMapping)result.windZoneTransfer={windDirection:zoneWindMapping.windDirection,internalScenario:zoneWindMapping.internalScenario,pressureScale:selected.windFactor,serviceability:!!selected.serviceability,applicationScope:zoneWindMapping.applicationScope,windProcedure:zoneWindMapping.windProcedure,componentsCladdingStatus:zoneWindMapping.componentsCladdingStatus,codeComplianceStatus:zoneWindMapping.codeComplianceStatus,designWarning:zoneWindMapping.designWarning,counts:zoneWindMapping.counts,endFacePressures:zoneWindMapping.endFacePressures};
+    if(selected.serviceability)result.windServiceability=window.SteelLoadTransfer.checkWindDrift(
+      {...analysisModel,geometry:model.geometry},result.displacements,selected.windZoneDirection,0.0025
+    );
 
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
@@ -826,11 +1220,53 @@
     result.loadCaseLabel=selected.label;
     result.supportType=fixed?"گیردار":"مفصلی";
     result.selfWeight={included:selected.deadFactor>0,deadLoadFactor:selected.deadFactor,unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount,bySectionGroup:selfWeightByGroup};
+    result.externalLoadSource=selected.externalSource||null;
+    result.loadPathCoverage={
+      wallDeadLongitudinalMembers:analysisModel.members.filter(m=>m.sectionKey==="wallGirt"&&Number(m.lineLoads?.dead)>0).length,
+      wallDeadEndMembers:analysisModel.members.filter(m=>m.sectionKey==="endGirt"&&Number(m.lineLoads?.dead)>0).length,
+      wallDeadSupportPath:currentWindInputs.wallDeadSupportPath||"foundation",
+      wallDeadLongitudinalInput:Number(currentWindInputs.wallDeadLeft||0)+Number(currentWindInputs.wallDeadRight||0),
+      wallDeadEndInput:Number(currentWindInputs.endWallDeadFront||0)+Number(currentWindInputs.endWallDeadBack||0),
+      wallDeadGableTriangle:gableWallDeadTransfer.length?"applied":(currentWindInputs.wallDeadSupportPath==="girts"?"not-applied":"foundation-path-pending"),
+      foundationWallLoadsPending:(currentWindInputs.wallDeadSupportPath||"foundation")==="foundation",
+      wallFoundationTransfer:wallFoundationTransfer?{
+        method:wallFoundationTransfer.method,isFiniteElementShell:wallFoundationTransfer.isFiniteElementShell,
+        foundationElementModelled:wallFoundationTransfer.foundationElementModelled,
+        foundationDesignPending:wallFoundationTransfer.foundationDesignPending,
+        sourceAreaKN:wallFoundationTransfer.sourceAreaKN,resultantKN:wallFoundationTransfer.resultantKN,
+        equilibriumResidualKN:wallFoundationTransfer.equilibriumResidualKN,
+        supportReactionCount:wallFoundationTransfer.nodalLoads.length,ledger:wallFoundationTransfer.ledger,
+        note:wallFoundationTransfer.note
+      }:null,
+      gableWallDeadTransfer,
+      seismicApplied:selected.key==="seismic",
+      craneApplied:selected.key==="crane",
+      craneRunwayMembers:analysisModel.members.filter(m=>["craneRunway","craneRail","craneBracket"].includes(m.sectionKey)).length
+    };
+    if(window.SahroudLoadPathAudit){
+      result.loadPathAudit=window.SahroudLoadPathAudit.audit({model:analysisModel,result,sectionsByMemberId,supports,loadCase:selected.key});
+    }
     result.connectionModel="اتصال پرلین به رفتر: تقریب کلیپس/نبشی دوپیچه؛ انتقال جابه‌جایی مشترک است، دو دوران خمشی پرلین از رفتر جدا شده‌اند و دوران حول محور طولی پرلین مشترک باقی مانده است. این مدل سختی واقعی اتصال را محاسبه نمی‌کند.";
-    result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. حالت باد فقط فشار خالص دستی واردشده را به‌صورت برداری به پرلین‌های سقف و قیدهای طولی دو دیوار جانبی منتقل می‌کند؛ فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، ناحیه مثلثی دیوار انتهایی بالای آخرین قید، بازشوهای غالب و پیچش کلی هنوز منظور نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
+    result.warning="وزن خود فولاد در حالت بار مرده و ترکیبات ثقلی متناسب با ضریب D با وزن مخصوص فرضی 78.5 kN/m³ و مساحت A مقاطع تخصیص‌یافته محاسبه و اضافه شده است. حالت باد، فشار خالص دستی واردشده را به پرلین‌های سقف، قیدهای طولی دو دیوار جانبی و ناحیه مثلثی دیوارهای انتهایی منتقل می‌کند؛ ناحیه مثلثی با نیروها و لنگرهای گره‌ای معادل ایستایی مدل شده است. فشارهای بادگیر/بادپناه، ضرایب فشار خارجی و داخلی، بازشوهای غالب و پیچش کلی هنوز کامل مدل نشده‌اند. ترکیبات موجود D، Lr، S و W در حالت سه‌بعدی مقدماتی قابل تحلیل‌اند، اما ضرایب و پوشش آن‌ها باید با متن رسمی مبحث ششم تطبیق نهایی شوند. ورودی باد در این مرحله سرعت مبنای باد نیست و باید فشار خالص بر حسب kN/m² باشد؛ مثبت به سمت داخل ساختمان و منفی مکش به سمت بیرون است. ترکیبات ثقلی ULS-1 تا ULS-3 جداگانه باقی می‌مانند. اتصال پرلین به رفتر با جداسازی دو دوران خمشی و حفظ دوران پیچشی حول محور طولی پرلین تقریب شده، اما سختی واقعی کلیپس، لغزش پیچ، مقاومت اتصال و جزئیات اجرایی کنترل نشده‌اند. P-Delta و کنترل آیین‌نامه‌ای نیز وجود ندارد. مهاربندهای پیشنهادی با سختی کامل مقطع وارد تحلیل می‌شوند؛ صحت جزئیات اتصال باید جداگانه تأیید شود.";
     return result;
   }
-  function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members}:null;}
+  async function analyze3DCombinations(){
+    if(!window.Sahroud3DCombinationRunner)throw new Error("ماژول اجرای ترکیبات سه‌بعدی بارگذاری نشده است.");
+    if(!window.SahroudMemberDemand3D)throw new Error("موتور تقاضای اعضا بارگذاری نشده است.");
+    build();
+    const source=window.SteelLoads?.getData?.();
+    if(!source||!Array.isArray(source.combinations))throw new Error("فهرست ترکیبات بار در بخش بارگذاری موجود نیست.");
+    const result=await window.Sahroud3DCombinationRunner.run(
+      source.combinations,spec=>analyze3D(spec),model,window.SahroudMemberDemand3D
+    );
+    combinationResults=result.combinationResults;
+    combinationEnvelope=result.envelope;
+    if(!window.SahroudMemberDesignDemand3D)
+      throw new Error("ماژول آماده‌سازی تقاضای طراحی اعضای سه‌بعدی بارگذاری نشده است.");
+    result.designDemand=window.SahroudMemberDesignDemand3D.build(result,model,window.SahroudMemberDemand3D);
+    return result;
+  }
+  function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members,windFootprints:model.windFootprints||[],orientationAudit:model.orientationAudit||null}:null;}
   function setData(data){
     if(data&&data.geometry){const g=data.geometry,map={roofPurlinSpacing:"modelPurlinSpacing",wallGirtSpacing:"modelGirtSpacing",endPostSpacing:"modelEndPostSpacing",braceBays:"modelBraceBays"};Object.entries(map).forEach(([k,id])=>{if($(id)&&g[k]!=null)$(id).value=g[k];});}
     build();draw();showSummary();
@@ -848,6 +1284,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,getProposedUnbracedLengths,get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyze3DCombinations,getProposedUnbracedLengths,buildRoofPurlinWindFootprints,assignGeometricMemberLineLoads,windMemberLineLoadGlobal,get combinationResults(){return combinationResults.slice();},get combinationEnvelope(){return combinationEnvelope;},get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();

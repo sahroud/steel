@@ -158,6 +158,79 @@
         const validationButtons=panel.querySelector(".button-grid");
         if(validationButtons) panel.insertBefore(extraHost,validationButtons);
         else panel.appendChild(extraHost);
+
+        const provenanceGroups=[
+          ["column","ستون"],["rafter","رفتر"],["roofPurlin","پرلین سقف"],
+          ["wallGirt","قید دیوار"],["endPost","ستونک انتهایی"],["endGirt","تیر انتهایی"],
+          ["wallBrace","مهاربند دیوار"],["roofBrace","مهاربند سقف"],["roofEdge","تیر لبه سقف"]
+        ];
+        const provenance=document.createElement("details");
+        provenance.className="sub-panel";
+        provenance.id="sectionProvenancePanel";
+        provenance.innerHTML='<summary>هـ ـ شناسنامه و مستندات هر مقطع</summary>'+
+          '<div class="notice">برای هر گروه، نام سازنده/کاتالوگ و شماره سند یا نقشه و صفحه را وارد کنید. تیک تأیید فقط پس از تطبیق مستقل با مدرک واقعی زده شود؛ ورود اطلاعات به‌تنهایی تأیید فنی نیست.</div>'+
+          provenanceGroups.map(([key,label])=>'<div class="sub-panel"><h4>'+label+'</h4><div class="form-grid">'+
+            '<div class="field"><label for="sp_'+key+'_profile">نام دقیق مقطع/مدل</label><input id="sp_'+key+'_profile" type="text"></div>'+
+            '<div class="field"><label for="sp_'+key+'_manufacturer">سازنده/تولیدکننده</label><input id="sp_'+key+'_manufacturer" type="text"></div>'+
+            '<div class="field"><label for="sp_'+key+'_document">شناسه سند/نقشه یا لینک مرجع</label><input id="sp_'+key+'_document" type="text"></div>'+
+            '<div class="field"><label for="sp_'+key+'_catalog">شماره کاتالوگ/استاندارد</label><input id="sp_'+key+'_catalog" type="text"></div>'+
+            '<div class="field"><label for="sp_'+key+'_page">شماره صفحه/جزئیات</label><input id="sp_'+key+'_page" type="text"></div>'+
+            '<div class="field"><label><input id="sp_'+key+'_verified" type="checkbox"> مشخصات با مدرک واقعی تطبیق و تأیید شد</label></div>'+
+            '</div></div>').join("");
+        if(validationButtons) panel.insertBefore(provenance,validationButtons);
+        else panel.appendChild(provenance);
+
+        const girderBuilder=document.createElement("details");
+        girderBuilder.className="sub-panel";
+        girderBuilder.id="builtUpGirderBuilder";
+        girderBuilder.innerHTML=`
+          <summary>محاسبه هندسی تیرورق ستون و رفتر از روی ابعاد ورق‌ها</summary>
+          <div class="notice">ابعاد واقعی را بر حسب میلی‌متر وارد کنید. ابزار، مساحت، مرکز سطح، ممان‌های اینرسی و مدول‌های مقطع ناخالص را محاسبه و در فیلدهای ستون/رفتر درج می‌کند. برای ستون و رفتر در صفحه قاب X-Y، محور قوی به Iz و محور ضعیف به Iy نگاشت می‌شود. این نگاشت برای اعضای طولی مانند پرلین معتبر فرض نمی‌شود. مقدار J فقط تقریب مقطع نازک‌جداره باز است و خودکار وارد تحلیل نمی‌شود.</div>
+          ${["column","rafter"].map((key)=>`
+            <h4>${key==="column"?"تیرورق ستون":"تیرورق رفتر"}</h4>
+            <div class="form-grid">
+              <div class="field"><label for="bg_${key}_bt">عرض بال بالا (mm)</label><input id="bg_${key}_bt" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_tt">ضخامت بال بالا (mm)</label><input id="bg_${key}_tt" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_bb">عرض بال پایین (mm)</label><input id="bg_${key}_bb" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_tb">ضخامت بال پایین (mm)</label><input id="bg_${key}_tb" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_hw">ارتفاع خالص جان (mm)</label><input id="bg_${key}_hw" type="number" min="1" step="0.1"></div>
+              <div class="field"><label for="bg_${key}_tw">ضخامت جان (mm)</label><input id="bg_${key}_tw" type="number" min="1" step="0.1"></div>
+            </div>
+            <button type="button" class="btn secondary" id="bg_${key}_calculate">محاسبه و درج خواص هندسی ${key==="column"?"ستون":"رفتر"}</button>
+            <div class="notice" id="bg_${key}_result">هنوز محاسبه نشده است.</div>
+          `).join("")}
+        `;
+        if(validationButtons) panel.insertBefore(girderBuilder,validationButtons);
+        else panel.appendChild(girderBuilder);
+
+        function calculateBuiltUpFor(prefix){
+          const readDim=suffix=>Number($("bg_"+prefix+"_"+suffix).value);
+          const input={
+            profile:"تیرورق I ساخته‌شده",
+            topFlangeWidthMm:readDim("bt"),topFlangeThicknessMm:readDim("tt"),
+            bottomFlangeWidthMm:readDim("bb"),bottomFlangeThicknessMm:readDim("tb"),
+            webClearHeightMm:readDim("hw"),webThicknessMm:readDim("tw")
+          };
+          const resultBox=$("bg_"+prefix+"_result");
+          try{
+            if(!window.SahroudBuiltUpSection?.calculateBuiltUpISection)
+              throw new Error("ماژول محاسبه هندسی تیرورق بارگذاری نشده است.");
+            const r=window.SahroudBuiltUpSection.calculateBuiltUpISection(input);
+            $(prefix+"Profile").value=input.profile;
+            $(prefix+"A").value=r.areaCm2.toFixed(4);
+            $(prefix+"Ix").value=r.strongAxis.inertiaCm4.toFixed(4);
+            $(prefix+"Iy").value=r.weakAxis.inertiaCm4.toFixed(4);
+            $(prefix+"SxTop").value=r.strongAxis.sectionModulusTopCm3.toFixed(4);
+            $(prefix+"SxBottom").value=r.strongAxis.sectionModulusBottomCm3.toFixed(4);
+            $(prefix+"Sy").value=r.weakAxis.sectionModulusCm3.toFixed(4);
+            resultBox.textContent="محاسبه هندسی انجام شد: A="+r.areaCm2.toFixed(3)+" cm²؛ مرکز سطح از پایین="+r.centroidYFromBottomMm.toFixed(2)+" mm؛ Ix قوی="+r.strongAxis.inertiaCm4.toFixed(3)+" cm⁴؛ Iy ضعیف="+r.weakAxis.inertiaCm4.toFixed(3)+" cm⁴؛ J تقریبی="+r.torsion.JApproxCm4.toFixed(3)+" cm⁴. J به فیلد تحلیل منتقل نشده است؛ مقدار معتبر آن باید جداگانه تعیین شود. این نتیجه کنترل مقاومت یا انطباق آیین‌نامه‌ای نیست.";
+            resultBox.style.color="#92400e";
+          }catch(error){
+            resultBox.textContent="محاسبه انجام نشد: "+error.message;
+            resultBox.style.color="#b45309";
+          }
+        }
+        ["column","rafter"].forEach(key=>$("bg_"+key+"_calculate").addEventListener("click",()=>calculateBuiltUpFor(key)));
         $("btnCheckSections").addEventListener("click", validate);
     }
 
@@ -170,6 +243,18 @@
             SxTop_cm3: Number($(prefix + "SxTop").value),
             SxBottom_cm3: Number($(prefix + "SxBottom").value),
             Sy_cm3: Number($(prefix + "Sy").value)
+        };
+    }
+
+    function readSectionProvenance(key) {
+        const value=suffix=>String($("sp_"+key+"_"+suffix)?.value||"").trim();
+        return {
+            profile:value("profile"),
+            manufacturer:value("manufacturer"),
+            sourceDocumentId:value("document"),
+            catalogReference:[value("manufacturer"),value("catalog"),value("page")].filter(Boolean).join(" | "),
+            sourcePage:value("page"),
+            sectionDataVerified:!!$("sp_"+key+"_verified")?.checked
         };
     }
 
@@ -191,14 +276,16 @@
                             A_cm2:m.A_cm2,
                             Iy_cm4:m.Iy_cm4,
                             Iz_cm4:m.Ix_cm4,
-                            J_cm4:Number($(key+"J3D")?.value)
+                            J_cm4:Number($(key+"J3D")?.value),
+                            ...readSectionProvenance(key)
                         }];
                     }
                     return [key,{
                         A_cm2:Number($("p3_"+key+"_A")?.value),
                         Iy_cm4:Number($("p3_"+key+"_Iy")?.value),
                         Iz_cm4:Number($("p3_"+key+"_Iz")?.value),
-                        J_cm4:Number($("p3_"+key+"_J")?.value)
+                        J_cm4:Number($("p3_"+key+"_J")?.value),
+                        ...readSectionProvenance(key)
                     }];
                 }))
             }
@@ -243,7 +330,8 @@
         const required=[["A_cm2","مساحت A (cm²)"],["Iy_cm4","ممان اینرسی Iy (cm⁴)"],["Iz_cm4","ممان اینرسی Iz (cm⁴)"],["J_cm4","ثابت پیچشی J (cm⁴)"]];
         const missing=required.find(([field])=>!(Number.isFinite(Number(p[field]))&&Number(p[field])>0));
         if(missing) throw new Error("برای گروه " + labels[key] + "، مقدار " + missing[1] + " خالی یا نامعتبر است. مقدار واقعی مقطع را وارد کنید.");
-        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile:key==="column"?d.column.profile:key==="rafter"?d.rafter.profile:""};
+        const profile=p.profile||(key==="column"||key==="rafter"?d[key].profile:"");
+        return {E:E*1e9,G:G*1e9,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,sectionKey:key,sectionLabel:labels[key],profile,manufacturer:p.manufacturer||"",sourceDocumentId:p.sourceDocumentId||"",catalogReference:p.catalogReference||"",sourcePage:p.sourcePage||"",sectionDataVerified:p.sectionDataVerified===true};
     }
     function setData(data) {
         if (!data || typeof data !== "object") return;
@@ -277,6 +365,17 @@
             if (element && value !== undefined && value !== null) {
                 element.value = value;
             }
+        });
+
+        Object.entries(data.analysis3d?.groups||{}).forEach(([key,p])=>{
+            const values={profile:p.profile,manufacturer:p.manufacturer,document:p.sourceDocumentId,
+                catalog:p.catalogReference,page:p.sourcePage};
+            Object.entries(values).forEach(([suffix,value])=>{
+                const el=$("sp_"+key+"_"+suffix);
+                if(el&&value!==undefined&&value!==null)el.value=value;
+            });
+            const verified=$("sp_"+key+"_verified");
+            if(verified)verified.checked=p.sectionDataVerified===true;
         });
 
         // داده‌های قدیمی سه‌بعدی پس از بازیابی فیلدهای اصلی، فقط خانه‌های خالی را تکمیل می‌کنند.
@@ -350,6 +449,52 @@
         validateMember("column", d.column, "ستون");
         validateMember("rafter", d.rafter, "رفتر");
 
+        // A green result must cover every 3D section group and its source evidence.
+        const allGroups = [
+            ["column","ستون"],["rafter","رفتر"],["roofPurlin","پرلین سقف"],
+            ["wallGirt","قید دیوار"],["endPost","ستونک انتهایی"],["endGirt","تیر انتهایی"],
+            ["wallBrace","مهاربند دیوار"],["roofBrace","مهاربند سقف"],["roofEdge","تیر لبه سقف"]
+        ];
+        const modelMembers = window.SteelStructuralModel?.model?.members || [];
+        const activeKeys = modelMembers.length
+            ? new Set(modelMembers.map(member => String(member.sectionKey || "")))
+            : null;
+        const groups = activeKeys ? allGroups.filter(([key]) => activeKeys.has(key)) : allGroups;
+        groups.forEach(([key,title]) => {
+            const provenance = readSectionProvenance(key);
+            const isMain = key === "column" || key === "rafter";
+            const props = isMain ? {
+                A: d[key].A_cm2, Iy: d[key].Iy_cm4, Iz: d[key].Ix_cm4,
+                J: Number($(key + "J3D")?.value)
+            } : {
+                A: Number($("p3_" + key + "_A")?.value),
+                Iy: Number($("p3_" + key + "_Iy")?.value),
+                Iz: Number($("p3_" + key + "_Iz")?.value),
+                J: Number($("p3_" + key + "_J")?.value)
+            };
+            const profile = provenance.profile || (isMain ? d[key].profile : "");
+            check(isMain ? key + "Profile" : "sp_" + key + "_profile",
+                !!profile, "نام دقیق مقطع " + title + " ثبت نشده است.");
+            Object.entries(props).forEach(([name,value]) => {
+                const id = isMain
+                    ? key + (name === "A" ? "A" : name === "Iy" ? "Iy" : name === "Iz" ? "Ix" : "J3D")
+                    : "p3_" + key + "_" + name;
+                check(id, Number.isFinite(value) && value > 0,
+                    name + " مقطع " + title + " ناقص یا نامعتبر است.");
+            });
+            check("sp_" + key + "_manufacturer", !!provenance.manufacturer,
+                "سازنده مقطع " + title + " مشخص نشده است.");
+            check("sp_" + key + "_document", !!provenance.sourceDocumentId,
+                "سند/نقشه مرجع مقطع " + title + " مشخص نشده است.");
+            check("sp_" + key + "_catalog",
+                !!String($("sp_" + key + "_catalog")?.value || "").trim(),
+                "شماره کاتالوگ/استاندارد مقطع " + title + " مشخص نشده است.");
+            check("sp_" + key + "_page", !!provenance.sourcePage,
+                "صفحه/جزئیات مرجع مقطع " + title + " مشخص نشده است.");
+            check("sp_" + key + "_verified", provenance.sectionDataVerified === true,
+                "تطبیق مقطع " + title + " با مدرک واقعی تأیید نشده است.");
+        });
+
         const message = $("sectionMessage");
 
         if (message) {
@@ -359,8 +504,8 @@
                 message.style.color = "#b45309";
             } else {
                 message.textContent =
-                    "اطلاعات مصالح و مشخصات هندسی مقاطع کامل است. " +
-                    "صحت مقادیر باید با مدارک واقعی مقطع تطبیق داده شود.";
+                    "ورودی هندسی، خواص و شناسنامه همه ۹ گروه مقطع تکمیل و تیک تطبیق ثبت شده است. " +
+                    "این کنترل، محاسبه ظرفیت یا تأیید آیین‌نامه‌ای نیست.";
                 message.style.color = "#15803d";
             }
         }

@@ -39,7 +39,58 @@ function mul(A,B){
  for(let i=0;i<A.length;i++)for(let k=0;k<B.length;k++)if(A[i][k]!==0)for(let j=0;j<B[0].length;j++)C[i][j]+=A[i][k]*B[k][j];
  return C;
 }
-function addBlock(K,ids,ke){for(let i=0;i<ids.length;i++)for(let j=0;j<ids.length;j++)K[ids[i]][ids[j]]+=ke[i][j];}
+function addBlock(K,ids,ke){
+ const sparse=K[0] instanceof Map;
+ for(let i=0;i<ids.length;i++)for(let j=0;j<ids.length;j++){
+  const value=ke[i][j];if(value===0)continue;
+  if(sparse){const row=K[ids[i]];row.set(ids[j],(row.get(ids[j])||0)+value);}
+  else K[ids[i]][ids[j]]+=value;
+ }
+}
+function matrixVector(K,x){
+ if(K[0] instanceof Map)return K.map(row=>{let sum=0;row.forEach((value,j)=>{sum+=value*x[j];});return sum;});
+ return K.map(row=>dot(row,x));
+}
+function solveSparseConjugateGradient(K,free,b){
+ const n=free.length;if(!n)throw Error("تمام درجات آزادی مقید شده‌اند.");
+ const reduced=new Int32Array(K.length);reduced.fill(-1);
+ free.forEach((global,i)=>{reduced[global]=i;});
+ const scaleD=new Float64Array(n),rhs=new Float64Array(n);
+ for(let i=0;i<n;i++){
+  const diagonal=K[free[i]].get(free[i]);
+  if(!(Number.isFinite(diagonal)&&diagonal>0))throw Error("DOF_SINGULAR:"+i+":قطر صفر یا نامعتبر در ماتریس سختی تنک");
+  scaleD[i]=1/Math.sqrt(diagonal);rhs[i]=b[i]*scaleD[i];
+ }
+ const multiply=v=>{
+  const out=new Float64Array(n);
+  for(let i=0;i<n;i++){
+   let sum=0;
+   K[free[i]].forEach((value,globalJ)=>{
+    const j=reduced[globalJ];if(j>=0)sum+=value*scaleD[i]*scaleD[j]*v[j];
+   });
+   out[i]=sum;
+  }
+  return out;
+ };
+ const dotV=(a,bv)=>{let sum=0;for(let i=0;i<a.length;i++)sum+=a[i]*bv[i];return sum;};
+ const normV=v=>Math.sqrt(dotV(v,v));
+ const x=new Float64Array(n),r=Float64Array.from(rhs),p=Float64Array.from(rhs);
+ let rz=dotV(r,r),rhsNorm=Math.max(normV(rhs),1);
+ if(normV(r)<=1e-12*rhsNorm)return Array.from(x,(v,i)=>v*scaleD[i]);
+ const tolerance=1e-9,maxIterations=Math.min(30000,Math.max(1000,n*12));
+ for(let iteration=0;iteration<maxIterations;iteration++){
+  const Ap=multiply(p),curvature=dotV(p,Ap);
+  if(!(Number.isFinite(curvature)&&curvature>1e-30))
+   throw Error("DOF_SINGULAR:"+iteration+":ماتریس سختی تنک مثبت‌معین نیست یا مدل ناپایدار است");
+  const alpha=rz/curvature;
+  for(let i=0;i<n;i++){x[i]+=alpha*p[i];r[i]-=alpha*Ap[i];}
+  if(normV(r)<=tolerance*rhsNorm)return Array.from(x,(v,i)=>v*scaleD[i]);
+  const next=dotV(r,r),beta=next/rz;
+  for(let i=0;i<n;i++)p[i]=r[i]+beta*p[i];
+  rz=next;
+ }
+ throw Error("SPARSE_CG_NOT_CONVERGED:"+maxIterations+":حل تکراری ماتریس سختی تنک به تلرانس نرسید.");
+}
 function frameLocalStiffness(p,L){
  const {E,A,Iy,Iz,G,J}=p;
  const k=zeros(12,12),ax=E*A/L,t=G*J/L;
@@ -59,6 +110,8 @@ function frameLocalStiffness(p,L){
 function makeTransform(a,b,reference){
  const d=sub(b,a),L=norm(d);if(!(L>0))throw Error("عضو با طول صفر در مدل وجود دارد.");
  const ex=scale(d,1/L);let ref=reference||[0,0,1];
+ if(!Array.isArray(ref)||ref.length!==3||ref.some(v=>!Number.isFinite(Number(v)))||!(norm(ref)>EPS))
+  throw Error("محور مرجع عضو باید سه مؤلفه متناهی و بردار غیرصفر باشد.");
  if(Math.abs(dot(ex,ref)/norm(ref))>0.95)ref=[0,1,0];
  const ey=scale(cross(ref,ex),1/norm(cross(ref,ex)));
  const ez=cross(ex,ey);
@@ -66,12 +119,138 @@ function makeTransform(a,b,reference){
  for(let block=0;block<4;block++)for(let i=0;i<3;i++)for(let j=0;j<3;j++)T[block*3+i][block*3+j]=R[i][j];
  return {T,L,axes:{x:ex,y:ey,z:ez}};
 }
+function globalVectorToLocal(a,b,vector,reference){
+ if(!Array.isArray(vector)||vector.length!==3||vector.some(v=>!Number.isFinite(Number(v))))
+  throw Error("بردار بار جهانی باید سه مؤلفه عددی متناهی داشته باشد.");
+ const tr=makeTransform(a,b,reference);
+ return [tr.axes.x,tr.axes.y,tr.axes.z].map(axis=>dot(axis,vector));
+}
 function equivalentUniformLoad(q,L){
  const [qx,qy,qz]=q, f=Array(12).fill(0);
  f[0]=qx*L/2;f[6]=qx*L/2;
  f[1]=qy*L/2;f[7]=qy*L/2;f[5]=qy*L*L/12;f[11]=-qy*L*L/12;
  f[2]=qz*L/2;f[8]=qz*L/2;f[4]=-qz*L*L/12;f[10]=qz*L*L/12;
  return f;
+}
+function calculateGlobalLoadResultants(model,nodalLoads){
+ if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل برای ممیزی برآیند بار معتبر نیست.");
+ const nodeMap=new Map(model.nodes.map(n=>[n.id,n]));
+ if(nodeMap.size!==model.nodes.length)throw Error("شناسه گره تکراری در ممیزی برآیند بار.");
+ const force=[0,0,0],moment=[0,0,0];
+ const addAt=(f,m,r)=>{
+  for(let i=0;i<3;i++){force[i]+=f[i];moment[i]+=m[i];}
+  moment[0]+=r[1]*f[2]-r[2]*f[1];
+  moment[1]+=r[2]*f[0]-r[0]*f[2];
+  moment[2]+=r[0]*f[1]-r[1]*f[0];
+ };
+ model.members.forEach(member=>{
+  const q=member.analysisLoad&&member.analysisLoad.uniformLocal;
+  if(!q)return;
+  if(!Array.isArray(q)||q.length!==3||q.some(v=>!Number.isFinite(Number(v))))throw Error("بار گسترده محلی عضو "+member.id+" برای ممیزی نامعتبر است.");
+  const a=nodeMap.get(member.start),b=nodeMap.get(member.end);
+  if(!a||!b)throw Error("گره عضو "+member.id+" در ممیزی برآیند بار یافت نشد.");
+  const tr=makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z],member.referenceAxis||undefined);
+  const qGlobal=[0,1,2].map(i=>tr.axes.x[i]*q[0]+tr.axes.y[i]*q[1]+tr.axes.z[i]*q[2]);
+  const resultant=qGlobal.map(v=>v*tr.L);
+  addAt(resultant,[0,0,0],[(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2]);
+ });
+ (nodalLoads||[]).forEach(load=>{
+  const node=nodeMap.get(load.nodeId),v=load.values||[];
+  if(!node)throw Error("گره بار گره‌ای در ممیزی یافت نشد: "+load.nodeId);
+  if(v.length!==6||v.some(x=>!Number.isFinite(Number(x))))throw Error("بار گره‌ای "+load.nodeId+" برای ممیزی نامعتبر است.");
+  addAt(v.slice(0,3).map(Number),v.slice(3,6).map(Number),[node.x,node.y,node.z]);
+ });
+ return {forceN:force,momentNm:moment,method:"direct distributed-load resultant at member midpoint plus nodal actions"};
+}
+
+function auditMemberOrientation(model){
+  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))
+    throw Error("مدل برای ممیزی جهت‌گیری اعضا معتبر نیست.");
+  const nodes=new Map(model.nodes.map(n=>[String(n.id),n]));
+  if(nodes.size!==model.nodes.length)throw Error("شناسه گره تکراری در ممیزی جهت‌گیری.");
+  const groups=Object.create(null),members=[];
+  model.members.forEach(member=>{
+    const key=String(member.sectionKey||"unassigned");
+    const a=nodes.get(String(member.start)),b=nodes.get(String(member.end));
+    let direction=null,length=0,geometryValid=!!(a&&b);
+    if(geometryValid){
+      const d=[b.x-a.x,b.y-a.y,b.z-a.z].map(Number),L=Math.hypot(...d);
+      geometryValid=Number.isFinite(L)&&L>EPS;
+      if(geometryValid){length=L;direction=d.map(v=>v/L);}
+    }
+    const axis=member.referenceAxis;
+    const axisShapeValid=Array.isArray(axis)&&axis.length===3&&axis.every(v=>Number.isFinite(Number(v)));
+    const axisLength=axisShapeValid?Math.hypot(...axis.map(Number)):0;
+    const explicitAxisValid=axisShapeValid&&axisLength>EPS;
+    const axisParallel=!!(explicitAxisValid&&direction&&Math.abs(direction.reduce((sum,v,i)=>sum+v*Number(axis[i]),0)/axisLength)>0.95);
+    const sectionOrientationVerified=member.sectionOrientationVerified===true;
+    const directionClass=!direction?"invalid":Math.abs(direction[1])>=0.95?"vertical":
+      Math.abs(direction[2])>=0.95?"longitudinal":Math.abs(direction[0])>=0.95?"transverse":"diagonal-or-oblique";
+    const status=!geometryValid?"invalid-member-geometry":
+      (axis!==undefined&&!axisShapeValid?"invalid-reference-axis":
+      (!explicitAxisValid?"reference-axis-unverified":
+      (axisParallel?"reference-axis-parallel-to-member":
+      (!sectionOrientationVerified?"section-roll-unverified":"verified"))));
+    const item={id:member.id,sectionKey:key,type:member.type||"",status,memberDirection:direction,
+      directionClass,lengthM:length,referenceAxis:explicitAxisValid?axis.map(Number):null,
+      referenceAxisSource:explicitAxisValid?"member-metadata":"solver-default",
+      referenceAxisParallelToMember:axisParallel,sectionOrientationVerified};
+    members.push(item);
+    if(!groups[key])groups[key]={count:0,verified:0,missingReferenceAxis:0,invalidReferenceAxis:0,
+      parallelReferenceAxis:0,unverifiedSectionRoll:0,invalidGeometry:0,
+      directionCounts:{vertical:0,longitudinal:0,transverse:0,"diagonal-or-oblique":0,invalid:0},
+      memberIds:[],unverifiedMemberIds:[]};
+    const g=groups[key];g.count++;g.memberIds.push(String(member.id||""));
+    g.directionCounts[directionClass]++;
+    if(status==="verified")g.verified++;
+    else g.unverifiedMemberIds.push(String(member.id||""));
+    if(status==="reference-axis-unverified")g.missingReferenceAxis++;
+    if(status==="invalid-reference-axis")g.invalidReferenceAxis++;
+    if(status==="reference-axis-parallel-to-member")g.parallelReferenceAxis++;
+    if(status==="section-roll-unverified")g.unverifiedSectionRoll++;
+    if(status==="invalid-member-geometry")g.invalidGeometry++;
+  });
+  const verified=members.filter(m=>m.status==="verified").length;
+  return {memberCount:members.length,verifiedCount:verified,
+    unverifiedCount:members.length-verified,readyForCodeDesign:members.length>0&&verified===members.length,
+    groups,members,
+    note:"جهت هندسی و دسته‌بندی طولی/عرضی/قائم/مورب از مختصات مدل استخراج می‌شود. محور مرجع موازی عضو نامعتبر است، زیرا تبدیل حل‌گر آن را با محور جایگزین می‌کند. referenceAxis و تأیید چرخش واقعی مقطع باید از نقشه ساخت/نصب یا مشخصات مستند وارد شوند."};
+}
+function auditMemberSectionProperties(model,sectionsByMemberId){
+  if(!model||!Array.isArray(model.members)||!sectionsByMemberId||typeof sectionsByMemberId!=="object")
+    throw Error("مدل یا نگاشت مشخصات مقاطع برای ممیزی معتبر نیست.");
+  const required=["E","G","A","Iy","Iz","J"],groups=Object.create(null),members=[];
+  model.members.forEach(member=>{
+    const id=String(member.id),p=sectionsByMemberId[id],key=String(member.sectionKey||"unassigned");
+    const missing=required.filter(field=>!p||p[field]===undefined||p[field]===null||p[field]==="");
+    const invalid=required.filter(field=>p&&p[field]!==undefined&&p[field]!==null&&p[field]!==""&&
+      !(Number.isFinite(Number(p[field]))&&Number(p[field])>0));
+    const keyMismatch=!!(p&&p.sectionKey!==undefined&&String(p.sectionKey)!==key);
+    const status=!p?"section-properties-missing":missing.length?"section-properties-incomplete":
+      invalid.length?"section-properties-invalid":keyMismatch?"section-key-mismatch":"inputs-valid-provenance-unverified";
+    const item={id:member.id,sectionKey:key,status,missingProperties:missing,invalidProperties:invalid,
+      sectionKeyMismatch:keyMismatch,profile:p&&p.profile?String(p.profile):"",
+      sourceDocumentProvided:!!(p&&(p.sourceDocumentId||p.sourceDocument||p.catalogReference)),
+      sectionDataVerified:!!(p&&p.sectionDataVerified===true)};
+    members.push(item);
+    if(!groups[key])groups[key]={count:0,validInputs:0,missing:0,incomplete:0,invalid:0,keyMismatch:0,
+      provenanceVerified:0,memberIds:[],unverifiedMemberIds:[]};
+    const g=groups[key];g.count++;g.memberIds.push(id);
+    if(status==="inputs-valid-provenance-unverified")g.validInputs++;
+    if(status==="section-properties-missing")g.missing++;
+    if(status==="section-properties-incomplete")g.incomplete++;
+    if(status==="section-properties-invalid")g.invalid++;
+    if(status==="section-key-mismatch")g.keyMismatch++;
+    if(item.sourceDocumentProvided&&item.sectionDataVerified)g.provenanceVerified++;
+    if(status!=="inputs-valid-provenance-unverified"||!item.sourceDocumentProvided||!item.sectionDataVerified)
+      g.unverifiedMemberIds.push(id);
+  });
+  const valid=members.filter(x=>x.status==="inputs-valid-provenance-unverified").length;
+  const evidenced=members.filter(x=>x.sourceDocumentProvided&&x.sectionDataVerified&&x.status==="inputs-valid-provenance-unverified").length;
+  return {memberCount:members.length,validInputCount:valid,invalidInputCount:members.length-valid,
+    provenanceVerifiedCount:evidenced,readyForAnalysis:members.length>0&&valid===members.length,
+    readyForCodeDesign:members.length>0&&evidenced===members.length,groups,members,
+    note:"این ممیزی فقط کامل و مثبت‌بودن E، G، A، Iy، Iz و J را می‌سنجد. مقادیر ورودی معتبر تا زمان ثبت مرجع کاتالوگ/نقشه و تأیید مستند، داده تأییدشده طراحی محسوب نمی‌شوند."};
 }
 function analyze(model,options){
  options=options||{};
@@ -100,7 +279,8 @@ function analyze(model,options){
    });
   });
  }
- const K=zeros(nDof,nDof),F=Array(nDof).fill(0),elements=[];
+ const useSparse=options.sparseSolver===true||nDof>=600;
+ const K=useSparse?Array.from({length:nDof},()=>new Map()):zeros(nDof,nDof),F=Array(nDof).fill(0),elements=[];
  const props=options.sectionResolver;
  if(typeof props!=="function")throw Error("تابع تخصیص خواص مقطع برای همه اعضا تعریف نشده است؛ تحلیل متوقف شد.");
  for(const m of members){
@@ -108,7 +288,7 @@ function analyze(model,options){
   const p=props(m);if(!p)throw Error("مقطع عضو "+m.id+" ("+m.type+") تخصیص نیافته است.");
   for(const key of ["E","G","A","Iy","Iz","J"])if(!(Number.isFinite(Number(p[key]))&&Number(p[key])>0))throw Error("خاصیت "+key+" برای عضو "+m.id+" ناقص یا نامعتبر است.");
   const a=[nodes[ia].x,nodes[ia].y,nodes[ia].z],b=[nodes[ib].x,nodes[ib].y,nodes[ib].z];
-  const tr=makeTransform(a,b,options.referenceAxis),kl=frameLocalStiffness(p,tr.L),kg=mul(transpose(tr.T),mul(kl,tr.T));
+  const tr=makeTransform(a,b,m.referenceAxis||options.referenceAxis),kl=frameLocalStiffness(p,tr.L),kg=mul(transpose(tr.T),mul(kl,tr.T));
   const ids=Array.from({length:6},(_,i)=>ia*6+i).concat(Array.from({length:6},(_,i)=>ib*6+i));
   if(options.releasePurlinRafterRotation===true&&(m.sectionKey||"")==="roofPurlin"){
    const ri=purlinEndRotationDof.get(String(m.id)+":i"),rj=purlinEndRotationDof.get(String(m.id)+":j");
@@ -134,9 +314,9 @@ function analyze(model,options){
  });
  const free=Array.from({length:nDof},(_,i)=>i).filter(i=>!fixed.has(i));
  if(!free.length)throw Error("تمام درجات آزادی مقید شده‌اند.");
- const Kff=free.map(i=>free.map(j=>K[i][j])),Ff=free.map(i=>F[i]);
+ const Ff=free.map(i=>F[i]);
  let df;
- try{df=solve(Kff,Ff);}
+ try{df=useSparse?solveSparseConjugateGradient(K,free,Ff):solve(free.map(i=>free.map(j=>K[i][j])),Ff);}
  catch(err){
   const match=String(err.message||err).match(/DOF_SINGULAR:(\d+):(.*)/);
   if(match){
@@ -171,7 +351,7 @@ function analyze(model,options){
  }
  const D=Array(nDof).fill(0);
  free.forEach((id,i)=>D[id]=df[i]);
- const KD=K.map(r=>dot(r,D)),R=KD.map((v,i)=>v-F[i]);
+ const KD=matrixVector(K,D),R=KD.map((v,i)=>v-F[i]);
  // Global equilibrium is evaluated from assembled equivalent nodal loads and
  // support reactions. Do not sum force and moment components into one scalar.
  const appliedForce=[0,0,0],appliedMoment=[0,0,0];
@@ -200,6 +380,16 @@ function analyze(model,options){
   const nodeIndex=nodeMap.get(nodeId);
   if(nodeIndex!==undefined)addGlobal([0,0,0],[F[ids[0]],F[ids[1]],0],nodes[nodeIndex],appliedForce,appliedMoment);
  });
+ const loadResultantAudit=calculateGlobalLoadResultants({nodes,members},options.nodalLoads||[]);
+ const loadForceDifference=appliedForce.map((v,i)=>v-loadResultantAudit.forceN[i]);
+ const loadMomentDifference=appliedMoment.map((v,i)=>v-loadResultantAudit.momentNm[i]);
+ const loadForceRelative=Math.hypot(...loadForceDifference)/Math.max(Math.hypot(...appliedForce),1);
+ const loadMomentRelative=Math.hypot(...loadMomentDifference)/Math.max(Math.hypot(...appliedMoment),1);
+ const loadAssemblyAudit={...loadResultantAudit,assembledForceN:appliedForce,assembledMomentNm:appliedMoment,
+  forceDifferenceN:loadForceDifference,momentDifferenceNm:loadMomentDifference,
+  relativeForceDifference:loadForceRelative,relativeMomentDifference:loadMomentRelative,
+  ok:loadForceRelative<=1e-8&&loadMomentRelative<=1e-8};
+ if(!loadAssemblyAudit.ok)throw Error("ممیزی مستقل برآیند بارهای گسترده/گره‌ای با بردار بار مونتاژشده حل‌گر سازگار نیست.");
  const momentResidual=appliedMoment.map((v,i)=>v+supportMoment[i]);
  const vectorNorm=v=>Math.hypot(...v);
  const relativeForceResidual=vectorNorm(forceResidual)/Math.max(vectorNorm(appliedForce),vectorNorm(supportForce),1);
@@ -223,7 +413,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",solverAlgorithm:useSparse?"diagonally-scaled-sparse-conjugate-gradient":"dense-gaussian-elimination",units:"N,m,Pa",loadAssemblyAudit,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
-root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
+root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,globalVectorToLocal,equivalentUniformLoad,calculateGlobalLoadResultants,auditMemberOrientation,auditMemberSectionProperties,solve,solveSparseConjugateGradient};
 })(typeof window!=="undefined"?window:globalThis);
