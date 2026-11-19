@@ -109,7 +109,7 @@ test("does not apply an unsupported generic maximum leg equal to thinner-part th
 });
 
 test("passes intermittent weld spacing for protected steel using min(24t,300 mm)",()=>{
- const d=fixture({continuity:"intermittent",intermittentGroupId:"G1",corrosionCondition:"protected"});
+ const d=fixture({continuity:"intermittent",intermittentUseCase:"built-up-member-component",intermittentGroupId:"G1",corrosionCondition:"protected"});
  d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
  d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[180,0,0]});
  const r=check.assess(d),row=r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="group:G1");
@@ -127,7 +127,7 @@ test("fails weather-exposed unpainted intermittent weld spacing above min(14t,18
  assert.equal(row.maximumProvidedGapMm,130);
 });
 test("does not infer intermittent weld grouping or corrosion exposure",()=>{
- const d=fixture({continuity:"intermittent"});
+ const d=fixture({continuity:"intermittent",intermittentUseCase:"built-up-member-component"});
  d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
  d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[180,0,0]});
  const r=check.assess(d);
@@ -137,6 +137,33 @@ test("rejects non-collinear beads from one intermittent weld spacing group as no
  const d=fixture({continuity:"intermittent",intermittentGroupId:"G1",corrosionCondition:"protected"});
  d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
  d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[140,50,0]});
+ const r=check.assess(d);
+ assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="group:G1").status,"NOT_ASSESSABLE");
+});
+
+test("does not approve intermittent welds when their application is not identified",()=>{
+ const d=fixture({continuity:"intermittent",intermittentGroupId:"G1",corrosionCondition:"protected"});
+ d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
+ d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[180,0,0]});
+ const r=check.assess(d);
+ assert.equal(r.checks.find(x=>x.checkId==="intermittent-use"&&x.weldId==="W1").status,"NOT_ASSESSABLE");
+ assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="group:G1").status,"PASS");
+ assert.equal(r.overallStatus,"INCOMPLETE");
+});
+test("accepts explicit permitted intermittent weld use and painted or non-corrosive categories",()=>{
+ for(const corrosionCondition of ["painted","unpainted-noncorrosive"]){
+  const d=fixture({continuity:"intermittent",intermittentUseCase:"web-stiffener",intermittentGroupId:"G1",corrosionCondition});
+  d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
+  d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[180,0,0]});
+  const r=check.assess(d);
+  assert.equal(r.checks.find(x=>x.checkId==="intermittent-use"&&x.weldId==="W1").status,"PASS");
+  assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="group:G1").maximumFreeSpacingMm,192);
+ }
+});
+test("rejects inconsistent intermittent use cases within one weld group",()=>{
+ const d=fixture({continuity:"intermittent",intermittentUseCase:"web-stiffener",intermittentGroupId:"G1",corrosionCondition:"protected"});
+ d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
+ d.welds.push({...d.welds[0],id:"W2",intermittentUseCase:"flange-cover-plate",startMm:[140,0,0],endMm:[180,0,0]});
  const r=check.assess(d);
  assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="group:G1").status,"NOT_ASSESSABLE");
 });
