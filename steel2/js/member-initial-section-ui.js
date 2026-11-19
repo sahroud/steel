@@ -33,12 +33,23 @@
    '<div class="field"><label for="initialSectionA">مساحت A (cm²)</label><input id="initialSectionA" type="number" min="0" step="0.01"></div>'+
    '<div class="field"><label for="initialSectionIy">ممان اینرسی Iy (cm⁴)</label><input id="initialSectionIy" type="number" min="0" step="0.01"></div>'+
    '<div class="field"><label for="initialSectionIz">ممان اینرسی Iz (cm⁴)</label><input id="initialSectionIz" type="number" min="0" step="0.01"></div>'+
-   '<div class="field"><label for="initialSectionJ">ثابت پیچشی J (cm⁴)</label><input id="initialSectionJ" type="number" min="0" step="0.01"></div></div>'+
+   '<div class="field"><label for="initialSectionJ">ثابت پیچشی J (cm⁴)</label><input id="initialSectionJ" type="number" min="0" step="0.01"></div>
+   <div class="field"><label for="initialSectionMode">روش تعریف مقطع</label><select id="initialSectionMode"><option value="properties">ورود مستقیم خواص مقطع</option><option value="builtUpI">تیرورق I ـ محاسبه خودکار از ابعاد</option></select></div></div>
+   <div id="initialSectionGeometry" hidden><h4>ابعاد هندسی تیرورق (mm)</h4><div class="form-grid">
+   <div class="field"><label for="sectionTopB">عرض بال بالا</label><input id="sectionTopB" type="number" min="1" step="1"></div>
+   <div class="field"><label for="sectionTopT">ضخامت بال بالا</label><input id="sectionTopT" type="number" min="1" step="1"></div>
+   <div class="field"><label for="sectionBottomB">عرض بال پایین</label><input id="sectionBottomB" type="number" min="1" step="1"></div>
+   <div class="field"><label for="sectionBottomT">ضخامت بال پایین</label><input id="sectionBottomT" type="number" min="1" step="1"></div>
+   <div class="field"><label for="sectionWebH">ارتفاع خالص جان</label><input id="sectionWebH" type="number" min="1" step="1"></div>
+   <div class="field"><label for="sectionWebT">ضخامت جان</label><input id="sectionWebT" type="number" min="1" step="1"></div></div>
+   <div id="initialSectionGeometrySummary" class="notice">با تغییر هر بعد، خواص هندسی به‌صورت خودکار محاسبه و در ورودی همین عضو به‌روزرسانی می‌شود.</div></div>'+
    '<div class="button-grid"><button type="button" class="btn primary" id="btnSaveInitialMemberSection">ثبت مقطع برای همین عضو</button><button type="button" class="btn secondary" id="btnClearInitialMemberSection">بازگشت به پیش‌فرض گروه</button></div>'+
    '<div id="initialMemberSectionMessage" class="notice" aria-live="polite">مقطع‌های مستقل هنوز وارد نشده‌اند.</div>';
   const host=$("shedLayoutPanel")||document.querySelector("main");
   if(host&&host.parentNode)host.parentNode.insertBefore(panel,host.nextSibling);
   $("initialSectionMember").addEventListener("change",e=>{selectedId=e.target.value;loadSelected();});
+  $("initialSectionMode").addEventListener("change",e=>{ $("initialSectionGeometry").hidden=e.target.value!=="builtUpI"; if(e.target.value==="builtUpI") updateBuiltUpFromDimensions(); });
+  ["sectionTopB","sectionTopT","sectionBottomB","sectionBottomT","sectionWebH","sectionWebT"].forEach(id=>$ (id).addEventListener("input",updateBuiltUpFromDimensions));
   $("btnSaveInitialMemberSection").addEventListener("click",()=>{
    try{
     const member=currentModel?.members?.find(m=>String(m.id)===selectedId);
@@ -58,6 +69,33 @@
   });
   return panel;
  }
+ function updateBuiltUpFromDimensions(){
+  if($("initialSectionMode")?.value!=="builtUpI")return;
+  const member=currentModel?.members?.find(m=>String(m.id)===selectedId);
+  if(!member){message("ابتدا عضو معتبر را انتخاب کنید.",true);return;}
+  try{
+   const calculator=root.SahroudBuiltUpSection?.calculateBuiltUpISection;
+   if(typeof calculator!=="function")throw new Error("محاسبه‌گر هندسه تیرورق بارگذاری نشده است.");
+   const geometry={
+    topFlangeWidthMm:Number($("sectionTopB").value),topFlangeThicknessMm:Number($("sectionTopT").value),
+    bottomFlangeWidthMm:Number($("sectionBottomB").value),bottomFlangeThicknessMm:Number($("sectionBottomT").value),
+    webClearHeightMm:Number($("sectionWebH").value),webThicknessMm:Number($("sectionWebT").value)
+   };
+   if(Object.values(geometry).some(v=>!Number.isFinite(v)||v<=0))return;
+   const result=calculator({...geometry,profile:$("initialSectionProfile").value||"تیرورق I"});
+   const A=result.areaCm2, Iy=result.weakAxis.inertiaCm4, Iz=result.strongAxis.inertiaCm4, J=result.torsion.JApproxCm4;
+   $("initialSectionA").value=A.toFixed(3);$("initialSectionIy").value=Iy.toFixed(3);
+   $("initialSectionIz").value=Iz.toFixed(3);$("initialSectionJ").value=J.toFixed(3);
+   const base=baseFor(member);if(!base)throw new Error("مقطع پایه و خواص ماده عضو موجود نیست.");
+   const item=createOverride(selectedId,base,{profile:$("initialSectionProfile").value||result.profile,A_cm2:A,Iy_cm4:Iy,Iz_cm4:Iz,J_cm4:J});
+   item.section.geometryType="built-up-I";
+   item.section.geometryDimensionsMm={...geometry};
+   item.section.geometricProperties=result;
+   dirty.set(selectedId,item);
+   $("initialSectionGeometrySummary").textContent="به‌روزرسانی زنده انجام شد: A="+A.toFixed(2)+" cm²، Iy="+Iy.toFixed(2)+" cm⁴، Iz="+Iz.toFixed(2)+" cm⁴، J≈"+J.toFixed(2)+" cm⁴، وزن="+(A*0.785).toFixed(2)+" kg/m. خواص در مدل تحلیلی بعدی جایگزین می‌شوند؛ تحلیل قبلی تا اجرای مجدد معتبر نیست.";
+   message("خواص مقطع از ابعاد جدید محاسبه و برای همین عضو ثبت شد؛ تحلیل باید دوباره اجرا شود.");
+  }catch(e){$("initialSectionGeometrySummary").textContent="خطا در هندسه مقطع: "+e.message;message(e.message,true);}
+ }
  function message(text,error){const el=$("initialMemberSectionMessage");if(el){el.textContent=text;el.style.color=error?"#b45309":"";}}
  function baseFor(member){
   try{return root.SteelSections?.resolveAnalysis3DSection(member)||null;}catch(_){return null;}
@@ -71,6 +109,10 @@
   $("initialSectionIy").value=toDisplay(base.Iy,1e-8);
   $("initialSectionIz").value=toDisplay(base.Iz,1e-8);
   $("initialSectionJ").value=toDisplay(base.J,1e-8);
+  const gd=base.geometryDimensionsMm||{};
+  [["sectionTopB","topFlangeWidthMm"],["sectionTopT","topFlangeThicknessMm"],["sectionBottomB","bottomFlangeWidthMm"],["sectionBottomT","bottomFlangeThicknessMm"],["sectionWebH","webClearHeightMm"],["sectionWebT","webThicknessMm"]].forEach(([id,key])=>{if($(id))$(id).value=gd[key]??"";});
+  if($("initialSectionMode")){$("initialSectionMode").value=base.geometryType==="built-up-I"?"builtUpI":"properties";$("initialSectionGeometry").hidden=$("initialSectionMode").value!=="builtUpI";}
+  if(base.geometricProperties&&$("initialSectionGeometrySummary"))$("initialSectionGeometrySummary").textContent="خواص هندسی ذخیره‌شده از ابعاد مقطع بازیابی شد؛ با تغییر هر بعد دوباره محاسبه می‌شود.";
   if(!saved)message("مقادیر نمایش‌داده‌شده از مقطع پیش‌فرض گروه «"+(labels[member.sectionKey]||member.sectionKey)+"» آمده‌اند. برای تغییر مستقل، مقادیر را اصلاح و ثبت کنید.");
   else message("این عضو دارای مقطع اولیه مستقل ثبت‌شده است.");
  }
