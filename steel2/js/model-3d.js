@@ -1340,6 +1340,6 @@
     if(window.SteelDrawing){originalDrawFrame=window.SteelDrawing.drawFrame;window.SteelDrawing.drawFrame=function(){try{build();draw();showSummary();return true;}catch(e){console.error(e);return originalDrawFrame?originalDrawFrame():false;}};window.SteelDrawing.drawFullModel=draw;}
     try{build();draw();showSummary();}catch(e){console.warn(e);}
   }
-  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyze3DCombinations,getProposedUnbracedLengths,buildRoofPurlinWindFootprints,assignGeometricMemberLineLoads,windMemberLineLoadGlobal,get combinationResults(){return combinationResults.slice();},get combinationEnvelope(){return combinationEnvelope;},get model(){return model;}};
+  window.SteelStructuralModel={build,draw,getData,setData,validate,validate3DSections,analyze3D,analyze3DCombinations,getSectionSchedule:()=>window.SahroudSectionPropertyRegistry?.schedule(model)||[],getProposedUnbracedLengths,buildRoofPurlinWindFootprints,assignGeometricMemberLineLoads,windMemberLineLoadGlobal,get combinationResults(){return combinationResults.slice();},get combinationEnvelope(){return combinationEnvelope;},get model(){return model;}};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
