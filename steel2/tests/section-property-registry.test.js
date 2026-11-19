@@ -31,7 +31,9 @@ test("changing any section property changes the fingerprint and member schedule"
 });
 test("registry rejects missing or extra member mappings",()=>{
  const model={members:[{id:"C1"}]};
- assert.throws(()=>registry.apply(model,[]),/خواص مقطع/);
+ const missing=registry.apply(model,[]);
+ assert.equal(missing.complete,false);
+ assert.deepEqual(missing.missing,["C1"]);
  assert.throws(()=>registry.apply(model,[{memberId:"other",section:section()}]),/خارج از مدل/);
 });
 test("registry rejects invalid or incomplete engineering properties",()=>{
