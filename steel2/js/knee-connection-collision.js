@@ -110,6 +110,8 @@
    clear:arr.filter(x=>x.state==="clear").length});
   return{success:true,method:"triangle-prism SAT; 32-sector annular washer approximation",toleranceMm:tolerance,
    platePairs,hardwarePlatePairs,hardwarePairs,shankStatus,
+   pairs:platePairs,overlapCount:platePairs.filter(p=>p.state==="overlap").length,
+   contactCount:platePairs.filter(p=>p.state==="contact").length,clearCount:platePairs.filter(p=>p.state==="clear").length,
    summary:{platePairs:count(platePairs),hardwarePlatePairs:count(hardwarePlatePairs),hardwarePairs:count(hardwarePairs),
     shanksNotAssessable:shankStatus.length},
    geometryOnly:true,capacityDesigned:false,executionReady:false,
