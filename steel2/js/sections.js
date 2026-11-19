@@ -450,11 +450,16 @@
         validateMember("rafter", d.rafter, "رفتر");
 
         // A green result must cover every 3D section group and its source evidence.
-        const groups = [
+        const allGroups = [
             ["column","ستون"],["rafter","رفتر"],["roofPurlin","پرلین سقف"],
             ["wallGirt","قید دیوار"],["endPost","ستونک انتهایی"],["endGirt","تیر انتهایی"],
             ["wallBrace","مهاربند دیوار"],["roofBrace","مهاربند سقف"],["roofEdge","تیر لبه سقف"]
         ];
+        const modelMembers = window.SteelStructuralModel?.model?.members || [];
+        const activeKeys = modelMembers.length
+            ? new Set(modelMembers.map(member => String(member.sectionKey || "")))
+            : null;
+        const groups = activeKeys ? allGroups.filter(([key]) => activeKeys.has(key)) : allGroups;
         groups.forEach(([key,title]) => {
             const provenance = readSectionProvenance(key);
             const isMain = key === "column" || key === "rafter";
