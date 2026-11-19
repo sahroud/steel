@@ -16,6 +16,7 @@
         deadRight: 0.50,
         wallDeadLeft: 0,
         wallDeadRight: 0,
+        wallDeadSupportPath: "foundation",
         endWallDeadFront: 0,
         endWallDeadBack: 0,
         liveLeft: 0.75,
@@ -241,6 +242,13 @@
 
             <h4>هـ ـ وزن سطحی دیوارها و پوسته (بار مرده)</h4>
             <div class="notice">وزن سطحی دیوارهای طولی و انتهایی را از مشخصات واقعی آجر، ساندویچ‌پنل، زیرسازی و پوشش وارد کنید. مقدار صفر یعنی این بار در این ورودی تعریف نشده است؛ ناحیه مثلثی بالای دیوار انتهایی هنوز به مسیر مستقل نیاز دارد. واحد kN/m² است.</div>
+            <div class="field">
+                <label for="wallDeadSupportPath">مسیر تحمل وزن دیوار</label>
+                <select id="wallDeadSupportPath">
+                    <option value="foundation">دیوار باربر روی شناژ/فونداسیون (پیش‌فرض دیوار آجری)</option>
+                    <option value="girts">دیوار/پنل آویخته و متکی به قیدهای فلزی</option>
+                </select>
+            </div>
             <div class="form-grid">
                 ${input("loadWallDeadLeft", "وزن سطحی دیوار طولی چپ", state.wallDeadLeft, false)}
                 ${input("loadWallDeadRight", "وزن سطحی دیوار طولی راست", state.wallDeadRight, false)}
@@ -389,6 +397,7 @@
             const el = $(key);
             if (el) state[key] = el.value;
         });
+        if ($("wallDeadSupportPath")) state.wallDeadSupportPath = $("wallDeadSupportPath").value;
 
         if ($("loadWindDirection")) {
             state.windDirection = $("loadWindDirection").value;
@@ -633,6 +642,7 @@
             windEndBack: 0,
             wallDeadLeft: 0,
             wallDeadRight: 0,
+            wallDeadSupportPath: "foundation",
             endWallDeadFront: 0,
             endWallDeadBack: 0
         };
@@ -666,6 +676,7 @@
         ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
             if ($(key)) $(key).value = state[key];
         });
+        if ($("wallDeadSupportPath")) $("wallDeadSupportPath").value = state.wallDeadSupportPath;
 
         if ($("loadWindDirection")) {
             $("loadWindDirection").value = "left-to-right";
@@ -695,6 +706,7 @@
             "wallDeadLeft", "wallDeadRight", "endWallDeadFront", "endWallDeadBack"
         ];
 
+        state.wallDeadSupportPath = ["foundation","girts"].includes(data.wallDeadSupportPath) ? data.wallDeadSupportPath : "foundation";
         const legacyBasis = ["horizontal-projection", "sloped-surface"].includes(data.roofLoadAreaBasis)
             ? data.roofLoadAreaBasis : "unspecified";
         ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
@@ -789,6 +801,7 @@
             ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
                 if ($(key)) $(key).value = state[key];
             });
+            if ($("wallDeadSupportPath")) $("wallDeadSupportPath").value = state.wallDeadSupportPath;
             renderCombinations();
 
             if (data.combinations) {
