@@ -21,26 +21,27 @@
    throw new Error("جهت تبدیل واکنش ULS باید صریحاً مشخص باشد.");
   if(!Array.isArray(actions.foundations)||!actions.foundations.length)
    throw new Error("فهرست پایه‌های بسته ULS معتبر نیست.");
-  const actionNodeIds=new Set();
+  const actionNodeIds=new Set(),normalizedCasesByNode=new Map();
   actions.foundations.forEach(item=>{
-   const id=String(item&&item.nodeId||"").trim();
-   if(!id||actionNodeIds.has(id))throw new Error("شناسه پایه در بسته کنش ULS خالی یا تکراری است.");
-   actionNodeIds.add(id);
-   if(!Array.isArray(item.cases)||!item.cases.length)throw new Error("فهرست ترکیبات ULS برای پایه "+id+" خالی است.");
+   const supportId=String(item&&item.nodeId||"").trim();
+   if(!supportId||actionNodeIds.has(supportId))throw new Error("شناسه پایه در بسته کنش ULS خالی یا تکراری است.");
+   actionNodeIds.add(supportId);
+   if(!Array.isArray(item.cases)||!item.cases.length)throw new Error("فهرست ترکیبات ULS برای پایه "+supportId+" خالی است.");
+   const caseIds=new Set();
+   const normalized=item.cases.map(c=>{
+    if(!c||typeof c!=="object"||Array.isArray(c))throw new Error("رکورد کنش ULS برای پایه "+supportId+" معتبر نیست.");
+    const loadCase=String(c.loadCase||"").trim();
+    if(!loadCase||caseIds.has(loadCase))throw new Error("شناسه ترکیب ULS خالی یا تکراری است؛ پایه "+supportId);
+    caseIds.add(loadCase);
+    const values={};
+    ["FxLocalkN","FylocalkN","FzLocalkN","MxkNm","MykNm","MzkNm","NkN"].forEach(k=>values[k]=finite(c[k],"کنش "+k+" در "+loadCase+"، پایه "+supportId));
+    return Object.freeze({loadCase,loadCaseLabel:String(c.loadCaseLabel||loadCase),
+     sourceReference:reference(c.sourceReference,"ترکیب "+loadCase+"، پایه "+supportId),...values});
+   });
+   normalizedCasesByNode.set(supportId,Object.freeze(normalized));
   });
-  const base=actions.foundations.find(x=>String(x.nodeId)===nodeId);
-  if(!base||!Array.isArray(base.cases)||!base.cases.length)throw new Error("برای این گره، کنش محلی ULS موجود نیست.");
-  const caseIds=new Set();
-  const cases=base.cases.map(c=>{
-   if(!c||typeof c!=="object")throw new Error("رکورد کنش ULS معتبر نیست.");
-   const loadCase=String(c.loadCase||"").trim();
-   if(!loadCase||caseIds.has(loadCase))throw new Error("شناسه ترکیب ULS خالی یا تکراری است.");
-   caseIds.add(loadCase);
-   const values={};
-   ["FxLocalkN","FylocalkN","FzLocalkN","MxkNm","MykNm","MzkNm","NkN"].forEach(k=>values[k]=finite(c[k],"کنش "+k+" در "+loadCase));
-   return Object.freeze({loadCase,loadCaseLabel:String(c.loadCaseLabel||loadCase),
-    sourceReference:reference(c.sourceReference,"ترکیب "+loadCase),...values});
-  });
+  const cases=normalizedCasesByNode.get(nodeId);
+  if(!cases||!cases.length)throw new Error("برای این گره، کنش محلی ULS موجود نیست.");
   const footing=d.footing||{};
   const B=positive(footing.Bm,"عرض پی B"),L=positive(footing.Lm,"طول پی L"),h=positive(footing.thicknessM,"ضخامت پی");
   const column=d.column||{};
