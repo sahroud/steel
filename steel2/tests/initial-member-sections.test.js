@@ -40,3 +40,12 @@ test("accepts actual 3D section records identified by profile and preserves SI p
  assert.equal(r.records[0].initialSection.A,0.02);
  assert.equal(r.records[0].source,"user-input");
 });
+
+test("uses sectionKey to resolve the actual model group default",()=>{
+ const r=resolve({members:[{id:"P-1",sectionKey:"roofPurlin",type:"پرلین"}]},{
+  defaults:{roofPurlin:{profile:"Z180",A:0.001}}
+ });
+ assert.equal(r.records[0].group,"roofPurlin");
+ assert.equal(r.records[0].source,"group-default");
+ assert.equal(r.records[0].initialSection.profile,"Z180");
+});
