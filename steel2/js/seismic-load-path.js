@@ -28,8 +28,9 @@
     const sum=nodalLoads.reduce((s,p)=>s+p.values[axis],0);
     if(Math.abs(sum-V*1000)>Math.max(1e-6,V*1e-9))
       throw new Error("کنترل جمع نیروهای جانبی توزیع‌شده ناموفق است.");
-    return Object.freeze({success:true,method:"user-approved-base-shear-weighted-distribution",
-      baseShearKN:V,axisIndex:axis,sourceReference:d.sourceReference,
+    return Object.freeze({success:true,type:"seismic",sourceVerified:true,
+      method:"user-approved-base-shear-weighted-distribution",
+      baseShearKN:V,axisIndex:axis,sourceReference:d.sourceReference,factors:d.factors||{dead:1,live:0,snow:0},
       nodalLoads:Object.freeze(nodalLoads.map(x=>Object.freeze({nodeId:x.nodeId,values:Object.freeze(x.values)}))),
       resultantKN:sum/1000,codeDesignApproved:false,
       limitations:["پارامترهای لرزه‌ای محل و خاک محاسبه نمی‌شوند","ضریب رفتار، نامنظمی، پیچش و اثرات طیفی محاسبه نمی‌شوند","ضرایب توزیع باید از محاسبه مستند مهندس محاسب تأمین شوند","کنترل دریفت، P-Delta، اتصالات و فونداسیون خارج از این ماژول است"]});
