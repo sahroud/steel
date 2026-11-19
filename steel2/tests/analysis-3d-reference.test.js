@@ -100,7 +100,7 @@ test("raw solver member results retain the exact applied section roll",()=>{
  const model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:0,y:0,z:2}],
   members:[{id:"M-ROLL",start:"A",end:"B",referenceAxis:[0,1,0],sectionRollDeg:37}]};
  const result=solver.analyze(model,{sectionResolver:()=>section,
-  supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]});
+  supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,3,4,5]}]});
  const member=result.members.find(item=>item.id==="M-ROLL");
  assert.equal(member.sectionRollDeg,37);
  assert.deepEqual(member.localAxes,solver.makeTransform([0,0,0],[0,0,2],[0,1,0],37).axes);
