@@ -127,7 +127,7 @@ test("plate solid exports correctly oriented triangulated top and bottom meshes"
  assert.equal(mesh.top.length,2);
  assert.equal(mesh.bottom.length,2);
  assert.deepEqual(mesh.top[0][0],g.plates[0].solid.plusFaceGlobalM[0]);
- assert.deepEqual(mesh.bottom[0][0],g.plates[0].solid.minusFaceGlobalM[2]);
+ assert.deepEqual(mesh.bottom[0][0],g.plates[0].solid.minusFaceGlobalM[1]);
 });
 test("concave plate polygon is triangulated without assuming a rectangular plate",()=>{
  const d=fixture();
