@@ -40,7 +40,7 @@
      add(w,"minimum-leg","NOT_ASSESSABLE","وضعیت بارگذاری دینامیکی با تکرار زیاد باید صریحاً تعیین شود.");
     }else{
      const required=Math.max(minLeg(thinner),w.highCycleDynamic?5:0);
-     const status=a+1e-9>=required&&a<=thinner+1e-9?"PASS":"FAIL";
+     const status=a+1e-9>=required?"PASS":"FAIL";
      add(w,"minimum-leg",status,"حداقل بعد بر اساس ضخامت قطعه نازک‌تر و شرط بارگذاری پرتکرار کنترل شد.",
       {thinnerPartThicknessMm:thinner,requiredLegMm:required,providedLegMm:a,
        highCycleDynamic:w.highCycleDynamic,reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)(1)"});
