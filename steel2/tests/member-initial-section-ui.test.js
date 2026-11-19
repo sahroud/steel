@@ -1,8 +1,10 @@
 "use strict";
 const test=require("node:test");
 const assert=require("node:assert/strict");
-const ui=require("../js/member-initial-section-ui.js");
-const resolver=require("../js/initial-member-sections.js");
+require("../js/member-initial-section-ui.js");
+require("../js/initial-member-sections.js");
+const ui=global.SahroudMemberInitialSectionUI;
+const resolver=global.SahroudInitialMemberSections;
 test("converts per-member user geometry from cm units to SI without changing material",()=>{
  const base={profile:"Group I",E:200e9,G:77e9,A:0.01,Iy:0.00004,Iz:0.0003,J:0.000001,sectionKey:"rafter"};
  const item=ui.createOverride("R-17",base,{profile:"Rafter custom",A_cm2:125,Iy_cm4:8200,Iz_cm4:65000,J_cm4:120});
