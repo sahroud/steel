@@ -79,3 +79,16 @@ test("coincident bolt coordinates on different plates are not treated as duplica
  d.bolts.push({...d.bolts[0],id:"B3",plateId:"BACK-PLATE"});
  assert.equal(detail.validate(d).valid,true);
 });
+
+test("weld endpoints must lie on and within the referenced plate",()=>{
+ const d=fixture();d.welds[0].startMm=[-100,-60,5];
+ let r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("روی صفحه ورق")));
+ d.welds[0].startMm=[-120,-60,0];
+ r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("خارج از محدوده")));
+});
+test("weld geometry is checked against its own plate coordinate frame",()=>{
+ const d=fixture();
+ d.plates[0].frame.originMm=[-100,-100,0];
+ d.welds[0].startMm=[-100,-60,0];d.welds[0].endMm=[-100,60,0];
+ const r=detail.validate(d);assert.equal(r.valid,true);
+});
