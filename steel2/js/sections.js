@@ -593,6 +593,9 @@
     function init() {
         createPanel();
         installAnalysisChecks();
+        // Refresh per-member inputs after the group-level section form exists.
+        if(window.SahroudMemberInitialSectionUI&&window.SteelStructuralModel?.model)
+            window.SahroudMemberInitialSectionUI.setModel(window.SteelStructuralModel.model);
     }
 
     window.SteelSections = {
