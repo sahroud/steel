@@ -47,8 +47,6 @@
                 ${field("connPlateThickness", "ضخامت ورق اتصال ـ مقدار آزمایشی", "mm", 10)}
                 ${field("connPlateWidth", "عرض ورق / فاصله خطوط جوش ـ آزمایشی", "mm", 200)}
                 ${field("connPlateHeight", "ارتفاع گروه جوش ـ آزمایشی", "mm", 300)}
-                ${field("connWeldSize", "اندازه ساق جوش گوشه ـ آزمایشی", "mm", 6)}
-                ${field("connFexx", "مقاومت کششی الکترود FEXX ـ آزمایشی", "MPa", 490)}
             </div>
             <div class="notice">
                 مدل محاسباتی: چهار خط جوش پیوسته روی محیط مستطیل، با مرکز هندسی در مرکز ورق.
@@ -105,10 +103,8 @@
             const t=Number($("connPlateThickness").value);
             const b=Number($("connPlateWidth").value);
             const h=Number($("connPlateHeight").value);
-            const leg=Number($("connWeldSize").value);
-            const fexx=Number($("connFexx").value);
-            if (!(t>0 && b>0 && h>0 && leg>0 && fexx>0)) {
-                throw new Error("تمام ابعاد ورق، اندازه جوش و FEXX را با مقادیر مثبت وارد کنید.");
+            if (!(t>0 && b>0 && h>0)) {
+                throw new Error("ضخامت، عرض و ارتفاع هندسه را با مقادیر مثبت وارد کنید.");
             }
             if (b<=0 || h<=0) throw new Error("عرض و ارتفاع گروه جوش باید مثبت باشند.");
             const outputs = sides.map(([name,r]) => {
