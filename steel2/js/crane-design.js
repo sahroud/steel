@@ -50,6 +50,7 @@
   }
   function createVerifiedWheelLoadCase(input){
     const d=input||{},config=d.configuration,readiness=assessReadiness(config);
+    if(!config||config.enabled!==true)throw new Error("برای انتقال بار چرخ، گزینه جرثقیل باید در پروژه فعال باشد.");
     if(!readiness.ready)throw new Error("اطلاعات هندسی/کاری/سازنده جرثقیل کامل نیست: "+readiness.missing.join("، "));
     if(d.sourceVerified!==true||typeof d.sourceReference!=="string"||!d.sourceReference.trim())
       throw new Error("منبع معتبر سازنده برای واکنش چرخ‌ها الزامی است.");
