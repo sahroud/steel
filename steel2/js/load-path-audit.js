@@ -49,6 +49,10 @@
   if(seismicApplied&&!result.externalLoadSource)blockers.push("بار زلزله بدون شناسه منبع مستند در نتیجه ثبت شده است");
   const wallDeadLongitudinal=members.filter(m=>m.sectionKey==="wallGirt"&&Number(m.lineLoads?.dead)>0).length;
   const wallDeadEnd=members.filter(m=>m.sectionKey==="endGirt"&&Number(m.lineLoads?.dead)>0).length;
+  if(result.loadPathCoverage?.wallDeadSupportPath==="girts"&&
+    ((Number(result.loadPathCoverage.wallDeadLongitudinalInput||0)>0&&wallDeadLongitudinal===0)||
+     (Number(result.loadPathCoverage.wallDeadEndInput||0)>0&&wallDeadEnd===0)))
+   blockers.push("وزن دیوار برای انتقال به قیدها وارد شده ولی عضو باربر متناظر بار دریافت نکرده است");
   if(result.loadPathCoverage?.wallDeadSupportPath==="foundation")
    warnings.push("وزن دیوار با مسیر باربری روی شناژ/فونداسیون انتخاب شده و عمداً به قیدهای فلزی منتقل نشده است؛ تا مدل‌سازی شناژ و پی، این وزن در تحلیل قاب منظور نمی‌شود.");
   else if(!result.loadPathCoverage||result.loadPathCoverage.wallDeadGableTriangle!=="applied")
