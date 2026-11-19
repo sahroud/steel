@@ -779,12 +779,6 @@
     const sameNode=selected.every(m=>m.start===critical.nodeId||m.end===critical.nodeId);
     box.innerHTML=svg+'<p style="margin:8px 0 0"><b>نتیجه اتصال:</b> '+(sameNode?'قطعات قرمز در گره مشترک '+esc(critical.nodeId)+' به هم می‌رسند؛ در مدل، این گره مشترک است و قطعه کوتاه به‌عنوان تیر مستقل و جدا از رفتر تعریف نشده.':'اتصال قطعات به گره بحرانی نیازمند بازبینی است.')+'</p><p style="margin:4px 0 0">نمای بالا مربوط به '+esc(contextLabel||"مدل تحلیل‌شده")+' است. شکل I فقط نوع مقطع را نشان می‌دهد؛ چون ابعاد جان و بال در گزارش موجود نیست، اندازه واقعی مقطع نمایش داده نشده است.</p>';
   }
-  function showSummary(){
-    if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
-    const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
-    const orientation=model.orientationAudit||{memberCount:model.members.length,verifiedCount:0,readyForCodeDesign:false,groups:{}};
-    const orientationRows=Object.entries(orientation.groups||{}).map(([key,g])=>key+": "+g.count+" عضو، تأییدشده "+g.verified+"، بدون محور مستند "+g.missingReferenceAxis+"، چرخش مقطع تأییدنشده "+g.unverifiedSectionRoll).join("؛ ");
-    const orientationSummary="ممیزی جهت‌گیری: "+orientation.verifiedCount+" از "+orientation.memberCount+" عضو دارای محور و چرخش مقطع مستند هستند. "+(orientation.readyForCodeDesign?"جهت‌گیری همه اعضا مستند است.":"آمادگی طراحی آیین‌نامه‌ای از نظر جهت نصب تأیید نشده است.")+" "+orientationRows;
   function renderSectionPropertySchedule(){
     const target=$("fullModelSummary");
     if(!target||!model||!window.SahroudSectionPropertyRegistry?.schedule)return;
@@ -803,6 +797,13 @@
      "<details><summary>نمایش جدول کامل مقاطع اعضا</summary><div style='overflow-x:auto'><table><thead><tr><th>شناسه</th><th>گروه</th><th>مقطع</th><th>A (cm²)</th><th>Iy (cm⁴)</th><th>Iz (cm⁴)</th><th>J (cm⁴)</th><th>وزن (kg/m)</th></tr></thead><tbody>"+rows+"</tbody></table></div></details>";
     target.appendChild(section);
   }
+  function showSummary(){
+    if(!model)return;const counts={};model.members.forEach(m=>counts[m.type]=(counts[m.type]||0)+1);
+    const rows=Object.entries(counts).map(x=>"<tr><td>"+x[0]+"</td><td>"+x[1]+"</td></tr>").join("");
+    const orientation=model.orientationAudit||{memberCount:model.members.length,verifiedCount:0,readyForCodeDesign:false,groups:{}};
+    const orientationRows=Object.entries(orientation.groups||{}).map(([key,g])=>key+": "+g.count+" عضو، تأییدشده "+g.verified+"، بدون محور مستند "+g.missingReferenceAxis+"، چرخش مقطع تأییدنشده "+g.unverifiedSectionRoll).join("؛ ");
+    const orientationSummary="ممیزی جهت‌گیری: "+orientation.verifiedCount+" از "+orientation.memberCount+" عضو دارای محور و چرخش مقطع مستند هستند. "+(orientation.readyForCodeDesign?"جهت‌گیری همه اعضا مستند است.":"آمادگی طراحی آیین‌نامه‌ای از نظر جهت نصب تأیید نشده است.")+" "+orientationRows;
+
     const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی اعضا تبدیل می‌شوند؛ بارهای مرده، زنده و برف و سه ترکیب ثقلی ULS-1 تا ULS-3 در حل‌گر خطی قابل تحلیل‌اند. باد شش‌ناحیه‌ای برای چهار جهت و دو علامت فشار داخلی به اعضای سقف و دیوار منتقل می‌شود؛ ترکیبات باد موجود هنوز آزمایشی‌اند و جایگزین ترکیبات آیین‌نامه‌ای تأییدشده نیستند. زلزله هنوز در مدل اعمال نشده است. پرلین‌های سقف به‌صورت قطعات مجزا بین دو قاب ساخته شده‌اند؛ در تحلیل، انتقال جابه‌جایی در محل تکیه‌گاه برقرار است؛ دو دوران خمشی انتهای هر قطعه پرلین مستقل شده‌اند، اما دوران پیچشی حول محور طولی مشترک باقی می‌ماند. این تقریب مفصل خمشی است و سختی واقعی کلیپس/پیچ، لغزش و خروج از مرکزیت را مدل نمی‌کند. این مدل، مفصل ایده‌آل است و سختی واقعی کلیپس/پیچ، لغزش و اثر خروج از مرکزیت را شامل نمی‌شود؛ سایر گره‌های مشترک فعلاً صلب‌اند. مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>"+orientationSummary+"</b></p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
   }
   function validate3DSections(){
