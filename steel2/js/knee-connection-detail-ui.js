@@ -229,6 +229,7 @@
      return "<tr><td>"+esc(r.combination)+"</td><td>"+esc(r.role)+" / "+esc(r.memberId)+"</td><td>"+esc(r.plateId)+"</td>"+
       "<td>"+Number(r.demandAtPlateOrigin.N).toFixed(3)+"</td><td>"+Number(r.demandAtPlateOrigin.V).toFixed(3)+"</td>"+
       "<td>"+Number(r.demandAtPlateOrigin.Mz).toFixed(3)+"</td><td>"+Number(r.lineDemand.maxLineDemand).toFixed(6)+"</td>"+
+      "<td>"+Number(p.qParallel||0).toFixed(6)+"</td><td>"+Number(p.qTransverse||0).toFixed(6)+"</td>"+
       "<td>"+esc(p.segmentId||"—")+" / "+esc(p.point||"—")+"</td></tr>";
     }).join("");
     $("kneeWeldDemandResult").innerHTML="<p><b>تقاضای الاستیک گروه جوش محاسبه شد؛ ظرفیت و قبولی اتصال محاسبه نشده است.</b></p>"+
