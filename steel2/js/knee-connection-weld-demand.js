@@ -10,7 +10,7 @@
  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
  const norm=a=>Math.hypot(...a);
  function fail(s){throw new Error(s);}
- function sameVector(a,b,tol=1e-8){return norm(a.map((x,i)=>x-b[i]))<=tol;}
+ function sameVector(a,b,tol=1e-8){return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&norm(a.map((x,i)=>x-b[i]))<=tol;}
  function localToGlobal(q,axes){
   return [0,1,2].map(i=>axes.x[i]*q.x+axes.y[i]*q.y+axes.z[i]*q.z);
  }
