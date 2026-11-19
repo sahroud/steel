@@ -55,7 +55,6 @@
   if(!Array.isArray(members)||members.length!==2)fail(errors,"برای اتصال زانویی باید دقیقاً دو نقطه انتقال نیرو، یکی برای ستون و دیگری برای رفتر، ثبت شود.");
   else{
    const ids=new Set(),roles=new Set();
-   const roles=new Set();
    members.forEach((m,i)=>{
     if(!text(m.memberId)||ids.has(String(m.memberId)))fail(errors,"شناسه عضو در نقاط انتقال نیرو خالی یا تکراری است.");
     ids.add(String(m.memberId));
@@ -108,7 +107,6 @@
      if(clear+1e-8<b.holeDiameterMm/2)fail(errors,"سوراخ پیچ "+(b.id||i)+" از مرز ورق عبور می‌کند.");
     }
     }
-   }
   });
   if(!Array.isArray(input.welds)||!input.welds.length)fail(errors,"خطوط جوش واقعی باید با ابتدا و انتهای هر قطعه تعریف شوند.");
   const weldIds=new Set();
