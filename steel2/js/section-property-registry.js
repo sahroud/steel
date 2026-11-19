@@ -7,7 +7,7 @@
  const clone=v=>JSON.parse(JSON.stringify(v));
  const positive=(v,label)=>{const n=Number(v);if(!Number.isFinite(n)||n<=0)throw new Error(label+" باید مثبت و محدود باشد.");return n;};
  function fingerprint(section){
-  const keys=["profile","A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy","massPerMeterKg","geometryType"];
+  const keys=["profile","A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy","massPerMeterKg","geometryType","sectionRollDeg","sectionOrientationConfirmed"];
   const raw=keys.map(k=>{
    const value=section[k];
    return k+":"+(typeof value==="number"?value.toPrecision(12):String(value??""));
@@ -92,6 +92,8 @@
    if(!raw){summary.missing.push(id);return;}
    const section=normalize(raw,id);
    member.sectionProperties=section;
+   member.sectionRollDeg=section.sectionRollDeg;
+   member.sectionOrientationVerified=section.sectionOrientationConfirmed===true&&Number.isFinite(Number(section.sectionRollDeg));
    member.sectionPropertyFingerprint=section.sectionPropertyFingerprint;
    member.sectionPropertySource=byId.has(id)?"resolved-member-section":"member-existing-section";
    summary.assignedCount++;
@@ -108,6 +110,8 @@
   if(!member)throw new Error("عضو برای به‌روزرسانی مشخصات مقطع وجود ندارد.");
   const normalized=normalize(section,String(member.id));
   member.sectionProperties=normalized;
+  member.sectionRollDeg=normalized.sectionRollDeg;
+  member.sectionOrientationVerified=normalized.sectionOrientationConfirmed===true&&Number.isFinite(Number(normalized.sectionRollDeg));
   member.sectionPropertyFingerprint=normalized.sectionPropertyFingerprint;
   member.sectionPropertySource="live-member-edit";
   return normalized;
