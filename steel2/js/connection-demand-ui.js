@@ -12,15 +12,15 @@
   const familyRows=data.families.map(f=>"<tr><td>"+esc(f.label)+"</td><td>"+fmt(f.jointCount)+"</td><td>ظرفیت طراحی نشده</td></tr>").join("");
   const jointRows=data.joints.map(j=>{
    const combos=j.cases.map(c=>{
-    const members=c.memberActions.map(a=>"<tr><td>"+esc(a.memberId)+" ("+esc(a.end)+")</td><td>"+fmt(a.localActions.N/1000)+"</td><td>"+fmt(a.localActions.Vy/1000)+"</td><td>"+fmt(a.localActions.Vz/1000)+"</td><td>"+fmt(a.localActions.T/1000)+"</td><td>"+fmt(a.localActions.My/1000)+"</td><td>"+fmt(a.localActions.Mz/1000)+"</td></tr>").join("");
-    return "<details><summary>"+esc(c.combination)+"</summary><div style='overflow-x:auto'><table><thead><tr><th>عضو/انتهای عضو</th><th>N kN</th><th>Vy kN</th><th>Vz kN</th><th>T kN.m</th><th>My kN.m</th><th>Mz kN.m</th></tr></thead><tbody>"+members+"</tbody></table></div></details>";
+    const members=c.memberActions.map(a=>"<tr><td>"+esc(a.memberId)+" ("+esc(a.end)+")</td><td>"+fmt(a.localActions.N/1000)+"</td><td>"+fmt(a.localActions.Vy/1000)+"</td><td>"+fmt(a.localActions.Vz/1000)+"</td><td>"+fmt(a.localActions.T/1000)+"</td><td>"+fmt(a.localActions.My/1000)+"</td><td>"+fmt(a.localActions.Mz/1000)+"</td><td>"+fmt(a.global.Fx/1000)+"</td><td>"+fmt(a.global.Fy/1000)+"</td><td>"+fmt(a.global.Fz/1000)+"</td><td>"+fmt(a.global.Mx/1000)+"</td><td>"+fmt(a.global.My/1000)+"</td><td>"+fmt(a.global.Mz/1000)+"</td></tr>").join("");
+    return "<details><summary>"+esc(c.combination)+"</summary><div style='overflow-x:auto'><table><thead><tr><th>عضو/انتهای عضو</th><th>N kN</th><th>Vy kN</th><th>Vz kN</th><th>T kN.m</th><th>My kN.m</th><th>Mz kN.m</th><th>Fx kN</th><th>Fy kN</th><th>Fz kN</th><th>Mx kN.m</th><th>My kN.m</th><th>Mz kN.m</th></tr></thead><tbody>"+members+"</tbody></table></div></details>";
    }).join("");
    return "<details class='notice'><summary>گره "+esc(j.nodeId)+" — "+esc(j.families.join("، "))+"</summary><p>مختصات (m): "+fmt(j.coordinatesM.x)+", "+fmt(j.coordinatesM.y)+", "+fmt(j.coordinatesM.z)+"</p>"+combos+"</details>";
   }).join("");
   out.innerHTML="<div class='notice'>بسته نیرو از "+fmt(data.source.combinationCount)+" ترکیب بار اجراشده و "+fmt(data.source.modelMemberCount)+" عضو مدل استخراج شده است. واحدها در جدول تبدیل‌شده به kN و kN.m هستند. این بسته صرفاً تقاضای اتصال است و هیچ ظرفیت یا قبولی را اثبات نمی‌کند.</div>"+
    "<h4>شمارش گره‌های هر خانواده اتصال</h4><div style='overflow-x:auto'><table><thead><tr><th>خانواده</th><th>گره‌های شناسایی‌شده</th><th>وضعیت ظرفیت</th></tr></thead><tbody>"+familyRows+"</tbody></table></div>"+
    "<h4>نیروهای هم‌زمان در گره‌ها</h4>"+(jointRows||"<p>در هندسه فعلی گره قابل طبقه‌بندی برای اتصال شناسایی نشد.</p>")+
-   "<div class='notice'>محدودیت: مؤلفه‌ها در دستگاه محلی هر عضو گزارش شده‌اند؛ برای محاسبه تعادل و طراحی یک ورق مشترک باید به دستگاه مختصات اتصال منتقل شوند. ترکیبات فعلی نیز فقط همان ترکیباتی هستند که واقعاً در موتور تحلیل اجرا شده‌اند.</div>";
+   "<div class='notice'>مؤلفه‌های محلی هر عضو حفظ شده‌اند و بردارهای شش‌مؤلفه‌ای به دستگاه جهانی نیز تبدیل شده‌اند. هنوز تبدیل به دستگاه مختصات صفحه واقعی اتصال، اعمال هندسه خروج از مرکز، بارهای گره‌ای/واکنش‌ها و کنترل تعادل کامل گره انجام نشده است؛ بنابراین این خروجی هنوز ورودی نهایی طراحی ورق مشترک نیست.</div>";
  }
  function mount(){
   if(!$("connectionDemandReviewPanel")){
