@@ -727,6 +727,8 @@
             }
         });
 
+        const resetComponentIds={covering:["deadCompCoveringLeft","deadCompCoveringRight"],insulation:["deadCompInsulationLeft","deadCompInsulationRight"],liner:["deadCompLinerLeft","deadCompLinerRight"],ceiling:["deadCompCeilingLeft","deadCompCeilingRight"],equipment:["deadCompEquipmentLeft","deadCompEquipmentRight"],other:["deadCompOtherLeft","deadCompOtherRight"]};
+        Object.entries(resetComponentIds).forEach(([k,ids])=>{if($(ids[0]))$(ids[0]).value=0;if($(ids[1]))$(ids[1]).value=0;});
         ["deadAreaBasis", "liveAreaBasis", "snowAreaBasis"].forEach(key => {
             if ($(key)) $(key).value = state[key];
         });
