@@ -6,7 +6,7 @@ function fixture(){
  return {schema:detail.SCHEMA,connectionId:"KNEE-01",jointId:"EAVE-1",drawingReference:"DWG-S-101-REV2",units:"mm",
   connectionFrame:{originM:[0,6,0],axes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},verifiedByDrawing:true},
   memberForceTransferPoints:[{role:"column",memberId:"COL-1",pointMm:[0,0,0]},{role:"rafter",memberId:"RAF-1",pointMm:[120,0,0]}],
-  plates:[{id:"END-PLATE",thicknessMm:16,material:{grade:"ST37",FyMPa:235,FuMPa:360},
+  plates:[{id:"END-PLATE",thicknessMm:16,thicknessReference:"mid-plane",material:{grade:"ST37",FyMPa:235,FuMPa:360},
    frame:{originMm:[0,0,0],axes:{u:[1,0,0],v:[0,1,0],n:[0,0,1]}},
    polygonMm:[{x:-100,y:-100},{x:300,y:-100},{x:300,y:100},{x:-100,y:100}]}],
   bolts:[{id:"B1",plateId:"END-PLATE",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
@@ -106,4 +106,17 @@ test("builds global 3D plate polygon, bolt and weld coordinates from declared fr
 test("global geometry export rejects invalid connection details",()=>{
  const d=fixture();d.plates[0].frame.axes.n=[0,0,-1];
  assert.throws(()=>detail.buildGlobalGeometry(d),/هندسه اتصال معتبر نیست/);
+});
+
+test("plate solid faces are extruded symmetrically about the explicitly declared mid-plane",()=>{
+ const d=fixture();const g=detail.buildGlobalGeometry(d);const solid=g.plates[0].solid;
+ assert.deepEqual(solid.minusFaceGlobalM[0],[-0.1,5.9,-0.008]);
+ assert.deepEqual(solid.plusFaceGlobalM[0],[-0.1,5.9,0.008]);
+ assert.equal(solid.sideFaces.length,4);
+ assert.equal(g.plates[0].thicknessReference,"mid-plane");
+});
+test("plate solid generation rejects an unspecified thickness reference plane",()=>{
+ const d=fixture();delete d.plates[0].thicknessReference;
+ const r=detail.validate(d);assert.equal(r.valid,false);
+ assert.ok(r.errors.some(x=>x.includes("مرجع ضخامت")));
 });
