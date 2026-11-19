@@ -48,7 +48,7 @@ test("shifts moment using global connection-to-plate eccentricity",()=>{
  mapped.cases[0].memberActions.forEach(a=>a.connectionFrame.connectionOriginM={x:10,y:0,z:0});
  d.plates[0].frame.originMm=[10000,100,0];
  d.welds.forEach(w=>{w.startMm[0]+=10000;w.endMm[0]+=10000;w.startMm[1]+=100;w.endMm[1]+=100;});
- mapped.cases[0].memberActions[0].connectionFrame.force={x:0,y:10000,z:0};
+ mapped.cases[0].memberActions[0].connectionFrame.force={x:10000,y:0,z:0};
  const r=kneeWeld.analyze(d,mapped);
  assert.equal(r.results[0].demandAtPlateOrigin.Mz,1000);
 });
