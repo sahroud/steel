@@ -72,13 +72,20 @@
    const plateIds=new Set((detail?.plates||[]).map(p=>String(p.id)));
    const bearing=c.bearingChecks;
    if(!Array.isArray(bearing)||bearing.length===0)fail(errors,"کنترل اتکایی و پارگی جدار سوراخ برای ورق‌های درگیر الزامی است.");
+   const bearingKeys=new Set();
    (bearing||[]).forEach(b=>{
+    const bearingKey=String(b.boltId)+":"+String(b.plateId);
+    if(bearingKeys.has(bearingKey))fail(errors,"کنترل اتکایی تکراری برای یک پیچ و ورق ثبت شده است.");
+    bearingKeys.add(bearingKey);
     if(!boltIds.has(String(b.boltId))||!plateIds.has(String(b.plateId)))fail(errors,"مرجع پیچ/ورق در کنترل اتکایی نامعتبر است.");
-    if(!positive(b.shearKN)||!positive(b.LcMm))fail(errors,"برش هر سوراخ و فاصله خالص Lc باید صریح و مثبت باشد.");
+    if(!finite(b.shearKN)||b.shearKN<0||!positive(b.LcMm))fail(errors,"برش هر سوراخ باید متناهی و نامنفی و فاصله خالص Lc مثبت باشد.");
     if(!["standard","oversized","short-slotted","long-slotted"].includes(b.holeType))fail(errors,"نوع سوراخ در کنترل اتکایی نامعتبر است.");
+    const sourceBolt=(detail?.bolts||[]).find(q=>String(q.id)===String(b.boltId));
+    if(sourceBolt&&sourceBolt.holeType!==b.holeType)fail(errors,"نوع سوراخ در کنترل اتکایی با هندسه پیچ "+b.boltId+" یکسان نیست.");
     if(b.holeType==="long-slotted"&&!["parallel","transverse"].includes(b.forceDirectionToSlot))
      fail(errors,"جهت نیرو نسبت به محور سوراخ لوبیایی بلند باید تعیین شود.");
    });
+   (detail?.bolts||[]).forEach(b=>{if(!bearingKeys.has(String(b.id)+":"+String(b.plateId)))fail(errors,"کنترل اتکایی ورق میزبان برای پیچ "+b.id+" ثبت نشده است.");});
    if(!Array.isArray(c.plateSectionChecks)||c.plateSectionChecks.length!==plateIds.size)
     fail(errors,"کنترل مقطع کلی/خالص کششی و برشی تمام ورق‌ها باید ارائه شود.");
    (c.plateSectionChecks||[]).forEach(p=>{
