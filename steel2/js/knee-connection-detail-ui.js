@@ -94,13 +94,22 @@
     const value=JSON.parse($("kneeDetailJson").value);
     const tolerance=Number($("kneeCollisionTolerance").value);
     const report=root.SahroudKneeConnectionCollision.audit(value,{toleranceMm:tolerance});
-    const rows=report.pairs.map(p=>"<tr><td>"+esc(p.plateA)+"</td><td>"+esc(p.plateB)+"</td><td>"+
-     (p.state==="overlap"?"هم‌پوشانی حجمی":p.state==="contact"?"تماس در محدوده تلرانس":"بدون برخورد")+
-     "</td><td>"+Number(p.minimumPenetrationMm).toFixed(3)+"</td></tr>").join("");
-    $("kneeDetailCollisionResult").innerHTML="<p>روش: SAT روی منشورهای مثلثی؛ تلرانس طبقه‌بندی: "+report.toleranceMm+
-     " mm. هم‌پوشانی: "+report.overlapCount+"؛ تماس: "+report.contactCount+"؛ فاصله: "+report.clearCount+"</p>"+
-     "<table><thead><tr><th>ورق اول</th><th>ورق دوم</th><th>نتیجه هندسی</th><th>نفوذ/فاصله علامت‌دار (mm)</th></tr></thead><tbody>"+rows+"</tbody></table>"+
-     "<p>این گزارش فقط ممیزی هندسی است؛ تماس مجاز سازه‌ای، ظرفیت، جوش، پیچ، مهره، واشر و آمادگی اجرا را تأیید نمی‌کند.</p>"+
+    const stateLabel=s=>s==="overlap"||s==="interference"?"تداخل حجمی":s==="contact"?"تماس هندسی":s==="contact-intent-unverified"?"تماس؛ قصد تماس تأیید نشده":s==="clear"?"بدون برخورد": "قابل ارزیابی نیست";
+    const rows=report.platePairs.map(p=>"<tr><td>"+esc(p.plateA)+"</td><td>"+esc(p.plateB)+"</td><td>"+
+     stateLabel(p.state)+"</td><td>"+Number(p.minimumPenetrationMm).toFixed(3)+"</td></tr>").join("");
+    const hardwarePlateRows=report.hardwarePlatePairs.map(p=>"<tr><td>"+esc(p.hardwareId)+" ("+esc(p.hardwareKind)+")</td><td>"+esc(p.boltId)+
+     "</td><td>"+esc(p.plateCompared)+"</td><td>"+stateLabel(p.state)+"</td><td>"+(Number.isFinite(p.minimumPenetrationMm)?p.minimumPenetrationMm.toFixed(3):"—")+"</td></tr>").join("");
+    const hardwareRows=report.hardwarePairs.map(p=>"<tr><td>"+esc(p.hardwareA)+" / "+esc(p.boltA)+"</td><td>"+esc(p.hardwareB)+" / "+esc(p.boltB)+
+     "</td><td>"+stateLabel(p.state)+"</td><td>"+(Number.isFinite(p.minimumPenetrationMm)?p.minimumPenetrationMm.toFixed(3):"—")+"</td></tr>").join("");
+    const shankRows=report.shankStatus.map(p=>"<tr><td>"+esc(p.boltId)+"</td><td>"+esc(p.hostPlateId)+"</td><td>قابل ارزیابی نیست</td><td>"+esc(p.reason)+"</td></tr>").join("");
+    $("kneeDetailCollisionResult").innerHTML="<p>روش: SAT روی منشورهای مثلثی؛ واشر با تقریب ۳۲ قطاع؛ تلرانس طبقه‌بندی: "+report.toleranceMm+
+     " mm. ورق‌ها: هم‌پوشانی "+report.overlapCount+"؛ تماس "+report.contactCount+"؛ فاصله "+report.clearCount+
+     ". ظرفیت یا مجازبودن تماس استنتاج نمی‌شود.</p>"+
+     "<h4>برخورد ورق با ورق</h4><table><thead><tr><th>ورق اول</th><th>ورق دوم</th><th>نتیجه هندسی</th><th>نفوذ/فاصله (mm)</th></tr></thead><tbody>"+rows+"</tbody></table>"+
+     "<h4>سرپیچ، مهره و واشر در برابر ورق‌ها</h4><table><thead><tr><th>قطعه</th><th>پیچ</th><th>ورق</th><th>نتیجه</th><th>نفوذ/فاصله (mm)</th></tr></thead><tbody>"+hardwarePlateRows+"</tbody></table>"+
+     "<h4>برخورد قطعات سخت‌افزاری با یکدیگر</h4><table><thead><tr><th>قطعه اول / پیچ</th><th>قطعه دوم / پیچ</th><th>نتیجه</th><th>نفوذ/فاصله (mm)</th></tr></thead><tbody>"+hardwareRows+"</tbody></table>"+
+     "<h4>بدنه پیچ و سوراخ میزبان</h4><table><thead><tr><th>پیچ</th><th>ورق میزبان</th><th>نتیجه</th><th>علت</th></tr></thead><tbody>"+shankRows+"</tbody></table>"+
+     "<p>این گزارش فقط ممیزی هندسی است؛ تماس مجاز سازه‌ای، ظرفیت، فشار تماس، رزوه، پیش‌تنیدگی یا آمادگی اجرا را تأیید نمی‌کند.</p>"+
      "<ul>"+report.limitations.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
     $("kneeDetailCollisionResult").dataset.valid="true";
    }catch(e){
