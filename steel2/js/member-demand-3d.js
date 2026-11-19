@@ -85,6 +85,7 @@
       localAxesVerified:!!localAxes,
       localAxesConvention:"unit global direction vectors for solver local x/y/z; local x follows member i-to-j",
       sectionOrientationVerified:member.sectionOrientationVerified===true,
+      sectionRollDeg:member.sectionRollDeg??member.sectionProperties?.sectionRollDeg??null,
       sectionOrientationSource:member.sectionOrientationSource||null,
       units:{force:"N",moment:"N.m",length:"m"}};
   }
