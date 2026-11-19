@@ -109,10 +109,3 @@ test("knee detail UI runs and displays the elastic weld-group demand report",()=
  assert.match(source,/ظرفیت و قبولی اتصال محاسبه نشده است/);
 });
 
-test("knee detail UI runs and displays the elastic weld-group demand report",()=>{
- assert.match(source,/btnKneeWeldDemand/);
- assert.match(source,/SahroudKneeWeldDemand\\.analyze/);
- assert.match(source,/lastKneeMappedDemand=mapped/);
- assert.match(source,/qmax \\(kN\\/mm\\)/);
- assert.match(source,/ظرفیت و قبولی اتصال محاسبه نشده است/);
-});
