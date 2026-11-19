@@ -198,6 +198,10 @@
         <pre id="foundationSizingResult" class="notice" aria-live="polite">برای جست‌وجو، محدوده و گام ابعاد، نوع پلان، بارهای SLS و داده‌های ژئوتکنیک را وارد کنید.</pre>
         <button id="btnRunSoilCheck" class="btn primary" type="button" disabled>اجرای کنترل فشار باربری خاک</button>
         <pre id="soilCheckResult" class="notice" aria-live="polite">کنترل خاک غیرفعال است.</pre>
+        <div class="notice">اعتبارسنجی ورودی طراحی بتن‌آرمه پی (بدون محاسبه مقاومت): داده کامل را به‌صورت JSON وارد کنید. در بخش ulsLocalActions، خروجی تبدیل‌شده مرحله ULS را قرار دهید. مقادیر نمونه یا پیش‌فرض در این قسمت اعمال نمی‌شود.</div>
+        <div class="field"><label for="footingDesignInputJson">مشخصات هندسه، مصالح و کنش‌های ULS پی (JSON)</label><textarea id="footingDesignInputJson" rows="12" placeholder='{"schema":"SAHROUD-FOOTING-DESIGN-INPUT-1.0","foundationId":"شناسه پی","nodeId":"شناسه پایه","footing":{"Bm":null,"Lm":null,"thicknessM":null},"column":{"widthX_m":null,"widthZ_m":null,"offsetX_m":0,"offsetZ_m":0},"pedestal":{"enabled":false},"materials":{"concreteFcMPa":null,"rebarFyMPa":null,"concreteSourceReference":"مرجع واقعی مشخصات بتن","rebarSourceReference":"مرجع واقعی مشخصات میلگرد"},"cover":{"bottomM":null,"sideM":null},"geometrySourceReference":"شماره نقشه یا مدل","ulsLocalActions":{}}' disabled></textarea></div>
+        <button id="btnValidateFootingDesignInput" class="btn primary" type="button" disabled>اعتبارسنجی مشخصات طراحی پی</button>
+        <pre id="footingDesignInputResult" class="notice" aria-live="polite">این بخش فقط داده‌های ورودی را اعتبارسنجی می‌کند؛ طراحی خمش، برش، پانچ و آرماتور هنوز فعال نیست.</pre>
     </section>
 
     <section class="panel" id="craneDesignPanel">
@@ -323,7 +327,8 @@
 <script src="js/foundation-uls-reaction-batch.js?v=20261119ulsbatch1"></script>
 <script src="js/foundation-uls-action-mapping.js?v=20261119ulsmapping1"></script>
 <script src="js/foundation-uls-action-mapping-ui.js?v=20261119ulsmappingui1"></script>
-<script src="js/foundation-design-input.js?v=20261119designinput1"></script>
+<script src="js/foundation-design-input.js?v=20261119designinput2"></script>
+<script src="js/foundation-design-input-ui.js?v=20261119designinputui1"></script>
 <script src="js/project.js?v=20261112purlinmigration1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/member-demand-3d.js?v=20261118demand1"></script>
