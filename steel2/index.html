@@ -165,6 +165,10 @@
             <div class="field"><label for="soilFootingB">عرض پی در راستای X (m)</label><input id="soilFootingB" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
             <div class="field"><label for="soilFootingL">طول پی در راستای Z (m)</label><input id="soilFootingL" type="number" min="0.1" step="0.05" placeholder="ابعاد طرح" disabled></div>
         </div>
+        <div class="notice">ورودی زیر بسته واکنش تمام پایه‌ها در تمام ترکیبات SLS است. هر حالت باید با classification برابر SLS، تعادل حل‌گر تأییدشده و مرجع مستند ارائه شود. این مرحله فقط ساختار داده و ثبات هندسه پایه‌ها را کنترل می‌کند.</div>
+        <div class="field"><label for="foundationSlsBatchInput">بسته واکنش ترکیبات SLS برای همه پایه‌ها (JSON)</label><textarea id="foundationSlsBatchInput" rows="7" placeholder='{"cases":[{"loadCase":"SLS-1","loadCaseLabel":"ترکیب بهره‌برداری ۱","classification":"SLS","solverEquilibriumOK":true,"sourceReference":"گزارش مصوب ترکیبات SLS، صفحه ...","supports":[{"nodeId":"B1","coordinatesM":{"x":0,"y":0,"z":0},"fixedDofs":[0,1,2],"FxkN":0,"FykN":100,"FzkN":0,"MxkNm":0,"MykNm":0,"MzkNm":0}]}]}' disabled></textarea></div>
+        <button id="btnValidateFoundationSlsBatch" class="btn secondary" type="button" disabled>اعتبارسنجی بسته واکنش‌های SLS</button>
+        <pre id="foundationSlsBatchResult" class="notice" aria-live="polite">هنوز بسته واکنش SLS بارگذاری نشده است.</pre>
         <div class="field"><label for="soilReactionCases">واکنش‌های هر پی در ترکیبات بهره‌برداری (JSON)</label><textarea id="soilReactionCases" rows="5" placeholder='[{"name":"SLS-1","sourceReference":"گزارش تحلیل R-01 صفحه ۴","NkN":1000,"MxkNm":20,"MzkNm":15}]' disabled></textarea></div>
         <div class="notice">N بر حسب kN و Mx/Mz بر حسب kN.m است. برای هر پی و هر ترکیب بهره‌برداری، کنترل باید جداگانه تکرار شود. خروجی تحلیل خطی منفرد یا ترکیب ULS را به‌جای واکنش SLS وارد نکنید.</div>
         <button id="btnRunSoilCheck" class="btn primary" type="button" disabled>اجرای کنترل فشار باربری خاک</button>
