@@ -46,12 +46,14 @@
  function analyze(input){
   const b=finite(input.width,"width"),h=finite(input.height,"height");
   if(!(b>0&&h>0))throw new Error("Weld-group dimensions must be positive");
-  return analyzeSegments({segments:[
+  const result=analyzeSegments({segments:[
    {id:"bottom",start:[-b/2,-h/2],end:[b/2,-h/2]},
    {id:"right",start:[b/2,-h/2],end:[b/2,h/2]},
    {id:"top",start:[b/2,h/2],end:[-b/2,h/2]},
    {id:"left",start:[-b/2,h/2],end:[-b/2,-h/2]}
   ],N:input.N,V:input.V,Mz:input.M});
+  result.components={N:input.N,V:input.V,M:input.M};
+  return result;
  }
  const api={analyze,analyzeSegments};
  root.SahroudWeldGroupDemand=api;
