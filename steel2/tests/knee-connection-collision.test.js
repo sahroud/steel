@@ -35,6 +35,7 @@ test("separated parallel plates are reported clear",()=>{
  const d=fixture();addParallelPlate(d,"P2",17);
  const r=collision.audit(d);
  assert.equal(r.clearCount,1);assert.equal(r.pairs[0].state,"clear");
+ assert.ok(Number.isFinite(r.pairs[0].minimumPenetrationMm));assert.ok(r.pairs[0].minimumPenetrationMm<0);
 });
 test("orthogonal intersecting plates are detected by 3D separating-axis tests",()=>{
  const d=fixture();
