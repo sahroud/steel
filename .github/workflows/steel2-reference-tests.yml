@@ -36,7 +36,7 @@ on:
       - "steel2/js/member-initial-section-ui.js"
       - "steel2/js/section-property-registry.js"
       - "steel2/js/project.js"
-      - "steel2/tests/initial-member-sections.test.js steel2/tests/member-initial-section-ui.test.js steel2/tests/section-property-registry.test.js steel2/tests/connection-weld-demand.test.js"
+      - "steel2/tests/initial-member-sections.test.js steel2/tests/member-initial-section-ui.test.js steel2/tests/section-property-registry.test.js steel2/tests/connection-weld-demand.test.js steel2/tests/connection-design-input.test.js"
       - "steel2/js/connection-readiness.js"
       - "steel2/js/connection-demand-registry.js"
       - "steel2/js/member-demand-3d.js"
