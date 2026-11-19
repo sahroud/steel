@@ -4,7 +4,7 @@ const assert=require("node:assert/strict");
 function fixture(){
  const listeners=new Map(),ids=["foundationSoilPanel","btnValidateFootingDesignInput","btnUseMappedUlsActions","footingDesignInputJson","footingDesignInputResult"];
  const elements=Object.fromEntries(ids.map(id=>[id,{id,dataset:{},disabled:true,value:"",textContent:"",style:{},addEventListener(type,fn){listeners.set(id+":"+type,fn);}}]));
- const actions={schema:"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0",success:true,reactionSense:"on-structure",
+ const actions={schema:"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0",sourceSchema:"SAHROUD-FOUNDATION-ULS-REACTION-BATCH-1.0",success:true,reactionSense:"on-structure",
  foundations:[{nodeId:"B1",cases:[{loadCase:"ULS-1",loadCaseLabel:"ULS 1",sourceReference:"Report p.4",
  FxLocalkN:0,FylocalkN:100,FzLocalkN:0,MxkNm:0,MykNm:0,MzkNm:0,NkN:100}]}]};
  const payload={schema:"SAHROUD-FOOTING-DESIGN-INPUT-1.0",foundationId:"F1",nodeId:"B1",
