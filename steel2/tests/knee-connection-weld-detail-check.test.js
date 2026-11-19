@@ -94,7 +94,7 @@ test("fails when a weld leg exceeds the thinner connected part thickness",()=>{
 });
 
 test("does not report groove welds as passed by the fillet-only detail checker",()=>{
- const d=fixture({type:"groove",legSizeMm:undefined});
+ const d=fixture({type:"groove",legSizeMm:undefined,grooveType:"CJP",effectiveThroatMm:6});
  const r=check.assess(d);
  assert.equal(r.overallStatus,"INCOMPLETE");
  assert.equal(r.checks[0].status,"NOT_ASSESSABLE");
