@@ -63,6 +63,8 @@ test("checks minimum length of intermittent weld segments as max(4a,40 mm)",()=>
  const row=r.checks.find(x=>x.checkId==="minimum-effective-length");
  assert.equal(row.requiredLengthMm,40);
  assert.equal(row.status,"FAIL");
+ assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing").status,"NOT_ASSESSABLE");
+ assert.equal(r.overallStatus,"INCOMPLETE");
 });
 test("applies beta reduction to a longitudinally loaded axial end weld longer than 100a",()=>{
  const d=fixture({startMm:[0,0,0],endMm:[1000,0,0],axialEndConnection:true,longitudinallyLoaded:true});
