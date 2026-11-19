@@ -8,8 +8,8 @@ function section(extra={}){
 }
 function model(overrides={}){
  return {geometry:{span:12},nodes:[{id:"E",x:0,y:6,z:0,kind:"eave"},{id:"C",x:0,y:0,z:0},{id:"R",x:6,y:7.2,z:0}],
-  members:[{id:"COL",start:"C",end:"E",sectionKey:"column",sectionProperties:section(),...overrides.column},
-   {id:"RAF",start:"E",end:"R",sectionKey:"rafter",axis:"transverse",frame:1,sectionProperties:section({topFlangeWidthMm:180}),...overrides.rafter}]};
+  members:[{id:"COL",start:"C",end:"E",sectionKey:"column",referenceAxis:[0,0,1],sectionProperties:section(),...overrides.column},
+   {id:"RAF",start:"E",end:"R",sectionKey:"rafter",axis:"transverse",frame:1,referenceAxis:[0,0,1],sectionProperties:section({topFlangeWidthMm:180}),...overrides.rafter}]};
 }
 test("knee extraction reads actual assigned column and rafter geometry dimensions",()=>{
  const m=model({column:{sectionRollDeg:0,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:0,sectionOrientationConfirmed:true})},rafter:{sectionRollDeg:0,sectionOrientationVerified:true,sectionProperties:section({topFlangeWidthMm:180,sectionRollDeg:0,sectionOrientationConfirmed:true})}});
