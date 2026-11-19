@@ -63,6 +63,39 @@ test("global member load uses the same member-specific axes as the solver transf
   assert.deepEqual(reconstructed, global);
 });
 
+test("section roll rotates the solver local Y/Z axes with a right-hand sign convention",()=>{
+ const a=[0,0,0],b=[0,0,4],ref=[0,1,0];
+ const zero=solver.makeTransform(a,b,ref,0),plus=solver.makeTransform(a,b,ref,90),minus=solver.makeTransform(a,b,ref,-90);
+ assert.deepEqual(zero.axes.y,[1,0,0]);
+ assert.ok(Math.abs(plus.axes.y[1]-1)<1e-12);
+ assert.ok(Math.abs(plus.axes.z[0]+1)<1e-12);
+ assert.ok(Math.abs(minus.axes.y[1]+1)<1e-12);
+ assert.ok(Math.abs(minus.axes.z[0]-1)<1e-12);
+});
+test("global load projection uses the same explicit section roll as the stiffness transform",()=>{
+ const a=[0,0,0],b=[0,0,4],ref=[0,1,0],global=[0,1,0];
+ const tr=solver.makeTransform(a,b,ref,90);
+ const local=solver.globalVectorToLocal(a,b,global,ref,90);
+ const reconstructed=[0,1,2].map(i=>tr.axes.x[i]*local[0]+tr.axes.y[i]*local[1]+tr.axes.z[i]*local[2]);
+ reconstructed.forEach((v,i)=>assert.ok(Math.abs(v-global[i])<1e-12));
+ assert.ok(Math.abs(local[2]+1)<1e-12);
+});
+test("explicit section roll changes anisotropic member stiffness orientation",()=>{
+ const L=3,P=500,a={id:"FIX",x:0,y:0,z:0},b={id:"TIP",x:L,y:0,z:0};
+ const run=roll=>solver.analyze({nodes:[a,b],members:[{id:"ROLL",start:"FIX",end:"TIP",sectionKey:"reference",referenceAxis:[0,0,1],sectionRollDeg:roll}]},{
+  sectionResolver:()=>({...section,Iy:1e-5,Iz:1e-4}),supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],
+  nodalLoads:[{nodeId:"TIP",values:[0,P,0,0,0,0]}]
+ });
+ const zero=run(0),ninety=run(90);
+ const dy0=zero.displacements.find(n=>n.nodeId==="TIP").values[1];
+ const dy90=ninety.displacements.find(n=>n.nodeId==="TIP").values[1];
+ const expected0=P*L**3/(3*section.E*1e-4),expected90=P*L**3/(3*section.E*1e-5);
+ assert.ok(Math.abs(dy0-expected0)<Math.max(1e-12,expected0*1e-7));
+ assert.ok(Math.abs(dy90-expected90)<Math.max(1e-12,expected90*1e-7));
+});
+test("solver rejects a non-finite section roll instead of silently using zero",()=>{
+ assert.throws(()=>solver.makeTransform([0,0,0],[0,0,1],[0,1,0],NaN),/زاویه چرخش/);
+});
 test("global-to-local member load conversion rejects malformed vectors", () => {
   assert.throws(() => solver.globalVectorToLocal([0,0,0],[0,0,1],[1,2]), /سه مؤلفه/);
 });
