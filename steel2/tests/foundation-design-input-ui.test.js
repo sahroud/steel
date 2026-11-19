@@ -18,7 +18,7 @@ function fixture(){
  global.window.SahroudLastFoundationUlsActions=actions;
  delete require.cache[require.resolve("../js/foundation-design-input-ui.js")];
  require("../js/foundation-design-input-ui.js");
- return {elements,listeners};
+ return {elements,listeners,actions};
 }
 test("footing design input UI validates JSON and clearly distinguishes intake from design",()=>{
  const {elements,listeners}=fixture();
@@ -34,12 +34,28 @@ test("footing design input UI reports malformed or incomplete input",()=>{
  assert.match(elements.footingDesignInputResult.textContent,/انجام نشد/);
  delete global.window;
 });
-
-test("design input UI imports the full mapped ULS package from the preceding step",()=>{
+test("design input UI imports the full mapped ULS package for the matching footing",()=>{
  const {elements,listeners}=fixture();
  listeners.get("btnUseMappedUlsActions:click")();
  const payload=JSON.parse(elements.footingDesignInputJson.value);
  assert.equal(payload.ulsLocalActions.schema,"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0");
- assert.match(elements.footingDesignInputResult.textContent,/منتقل شد/);
+ assert.match(elements.footingDesignInputResult.textContent,/پایه B1 به ورودی/);
+ delete global.window;
+});
+test("design input UI refuses to transfer a ULS package belonging to another footing",()=>{
+ const {elements,listeners}=fixture();
+ const payload=JSON.parse(elements.footingDesignInputJson.value);payload.nodeId="B2";
+ const previous=payload.ulsLocalActions;elements.footingDesignInputJson.value=JSON.stringify(payload);
+ listeners.get("btnUseMappedUlsActions:click")();
+ assert.match(elements.footingDesignInputResult.textContent,/متعلق به پایه B2 نیست/);
+ assert.deepEqual(JSON.parse(elements.footingDesignInputJson.value).ulsLocalActions,previous);
+ assert.equal(elements.footingDesignInputResult.style.color,"#b45309");
+ delete global.window;
+});
+test("design input UI refuses a stale or unvalidated global ULS package",()=>{
+ const {elements,listeners}=fixture();
+ global.window.SahroudLastFoundationUlsActions={schema:"wrong",success:true,foundations:[]};
+ listeners.get("btnUseMappedUlsActions:click")();
+ assert.match(elements.footingDesignInputResult.textContent,/بسته معتبر واکنش ULS/);
  delete global.window;
 });
