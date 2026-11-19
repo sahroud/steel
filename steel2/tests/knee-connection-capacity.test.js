@@ -23,7 +23,7 @@ function designFixture(){
   loadCases:[{id:"ULS-1",classification:"ULS",sourceReference:"COMBO-ULS-1",
    pryingAssessment:{status:"not-applicable",reference:"CALC-01 page 5",reason:"طبق مدل تماس و سختی مستند، نیروی اهرمی ایجاد نمی‌شود."},
    boltActions:[{boltId:"B1",tensionKN:10,shearKN:8,pryingTensionKN:0}],
-   weldActions:[{weldId:"W1",demandKN:4,direction:"shear-on-effective-throat",sourceReference:"CALC-01 page 6"}],
+   weldActions:[{weldId:"W1",demandKN:4,direction:"axial-parallel-to-weld-axis",sourceReference:"CALC-01 page 6"}],
    bearingChecks:[{boltId:"B1",plateId:"P1",shearKN:8,LcMm:30,holeType:"standard"}],
    plateSectionChecks:[{plateId:"P1",tensionKN:10,shearKN:8,AgTensionMm2:1600,AeTensionMm2:1200,AgvMm2:800,AnvMm2:700,areaReference:"DWG-01 / net section S1"}],
    blockShearChecks:[{plateId:"P1",demandKN:12,AgvMm2:500,AnvMm2:400,AntMm2:200,Ubs:1,ubsBasis:"تنش کششی یکنواخت در سطح کششی، CALC-01",pathReference:"DWG-01 / path BS-1"}]}]};
@@ -156,13 +156,13 @@ test("shear is reduced by tension even when shear stress is below 30 percent",()
  assert.equal(r.interactionApplied,true);
 });
 
-test("fillet weld metal shear resistance uses effective throat, length and Table 10-2-9-3 factors",()=>{
+test("fillet weld axial-parallel resistance uses effective throat, length and Table 10-2-9-3 factors",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c),w=r.weldChecks[0];
  const L=Math.hypot(...d.welds[0].startMm.map((v,i)=>v-d.welds[0].endMm[i]));
  const Aw=0.707*d.welds[0].legSizeMm*L;
  const expected=0.75*0.6*d.welds[0].electrodeFexxMPa*Aw/1000;
  assert.ok(Math.abs(w.designCapacityKN-expected)<1e-10);
- assert.equal(w.check.limitState,"fillet-weld-metal-shear");
+ assert.equal(w.check.limitState,"fillet-weld-axial-parallel");
  assert.equal(r.connectionApproved,false);
 });
 test("missing weld action distribution or non-fillet weld prevents claiming a weld design",()=>{
