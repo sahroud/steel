@@ -1013,6 +1013,9 @@
       fixedDofs:fixed?[0,1,2,3,4,5]:[0,1,2]
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
+    if(selected.key==="crane"&&!analysisModel.members.some(member=>
+      ["craneRunway","craneRail","craneBracket"].includes(member.sectionKey)))
+      throw new Error("تحلیل جرثقیل متوقف شد: تیر حمال، ریل و کنسول جرثقیل هنوز در هندسه سازه مدل نشده‌اند؛ اعمال مستقیم واکنش چرخ به ستون جایگزین مدل مسیر جرثقیل نیست.");
     const nodalLoads=[];
     if(approvedExternalNodalLoads.length){
       const validNodeIds=new Set(analysisModel.nodes.map(n=>n.id));
