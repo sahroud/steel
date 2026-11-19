@@ -41,3 +41,21 @@ test("classification does not invent crane rail joints without crane members",()
  assert.ok(families.includes("knee"));
  assert.ok(!families.includes("craneRail"));
 });
+
+test("joint demand preserves simultaneous actions separately for every combination",()=>{
+ const {model,run}=fixture();
+ const clone=(base,id,label,n1,n2)=>{
+  const members=base.combinationResults[0].analysis.members.map(m=>({...m,localEndForces:m.localEndForces.slice()}));
+  members[0].localEndForces[0]=-n1;
+  members[1].localEndForces[0]=-n2;
+  return {id,label,analysis:{success:true,members}};
+ };
+ const records=[clone(run,"ULS-A","ترکیب A",10000,20000),clone(run,"ULS-B","ترکیب B",30000,40000)];
+ const out=registry.build({success:true,caseCount:2,combinationResults:records},model,demand);
+ const knee=out.joints.find(j=>j.nodeId==="E");
+ assert.equal(knee.cases.length,2);
+ assert.equal(knee.cases[0].memberActions[0].localActions.N,10000);
+ assert.equal(knee.cases[1].memberActions[0].localActions.N,30000);
+ assert.equal(knee.cases[0].memberActions[1].localActions.N,20000);
+ assert.equal(knee.cases[1].memberActions[1].localActions.N,40000);
+});
