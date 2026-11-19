@@ -7,7 +7,7 @@
  const clone=v=>JSON.parse(JSON.stringify(v));
  const positive=(v,label)=>{const n=Number(v);if(!Number.isFinite(n)||n<=0)throw new Error(label+" باید مثبت و محدود باشد.");return n;};
  function fingerprint(section){
-  const keys=["profile","A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy","massPerMeterKg","geometryType","sectionRollDeg","sectionOrientationConfirmed"];
+  const keys=["profile","A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy","massPerMeterKg","geometryType","sectionRollDeg","sectionOrientationConfirmed","sectionReferenceAxis"];
   const raw=keys.map(k=>{
    const value=section[k];
    return k+":"+(typeof value==="number"?value.toPrecision(12):String(value??""));
@@ -23,8 +23,16 @@
   const E=positive(section.E,"E"),G=positive(section.G,"G");
   if(section.sectionRollDeg!==undefined&&section.sectionRollDeg!==null&&!Number.isFinite(Number(section.sectionRollDeg)))throw new Error("زاویه چرخش مقطع عضو "+memberId+" باید متناهی باشد.");
   if(section.sectionOrientationConfirmed===true&&(section.sectionRollDeg===undefined||section.sectionRollDeg===null))throw new Error("تأیید جهت نصب عضو "+memberId+" بدون زاویه صریح مجاز نیست.");
+  let sectionReferenceAxis=null;
+  if(section.sectionReferenceAxis!==undefined&&section.sectionReferenceAxis!==null){
+   if(!Array.isArray(section.sectionReferenceAxis)||section.sectionReferenceAxis.length!==3||section.sectionReferenceAxis.some(v=>!Number.isFinite(Number(v))))throw new Error("محور مرجع عضو "+memberId+" باید سه مؤلفه عددی متناهی داشته باشد.");
+   const axis=section.sectionReferenceAxis.map(Number),length=Math.hypot(...axis);
+   if(!(length>1e-10))throw new Error("محور مرجع عضو "+memberId+" نباید بردار صفر باشد.");
+   sectionReferenceAxis=axis.map(v=>v/length);
+  }
   const rho=Number.isFinite(Number(section.densityKgM3))&&Number(section.densityKgM3)>0?Number(section.densityKgM3):7850;
   const normalized={...clone(section),A,Iy,Iz,J,E,G};
+  if(sectionReferenceAxis)normalized.sectionReferenceAxis=sectionReferenceAxis;
   normalized.massPerMeterKg=A*rho;
   normalized.radiusY=Math.sqrt(Iy/A);
   normalized.radiusZ=Math.sqrt(Iz/A);
@@ -95,7 +103,10 @@
    const section=normalize(raw,id);
    member.sectionProperties=section;
    member.sectionRollDeg=section.sectionRollDeg;
-   member.sectionOrientationVerified=section.sectionOrientationConfirmed===true&&Number.isFinite(Number(section.sectionRollDeg));
+   if(section.sectionReferenceAxis)member.referenceAxis=section.sectionReferenceAxis.slice();
+   const referenceAxis=member.referenceAxis;
+   const referenceAxisValid=Array.isArray(referenceAxis)&&referenceAxis.length===3&&referenceAxis.every(v=>Number.isFinite(Number(v)))&&Math.hypot(...referenceAxis.map(Number))>1e-10;
+   member.sectionOrientationVerified=section.sectionOrientationConfirmed===true&&Number.isFinite(Number(section.sectionRollDeg))&&referenceAxisValid;
    member.sectionPropertyFingerprint=section.sectionPropertyFingerprint;
    member.sectionPropertySource=byId.has(id)?"resolved-member-section":"member-existing-section";
    summary.assignedCount++;
@@ -113,7 +124,10 @@
   const normalized=normalize(section,String(member.id));
   member.sectionProperties=normalized;
   member.sectionRollDeg=normalized.sectionRollDeg;
-  member.sectionOrientationVerified=normalized.sectionOrientationConfirmed===true&&Number.isFinite(Number(normalized.sectionRollDeg));
+  if(normalized.sectionReferenceAxis)member.referenceAxis=normalized.sectionReferenceAxis.slice();
+  const referenceAxis=member.referenceAxis;
+  const referenceAxisValid=Array.isArray(referenceAxis)&&referenceAxis.length===3&&referenceAxis.every(v=>Number.isFinite(Number(v)))&&Math.hypot(...referenceAxis.map(Number))>1e-10;
+  member.sectionOrientationVerified=normalized.sectionOrientationConfirmed===true&&Number.isFinite(Number(normalized.sectionRollDeg))&&referenceAxisValid;
   member.sectionPropertyFingerprint=normalized.sectionPropertyFingerprint;
   member.sectionPropertySource="live-member-edit";
   return normalized;
