@@ -1843,3 +1843,40 @@ test("3D combination runner rejects invalid and empty factor sets", () => {
   assert.throws(()=>runner.normalize([{name:"bad",dead:-1,live:0,snow:0}]),/غیرمنفی/);
   assert.throws(()=>runner.normalize([{name:"empty",dead:0,live:0,snow:0}]),/ضریب بار فعالی/);
 });
+
+
+test("3D design candidates preserve all six simultaneous actions from each combination and station", () => {
+  require("../js/member-design-demand-3d.js");
+  const api=globalThis.SahroudMemberDesignDemand3D;
+  const model={members:[{id:"M1"}]};
+  const mk=(id,label,vals)=>({
+    id,label,
+    analysis:{success:true,loadCase:id,loadCaseLabel:label,members:[{
+      id:"M1",length:2,localEndForces:[0,0,0,0,0,0,0,0,0,0,0,0],
+      analysisLoad:{uniformLocal:[0,0,0]}
+    }],memberDemand:null}
+  });
+  const combos={success:true,caseCount:2,combinationResults:[
+    mk("C1","ترکیب ۱",[1,2,3,4,5,6]),
+    mk("C2","ترکیب ۲",[7,8,9,10,11,12])
+  ]};
+  const demandApi={extractCase:(analysis,source)=>({
+    success:true,memberCount:1,members:[{
+      id:"M1",samples:[{x:0,N:analysis.loadCase==="C1"?1:7,Vy:2,Vz:3,T:4,My:5,Mz:6}]
+    }]
+  })};
+  const result=api.build(combos,model,demandApi);
+  assert.equal(result.caseCount,2);
+  assert.equal(result.members[0].candidateCount,2);
+  assert.deepEqual(result.members[0].governing.N.values,{N:7,Vy:2,Vz:3,T:4,My:5,Mz:6});
+  assert.equal(result.members[0].governing.N.combinationId,"C2");
+  assert.equal(result.interactionReady,false);
+});
+
+test("3D design demand preparation rejects incomplete combinations and non-finite actions", () => {
+  require("../js/member-design-demand-3d.js");
+  const api=globalThis.SahroudMemberDesignDemand3D;
+  assert.throws(()=>api.build({success:true,caseCount:2,combinationResults:[]},{members:[{id:"M1"}]},{extractCase(){}}),/نتایج کامل/);
+  const bad={success:true,caseCount:1,combinationResults:[{id:"C1",label:"C1",analysis:{success:true,members:[]}}]};
+  assert.throws(()=>api.build(bad,{members:[{id:"M1"}]},{extractCase:()=>({memberCount:1,members:[{id:"M1",samples:[{x:0,N:NaN,Vy:0,Vz:0,T:0,My:0,Mz:0}]}]})}),/نامعتبر/);
+});
