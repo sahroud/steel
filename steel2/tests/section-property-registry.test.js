@@ -132,3 +132,13 @@ test("section roll rejects non-finite values before solver consumption",()=>{
  assert.throws(()=>registry.normalize(section({sectionOrientationConfirmed:true}),"R-BAD"),/بدون زاویه صریح/);
  assert.throws(()=>registry.normalize(section({sectionReferenceAxis:[0,0,0]}),"R-BAD"),/بردار صفر/);
 });
+
+test("registry removes only its own reference-axis override when the section orientation is cleared",()=>{
+ const member={id:"R-AXIS"};
+ registry.applyOne(member,section({sectionRollDeg:0,sectionOrientationConfirmed:true,sectionReferenceAxis:[0,0,1]}));
+ assert.deepEqual(member.referenceAxis,[0,0,1]);
+ assert.equal(member.sectionOrientationVerified,true);
+ registry.applyOne(member,section({sectionRollDeg:0,sectionOrientationConfirmed:false}));
+ assert.equal(Object.hasOwn(member,"referenceAxis"),false);
+ assert.equal(member.sectionOrientationVerified,false);
+});
