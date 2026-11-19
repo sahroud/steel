@@ -79,6 +79,25 @@ test("section solid extrusion blocks missing explicit roll and unconfirmed orien
  const k2=knee.extract(unconfirmed,analysisResult())[0];
  assert.equal(k2.column.sectionSolids.status,"section-orientation-unconfirmed");
 });
+test("aggregate connection geometry reads axes from every combination case",()=>{
+ const roll=0;
+ const m=model({column:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true})},
+  rafter:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({topFlangeWidthMm:180,sectionRollDeg:roll,sectionOrientationConfirmed:true})}});
+ const axes=analysisResult(roll).members;
+ const result={envelope:{cases:[{members:axes},{members:axes.map(item=>({...item}))}]}};
+ const k=knee.extract(m,result)[0];
+ assert.equal(k.column.solverAxes.available,true);
+ assert.equal(k.column.sectionSolids.available,true);
+});
+test("aggregate connection geometry rejects axes missing from one load combination",()=>{
+ const roll=0;
+ const m=model({column:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true})}});
+ const axes=analysisResult(roll).members;
+ const result={envelope:{cases:[{members:axes},{members:axes.filter(item=>item.id!=="COL")}]}};
+ const k=knee.extract(m,result)[0];
+ assert.equal(k.column.solverAxes.status,"solver-axes-incomplete-combinations");
+ assert.equal(k.column.sectionSolids.available,false);
+});
 test("section solid extrusion blocks mismatch between stored and analyzed roll",()=>{
  const roll=45;
  const m=model({column:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true})}});
