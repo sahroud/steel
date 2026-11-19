@@ -90,3 +90,14 @@ test("blocks line demand if long-weld effective length applicability is unknown"
  d.plates[0].polygonMm=[{x:-1000,y:-1000},{x:1000,y:-1000},{x:1000,y:1000},{x:-1000,y:1000}];
  assert.throws(()=>kneeWeld.analyze(d,mapped),/طول مؤثر خطوط جوش/);
 });
+
+test("blocks line-demand analysis when any weld detail check fails",()=>{
+ const {d,mapped}=fixture();
+ d.welds[0].legSizeMm=2;
+ assert.throws(()=>kneeWeld.analyze(d,mapped),/دارای FAIL یا NOT_ASSESSABLE/);
+});
+test("does not treat groove welds as fillet-weld line segments",()=>{
+ const {d,mapped}=fixture();
+ d.welds[0].type="groove";
+ assert.throws(()=>kneeWeld.analyze(d,mapped),/فقط برای جوش گوشه/);
+});
