@@ -51,8 +51,9 @@
     const F=[finite(cf.force.x,"Fx"),finite(cf.force.y,"Fy"),finite(cf.force.z,"Fz")];
     const M=[finite(cf.moment.x,"Mx"),finite(cf.moment.y,"My"),finite(cf.moment.z,"Mz")];
     const Fn=dot(F,n), Mu=dot(M,u), Mv=dot(M,v);
-    const scale=Math.max(1,norm(F),norm(M));
-    if(Math.abs(Fn)>tol*scale||Math.abs(Mu)>tol*scale||Math.abs(Mv)>tol*scale)
+    const forceScale=Math.max(1,norm(F));
+    const momentScale=Math.max(1,norm(M));
+    if(Math.abs(Fn)>tol*forceScale||Math.abs(Mu)>tol*momentScale||Math.abs(Mv)>tol*momentScale)
      fail("کنش عضو "+action.memberId+" مؤلفه خارج از صفحه جوش دارد؛ مدل خطی دوبعدی نمی‌تواند آن را حذف یا نادیده بگیرد.");
     const arm=origin.map(x=>-x); // r_connection(0) - r_plateOrigin, in connection-frame mm
     const shifted=cross(arm,F);
