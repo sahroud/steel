@@ -136,3 +136,27 @@ test("concave plate polygon is triangulated without assuming a rectangular plate
  const g=detail.buildGlobalGeometry(d);
  assert.equal(g.plates[0].solid.triangulation.top.length,3);
 });
+
+test("plate polygons with repeated vertices are rejected before solid generation",()=>{
+ const d=fixture();
+ d.plates[0].polygonMm=[{x:-100,y:-100},{x:300,y:-100},{x:300,y:100},{x:300,y:100},{x:-100,y:100}];
+ const r=detail.validate(d);
+ assert.equal(r.valid,false);
+ assert.ok(r.errors.some(x=>x.includes("رأس")&&x.includes("تکراری")));
+ assert.throws(()=>detail.buildGlobalGeometry(d),/هندسه اتصال معتبر نیست/);
+});
+test("plate polygons with consecutive collinear vertices are rejected before ear clipping",()=>{
+ const d=fixture();
+ d.plates[0].polygonMm=[{x:-100,y:-100},{x:100,y:-100},{x:300,y:-100},{x:300,y:100},{x:-100,y:100}];
+ const r=detail.validate(d);
+ assert.equal(r.valid,false);
+ assert.ok(r.errors.some(x=>x.includes("هم‌خط")));
+});
+test("clockwise concave plate polygons retain a valid triangulated solid",()=>{
+ const d=fixture();
+ d.plates[0].polygonMm=[{x:-100,y:100},{x:300,y:100},{x:100,y:0},{x:300,y:-100},{x:-100,y:-100}];
+ d.bolts[0].xMm=0;d.bolts[0].yMm=40;d.bolts[1].xMm=0;d.bolts[1].yMm=-40;
+ const g=detail.buildGlobalGeometry(d);
+ assert.equal(g.plates[0].solid.triangulation.top.length,3);
+ assert.equal(g.plates[0].solid.triangulation.bottom.length,3);
+});
