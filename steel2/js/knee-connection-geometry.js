@@ -84,7 +84,7 @@
   return '<svg viewBox="0 0 700 410" role="img" aria-label="محورهای تحلیلی ستون و رفتر" style="width:100%;height:auto;background:#f8fafc">'+
    '<line x1="'+x+'" y1="'+y+'" x2="'+cp.x+'" y2="'+cp.y+'" stroke="#176b9b" stroke-width="12"/>'+
    '<line x1="'+x+'" y1="'+y+'" x2="'+rp.x+'" y2="'+rp.y+'" stroke="#d97706" stroke-width="12"/>'+
-   '<circle cx="'+x+'" cy="'+y+'" r="6" fill="#b91c1c"/>'+
+   '<rect x="'+(x-5)+'" y="'+(y-5)+'" width="10" height="10" fill="#b91c1c"/>'+
    '<text x="20" y="28" fill="#176b9b">محور عضو ستون '+esc(k.column.id)+'</text>'+
    '<text x="430" y="28" fill="#b45309">محور عضو رفتر '+esc(k.rafter.id)+'</text>'+
    '<text x="20" y="385" fill="#334155">فقط محورهای واقعی اعضا؛ هیچ ورق یا آرایش پیچی فرض نشده است.</text></svg>';
