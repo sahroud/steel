@@ -969,6 +969,7 @@
     let selfWeightKN=0, selfWeightMemberCount=0;
     const selfWeightByGroup=Object.create(null);
     const sectionsByMemberId=Object.create(null);
+    const initialSectionDefaults=Object.create(null);
     const initialSectionOverrides=[];
     analysisModel.members.forEach(m=>{
       const lineLoad=selected.factors
@@ -988,7 +989,8 @@
           "؛ لطفاً این پیام کامل را برای بررسی بفرستید.");
       }
       const section=window.SteelSections.resolveAnalysis3DSection(m);
-      initialSectionOverrides.push({memberId:String(m.id),section,sourceReference:section.catalogReference||("ورودی گروه "+String(m.sectionKey)+" از فرم مشخصات مقاطع")});
+      initialSectionDefaults[String(m.sectionKey)]=section;
+      if(m.group)initialSectionDefaults[String(m.group)]=section;
       sectionsByMemberId[String(m.id)]={E:section.E,G:section.G,A:section.A,Iy:section.Iy,Iz:section.Iz,J:section.J,
         sectionKey:section.sectionKey,sectionLabel:section.sectionLabel,profile:section.profile,
         manufacturer:section.manufacturer,sourceDocumentId:section.sourceDocumentId,
@@ -1027,7 +1029,8 @@
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
     if(window.SahroudMemberInitialSectionUI?.readOverrides){
-      const individual=window.SahroudMemberInitialSectionUI.readOverrides(analysisModel,initialSectionOverrides);
+      const baseRecords=analysisModel.members.map(member=>({memberId:String(member.id),section:initialSectionDefaults[String(member.sectionKey)]}));
+      const individual=window.SahroudMemberInitialSectionUI.readOverrides(analysisModel,baseRecords);
       individual.forEach(item=>{
         const index=initialSectionOverrides.findIndex(base=>String(base.memberId)===String(item.memberId));
         if(index>=0)initialSectionOverrides[index]=item;else initialSectionOverrides.push(item);
@@ -1035,7 +1038,7 @@
     }
     if(!window.SahroudInitialMemberSections?.resolve)
       throw new Error("ماژول ثبت مقاطع اولیه اعضا بارگذاری نشده است.");
-    const initialSectionResolution=window.SahroudInitialMemberSections.resolve(analysisModel,{overrides:initialSectionOverrides});
+    const initialSectionResolution=window.SahroudInitialMemberSections.resolve(analysisModel,{defaults:initialSectionDefaults,overrides:initialSectionOverrides});
     initialSectionResolution.records.forEach(record=>{
       const member=analysisModel.members.find(item=>String(item.id)===record.memberId);
       if(member)member.initialSection=JSON.parse(JSON.stringify(record.initialSection));
