@@ -61,3 +61,35 @@ test("bolt shank geometry follows explicit axis and grip length",()=>{
  assert.deepEqual(bolt.shank.endGlobalM,[0,5.96,0.018]);
  assert.equal(bolt.shank.radiusMm,10);
 });
+
+test("bolt head touching the declared plate face is contact with unverified intent, not interference",()=>{
+ const d=fixture();d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[0].hardware=[{id:"HEAD-1",kind:"head",centerOffsetMm:14,thicknessMm:12,acrossFlatsMm:30}];
+ const r=collision.audit(d);
+ const p=r.hardwarePlatePairs.find(x=>x.hardwareId==="HEAD-1"&&x.plateCompared==="P1");
+ assert.equal(p.state,"contact-intent-unverified");assert.equal(p.intentVerified,false);
+});
+test("bolt nut penetrating the plate solid is classified as hardware interference",()=>{
+ const d=fixture();d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[0].hardware=[{id:"NUT-1",kind:"nut",centerOffsetMm:0,thicknessMm:16,acrossFlatsMm:30}];
+ const r=collision.audit(d);
+ const p=r.hardwarePlatePairs.find(x=>x.hardwareId==="NUT-1"&&x.plateCompared==="P1");
+ assert.equal(p.state,"interference");
+});
+test("washer annulus is evaluated with its inner opening and bolt shank is explicitly not assessable",()=>{
+ const d=fixture();d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[0].hardware=[{id:"WASHER-1",kind:"washer",centerOffsetMm:14.5,thicknessMm:3,outerDiameterMm:36,innerDiameterMm:22}];
+ const r=collision.audit(d);
+ assert.equal(r.hardwarePlatePairs.find(x=>x.hardwareId==="WASHER-1").state,"contact-intent-unverified");
+ assert.equal(r.shankStatus.find(x=>x.boltId==="B1").state,"not-assessable");
+ assert.match(r.method,/32-sector/);
+});
+test("hardware on separate bolts is checked against other hardware",()=>{
+ const d=fixture();d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[1].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[0].hardware=[{id:"H-A",kind:"head",centerOffsetMm:14,thicknessMm:12,acrossFlatsMm:30}];
+ d.bolts[1].hardware=[{id:"H-B",kind:"head",centerOffsetMm:14,thicknessMm:12,acrossFlatsMm:30}];
+ const r=collision.audit(d);
+ assert.equal(r.hardwarePairs.length,1);
+ assert.ok(["interference","contact-intent-unverified","clear"].includes(r.hardwarePairs[0].state));
+});
