@@ -16,9 +16,9 @@
   const envelopeCases=analysisResult?.envelope?.cases||[];
   const caseMembers=envelopeCases.flatMap(item=>item?.members||[]);
   const combinationMembers=(analysisResult?.combinationResults||[]).flatMap(item=>item?.memberDemand?.members||item?.analysis?.memberDemand?.members||[]);
-  const candidates=[...direct,...caseMembers,...combinationMembers];
+  const candidates=[...caseMembers,...combinationMembers,...direct];
   const matches=candidates.filter(item=>String(item.id)===String(member.id));
-  const solved=matches[0];
+  const solved=matches.find(item=>item.localAxes)||matches[0];
   const axes=solved?.localAxes;
   if(!axes)return{available:false,status:"solver-axes-missing",axes:null,source:null,issues:["محورهای محلی حل‌گر برای این عضو در نتیجه تحلیل موجود نیست."]};
   const names=["x","y","z"],vectors=[];
