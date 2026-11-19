@@ -39,9 +39,10 @@
    ])});
  }
  function render(){
-  if(!root.document||root.document.getElementById("foundationSoilPanel"))return;
+  if(!root.document)return;
   const panel=root.document.getElementById("foundationSoilPanel");
-  if(!panel)return;
+  if(!panel||panel.dataset.soilCheckInitialized==="true")return;
+  panel.dataset.soilCheckInitialized="true";
   const $=id=>root.document.getElementById(id);
   const enabled=$("soilControlEnabled"),fields=["soilQa","soilSource","soilFootingB","soilFootingL","soilReactionCases","btnRunSoilCheck"];
   const update=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled.checked;});};
@@ -58,7 +59,7 @@
      "مرجع خاک: "+result.soil.sourceReference+" | qa="+fmt(result.soil.allowableBearingKPa)+" kPa | مساحت پی="+fmt(result.footing.areaM2)+" m²",
      ...result.results.map(x=>x.name+" | N="+fmt(x.NkN)+" kN | ex="+fmt(x.eccentricityX_m)+" m | ez="+fmt(x.eccentricityZ_m)+" m | qmin="+fmt(x.qMinKPa)+" kPa | qmax="+fmt(x.qMaxKPa)+" kPa | "+x.status),
      "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
-    ].join("\\n");
+    ].join("\n");
     out.style.color=result.success?"#15803d":"#b45309";
     root.SahroudFoundationSoilCheck.lastResult=result;
    }catch(error){out.textContent="کنترل خاک انجام نشد: "+error.message;out.style.color="#b45309";root.SahroudFoundationSoilCheck.lastResult=null;}
