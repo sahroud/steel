@@ -34,6 +34,9 @@
     throw new Error("مرجع گزارش تحلیل/جدول واکنش برای حالت "+name+" الزامی است.");
    const reactionN=finite(c.NkN,"نیروی قائم واکنش "+name);
    const Mx=finite(c.MxkNm===undefined?0:c.MxkNm,"لنگر Mx "+name),Mz=finite(c.MzkNm===undefined?0:c.MzkNm,"لنگر Mz "+name);
+   const Hx=c.HxkN===undefined?null:finite(c.HxkN,"نیروی افقی Hx "+name);
+   const Hz=c.HzkN===undefined?null:finite(c.HzkN,"نیروی افقی Hz "+name);
+   const horizontalResultant=Hx===null||Hz===null?null:Math.hypot(Hx,Hz);
    const N=reactionN+footingWeight+soilCoverWeight;
    if(!(N>0))throw new Error("مجموع نیروی قائم شامل واکنش، وزن پی و خاک روی پی در "+name+" باید فشاری و مثبت باشد.");
    const ex=Mz/N,ez=Mx/N,qAvg=N/A;
@@ -45,6 +48,7 @@
    const qMinChecked=soil.allowableBearingBasis==="gross"?qMinGross:qMinNet;
    const bearingPass=fullContact&&qMaxChecked<=soil.allowableBearingKPa+1e-9;
    return Object.freeze({name,sourceReference:c.sourceReference.trim(),reactionNkN:reactionN,NkN:N,MxkNm:Mx,MzkNm:Mz,
+    HxkN:Hx,HzkN:Hz,horizontalResultantKN:horizontalResultant,slidingAssessment:"not-performed",
     footingWeightKN:footingWeight,soilCoverWeightKN:soilCoverWeight,totalAddedWeightKN:footingWeight+soilCoverWeight,
     overburdenAtBaseKPa:overburden,areaM2:A,eccentricityX_m:ex,eccentricityZ_m:ez,
     qAverageGrossKPa:qAvg,qMaxGrossKPa:qMaxGross,qMinGrossKPa:qMinGross,
@@ -64,7 +68,9 @@
     "این کنترل فقط فشار تماس قائم پی مستطیلی با توزیع خطی و فرض تماس کامل را بررسی می‌کند؛ qmin ناخالص معیار تشخیص جداشدگی است.",
     "اگر qmin ناخالص منفی شود، تحلیل تماس جزئی/بلندشدگی لازم است؛ فشار کششی به خاک مجاز فرض نشده است.",
     "کنترل نشست، ظرفیت نهایی، لغزش، واژگونی، آب زیرزمینی، اثر لایه‌بندی، اندرکنش پی‌ها و طراحی آرماتور/برش پانچ در این ماژول انجام نمی‌شود.",
-    "وزن شناژ، پدستال، دیوار، خاک جانبی، بارهای افقی و لنگر ناشی از اجزای خارج از مرکز در این محاسبه منظور نشده‌اند.",
+    "نیروهای افقی Hx/Hz در صورت ورود فقط گزارش می‌شوند؛ کنترل لغزش، اصطکاک کف، فشار جانبی و برش انتقالی در این ماژول انجام نمی‌شود.",
+    "اگر HxkN یا HzkN در یک حالت بار وارد نشده باشد، برآیند افقی آن حالت نامشخص است و نباید صفر فرض شود.",
+    "وزن شناژ، پدستال، دیوار، خاک جانبی و لنگر ناشی از اجزای خارج از مرکز در این محاسبه منظور نشده‌اند.",
     "وزن مخصوص بتن و خاک و ارتفاع پوشش باید از مشخصات واقعی پروژه/گزارش ژئوتکنیک وارد شوند؛ مقادیر پیش‌فرض ساخته نشده‌اند.",
     "بارهای ورودی باید ترکیبات بهره‌برداری (SLS) تأییدشده از تحلیل سازه باشند؛ نتایج ULS یا یک حالت بار منفرد جایگزین آن نیستند.",
     "تیپ I/II/III جایگزین ظرفیت باربری، پارامترهای مقاومت یا کنترل نشست گزارش ژئوتکنیک نیست."
@@ -93,7 +99,7 @@
      result.success?"کنترل فشار باربری در همه حالت‌های واردشده قبول شد.":"کنترل فشار باربری مردود یا مسدود است.",
      "تیپ خاک: "+result.soil.soilType+" | مبنای qa: "+result.soil.allowableBearingBasis+" | مرجع: "+result.soil.sourceReference+" | qa="+fmt(result.soil.allowableBearingKPa)+" kPa",
      "ابعاد پی: "+fmt(result.footing.B_m)+" × "+fmt(result.footing.L_m)+" m | وزن پی="+fmt(result.footing.footingWeightKN)+" kN | وزن خاک روی پی="+fmt(result.footing.soilCoverWeightKN)+" kN",
-     ...result.results.map(x=>x.name+" | N کل="+fmt(x.NkN)+" kN | qmax ناخالص="+fmt(x.qMaxGrossKPa)+" | qmax خالص="+fmt(x.qMaxNetKPa)+" kPa | "+x.status),
+     ...result.results.map(x=>x.name+" | N کل="+fmt(x.NkN)+" kN | qmax ناخالص="+fmt(x.qMaxGrossKPa)+" | qmax خالص="+fmt(x.qMaxNetKPa)+" kPa | H="+(x.horizontalResultantKN===null?"وارد نشده":fmt(x.horizontalResultantKN)+" kN (لغزش کنترل نشده)")+" | "+x.status),
      "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
     ].join("\n");
     out.style.color=result.success?"#15803d":"#b45309";lastResult=result;
