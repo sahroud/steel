@@ -66,7 +66,6 @@
      Iy_cm4:$("initialSectionIy").value,Iz_cm4:$("initialSectionIz").value,J_cm4:$("initialSectionJ").value
     });
     dirty.set(selectedId,item);
-    const member=currentModel.members.find(m=>String(m.id)===selectedId);
     if(root.SahroudSectionPropertyRegistry?.applyOne)root.SahroudSectionPropertyRegistry.applyOne(member,item.section);
     invalidateAnalysis(selectedId);
     message("مقطع اولیه مستقل عضو "+selectedId+" ثبت و در مشخصات یکپارچه عضو به‌روزرسانی شد. تحلیل مجدد لازم است.");
