@@ -473,6 +473,9 @@
 
     function validate() {
         const data = readInputs();
+        if (!["foundation","girts"].includes(data.wallDeadSupportPath)) {
+            return "مسیر تحمل وزن دیوار باید شناژ/فونداسیون یا قیدهای فلزی باشد.";
+        }
 
         const nonNegative = [
             ["بار مرده چپ", data.deadLeft],
