@@ -100,3 +100,9 @@ test("does not report groove welds as passed by the fillet-only detail checker",
  assert.equal(r.checks[0].status,"NOT_ASSESSABLE");
  assert.match(r.codeBasis.sourceVerification,/بازنشر برخط/);
 });
+
+test("does not apply an unsupported generic maximum leg equal to thinner-part thickness away from an edge",()=>{
+ const r=check.assess(fixture({legSizeMm:9,connectedPartThicknessMm:8,edgeWeld:false}));
+ assert.equal(r.checks.find(x=>x.checkId==="minimum-leg").status,"PASS");
+ assert.equal(r.checks.find(x=>x.checkId==="maximum-edge-leg").status,"NOT_APPLICABLE");
+});
