@@ -60,7 +60,7 @@ test("crane wheel reactions are passed to solver only with verified manufacturer
  assert.deepEqual(result.nodalLoads[0].values,[4000,-85000,7000,0,0,0]);
 });
 test("crane wheel reaction transfer rejects unverified and malformed data",()=>{
- const configuration=crane.createConfiguration({capacityTonnes:5,craneSpanM:12,runwayLengthM:36,hookLiftM:5,
+ const configuration=crane.createConfiguration({capacityTonnes:5,enabled:true,craneSpanM:12,runwayLengthM:36,hookLiftM:5,
   dutyClass:"M3",cyclesPerHour:5,verified:true,manufacturer:"M",model:"X",sourceReference:"source"});
  assert.throws(()=>crane.createVerifiedWheelLoadCase({configuration,sourceVerified:false,sourceReference:"source",wheelReactions:[{nodeId:"N",verticalKN:10}]}),/منبع معتبر/);
  assert.throws(()=>crane.createVerifiedWheelLoadCase({configuration,sourceVerified:true,sourceReference:"source",wheelReactions:[{nodeId:"N",verticalKN:-10}]}),/محدود/);
