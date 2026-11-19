@@ -16,8 +16,8 @@ test("user input overrides group default and is marked as user input",()=>{
 });
 test("preserves already assigned model section before falling back to group default",()=>{
  const r=resolve({members:[model.members[1]]},{defaults:{rafter:{designation:"I-400"}}});
- assert.equal(r.records[1].source,"existing-model-section");
- assert.equal(r.records[1].initialSection.designation,"IPE300");
+ assert.equal(r.records[0].source,"existing-model-section");
+ assert.equal(r.records[0].initialSection.designation,"IPE300");
 });
 test("blocks missing starting sections rather than inventing one",()=>{
  assert.throws(()=>resolve(model,{}),/مقطع اولیه مشخص نیست/);
