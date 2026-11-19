@@ -45,6 +45,7 @@ on:
       - "steel2/js/connection-readiness.js"
       - "steel2/js/knee-connection-geometry.js"
       - "steel2/js/foundation-soil-check.js"
+      - "steel2/js/foundation-reaction-batch.js"
       - "steel2/tests/**"
       - ".github/workflows/steel2-reference-tests.yml"
 
