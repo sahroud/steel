@@ -79,3 +79,18 @@ test("collision module loads before the knee detail UI",()=>{
  const ui=html.indexOf("js/knee-connection-detail-ui.js");
  assert.ok(collision>=0&&ui>collision);
 });
+
+test("capacity module loads before the knee detail UI",()=>{
+ const html=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
+ const detail=html.indexOf("js/knee-connection-detail.js");
+ const capacity=html.indexOf("js/knee-connection-capacity.js");
+ const ui=html.indexOf("js/knee-connection-detail-ui.js");
+ assert.ok(detail>=0&&capacity>detail&&ui>capacity);
+});
+test("knee detail UI exposes code-referenced bolt and plate capacity calculations without approving the connection",()=>{
+ assert.match(source,/btnKneeCapacityTemplate/);
+ assert.match(source,/btnKneeCapacityRun/);
+ assert.match(source,/SahroudKneeConnectionCapacity\.calculate/);
+ assert.match(source,/تأیید نهایی: خیر؛ آمادگی اجرا: خیر/);
+ assert.match(source,/ظرفیت‌های محاسبه‌شده به معنی تأیید اتصال نیستند/);
+});
