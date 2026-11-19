@@ -63,6 +63,7 @@
    "<button id='btnKneeDetailExport' class='btn secondary' type='button'>دریافت JSON ورودی</button>"+
    "<button id='btnKneeDetailExportGlobal' class='btn secondary' type='button'>دریافت هندسه سه‌بعدی جهانی</button>"+
    "<button id='btnKneeDetailMapDemand' class='btn primary' type='button'>انتقال تقاضای ترکیبات بار به دستگاه اتصال</button>"+
+   "<button id='btnKneeWeldDemand' class='btn primary' type='button'>محاسبه تقاضای خطوط جوش</button>"+
    "<button id='btnKneeDetailCollision' class='btn secondary' type='button'>ممیزی برخورد سه‌بعدی ورق‌ها</button></div>"+
    "<div class='notice'>محاسبات زیر فقط حالت‌های حدی پیچی اتکایی و ورق را که داده‌های هندسی/تقاضای آن‌ها صریح وارد شده باشد بررسی می‌کند. توزیع نیرو بین پیچ‌ها و خطوط جوش، سطوح مقطع خالص، مسیر برش قالبی و اثر اهرمی باید مستند باشند. کنترل جوش فعلاً فقط فلز جوش گوشه در برش گلویی مؤثر را پوشش می‌دهد. جوش، خمش ورق، لغزش بحرانی و تأیید نهایی اتصال هنوز پوشش داده نمی‌شوند.</div>"+
    "<div class='button-grid'><button id='btnKneeCapacityTemplate' class='btn secondary' type='button'>ساخت قالب داده‌های ظرفیت</button><button id='btnKneeCapacityRun' class='btn primary' type='button'>محاسبه ظرفیت‌های پیچی/ورق</button></div>"+
@@ -71,6 +72,7 @@
    "<div class='field'><label for='kneeDetailJson'>جزئیات اتصال (JSON)</label><textarea id='kneeDetailJson' rows='18' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
    "<div id='kneeDetailValidationResult' aria-live='polite' class='notice'>قالب اولیه هنوز ساخته نشده است.</div>"+
    "<div id='kneeDetailMappedDemand' aria-live='polite' class='notice'>تقاضای منتقل‌شده هنوز محاسبه نشده است.</div>"+
+   "<div id='kneeWeldDemandResult' aria-live='polite' class='notice'>برای محاسبه تقاضای جوش، ابتدا تقاضای ترکیبات بار را منتقل کنید.</div>"+
    "<div class='field'><label for='kneeCollisionTolerance'>تلرانس طبقه‌بندی تماس هندسی (mm)</label><input id='kneeCollisionTolerance' type='number' min='0' step='0.01' value='0.1'></div>"+
    "<div id='kneeDetailCollisionResult' aria-live='polite' class='notice'>ممیزی برخورد هنوز اجرا نشده است.</div>";
   $("kneeConnectionGeometryPanel").appendChild(panel);
@@ -185,10 +187,34 @@
     $("kneeDetailMappedDemand").innerHTML="<p>تقاضای هر عضو جداگانه به مبدأ و محورهای اتصال منتقل شد. نیرو kN و لنگر kN.m است.</p>"+
      "<table><thead><tr><th>ترکیب بار</th><th>عضو</th><th>نقطه انتقال جهانی (m)</th><th>Fx</th><th>Fy</th><th>Fz</th><th>Mx</th><th>My</th><th>Mz</th></tr></thead><tbody>"+rows+"</tbody></table>"+
      "<p>ظرفیت طراحی نشده؛ جمع نیروهای گره و کنترل تعادل کامل انجام نشده است.</p>";
+    root.lastKneeMappedDemand=mapped;
     $("kneeDetailMappedDemand").dataset.valid="true";
    }catch(e){
     $("kneeDetailMappedDemand").textContent="انتقال تقاضا متوقف شد: "+e.message;
     $("kneeDetailMappedDemand").dataset.valid="false";
+   }
+  });
+  $("btnKneeWeldDemand").addEventListener("click",()=>{
+   try{
+    const value=JSON.parse($("kneeDetailJson").value);
+    if(!root.lastKneeMappedDemand)throw new Error("ابتدا دکمه انتقال تقاضای ترکیبات بار به دستگاه اتصال را اجرا کنید.");
+    const report=root.SahroudKneeWeldDemand.analyze(value,root.lastKneeMappedDemand);
+    const rows=report.results.map(r=>{
+     const p=r.lineDemand.criticalPoint||{};
+     return "<tr><td>"+esc(r.combination)+"</td><td>"+esc(r.role)+" / "+esc(r.memberId)+"</td><td>"+esc(r.plateId)+"</td>"+
+      "<td>"+Number(r.demandAtPlateOrigin.N).toFixed(3)+"</td><td>"+Number(r.demandAtPlateOrigin.V).toFixed(3)+"</td>"+
+      "<td>"+Number(r.demandAtPlateOrigin.Mz).toFixed(3)+"</td><td>"+Number(r.lineDemand.maxLineDemand).toFixed(6)+"</td>"+
+      "<td>"+esc(p.segmentId||"—")+" / "+esc(p.point||"—")+"</td></tr>";
+    }).join("");
+    $("kneeWeldDemandResult").innerHTML="<p><b>تقاضای الاستیک گروه جوش محاسبه شد؛ ظرفیت و قبولی اتصال محاسبه نشده است.</b></p>"+
+     "<p>روش: "+esc(report.demandModel)+"؛ طول کل جوش: "+Number(report.results[0]?.lineDemand.totalLength||0).toFixed(2)+
+     " mm؛ تعداد سناریوهای مستقل: "+report.results.length+"</p>"+
+     "<div style='overflow-x:auto'><table><thead><tr><th>ترکیب</th><th>عضو</th><th>ورق مرجع</th><th>N (kN)</th><th>V (kN)</th><th>Mz (kN.mm)</th><th>qmax (kN/mm)</th><th>نقطه بحرانی</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
+     "<p>مؤلفه‌های خارج از صفحه رد می‌شوند. فرض‌ها: سختی خطی یکنواخت و ورق صلب. ظرفیت فلز جوش/پایه، اثر انعطاف ورق، اندرکنش پیچ و جوش و ضوابط اجرایی هنوز بررسی نشده‌اند.</p>";
+    $("kneeWeldDemandResult").dataset.valid="true";
+   }catch(e){
+    $("kneeWeldDemandResult").textContent="محاسبه تقاضای جوش متوقف شد: "+e.message;
+    $("kneeWeldDemandResult").dataset.valid="false";
    }
   });
   $("btnKneeDetailExportGlobal").addEventListener("click",()=>{
