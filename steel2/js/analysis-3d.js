@@ -405,7 +405,7 @@ function analyze(model,options){
  const results=elements.map(e=>{
   const dg=e.ids.map(i=>D[i]),dl=mul(e.T,dg.map(v=>[v])).map(r=>r[0]),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
-  return {id:e.member.id,type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props};
+  return {id:e.member.id,type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,sectionRollDeg:e.member.sectionRollDeg??null,section:e.props};
  });
  let maxTranslation=0,maxDisplacement=null;
  nodes.forEach((n,i)=>{
