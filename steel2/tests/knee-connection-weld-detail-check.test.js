@@ -129,6 +129,7 @@ test("fails weather-exposed unpainted intermittent weld spacing above min(14t,18
 });
 test("does not infer intermittent weld grouping or corrosion exposure",()=>{
  const d=fixture({continuity:"intermittent"});
+ d.plates[0].polygonMm=[{x:-300,y:-100},{x:300,y:-100},{x:300,y:100},{x:-300,y:100}];
  d.welds.push({...d.welds[0],id:"W2",startMm:[140,0,0],endMm:[180,0,0]});
  const r=check.assess(d);
  assert.equal(r.checks.find(x=>x.checkId==="intermittent-spacing"&&x.weldId==="W1").status,"NOT_ASSESSABLE");
