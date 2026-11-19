@@ -19,6 +19,8 @@ test("knee extraction reads actual assigned column and rafter geometry dimension
  assert.equal(k.rafter.sectionGeometry.dimensionsMm.topFlangeWidthMm,180);
  assert.equal(k.column.sectionSolids.available,true,JSON.stringify({axes:k.column.solverAxes,solids:k.column.sectionSolids}));
  assert.equal(k.column.sectionSolids.solids.length,3);
+ assert.equal(k.webPlane.commonPlaneVerified,true);
+ assert.equal(k.webPlane.columnWebFaceAtJoint.length,4);
  assert.equal(k.rafter.sectionSolids.solids.length,3);
  assert.equal(knee.check(k).valid,true);
 });
@@ -79,6 +81,15 @@ test("section solid extrusion blocks missing explicit roll and unconfirmed orien
  const k2=knee.extract(unconfirmed,analysisResult())[0];
  assert.equal(k2.column.sectionSolids.status,"section-orientation-unconfirmed");
 });
+test("knee web plane is verified only when both rolled member webs lie in the frame plane",()=>{
+ const make=roll=>model({column:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true})},
+  rafter:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({topFlangeWidthMm:180,sectionRollDeg:roll,sectionOrientationConfirmed:true})}});
+ const flat=knee.extract(make(0),analysisResult(0))[0];
+ assert.equal(flat.webPlane.commonPlaneVerified,true);
+ const rotated=knee.extract(make(90),analysisResult(90))[0];
+ assert.equal(rotated.webPlane.commonPlaneVerified,false);
+ assert.equal(rotated.webPlane.platePlaneVerified,false);
+});
 test("aggregate connection geometry reads axes from every combination case",()=>{
  const roll=0;
  const m=model({column:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true})},
@@ -112,8 +123,9 @@ test("knee geometry self-test passes",()=>{
 });
 
 function analysisResult(roll=0){
- const columnAxes={x:[0,1,0],y:[-1,0,0],z:[0,0,1]};
- const rafterAxes={x:[1/Math.sqrt(2.44),1.2/Math.sqrt(2.44),0],y:[-1.2/Math.sqrt(2.44),1/Math.sqrt(2.44),0],z:[0,0,1]};
+ const rotate=(base)=>{const a=roll*Math.PI/180,c=Math.cos(a),s=Math.sin(a);return{x:base.x,y:base.y.map((v,i)=>v*c+base.z[i]*s),z:base.z.map((v,i)=>base.z[i]*c-base.y[i]*s)};};
+ const columnAxes=rotate({x:[0,1,0],y:[-1,0,0],z:[0,0,1]});
+ const rafterAxes=rotate({x:[1/Math.sqrt(2.44),1.2/Math.sqrt(2.44),0],y:[-1.2/Math.sqrt(2.44),1/Math.sqrt(2.44),0],z:[0,0,1]});
  return {members:[{id:"COL",localAxes:columnAxes,sectionRollDeg:roll},{id:"RAF",localAxes:rafterAxes,sectionRollDeg:roll}]};
 }
 test("knee geometry consumes solver local axes by member id without inferring section roll",()=>{
