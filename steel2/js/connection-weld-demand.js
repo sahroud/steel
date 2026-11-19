@@ -15,7 +15,8 @@
    const x2=finite(s.end[0],"segment end x"),y2=finite(s.end[1],"segment end y");
    const length=Math.hypot(x2-x1,y2-y1);
    if(!(length>0))throw new Error("Zero-length weld segment is invalid");
-   return{ id:s.id??String(i+1),x1,y1,x2,y2,length };
+   const tx=(x2-x1)/length,ty=(y2-y1)/length;
+   return{ id:s.id??String(i+1),x1,y1,x2,y2,length, tangent:{x:tx,y:ty}, inPlaneNormal:{x:-ty,y:tx} };
   });
   const L=parsed.reduce((v,s)=>v+s.length,0);
   const cx=parsed.reduce((v,s)=>v+s.length*(s.x1+s.x2)/2,0)/L;
@@ -34,7 +35,9 @@
    for(const [name,x,y] of [["start",s.x1,s.y1],["end",s.x2,s.y2]]){
     const rx=x-cx,ry=y-cy;
     const qx=N/L-Mz*ry/J,qy=V/L+Mz*rx/J;
-    samples.push({segmentId:s.id,point:name,x,y,qx,qy,q:Math.hypot(qx,qy)});
+    const qParallel=qx*s.tangent.x+qy*s.tangent.y;
+    const qTransverse=qx*s.inPlaneNormal.x+qy*s.inPlaneNormal.y;
+    samples.push({segmentId:s.id,point:name,x,y,qx,qy,qParallel,qTransverse,q:Math.hypot(qx,qy)});
    }
   });
   const critical=samples.reduce((a,p)=>p.q>a.q?p:a,samples[0]);
