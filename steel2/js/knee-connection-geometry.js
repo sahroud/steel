@@ -214,7 +214,7 @@
    '<h4>هندسه ثبت‌شده مقطع رفتر</h4>'+dimensionsText(k.rafter.sectionGeometry)+
    '<p class="geometry-hint">هندسه سه‌بعدی: '+esc(k.rafter.sectionSolids?.status||"ناموجود")+'؛ اجزای اکسترودشده: '+esc(k.rafter.sectionSolids?.solids?.length||0)+'</p>'+
    '<h4>محورهای حل‌گر رفتر</h4>'+axesText(k.rafter.solverAxes)+
-   '<h4>هم‌صفحه بودن جان ستون و رفتر</h4><p class="geometry-hint">'+esc(k.webPlane?.status||"ناموجود")+'؛ هم‌راستایی ستون: '+esc(k.webPlane?.columnAlignment??"—")+'؛ رفتر: '+esc(k.webPlane?.rafterAlignment??"—")+'؛ صفحه ورق اتصال همچنان تأییدنشده است.</p>'+
+   '<h4>هم‌صفحه بودن جان ستون و رفتر</h4><p class="geometry-hint">'+esc(k.webPlane?.status||"ناموجود")+'؛ هم‌راستایی ستون: '+esc(k.webPlane?.columnAlignment??"—")+'؛ رفتر: '+esc(k.webPlane?.rafterAlignment??"—")+'؛ صفحه ورق اتصال همچنان تأییدنشده است.</p>';
   draw.innerHTML=drawing(k);
   checks.innerHTML=(v.valid?"هندسه پارامتریک هر دو مقطع از رجیستری عضو بازیابی شد.":"هندسه مقاطع برای ورود به مرحله اتصال کامل نیست.")+
    (v.errors.length?"<ul>"+v.errors.map(e=>"<li>"+esc(e)+"</li>").join("")+"</ul>":"")+
