@@ -54,7 +54,7 @@
    if(c.classification!=="ULS"||!text(c.sourceReference))fail(errors,"هر حالت باید ULS و دارای مرجع خروجی ترکیب بار باشد.");
    if(!c.pryingAssessment||!["calculated","not-applicable"].includes(c.pryingAssessment.status)||!text(c.pryingAssessment.reference))
     fail(errors,"ارزیابی اثر اهرمی هر ترکیب باید calculated یا not-applicable و دارای مرجع مستند باشد.");
-   if(c.pryingAssessment.status==="not-applicable"&&!text(c.pryingAssessment.reason))
+   if(c.pryingAssessment?.status==="not-applicable"&&!text(c.pryingAssessment.reason))
     fail(errors,"عدم کاربرد اثر اهرمی باید با دلیل مهندسی ثبت شود.");
    const actions=c.boltActions;
    if(!Array.isArray(actions)||actions.length!==boltIds.size)fail(errors,"تقاضای هر پیچ باید در هر ترکیب، حتی با مقدار صفر، ثبت شود.");
