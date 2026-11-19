@@ -178,6 +178,9 @@
             <div class="field"><label for="soilUnitWeight">وزن مخصوص خاک (kN/m³)</label><input id="soilUnitWeight" type="number" min="1" step="0.5" placeholder="از گزارش ژئوتکنیک" disabled></div>
         </div>
         <div class="notice">ورودی زیر بسته واکنش تمام پایه‌ها در تمام ترکیبات SLS است. هر حالت باید با classification برابر SLS، تعادل حل‌گر تأییدشده و مرجع مستند ارائه شود. این مرحله فقط ساختار داده و ثبات هندسه پایه‌ها را کنترل می‌کند.</div>
+        <div class="field"><label for="foundationUlsBatchInput">بسته واکنش ترکیبات نهایی ULS برای همه پایه‌ها (JSON)</label><textarea id="foundationUlsBatchInput" rows="7" placeholder='{"cases":[{"loadCase":"ULS-1","loadCaseLabel":"ترکیب نهایی ۱","classification":"ULS","solverEquilibriumOK":true,"sourceReference":"گزارش مصوب ترکیبات ULS، صفحه ...","supports":[{"nodeId":"B1","coordinatesM":{"x":0,"y":0,"z":0},"fixedDofs":[0,1,2],"FxkN":0,"FykN":100,"FzkN":0,"MxkNm":0,"MykNm":0,"MzkNm":0}]}]}' disabled></textarea></div>
+        <button id="btnMapFoundationUlsActions" class="btn primary" type="button" disabled>اعتبارسنجی و تبدیل کنش‌های ULS به مرکز پی</button>
+        <pre id="foundationUlsActionResult" class="notice" aria-live="polite">برای طراحی بتن‌آرمه، بسته مستقل ترکیبات ULS را وارد کنید.</pre>
         <div class="field"><label for="foundationSlsBatchInput">بسته واکنش ترکیبات SLS برای همه پایه‌ها (JSON)</label><textarea id="foundationSlsBatchInput" rows="7" placeholder='{"cases":[{"loadCase":"SLS-1","loadCaseLabel":"ترکیب بهره‌برداری ۱","classification":"SLS","solverEquilibriumOK":true,"sourceReference":"گزارش مصوب ترکیبات SLS، صفحه ...","supports":[{"nodeId":"B1","coordinatesM":{"x":0,"y":0,"z":0},"fixedDofs":[0,1,2],"FxkN":0,"FykN":100,"FzkN":0,"MxkNm":0,"MykNm":0,"MzkNm":0}]}]}' disabled></textarea></div>
         <button id="btnValidateFoundationSlsBatch" class="btn secondary" type="button" disabled>اعتبارسنجی بسته واکنش‌های SLS</button>
         <pre id="foundationSlsBatchResult" class="notice" aria-live="polite">هنوز بسته واکنش SLS بارگذاری نشده است.</pre>
@@ -317,6 +320,9 @@
 <script src="js/foundation-action-mapping-ui.js?v=20261119actionmapui1"></script>
 <script src="js/foundation-sizing.js?v=20261119size1"></script>
 <script src="js/foundation-sizing-ui.js?v=20261119sizeui1"></script>
+<script src="js/foundation-uls-reaction-batch.js?v=20261119ulsbatch1"></script>
+<script src="js/foundation-uls-action-mapping.js?v=20261119ulsmapping1"></script>
+<script src="js/foundation-uls-action-mapping-ui.js?v=20261119ulsmappingui1"></script>
 <script src="js/project.js?v=20261112purlinmigration1"></script>
 <script src="js/drawing.js?v=20261111slope1"></script>
 <script src="js/member-demand-3d.js?v=20261118demand1"></script>
