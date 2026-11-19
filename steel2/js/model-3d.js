@@ -1027,7 +1027,11 @@
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
     if(window.SahroudMemberInitialSectionUI?.readOverrides){
-      initialSectionOverrides.push(...window.SahroudMemberInitialSectionUI.readOverrides(analysisModel,initialSectionOverrides));
+      const individual=window.SahroudMemberInitialSectionUI.readOverrides(analysisModel,initialSectionOverrides);
+      individual.forEach(item=>{
+        const index=initialSectionOverrides.findIndex(base=>String(base.memberId)===String(item.memberId));
+        if(index>=0)initialSectionOverrides[index]=item;else initialSectionOverrides.push(item);
+      });
     }
     if(!window.SahroudInitialMemberSections?.resolve)
       throw new Error("ماژول ثبت مقاطع اولیه اعضا بارگذاری نشده است.");
