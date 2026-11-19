@@ -33,7 +33,7 @@
    if(typeof c.sourceReference!=="string"||!c.sourceReference.trim())
     throw new Error("مرجع گزارش تحلیل/جدول واکنش برای حالت "+name+" الزامی است.");
    const reactionN=finite(c.NkN,"نیروی قائم واکنش "+name);
-   const Mx=finite(c.MxkNm===undefined?0:c.MxkNm,"لنگر Mx "+name),Mz=finite(c.MzkNm===undefined?0:c.MzkNm,"لنگر Mz "+name);
+   const Mx=finite(c.MxkNm,"لنگر Mx "+name),Mz=finite(c.MzkNm,"لنگر Mz "+name);
    const Hx=c.HxkN===undefined?null:finite(c.HxkN,"نیروی افقی Hx "+name);
    const Hz=c.HzkN===undefined?null:finite(c.HzkN,"نیروی افقی Hz "+name);
    const horizontalResultant=Hx===null||Hz===null?null:Math.hypot(Hx,Hz);
