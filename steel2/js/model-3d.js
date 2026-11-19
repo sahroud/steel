@@ -1344,6 +1344,11 @@
     );
     combinationResults=result.combinationResults;
     combinationEnvelope=result.envelope;
+    if(!window.SahroudConnectionDemandRegistry)
+      throw new Error("ماژول انتقال تقاضای اتصالات بارگذاری نشده است.");
+    result.connectionDemand=window.SahroudConnectionDemandRegistry.build(result,model,window.SahroudMemberDemand3D);
+    window.SteelStructuralModel.lastConnectionDemand=result.connectionDemand;
+    window.dispatchEvent(new CustomEvent("sahroud:connection-demand-ready",{detail:result.connectionDemand}));
     if(!window.SahroudMemberDesignDemand3D)
       throw new Error("ماژول آماده‌سازی تقاضای طراحی اعضای سه‌بعدی بارگذاری نشده است.");
     result.designDemand=window.SahroudMemberDesignDemand3D.build(result,model,window.SahroudMemberDemand3D);
