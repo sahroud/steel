@@ -158,7 +158,9 @@
       throw new Error("شناسه عضو "+item.role+" با مدل جاری تطبیق ندارد.");
     }
     const report=root.SahroudKneeConnectionCapacity.calculate(detail,design);
-    const status=s=>s==="PASS"?"قبول":s==="FAIL"?"رد":"ناقص";
+    const status=s=>s==="PASS"?"قبول":s==="FAIL"?"رد":s==="NOT_ASSESSABLE"?"قابل ارزیابی نیست":"ناقص";
+    const fmt=v=>Number.isFinite(v)?Number(v).toFixed(3):"—";
+    const ratio=v=>Number.isFinite(v)?(Number(v)*100).toFixed(1)+"%":"—";
     const rows=[];
     report.boltChecks.forEach(b=>{
      rows.push("<tr><td>"+esc(b.caseId)+"</td><td>پیچ "+esc(b.boltId)+"</td><td>کشش</td><td>"+b.tension.demandKN.toFixed(3)+"</td><td>"+b.tension.capacityKN.toFixed(3)+"</td><td>"+(b.tension.utilization*100).toFixed(1)+"%</td><td>"+status(b.tension.status)+"</td></tr>");
@@ -167,9 +169,9 @@
     report.bearingChecks.forEach(b=>[b.bearing,b.tear].forEach(x=>rows.push("<tr><td>"+esc(b.caseId)+"</td><td>"+esc(b.boltId)+" / "+esc(b.plateId)+"</td><td>"+esc(x.limitState)+"</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>")));
     report.plateChecks.forEach(p=>p.checks.forEach(x=>rows.push("<tr><td>"+esc(p.caseId)+"</td><td>"+esc(p.plateId)+"</td><td>"+esc(x.limitState)+"</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>")));
     report.blockShearChecks.forEach(p=>{const x=p.check;rows.push("<tr><td>"+esc(p.caseId)+"</td><td>"+esc(p.plateId)+"</td><td>برش قالبی</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>");});
-    report.weldChecks.forEach(w=>{const x=w.check;rows.push("<tr><td>"+esc(w.caseId)+"</td><td>جوش "+esc(w.weldId)+"</td><td>کشش/فشار موازی محور جوش</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>");});
+    report.weldChecks.forEach(w=>{const x=w.check;rows.push("<tr><td>"+esc(w.caseId)+"</td><td>جوش "+esc(w.weldId)+"</td><td>مقاومت جوش</td><td>"+fmt(x.demandKN)+"</td><td>"+fmt(x.capacityKN)+"</td><td>"+ratio(x.utilization)+"</td><td>"+status(x.status)+"</td></tr>");});
     $("kneeCapacityResult").innerHTML="<p><b>نتیجه کنترل‌های جزئی: "+(report.overallStatus==="FAIL"?"حداقل یک کنترل رد شده است":"کنترل‌های اجراشده بدون رد ثبت شده‌اند، اما طراحی اتصال ناقص است")+"</b></p>"+
-     "<p>روش: "+esc(report.method)+"؛ تعداد کنترل: "+report.summary.checks+"؛ قبول: "+report.summary.passed+"؛ رد: "+report.summary.failed+"؛ بیشینه نسبت تقاضا به ظرفیت: "+(report.summary.maximumUtilization*100).toFixed(1)+"%</p>"+
+     "<p>روش: "+esc(report.method)+"؛ تعداد کنترل: "+report.summary.checks+"؛ قبول: "+report.summary.passed+"؛ رد: "+report.summary.failed+"؛ غیرقابل ارزیابی: "+report.weldChecks.filter(w=>w.check.status==="NOT_ASSESSABLE").length+"؛ بیشینه نسبت تقاضا به ظرفیت کنترل‌های محاسبه‌شده: "+(report.summary.maximumUtilization*100).toFixed(1)+"%</p>"+
      "<table><thead><tr><th>ترکیب</th><th>جزء</th><th>حالت حدی</th><th>تقاضا (kN)</th><th>ظرفیت موجود (kN)</th><th>نسبت</th><th>نتیجه</th></tr></thead><tbody>"+rows.join("")+"</tbody></table>"+
      "<p><b>ظرفیت‌های محاسبه‌شده به معنی تأیید اتصال نیستند.</b> تأیید نهایی: خیر؛ آمادگی اجرا: خیر.</p>"+
      "<ul>"+report.notEvaluated.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
