@@ -48,7 +48,28 @@
     if(!(config.provenance&&config.provenance.verified===true&&config.provenance.sourceReference)) missing.push("verified manufacturer/design source");
     return Object.freeze({ready:missing.length===0,missing:Object.freeze(missing)});
   }
-  const api=Object.freeze({CAPACITIES_TONNES,ARCHITECTURE,createConfiguration,assessReadiness});
+  function createVerifiedWheelLoadCase(input){
+    const d=input||{},config=d.configuration,readiness=assessReadiness(config);
+    if(!readiness.ready)throw new Error("اطلاعات هندسی/کاری/سازنده جرثقیل کامل نیست: "+readiness.missing.join("، "));
+    if(d.sourceVerified!==true||typeof d.sourceReference!=="string"||!d.sourceReference.trim())
+      throw new Error("منبع معتبر سازنده برای واکنش چرخ‌ها الزامی است.");
+    if(!Array.isArray(d.wheelReactions)||!d.wheelReactions.length)
+      throw new Error("واکنش‌های واقعی چرخ جرثقیل وارد نشده‌اند.");
+    const seen=new Set(),nodalLoads=d.wheelReactions.map((w,i)=>{
+      if(!w||typeof w.nodeId!=="string"||!w.nodeId.trim())throw new Error("گره واکنش چرخ "+(i+1)+" مشخص نیست.");
+      if(seen.has(w.nodeId))throw new Error("برای هر گره واکنش چرخ فقط یک رکورد تجمیع‌شده وارد کنید.");
+      seen.add(w.nodeId);
+      const vertical=Number(w.verticalKN),longitudinal=Number(w.longitudinalKN||0),transverse=Number(w.transverseKN||0);
+      if(!Number.isFinite(vertical)||vertical<0||!Number.isFinite(longitudinal)||!Number.isFinite(transverse))
+        throw new Error("مؤلفه‌های واکنش چرخ باید محدود باشند و نیروی قائم نامنفی باشد.");
+      return {nodeId:w.nodeId,values:[longitudinal*1000,-vertical*1000,transverse*1000,0,0,0]};
+    });
+    return Object.freeze({success:true,type:"crane",sourceVerified:true,
+      label:"واکنش چرخ جرثقیل از سند سازنده",sourceReference:d.sourceReference,
+      factors:d.factors||{dead:0,live:0,snow:0},nodalLoads:Object.freeze(nodalLoads.map(x=>Object.freeze({nodeId:x.nodeId,values:Object.freeze(x.values)}))),
+      note:"واکنش‌ها از منبع سازنده/محاسبه تأییدشده دریافت شده‌اند؛ این تابع آن‌ها را محاسبه نمی‌کند. تا مدل‌سازی ریل، تیر حمال، کنسول، مهاربندی و اتصالات، مسیر جرثقیل کامل نیست."});
+  }
+  const api=Object.freeze({CAPACITIES_TONNES,ARCHITECTURE,createConfiguration,assessReadiness,createVerifiedWheelLoadCase});
   root.SahroudCraneDesign=api;
   if(typeof module!=="undefined"&&module.exports) module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
