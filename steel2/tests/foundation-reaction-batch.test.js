@@ -31,3 +31,12 @@ test("rejects duplicate cases and non-finite support components",()=>{
  assert.throws(()=>collectSlsReactionCases({cases:[make("S1","SLS-1"),make("S1","SLS-1b")]}),/یکتا/);
  assert.throws(()=>collectSlsReactionCases({cases:[{...make("S2","SLS-2"),supports:[{...supports[0],FykN:NaN},supports[1]]}]}),/عدد محدود/);
 });
+
+test("rejects null or blank force and moment components instead of coercing them to zero",()=>{
+ const nullCase=make("SLS-null","SLS null");
+ nullCase.supports=[{...supports[0],FykN:null},supports[1]];
+ assert.throws(()=>collectSlsReactionCases({cases:[nullCase]}),/نباید خالی باشد/);
+ const blankCase=make("SLS-blank","SLS blank");
+ blankCase.supports=[{...supports[0],MzkNm:""},supports[1]];
+ assert.throws(()=>collectSlsReactionCases({cases:[blankCase]}),/نباید خالی باشد/);
+});
