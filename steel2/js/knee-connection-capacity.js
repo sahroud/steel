@@ -133,16 +133,17 @@
    const weldActions=new Map(c.weldActions.map(a=>[String(a.weldId),a]));
    for(const weld of detail.welds){
     const a=weldActions.get(String(weld.id));
-    const start=weld.startMm,end=weld.endMm;
-    const lengthMm=Math.hypot(...start.map((v,i)=>v-end[i]));
-    const throatMm=0.707*weld.legSizeMm;
-    const nominalStressMPa=0.6*weld.electrodeFexxMPa;
-    const nominalCapacityKN=nominalStressMPa*throatMm*lengthMm/1000;
-    const designCapacity=factor(method,0.75,2.0)*nominalCapacityKN;
-    const check=demandCheck(c.id+":"+weld.id,"fillet-weld-axial-parallel",a.demandKN,designCapacity,method,"جدول ۱۰-۲-۹-۳؛ کشش/فشار موازی محور جوش: Fnw=0.6FEXX، Aw=0.707aL");
-    weldChecks.push({caseId:c.id,weldId:weld.id,lengthMm,legSizeMm:weld.legSizeMm,effectiveThroatMm:throatMm,
-     FexxMPa:weld.electrodeFexxMPa,effectiveAreaMm2:throatMm*lengthMm,nominalStressMPa,nominalCapacityKN,
-     designCapacityKN:designCapacity,check,limitations:["این کنترل فقط مقاومت فلز جوش را برای کشش/فشار موازی محور جوش می‌سنجد.","ظرفیت فلز پایه، بارگذاری موازی محور جوش، گروه جوش با خروج از مرکزیت، حداقل/حداکثر بعد و طول مؤثر جوش، و جوش شیاری کنترل نشده‌اند."]});
+    // Do not calculate a weld resistance until the current official edition/table,
+    // effective weld length, detail limits and base-metal limit states are verified.
+    // In particular, never use raw geometric length where a long-weld reduction may apply.
+    const check={id:c.id+":"+weld.id,limitState:"fillet-weld-resistance",
+     demandKN:a.demandKN,capacityKN:null,utilization:null,status:"NOT_ASSESSABLE",
+     method,reference:"مبحث دهم ۱۴۰۱، جدول ۱۰-۲-۹-۳ و بند ۱۰-۲-۹-۲-۴؛ تطبیق رسمی جدول/تمام حالت‌های حدی هنوز کامل نیست."};
+    weldChecks.push({caseId:c.id,weldId:weld.id,check,
+     status:"NOT_ASSESSABLE",
+     limitations:["ظرفیت جوش تا تطبیق مستقیم جدول نسخه رسمی ۱۴۰۱ محاسبه نمی‌شود.",
+      "طول مؤثر، کاهش جوش بلند، گلویی مؤثر و وضعیت بارگذاری باید از کنترل جزئیات معتبر اخذ شود.",
+      "ظرفیت فلز پایه و اندرکنش تنش‌های برشی/عمود بر محور جوش نیز در این خروجی محاسبه نشده‌اند."]});
    }
    const actions=new Map(c.boltActions.map(a=>[String(a.boltId),a]));
    for(const bolt of detail.bolts){
@@ -226,7 +227,7 @@
    notEvaluated:[
     "توزیع نیرو در پیچ‌ها از مدل سه‌بعدی به‌طور خودکار محاسبه نشده؛ بسته نیروهای هر پیچ باید با روش مستند و تأیید مهندس وارد شود.",
     "اثر اهرمی فقط به‌صورت نیروی افزوده ورودی پذیرفته می‌شود؛ سختی ورق انتهایی، prying و اندرکنش تماس/پیچ حل نشده است.",
-    "تنش برداری گروه جوش با خروج از مرکزیت، ظرفیت فلز پایه برای برش روی گلویی مؤثر، حداقل/حداکثر بعد و طول مؤثر جوش هنوز محاسبه نشده است؛ فقط مقاومت فلز جوش برای کشش/فشار موازی محور جوش گوشه بررسی می‌شود.",
+    "ظرفیت جوش گوشه و فلز پایه فعلاً NOT_ASSESSABLE است؛ جدول رسمی، طول مؤثر و همه حالت‌های حدی باید پیش از محاسبه تطبیق داده شوند.",
     "خمش ورق، تسلیم موضعی، کمانش/پایداری اجزای اتصال، ظرفیت اعضای ستون و رفتر در محل اتصال و اثر خروج از مرکزیت‌های واقعی کامل نیست.",
     "اتصالات لغزش بحرانی/پیش‌تنیده، لغزش، خستگی، الزامات لرزه‌ای و طراحی ظرفیت‌محور در این ماژول محاسبه نمی‌شوند.",
     "قبولی این کنترل‌های جزئی به معنی قبولی کل اتصال یا آمادگی ساخت و اجرا نیست."
