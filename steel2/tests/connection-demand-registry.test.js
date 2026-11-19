@@ -2,7 +2,8 @@
 const test=require("node:test");
 const assert=require("node:assert/strict");
 const registry=require("../js/connection-demand-registry.js");
-const demand=require("../js/member-demand-3d.js");
+require("../js/member-demand-3d.js");
+const demand=globalThis.SahroudMemberDemand3D;
 function fixture(){
  const model={nodes:[
   {id:"B",x:0,y:0,z:0,kind:"base"},
