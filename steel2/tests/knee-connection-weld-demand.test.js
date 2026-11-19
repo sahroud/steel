@@ -16,7 +16,7 @@ function fixture(){
  axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",
  threadsInShearPlane:true,shearPlaneCount:1}],
  welds:[{id:"W1",plateId:"P1",faceReference:"DWG-1/F1",startMm:[-50,-50,0],endMm:[50,-50,0],type:"fillet",legSizeMm:6,connectedPartThicknessMm:10,highCycleDynamic:false,edgeWeld:false,continuity:"continuous",electrodeFexxMPa:490},
- {id:"W2",plateId:"P1",faceReference:"DWG-1/F1",startMm:[50,-50,0],endMm:[50,50,0],type:"fillet",legSizeMm:6,electrodeFexxMPa:490}]};
+ {id:"W2",plateId:"P1",faceReference:"DWG-1/F1",startMm:[50,-50,0],endMm:[50,50,0],type:"fillet",legSizeMm:6,connectedPartThicknessMm:10,highCycleDynamic:false,edgeWeld:false,continuity:"continuous",electrodeFexxMPa:490}]};
  const action=(id,role,force,moment)=>({memberId:id,role,connectionFrame:{
   force,moment,connectionOriginM:{x:0,y:0,z:0},units:{force:"N",moment:"N.m",length:"m"}}});
  const mapped={success:true,connectionId:"K1",jointId:"E",originM:[0,0,0],
