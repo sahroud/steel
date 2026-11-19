@@ -52,6 +52,12 @@
   ["sectionTopB","sectionTopT","sectionBottomB","sectionBottomT","sectionWebH","sectionWebT"].forEach(id=>$ (id).addEventListener("input",updateBuiltUpFromDimensions));
   $("btnSaveInitialMemberSection").addEventListener("click",()=>{
    try{
+    if($("initialSectionMode")?.value==="builtUpI"){
+     updateBuiltUpFromDimensions();
+     if(!dirty.has(selectedId))throw new Error("ابعاد کامل تیرورق را وارد کنید.");
+     message("ابعاد و تمام خواص هندسی مقطع همین عضو به‌روزرسانی و ثبت شد. تحلیل مجدد لازم است.");
+     return;
+    }
     const member=currentModel?.members?.find(m=>String(m.id)===selectedId);
     if(!member)throw new Error("ابتدا یک عضو معتبر انتخاب کنید.");
     const base=baseFor(member);
