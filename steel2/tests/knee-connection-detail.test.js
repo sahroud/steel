@@ -92,3 +92,16 @@ test("weld geometry is checked against its own plate coordinate frame",()=>{
  d.welds[0].startMm=[-100,-60,0];d.welds[0].endMm=[-100,60,0];
  const r=detail.validate(d);assert.equal(r.valid,true);
 });
+
+test("builds global 3D plate polygon, bolt and weld coordinates from declared frames",()=>{
+ const d=fixture();const g=detail.buildGlobalGeometry(d);
+ assert.equal(g.success,true);
+ assert.deepEqual(g.plates[0].polygon[0].globalM,[-0.1,5.9,0]);
+ assert.deepEqual(g.plates[0].bolts[0].centerGlobalM,[0,5.96,0]);
+ assert.deepEqual(g.welds[0].startGlobalM,[-0.1,5.94,0]);
+ assert.equal(g.capacityDesigned,false);
+});
+test("global geometry export rejects invalid connection details",()=>{
+ const d=fixture();d.plates[0].frame.axes.n=[0,0,-1];
+ assert.throws(()=>detail.buildGlobalGeometry(d),/هندسه اتصال معتبر نیست/);
+});
