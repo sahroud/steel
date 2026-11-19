@@ -43,3 +43,12 @@ test("knee detail UI exposes signed per-combination connection-frame demand mapp
  assert.match(source,/SahroudKneeConnectionDemandMapper\.map/);
  assert.match(source,/ظرفیت طراحی نشده؛ جمع نیروهای گره/);
 });
+
+test("knee demand report includes the physical transfer point column",()=>{
+ assert.match(source,/نقطه انتقال جهانی \(m\)/);
+ assert.match(source,/transferPoint\.globalCoordinatesM/);
+});
+test("knee detail editor button layout keeps all actions in one button grid",()=>{
+ assert.match(source,/<div class='button-grid'><button id='btnKneeDetailTemplate'/);
+ assert.match(source,/btnKneeDetailMapDemand[\s\S]*?انتقال تقاضای ترکیبات بار به دستگاه اتصال<\/button><\/div>/);
+});
