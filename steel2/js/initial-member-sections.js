@@ -30,7 +30,7 @@ function resolve(model,inputs){
   const picked=user?.section?{section:user.section,source:"user-input"}:
     existing?{section:existing,source:"existing-model-section"}:
     fallback?{section:fallback,source:"group-default"}:null;
-  if(!picked||!picked.section||!nonblank(picked.section.designation||picked.section.name))
+  if(!picked||!picked.section||!nonblank(picked.section.designation||picked.section.name||picked.section.profile))
    throw new Error("برای عضو "+id+" مقطع اولیه مشخص نیست؛ ورودی کاربر یا پیش‌فرض گروه لازم است.");
   return {memberId:id,group:String(m.group||m.type||"unspecified"),
    initialSection:clone(picked.section),source:picked.source,
