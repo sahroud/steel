@@ -12,10 +12,14 @@ function model(overrides={}){
    {id:"RAF",start:"E",end:"R",sectionKey:"rafter",axis:"transverse",frame:1,sectionProperties:section({topFlangeWidthMm:180}),...overrides.rafter}]};
 }
 test("knee extraction reads actual assigned column and rafter geometry dimensions",()=>{
- const k=knee.extract(model())[0];
+ const m=model({column:{sectionRollDeg:0,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:0,sectionOrientationConfirmed:true})},rafter:{sectionRollDeg:0,sectionOrientationVerified:true,sectionProperties:section({topFlangeWidthMm:180,sectionRollDeg:0,sectionOrientationConfirmed:true})}});
+ const k=knee.extract(m,analysisResult())[0];
  assert.equal(k.column.sectionGeometry.available,true);
  assert.equal(k.column.sectionGeometry.dimensionsMm.topFlangeWidthMm,220);
  assert.equal(k.rafter.sectionGeometry.dimensionsMm.topFlangeWidthMm,180);
+ assert.equal(k.column.sectionSolids.available,true);
+ assert.equal(k.column.sectionSolids.solids.length,3);
+ assert.equal(k.rafter.sectionSolids.solids.length,3);
  assert.equal(knee.check(k).valid,true);
 });
 test("missing section properties block knee geometry readiness",()=>{
@@ -53,17 +57,49 @@ test("geometry sketch contains member axes only and no fabricated plate or bolt 
  assert.equal(drawing.includes("<circle"),false);
  assert.equal(drawing.includes("bolt"),false);
 });
+test("rolled built-up I member solids use the solver basis and centroidal asymmetric section geometry",()=>{
+ const roll=90;
+ const m=model({column:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true})},
+  rafter:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({topFlangeWidthMm:180,sectionRollDeg:roll,sectionOrientationConfirmed:true})}});
+ const result=analysisResult(roll);
+ const k=knee.extract(m,result)[0];
+ assert.equal(k.column.sectionSolids.available,true);
+ assert.equal(k.column.sectionSolids.sectionRollDeg,90);
+ assert.equal(k.column.sectionSolids.memberCenterlineAssumedCentroidal,true);
+ assert.equal(k.column.sectionSolids.eccentricityIncluded,false);
+ assert.equal(k.column.sectionSolids.solids.length,3);
+ assert.equal(k.column.sectionSolids.solids[0].vertices.length,8);
+ assert.equal(k.column.sectionSolids.solids[1].faces.length,6);
+});
+test("section solid extrusion blocks missing explicit roll and unconfirmed orientation",()=>{
+ const noRoll=model();
+ const k1=knee.extract(noRoll,analysisResult())[0];
+ assert.equal(k1.column.sectionSolids.status,"section-roll-missing");
+ const unconfirmed=model({column:{sectionRollDeg:0,sectionProperties:section({sectionRollDeg:0})}});
+ const k2=knee.extract(unconfirmed,analysisResult())[0];
+ assert.equal(k2.column.sectionSolids.status,"section-orientation-unconfirmed");
+});
+test("section solid extrusion blocks mismatch between stored and analyzed roll",()=>{
+ const roll=45;
+ const m=model({column:{sectionRollDeg:roll,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:roll,sectionOrientationConfirmed:true})}});
+ const result=analysisResult(0);
+ const k=knee.extract(m,result)[0];
+ assert.equal(k.column.sectionSolids.status,"solver-roll-mismatch");
+});
+
 test("knee geometry self-test passes",()=>{
  const result=knee.selfTest();
  assert.equal(result.failed,0);
 });
 
-function analysisResult(){
- const axes={x:[0,1,0],y:[0,0,1],z:[1,0,0]};
- return {members:[{id:"COL",localAxes:axes},{id:"RAF",localAxes:axes}]};
+function analysisResult(roll=0){
+ const columnAxes={x:[0,1,0],y:[-1,0,0],z:[0,0,-1]};
+ const rafterAxes={x:[1/Math.sqrt(2.44),1.2/Math.sqrt(2.44),0],y:[-1.2/Math.sqrt(2.44),1/Math.sqrt(2.44),0],z:[0,0,1]};
+ return {members:[{id:"COL",localAxes:columnAxes,sectionRollDeg:roll},{id:"RAF",localAxes:rafterAxes,sectionRollDeg:roll}]};
 }
 test("knee geometry consumes solver local axes by member id without inferring section roll",()=>{
- const k=knee.extract(model(),analysisResult())[0];
+ const m=model({column:{sectionRollDeg:0,sectionOrientationVerified:true,sectionProperties:section({sectionRollDeg:0,sectionOrientationConfirmed:true})},rafter:{sectionRollDeg:0,sectionOrientationVerified:true,sectionProperties:section({topFlangeWidthMm:180,sectionRollDeg:0,sectionOrientationConfirmed:true})}});
+ const k=knee.extract(m,analysisResult())[0];
  assert.equal(k.column.solverAxes.available,true);
  assert.deepEqual(k.column.solverAxes.axes,{x:[0,1,0],y:[0,0,1],z:[1,0,0]});
  assert.equal(k.rafter.solverAxes.source,"analysisResult.members.localAxes");
