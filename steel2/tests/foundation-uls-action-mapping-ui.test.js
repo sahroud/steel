@@ -13,7 +13,7 @@ function setup(){
     FxkN:0,FykN:100,FzkN:0,MxkNm:0,MykNm:0,MzkNm:0}]}]}),
   foundationLocalGeometryInput:JSON.stringify(geometry),foundationReactionSense:"on-structure",selectedFoundationNodeId:"B1"
  };
- const ids=["foundationSoilPanel","btnMapFoundationUlsActions","foundationUlsActionResult",...Object.keys(values)];
+ const ids=["foundationSoilPanel","btnMapFoundationUlsActions","foundationUlsActionResult","foundationUlsMappedJson",...Object.keys(values)];
  const elements=Object.fromEntries(ids.map(id=>[id,{id,dataset:{},value:values[id]||"",textContent:"",style:{},
   addEventListener(type,fn){listeners.set(id+":"+type,fn);}}]));
  global.window={document:{readyState:"complete",getElementById:id=>elements[id]||null}};
@@ -30,6 +30,8 @@ test("ULS UI validates and maps complete local actions for the selected footing"
  assert.match(elements.foundationUlsActionResult.textContent,/بسته کنش‌های ULS/);
  assert.match(elements.foundationUlsActionResult.textContent,/"NkN": 100/);
  assert.equal(elements.foundationUlsActionResult.style.color,"#15803d");
+ assert.equal(JSON.parse(elements.foundationUlsMappedJson.value).schema,"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0");
+ assert.equal(global.window.SahroudLastFoundationUlsActions.success,true);
  delete global.window;
 });
 test("ULS UI refuses missing footing identity or invalid JSON without claiming success",()=>{
