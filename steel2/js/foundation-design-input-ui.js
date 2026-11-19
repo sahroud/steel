@@ -18,7 +18,7 @@
     const payload=JSON.parse(input.value||"{}");
     const nodeId=String(payload.nodeId||"").trim();
     if(!nodeId)throw new Error("ابتدا شناسه گره پایه را در فرم مشخصات پی وارد کنید.");
-    if(!actions.foundations.some(item=>item&&item.nodeId===nodeId))
+    if(!actions.foundations.some(item=>item&&String(item.nodeId||"").trim()===nodeId))
      throw new Error("بسته ULS متعلق به پایه "+nodeId+" نیست؛ شناسه پایه را با مرحله تبدیل تطبیق دهید.");
     payload.ulsLocalActions=actions;
     input.value=JSON.stringify(payload,null,2);
