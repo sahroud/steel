@@ -69,6 +69,7 @@
   (input.plates||[]).forEach((p,i)=>{
    if(!text(p.id)||plateIds.has(String(p.id)))fail(errors,"شناسه ورق خالی یا تکراری است.");plateIds.add(String(p.id));
    if(!positive(p.thicknessMm))fail(errors,"ضخامت ورق "+(p.id||i)+" باید مثبت و صریح باشد.");
+   if(p.thicknessReference!=="mid-plane")fail(errors,"مرجع ضخامت ورق "+(p.id||i)+" باید صریحاً mid-plane باشد؛ محل سطح مرجع حدس زده نمی‌شود.");
    if(!text(p.material?.grade)||!positive(p.material?.FyMPa)||!positive(p.material?.FuMPa)||p.material.FuMPa<p.material.FyMPa)
     fail(errors,"گرید، Fy و Fu معتبر ورق "+(p.id||i)+" الزامی است.");
    const pf=p.frame;
@@ -165,11 +166,22 @@
    const frame=plate.frame,u=frame.axes.u,v=frame.axes.v,n=frame.axes.n,o=frame.originMm;
    const localToConnection=(x,y)=>[0,1,2].map(i=>o[i]+u[i]*x+v[i]*y);
    const normalGlobal=[0,1,2].map(i=>axes.x[i]*n[0]+axes.y[i]*n[1]+axes.z[i]*n[2]);
-   return{id:String(plate.id),thicknessMm:plate.thicknessMm,material:plate.material,
+   const half=Number(plate.thicknessMm)/2000;
+   const vertices=plate.polygonMm.map(point=>{
+    const center=localToConnection(point.x,point.y);
+    const minus=center.map((v,i)=>v-n[i]*half*1000);
+    const plus=center.map((v,i)=>v+n[i]*half*1000);
+    return{localMm:{x:point.x,y:point.y},minusFaceGlobalM:toGlobal(minus),plusFaceGlobalM:toGlobal(plus)};
+   });
+   const sideFaces=vertices.map((vertex,i)=>({edgeIndex:i,
+    verticesGlobalM:[vertex.minusFaceGlobalM,vertices[(i+1)%vertices.length].minusFaceGlobalM,
+     vertices[(i+1)%vertices.length].plusFaceGlobalM,vertex.plusFaceGlobalM]}));
+   return{id:String(plate.id),thicknessMm:plate.thicknessMm,thicknessReference:"mid-plane",material:plate.material,
     referencePlaneOriginGlobalM:toGlobal(o),normalGlobal,
     polygon:plate.polygonMm.map(point=>({localMm:{x:point.x,y:point.y},
      connectionFrameMm:localToConnection(point.x,point.y),
      globalM:toGlobal(localToConnection(point.x,point.y))})),
+    solid:{minusFaceGlobalM:vertices.map(v=>v.minusFaceGlobalM),plusFaceGlobalM:vertices.map(v=>v.plusFaceGlobalM),sideFaces},
     bolts:input.bolts.filter(b=>String(b.plateId)===String(plate.id)).map(b=>{
      const point=localToConnection(b.xMm,b.yMm);
      return{id:String(b.id),centerLocalMm:{x:b.xMm,y:b.yMm},centerGlobalM:toGlobal(point),
@@ -183,7 +195,7 @@
    coordinateSystems:{platePolygonAndBolt:"plate-local mm",plateFrame:"connection-frame mm",
     weldEndpoints:"connection-frame mm",output:"global m"},
    plates,welds,capacityDesigned:false,executionReady:false,
-   limitations:["مختصات سه‌بعدی هندسه استخراج شده‌اند؛ ضخامت به‌صورت مقدار ورودی حفظ شده و حجم جامد/تماس اجزا ساخته نشده است.",
+   limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ تماس بین ورق‌های مختلف هنوز کنترل نشده است.",
     "محور پیچ، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا در این خروجی محاسبه نمی‌شوند."]};
  }
  const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildGlobalGeometry};
