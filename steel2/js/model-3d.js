@@ -1122,6 +1122,11 @@
       nodalLoads.push(...Array.from(loadByNode,([nodeId,values])=>({nodeId,values})));
     }
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports,nodalLoads);
+     if(!window.SahroudFoundationReactionExport)throw new Error("ماژول خروجی واکنش تکیه‌گاهی فونداسیون بارگذاری نشده است.");
+     result.foundationReactionExport=window.SahroudFoundationReactionExport.exportSupportReactions({
+       nodes:analysisModel.nodes,supports,reactions:result.reactions,loadCase:selected.key,
+       loadCaseLabel:selected.label,equilibrium:result.equilibrium
+     });
     if(!window.SahroudMemberDemand3D)throw new Error("موتور استخراج تقاضای اعضای سه‌بعدی بارگذاری نشده است.");
     result.memberDemand=window.SahroudMemberDemand3D.extractCase(result,analysisModel);
     result.orientationAudit=window.SteelFrame3D.auditMemberOrientation(analysisModel);
