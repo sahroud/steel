@@ -91,11 +91,12 @@
     const mapped=root.SahroudKneeConnectionDemandMapper.map(value,root.SteelStructuralModel?.lastConnectionDemand||null,selectedKnee());
     const rows=mapped.cases.map(c=>c.memberActions.map(a=>
      "<tr><td>"+esc(c.combination)+"</td><td>"+esc(a.role)+" / "+esc(a.memberId)+"</td>"+
+     "<td>"+a.transferPoint.globalCoordinatesM.map(v=>Number(v).toFixed(4)).join(", ")+"</td>"+
      [a.connectionFrame.force.x,a.connectionFrame.force.y,a.connectionFrame.force.z].map(v=>"<td>"+(Number(v)/1000).toFixed(3)+"</td>").join("")+
      [a.connectionFrame.moment.x,a.connectionFrame.moment.y,a.connectionFrame.moment.z].map(v=>"<td>"+(Number(v)/1000).toFixed(3)+"</td>").join("")+"</tr>"
     ).join("")).join("");
     $("kneeDetailMappedDemand").innerHTML="<p>تقاضای هر عضو جداگانه به مبدأ و محورهای اتصال منتقل شد. نیرو kN و لنگر kN.m است.</p>"+
-     "<table><thead><tr><th>ترکیب بار</th><th>عضو</th><th>Fx</th><th>Fy</th><th>Fz</th><th>Mx</th><th>My</th><th>Mz</th></tr></thead><tbody>"+rows+"</tbody></table>"+
+     "<table><thead><tr><th>ترکیب بار</th><th>عضو</th><th>نقطه انتقال جهانی (m)</th><th>Fx</th><th>Fy</th><th>Fz</th><th>Mx</th><th>My</th><th>Mz</th></tr></thead><tbody>"+rows+"</tbody></table>"+
      "<p>ظرفیت طراحی نشده؛ جمع نیروهای گره و کنترل تعادل کامل انجام نشده است.</p>";
     $("kneeDetailMappedDemand").dataset.valid="true";
    }catch(e){
