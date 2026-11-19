@@ -227,7 +227,7 @@
    p.innerHTML='<div class="panel-title"><h3>اتصال زانویی ـ ممیزی هندسه واقعی اعضا</h3><span class="status">هندسه، بدون طراحی ظرفیت</span></div>'+
     '<div class="notice">در این مرحله فقط هندسه مقاطع ستون و رفتر از رجیستری یکپارچه مقاطع خوانده می‌شود. ابعاد فرضی ورق و آرایش فرضی پیچ حذف شده‌اند تا با نقشه ساخت اشتباه گرفته نشوند.</div>'+
     '<div class="form-grid"><div class="field"><label for="kneeSelect">قاب و سمت</label><select id="kneeSelect"><option value="">ابتدا مدل را استخراج کنید</option></select></div></div>'+
-    '<div class="button-grid"><button id="btnKneeExtract" class="btn primary" type="button">بازیابی هندسه از مدل جاری</button><button id="btnKneeCsv" class="btn secondary" type="button" disabled>خروجی CSV هندسه مقاطع</button></div>'+
+    '<div class="button-grid"><button id="btnKneeExtract" class="btn primary" type="button">بازیابی هندسه از مدل جاری</button><button id="btnKneeCsv" class="btn secondary" type="button" disabled>خروجی CSV هندسه مقاطع</button><button id="btnKneeGeometryJson" class="btn secondary" type="button" disabled>خروجی JSON هندسه سه‌بعدی</button></div>'+
     '<div id="kneeSummary" class="notice">مدل سه‌بعدی و مقاطع اعضا را ابتدا تولید کنید.</div><div id="kneeSectionGeometry"></div>'+
     '<h4>نمای محورهای اعضای متصل</h4><div id="kneeDrawing" class="drawing-area"></div><div id="kneeChecks" class="notice"></div>';
    const anchor=$("connectionDemandReviewPanel");
@@ -258,16 +258,27 @@
  }
  function exportCsv(){
   if(!knees.length)return;
-  const rows=[["Frame","Side","Joint","ColumnMember","ColumnProfile","ColumnGeometryStatus","ColumnTopFlangeWidth_mm","ColumnTopFlangeThickness_mm","ColumnBottomFlangeWidth_mm","ColumnBottomFlangeThickness_mm","ColumnWebClearHeight_mm","ColumnWebThickness_mm","RafterMember","RafterProfile","RafterGeometryStatus","RafterTopFlangeWidth_mm","RafterTopFlangeThickness_mm","RafterBottomFlangeWidth_mm","RafterBottomFlangeThickness_mm","RafterWebClearHeight_mm","RafterWebThickness_mm","Angle_deg"]];
+  const rows=[["Frame","Side","Joint","ColumnMember","ColumnProfile","ColumnGeometryStatus","ColumnRoll_deg","ColumnOrientationConfirmed","ColumnTopFlangeWidth_mm","ColumnTopFlangeThickness_mm","ColumnBottomFlangeWidth_mm","ColumnBottomFlangeThickness_mm","ColumnWebClearHeight_mm","ColumnWebThickness_mm","RafterMember","RafterProfile","RafterGeometryStatus","RafterRoll_deg","RafterOrientationConfirmed","RafterTopFlangeWidth_mm","RafterTopFlangeThickness_mm","RafterBottomFlangeWidth_mm","RafterBottomFlangeThickness_mm","RafterWebClearHeight_mm","RafterWebThickness_mm","CommonWebPlaneVerified","ColumnWebAlignment","RafterWebAlignment","Angle_deg"]];
   knees.forEach(k=>{
    const c=k.column.sectionGeometry,r=k.rafter.sectionGeometry,cd=c.dimensionsMm||{},rd=r.dimensionsMm||{};
-   rows.push([k.frame,k.side,k.node.id,k.column.id,c.profile,c.status,...DIMENSIONS.map(x=>cd[x]??""),k.rafter.id,r.profile,r.status,...DIMENSIONS.map(x=>rd[x]??""),k.angle]);
+   rows.push([k.frame,k.side,k.node.id,k.column.id,c.profile,c.status,k.column.sectionSolids?.sectionRollDeg??"",k.column.sectionSolids?.orientationConfirmed??false,...DIMENSIONS.map(x=>cd[x]??""),k.rafter.id,r.profile,r.status,k.rafter.sectionSolids?.sectionRollDeg??"",k.rafter.sectionSolids?.orientationConfirmed??false,...DIMENSIONS.map(x=>rd[x]??""),k.webPlane?.commonPlaneVerified??false,k.webPlane?.columnAlignment??"",k.webPlane?.rafterAlignment??"",k.angle]);
   });
   const csv="\uFEFF"+rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
   const url=root.URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),a=root.document.createElement("a");
   a.href=url;a.download="sahroud-knee-member-geometry.csv";a.click();root.URL.revokeObjectURL(url);
  }
- function selfTest(){
+ function exportGeometryJson(){
+ if(!knees.length)return;
+ const payload={schema:"SAHROUD-KNEE-MEMBER-GEOMETRY-1.0",units:"m",generatedAt:new Date().toISOString(),
+  note:"Only verified built-up-I member solids are included. No connection plate, bolts, welds, holes or eccentricities are invented.",
+  items:knees.map(k=>({frame:k.frame,side:k.side,joint:{id:k.node.id,x:k.node.x,y:k.node.y,z:k.node.z},
+   column:{id:k.column.id,sectionGeometry:k.column.sectionGeometry,sectionSolids:k.column.sectionSolids},
+   rafter:{id:k.rafter.id,sectionGeometry:k.rafter.sectionGeometry,sectionSolids:k.rafter.sectionSolids},
+   webPlane:k.webPlane,connectionPlateIncluded:false,capacityDesigned:false,executionReady:false}))};
+ const json=JSON.stringify(payload,null,2),url=root.URL.createObjectURL(new Blob([json],{type:"application/json"})),a=root.document.createElement("a");
+ a.href=url;a.download="sahroud-knee-member-geometry.json";a.click();root.URL.revokeObjectURL(url);
+}
+function selfTest(){
   const section=(dims={})=>({profile:"Plate girder",geometryType:"built-up-I",geometryDimensionsMm:{
    topFlangeWidthMm:220,topFlangeThicknessMm:12,bottomFlangeWidthMm:200,bottomFlangeThicknessMm:12,webClearHeightMm:500,webThicknessMm:8,...dims},sectionPropertyFingerprint:"fp1"});
   const model={geometry:{span:12},nodes:[{id:"E",x:0,y:6,z:0,kind:"eave"},{id:"C",x:0,y:0,z:0},{id:"R",x:6,y:7.2,z:0}],
