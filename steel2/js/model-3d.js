@@ -87,12 +87,23 @@
           });
           lines.push("","بردارهای هم‌زمان برای کنترل طراحی ـ هر ردیف از یک ترکیب و یک مقطع است؛ واحد نیرو kN و گشتاور kN.m:");
           result.designDemand.members.forEach(member=>{
-            const e=member.governing.N;
-            if(!e)return;
-            const v=e.values;
-            lines.push(member.id+" | "+e.combination+" @ "+e.x.toFixed(3)+"m | N="+(v.N/1000).toFixed(2)+
-              " Vy="+(v.Vy/1000).toFixed(2)+" Vz="+(v.Vz/1000).toFixed(2)+
-              " T="+(v.T/1e6).toFixed(3)+" My="+(v.My/1e6).toFixed(3)+" Mz="+(v.Mz/1e6).toFixed(3));
+            const byCombination=new Map();
+            member.candidates.forEach(candidate=>{
+              let row=byCombination.get(candidate.combinationId);
+              if(!row){row={label:candidate.combination,actions:{}};byCombination.set(candidate.combinationId,row);}
+              ["N","Vy","Vz","T","My","Mz"].forEach(k=>{
+                const previous=row.actions[k];
+                if(!previous||Math.abs(candidate.values[k])>Math.abs(previous.value))
+                  row.actions[k]={value:candidate.values[k],x:candidate.x};
+              });
+            });
+            byCombination.forEach(row=>{
+              const parts=["N","Vy","Vz","T","My","Mz"].map(k=>{
+                const a=row.actions[k],factor=["N","Vy","Vz"].includes(k)?1000:1000000;
+                return k+"="+(a.value/factor).toFixed(2)+" @ "+a.x.toFixed(3)+"m";
+              });
+              lines.push(member.id+" | "+row.label+" | "+parts.join(" | "));
+            });
           });
           lines.push("","پوش تقاضا ـ واحد نیرو kN، گشتاور kN.m، مختصات m:");
           const fmt=(v,f,d=2)=>Number.isFinite(Number(v))?(Number(v)*f).toFixed(d):"—";
