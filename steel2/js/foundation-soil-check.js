@@ -1,5 +1,6 @@
 (function(root){
  "use strict";
+ let lastResult=null;
  const finite=(v,label)=>{const n=Number(v);if(!Number.isFinite(n))throw new Error(label+" باید عدد محدود باشد.");return n;};
  function validateSoil(input){
   const d=input||{},qa=finite(d.allowableBearingKPa,"ظرفیت مجاز باربری خاک");
@@ -61,11 +62,11 @@
      "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
     ].join("\n");
     out.style.color=result.success?"#15803d":"#b45309";
-    root.SahroudFoundationSoilCheck.lastResult=result;
-   }catch(error){out.textContent="کنترل خاک انجام نشد: "+error.message;out.style.color="#b45309";root.SahroudFoundationSoilCheck.lastResult=null;}
+    lastResult=result;
+   }catch(error){out.textContent="کنترل خاک انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
   });
  }
- const api=Object.freeze({validateSoil,checkRectangularFooting,render});
+ const api=Object.freeze({validateSoil,checkRectangularFooting,render,get lastResult(){return lastResult;}});
  root.SahroudFoundationSoilCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
  if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",render);else render();}
