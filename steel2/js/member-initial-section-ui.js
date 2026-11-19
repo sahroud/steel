@@ -96,6 +96,17 @@
    return {memberId:item.memberId,section:{...base,...item.section},sourceReference:item.sourceReference};
   });
  }
+ function getData(){return [...dirty.values()].map(item=>({memberId:item.memberId,section:{...item.section},sourceReference:item.sourceReference}));}
+ function setData(records){
+  dirty.clear();
+  if(records==null)return;
+  if(!Array.isArray(records))throw new Error("داده مقاطع مستقل ذخیره‌شده باید آرایه باشد.");
+  records.forEach(item=>{
+   if(!item||!item.memberId||!item.section||typeof item.section!=="object")throw new Error("رکورد مقطع مستقل ذخیره‌شده معتبر نیست.");
+   dirty.set(String(item.memberId),{memberId:String(item.memberId),section:{...item.section},sourceReference:String(item.sourceReference||"ورودی مستقل ذخیره‌شده پروژه")});
+  });
+  if(currentModel)setModel(currentModel);
+ }
  function getState(){return {memberCount:currentModel?.members?.length||0,overrideCount:dirty.size,memberIds:[...dirty.keys()]};}
- root.SahroudMemberInitialSectionUI={setModel,readOverrides,createOverride,getState};
+ root.SahroudMemberInitialSectionUI={setModel,readOverrides,createOverride,getData,setData,getState};
 })(typeof window!=="undefined"?window:globalThis);
