@@ -14,6 +14,7 @@ on:
       - "steel2/js/load-transfer.js"
       - "steel2/js/load-path-audit.js"
       - "steel2/js/seismic-load-path.js"
+      - "steel2/js/crane-design.js"
       - "steel2/js/climate-load-engine.js"
       - "steel2/js/sections.js"
       - "steel2/js/final-report.js"
@@ -55,6 +56,7 @@ jobs:
           node --check steel2/js/loads.js
           node --check steel2/js/load-path-audit.js
           node --check steel2/js/seismic-load-path.js
+          node --check steel2/js/crane-design.js
           node --check steel2/js/load-transfer.js
           node --check steel2/js/climate-load-engine.js
           node --check steel2/js/sections.js
