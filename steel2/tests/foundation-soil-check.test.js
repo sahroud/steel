@@ -59,3 +59,20 @@ test("rejects null axial reaction and blank moments instead of silently treating
  assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-null",sourceReference:"R-1",NkN:null,MxkNm:0,MzkNm:0}]}),/نباید خالی باشد/);
  assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-blank",sourceReference:"R-1",NkN:100,MxkNm:"",MzkNm:0}]}),/نباید خالی باشد/);
 });
+
+test("reports horizontal actions but explicitly leaves sliding unverified",()=>{
+ const r=soil.checkRectangularFooting({...base,cases:[{name:"SLS-H",sourceReference:"Reaction report R-03 p.2",NkN:1000,MxkNm:0,MzkNm:0,HxkN:30,HzkN:40}]});
+ const x=r.results[0];
+ assert.equal(x.HxkN,30);
+ assert.equal(x.HzkN,40);
+ assert.equal(x.horizontalResultantKN,50);
+ assert.equal(x.slidingAssessment,"not-performed");
+ assert.ok(r.limitations.some(v=>v.includes("کنترل لغزش")));
+});
+test("does not silently treat omitted horizontal actions as zero",()=>{
+ const r=soil.checkRectangularFooting({...base,cases:[{name:"SLS-no-H",sourceReference:"Reaction report R-04 p.2",NkN:1000,MxkNm:0,MzkNm:0}]});
+ assert.equal(r.results[0].horizontalResultantKN,null);
+});
+test("rejects blank supplied horizontal actions",()=>{
+ assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-H-blank",sourceReference:"R-05",NkN:1000,MxkNm:0,MzkNm:0,HxkN:"",HzkN:0}]}),/نیروی افقی Hx/);
+});
