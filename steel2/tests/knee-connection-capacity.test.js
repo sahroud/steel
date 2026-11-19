@@ -131,3 +131,25 @@ test("bearing connection rejects oversized holes and slots parallel to the force
  x.loadCases[0].bearingChecks[0].forceDirectionToSlot="parallel";
  assert.equal(capacity.validate(e,x).valid,false);
 });
+
+test("tension is reduced by shear even when tensile stress is below 30 percent",()=>{
+ const d=detailFixture(),c=designFixture(),b=d.bolts[0];
+ const Ab=Math.PI*b.diameterMm*b.diameterMm/4;
+ const Fnv=0.45*b.FuMPa;
+ const V=0.5*Fnv*Ab/1000;
+ c.loadCases[0].boltActions[0]={boltId:"B1",tensionKN:0.1,shearKN:V,pryingTensionKN:0};
+ const r=capacity.calculate(d,c).boltChecks[0];
+ const expected=0.75*(0.75*b.FuMPa*(1.3-(V*1000/Ab)/(0.75*Fnv)))*Ab/1000;
+ assert.ok(Math.abs(r.tension.capacityKN-expected)<1e-10);
+ assert.equal(r.interactionApplied,true);
+});
+test("shear is reduced by tension even when shear stress is below 30 percent",()=>{
+ const d=detailFixture(),c=designFixture(),b=d.bolts[0];
+ const Ab=Math.PI*b.diameterMm*b.diameterMm/4;
+ const T=0.5*0.75*b.FuMPa*Ab/1000;
+ c.loadCases[0].boltActions[0]={boltId:"B1",tensionKN:T,shearKN:0.1,pryingTensionKN:0};
+ const r=capacity.calculate(d,c).boltChecks[0];
+ const expected=0.75*(0.45*b.FuMPa*(1.3-(T*1000/Ab)/(0.75*0.75*b.FuMPa)))*Ab/1000;
+ assert.ok(Math.abs(r.shear.capacityKN-expected)<1e-10);
+ assert.equal(r.interactionApplied,true);
+});
