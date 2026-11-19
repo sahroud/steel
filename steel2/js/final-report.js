@@ -60,10 +60,18 @@
     function buildSectionScheduleTable(schedule) {
         return schedule.map((item, i) => `
             <tr><td>${i + 1}</td><td>${esc(item.memberId)}</td><td>${esc(item.sectionKey)}</td>
-            <td>${esc(item.profile)}</td><td>${fmt(item.A_m2 * 1e4)}</td>
+            <td>${esc(item.profile)}</td><td>${fmt(item.lengthM)}</td><td>${fmt(item.A_m2 * 1e4)}</td>
             <td>${fmt(item.Iy_m4 * 1e8)}</td><td>${fmt(item.Iz_m4 * 1e8)}</td>
             <td>${fmt(item.J_m4 * 1e8)}</td><td>${fmt(item.massPerMeterKg)}</td>
             <td>${esc(item.fingerprint)}</td></tr>`
+        ).join("");
+    }
+
+    function buildSteelTakeoffRows(groups) {
+        return groups.map((item, i) => `
+            <tr><td>${i + 1}</td><td>${esc(item.sectionKey)}</td><td>${esc(item.profile)}</td>
+            <td>${item.memberCount}</td><td>${fmt(item.totalLengthM)}</td>
+            <td>${fmt(item.massPerMeterKg)}</td><td>${fmt(item.totalMassKg)}</td></tr>`
         ).join("");
     }
 
@@ -151,6 +159,11 @@
                 throw new Error("جدول مقاطع با تعداد اعضای مدل تطبیق ندارد؛ گزارش قابل تهیه نیست.");
             }
             const sectionRows = buildSectionScheduleTable(sectionSchedule);
+            const steelTakeoff = window.SahroudSectionPropertyRegistry?.takeoff?.(structuralModel);
+            if (!steelTakeoff || steelTakeoff.memberCount !== structuralModel.members.length) {
+                throw new Error("متره وزن فولاد کامل نیست؛ تعداد اعضای متره با مدل تطبیق ندارد.");
+            }
+            const steelTakeoffRows = buildSteelTakeoffRows(steelTakeoff.groups);
 
             if (!gov || !gov.N || !gov.V || !gov.M) {
                 throw new Error(
@@ -350,14 +363,23 @@
                         <h3>۹. جدول مشخصات مقاطع تخصیص‌یافته به اعضا</h3>
                         <p>این جدول از رجیستری واحد مقاطع مدل سه‌بعدی و برای تمام اعضای مدل فعلی استخراج شده است.</p>
                         <div style="overflow-x:auto"><table style="width:100%;min-width:1250px;border-collapse:collapse">
-                            <thead><tr><th>ردیف</th><th>شناسه عضو</th><th>گروه</th><th>نام مقطع</th><th>A (cm²)</th><th>Iy (cm⁴)</th><th>Iz (cm⁴)</th><th>J (cm⁴)</th><th>وزن (kg/m)</th><th>Fingerprint</th></tr></thead>
+                            <thead><tr><th>ردیف</th><th>شناسه عضو</th><th>گروه</th><th>نام مقطع</th><th>طول (m)</th><th>A (cm²)</th><th>Iy (cm⁴)</th><th>Iz (cm⁴)</th><th>J (cm⁴)</th><th>وزن (kg/m)</th><th>Fingerprint</th></tr></thead>
                             <tbody>${sectionRows}</tbody>
                         </table></div>
                         <div class="notice">
                             <p>خواص هندسی و وزن خطی از مقطع تخصیص‌یافته به هر عضو استخراج شده‌اند؛ این جدول به‌تنهایی کنترل مقاومت، پایداری، کمانش موضعی/جانبی‌پیچشی یا تأیید آیین‌نامه‌ای نیست.</p>
                             <p>پس از هر تغییر در مقطع یا ابعاد آن، گزارش قبلی نامعتبر است و باید مدل و تحلیل مجدداً اجرا شوند.</p>
                         </div>
-                        <h3>۱۰. محدودیت‌ها و هشدارهای مهندسی</h3>
+                        <h3>۱۰. متره وزن فولاد اعضای مدل</h3>
+                        <p>متره بر اساس طول هندسی واقعی هر عضو در مدل (متر) و وزن واحد طول مقطع تخصیص‌یافته (کیلوگرم بر متر) محاسبه شده است. هر شناسه عضو دقیقاً یک‌بار محاسبه می‌شود.</p>
+                        <div style="overflow-x:auto"><table style="width:100%;min-width:850px;border-collapse:collapse">
+                            <thead><tr><th>ردیف</th><th>گروه</th><th>مقطع</th><th>تعداد اعضا</th><th>طول کل (m)</th><th>وزن واحد طول (kg/m)</th><th>وزن کل (kg)</th></tr></thead>
+                            <tbody>${steelTakeoffRows}</tbody>
+                            <tfoot><tr><th colspan="4">جمع کل</th><th>${fmt(steelTakeoff.totalLengthM)}</th><th>—</th><th>${fmt(steelTakeoff.totalMassKg)}</th></tr></tfoot>
+                        </table></div>
+                        <p><b>وزن کل مدل:</b> ${fmt(steelTakeoff.totalMassKg)} کیلوگرم (${fmt(steelTakeoff.totalMassTon, 3)} تن)</p>
+                        <div class="notice"><p>این مقدار، وزن هندسی اعضای موجود در مدل است؛ ضایعات برش، وصله‌ها، ورق‌های اتصال، پیچ و مهره، جوش، پرت ساخت و قطعاتی که در مدل عضو مستقل ندارند در آن منظور نشده‌اند. این خروجی متره مصالح است، نه برآورد قیمت یا صورت‌وضعیت اجرایی.</p></div>
+                        <h3>۱۱. محدودیت‌ها و هشدارهای مهندسی</h3>
 
                         <div class="notice">
                             <p>
