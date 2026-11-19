@@ -141,6 +141,24 @@
     const axisLength=Math.hypot(...b.axisConnectionFrame);
     if(Math.abs(axisLength-1)>1e-6)fail(errors,"محور پیچ "+(b.id||i)+" باید بردار یکه باشد؛ جهت از نقشه وارد شود.");
    }
+   if(Array.isArray(b.hardware)&&b.hardware.length){
+    const axis=b.axisConnectionFrame,ref=b.transverseReferenceConnectionFrame;
+    if(!vec(ref,3))fail(errors,"بردار مرجع عرضی برای جهت‌گیری سرپیچ/مهره/واشر "+(b.id||i)+" باید از نقشه وارد شود.");
+    else{
+     const dot=axis.reduce((s,v,j)=>s+v*ref[j],0),norm=Math.hypot(...ref);
+     if(Math.abs(norm-1)>1e-6||Math.abs(dot)>1e-6)fail(errors,"بردار مرجع عرضی پیچ "+(b.id||i)+" باید یکه و عمود بر محور پیچ باشد.");
+    }
+    const hwIds=new Set();
+    b.hardware.forEach((h,j)=>{
+     if(!text(h.id)||hwIds.has(String(h.id)))fail(errors,"شناسه قطعه جانبی پیچ خالی یا تکراری است.");hwIds.add(String(h.id));
+     if(!["head","nut","washer"].includes(h.kind)||!finite(h.centerOffsetMm)||!positive(h.thicknessMm))
+      fail(errors,"نوع، موقعیت محوری و ضخامت قطعه جانبی "+(h.id||j)+" باید صریح باشد.");
+     if(h.kind==="washer"&&(!positive(h.outerDiameterMm)||!positive(h.innerDiameterMm)||h.outerDiameterMm<=h.innerDiameterMm||h.innerDiameterMm<b.diameterMm))
+      fail(errors,"قطر داخلی/خارجی واشر "+(h.id||j)+" باید معتبر و با قطر بدنه پیچ سازگار باشد.");
+     if(h.kind!=="washer"&&(!positive(h.acrossFlatsMm)||h.acrossFlatsMm<=b.diameterMm))
+      fail(errors,"عرض آچارخور سرپیچ/مهره "+(h.id||j)+" باید صریح و بزرگ‌تر از قطر پیچ باشد.");
+    });
+   }
    if(!text(b.plateId)||!plateIds.has(String(b.plateId)))fail(errors,"شناسه ورق میزبان پیچ "+(b.id||i)+" باید صریح و معتبر باشد.");
    if(!["standard","oversized","short-slotted","long-slotted"].includes(b.holeType))fail(errors,"نوع سوراخ پیچ "+(b.id||i)+" باید از گزینه‌های تعریف‌شده انتخاب شود.");
    if(["short-slotted","long-slotted"].includes(b.holeType)&&(!positive(b.slotLengthMm)||!positive(b.slotWidthMm)||!finite(b.slotAngleDeg)||b.slotLengthMm<b.slotWidthMm||Math.abs(b.slotWidthMm-b.holeDiameterMm)>1e-6))
@@ -236,7 +254,30 @@
      return{id:String(b.id),centerLocalMm:{x:b.xMm,y:b.yMm},centerGlobalM:toGlobal(point),
       axisConnectionFrame:axis,axisGlobal,gripLengthMm:b.gripLengthMm,
       shank:{startGlobalM:toGlobal(start),endGlobalM:toGlobal(end),radiusMm:b.diameterMm/2},
-      diameterMm:b.diameterMm,holeDiameterMm:b.holeDiameterMm,holeType:b.holeType};
+      diameterMm:b.diameterMm,holeDiameterMm:b.holeDiameterMm,holeType:b.holeType,
+      hardware:(b.hardware||[]).map(h=>{
+       const axis=b.axisConnectionFrame.map(Number),ref=b.transverseReferenceConnectionFrame.map(Number);
+       const second=[axis[1]*ref[2]-axis[2]*ref[1],axis[2]*ref[0]-axis[0]*ref[2],axis[0]*ref[1]-axis[1]*ref[0]];
+       const center=point.map((v,i)=>v+axis[i]*h.centerOffsetMm);
+       const half=Number(h.thicknessMm)/2;
+       const ring=h.kind==="washer",count=ring?32:6;
+       const radius=ring?Number(h.outerDiameterMm)/2:Number(h.acrossFlatsMm)/Math.sqrt(3);
+       const inner=ring?Number(h.innerDiameterMm)/2:0;
+       const perimeter=Array.from({length:count},(_,k)=>{
+        const angle=2*Math.PI*k/count;
+        return [0,1,2].map(i=>center[i]+radius*Math.cos(angle)*ref[i]+radius*Math.sin(angle)*second[i]);
+       });
+       const innerPerimeter=ring?Array.from({length:count},(_,k)=>{
+        const angle=2*Math.PI*k/count;
+        return [0,1,2].map(i=>center[i]+inner*Math.cos(angle)*ref[i]+inner*Math.sin(angle)*second[i]);
+       }):null;
+       const face=(sign)=>perimeter.map((p,k)=>toGlobal(p.map((v,i)=>v+axis[i]*half*sign)));
+       return{id:String(h.id),kind:h.kind,centerOffsetMm:h.centerOffsetMm,thicknessMm:h.thicknessMm,
+        acrossFlatsMm:h.acrossFlatsMm||null,outerDiameterMm:h.outerDiameterMm||null,innerDiameterMm:h.innerDiameterMm||null,
+        geometry:{method:ring?"32-segment-annulus":"regular-hex-prism",topFaceGlobalM:face(1),bottomFaceGlobalM:face(-1),
+         innerTopFaceGlobalM:ring?innerPerimeter.map(p=>toGlobal(p.map((v,i)=>v+axis[i]*half))):null,
+         innerBottomFaceGlobalM:ring?innerPerimeter.map(p=>toGlobal(p.map((v,i)=>v-axis[i]*half))):null}};
+      })};
     })};
   });
   const welds=input.welds.map(w=>({id:String(w.id),plateId:String(w.plateId),faceReference:w.faceReference,
@@ -247,7 +288,7 @@
     weldEndpoints:"connection-frame mm",output:"global m"},
    plates,welds,capacityDesigned:false,executionReady:false,
    limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ تماس بین ورق‌های مختلف هنوز کنترل نشده است.",
-    "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ سر پیچ، مهره، واشر، رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
+    "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ قطعات جانبی فقط در صورت تعریف صریح hardware هندسه می‌گیرند؛ رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
  }
  const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildGlobalGeometry};
  root.SahroudKneeConnectionDetail=api;
