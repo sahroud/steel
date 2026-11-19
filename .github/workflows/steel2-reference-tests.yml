@@ -52,6 +52,7 @@ on:
       - "steel2/index.html"
       - "steel2/tests/**"
       - ".github/workflows/steel2-reference-tests.yml"
+      - "steel2/js/knee-connection-demand-mapper.js"
   pull_request:
     paths:
       - "steel2/js/analysis-3d.js"
@@ -78,6 +79,7 @@ on:
       - "steel2/tests/**"
       - ".github/workflows/steel2-reference-tests.yml"
 
+      - "steel2/js/knee-connection-demand-mapper.js"
 jobs:
   solver-reference-tests:
     runs-on: ubuntu-latest
