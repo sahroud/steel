@@ -84,6 +84,7 @@ on:
       - ".github/workflows/steel2-reference-tests.yml"
 
       - "steel2/js/knee-connection-demand-mapper.js"
+      - "steel2/js/knee-connection-weld-demand.js"
       - "steel2/js/knee-connection-collision.js"
       - "steel2/js/knee-connection-capacity.js"
 jobs:
