@@ -21,6 +21,8 @@
   if(!section||typeof section!=="object")throw new Error("مقطع عضو "+memberId+" موجود نیست.");
   const A=positive(section.A,"A"),Iy=positive(section.Iy,"Iy"),Iz=positive(section.Iz,"Iz"),J=positive(section.J,"J");
   const E=positive(section.E,"E"),G=positive(section.G,"G");
+  if(section.sectionRollDeg!==undefined&&section.sectionRollDeg!==null&&!Number.isFinite(Number(section.sectionRollDeg)))throw new Error("زاویه چرخش مقطع عضو "+memberId+" باید متناهی باشد.");
+  if(section.sectionOrientationConfirmed===true&&(section.sectionRollDeg===undefined||section.sectionRollDeg===null))throw new Error("تأیید جهت نصب عضو "+memberId+" بدون زاویه صریح مجاز نیست.");
   const rho=Number.isFinite(Number(section.densityKgM3))&&Number(section.densityKgM3)>0?Number(section.densityKgM3):7850;
   const normalized={...clone(section),A,Iy,Iz,J,E,G};
   normalized.massPerMeterKg=A*rho;
