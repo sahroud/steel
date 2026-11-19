@@ -785,6 +785,24 @@
     const orientation=model.orientationAudit||{memberCount:model.members.length,verifiedCount:0,readyForCodeDesign:false,groups:{}};
     const orientationRows=Object.entries(orientation.groups||{}).map(([key,g])=>key+": "+g.count+" عضو، تأییدشده "+g.verified+"، بدون محور مستند "+g.missingReferenceAxis+"، چرخش مقطع تأییدنشده "+g.unverifiedSectionRoll).join("؛ ");
     const orientationSummary="ممیزی جهت‌گیری: "+orientation.verifiedCount+" از "+orientation.memberCount+" عضو دارای محور و چرخش مقطع مستند هستند. "+(orientation.readyForCodeDesign?"جهت‌گیری همه اعضا مستند است.":"آمادگی طراحی آیین‌نامه‌ای از نظر جهت نصب تأیید نشده است.")+" "+orientationRows;
+  function renderSectionPropertySchedule(){
+    const target=$("fullModelSummary");
+    if(!target||!model||!window.SahroudSectionPropertyRegistry?.schedule)return;
+    const audit=model.sectionPropertyAudit;
+    if(!audit?.complete)return;
+    const escapeHtml=value=>String(value??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    const rows=window.SahroudSectionPropertyRegistry.schedule(model).map(item=>`<tr>
+      <td>${escapeHtml(item.memberId)}</td><td>${escapeHtml(item.sectionKey)}</td><td>${escapeHtml(item.profile)}</td>
+      <td>${(item.A_m2*1e4).toFixed(2)}</td><td>${(item.Iy_m4*1e8).toFixed(2)}</td>
+      <td>${(item.Iz_m4*1e8).toFixed(2)}</td><td>${(item.J_m4*1e8).toFixed(2)}</td>
+      <td>${item.massPerMeterKg.toFixed(2)}</td></tr>`).join("");
+    const old=target.querySelector("#memberSectionPropertySchedule");if(old)old.remove();
+    const section=document.createElement("section");
+    section.id="memberSectionPropertySchedule";section.className="notice";
+    section.innerHTML="<b>جدول یکپارچه مشخصات مقاطع اعضا</b><p>"+audit.assignedCount+" از "+audit.memberCount+" عضو دارای مشخصات مقطع تخصیص‌یافته به تحلیل هستند.</p>"+
+     "<details><summary>نمایش جدول کامل مقاطع اعضا</summary><div style='overflow-x:auto'><table><thead><tr><th>شناسه</th><th>گروه</th><th>مقطع</th><th>A (cm²)</th><th>Iy (cm⁴)</th><th>Iz (cm⁴)</th><th>J (cm⁴)</th><th>وزن (kg/m)</th></tr></thead><tbody>"+rows+"</tbody></table></div></details>";
+    target.appendChild(section);
+  }
     const target=$("fullModelSummary");if(target)target.innerHTML="<b>مدل هندسی تولید شد:</b> "+model.geometry.frames.length+" قاب اصلی، "+model.nodes.length+" گره و "+model.members.length+" عضو هندسی.<table><thead><tr><th>نوع عضو</th><th>تعداد</th></tr></thead><tbody>"+rows+"</tbody></table><p>بارهای ثقلی سطحی به بار خطی اعضا تبدیل می‌شوند؛ بارهای مرده، زنده و برف و سه ترکیب ثقلی ULS-1 تا ULS-3 در حل‌گر خطی قابل تحلیل‌اند. باد شش‌ناحیه‌ای برای چهار جهت و دو علامت فشار داخلی به اعضای سقف و دیوار منتقل می‌شود؛ ترکیبات باد موجود هنوز آزمایشی‌اند و جایگزین ترکیبات آیین‌نامه‌ای تأییدشده نیستند. زلزله هنوز در مدل اعمال نشده است. پرلین‌های سقف به‌صورت قطعات مجزا بین دو قاب ساخته شده‌اند؛ در تحلیل، انتقال جابه‌جایی در محل تکیه‌گاه برقرار است؛ دو دوران خمشی انتهای هر قطعه پرلین مستقل شده‌اند، اما دوران پیچشی حول محور طولی مشترک باقی می‌ماند. این تقریب مفصل خمشی است و سختی واقعی کلیپس/پیچ، لغزش و خروج از مرکزیت را مدل نمی‌کند. این مدل، مفصل ایده‌آل است و سختی واقعی کلیپس/پیچ، لغزش و اثر خروج از مرکزیت را شامل نمی‌شود؛ سایر گره‌های مشترک فعلاً صلب‌اند. مهاربندهای ترسیم‌شده نیز با مقطع تخصیص‌یافته فعال و در سختی سازه مؤثرند. اگر اتصال واقعی مفصلی، کشویی یا دارای آزادسازی باشد، نتایج فعلی می‌تواند تفاوت قابل‌توجهی داشته باشد.</p><p><b>"+orientationSummary+"</b></p><p><b>محدوده مدل:</b> تحلیل الاستیک خطی سه‌بعدی در حال توسعه است؛ خروجی آن تا تکمیل بارگذاری، شرایط تکیه‌گاهی، آزادسازی‌ها و کنترل‌های آیین‌نامه‌ای، صرفاً مقدماتی است.</p>";
   }
   function validate3DSections(){
@@ -1055,6 +1073,7 @@
       throw new Error("خواص مقطع برای همه اعضای مدل تحلیل تخصیص نیافت؛ اعضای ناقص: "+propertyAudit.missing.slice(0,8).join("، "));
     analysisModel.sectionPropertyAudit=propertyAudit;
     model.sectionPropertyAudit=propertyAudit;
+    renderSectionPropertySchedule();
     analysisModel.members.forEach(member=>{
       sectionsByMemberId[String(member.id)]=JSON.parse(JSON.stringify(member.sectionProperties));
     });
