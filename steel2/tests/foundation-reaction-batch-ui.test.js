@@ -51,7 +51,7 @@ test("SLS batch UI validates JSON and reports case and support totals",()=>{
   elements.soilControlEnabled.checked=true;
   listeners.get("soilControlEnabled:change")();
   listeners.get("btnValidateFoundationSlsBatch:click")();
-  assert.match(elements.foundationSlsBatchResult.textContent,/۱ ترکیب SLS و ۱ پایه/);
+  assert.match(elements.foundationSlsBatchResult.textContent,/1 ترکیب SLS و 1 پایه/);
   assert.match(elements.foundationSlsBatchResult.textContent,/آیین‌نامه‌ای بودن ترکیبات را تأیید نمی‌کند/);
   assert.equal(elements.foundationSlsBatchResult.style.color,"#15803d");
   delete global.window;
