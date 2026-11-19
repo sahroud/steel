@@ -85,6 +85,15 @@
               " | گره="+c.analysis.nodeCount+" عضو="+c.members.length+
               " | بیشینه جابه‌جایی="+(c.maxTranslation===null?"—":(c.maxTranslation*1000).toFixed(2)+" mm"));
           });
+          lines.push("","بردارهای هم‌زمان برای کنترل طراحی ـ هر ردیف از یک ترکیب و یک مقطع است؛ واحد نیرو kN و گشتاور kN.m:");
+          result.designDemand.members.forEach(member=>{
+            const e=member.governing.N;
+            if(!e)return;
+            const v=e.values;
+            lines.push(member.id+" | "+e.combination+" @ "+e.x.toFixed(3)+"m | N="+(v.N/1000).toFixed(2)+
+              " Vy="+(v.Vy/1000).toFixed(2)+" Vz="+(v.Vz/1000).toFixed(2)+
+              " T="+(v.T/1e6).toFixed(3)+" My="+(v.My/1e6).toFixed(3)+" Mz="+(v.Mz/1e6).toFixed(3));
+          });
           lines.push("","پوش تقاضا ـ واحد نیرو kN، گشتاور kN.m، مختصات m:");
           const fmt=(v,f,d=2)=>Number.isFinite(Number(v))?(Number(v)*f).toFixed(d):"—";
           result.envelope.members.forEach(member=>{
@@ -1136,6 +1145,9 @@
     );
     combinationResults=result.combinationResults;
     combinationEnvelope=result.envelope;
+    if(!window.SahroudMemberDesignDemand3D)
+      throw new Error("ماژول آماده‌سازی تقاضای طراحی اعضای سه‌بعدی بارگذاری نشده است.");
+    result.designDemand=window.SahroudMemberDesignDemand3D.build(result,model,window.SahroudMemberDemand3D);
     return result;
   }
   function getData(){return model?{geometry:model.geometry,nodes:model.nodes,members:model.members,windFootprints:model.windFootprints||[],orientationAudit:model.orientationAudit||null}:null;}
