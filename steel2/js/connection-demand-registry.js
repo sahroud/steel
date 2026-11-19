@@ -125,7 +125,7 @@
           const sectionActions=end==="i"?action.start:action.end;
           const transformed=toGlobalJointActions(sectionActions,action.localAxes,end);
           return {memberId:String(member.id),sectionKey:action.sectionKey,end,
-            sectionActions,localAxes:action.localAxes,...transformed};
+            sectionActions,localActions:sectionActions,localAxes:action.localAxes,...transformed};
         })
       }));
       joints.push({nodeId,kind:node.kind||null,coordinatesM:{x:Number(node.x),y:Number(node.y),z:Number(node.z)},
