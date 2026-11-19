@@ -7,6 +7,7 @@ function fixture(){
   connectionFrame:{originM:[0,6,0],axes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},verifiedByDrawing:true},
   memberForceTransferPoints:[{role:"column",memberId:"COL-1",pointMm:[0,0,0]},{role:"rafter",memberId:"RAF-1",pointMm:[120,0,0]}],
   plates:[{id:"END-PLATE",thicknessMm:16,material:{grade:"ST37",FyMPa:235,FuMPa:360},
+   frame:{originMm:[0,0,0],axes:{u:[1,0,0],v:[0,1,0],n:[0,0,1]}},
    polygonMm:[{x:-100,y:-100},{x:300,y:-100},{x:300,y:100},{x:-100,y:100}]}],
   bolts:[{id:"B1",plateId:"END-PLATE",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
    {id:"B2",plateId:"END-PLATE",xMm:0,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1}],
@@ -67,4 +68,14 @@ test("fillet weld and groove weld use distinct size definitions",()=>{
 test("welds must identify the connected plate and drawing face",()=>{
  const d=fixture();delete d.welds[0].faceReference;
  const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("وجه اتصال")));
+});
+
+test("each plate requires a verified orthonormal local 3D frame",()=>{
+ const d=fixture();d.plates[0].frame.axes.n=[0,0,-1];
+ const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("محورهای محلی ورق")));
+});
+test("coincident bolt coordinates on different plates are not treated as duplicate holes",()=>{
+ const d=fixture();d.plates.push({...d.plates[0],id:"BACK-PLATE"});
+ d.bolts.push({...d.bolts[0],id:"B3",plateId:"BACK-PLATE"});
+ assert.equal(detail.validate(d).valid,true);
 });
