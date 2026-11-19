@@ -1,0 +1,116 @@
+/* SAHROUD STEEL — clause-based fillet-weld detail checks.
+ * Geometry/detail compliance only; this module does not calculate weld resistance.
+ * Basis: Iranian National Building Regulations, Part 10 (1401), 10-2-9-2-2.
+ */
+(function(root){
+ "use strict";
+ const finite=v=>typeof v==="number"&&Number.isFinite(v);
+ const positive=v=>finite(v)&&v>0;
+ const length=(a,b)=>Math.hypot(...a.map((x,i)=>x-b[i]));
+ function fail(message){throw new Error(message);}
+ function minLeg(t){
+  if(t<=6)return 3;
+  if(t<=12)return 5;
+  if(t<=20)return 6;
+  return 8;
+ }
+ function assess(detail){
+  const api=root.SahroudKneeConnectionDetail;
+  if(!api)fail("ماژول اعتبارسنجی جزئیات زانویی بارگذاری نشده است.");
+  const validation=api.validate(detail);
+  if(!validation.valid)return{success:false,overallStatus:"INCOMPLETE",errors:validation.errors,
+   checks:[],effectiveWelds:[],lineDemandGeometryComplete:false,capacityDesigned:false,executionReady:false};
+  const plates=new Map(detail.plates.map(p=>[String(p.id),p]));
+  const checks=[],effectiveWelds=[];
+  let lineDemandGeometryComplete=true;
+  const add=(w,id,status,detailText,values={})=>checks.push({weldId:String(w.id),checkId:id,status,detail:detailText,...values});
+  for(const w of detail.welds){
+   const plate=plates.get(String(w.plateId));
+   const L=length(w.startMm,w.endMm),a=w.legSizeMm;
+   if(w.type!=="fillet"){
+    add(w,"fillet-detail","NOT_APPLICABLE","این کنترل‌ها فقط برای جوش گوشه هستند.");
+    effectiveWelds.push({...w,effectiveStartMm:w.startMm.slice(),effectiveEndMm:w.endMm.slice(),effectiveLengthMm:L,effectiveLengthFactor:1});
+    continue;
+   }
+   if(!positive(w.connectedPartThicknessMm)){
+    add(w,"minimum-leg","NOT_ASSESSABLE","ضخامت قطعه متصل‌شونده به ورق میزبان ثبت نشده است؛ حداقل بعد بر اساس قطعه نازک‌تر قابل تعیین نیست.");
+   }else{
+    const thinner=Math.min(plate.thicknessMm,w.connectedPartThicknessMm);
+    if(w.highCycleDynamic!==true&&w.highCycleDynamic!==false){
+     add(w,"minimum-leg","NOT_ASSESSABLE","وضعیت بارگذاری دینامیکی با تکرار زیاد باید صریحاً تعیین شود.");
+    }else{
+     const required=Math.max(minLeg(thinner),w.highCycleDynamic?5:0);
+     const status=a+1e-9>=required&&a<=thinner+1e-9?"PASS":"FAIL";
+     add(w,"minimum-leg",status,"حداقل بعد بر اساس ضخامت قطعه نازک‌تر و شرط بارگذاری پرتکرار کنترل شد.",
+      {thinnerPartThicknessMm:thinner,requiredLegMm:required,providedLegMm:a,
+       highCycleDynamic:w.highCycleDynamic,reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)(1)"});
+    }
+   }
+   if(w.edgeWeld!==true&&w.edgeWeld!==false){
+    add(w,"maximum-edge-leg","NOT_ASSESSABLE","مشخص نیست جوش در لبه قطعه اجرا می‌شود یا روی سطح؛ شرط حداکثر بعد قابل ارزیابی نیست.");
+   }else if(w.edgeWeld===false){
+    add(w,"maximum-edge-leg","NOT_APPLICABLE","جوش به‌عنوان جوش لبه‌ای طبقه‌بندی نشده است.");
+   }else if(!["host","connected"].includes(w.edgePart)){
+    add(w,"maximum-edge-leg","NOT_ASSESSABLE","قطعه‌ای که جوش روی لبه آن اجرا می‌شود باید host یا connected مشخص شود.");
+   }else{
+    const edgeThickness=w.edgePart==="host"?plate.thicknessMm:w.connectedPartThicknessMm;
+    if(!positive(edgeThickness)){
+     add(w,"maximum-edge-leg","NOT_ASSESSABLE","ضخامت قطعه لبه‌ای ثبت نشده است.");
+    }else if(Math.abs(edgeThickness-6)<=1e-9){
+     add(w,"maximum-edge-leg","NOT_ASSESSABLE","متن بند برای ضخامت دقیقاً ۶ میلی‌متر حد بالای صریحی بین دو حالت کمتر/بیشتر از ۶ تعیین نمی‌کند؛ بررسی دستی لازم است.");
+    }else{
+     const maxLeg=edgeThickness<6?edgeThickness:edgeThickness-2;
+     add(w,"maximum-edge-leg",a<=maxLeg+1e-9?"PASS":"FAIL",
+      "حداکثر بعد جوش لبه‌ای با ضخامت قطعه لبه‌ای کنترل شد.",
+      {edgePart:w.edgePart,edgeThicknessMm:edgeThickness,maximumLegMm:maxLeg,providedLegMm:a,
+       reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)(2)"});
+    }
+   }
+   if(w.continuity!=="continuous"&&w.continuity!=="intermittent"){
+    add(w,"minimum-effective-length","NOT_ASSESSABLE","پیوسته یا منقطع بودن قطعه جوش باید مشخص شود.");
+   }else{
+    const requiredLength=w.continuity==="intermittent"?Math.max(4*a,40):4*a;
+    add(w,"minimum-effective-length",L+1e-9>=requiredLength?"PASS":"FAIL",
+     "حداقل طول مؤثر قطعه جوش با توجه به پیوسته/منقطع بودن کنترل شد.",
+     {providedLengthMm:L,requiredLengthMm:requiredLength,continuity:w.continuity,
+      reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)"});
+   }
+   let beta=1,known=true;
+   if(L/a>100){
+    if(typeof w.axialEndConnection!=="boolean"||typeof w.longitudinallyLoaded!=="boolean"){
+     known=false;lineDemandGeometryComplete=false;
+     add(w,"long-weld-reduction","NOT_ASSESSABLE","برای نسبت طول به بعد بیش از ۱۰۰، نوع اتصال انتهایی محوری و بارگذاری طولی باید صریحاً مشخص شود؛ کاهش طول مؤثر نامعلوم است.",
+      {lengthToLegRatio:L/a,reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)"});
+    }else if(w.axialEndConnection&&w.longitudinallyLoaded){
+     beta=Math.max(0.6,Math.min(1,1.2-0.002*(L/a)));
+     add(w,"long-weld-reduction","PASS","کاهش طول مؤثر جوش طولی در اتصال انتهایی عضو محوری اعمال شد.",
+      {lengthToLegRatio:L/a,beta,effectiveLengthMm:beta*L,
+       reference:"مبحث دهم ۱۴۰۱، رابطه کاهش طول مؤثر در بند 10-2-9-2-2(ب)"});
+    }else{
+     add(w,"long-weld-reduction","NOT_APPLICABLE","شرط هم‌زمان اتصال انتهایی محوری و بارگذاری طولی برقرار نیست.",
+      {lengthToLegRatio:L/a});
+    }
+   }else{
+    add(w,"long-weld-reduction","NOT_APPLICABLE","نسبت طول به بعد جوش از ۱۰۰ تجاوز نمی‌کند.",{lengthToLegRatio:L/a});
+   }
+   const midpoint=w.startMm.map((x,i)=>(x+w.endMm[i])/2),direction=w.endMm.map((x,i)=>(x-w.startMm[i])/L);
+   const effectiveLength=known?beta*L:L;
+   const half=effectiveLength/2;
+   const start=midpoint.map((x,i)=>x-direction[i]*half),end=midpoint.map((x,i)=>x+direction[i]*half);
+   effectiveWelds.push({...w,effectiveStartMm:start,effectiveEndMm:end,effectiveLengthMm:effectiveLength,effectiveLengthFactor:beta,
+    effectiveLengthKnown:known});
+  }
+  const statuses=checks.map(c=>c.status);
+  const overallStatus=statuses.includes("FAIL")?"FAIL":statuses.includes("NOT_ASSESSABLE")?"INCOMPLETE":"PASS";
+  return{success:true,schema:"SAHROUD-FILLET-WELD-DETAIL-CHECK-1.0",
+   codeBasis:{document:"مبحث دهم مقررات ملی ساختمان، ویرایش ۱۴۰۱",clause:"10-2-9-2-2",
+    note:"کنترل‌های این ماژول محدود به جزئیات هندسی جوش گوشه هستند؛ مقاومت موجود جوش طبق 10-2-9-2-4 جداگانه لازم است."},
+   overallStatus,checks,effectiveWelds,lineDemandGeometryComplete,
+   capacityDesigned:false,executionReady:false,
+   limitations:["این گزارش ظرفیت فلز جوش و فلز پایه را محاسبه نمی‌کند.",
+    "کنترل‌های خستگی، کیفیت ساخت، اندازه جوش واقعی، دسترسی جوشکاری و بازرسی در این ماژول پوشش داده نمی‌شوند.",
+    "برای جوش‌های شیاری و اتصالات مرکب، این کنترل‌ها قابل تعمیم نیستند."]};
+ }
+ root.SahroudKneeWeldDetailCheck={assess,minLeg};
+ if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudKneeWeldDetailCheck;
+})(typeof window!=="undefined"?window:globalThis);
