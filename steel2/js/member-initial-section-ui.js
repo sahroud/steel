@@ -26,7 +26,7 @@
   if(panel)return panel;
   panel=document.createElement("section");panel.className="panel";panel.id="memberInitialSectionPanel";
   panel.innerHTML='<div class="panel-title"><h3>مقاطع اولیه مستقل اعضا</h3><span class="status">ورودی اختیاری هر عضو</span></div>'+
-   '<div class="notice">مقطع پیش‌فرض گروه برای همه اعضا حفظ می‌شود. از فهرست، عضو موردنظر را انتخاب کنید و فقط در صورت نیاز مقطع اولیه متفاوت آن را ثبت کنید. مقادیر هندسی با واحد cm² و cm⁴ وارد می‌شوند. برای جهت‌گیری مقطع، محور مرجع جهانی X/Y/Z و زاویه راست‌گرد حول محور محلی +X عضو را صریح وارد کنید؛ تأیید جهت جان و بال باید با نقشه ساخت/نصب تطبیق داده شود. این مرحله به معنی کنترل مقاومت یا تأیید آیین‌نامه‌ای نیست.</div>'+
+   '<div class="notice">مقطع پیش‌فرض گروه برای همه اعضا حفظ می‌شود. از فهرست، عضو موردنظر را انتخاب کنید و فقط در صورت نیاز مقطع اولیه متفاوت آن را ثبت کنید. مقادیر هندسی با واحد cm² و cm⁴ وارد می‌شوند. برای جهت‌گیری مقطع، محور مرجع جهانی X/Y/Z و زاویه راست‌گرد حول محور محلی +X عضو را صریح وارد کنید؛ تأیید جهت جان و بال باید با نقشه ساخت/نصب تطبیق داده شود. اگر زاویه ثبت نشود، حل‌گر فقط برای تحلیل مقدماتی از چرخش محاسباتی صفر استفاده می‌کند؛ این مقدار به‌عنوان جهت واقعی عضو تأیید نمی‌شود و آمادگی طراحی آیین‌نامه‌ای برقرار نخواهد بود.</div>'+
    '<div class="form-grid">'+
    '<div class="field"><label for="initialSectionMember">عضو سازه‌ای</label><select id="initialSectionMember"><option value="">ابتدا مدل هندسی را بسازید</option></select></div>'+
    '<div class="field"><label for="initialSectionProfile">نام مقطع اولیه</label><input id="initialSectionProfile" type="text" placeholder="نام دقیق مقطع"></div>'+
