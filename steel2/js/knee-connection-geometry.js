@@ -101,6 +101,35 @@
    eccentricityIncluded:false,source:"member.sectionProperties.geometryDimensionsMm + solver localAxes + member endpoint coordinates",
    note:"سه جزء واقعی تیرورق (بال پایین، جان، بال بالا) بر اساس ابعاد ثبت‌شده و محورهای چرخیده حل‌گر اکسترود شده‌اند. محور عضو در مرکز هندسی مقطع فرض شده و خروج از مرکزیت اتصال/صفحه ورق هنوز مدل نشده است."};
  }
+ function deriveKneeWebPlane(knee){
+  const col=knee?.column,raf=knee?.rafter;
+  if(!col?.solverAxes?.available||!raf?.solverAxes?.available)
+   return{available:false,status:"solver-axes-missing",commonPlaneVerified:false,platePlaneVerified:false,issues:["محورهای محلی هر دو عضو برای بررسی هم‌صفحه بودن جان‌ها لازم است."]};
+  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0),norm=v=>Math.hypot(...v);
+  const frameRaw=cross([col.vector.x,col.vector.y,col.vector.z],[raf.vector.x,raf.vector.y,raf.vector.z]);
+  const frameLength=norm(frameRaw);
+  if(!(frameLength>1e-8))return{available:false,status:"degenerate-knee-frame",commonPlaneVerified:false,platePlaneVerified:false,issues:["صفحه قاب از امتداد ستون و رفتر قابل استخراج نیست."]};
+  const frameNormal=frameRaw.map(v=>v/frameLength),columnNormal=col.solverAxes.axes.z,rafterNormal=raf.solverAxes.axes.z;
+  const columnAlignment=Math.abs(dot(frameNormal,columnNormal)),rafterAlignment=Math.abs(dot(frameNormal,rafterNormal));
+  const commonPlaneVerified=columnAlignment>=1-1e-6&&rafterAlignment>=1-1e-6;
+  const faceAtJoint=(member,solid,nodeId)=>{
+   if(!solid)return null;
+   if(String(member.start)===String(nodeId))return solid.vertices.slice(0,4);
+   if(String(member.end)===String(nodeId))return solid.vertices.slice(4,8);
+   return null;
+  };
+  const columnWeb=col.sectionSolids?.solids?.find(s=>s.id==="web"),rafterWeb=raf.sectionSolids?.solids?.find(s=>s.id==="web");
+  const columnWebFace=faceAtJoint(col,columnWeb,knee.node.id),rafterWebFace=faceAtJoint(raf,rafterWeb,knee.node.id);
+  return{available:true,status:commonPlaneVerified?"common-member-web-plane-verified":"member-web-planes-not-coplanar",
+   commonPlaneVerified,platePlaneVerified:false,framePlaneNormal:frameNormal,
+   columnWebNormal:columnNormal,rafterWebNormal:rafterNormal,columnAlignment,rafterAlignment,
+   columnWebThicknessMm:col.sectionGeometry.dimensionsMm?.webThicknessMm??null,
+   rafterWebThicknessMm:raf.sectionGeometry.dimensionsMm?.webThicknessMm??null,
+   columnWebFaceAtJoint:columnWebFace,rafterWebFaceAtJoint:rafterWebFace,
+   issues:commonPlaneVerified?[]:["جان ستون و رفتر در یک صفحه مشترک با صفحه قاب قرار ندارند؛ اتصال ورقی مشترک از این هندسه قابل استنتاج نیست."],
+   note:"هم‌صفحه بودن جان اعضا کنترل شده است؛ این نتیجه صفحه واقعی ورق اتصال، فاصله نصب، خروج از مرکزیت یا ظرفیت اتصال را تأیید نمی‌کند."};
+ }
  function extract(model,analysisResult){
   if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("ابتدا مدل سه‌بعدی را تولید و مقاطع اعضا را تخصیص دهید.");
   const out=[];
@@ -120,6 +149,7 @@
     const item=out[out.length-1];
     item.column.sectionSolids=extrudeBuiltUpI(col,item.column.solverAxes,model);
     item.rafter.sectionSolids=extrudeBuiltUpI(raf,item.rafter.solverAxes,model);
+    item.webPlane=deriveKneeWebPlane(item);
    }));
   });
   return out.sort((a,b)=>(Number(a.frame)||0)-(Number(b.frame)||0)||a.side.localeCompare(b.side));
@@ -137,6 +167,7 @@
    if(!k.rafter?.sectionGeometry?.available)errors.push("هندسه واقعی/پارامتریک مقطع رفتر قابل تأیید نیست: "+(k.rafter?.sectionGeometry?.issues||[]).join("؛ "));
    if(!positive(k.column?.length)||!positive(k.rafter?.length))errors.push("طول هندسی عضو مجاور گره معتبر نیست.");
    ["column","rafter"].forEach(key=>{if(!k[key]?.sectionSolids?.available)errors.push("اکسترود هندسه واقعی "+(key==="column"?"ستون":"رفتر")+" ممکن نیست: "+(k[key]?.sectionSolids?.issues||[]).join("؛ "));});
+   if(!k.webPlane?.commonPlaneVerified)errors.push("صفحه مشترک جان ستون و رفتر تأیید نشده است: "+(k.webPlane?.issues||[]).join("؛ "));
    ["column","rafter"].forEach(key=>{if(k[key]?.solverAxes?.status==="solver-axes-invalid")errors.push("محورهای محلی حل‌گر برای عضو "+k[key].id+" نامعتبر است.");});
   }
   return{valid:errors.length===0,errors,warnings,geometryOnly:true,platePlaneVerified:false,capacityDesigned:false,executionReady:false};
@@ -182,7 +213,8 @@
    '<h4>محورهای حل‌گر ستون</h4>'+axesText(k.column.solverAxes)+
    '<h4>هندسه ثبت‌شده مقطع رفتر</h4>'+dimensionsText(k.rafter.sectionGeometry)+
    '<p class="geometry-hint">هندسه سه‌بعدی: '+esc(k.rafter.sectionSolids?.status||"ناموجود")+'؛ اجزای اکسترودشده: '+esc(k.rafter.sectionSolids?.solids?.length||0)+'</p>'+
-   '<h4>محورهای حل‌گر رفتر</h4>'+axesText(k.rafter.solverAxes);
+   '<h4>محورهای حل‌گر رفتر</h4>'+axesText(k.rafter.solverAxes)+
+   '<h4>هم‌صفحه بودن جان ستون و رفتر</h4><p class="geometry-hint">'+esc(k.webPlane?.status||"ناموجود")+'؛ هم‌راستایی ستون: '+esc(k.webPlane?.columnAlignment??"—")+'؛ رفتر: '+esc(k.webPlane?.rafterAlignment??"—")+'؛ صفحه ورق اتصال همچنان تأییدنشده است.</p>'+
   draw.innerHTML=drawing(k);
   checks.innerHTML=(v.valid?"هندسه پارامتریک هر دو مقطع از رجیستری عضو بازیابی شد.":"هندسه مقاطع برای ورود به مرحله اتصال کامل نیست.")+
    (v.errors.length?"<ul>"+v.errors.map(e=>"<li>"+esc(e)+"</li>").join("")+"</ul>":"")+
@@ -252,7 +284,7 @@
   ];
   return{passed:tests.filter(Boolean).length,failed:tests.filter(x=>!x).length,total:tests.length,tests};
  }
- const api={extract,sectionGeometry,solverAxes,extrudeBuiltUpI,check,drawing,selfTest};
+ const api={extract,sectionGeometry,solverAxes,extrudeBuiltUpI,deriveKneeWebPlane,check,drawing,selfTest};
  root.SteelKneeConnectionGeometry=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
  if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",mount);else mount();}
