@@ -9,8 +9,8 @@ function fixture(){
   plates:[{id:"END-PLATE",thicknessMm:16,thicknessReference:"mid-plane",material:{grade:"ST37",FyMPa:235,FuMPa:360},
    frame:{originMm:[0,0,0],axes:{u:[1,0,0],v:[0,1,0],n:[0,0,1]}},
    polygonMm:[{x:-100,y:-100},{x:300,y:-100},{x:300,y:100},{x:-100,y:100}]}],
-  bolts:[{id:"B1",plateId:"END-PLATE",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
-   {id:"B2",plateId:"END-PLATE",xMm:0,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1}],
+  bolts:[{id:"B1",plateId:"END-PLATE",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
+   {id:"B2",plateId:"END-PLATE",xMm:0,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1}],
   welds:[{id:"W1",plateId:"END-PLATE",faceReference:"DWG-S-101-REV2/DETAIL-A",startMm:[-100,-60,0],endMm:[-100,60,0],type:"fillet",legSizeMm:8,electrodeFexxMPa:490}]};
 }
 test("explicit connection detail accepts complete, drawing-referenced geometry",()=>{
@@ -100,6 +100,10 @@ test("builds global 3D plate polygon, bolt and weld coordinates from declared fr
  assert.equal(g.success,true);
  assert.deepEqual(g.plates[0].polygon[0].globalM,[-0.1,5.9,0]);
  assert.deepEqual(g.plates[0].bolts[0].centerGlobalM,[0,5.96,0]);
+ assert.deepEqual(g.plates[0].bolts[0].axisGlobal,[0,0,1]);
+ assert.equal(g.plates[0].bolts[0].shank.radiusMm,10);
+ assert.deepEqual(g.plates[0].bolts[0].shank.startGlobalM,[0,5.942,0]);
+ assert.deepEqual(g.plates[0].bolts[0].shank.endGlobalM,[0,5.978,0]);
  assert.deepEqual(g.welds[0].startGlobalM,[-0.1,5.94,0]);
  assert.equal(g.capacityDesigned,false);
 });
@@ -162,4 +166,15 @@ test("clockwise concave plate polygons retain a valid triangulated solid",()=>{
  const g=detail.buildGlobalGeometry(d);
  assert.equal(g.plates[0].solid.triangulation.top.length,3);
  assert.equal(g.plates[0].solid.triangulation.bottom.length,3);
+});
+
+test("bolt axis, grip length and drawing verification are mandatory",()=>{
+ const d=fixture();delete d.bolts[0].axisConnectionFrame;
+ assert.equal(detail.validate(d).valid,false);
+ const e=fixture();e.bolts[0].axisConnectionFrame=[0,0,2];
+ assert.equal(detail.validate(e).valid,false);
+ const f=fixture();f.bolts[0].gripLengthMm=0;
+ assert.equal(detail.validate(f).valid,false);
+ const g=fixture();g.bolts[0].axisVerifiedByDrawing=false;
+ assert.equal(detail.validate(g).valid,false);
 });
