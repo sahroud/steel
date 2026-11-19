@@ -153,7 +153,40 @@
    jointId:input.jointId||null,plateCount:input.plates?.length||0,boltCount:input.bolts?.length||0,weldCount:input.welds?.length||0,
    capacityDesigned:false,executionReady:false,geometryOnly:true};
  }
- const api={SCHEMA,validate,pointInPolygon,edgeDistance};
+ function buildGlobalGeometry(input){
+  const checked=validate(input);
+  if(!checked.valid)throw new Error("هندسه اتصال معتبر نیست: "+checked.errors.join(" | "));
+  const cf=input.connectionFrame,origin=cf.originM.map(Number),axes=cf.axes;
+  const toGlobal=(connectionMm)=>{
+   const p=connectionMm.map(v=>Number(v)/1000);
+   return [0,1,2].map(i=>origin[i]+axes.x[i]*p[0]+axes.y[i]*p[1]+axes.z[i]*p[2]);
+  };
+  const plates=input.plates.map(plate=>{
+   const frame=plate.frame,u=frame.axes.u,v=frame.axes.v,n=frame.axes.n,o=frame.originMm;
+   const localToConnection=(x,y)=>[0,1,2].map(i=>o[i]+u[i]*x+v[i]*y);
+   const normalGlobal=[0,1,2].map(i=>axes.x[i]*n[0]+axes.y[i]*n[1]+axes.z[i]*n[2]);
+   return{id:String(plate.id),thicknessMm:plate.thicknessMm,material:plate.material,
+    referencePlaneOriginGlobalM:toGlobal(o),normalGlobal,
+    polygon:plate.polygonMm.map(point=>({localMm:{x:point.x,y:point.y},
+     connectionFrameMm:localToConnection(point.x,point.y),
+     globalM:toGlobal(localToConnection(point.x,point.y))})),
+    bolts:input.bolts.filter(b=>String(b.plateId)===String(plate.id)).map(b=>{
+     const point=localToConnection(b.xMm,b.yMm);
+     return{id:String(b.id),centerLocalMm:{x:b.xMm,y:b.yMm},centerGlobalM:toGlobal(point),
+      diameterMm:b.diameterMm,holeDiameterMm:b.holeDiameterMm,holeType:b.holeType};
+    })};
+  });
+  const welds=input.welds.map(w=>({id:String(w.id),plateId:String(w.plateId),faceReference:w.faceReference,
+   type:w.type,startGlobalM:toGlobal(w.startMm),endGlobalM:toGlobal(w.endMm)}));
+  return{success:true,schema:"SAHROUD-KNEE-CONNECTION-GLOBAL-GEOMETRY-1.0",
+   connectionId:String(input.connectionId),jointId:String(input.jointId),
+   coordinateSystems:{platePolygonAndBolt:"plate-local mm",plateFrame:"connection-frame mm",
+    weldEndpoints:"connection-frame mm",output:"global m"},
+   plates,welds,capacityDesigned:false,executionReady:false,
+   limitations:["مختصات سه‌بعدی هندسه استخراج شده‌اند؛ ضخامت به‌صورت مقدار ورودی حفظ شده و حجم جامد/تماس اجزا ساخته نشده است.",
+    "محور پیچ، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا در این خروجی محاسبه نمی‌شوند."]};
+ }
+ const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildGlobalGeometry};
  root.SahroudKneeConnectionDetail=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
