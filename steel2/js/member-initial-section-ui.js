@@ -116,6 +116,8 @@
   }catch(e){$("initialSectionGeometrySummary").textContent="خطا در هندسه مقطع: "+e.message;message(e.message,true);}
  }
  function invalidateAnalysis(memberId){
+  // A section edit invalidates every cached result based on the previous stiffness matrix.
+  if(root.SteelStructuralModel){root.SteelStructuralModel.last3DResult=null;root.SteelStructuralModel.lastConnectionDemand=null;}
   ["fullModel3DResult","fullModel3DDemand","fullModel3DCombinationResult","criticalRafterDiagram"].forEach(id=>{
    const el=$(id);if(el)el.textContent="مقطع عضو "+memberId+" تغییر کرده است؛ نتایج قبلی نامعتبرند. مدل و تمام ترکیبات بار را دوباره تحلیل کنید.";
   });
