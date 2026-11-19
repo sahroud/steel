@@ -675,6 +675,7 @@
       ?window.SteelFrame3D.auditMemberOrientation(model)
       :{memberCount:members.length,verifiedCount:0,unverifiedCount:members.length,readyForCodeDesign:false,unavailable:true,groups:{},note:"ممیزی جهت‌گیری در این محیط بارگذاری نشده است؛ محورهای نصب تأییدنشده تلقی می‌شوند."};
     model.windFootprints=buildRoofPurlinWindFootprints(model);
+    window.SahroudMemberInitialSectionUI?.setModel(model);
     return model;
   }
   function draw() {
@@ -1025,6 +1026,9 @@
       m.analysisLoad={uniformLocal:local,globalUniform:global};
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
+    if(window.SahroudMemberInitialSectionUI?.readOverrides){
+      initialSectionOverrides.push(...window.SahroudMemberInitialSectionUI.readOverrides(analysisModel,initialSectionOverrides));
+    }
     if(!window.SahroudInitialMemberSections?.resolve)
       throw new Error("ماژول ثبت مقاطع اولیه اعضا بارگذاری نشده است.");
     const initialSectionResolution=window.SahroudInitialMemberSections.resolve(analysisModel,{overrides:initialSectionOverrides});
