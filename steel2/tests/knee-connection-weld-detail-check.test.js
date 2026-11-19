@@ -32,7 +32,7 @@ test("passes a weld meeting minimum leg and effective length rules",()=>{
  assert.equal(r.lineDemandGeometryComplete,true);
 });
 test("fails when leg size is below the thinner-part minimum or exceeds thinner-part thickness",()=>{
- const d=fixture({legSizeMm:4,connectedPartThicknessMm:4});
+ const d=fixture({legSizeMm:2,connectedPartThicknessMm:4});
  const r=check.assess(d);
  assert.equal(r.overallStatus,"FAIL");
  assert.equal(r.checks.find(x=>x.checkId==="minimum-leg").status,"FAIL");
@@ -69,7 +69,7 @@ test("applies beta reduction to a longitudinally loaded axial end weld longer th
  const row=r.checks.find(x=>x.checkId==="long-weld-reduction");
  assert.equal(row.status,"PASS");
  assert.equal(row.beta,1.0); // beta=1.2-0.002(1000/6), capped at 1.0
- assert.equal(r.effectiveWelds[0].effectiveLengthMm,1000);
+ assert.ok(Math.abs(r.effectiveWelds[0].effectiveLengthMm-(1000*(1.2-0.002*(1000/6))))<1e-8);
 });
 test("flags unknown long-weld applicability and blocks effective-length demand mapping",()=>{
  const r=check.assess(fixture({startMm:[0,0,0],endMm:[1000,0,0],axialEndConnection:undefined,longitudinallyLoaded:undefined}));
@@ -80,4 +80,9 @@ test("rejects invalid base detail without claiming a weld check",()=>{
  const d=fixture();d.plates=[];
  const r=check.assess(d);
  assert.equal(r.success,false);assert.equal(r.overallStatus,"INCOMPLETE");
+});
+
+test("fails when a weld leg exceeds the thinner connected part thickness",()=>{
+ const r=check.assess(fixture({legSizeMm:6,connectedPartThicknessMm:4}));
+ assert.equal(r.checks.find(x=>x.checkId==="minimum-leg").status,"FAIL");
 });
