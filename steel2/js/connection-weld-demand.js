@@ -28,19 +28,19 @@
    return sum+s.length*(ax*ax+ay*ay+ax*bx+ay*by+bx*bx+by*by)/3;
   },0);
   if(!(J>0))throw new Error("Weld segments have zero polar line moment");
-  const N=finite(input.N,"N"),Vx=finite(input.Vx,"Vx"),Vy=finite(input.Vy,"Vy"),Mz=finite(input.Mz,"Mz");
+  const N=finite(input.N,"N"),V=finite(input.V,"V"),Mz=finite(input.Mz,"Mz");
   const samples=[];
   parsed.forEach(s=>{
    for(const [name,x,y] of [["start",s.x1,s.y1],["end",s.x2,s.y2]]){
     const rx=x-cx,ry=y-cy;
-    const qx=N/L-Mz*ry/J,qy=Vx/L+Mz*rx/J+Vy/L;
+    const qx=N/L-Mz*ry/J,qy=V/L+Mz*rx/J;
     samples.push({segmentId:s.id,point:name,x,y,qx,qy,q:Math.hypot(qx,qy)});
    }
   });
   const critical=samples.reduce((a,p)=>p.q>a.q?p:a,samples[0]);
   return{totalLength:L,centroid:{x:cx,y:cy},linePolarMoment:J,segments:parsed,
    samples,maxLineDemand:critical.q,criticalPoint:critical,
-   components:{N,Vx,Vy,Mz},assumptions:["All weld segments are coplanar.","Uniform line stiffness and rigid connected plate are assumed.","Plate flexibility, local weld orientation effects, base-metal resistance and weld resistance are not evaluated."],
+   components:{N,V,Mz},assumptions:["All weld segments are coplanar.","Uniform line stiffness and rigid connected plate are assumed.","Plate flexibility, local weld orientation effects, base-metal resistance and weld resistance are not evaluated."],
    units:{lineDemand:"kN/mm",length:"mm",moment:"kN.mm"}};
  }
  function analyze(input){
@@ -51,7 +51,7 @@
    {id:"right",start:[b/2,-h/2],end:[b/2,h/2]},
    {id:"top",start:[b/2,h/2],end:[-b/2,h/2]},
    {id:"left",start:[-b/2,h/2],end:[-b/2,-h/2]}
-  ],N:input.N,Vx:0,Vy:input.V,Mz:input.M});
+  ],N:input.N,V:input.V,Mz:input.M});
  }
  const api={analyze,analyzeSegments};
  root.SahroudWeldGroupDemand=api;
