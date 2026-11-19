@@ -2,7 +2,7 @@
 const test=require("node:test");
 const assert=require("node:assert/strict");
 function fixture(){
- const listeners=new Map(),ids=["foundationSoilPanel","btnValidateFootingDesignInput","footingDesignInputJson","footingDesignInputResult"];
+ const listeners=new Map(),ids=["foundationSoilPanel","btnValidateFootingDesignInput","btnUseMappedUlsActions","footingDesignInputJson","footingDesignInputResult"];
  const elements=Object.fromEntries(ids.map(id=>[id,{id,dataset:{},disabled:true,value:"",textContent:"",style:{},addEventListener(type,fn){listeners.set(id+":"+type,fn);}}]));
  const actions={schema:"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0",success:true,reactionSense:"on-structure",
  foundations:[{nodeId:"B1",cases:[{loadCase:"ULS-1",loadCaseLabel:"ULS 1",sourceReference:"Report p.4",
@@ -15,6 +15,7 @@ function fixture(){
  global.window={document:{readyState:"complete",getElementById:id=>elements[id]||null}};
  delete require.cache[require.resolve("../js/foundation-design-input.js")];
  global.window.SahroudFootingDesignInput=require("../js/foundation-design-input.js");
+ global.window.SahroudLastFoundationUlsActions=actions;
  delete require.cache[require.resolve("../js/foundation-design-input-ui.js")];
  require("../js/foundation-design-input-ui.js");
  return {elements,listeners};
@@ -31,5 +32,14 @@ test("footing design input UI reports malformed or incomplete input",()=>{
  elements.footingDesignInputJson.value="{bad json";
  listeners.get("btnValidateFootingDesignInput:click")();
  assert.match(elements.footingDesignInputResult.textContent,/انجام نشد/);
+ delete global.window;
+});
+
+test("design input UI imports the full mapped ULS package from the preceding step",()=>{
+ const {elements,listeners}=fixture();
+ listeners.get("btnUseMappedUlsActions:click")();
+ const payload=JSON.parse(elements.footingDesignInputJson.value);
+ assert.equal(payload.ulsLocalActions.schema,"SAHROUD-FOUNDATION-ULS-LOCAL-ACTIONS-1.0");
+ assert.match(elements.footingDesignInputResult.textContent,/منتقل شد/);
  delete global.window;
 });
