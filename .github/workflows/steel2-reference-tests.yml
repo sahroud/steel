@@ -14,6 +14,7 @@ on:
       - "steel2/js/design-scope.js"
       - "steel2/js/wall-foundation-transfer.js"
       - "steel2/js/foundation-soil-check.js"
+      - "steel2/js/foundation-reaction-batch.js"
       - "steel2/index.html"
       - "steel2/js/load-transfer.js"
       - "steel2/js/load-path-audit.js"
@@ -65,6 +66,7 @@ jobs:
           node --check steel2/js/design-scope.js
           node --check steel2/js/wall-foundation-transfer.js
           node --check steel2/js/foundation-soil-check.js
+          node --check steel2/js/foundation-reaction-batch.js
           node --check steel2/js/load-path-audit.js
           node --check steel2/js/seismic-load-path.js
           node --check steel2/js/crane-design.js
@@ -75,4 +77,4 @@ jobs:
           node --check steel2/js/connection-readiness.js
           node --check steel2/js/knee-connection-geometry.js
       - name: Run independent 3D solver reference tests
-        run: node --test steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js steel2/tests/load-path-audit.test.js steel2/tests/wall-foundation-transfer.test.js steel2/tests/foundation-soil-check.test.js steel2/tests/foundation-soil-panel-ui.test.js steel2/tests/foundation-reaction-export.test.js
+        run: node --test steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js steel2/tests/load-path-audit.test.js steel2/tests/wall-foundation-transfer.test.js steel2/tests/foundation-soil-check.test.js steel2/tests/foundation-soil-panel-ui.test.js steel2/tests/foundation-reaction-export.test.js steel2/tests/foundation-reaction-batch.test.js
