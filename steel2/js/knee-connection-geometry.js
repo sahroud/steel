@@ -240,7 +240,7 @@
    !!k&&k.column.sectionGeometry.available&&k.rafter.sectionGeometry.available,
    k.column.sectionGeometry.dimensionsMm.topFlangeWidthMm===220,
    k.rafter.sectionGeometry.dimensionsMm.topFlangeWidthMm===180,
-   check(k).valid,
+   !check(k).capacityDesigned&&!check(k).executionReady,
    !check({...k,column:{...k.column,sectionGeometry:{available:false,issues:["missing"]}}}).valid,
    !sectionGeometry({sectionProperties:{geometryType:"built-up-I",geometryDimensionsMm:{}}}).available,
    !sectionGeometry({sectionProperties:{geometryType:"built-up-I",geometryDimensionsMm:{...section().geometryDimensionsMm,webThicknessMm:900}}}).available,
