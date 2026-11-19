@@ -57,13 +57,25 @@
         }).join("");
     }
 
+    function formatSectionDimensions(dimensions) {
+        if (!dimensions || typeof dimensions !== "object" || !Object.keys(dimensions).length) {
+            return "ابعاد هندسی ثبت نشده";
+        }
+        return Object.entries(dimensions).map(([key, value]) => {
+            const rendered = value && typeof value === "object"
+                ? JSON.stringify(value) : String(value);
+            return esc(key) + ": " + esc(rendered);
+        }).join("؛ ");
+    }
+
     function buildSectionScheduleTable(schedule) {
         return schedule.map((item, i) => `
             <tr><td>${i + 1}</td><td>${esc(item.memberId)}</td><td>${esc(item.sectionKey)}</td>
-            <td>${esc(item.profile)}</td><td>${fmt(item.lengthM)}</td><td>${fmt(item.A_m2 * 1e4)}</td>
-            <td>${fmt(item.Iy_m4 * 1e8)}</td><td>${fmt(item.Iz_m4 * 1e8)}</td>
-            <td>${fmt(item.J_m4 * 1e8)}</td><td>${fmt(item.massPerMeterKg)}</td>
-            <td>${esc(item.fingerprint)}</td></tr>`
+            <td>${esc(item.profile)}</td><td>${fmt(item.lengthM)}</td>
+            <td>${formatSectionDimensions(item.geometryDimensionsMm)}</td>
+            <td>${fmt(item.A_m2 * 1e4)}</td><td>${fmt(item.Iy_m4 * 1e8)}</td>
+            <td>${fmt(item.Iz_m4 * 1e8)}</td><td>${fmt(item.J_m4 * 1e8)}</td>
+            <td>${fmt(item.massPerMeterKg)}</td><td>${esc(item.fingerprint)}</td></tr>`
         ).join("");
     }
 
@@ -362,8 +374,9 @@
                     <section class="report-section">
                         <h3>۹. جدول مشخصات مقاطع تخصیص‌یافته به اعضا</h3>
                         <p>این جدول از رجیستری واحد مقاطع مدل سه‌بعدی و برای تمام اعضای مدل فعلی استخراج شده است.</p>
+                        <p>ابعاد هندسی فقط از داده ثبت‌شده مقطع خوانده می‌شود؛ در صورت نبود ابعاد، عبارت «ابعاد هندسی ثبت نشده» درج می‌شود و هیچ مقدار تخمینی جایگزین نخواهد شد.</p>
                         <div style="overflow-x:auto"><table style="width:100%;min-width:1250px;border-collapse:collapse">
-                            <thead><tr><th>ردیف</th><th>شناسه عضو</th><th>گروه</th><th>نام مقطع</th><th>طول (m)</th><th>A (cm²)</th><th>Iy (cm⁴)</th><th>Iz (cm⁴)</th><th>J (cm⁴)</th><th>وزن (kg/m)</th><th>Fingerprint</th></tr></thead>
+                            <thead><tr><th>ردیف</th><th>شناسه عضو</th><th>گروه</th><th>نام مقطع</th><th>طول (m)</th><th>ابعاد واقعی مقطع (mm)</th><th>A (cm²)</th><th>Iy (cm⁴)</th><th>Iz (cm⁴)</th><th>J (cm⁴)</th><th>وزن (kg/m)</th><th>Fingerprint</th></tr></thead>
                             <tbody>${sectionRows}</tbody>
                         </table></div>
                         <div class="notice">
