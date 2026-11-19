@@ -29,3 +29,10 @@ test("rejects inconsistent supports and non-finite force or moment values",()=>{
  assert.throws(()=>collectUlsReactionCases(p),/خالی/);
  assert.throws(()=>collectUlsReactionCases(payload({supports:[{...payload().cases[0].supports[0],MxkNm:"NaN"}]})),/عدد محدود/);
 });
+
+test("rejects null or blank ULS force and moment components instead of coercing them to zero",()=>{
+ const n=payload();n.cases[0].supports[0].FykN=null;
+ assert.throws(()=>collectUlsReactionCases(n),/نباید خالی باشد/);
+ const b=payload();b.cases[0].supports[0].MzkNm="";
+ assert.throws(()=>collectUlsReactionCases(b),/نباید خالی باشد/);
+});
