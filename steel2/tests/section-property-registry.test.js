@@ -48,3 +48,25 @@ test("section fingerprints include profile and geometric dimensions",()=>{
  assert.notEqual(a.sectionPropertyFingerprint,b.sectionPropertyFingerprint);
  assert.notEqual(a.sectionPropertyFingerprint,c.sectionPropertyFingerprint);
 });
+
+test("steel takeoff sums each unique member actual length times its section mass per metre",()=>{
+ const members=[
+  {id:"C1",sectionKey:"column",length:6,sectionProperties:registry.normalize(section({profile:"Plate I",A:0.02}),"C1")},
+  {id:"R1",sectionKey:"rafter",length:8,sectionProperties:registry.normalize(section({profile:"Plate I",A:0.02}),"R1")},
+  {id:"P1",sectionKey:"purlin",length:5,sectionProperties:registry.normalize(section({profile:"Z",A:0.01}),"P1")}
+ ];
+ const model={members,sectionPropertyAudit:{complete:true,memberCount:3}};
+ const result=registry.takeoff(model);
+ assert.equal(result.memberCount,3);
+ assert.equal(result.totalLengthM,19);
+ assert.equal(result.totalMassKg,19*157+5*78.5);
+ assert.equal(result.items.length,3);
+ assert.equal(result.groups.length,2);
+});
+test("steel takeoff refuses stale, incomplete, duplicate or invalid-length models",()=>{
+ const member={id:"C1",length:6,sectionProperties:registry.normalize(section(),"C1")};
+ assert.throws(()=>registry.takeoff({members:[member],sectionPropertiesDirty:true,sectionPropertyAudit:{complete:true,memberCount:1}}),/تغییر/);
+ assert.throws(()=>registry.takeoff({members:[member],sectionPropertyAudit:{complete:false,memberCount:1}}),/کامل/);
+ assert.throws(()=>registry.takeoff({members:[member,{...member}],sectionPropertyAudit:{complete:true,memberCount:2}}),/تکراری/);
+ assert.throws(()=>registry.takeoff({members:[{...member,length:0}],sectionPropertyAudit:{complete:true,memberCount:1}}),/طول واقعی/);
+});
