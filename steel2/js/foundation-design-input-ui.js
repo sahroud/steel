@@ -24,7 +24,20 @@
     input.value=JSON.stringify(payload,null,2);
     out.textContent="بسته کامل ULS مربوط به پایه "+nodeId+" به ورودی طراحی پی منتقل شد. مشخصات هندسه، مصالح و پوشش بتن را تکمیل و سپس اعتبارسنجی کنید.";
     out.style.color="#15803d";
-   }catch(error){out.textContent="انتقال بسته ULS انجام نشد: "+error.message;out.style.color="#b45309";}
+   }catch(error){
+    // A failed import must not leave an older package attached to a changed footing payload.
+    try{
+     const payload=JSON.parse(input.value||"{}");
+     if(payload&&typeof payload==="object"&&!Array.isArray(payload)&&
+        Object.prototype.hasOwnProperty.call(payload,"ulsLocalActions")){
+      delete payload.ulsLocalActions;
+      input.value=JSON.stringify(payload,null,2);
+     }
+    }catch(_){}
+    out.textContent="انتقال بسته ULS انجام نشد: "+error.message+
+     "؛ بسته قبلی از فرم حذف شد تا برای پایه دیگری استفاده نشود.";
+    out.style.color="#b45309";
+   }
   });
   button.addEventListener("click",()=>{
    try{
