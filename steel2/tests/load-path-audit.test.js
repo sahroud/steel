@@ -98,3 +98,7 @@ test("foundation-bearing wall weight is not silently assigned to steel girts",()
  });
  assert.deepEqual(members.map(m=>m.lineLoads.dead),[0,0]);
 });
+
+test("seismic lateral distribution rejects vertical axis",()=>{
+ assert.throws(()=>seismic.distributeApprovedBaseShear({baseShearKN:50,axisIndex:1,sourceVerified:true,sourceReference:"S-01",points:[{nodeId:"R",weight:1}]}),/محور افقی/);
+});
