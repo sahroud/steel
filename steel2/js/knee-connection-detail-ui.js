@@ -57,7 +57,7 @@
   const panel=root.document.createElement("section");
   panel.className="panel";panel.id="kneeConnectionDetailIntake";
   panel.innerHTML="<div class='panel-title'><h3>ورود جزئیات واقعی اتصال زانویی</h3><span class='status'>ورودی نقشه ساخت</span></div>"+
-   "<div class='notice'>این فرم هیچ اندازه، تعداد پیچ، ضخامت ورق یا جوش پیش‌فرض تولید نمی‌کند. ابتدا قالب شناسه‌ها را بسازید، سپس مختصات و مشخصات را دقیقاً از نقشه مصوب وارد کنید. مختصات چندضلعی و پیچ در دستگاه محلی هر ورق (mm) ثبت می‌شود؛ مبدأ و محورهای هر ورق در دستگاه اتصال سه‌بعدی و mm هستند؛ مرجع ضخامت هر ورق باید صریحاً mid-plane باشد تا دو سطح جامد به‌صورت متقارن ساخته شوند؛ مبدأ دستگاه اتصال m است. برای کنترل جوش گوشه، ضخامت قطعه متصل‌شونده، وضعیت بار پرتکرار، لبه‌ای یا سطحی بودن جوش و پیوسته/منقطع بودن هر خط را در رکورد weld وارد کنید. اگر نسبت طول به ساق از ۱۰۰ بیشتر شود، اتصال انتهایی محوری و بارگذاری طولی نیز باید صریحاً تعیین شوند؛ هیچ‌یک به‌صورت خودکار فرض نمی‌شود.</div>"+
+   "<div class='notice'>این فرم هیچ اندازه، تعداد پیچ، ضخامت ورق یا جوش پیش‌فرض تولید نمی‌کند. ابتدا قالب شناسه‌ها را بسازید، سپس مختصات و مشخصات را دقیقاً از نقشه مصوب وارد کنید. مختصات چندضلعی و پیچ در دستگاه محلی هر ورق (mm) ثبت می‌شود؛ مبدأ و محورهای هر ورق در دستگاه اتصال سه‌بعدی و mm هستند؛ مرجع ضخامت هر ورق باید صریحاً mid-plane باشد تا دو سطح جامد به‌صورت متقارن ساخته شوند؛ مبدأ دستگاه اتصال m است. برای کنترل جوش گوشه، ضخامت قطعه متصل‌شونده، وضعیت بار پرتکرار، لبه‌ای یا سطحی بودن جوش و پیوسته/منقطع بودن هر خط را در رکورد weld وارد کنید. برای جوش منقطع، هر قطعه را به‌صورت یک رکورد مستقل با intermittentGroupId مشترک برای یک خط مستقیم و corrosionCondition برابر protected یا weather-exposed-unpainted ثبت کنید؛ گروه‌بندی خودکار انجام نمی‌شود. اگر نسبت طول به ساق از ۱۰۰ بیشتر شود، اتصال انتهایی محوری و بارگذاری طولی نیز باید صریحاً تعیین شوند؛ هیچ‌یک به‌صورت خودکار فرض نمی‌شود.</div>"+
    "<div class='button-grid'><button id='btnKneeDetailTemplate' class='btn secondary' type='button'>ساخت قالب برای زانویی انتخاب‌شده</button>"+
    "<button id='btnKneeDetailValidate' class='btn primary' type='button'>اعتبارسنجی جزئیات واردشده</button>"+
    "<button id='btnKneeDetailExport' class='btn secondary' type='button'>دریافت JSON ورودی</button>"+
@@ -204,7 +204,7 @@
     const report=root.SahroudKneeWeldDetailCheck.assess(value);
     const label=s=>s==="PASS"?"قبول":s==="FAIL"?"رد":s==="NOT_APPLICABLE"?"نامرتبط":"قابل ارزیابی نیست";
     const rows=report.checks.map(x=>"<tr><td>"+esc(x.weldId)+"</td><td>"+esc(x.checkId)+"</td><td>"+label(x.status)+
-     "</td><td>"+esc(x.detail)+"</td><td>"+(Number.isFinite(x.requiredLegMm)?x.requiredLegMm+" mm":Number.isFinite(x.effectiveLengthMm)?x.effectiveLengthMm.toFixed(2)+" mm":"—")+"</td></tr>").join("");
+     "</td><td>"+esc(x.detail)+"</td><td>"+(Number.isFinite(x.requiredLegMm)?x.requiredLegMm+" mm":Number.isFinite(x.maximumFreeSpacingMm)?("حداکثر فاصله "+x.maximumFreeSpacingMm+" mm؛ فاصله واقعی "+x.maximumProvidedGapMm+" mm"):Number.isFinite(x.effectiveLengthMm)?x.effectiveLengthMm.toFixed(2)+" mm":"—")+"</td></tr>").join("");
     $("kneeWeldDetailCheckResult").innerHTML="<p><b>نتیجه کنترل جزئیات جوش گوشه: "+label(report.overallStatus)+"</b></p>"+
      "<p>مبنای بررسی: "+esc(report.codeBasis.document)+"، بند "+esc(report.codeBasis.clause)+
      "؛ تعیین طول مؤثر برای تحلیل گروه جوش: "+(report.lineDemandGeometryComplete?"کامل":"ناقص")+"</p>"+
