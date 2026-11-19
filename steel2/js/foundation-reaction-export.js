@@ -23,7 +23,7 @@
   });
   const supportIds=new Set();
   const rows=supports.map(s=>{
-   const id=String(s&&s.nodeId===undefined?"":s.nodeId);
+   const id=String(!s||s.nodeId===undefined||s.nodeId===null?"":s.nodeId);
    if(!id.trim()||supportIds.has(id))throw new Error("شناسه تکیه‌گاه خالی یا تکراری است.");
    supportIds.add(id);
    const node=nodeById.get(id);
