@@ -70,7 +70,7 @@ test("applies beta reduction to a longitudinally loaded axial end weld longer th
  const r=check.assess(d);
  const row=r.checks.find(x=>x.checkId==="long-weld-reduction");
  assert.equal(row.status,"PASS");
- assert.equal(row.beta,1.0); // beta=1.2-0.002(1000/6), capped at 1.0
+ assert.ok(Math.abs(row.beta-(1.2-0.002*(1000/6)))<1e-12);
  assert.ok(Math.abs(r.effectiveWelds[0].effectiveLengthMm-(1000*(1.2-0.002*(1000/6))))<1e-8);
 });
 test("flags unknown long-weld applicability and blocks effective-length demand mapping",()=>{
