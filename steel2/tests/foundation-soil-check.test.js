@@ -76,3 +76,8 @@ test("does not silently treat omitted horizontal actions as zero",()=>{
 test("rejects blank supplied horizontal actions",()=>{
  assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-H-blank",sourceReference:"R-05",NkN:1000,MxkNm:0,MzkNm:0,HxkN:"",HzkN:0}]}),/نیروی افقی Hx/);
 });
+
+test("requires both biaxial SLS moments explicitly instead of assuming zero",()=>{
+ assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-no-Mx",sourceReference:"R-06",NkN:1000,MzkNm:0}]}),/لنگر Mx/);
+ assert.throws(()=>soil.checkRectangularFooting({...base,cases:[{name:"SLS-no-Mz",sourceReference:"R-07",NkN:1000,MxkNm:0}]}),/لنگر Mz/);
+});
