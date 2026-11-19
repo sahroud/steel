@@ -783,18 +783,35 @@
     const target=$("fullModelSummary");
     if(!target||!model||!window.SahroudSectionPropertyRegistry?.schedule)return;
     const audit=model.sectionPropertyAudit;
-    if(!audit?.complete)return;
+    if(model.sectionPropertiesDirty===true||!audit||audit.complete!==true||
+       audit.memberCount!==model.members?.length||audit.assignedCount!==audit.memberCount)return;
+    const schedule=window.SahroudSectionPropertyRegistry.schedule(model);
+    if(schedule.length!==audit.memberCount)throw new Error("تعداد ردیف‌های جدول مقاطع با اعضای مدل برابر نیست.");
+    const ids=new Set();
+    schedule.forEach(item=>{
+      if(!item.memberId||ids.has(item.memberId))throw new Error("شناسه عضو در جدول مقاطع خالی یا تکراری است.");
+      ids.add(item.memberId);
+    });
     const escapeHtml=value=>String(value??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-    const rows=window.SahroudSectionPropertyRegistry.schedule(model).map(item=>`<tr>
+    const formatDimensions=dimensions=>{
+      if(!dimensions||typeof dimensions!=="object"||!Object.keys(dimensions).length)return "ابعاد هندسی ثبت نشده";
+      return Object.entries(dimensions).map(([key,value])=>{
+        const rendered=value&&typeof value==="object"?JSON.stringify(value):String(value);
+        return escapeHtml(key)+": "+escapeHtml(rendered);
+      }).join("؛ ");
+    };
+    const rows=schedule.map(item=>`<tr>
       <td>${escapeHtml(item.memberId)}</td><td>${escapeHtml(item.sectionKey)}</td><td>${escapeHtml(item.profile)}</td>
+      <td>${Number.isFinite(item.lengthM)?item.lengthM.toFixed(3):"ثبت نشده"}</td>
+      <td>${formatDimensions(item.geometryDimensionsMm)}</td>
       <td>${(item.A_m2*1e4).toFixed(2)}</td><td>${(item.Iy_m4*1e8).toFixed(2)}</td>
       <td>${(item.Iz_m4*1e8).toFixed(2)}</td><td>${(item.J_m4*1e8).toFixed(2)}</td>
       <td>${item.massPerMeterKg.toFixed(2)}</td></tr>`).join("");
-    const old=target.querySelector("#memberSectionPropertySchedule");if(old)old.remove();
+    const previous=target.querySelector("#memberSectionPropertySchedule");if(previous)previous.remove();
     const section=document.createElement("section");
     section.id="memberSectionPropertySchedule";section.className="notice";
-    section.innerHTML="<b>جدول یکپارچه مشخصات مقاطع اعضا</b><p>"+audit.assignedCount+" از "+audit.memberCount+" عضو دارای مشخصات مقطع تخصیص‌یافته به تحلیل هستند.</p>"+
-     "<details><summary>نمایش جدول کامل مقاطع اعضا</summary><div style='overflow-x:auto'><table><thead><tr><th>شناسه</th><th>گروه</th><th>مقطع</th><th>A (cm²)</th><th>Iy (cm⁴)</th><th>Iz (cm⁴)</th><th>J (cm⁴)</th><th>وزن (kg/m)</th></tr></thead><tbody>"+rows+"</tbody></table></div></details>";
+    section.innerHTML="<b>جدول تطبیقی شناسه اعضا و مشخصات واقعی مقاطع</b><p>"+audit.assignedCount+" از "+audit.memberCount+" عضو دارای مشخصات مقطع تخصیص‌یافته به مدل هستند. طول از هندسه عضو و ابعاد از داده ثبت‌شده همان مقطع خوانده می‌شود؛ مقدار مفقود حدس زده نمی‌شود.</p>"+
+     "<details><summary>نمایش جدول کامل اعضا و مقاطع</summary><div style='overflow-x:auto'><table><thead><tr><th>شناسه عضو</th><th>گروه</th><th>نام مقطع</th><th>طول عضو (m)</th><th>ابعاد هندسی مقطع (mm)</th><th>A (cm²)</th><th>Iy (cm⁴)</th><th>Iz (cm⁴)</th><th>J (cm⁴)</th><th>وزن (kg/m)</th></tr></thead><tbody>"+rows+"</tbody></table></div></details>";
     target.appendChild(section);
   }
   function showSummary(){
