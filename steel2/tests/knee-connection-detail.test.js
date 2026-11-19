@@ -8,9 +8,9 @@ function fixture(){
   memberForceTransferPoints:[{role:"column",memberId:"COL-1",pointMm:[0,0,0]},{role:"rafter",memberId:"RAF-1",pointMm:[120,0,0]}],
   plates:[{id:"END-PLATE",thicknessMm:16,material:{grade:"ST37",FyMPa:235,FuMPa:360},
    polygonMm:[{x:-100,y:-100},{x:300,y:-100},{x:300,y:100},{x:-100,y:100}]}],
-  bolts:[{id:"B1",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
-   {id:"B2",xMm:0,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1}],
-  welds:[{id:"W1",startMm:[-100,-60,0],endMm:[-100,60,0],type:"fillet",legSizeMm:8,electrodeFexxMPa:490}]};
+  bolts:[{id:"B1",plateId:"END-PLATE",xMm:0,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
+   {id:"B2",plateId:"END-PLATE",xMm:0,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1}],
+  welds:[{id:"W1",plateId:"END-PLATE",faceReference:"DWG-S-101-REV2/DETAIL-A",startMm:[-100,-60,0],endMm:[-100,60,0],type:"fillet",legSizeMm:8,electrodeFexxMPa:490}]};
 }
 test("explicit connection detail accepts complete, drawing-referenced geometry",()=>{
  const r=detail.validate(fixture());assert.equal(r.valid,true);assert.equal(r.capacityDesigned,false);assert.equal(r.executionReady,false);
@@ -46,4 +46,25 @@ test("force transfer points must identify one column and one rafter",()=>{
 test("knee detail requires exactly two member transfer points",()=>{
  const d=fixture();d.memberForceTransferPoints.pop();
  const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("دقیقاً دو نقطه")));
+});
+
+test("each bolt must reference its actual host plate",()=>{
+ const d=fixture();d.bolts[0].plateId="UNKNOWN";
+ const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("ورق میزبان")));
+});
+test("slotted holes require explicit length width and direction",()=>{
+ const d=fixture();d.bolts[0].holeType="long-slotted";
+ const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("طول، عرض و زاویه شیار")));
+ d.bolts[0].slotLengthMm=40;d.bolts[0].slotWidthMm=22;d.bolts[0].slotAngleDeg=90;
+ assert.equal(detail.validate(d).valid,true);
+});
+test("fillet weld and groove weld use distinct size definitions",()=>{
+ const d=fixture();d.welds[0].type="groove";d.welds[0].grooveType="CJP";d.welds[0].effectiveThroatMm=12;delete d.welds[0].legSizeMm;
+ assert.equal(detail.validate(d).valid,true);
+ d.welds[0].effectiveThroatMm=null;
+ const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("گلویی مؤثر")));
+});
+test("welds must identify the connected plate and drawing face",()=>{
+ const d=fixture();delete d.welds[0].faceReference;
+ const r=detail.validate(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("وجه اتصال")));
 });
