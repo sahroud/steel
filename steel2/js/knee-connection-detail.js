@@ -52,14 +52,17 @@
     fail(errors,"محورهای دستگاه اتصال باید یکه، متعامد و راست‌گرد باشند.");
   }
   const members=input.memberForceTransferPoints;
-  if(!Array.isArray(members)||members.length<2)fail(errors,"نقاط انتقال نیروی ستون و رفتر باید جداگانه و صریح ثبت شوند.");
+  if(!Array.isArray(members)||members.length!==2)fail(errors,"برای اتصال زانویی باید دقیقاً دو نقطه انتقال نیرو، یکی برای ستون و دیگری برای رفتر، ثبت شود.");
   else{
-   const ids=new Set();
+   const ids=new Set(),roles=new Set();
    members.forEach((m,i)=>{
     if(!text(m.memberId)||ids.has(String(m.memberId)))fail(errors,"شناسه عضو در نقاط انتقال نیرو خالی یا تکراری است.");
     ids.add(String(m.memberId));
+    if(!["column","rafter"].includes(m.role)||roles.has(m.role))fail(errors,"نقش عضو باید دقیقاً شامل یک column و یک rafter باشد.");
+    roles.add(m.role);
     if(!vec(m.pointMm,3))fail(errors,"نقطه انتقال نیروی عضو "+(m.memberId||i)+" باید مختصات سه‌بعدی mm داشته باشد.");
    });
+   if(roles.size===2&&(!roles.has("column")||!roles.has("rafter")))fail(errors,"نقش‌های ستون و رفتر هر دو باید حضور داشته باشند.");
   }
   if(!Array.isArray(input.plates)||!input.plates.length)fail(errors,"حداقل یک ورق واقعی با هندسه و مصالح صریح لازم است.");
   const plateIds=new Set();
