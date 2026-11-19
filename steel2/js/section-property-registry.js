@@ -103,7 +103,8 @@
    const section=normalize(raw,id);
    member.sectionProperties=section;
    member.sectionRollDeg=section.sectionRollDeg;
-   if(section.sectionReferenceAxis)member.referenceAxis=section.sectionReferenceAxis.slice();
+   if(section.sectionReferenceAxis){member.referenceAxis=section.sectionReferenceAxis.slice();member.sectionReferenceAxisSource="section-property-registry";}
+   else if(member.sectionReferenceAxisSource==="section-property-registry"){delete member.referenceAxis;delete member.sectionReferenceAxisSource;}
    const referenceAxis=member.referenceAxis;
    const referenceAxisValid=Array.isArray(referenceAxis)&&referenceAxis.length===3&&referenceAxis.every(v=>Number.isFinite(Number(v)))&&Math.hypot(...referenceAxis.map(Number))>1e-10;
    member.sectionOrientationVerified=section.sectionOrientationConfirmed===true&&Number.isFinite(Number(section.sectionRollDeg))&&referenceAxisValid;
@@ -124,7 +125,8 @@
   const normalized=normalize(section,String(member.id));
   member.sectionProperties=normalized;
   member.sectionRollDeg=normalized.sectionRollDeg;
-  if(normalized.sectionReferenceAxis)member.referenceAxis=normalized.sectionReferenceAxis.slice();
+  if(normalized.sectionReferenceAxis){member.referenceAxis=normalized.sectionReferenceAxis.slice();member.sectionReferenceAxisSource="section-property-registry";}
+  else if(member.sectionReferenceAxisSource==="section-property-registry"){delete member.referenceAxis;delete member.sectionReferenceAxisSource;}
   const referenceAxis=member.referenceAxis;
   const referenceAxisValid=Array.isArray(referenceAxis)&&referenceAxis.length===3&&referenceAxis.every(v=>Number.isFinite(Number(v)))&&Math.hypot(...referenceAxis.map(Number))>1e-10;
   member.sectionOrientationVerified=normalized.sectionOrientationConfirmed===true&&Number.isFinite(Number(normalized.sectionRollDeg))&&referenceAxisValid;
