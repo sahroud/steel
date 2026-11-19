@@ -410,6 +410,20 @@
       ?SteelLoadTransfer.roofSurfacePressureToLineLoad(pressure,width,roofAngle,roofLoadAreaBasis[basisKey]).lineLoadKNm
       :0;
     const roofPurlinsPresent=members.some(m=>m.sectionKey==="roofPurlin");
+    const wallSupportPath=loads.wallDeadSupportPath||"foundation";
+    if(!["foundation","girts"].includes(wallSupportPath))
+      throw new Error("مسیر تحمل وزن دیوار باید به‌صورت صریح انتخاب شود.");
+    if(wallSupportPath==="girts"){
+      const requirements=[
+        [Number(loads.wallDeadLeft||0)>0, m=>m.sectionKey==="wallGirt"&&m.side==="left", "قید طولی چپ"],
+        [Number(loads.wallDeadRight||0)>0, m=>m.sectionKey==="wallGirt"&&m.side==="right", "قید طولی راست"],
+        [Number(loads.endWallDeadFront||0)>0, m=>m.sectionKey==="endGirt"&&m.endFace==="front", "تیر دیوار انتهایی جلو"],
+        [Number(loads.endWallDeadBack||0)>0, m=>m.sectionKey==="endGirt"&&m.endFace==="rear", "تیر دیوار انتهایی عقب"]
+      ];
+      requirements.forEach(([active,predicate,label])=>{
+        if(active&&!members.some(predicate))throw new Error("وزن دیوار به مسیر قیدها سپرده شده اما "+label+" در مدل وجود ندارد.");
+      });
+    }
     members.forEach(m=>{
       if(m.axis==="transverse"){
         const fi=(m.frame||1)-1,tw=Number(frameTrib[fi]||0);
