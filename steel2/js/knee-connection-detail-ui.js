@@ -29,6 +29,18 @@
    fabricationStatus:""
   };
  }
+ function emptyCapacityRecord(detail){
+  return{
+   schema:root.SahroudKneeConnectionCapacity.SCHEMA,
+   method:"LRFD",connectionType:"bearing",
+   drawingReference:detail?.drawingReference||"",
+   boltDemandDistributionVerifiedByEngineer:false,
+   boltDemandDistributionReference:"",
+   axialEndConnection:false,boltGroupAxialSpanMm:null,
+   boltProperties:(detail?.bolts||[]).map(b=>({boltId:b.id,boltClass:""})),
+   loadCases:[]
+  };
+ }
  function statusMarkup(result){
   if(!result)return "<p class='notice'>ابتدا جزئیات را بررسی کنید.</p>";
   const errors=(result.errors||[]).map(x=>"<li>"+esc(x)+"</li>").join("");
@@ -50,6 +62,10 @@
    "<button id='btnKneeDetailExportGlobal' class='btn secondary' type='button'>دریافت هندسه سه‌بعدی جهانی</button>"+
    "<button id='btnKneeDetailMapDemand' class='btn primary' type='button'>انتقال تقاضای ترکیبات بار به دستگاه اتصال</button>"+
    "<button id='btnKneeDetailCollision' class='btn secondary' type='button'>ممیزی برخورد سه‌بعدی ورق‌ها</button></div>"+
+   "<div class='notice'>محاسبات زیر فقط حالت‌های حدی پیچی اتکایی و ورق را که داده‌های هندسی/تقاضای آن‌ها صریح وارد شده باشد بررسی می‌کند. توزیع نیرو بین پیچ‌ها، سطوح مقطع خالص، مسیر برش قالبی و اثر اهرمی باید مستند باشند. جوش، خمش ورق، لغزش بحرانی و تأیید نهایی اتصال هنوز پوشش داده نمی‌شوند.</div>"+
+   "<div class='button-grid'><button id='btnKneeCapacityTemplate' class='btn secondary' type='button'>ساخت قالب داده‌های ظرفیت</button><button id='btnKneeCapacityRun' class='btn primary' type='button'>محاسبه ظرفیت‌های پیچی/ورق</button></div>"+
+   "<div class='field'><label for='kneeCapacityJson'>تقاضاها، سطوح مقطع و مسیرهای گسیختگی (JSON)</label><textarea id='kneeCapacityJson' rows='16' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
+   "<div id='kneeCapacityResult' aria-live='polite' class='notice'>محاسبه ظرفیت هنوز اجرا نشده است.</div>"+
    "<div class='field'><label for='kneeDetailJson'>جزئیات اتصال (JSON)</label><textarea id='kneeDetailJson' rows='18' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
    "<div id='kneeDetailValidationResult' aria-live='polite' class='notice'>قالب اولیه هنوز ساخته نشده است.</div>"+
    "<div id='kneeDetailMappedDemand' aria-live='polite' class='notice'>تقاضای منتقل‌شده هنوز محاسبه نشده است.</div>"+
@@ -116,6 +132,42 @@
     $("kneeDetailCollisionResult").textContent="ممیزی برخورد اجرا نشد: "+e.message;
     $("kneeDetailCollisionResult").dataset.valid="false";
    }
+  });
+  $("btnKneeCapacityTemplate").addEventListener("click",()=>{
+   try{
+    const detail=JSON.parse($("kneeDetailJson").value);
+    const valid=root.SahroudKneeConnectionDetail.validate(detail);
+    if(!valid.valid)throw new Error("ابتدا هندسه اتصال را کامل و معتبر کنید: "+valid.errors.join(" | "));
+    $("kneeCapacityJson").value=JSON.stringify(emptyCapacityRecord(detail),null,2);
+    $("kneeCapacityResult").textContent="قالب ساخته شد. نوع پیچ، توزیع نیروی هر پیچ، اثر اهرمی، سطوح مقطع و مسیرهای برش قالبی را فقط از محاسبات و نقشه مستند تکمیل کنید؛ هیچ تقاضا یا ظرفیت فرضی وارد نشده است.";
+   }catch(e){$("kneeCapacityResult").textContent="قالب ظرفیت ساخته نشد: "+e.message;}
+  });
+  $("btnKneeCapacityRun").addEventListener("click",()=>{
+   try{
+    const detail=JSON.parse($("kneeDetailJson").value),design=JSON.parse($("kneeCapacityJson").value);
+    const selected=selectedKnee();
+    if(!selected||String(detail.jointId)!==String(selected.node.id))throw new Error("جزئیات واردشده با گره زانویی انتخاب‌شده در مدل جاری تطبیق ندارد.");
+    for(const item of [{role:"column",id:selected.column.id},{role:"rafter",id:selected.rafter.id}]){
+     if(!(detail.memberForceTransferPoints||[]).some(p=>p.role===item.role&&String(p.memberId)===String(item.id)))
+      throw new Error("شناسه عضو "+item.role+" با مدل جاری تطبیق ندارد.");
+    }
+    const report=root.SahroudKneeConnectionCapacity.calculate(detail,design);
+    const status=s=>s==="PASS"?"قبول":s==="FAIL"?"رد":"ناقص";
+    const rows=[];
+    report.boltChecks.forEach(b=>{
+     rows.push("<tr><td>"+esc(b.caseId)+"</td><td>پیچ "+esc(b.boltId)+"</td><td>کشش</td><td>"+b.tension.demandKN.toFixed(3)+"</td><td>"+b.tension.capacityKN.toFixed(3)+"</td><td>"+(b.tension.utilization*100).toFixed(1)+"%</td><td>"+status(b.tension.status)+"</td></tr>");
+     rows.push("<tr><td>"+esc(b.caseId)+"</td><td>پیچ "+esc(b.boltId)+"</td><td>برش</td><td>"+b.shear.demandKN.toFixed(3)+"</td><td>"+b.shear.capacityKN.toFixed(3)+"</td><td>"+(b.shear.utilization*100).toFixed(1)+"%</td><td>"+status(b.shear.status)+"</td></tr>");
+    });
+    report.bearingChecks.forEach(b=>[b.bearing,b.tear].forEach(x=>rows.push("<tr><td>"+esc(b.caseId)+"</td><td>"+esc(b.boltId)+" / "+esc(b.plateId)+"</td><td>"+esc(x.limitState)+"</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>")));
+    report.plateChecks.forEach(p=>p.checks.forEach(x=>rows.push("<tr><td>"+esc(p.caseId)+"</td><td>"+esc(p.plateId)+"</td><td>"+esc(x.limitState)+"</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>")));
+    report.blockShearChecks.forEach(p=>{const x=p.check;rows.push("<tr><td>"+esc(p.caseId)+"</td><td>"+esc(p.plateId)+"</td><td>برش قالبی</td><td>"+x.demandKN.toFixed(3)+"</td><td>"+x.capacityKN.toFixed(3)+"</td><td>"+(x.utilization*100).toFixed(1)+"%</td><td>"+status(x.status)+"</td></tr>");});
+    $("kneeCapacityResult").innerHTML="<p><b>نتیجه کنترل‌های جزئی: "+(report.overallStatus==="FAIL"?"حداقل یک کنترل رد شده است":"کنترل‌های اجراشده بدون رد ثبت شده‌اند، اما طراحی اتصال ناقص است")+"</b></p>"+
+     "<p>روش: "+esc(report.method)+"؛ تعداد کنترل: "+report.summary.checks+"؛ قبول: "+report.summary.passed+"؛ رد: "+report.summary.failed+"؛ بیشینه نسبت تقاضا به ظرفیت: "+(report.summary.maximumUtilization*100).toFixed(1)+"%</p>"+
+     "<table><thead><tr><th>ترکیب</th><th>جزء</th><th>حالت حدی</th><th>تقاضا (kN)</th><th>ظرفیت موجود (kN)</th><th>نسبت</th><th>نتیجه</th></tr></thead><tbody>"+rows.join("")+"</tbody></table>"+
+     "<p><b>ظرفیت‌های محاسبه‌شده به معنی تأیید اتصال نیستند.</b> تأیید نهایی: خیر؛ آمادگی اجرا: خیر.</p>"+
+     "<ul>"+report.notEvaluated.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
+    $("kneeCapacityResult").dataset.valid="true";
+   }catch(e){$("kneeCapacityResult").textContent="محاسبه ظرفیت متوقف شد: "+e.message;$("kneeCapacityResult").dataset.valid="false";}
   });
   $("btnKneeDetailMapDemand").addEventListener("click",()=>{
    try{
