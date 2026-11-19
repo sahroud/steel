@@ -134,24 +134,25 @@
     const capT=phi*Fnt*Ab*reduction/1000;
     const capV=phi*Fnv*Ab*planes*reduction/1000;
     const ft=T*1000/Ab, fv=V*1000/(Ab*planes);
-    let intT=capT,intV=capV,interactionApplied=false;
-    if(!(ft<0.3*Fnt||fv<0.3*Fnv)){
-     interactionApplied=true;
-     let fntp,fnvp;
-     if(method==="LRFD"){
-      fntp=Fnt*(1.3-fv/(PHI_BOLT*Fnv));
-      fnvp=Fnv*(1.3-ft/(PHI_BOLT*Fnt));
-     }else{
-      fntp=Fnt*(1.3-OMEGA_BOLT*fv/Fnv);
-      fnvp=Fnv*(1.3-OMEGA_BOLT*ft/Fnt);
-     }
-     intT=phi*Math.max(0,fntp)*Ab*reduction/1000;
-     intV=phi*Math.max(0,fnvp)*Ab*planes*reduction/1000;
+    // Apply the two interaction reductions independently: shear reduces tensile strength;
+    // tension reduces shear strength. A low demand in one direction does not exempt the other check.
+    let FntPrime=Fnt,FnvPrime=Fnv;
+    if(fv>=0.3*Fnv){
+     FntPrime=method==="LRFD"
+      ?Math.min(Fnt,Fnt*(1.3-fv/(PHI_BOLT*Fnv)))
+      :Math.min(Fnt,Fnt*(1.3-OMEGA_BOLT*fv/Fnv));
     }
-    const tc=demandCheck(c.id+":"+bolt.id,"bolt-tension",T,interactionApplied?intT:capT,method,"10-2-9-3-3 / 10-2-9-3-4");
-    const vc=demandCheck(c.id+":"+bolt.id,"bolt-shear",V,interactionApplied?intV:capV,method,"10-2-9-3-3 / 10-2-9-3-4");
-    boltChecks.push({caseId:c.id,boltId:bolt.id,AbMm2:Ab,FntMPa:Fnt,FnvMPa:Fnv,gripReduction:reduction,
-     interactionApplied,tension:tc,shear:vc,status:tc.status==="FAIL"||vc.status==="FAIL"?"FAIL":"PASS"});
+    if(ft>=0.3*Fnt){
+     FnvPrime=method==="LRFD"
+      ?Math.min(Fnv,Fnv*(1.3-ft/(PHI_BOLT*Fnt)))
+      :Math.min(Fnv,Fnv*(1.3-OMEGA_BOLT*ft/Fnt));
+    }
+    const intT=phi*Math.max(0,FntPrime)*Ab*reduction/1000;
+    const intV=phi*Math.max(0,FnvPrime)*Ab*planes*reduction/1000;
+    const tc=demandCheck(c.id+":"+bolt.id,"bolt-tension",T,intT,method,"10-2-9-3-4");
+    const vc=demandCheck(c.id+":"+bolt.id,"bolt-shear",V,intV,method,"10-2-9-3-4");
+    boltChecks.push({caseId:c.id,boltId:bolt.id,AbMm2:Ab,FntMPa:Fnt,FnvMPa:Fnv,FntPrimeMPa:FntPrime,FnvPrimeMPa:FnvPrime,gripReduction:reduction,
+     interactionApplied:FntPrime<Fnt||FnvPrime<Fnv,tension:tc,shear:vc,status:tc.status==="FAIL"||vc.status==="FAIL"?"FAIL":"PASS"});
    }
    for(const b of c.bearingChecks){
     const bolt=boltById.get(String(b.boltId)),plate=plateById.get(String(b.plateId));
