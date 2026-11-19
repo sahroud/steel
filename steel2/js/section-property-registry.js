@@ -7,8 +7,12 @@
  const clone=v=>JSON.parse(JSON.stringify(v));
  const positive=(v,label)=>{const n=Number(v);if(!Number.isFinite(n)||n<=0)throw new Error(label+" باید مثبت و محدود باشد.");return n;};
  function fingerprint(section){
-  const keys=["profile","A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy","massPerMeterKg"];
-  const raw=keys.map(k=>k+":"+Number(section[k]||0).toPrecision(12)).join("|");
+  const keys=["profile","A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy","massPerMeterKg","geometryType"];
+  const raw=keys.map(k=>{
+   const value=section[k];
+   return k+":"+(typeof value==="number"?value.toPrecision(12):String(value??""));
+  }).join("|")+"|geometry:"+JSON.stringify(section.geometryDimensionsMm||{})+
+   "|geometricProperties:"+JSON.stringify(section.geometricProperties||{});
   let h=2166136261;
   for(let i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619);}
   return (h>>>0).toString(16).padStart(8,"0");
@@ -69,6 +73,18 @@
   if(!member||!member.sectionProperties)return null;
   return clone(member.sectionProperties);
  }
- root.SahroudSectionPropertyRegistry={normalize,apply,applyOne,get,fingerprint};
+ function schedule(model){
+  if(!model||!Array.isArray(model.members))throw new Error("مدل اعضا برای تهیه جدول مقاطع موجود نیست.");
+  return model.members.map(member=>{
+   const p=member.sectionProperties;
+   if(!p)throw new Error("خواص مقطع عضو "+member.id+" هنوز تخصیص نیافته است.");
+   return {memberId:String(member.id),sectionKey:String(member.sectionKey||member.type||""),profile:p.profile||p.designation||p.name||"بدون نام",
+    A_m2:p.A,Iy_m4:p.Iy,Iz_m4:p.Iz,J_m4:p.J,E_Pa:p.E,G_Pa:p.G,
+    massPerMeterKg:p.massPerMeterKg,radiusY_m:p.radiusY,radiusZ_m:p.radiusZ,
+    SxTop_m3:p.SxTop||null,SxBottom_m3:p.SxBottom||null,Sy_m3:p.Sy||null,
+    geometryDimensionsMm:clone(p.geometryDimensionsMm||{}),fingerprint:p.sectionPropertyFingerprint};
+  });
+ }
+ root.SahroudSectionPropertyRegistry={normalize,apply,applyOne,get,schedule,fingerprint};
  if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudSectionPropertyRegistry;
 })(typeof globalThis!=="undefined"?globalThis:this);
