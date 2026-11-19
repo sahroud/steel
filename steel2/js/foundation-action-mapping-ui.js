@@ -26,7 +26,8 @@
     const footing=mapped.foundations.find(x=>x.nodeId===nodeId);
     if(!footing)throw new Error("شناسه پایه انتخاب‌شده در بسته واکنش وجود ندارد.");
     const cases=footing.cases.map(c=>({
-     name:c.loadCase,nameLabel:c.loadCaseLabel,sourceReference:c.sourceReference,
+     name:/^SLS(?:[-_ ]|$)/i.test(c.loadCase)?c.loadCase:"SLS-"+c.loadCase,
+     nameLabel:c.loadCaseLabel,sourceReference:c.sourceReference,
      NkN:c.NkN,MxkNm:c.MxkNm,MzkNm:c.MzkNm
     }));
     soilCases.value=JSON.stringify(cases,null,2);
