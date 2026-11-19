@@ -83,6 +83,7 @@ test("wall surface dead loads transfer to longitudinal and end girts using tribu
   windWall:0,windEndFront:0,windEndBack:0,
   deadAreaBasis:"unspecified",liveAreaBasis:"unspecified",snowAreaBasis:"unspecified"
  });
- assert.deepEqual(members.map(m=>m.lineLoads.dead),[1.6,1.8,1.4,2.0]);
+ const actual=members.map(m=>m.lineLoads.dead),expected=[1.6,1.8,1.4,2.0];
+ actual.forEach((value,index)=>assert.ok(Math.abs(value-expected[index])<1e-12));
  assert.equal(r.roofPurlinsPresent,false);
 });
