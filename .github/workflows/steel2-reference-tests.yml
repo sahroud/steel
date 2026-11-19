@@ -39,6 +39,7 @@ on:
       - "steel2/tests/initial-member-sections.test.js steel2/tests/member-initial-section-ui.test.js steel2/tests/section-property-registry.test.js steel2/tests/connection-weld-demand.test.js"
       - "steel2/js/connection-readiness.js"
       - "steel2/js/connection-demand-registry.js"
+      - "steel2/js/member-demand-3d.js"
       - "steel2/js/connection-demand-ui.js"
       - "steel2/js/connection-weld-demand.js"
       - "steel2/js/connection-design.js"
@@ -65,6 +66,9 @@ on:
       - "steel2/js/sections.js"
       - "steel2/js/final-report.js"
       - "steel2/js/connection-readiness.js"
+      - "steel2/js/connection-demand-registry.js"
+      - "steel2/js/member-demand-3d.js"
+      - "steel2/js/connection-demand-ui.js"
       - "steel2/js/knee-connection-geometry.js"
       - "steel2/js/foundation-soil-check.js"
       - "steel2/js/foundation-reaction-batch.js"
@@ -113,6 +117,7 @@ jobs:
           node --check steel2/js/connection-readiness.js
           node --check steel2/js/knee-connection-geometry.js
           node --check steel2/js/connection-demand-registry.js
+          node --check steel2/js/member-demand-3d.js
           node --check steel2/js/connection-demand-ui.js
           node --check steel2/js/connection-weld-demand.js
           node --check steel2/js/connection-design.js
