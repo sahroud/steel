@@ -74,6 +74,8 @@
      "حداقل طول مؤثر قطعه جوش با توجه به پیوسته/منقطع بودن کنترل شد.",
      {providedLengthMm:L,requiredLengthMm:requiredLength,continuity:w.continuity,
       reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)"});
+    if(w.continuity==="intermittent")add(w,"intermittent-spacing","NOT_ASSESSABLE",
+     "حداکثر فاصله آزاد جوش‌های منقطع، شرایط مجاز بودن کاربرد و وضعیت خوردگی در این نسخه کنترل نمی‌شود؛ PASS برای جوش منقطع صادر نمی‌شود.");
    }
    let beta=1,known=true;
    if(L/a>100){
