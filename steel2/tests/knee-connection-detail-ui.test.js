@@ -97,6 +97,6 @@ test("knee detail UI exposes code-referenced bolt and plate capacity calculation
 
 test("knee detail UI displays the limited fillet weld metal capacity checks",()=>{
  assert.match(source,/report\.weldChecks\.forEach/);
- assert.match(source,/برش فلز جوش/);
+ assert.match(source,/کشش/فشار موازی محور جوش/);
  assert.match(source,/weldDemandDistributionVerifiedByEngineer/);
 });
