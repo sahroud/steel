@@ -276,7 +276,8 @@
                             A_cm2:m.A_cm2,
                             Iy_cm4:m.Iy_cm4,
                             Iz_cm4:m.Ix_cm4,
-                            J_cm4:Number($(key+"J3D")?.value)
+                            J_cm4:Number($(key+"J3D")?.value),
+                            ...readSectionProvenance(key)
                         }];
                     }
                     return [key,{
