@@ -74,3 +74,29 @@ test("joint action transform rejects non-orthonormal local axes",()=>{
   {N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},
   {x:[1,0,0],y:[1,0,0],z:[0,0,1]},"j"),/متعامد/);
 });
+
+test("connection frame transfers moment by the exact force lever arm",()=>{
+ const out=registry.toConnectionFrame(
+  {Fx:0,Fy:10000,Fz:0,Mx:0,My:0,Mz:0},
+  [1,0,0],[0,0,0],
+  {x:[1,0,0],y:[0,1,0],z:[0,0,1]});
+ assert.deepEqual(out.globalAtConnectionOrigin,{Fx:0,Fy:10000,Fz:0,Mx:0,My:0,Mz:10000});
+ assert.deepEqual(out.force,{x:0,y:10000,z:0});
+ assert.deepEqual(out.moment,{x:0,y:0,z:10000});
+});
+test("connection frame projects forces and moments onto a rotated local frame",()=>{
+ const out=registry.toConnectionFrame(
+  {Fx:0,Fy:10000,Fz:0,Mx:0,My:0,Mz:0},
+  [0,0,0],[0,0,0],
+  {x:[0,1,0],y:[-1,0,0],z:[0,0,1]});
+ assert.deepEqual(out.force,{x:10000,y:0,z:0});
+ assert.deepEqual(out.moment,{x:0,y:0,z:0});
+});
+test("connection frame rejects invalid axes and missing coordinates",()=>{
+ assert.throws(()=>registry.toConnectionFrame(
+  {Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},[0,0,0],[0,0,0],
+  {x:[1,0,0],y:[1,0,0],z:[0,0,1]}),/متعامد/);
+ assert.throws(()=>registry.toConnectionFrame(
+  {Fx:1,Fy:2,Fz:3,Mx:4,My:5,Mz:6},[0,0],[0,0,0],
+  {x:[1,0,0],y:[0,1,0],z:[0,0,1]}),/مختصات گره/);
+});
