@@ -76,7 +76,7 @@ test("uses reduced effective weld length in elastic line-demand geometry for a l
  d.welds=[{...d.welds[0],startMm:[-600,0,0],endMm:[600,0,0],legSizeMm:6,
   connectedPartThicknessMm:10,highCycleDynamic:false,edgeWeld:false,continuity:"continuous",
   axialEndConnection:true,longitudinallyLoaded:true}];
- mapped.cases[0].memberActions=mapped.cases[0].memberActions.slice(0,1);
+ d.plates[0].polygonMm=[{x:-1000,y:-1000},{x:1000,y:-1000},{x:1000,y:1000},{x:-1000,y:1000}];
  const r=kneeWeld.analyze(d,mapped);
  const ratio=1200/6,beta=1.2-0.002*ratio;
  assert.ok(Math.abs(r.results[0].lineDemand.totalLength-1200*beta)<1e-8);
@@ -87,6 +87,6 @@ test("blocks line demand if long-weld effective length applicability is unknown"
  d.welds=[{...d.welds[0],startMm:[-600,0,0],endMm:[600,0,0],legSizeMm:6,
   connectedPartThicknessMm:10,highCycleDynamic:false,edgeWeld:false,continuity:"continuous",
   axialEndConnection:undefined,longitudinallyLoaded:undefined}];
- mapped.cases[0].memberActions=mapped.cases[0].memberActions.slice(0,1);
+ d.plates[0].polygonMm=[{x:-1000,y:-1000},{x:1000,y:-1000},{x:1000,y:1000},{x:-1000,y:1000}];
  assert.throws(()=>kneeWeld.analyze(d,mapped),/طول مؤثر خطوط جوش/);
 });
