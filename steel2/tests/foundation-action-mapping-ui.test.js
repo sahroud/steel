@@ -18,7 +18,7 @@ function setup(){
   loadCase:"SLS-1",loadCaseLabel:"SLS service",classification:"SLS",
   solverEquilibriumOK:true,sourceReference:"Approved SLS report p.4",
   supports:[{nodeId:"B1",coordinatesM:{x:2,y:0,z:0},fixedDofs:[0,1,2],
-   FxkN:0,FykN:100,FzkN:0,MxkNm:0,MykNm:0,MzkNm:0}]
+   FxkN:12,FykN:100,FzkN:5,MxkNm:0,MykNm:0,MzkNm:0}]
  }]});
  elements.foundationLocalGeometryInput.value=JSON.stringify({foundations:[{
   nodeId:"B1",footingCentroidGlobalM:{x:1,y:0,z:0},
@@ -42,6 +42,8 @@ test("mapping UI converts validated SLS reactions and fills soil-check cases for
  assert.equal(cases[0].name,"SLS-1");
  assert.equal(cases[0].NkN,100);
  assert.equal(cases[0].MzkNm,-100);
+ assert.equal(cases[0].HxkN,-12);
+ assert.equal(cases[0].HzkN,-5);
  assert.match(elements.foundationActionMappingResult.textContent,/تبدیل واکنش‌ها برای پایه B1 انجام شد/);
  assert.equal(elements.foundationActionMappingResult.style.color,"#15803d");
  delete global.window;
