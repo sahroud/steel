@@ -17,7 +17,7 @@ test("knee extraction reads actual assigned column and rafter geometry dimension
  assert.equal(k.column.sectionGeometry.available,true);
  assert.equal(k.column.sectionGeometry.dimensionsMm.topFlangeWidthMm,220);
  assert.equal(k.rafter.sectionGeometry.dimensionsMm.topFlangeWidthMm,180);
- assert.equal(k.column.sectionSolids.available,true);
+ assert.equal(k.column.sectionSolids.available,true,JSON.stringify({axes:k.column.solverAxes,solids:k.column.sectionSolids}));
  assert.equal(k.column.sectionSolids.solids.length,3);
  assert.equal(k.rafter.sectionSolids.solids.length,3);
  assert.equal(knee.check(k).valid,true);
@@ -86,7 +86,7 @@ test("aggregate connection geometry reads axes from every combination case",()=>
  const axes=analysisResult(roll).members;
  const result={envelope:{cases:[{members:axes},{members:axes.map(item=>({...item}))}]}};
  const k=knee.extract(m,result)[0];
- assert.equal(k.column.solverAxes.available,true);
+ assert.equal(k.column.solverAxes.available,true,JSON.stringify(k.column.solverAxes));
  assert.equal(k.column.sectionSolids.available,true);
 });
 test("aggregate connection geometry rejects axes missing from one load combination",()=>{
