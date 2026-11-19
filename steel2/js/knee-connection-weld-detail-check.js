@@ -23,6 +23,7 @@
   const plates=new Map(detail.plates.map(p=>[String(p.id),p]));
   const checks=[],effectiveWelds=[];
   let lineDemandGeometryComplete=true;
+  const intermittentGroups=new Map();
   const add=(w,id,status,detailText,values={})=>checks.push({weldId:String(w.id),checkId:id,status,detail:detailText,...values});
   for(const w of detail.welds){
    const plate=plates.get(String(w.plateId));
@@ -74,8 +75,15 @@
      "حداقل طول مؤثر قطعه جوش با توجه به پیوسته/منقطع بودن کنترل شد.",
      {providedLengthMm:L,requiredLengthMm:requiredLength,continuity:w.continuity,
       reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)"});
-    if(w.continuity==="intermittent")add(w,"intermittent-spacing","NOT_ASSESSABLE",
-     "حداکثر فاصله آزاد جوش‌های منقطع، شرایط مجاز بودن کاربرد و وضعیت خوردگی در این نسخه کنترل نمی‌شود؛ PASS برای جوش منقطع صادر نمی‌شود.");
+    if(w.continuity==="intermittent"){
+     const groupId=typeof w.intermittentGroupId==="string"?w.intermittentGroupId.trim():"";
+     if(!groupId){
+      add(w,"intermittent-spacing","NOT_ASSESSABLE","شناسه گروه خط جوش منقطع برای کنترل فاصله آزاد قطعات لازم است.");
+     }else{
+      if(!intermittentGroups.has(groupId))intermittentGroups.set(groupId,[]);
+      intermittentGroups.get(groupId).push(w);
+     }
+    }
    }
    let beta=1,known=true;
    if(L/a>100){
@@ -101,6 +109,66 @@
    const start=midpoint.map((x,i)=>x-direction[i]*half),end=midpoint.map((x,i)=>x+direction[i]*half);
    effectiveWelds.push({...w,effectiveStartMm:start,effectiveEndMm:end,effectiveLengthMm:effectiveLength,effectiveLengthFactor:beta,
     effectiveLengthKnown:known});
+  }
+
+  // The free spacing rule applies to successive beads on one collinear weld line.
+  // Group identity, corrosion condition and line geometry must be explicit; no
+  // automatic grouping across different faces or rows is attempted.
+  for(const [groupId,beads] of intermittentGroups){
+   const first=beads[0],plate=plates.get(String(first.plateId));
+   const conditionSet=new Set(beads.map(w=>w.corrosionCondition));
+   const plateSet=new Set(beads.map(w=>String(w.plateId)));
+   const faceSet=new Set(beads.map(w=>String(w.faceReference)));
+   const thicknesses=beads.map(w=>{
+    const p=plates.get(String(w.plateId));
+    return Math.min(p?.thicknessMm||Infinity,w.connectedPartThicknessMm||Infinity);
+   });
+   const tmin=Math.min(...thicknesses);
+   const addGroup=(status,detailText,values={})=>checks.push({weldId:"group:"+groupId,checkId:"intermittent-spacing",status,detail:detailText,...values});
+   if(beads.length<2){
+    addGroup("NOT_ASSESSABLE","برای کنترل فاصله آزاد، حداقل دو قطعه جوش منقطع در یک گروه لازم است.",{groupId,beadCount:beads.length});
+    continue;
+   }
+   if(conditionSet.size!==1||!["protected","weather-exposed-unpainted"].includes(first.corrosionCondition)){
+    addGroup("NOT_ASSESSABLE","وضعیت حفاظت/خوردگی باید برای تمام قطعات گروه یکسان و صریح باشد.",{groupId,corrosionConditions:[...conditionSet]});
+    continue;
+   }
+   if(plateSet.size!==1||faceSet.size!==1||!positive(tmin)){
+    addGroup("NOT_ASSESSABLE","قطعات یک گروه باید روی یک ورق و یک وجه باشند و ضخامت نازک‌ترین قطعه مشخص باشد.",{groupId});
+    continue;
+   }
+   const p0=first.startMm,p1=first.endMm,axis=p1.map((v,i)=>v-p0[i]);
+   const axisLength=Math.hypot(...axis),unit=axis.map(v=>v/axisLength);
+   const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+   const intervals=[];let collinear=true;
+   for(const bead of beads){
+    const d=bead.endMm.map((v,i)=>v-bead.startMm[i]),dl=Math.hypot(...d);
+    const parallel=Math.hypot(...cross(d.map(v=>v/dl),unit))<=1e-6;
+    const distance=point=>Math.hypot(...cross(point.map((v,i)=>v-p0[i]),unit));
+    if(!parallel||distance(bead.startMm)>0.1||distance(bead.endMm)>0.1){collinear=false;break;}
+    const s=bead.startMm.map((v,i)=>v-p0[i]).reduce((sum,v,i)=>sum+v*unit[i],0);
+    const e=bead.endMm.map((v,i)=>v-p0[i]).reduce((sum,v,i)=>sum+v*unit[i],0);
+    intervals.push([Math.min(s,e),Math.max(s,e)]);
+   }
+   if(!collinear){
+    addGroup("NOT_ASSESSABLE","قطعات گروه روی یک خط مستقیم هم‌محور نیستند؛ برای هر ردیف/خط جوش گروه جداگانه تعریف کنید.",{groupId});
+    continue;
+   }
+   intervals.sort((a,b)=>a[0]-b[0]);
+   const gaps=[];
+   for(let i=1;i<intervals.length;i++)gaps.push(intervals[i][0]-intervals[i-1][1]);
+   if(gaps.some(g=>g< -0.1)){
+    addGroup("NOT_ASSESSABLE","قطعات جوش گروه هم‌پوشانی دارند؛ هندسه گروه برای کنترل فاصله آزاد مبهم است.",{groupId,gapsMm:gaps});
+    continue;
+   }
+   const maximum=first.corrosionCondition==="weather-exposed-unpainted"
+    ?Math.min(14*tmin,180):Math.min(24*tmin,300);
+   const worst=Math.max(...gaps);
+   addGroup(worst<=maximum+1e-9?"PASS":"FAIL",
+    "فاصله آزاد بین قطعات متوالی جوش منقطع با توجه به ضخامت نازک‌ترین ورق و وضعیت خوردگی کنترل شد.",
+    {groupId,beadCount:beads.length,minimumPlateThicknessMm:tmin,corrosionCondition:first.corrosionCondition,
+     gapsMm:gaps,maximumFreeSpacingMm:maximum,maximumProvidedGapMm:worst,
+     reference:"مبحث دهم ۱۴۰۱، بند 10-2-9-2-2(ب)، محدودیت جوش‌های منقطع"});
   }
   const statuses=checks.map(c=>c.status);
   const overallStatus=statuses.includes("FAIL")?"FAIL":statuses.includes("NOT_ASSESSABLE")?"INCOMPLETE":"PASS";
