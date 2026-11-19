@@ -101,3 +101,10 @@ test("does not treat groove welds as fillet-weld line segments",()=>{
  d.welds[0].type="groove";d.welds[0].grooveType="CJP";d.welds[0].effectiveThroatMm=6;
  assert.throws(()=>kneeWeld.analyze(d,mapped),/فقط برای جوش گوشه/);
 });
+
+
+test("rejects duplicate load-combination identifiers instead of duplicating demand rows",()=>{
+ const {d,mapped}=fixture();
+ mapped.cases.push({...mapped.cases[0],memberActions:mapped.cases[0].memberActions.map(a=>({...a,connectionFrame:{...a.connectionFrame,force:{...a.connectionFrame.force},moment:{...a.connectionFrame.moment},connectionOriginM:{...a.connectionFrame.connectionOriginM},units:{...a.connectionFrame.units}}}))});
+ assert.throws(()=>kneeWeld.analyze(d,mapped),/شناسه ترکیب بار.*تکراری/);
+});
