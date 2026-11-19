@@ -14,6 +14,10 @@
     const state = {
         deadLeft: 0.50,
         deadRight: 0.50,
+        wallDeadLeft: 0,
+        wallDeadRight: 0,
+        endWallDeadFront: 0,
+        endWallDeadBack: 0,
         liveLeft: 0.75,
         liveRight: 0.75,
         snowLeft: 1.0,
@@ -235,6 +239,15 @@
                 ${input("loadDeadRight", "بار مرده سمت راست", state.deadRight, false)}
             </div>
 
+            <h4>هـ ـ وزن سطحی دیوارها و پوسته (بار مرده)</h4>
+            <div class="notice">وزن سطحی دیوارهای طولی و انتهایی را از مشخصات واقعی آجر، ساندویچ‌پنل، زیرسازی و پوشش وارد کنید. مقدار صفر یعنی این بار در این ورودی تعریف نشده است؛ ناحیه مثلثی بالای دیوار انتهایی هنوز به مسیر مستقل نیاز دارد. واحد kN/m² است.</div>
+            <div class="form-grid">
+                ${input("loadWallDeadLeft", "وزن سطحی دیوار طولی چپ", state.wallDeadLeft, false)}
+                ${input("loadWallDeadRight", "وزن سطحی دیوار طولی راست", state.wallDeadRight, false)}
+                ${input("loadEndWallDeadFront", "وزن سطحی دیوار انتهایی جلو", state.endWallDeadFront, false)}
+                ${input("loadEndWallDeadBack", "وزن سطحی دیوار انتهایی عقب", state.endWallDeadBack, false)}
+            </div>
+
             <h4>ب ـ بار زنده سقف</h4>
             <div class="form-grid">
                 ${input("loadLiveLeft", "بار زنده سمت چپ", state.liveLeft, false)}
@@ -360,7 +373,11 @@
             windRight: "loadWindRight",
             windWall: "loadWindWall",
             windEndFront: "loadWindEndFront",
-            windEndBack: "loadWindEndBack"
+            windEndBack: "loadWindEndBack",
+            wallDeadLeft: "loadWallDeadLeft",
+            wallDeadRight: "loadWallDeadRight",
+            endWallDeadFront: "loadEndWallDeadFront",
+            endWallDeadBack: "loadEndWallDeadBack"
         };
 
         Object.keys(ids).forEach(key => {
@@ -609,7 +626,11 @@
             windRight: 0,
             windWall: 0,
             windEndFront: 0,
-            windEndBack: 0
+            windEndBack: 0,
+            wallDeadLeft: 0,
+            wallDeadRight: 0,
+            endWallDeadFront: 0,
+            endWallDeadBack: 0
         };
 
         Object.assign(state, defaults);
@@ -625,7 +646,11 @@
             windRight: "loadWindRight",
             windWall: "loadWindWall",
             windEndFront: "loadWindEndFront",
-            windEndBack: "loadWindEndBack"
+            windEndBack: "loadWindEndBack",
+            wallDeadLeft: "loadWallDeadLeft",
+            wallDeadRight: "loadWallDeadRight",
+            endWallDeadFront: "loadEndWallDeadFront",
+            endWallDeadBack: "loadEndWallDeadBack"
         };
 
         Object.keys(ids).forEach(key => {
@@ -662,7 +687,8 @@
             "deadLeft", "deadRight",
             "liveLeft", "liveRight",
             "snowLeft", "snowRight",
-            "windLeft", "windRight", "windWall", "windEndFront", "windEndBack"
+            "windLeft", "windRight", "windWall", "windEndFront", "windEndBack",
+            "wallDeadLeft", "wallDeadRight", "endWallDeadFront", "endWallDeadBack"
         ];
 
         const legacyBasis = ["horizontal-projection", "sloped-surface"].includes(data.roofLoadAreaBasis)
