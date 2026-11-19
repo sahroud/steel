@@ -1880,3 +1880,29 @@ test("3D design demand preparation rejects incomplete combinations and non-finit
   const bad={success:true,caseCount:1,combinationResults:[{id:"C1",label:"C1",analysis:{success:true,members:[]}}]};
   assert.throws(()=>api.build(bad,{members:[{id:"M1"}]},{extractCase:()=>({memberCount:1,members:[{id:"M1",samples:[{x:0,N:NaN,Vy:0,Vz:0,T:0,My:0,Mz:0}]}]})}),/نامعتبر/);
 });
+
+
+test("3D design demand uses the real member-force recovery API for each combination", () => {
+  require("../js/member-design-demand-3d.js");
+  const model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2,y:0,z:0}],
+    members:[{id:"M1",start:"A",end:"B",sectionKey:"reference",length:2,
+      analysisLoad:{uniformLocal:[0,-10,-20]}}]};
+  const resultFor=(id,label,scale)=>({success:true,loadCase:id,loadCaseLabel:label,
+    members:[{id:"M1",length:2,localEndForces:[0,100*scale,200*scale,3*scale,4*scale,5*scale,0,0,0,0,0,0]}]});
+  const run={success:true,caseCount:2,combinationResults:[
+    {id:"C1",label:"C1",analysis:resultFor("C1","C1",1)},
+    {id:"C2",label:"C2",analysis:resultFor("C2","C2",2)}
+  ]};
+  const prepared=globalThis.SahroudMemberDesignDemand3D.build(run,model,globalThis.SahroudMemberDemand3D);
+  assert.equal(prepared.success,true);
+  assert.equal(prepared.members.length,1);
+  assert.ok(prepared.members[0].candidates.length>2);
+  const c2=prepared.members[0].candidates.find(x=>x.combinationId==="C2"&&x.x===0);
+  assert.ok(c2);
+  assert.equal(c2.values.N,-200);
+  assert.equal(c2.values.Vy,-200);
+  assert.equal(c2.values.Vz,-400);
+  assert.equal(c2.values.T,-6);
+  assert.equal(c2.values.My,-8);
+  assert.equal(c2.values.Mz,-10);
+});
