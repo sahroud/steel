@@ -64,7 +64,8 @@ test("steel takeoff sums each unique member actual length times its section mass
   {id:"R1",sectionKey:"rafter",length:8,sectionProperties:registry.normalize(section({profile:"Plate I",A:0.02}),"R1")},
   {id:"P1",sectionKey:"purlin",length:5,sectionProperties:registry.normalize(section({profile:"Z",A:0.01}),"P1")}
  ];
- const model={members,sectionPropertyAudit:{complete:true,memberCount:3}};
+ const model=withGeometry(members);
+ model.sectionPropertyAudit={complete:true,memberCount:members.length};
  const result=registry.takeoff(model);
  assert.equal(result.memberCount,3);
  assert.equal(result.totalLengthM,19);
