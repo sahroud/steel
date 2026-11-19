@@ -126,6 +126,6 @@ test("section roll and explicit orientation confirmation are fingerprinted and a
 });
 test("section roll rejects non-finite values before solver consumption",()=>{
  const member={id:"R-BAD"};
- const invalid=registry.normalize(section({sectionRollDeg:NaN}),"R-BAD");
- assert.ok(Number.isNaN(invalid.sectionRollDeg));
+ assert.throws(()=>registry.normalize(section({sectionRollDeg:NaN}),"R-BAD"),/زاویه چرخش/);
+ assert.throws(()=>registry.normalize(section({sectionOrientationConfirmed:true}),"R-BAD"),/بدون زاویه صریح/);
 });
