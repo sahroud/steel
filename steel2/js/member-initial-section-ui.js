@@ -66,12 +66,18 @@
      Iy_cm4:$("initialSectionIy").value,Iz_cm4:$("initialSectionIz").value,J_cm4:$("initialSectionJ").value
     });
     dirty.set(selectedId,item);
-    message("مقطع اولیه مستقل عضو "+selectedId+" ثبت شد. هنوز کنترل ظرفیت انجام نشده است.");
+    const member=currentModel.members.find(m=>String(m.id)===selectedId);
+    if(root.SahroudSectionPropertyRegistry?.applyOne)root.SahroudSectionPropertyRegistry.applyOne(member,item.section);
+    invalidateAnalysis(selectedId);
+    message("مقطع اولیه مستقل عضو "+selectedId+" ثبت و در مشخصات یکپارچه عضو به‌روزرسانی شد. تحلیل مجدد لازم است.");
    }catch(e){message(e.message,true);}
   });
   $("btnClearInitialMemberSection").addEventListener("click",()=>{
    if(!selectedId)return;
-   dirty.delete(selectedId);loadSelected();message("ورودی مستقل حذف شد؛ مقطع پیش‌فرض گروه برای این عضو استفاده می‌شود.");
+   dirty.delete(selectedId);
+   const member=currentModel?.members?.find(m=>String(m.id)===selectedId);
+   if(member){delete member.sectionProperties;delete member.sectionPropertyFingerprint;delete member.sectionPropertySource;}
+   invalidateAnalysis(selectedId);loadSelected();message("ورودی مستقل حذف شد؛ مقطع پیش‌فرض گروه برای این عضو استفاده می‌شود و تحلیل مجدد لازم است.");
   });
   return panel;
  }
@@ -104,10 +110,18 @@
    item.section.ry=Math.sqrt(Iy/A)*0.01;
    item.section.massPerMeterKg=A*0.785;
    dirty.set(selectedId,item);
-   ["fullModel3DResult","fullModel3DDemand","fullModel3DCombinationResult","criticalRafterDiagram"].forEach(id=>{const el=$(id);if(el)el.textContent="مقطع عضو "+selectedId+" تغییر کرده است؛ نتایج قبلی نامعتبرند. مدل و تمام ترکیبات بار را دوباره تحلیل کنید.";});
+   if(root.SahroudSectionPropertyRegistry?.applyOne)root.SahroudSectionPropertyRegistry.applyOne(member,item.section);
+   invalidateAnalysis(selectedId);
    $("initialSectionGeometrySummary").textContent="به‌روزرسانی زنده انجام شد: A="+A.toFixed(2)+" cm²، Iy="+Iy.toFixed(2)+" cm⁴، Iz="+Iz.toFixed(2)+" cm⁴، J≈"+J.toFixed(2)+" cm⁴، Sx بالا/پایین="+result.strongAxis.sectionModulusTopCm3.toFixed(2)+"/"+result.strongAxis.sectionModulusBottomCm3.toFixed(2)+" cm³، Sy="+result.weakAxis.sectionModulusCm3.toFixed(2)+" cm³، وزن="+(A*0.785).toFixed(2)+" kg/m. خواص در مدل تحلیلی بعدی جایگزین می‌شوند؛ تحلیل قبلی تا اجرای مجدد معتبر نیست.";
    message("خواص کامل هندسی و وزن مقطع از ابعاد جدید محاسبه و برای همین عضو ثبت شد؛ تحلیل باید دوباره اجرا شود.");
   }catch(e){$("initialSectionGeometrySummary").textContent="خطا در هندسه مقطع: "+e.message;message(e.message,true);}
+ }
+ function invalidateAnalysis(memberId){
+  ["fullModel3DResult","fullModel3DDemand","fullModel3DCombinationResult","criticalRafterDiagram"].forEach(id=>{
+   const el=$(id);if(el)el.textContent="مقطع عضو "+memberId+" تغییر کرده است؛ نتایج قبلی نامعتبرند. مدل و تمام ترکیبات بار را دوباره تحلیل کنید.";
+  });
+  const report=$("finalReportResults");if(report)report.textContent="مقطع اعضا تغییر کرده است؛ گزارش قبلی را معتبر تلقی نکنید و پس از تحلیل مجدد گزارش تازه بسازید.";
+  if(currentModel){currentModel.sectionPropertyAudit=null;currentModel.sectionPropertiesDirty=true;}
  }
  function message(text,error){const el=$("initialMemberSectionMessage");if(el){el.textContent=text;el.style.color=error?"#b45309":"";}}
  function baseFor(member){
