@@ -504,7 +504,9 @@
       })};
     })};
   });
-  const plateInteractionAudit=auditPlateInteractions(input.plates);\n  const hardwarePlateInteractionAudit=auditHardwarePlateInteractions(input);\n  const weldPlateInteractionAudit=auditWeldPlateInteractions(input.welds);
+  const plateInteractionAudit=auditPlateInteractions(input.plates);
+  const hardwarePlateInteractionAudit=auditHardwarePlateInteractions(input);
+  const weldPlateInteractionAudit=auditWeldPlateInteractions(input.welds);
    const welds=input.welds.map(w=>({id:String(w.id),plateId:String(w.plateId),faceReference:w.faceReference,
    type:w.type,startGlobalM:toGlobal(w.startMm),endGlobalM:toGlobal(w.endMm)}));
   return{success:true,schema:"SAHROUD-KNEE-CONNECTION-GLOBAL-GEOMETRY-1.0",
