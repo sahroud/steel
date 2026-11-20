@@ -118,13 +118,16 @@
    if(!Array.isArray(c.blockShearChecks)||c.blockShearChecks.length<plateIds.size)
     fail(errors,"برای هر ورق حداقل یک مسیر برش قالبی با سطوح و مرجع نقشه صریح لازم است؛ مسیرهای متعدد یک ورق نیز باید جداگانه کنترل شوند.");
    // A plate can have several physically distinct candidate shear paths; check each path once.
-   const blockShearPaths=new Set(),blockShearPlateIds=new Set();
+   const blockShearPaths=new Set(),blockShearPathIds=new Set(),blockShearPlateIds=new Set();
    (c.blockShearChecks||[]).forEach(p=>{
-    const plateId=String(p.plateId),pathReference=String(p.pathReference??"").trim();
-    if(!plateIds.has(plateId)||!pathReference||!text(p.ubsBasis))fail(errors,"مرجع مسیر برش قالبی/مقدار Ubs ناقص است.");
-    const pathKey=plateId+":"+pathReference;
-    if(blockShearPaths.has(pathKey))fail(errors,"مسیر برش قالبی "+pathReference+" برای ورق "+plateId+" تکراری است.");
+    const plateId=String(p.plateId),pathId=String(p.pathId??"").trim(),pathReference=String(p.pathReference??"").trim();
+    if(!plateIds.has(plateId)||!text(pathId)||!pathReference||!text(p.ubsBasis))
+     fail(errors,"شناسه مستقل مسیر، مرجع نقشه مسیر برش قالبی و مبنای Ubs الزامی است.");
+    const pathKey=plateId+":"+pathReference,pathIdKey=plateId+":"+pathId;
+    if(blockShearPaths.has(pathKey))fail(errors,"مرجع مسیر برش قالبی "+pathReference+" برای ورق "+plateId+" تکراری است.");
+    if(pathId&&blockShearPathIds.has(pathIdKey))fail(errors,"شناسه مسیر برش قالبی "+pathId+" برای ورق "+plateId+" تکراری است.");
     blockShearPaths.add(pathKey);
+    if(pathId)blockShearPathIds.add(pathIdKey);
     if(plateIds.has(plateId))blockShearPlateIds.add(plateId);
     ["demandKN","AgvMm2","AnvMm2","AntMm2"].forEach(k=>{if(!positive(p[k]))fail(errors,"مقدار "+k+" در برش قالبی باید مثبت و صریح باشد.");});
     if(![0.5,1].includes(p.Ubs))fail(errors,"Ubs فقط می‌تواند 0.5 یا 1 باشد و مبنای انتخاب باید مستند شود.");
