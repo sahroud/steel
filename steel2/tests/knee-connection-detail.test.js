@@ -251,3 +251,17 @@ test("hole-layout audit keeps separate transverse rows and requires explicit for
  assert.equal(a.rows.length,2);
  assert.throws(()=>detail.analyzeHoleLayout(d,"END-PLATE",{}),/راستای نیرو/);
 });
+
+test("hole polygon builder rejects unknown hole types instead of silently treating them as circular",()=>{
+ const d=fixture(),bolt=d.bolts[0];
+ for(const holeType of ["standard","oversized"]){
+  const points=detail.buildHolePolygon({...bolt,holeType});
+  assert.equal(points.length,32);
+ }
+ for(const holeType of ["short-slotted","long-slotted"]){
+  const points=detail.buildHolePolygon({...bolt,holeType,slotLengthMm:40,slotWidthMm:22,slotAngleDeg:0});
+  assert.equal(points.length,34);
+ }
+ assert.throws(()=>detail.buildHolePolygon({...bolt,holeType:"unrecognized"}),/نوع سوراخ/);
+ assert.throws(()=>detail.buildHolePolygon({...bolt,holeType:undefined}),/نوع سوراخ/);
+});
