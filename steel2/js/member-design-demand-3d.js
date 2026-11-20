@@ -60,4 +60,5 @@
       note:"هر candidate شش مؤلفه N,Vy,Vz,T,My,Mz را از یک ترکیب بار و یک مقطع نگه می‌دارد. حاکم‌های جداگانه مؤلفه‌ها الزاماً هم‌زمان نیستند. ظرفیت و کنترل آیین‌نامه‌ای در این ماژول محاسبه نمی‌شود."};
   }
   root.SahroudMemberDesignDemand3D={components:COMPONENTS.slice(),build};
+  if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudMemberDesignDemand3D;
 })(typeof window!=="undefined"?window:globalThis);
