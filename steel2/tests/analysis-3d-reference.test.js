@@ -1963,3 +1963,41 @@ test("3D design demand uses the real member-force recovery API for each combinat
   assert.equal(c2.values.My,-8);
   assert.equal(c2.values.Mz,-10);
 });
+
+test("local section bending axes map My to Iy and Mz to Iz with force-recovery equilibrium",()=>{
+  const demand=globalThis.SahroudMemberDemand3D;
+  assert.ok(demand,"3D member-demand recovery API must be loaded");
+  const E=200e9,G=80e9,A=0.01,Iy=2e-5,Iz=8e-5,J=1e-6,L=3,P=500;
+  const sectionProps={E,G,A,Iy,Iz,J};
+  const run=(axis)=>{
+    const model={
+      nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:L,y:0,z:0}],
+      members:[{id:"ANISO",start:"FIX",end:"TIP",sectionKey:"reference",
+        referenceAxis:[0,0,1],sectionRollDeg:0,analysisLoad:{uniformLocal:[0,0,0]}}]
+    };
+    const values=axis==="y"?[0,P,0,0,0,0]:[0,0,P,0,0,0];
+    const result=solver.analyze(model,{
+      sectionResolver:()=>sectionProps,
+      supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],
+      nodalLoads:[{nodeId:"TIP",values}]
+    });
+    const tip=result.displacements.find(n=>n.nodeId==="TIP").values;
+    const recovered=demand.recoverMember({
+      ...result.members[0],sectionKey:"reference",
+      analysisLoad:{uniformLocal:[0,0,0]}
+    });
+    return {tip,recovered};
+  };
+  const alongLocalY=run("y");
+  const alongLocalZ=run("z");
+  const expectedY=P*L**3/(3*E*Iz);
+  const expectedZ=P*L**3/(3*E*Iy);
+  assert.ok(Math.abs(alongLocalY.tip[1]-expectedY)<Math.max(1e-12,expectedY*1e-7));
+  assert.ok(Math.abs(alongLocalZ.tip[2]-expectedZ)<Math.max(1e-12,expectedZ*1e-7));
+  const yBase=alongLocalY.recovered.samples.find(s=>s.x===0);
+  const zBase=alongLocalZ.recovered.samples.find(s=>s.x===0);
+  assert.ok(Math.abs(Math.abs(yBase.Mz)-P*L)<1e-6);
+  assert.ok(Math.abs(yBase.My)<1e-6);
+  assert.ok(Math.abs(Math.abs(zBase.My)-P*L)<1e-6);
+  assert.ok(Math.abs(zBase.Mz)<1e-6);
+});
