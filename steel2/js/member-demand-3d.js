@@ -11,12 +11,12 @@
     return n;
   }
   function validateMember(member){
-    if(!member||!(Number(member.length)>0))throw new Error("طول عضو برای بازیابی نیروهای داخلی معتبر نیست.");
+    if(!member||!isFiniteInput(member.length)||!(Number(member.length)>0))throw new Error("طول عضو برای بازیابی نیروهای داخلی معتبر نیست.");
     const f=member.localEndForces;
-    if(!Array.isArray(f)||f.length!==12||f.some(v=>!Number.isFinite(Number(v))))
+    if(!Array.isArray(f)||f.length!==12||f.some(v=>!isFiniteInput(v)))
       throw new Error("بردار ۱۲ مؤلفه‌ای نیروهای انتهایی عضو ناقص یا نامعتبر است.");
     const q=member.analysisLoad?.uniformLocal??[0,0,0];
-    if(!Array.isArray(q)||q.length!==3||q.some(v=>!Number.isFinite(Number(v))))
+    if(!Array.isArray(q)||q.length!==3||q.some(v=>!isFiniteInput(v)))
       throw new Error("بار گسترده یکنواخت محلی باید سه مؤلفه معتبر داشته باشد.");
     return {L:Number(member.length),f:f.map(Number),q:q.map(Number)};
   }
@@ -52,7 +52,7 @@
     const names=["x","y","z"];
     const vectors=names.map(name=>{
       const value=axes[name];
-      if(!Array.isArray(value)||value.length!==3||value.some(v=>!Number.isFinite(Number(v))))
+      if(!Array.isArray(value)||value.length!==3||value.some(v=>!isFiniteInput(v)))
         throw new Error("دستگاه محورهای محلی عضو ناقص یا نامعتبر است: "+name);
       return value.map(Number);
     });
