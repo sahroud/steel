@@ -69,7 +69,9 @@ if(!finite(tol)||tol<=0)errors.push("تلرانس ردیف‌بندی باید �
 if(errors.length)return{valid:false,status:"NOT_ASSESSABLE",errors,candidates:[]};
 const P=p.polygonMm.map(q=>({x:+q.x,y:+q.y})),L=Math.hypot(fd.x,fd.y),u={x:fd.x/L,y:fd.y/L},v={x:-u.y,y:u.x};
 if(!simplePolygon(P))return{valid:false,status:"NOT_ASSESSABLE",errors:["چندضلعی ورق باید ساده، غیرخودمتقاطع، دارای مساحت غیرصفر و مختصات متناهی باشد."],candidates:[]};
-const holeIds=holes.map(h=>String(h.id));\nif(holeIds.some((id,i)=>!id||holeIds.indexOf(id)!==i))return{valid:false,status:"NOT_ASSESSABLE",errors:["شناسه سوراخ‌ها باید خالی‌نباشد و یکتا باشد."],candidates:[]};\nconst H=holes.map(h=>({id:String(h.id),c:{x:+(h.center?.x??h.xMm),y:+(h.center?.y??h.yMm)},poly:h.polygon||h.polygonMm}));
+const holeIds=holes.map(h=>String(h.id));
+if(holeIds.some((id,i)=>!id||holeIds.indexOf(id)!==i))return{valid:false,status:"NOT_ASSESSABLE",errors:["شناسه سوراخ‌ها باید خالی‌نباشد و یکتا باشد."],candidates:[]};
+const H=holes.map(h=>({id:String(h.id),c:{x:+(h.center?.x??h.xMm),y:+(h.center?.y??h.yMm)},poly:h.polygon||h.polygonMm}));
 if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!simplePolygon(h.poly)||h.poly.length<8||!convexPolygon(h.poly)))
  return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه هر سوراخ باید یک چندضلعی ساده، محدب، معتبر و متناهی با حداقل هشت رأس باشد؛ برای سوراخ لوبیایی، محیط باید از هندسه شیار و زاویه واقعی ساخته شده باشد."],candidates:[]};
 const plateEdges=P.map((q,i)=>[q,P[(i+1)%P.length]]);
