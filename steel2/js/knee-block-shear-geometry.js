@@ -75,6 +75,7 @@ const H=holes.map(h=>({id:String(h.id),c:{x:+(h.center?.x??h.xMm),y:+(h.center?.
 if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!simplePolygon(h.poly)||h.poly.length<8||!convexPolygon(h.poly)))
  return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه هر سوراخ باید یک چندضلعی ساده، محدب، معتبر و متناهی با حداقل هشت رأس باشد؛ برای سوراخ لوبیایی، محیط باید از هندسه شیار و زاویه واقعی ساخته شده باشد."],candidates:[]};
 const plateEdges=P.map((q,i)=>[q,P[(i+1)%P.length]]);
+const holeGeometryAudit=H.map(h=>({holeId:h.id,plateEdgeClearanceMm:polygonEdgeClearance(h.poly,plateEdges)}));
 for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
  if(j===i+1||(i===0&&j===P.length-1))continue;
  if(hit(P[i],P[(i+1)%P.length],P[j],P[(j+1)%P.length])!==null)
