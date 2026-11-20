@@ -329,3 +329,50 @@ test("hardware axial audit reports malformed intervals as not assessable",()=>{
  assert.equal(audit.status,"NOT_ASSESSABLE");
  assert.equal(audit.pairs[0].status,"NOT_ASSESSABLE");
 });
+
+test("parallel plate prisms with overlapping footprints and thickness are detected",()=>{
+ const d=fixture(),b={...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,10]}};
+ d.plates.push(b);
+ const audit=detail.auditPlateInteractions(d.plates);
+ assert.equal(audit.status,"INTERFERENCE_DETECTED");
+ assert.equal(audit.pairs[0].status,"VOLUME_INTERFERENCE");
+ assert.equal(audit.pairs[0].thicknessOverlapMm,6);
+ assert.ok(audit.pairs[0].projectedOverlapAreaMm2>0);
+});
+test("parallel plate face contact is distinguished from volume interference",()=>{
+ const d=fixture(),b={...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,16]}};
+ d.plates.push(b);
+ const pair=detail.auditPlateInteractions(d.plates).pairs[0];
+ assert.equal(pair.status,"FACE_CONTACT");
+ assert.equal(pair.thicknessOverlapMm,0);
+});
+test("parallel plates with separated thickness intervals are clear",()=>{
+ const d=fixture(),b={...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,20]}};
+ d.plates.push(b);
+ const pair=detail.auditPlateInteractions(d.plates).pairs[0];
+ assert.equal(pair.status,"THICKNESS_CLEARANCE");
+ assert.equal(pair.thicknessOverlapMm,-4);
+});
+test("parallel plates with disjoint projected polygons do not collide",()=>{
+ const d=fixture(),b={...d.plates[0],id:"REMOTE-PLATE",frame:{...d.plates[0].frame,originMm:[500,0,0]}};
+ d.plates.push(b);
+ assert.equal(detail.auditPlateInteractions(d.plates).pairs[0].status,"NO_PROJECTED_OVERLAP");
+});
+test("anti-parallel plate frames are assessed consistently",()=>{
+ const d=fixture(),b={...d.plates[0],id:"REVERSED-PLATE",frame:{originMm:[0,0,10],axes:{u:[1,0,0],v:[0,-1,0],n:[0,0,-1]}}};
+ d.plates.push(b);
+ assert.equal(detail.auditPlateInteractions(d.plates).pairs[0].status,"VOLUME_INTERFERENCE");
+});
+test("non-parallel plate pairs are explicitly not assessable",()=>{
+ const d=fixture(),b={...d.plates[0],id:"CROSS-PLATE",frame:{originMm:[0,0,0],axes:{u:[0,0,-1],v:[0,1,0],n:[1,0,0]}}};
+ d.plates.push(b);
+ const pair=detail.auditPlateInteractions(d.plates).pairs[0];
+ assert.equal(pair.status,"NOT_ASSESSABLE");
+ assert.ok(pair.reason.includes("غیرموازی"));
+});
+test("global geometry exposes plate interaction audit and limitations",()=>{
+ const d=fixture();d.plates.push({...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,10]}});
+ const result=detail.buildGlobalGeometry(d);
+ assert.equal(result.plateInteractionAudit.pairs[0].status,"VOLUME_INTERFERENCE");
+ assert.ok(result.plateInteractionAudit.limitations.length>=3);
+});
