@@ -97,14 +97,10 @@ test("plate section arithmetic remains provisional until areas are geometry-veri
 });
 test("block shear resistance remains unavailable when actual path geometry is not assessable",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c);
- const p=c.loadCases[0].blockShearChecks[0],m=d.plates[0].material;
- const expected=0.75*(Math.min(0.6*m.FyMPa*p.AgvMm2,0.6*m.FuMPa*p.AnvMm2)+p.Ubs*m.FuMPa*p.AntMm2)/1000;
  assert.equal(r.blockShearChecks[0].check.status,"NOT_ASSESSABLE");
  assert.equal(r.blockShearChecks[0].check.capacityKN,null);
  assert.equal(r.blockShearChecks[0].check.provisionalResistanceKN,null);
  assert.equal(r.blockShearChecks[0].geometryEvidenceStatus,"NOT_ASSESSABLE");
- assert.equal(r.blockShearChecks[0].geometryEvidenceStatus,"NOT_ASSESSABLE");
- assert.equal(r.blockShearChecks[0].check.provisionalResistanceKN,null);
 });
 test("missing prying assessment or per-bolt demand distribution prevents calculation",()=>{
  const d=detailFixture(),c=designFixture();delete c.loadCases[0].pryingAssessment;
@@ -295,6 +291,8 @@ test("capacity calculation retains NOT_ASSESSABLE after geometric area match unt
  assert.equal(block.geometryEvidenceStatus,"GEOMETRY_MATCHED_CODE_REVIEW_REQUIRED");
  assert.equal(block.check.status,"NOT_ASSESSABLE");
  assert.equal(block.check.capacityKN,null);
- assert.ok(Number.isFinite(block.check.provisionalResistanceKN));
+ const a=block.geometryAudit.verifiedAreasMm2,m=d.plates[0].material;
+ const expected=0.75*(Math.min(0.6*m.FyMPa*a.AgvMm2,0.6*m.FuMPa*a.AnvMm2)+1*m.FuMPa*a.AntMm2)/1000;
+ assert.ok(Math.abs(block.check.provisionalResistanceKN-expected)<1e-10);
  assert.equal(result.connectionApproved,false);
 });
