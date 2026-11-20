@@ -2001,3 +2001,48 @@ test("local section bending axes map My to Iy and Mz to Iz with force-recovery e
   assert.ok(Math.abs(Math.abs(zBase.My)-P*L)<1e-6);
   assert.ok(Math.abs(zBase.Mz)<1e-6);
 });
+
+test("local rotational end release is statically condensed and recovers zero released-end moments",()=>{
+  const model={
+    nodes:[
+      {id:"A",x:0,y:0,z:0},{id:"B",x:3,y:0,z:0},{id:"C",x:6,y:0,z:0}
+    ],
+    members:[
+      {id:"AB",type:"released beam",sectionKey:"reference",start:"A",end:"B",
+        referenceAxis:[0,0,1],endReleases:{j:["rx","ry","rz"]},
+        analysisLoad:{uniformLocal:[0,-250,0]}},
+      {id:"BC",type:"continuous beam",sectionKey:"reference",start:"B",end:"C",
+        referenceAxis:[0,0,1],analysisLoad:{uniformLocal:[0,0,0]}}
+    ]
+  };
+  const result=solver.analyze(model,{
+    sectionResolver:()=>section,
+    supports:[
+      {nodeId:"A",fixedDofs:[0,1,2,3,4,5]},
+      {nodeId:"C",fixedDofs:[0,1,2,3,4,5]}
+    ],
+    nodalLoads:[{nodeId:"B",values:[0,-1000,0,0,0,0]}]
+  });
+  assert.equal(result.success,true);
+  assert.equal(result.equilibrium.ok,true);
+  assert.equal(result.loadAssemblyAudit.ok,true);
+  const released=result.members.find(m=>m.id==="AB");
+  assert.deepEqual(released.releasedLocalRotations,[9,10,11]);
+  for(const dof of [9,10,11])assert.ok(Math.abs(released.localEndForces[dof])<1e-6,
+    "released local end moment component "+dof+" must be zero; got "+released.localEndForces[dof]);
+  assert.ok(Math.abs(result.equilibrium.relativeForceResidual)<1e-8);
+  assert.ok(Math.abs(result.equilibrium.relativeMomentResidual)<1e-8);
+});
+
+test("local rotational end release rejects unknown or duplicate axes",()=>{
+  const base={
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2,y:0,z:0}],
+    members:[{id:"M",sectionKey:"reference",start:"A",end:"B"}]
+  };
+  assert.throws(()=>solver.analyze({...base,members:[{...base.members[0],endReleases:{j:["rx","bad"]}}]},{
+    sectionResolver:()=>section,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]
+  }),/محور آزادسازی نامعتبر/);
+  assert.throws(()=>solver.analyze({...base,members:[{...base.members[0],endReleases:{i:["ry","ry"]}}]},{
+    sectionResolver:()=>section,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]
+  }),/تکراری/);
+});
