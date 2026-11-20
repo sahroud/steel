@@ -11,7 +11,7 @@ test("background worker imports the cache-busted solver and resolves member-spec
  assert.match(worker,/sections\[String\(member\.id\)\]/);
 });
 test("model runner cache-busts the worker and sends the full analysis model",()=>{
- assert.match(model3d,/analysis-3d-worker\.js\?v=20261119roll2/);
+ assert.match(model3d,/analysis-3d-worker\.js\?v=20261120endrelease1/);
  assert.match(model3d,/model:analysisModel/);
  assert.match(model3d,/sectionsByMemberId/);
 });
