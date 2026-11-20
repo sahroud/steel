@@ -5,7 +5,7 @@ const api=require("../js/member-design-readiness.js");
 function fixture(){
  const members=[{id:"C1",length:6,sectionKey:"column",sectionOrientationVerified:true,localAxes:{x:[1,0,0]},localAxesVerified:true,
   sectionProperties:{profile:"Built-up I",A:.02,Iy:.00008,Iz:.0009,J:.000001,E:200e9,G:77e9,SxTop:.00008,SxBottom:.00009,Sy:.00002,geometryType:"built-up-I"}}];
- const demand={success:true,caseCount:1,members:[{id:"C1",candidates:[{combinationId:"ULS-1",x:0,values:{N:-1000,Vy:200,Vz:300,T:10,My:400,Mz:500}},{combinationId:"ULS-1",x:6,values:{N:-900,Vy:100,Vz:200,T:8,My:300,Mz:400}}]}]};
+ const demand={success:true,caseCount:1,caseIds:["ULS-1"],members:[{id:"C1",candidates:[{combinationId:"ULS-1",x:0,values:{N:-1000,Vy:200,Vz:300,T:10,My:400,Mz:500}},{combinationId:"ULS-1",x:6,values:{N:-900,Vy:100,Vz:200,T:8,My:300,Mz:400}}]}]};
  return {model:{members},demand};
 }
 test("audits complete model-to-demand member coverage without claiming design approval",()=>{
@@ -84,4 +84,21 @@ test("rejects duplicate combination-station candidates",()=>{
 test("throws when the model or design-demand package is absent",()=>{
  assert.throws(()=>api.audit({members:[]},{}),/مدل اعضا/);
  const {model}=fixture();assert.throws(()=>api.audit(model,null),/بسته تقاضا/);
+});
+
+test("rejects unknown combination identifiers even when their count matches",()=>{
+ const {model,demand}=fixture();demand.caseIds=["ULS-1","ULS-2"];demand.caseCount=2;
+ demand.members[0].candidates.push({...demand.members[0].candidates[0],combinationId:"FAKE-2",x:3});
+ const r=api.audit(model,demand);
+ assert.equal(r.rows[0].inputStatus,"INCOMPLETE");
+ assert.ok(r.rows[0].issues.some(x=>x.includes("در فهرست ترکیبات واقعی")));
+ assert.ok(r.rows[0].issues.some(x=>x.includes("ترکیبات واقعی تحلیل")));
+});
+test("blocks missing, duplicate, or blank expected combination identity lists",()=>{
+ const {model,demand}=fixture();delete demand.caseIds;
+ assert.equal(api.audit(model,demand).complete,false);
+ demand.caseIds=["ULS-1","ULS-1"];demand.caseCount=2;
+ assert.equal(api.audit(model,demand).complete,false);
+ demand.caseIds=["ULS-1",""];demand.caseCount=2;
+ assert.equal(api.audit(model,demand).complete,false);
 });
