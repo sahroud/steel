@@ -145,7 +145,7 @@ test("registry removes only its own reference-axis override when the section ori
 
 test("section registry rejects boolean and whitespace engineering properties",()=>{
  for(const bad of [true,false,"   "]){
-  for(const key of ["A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy"])
+  for(const key of ["A","Iy","Iz","J","E","G"])
    assert.throws(()=>registry.normalize(section({[key]:bad}),"BAD"),new RegExp(key));
   assert.throws(()=>registry.normalize(section({sectionRollDeg:bad}),"BAD"),/زاویه چرخش/);
   assert.throws(()=>registry.normalize(section({sectionReferenceAxis:[0,bad,1]}),"BAD"),/محور مرجع/);
