@@ -226,8 +226,8 @@
     const plate=plateById.get(String(p.plateId)),m=plate.material;
     const Rn=Math.min(0.6*m.FyMPa*p.AgvMm2,0.6*m.FuMPa*p.AnvMm2)+p.Ubs*m.FuMPa*p.AntMm2;
     const resistance=factor(method,PHI_RUPTURE,OMEGA_RUPTURE)*Rn/1000;
-    const check=demandCheck(c.id+":"+p.plateId,"plate-block-shear",p.demandKN,resistance,method,"10-2-9-4-3 / (21-9-2-10)");
-    blockShearChecks.push({caseId:c.id,plateId:p.plateId,check,pathReference:p.pathReference,Ubs:p.Ubs,ubsBasis:p.ubsBasis});
+    const check=demandCheck(c.id+":"+p.plateId+":"+p.pathId,"plate-block-shear",p.demandKN,resistance,method,"10-2-9-4-3 / (21-9-2-10)");
+    blockShearChecks.push({caseId:c.id,plateId:p.plateId,pathId:p.pathId,check,pathReference:p.pathReference,Ubs:p.Ubs,ubsBasis:p.ubsBasis});
    }
   }
   const every=[...boltChecks,...bearingChecks,...plateChecks.flatMap(p=>p.checks),...blockShearChecks.map(p=>p.check),...weldChecks.map(p=>p.check)];
