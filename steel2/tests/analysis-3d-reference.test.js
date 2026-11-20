@@ -1904,7 +1904,8 @@ test("3D combination runner rejects invalid and empty factor sets", () => {
 test("3D design candidates preserve all six simultaneous actions from each combination and station", () => {
   require("../js/member-design-demand-3d.js");
   const api=globalThis.SahroudMemberDesignDemand3D;
-  const model={members:[{id:"M1"}]};
+  const axes={x:[1,0,0],y:[0,1,0],z:[0,0,1]};
+  const model={members:[{id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true}]};
   const mk=(id,label,vals)=>({
     id,label,
     analysis:{success:true,loadCase:id,loadCaseLabel:label,members:[{
@@ -1918,7 +1919,7 @@ test("3D design candidates preserve all six simultaneous actions from each combi
   ]};
   const demandApi={extractCase:(analysis,source)=>({
     success:true,memberCount:1,members:[{
-      id:"M1",samples:[{x:0,N:analysis.loadCase==="C1"?1:7,Vy:2,Vz:3,T:4,My:5,Mz:6}]
+      id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:analysis.loadCase==="C1"?1:7,Vy:2,Vz:3,T:4,My:5,Mz:6}]
     }]
   })};
   const result=api.build(combos,model,demandApi);
@@ -1941,10 +1942,10 @@ test("3D design demand preparation rejects incomplete combinations and non-finit
 test("3D design demand uses the real member-force recovery API for each combination", () => {
   require("../js/member-design-demand-3d.js");
   const model={nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:2,y:0,z:0}],
-    members:[{id:"M1",start:"A",end:"B",sectionKey:"reference",length:2,
+    members:[{id:"M1",start:"A",end:"B",sectionKey:"reference",length:2,sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,referenceAxis:[0,0,1],
       analysisLoad:{uniformLocal:[0,-10,-20]}}]};
   const resultFor=(id,label,scale)=>({success:true,loadCase:id,loadCaseLabel:label,
-    members:[{id:"M1",length:2,localEndForces:[100*scale,100*scale,200*scale,3*scale,4*scale,5*scale,0,0,0,0,0,0]}]});
+    members:[{id:"M1",length:2,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localEndForces:[100*scale,100*scale,200*scale,3*scale,4*scale,5*scale,0,0,0,0,0,0]}]});
   const run={success:true,caseCount:2,combinationResults:[
     {id:"C1",label:"C1",analysis:resultFor("C1","C1",1)},
     {id:"C2",label:"C2",analysis:resultFor("C2","C2",2)}
