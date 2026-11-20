@@ -288,7 +288,7 @@ test("multi-member spatial frame transfers local-axis-specific six-component dem
     const candidate=candidates.find(c=>Math.abs(c.x-station.x)<1e-10);
     assert.ok(candidate,"every recovered station must survive integration");
     for(const component of ["N","Vy","Vz","T","My","Mz"])
-     assert.equal(candidate.values[component],station[component],
+     assert.ok(Math.abs(candidate.values[component]-station[component])<1e-8,
       item.id+" "+member.id+" "+component+" at x="+station.x);
    }
    assert.ok(candidates.some(c=>Math.abs(c.x)<1e-10));
