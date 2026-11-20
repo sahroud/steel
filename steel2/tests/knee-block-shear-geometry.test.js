@@ -22,6 +22,15 @@ test("enumerates staggered terminal bolt pairs as separate zigzag geometry candi
  assert.ok(r.candidates.some(c=>c.pathType==="STAGGERED_ZIGZAG"&&c.terminalBoltIds[0]==="B2"&&c.terminalBoltIds[1]==="B4"));
  assert.ok(r.candidates.every(c=>c.status==="GEOMETRY_CANDIDATE_ONLY"&&c.capacityAssessable===false));
 });
+test("rejects unusual layouts above four transverse bolt rows for explicit engineering review",()=>{
+ const d=fixture(),circle=(x,y,r)=>Array.from({length:32},(_,k)=>({x:x+r*Math.cos(2*Math.PI*k/32),y:y+r*Math.sin(2*Math.PI*k/32)}));
+ d.holes=[];
+ for(let row=0;row<5;row++){const y=-40+row*20;d.holes.push({id:"L"+row,xMm:20,yMm:y,polygon:circle(20,y,4)},{id:"R"+row,xMm:80,yMm:y,polygon:circle(80,y,4)});}
+ const r=geo.assess(d);
+ assert.equal(r.valid,false);assert.equal(r.status,"NOT_ASSESSABLE");assert.equal(r.rowCount,5);assert.equal(r.maximumTransverseRows,4);assert.equal(r.candidates.length,0);
+ assert.match(r.errors.join(" "),/حداکثر چهار ردیف/);
+});
+
 test("reports candidate enumeration truncation instead of silently dropping paths",()=>{
  const d=fixture(),circle=(x,y,r)=>Array.from({length:32},(_,k)=>({x:x+r*Math.cos(2*Math.PI*k/32),y:y+r*Math.sin(2*Math.PI*k/32)}));
  d.holes=[];
