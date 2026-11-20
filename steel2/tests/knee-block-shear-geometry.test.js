@@ -22,6 +22,29 @@ test("enumerates staggered terminal bolt pairs as separate zigzag geometry candi
  assert.ok(r.candidates.some(c=>c.pathType==="STAGGERED_ZIGZAG"&&c.terminalBoltIds[0]==="B2"&&c.terminalBoltIds[1]==="B4"));
  assert.ok(r.candidates.every(c=>c.status==="GEOMETRY_CANDIDATE_ONLY"&&c.capacityAssessable===false));
 });
+test("enumerates continuous three- and four-row geometries only when the tension segment crosses every intermediate row",()=>{
+ const circle=(x,y,r)=>Array.from({length:32},(_,k)=>({x:x+r*Math.cos(2*Math.PI*k/32),y:y+r*Math.sin(2*Math.PI*k/32)}));
+ for(const count of [3,4]){
+  const d=fixture();d.holes=[];
+  for(let row=0;row<count;row++){const y=-40*(count-1)/2+row*40;for(const x of [20,80])d.holes.push({id:"R"+row+"X"+x,xMm:x,yMm:y,polygon:circle(x,y,10)});}
+  const r=geo.assess(d);assert.equal(r.valid,true);
+  const candidate=r.candidates.find(c=>c.terminalBoltIds[0]==="R0X80"&&c.terminalBoltIds[1]==="R"+(count-1)+"X80");
+  assert.ok(candidate,"expected outer-row path candidate");
+  assert.deepEqual(candidate.rowIds,Array.from({length:count},(_,i)=>i+1));
+  assert.equal(candidate.topologyType,"MULTI_ROW_CONTINUOUS");
+  assert.equal(candidate.intermediateBoltIds.length,count-2);
+  assert.ok(candidate.intermediateBoltIds.every(id=>id.endsWith("X80")));
+  assert.equal(candidate.capacityAssessable,false);
+ }
+});
+test("rejects a multi-row candidate when its tension segment misses an intermediate row",()=>{
+ const circle=(x,y,r)=>Array.from({length:32},(_,k)=>({x:x+r*Math.cos(2*Math.PI*k/32),y:y+r*Math.sin(2*Math.PI*k/32)}));
+ const d=fixture();d.holes=[];
+ for(const [row,y,x] of [[0,-40,80],[1,0,20],[2,40,80]])d.holes.push({id:"R"+row,xMm:x,yMm:y,polygon:circle(x,y,9)});
+ const r=geo.assess(d);assert.equal(r.valid,true);
+ assert.ok(!r.candidates.some(c=>c.terminalBoltIds[0]==="R0"&&c.terminalBoltIds[1]==="R2"));
+ assert.ok(r.rejected.some(x=>x.missingIntermediateRows?.length));
+});
 test("rejects unusual layouts above four transverse bolt rows for explicit engineering review",()=>{
  const d=fixture(),circle=(x,y,r)=>Array.from({length:32},(_,k)=>({x:x+r*Math.cos(2*Math.PI*k/32),y:y+r*Math.sin(2*Math.PI*k/32)}));
  d.holes=[];
