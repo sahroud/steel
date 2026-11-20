@@ -687,6 +687,7 @@
       :{memberCount:members.length,verifiedCount:0,unverifiedCount:members.length,readyForCodeDesign:false,unavailable:true,groups:{},note:"ممیزی جهت‌گیری در این محیط بارگذاری نشده است؛ محورهای نصب تأییدنشده تلقی می‌شوند."};
     model.windFootprints=buildRoofPurlinWindFootprints(model);
     window.SahroudMemberInitialSectionUI?.setModel(model);
+    window.SahroudMemberEndConnectionUI?.setModel(model);
     return model;
   }
   function draw() {
