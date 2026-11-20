@@ -91,8 +91,10 @@ for(let i=0;i<H.length;i++)for(let j=i+1;j<H.length;j++){
  let overlap=false;
  for(let a=0;a<H[i].poly.length&&!overlap;a++)for(let b=0;b<H[j].poly.length;b++)
   if(segmentsTouch(H[i].poly[a],H[i].poly[(a+1)%H[i].poly.length],H[j].poly[b],H[j].poly[(b+1)%H[j].poly.length])){overlap=true;break;}
- const clearance=polygonClearance(H[i].poly,H[j].poly);\n if(overlap||inside(H[i].c,H[j].poly)||inside(H[j].c,H[i].poly))
-  return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ‌های "+H[i].id+" و "+H[j].id+" هم‌پوشانی دارد."],candidates:[]};\n holeGeometryAudit.push({holePair:[H[i].id,H[j].id],clearanceMm:clearance});
+ const clearance=polygonClearance(H[i].poly,H[j].poly);
+ if(overlap||inside(H[i].c,H[j].poly)||inside(H[j].c,H[i].poly))
+  return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ‌های "+H[i].id+" و "+H[j].id+" هم‌پوشانی دارد."],candidates:[]};
+ holeGeometryAudit.push({holePair:[H[i].id,H[j].id],clearanceMm:clearance});
 }
 const sorted=H.map(h=>({...h,s:dot(h.c,u),t:dot(h.c,v)})).sort((a,b)=>a.t-b.t),rows=[];
 for(const h of sorted){let r=rows.find(q=>Math.abs(q.t-h.t)<=tol);if(!r){r={t:h.t,holes:[]};rows.push(r);}r.holes.push(h);}
