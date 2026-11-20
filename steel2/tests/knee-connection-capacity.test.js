@@ -26,7 +26,7 @@ function designFixture(){
    weldActions:[{weldId:"W1",demandKN:4,direction:"axial-parallel-to-weld-axis",sourceReference:"CALC-01 page 6"}],
    bearingChecks:[{boltId:"B1",plateId:"P1",shearKN:8,LcMm:30,holeType:"standard"}],
    plateSectionChecks:[{plateId:"P1",tensionKN:10,shearKN:8,AgTensionMm2:1600,AeTensionMm2:1200,AgvMm2:800,AnvMm2:700,areaReference:"DWG-01 / net section S1"}],
-   blockShearChecks:[{plateId:"P1",demandKN:12,AgvMm2:500,AnvMm2:400,AntMm2:200,Ubs:1,ubsBasis:"تنش کششی یکنواخت در سطح کششی، CALC-01",pathId:"BS-P1-01",pathReference:"DWG-01 / path BS-1"}]}]};
+   blockShearChecks:[{plateId:"P1",demandKN:12,AgvMm2:500,AnvMm2:400,AntMm2:200,Ubs:1,ubsBasis:"تنش کششی یکنواخت در سطح کششی، CALC-01",pathId:"BS-P1-01",pathReference:"DWG-01 / path BS-1",forceDirectionLocal:{x:1,y:0}}]}]};
 }
 test("calculates a drawing-referenced bolt and plate limit-state set without approving the connection",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c);
@@ -102,7 +102,8 @@ test("block shear arithmetic remains provisional until path areas are geometry-v
  assert.equal(r.blockShearChecks[0].check.status,"NOT_ASSESSABLE");
  assert.equal(r.blockShearChecks[0].check.capacityKN,null);
  assert.ok(Math.abs(r.blockShearChecks[0].check.provisionalResistanceKN-expected)<1e-10);
- assert.equal(r.blockShearChecks[0].geometryEvidenceStatus,"USER_SUPPLIED_UNVERIFIED");
+ assert.equal(r.blockShearChecks[0].geometryEvidenceStatus,"NOT_ASSESSABLE");
+ assert.equal(r.blockShearChecks[0].check.provisionalResistanceKN,null);
 });
 test("missing prying assessment or per-bolt demand distribution prevents calculation",()=>{
  const d=detailFixture(),c=designFixture();delete c.loadCases[0].pryingAssessment;
@@ -233,4 +234,50 @@ test("requires an explicit unique identity for each block-shear path",()=>{
   pathId:"BS-P1-01",pathReference:"DWG-01 / path BS-2"});
  assert.equal(capacity.validate(detailFixture(),e).valid,false);
  assert.match(capacity.validate(detailFixture(),e).errors.join(" "),/شناسه مسیر/);
+});
+
+function geometricDetailFixture(){
+ const d=detailFixture();
+ d.plates[0].polygonMm=[{x:-100,y:-100},{x:200,y:-100},{x:200,y:100},{x:-100,y:100}];
+ d.bolts=[
+  {id:"B1",plateId:"P1",xMm:20,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
+  {id:"B2",plateId:"P1",xMm:80,yMm:-40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
+  {id:"B3",plateId:"P1",xMm:20,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1},
+  {id:"B4",plateId:"P1",xMm:80,yMm:40,diameterMm:20,holeDiameterMm:22,grade:"8.8",FuMPa:800,axisConnectionFrame:[0,0,1],gripLengthMm:36,axisVerifiedByDrawing:true,holeType:"standard",threadsInShearPlane:true,shearPlaneCount:1}
+ ];
+ return d;
+}
+function geometricPathCheck(d){
+ const geo=require("../js/knee-block-shear-geometry.js");
+ const report=geo.assess({plate:d.plates[0],forceDirectionLocal:{x:1,y:0},
+  holes:d.bolts.map(b=>({id:b.id,xMm:b.xMm,yMm:b.yMm,polygon:detail.buildHolePolygon(b)}))});
+ const c=report.candidates[0];
+ return{plateId:"P1",pathId:c.pathId,AgvMm2:c.geometricAreas.AgvMm2,
+  AnvMm2:c.geometricAreas.AnvMm2,AntMm2:c.geometricAreas.AntMm2,forceDirectionLocal:{x:1,y:0}};
+}
+test("block shear geometry gate derives path and matches all three areas from actual bolt-hole polygons",()=>{
+ const d=geometricDetailFixture(),p=geometricPathCheck(d),r=capacity.assessBlockShearGeometry(d,p);
+ assert.equal(r.status,"GEOMETRY_MATCHED_CODE_REVIEW_REQUIRED");
+ assert.deepEqual(r.verifiedAreasMm2,{AgvMm2:p.AgvMm2,AnvMm2:p.AnvMm2,AntMm2:p.AntMm2});
+});
+test("block shear geometry gate rejects invented path IDs and mismatched geometric areas",()=>{
+ const d=geometricDetailFixture(),p=geometricPathCheck(d);
+ assert.equal(capacity.assessBlockShearGeometry(d,{...p,pathId:"invented"}).status,"NOT_ASSESSABLE");
+ const mismatch=capacity.assessBlockShearGeometry(d,{...p,AnvMm2:p.AnvMm2+10});
+ assert.equal(mismatch.status,"NOT_ASSESSABLE");
+ assert.equal(mismatch.mismatches[0].area,"AnvMm2");
+});
+test("rotated slotted-hole boundary is used in geometry extraction and is never replaced by a circle",()=>{
+ const d=geometricDetailFixture(),p=geometricPathCheck(d);
+ d.bolts[0].holeType="long-slotted";d.bolts[0].slotLengthMm=40;d.bolts[0].slotWidthMm=22;d.bolts[0].slotAngleDeg=35;
+ const polygon=detail.buildHolePolygon(d.bolts[0]);
+ assert.ok(polygon.length>=32);
+ assert.ok(Math.max(...polygon.map(q=>q.x))-Math.min(...polygon.map(q=>q.x))>22);
+ const r=capacity.assessBlockShearGeometry(d,p);
+ assert.equal(r.status,"NOT_ASSESSABLE");
+ assert.ok(r.report);
+});
+test("block shear geometry gate requires a nonzero explicit local force direction",()=>{
+ const d=geometricDetailFixture(),p=geometricPathCheck(d);
+ assert.equal(capacity.assessBlockShearGeometry(d,{...p,forceDirectionLocal:{x:0,y:0}}).status,"NOT_ASSESSABLE");
 });
