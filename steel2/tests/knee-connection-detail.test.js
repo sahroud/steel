@@ -294,3 +294,38 @@ test("weld path wholly inside a concave plate remains geometrically valid",()=>{
  d.welds[0].endMm=[30,80,0];
  assert.equal(detail.validate(d).valid,true);
 });
+
+test("bolt hardware with positive coaxial axial overlap is rejected and audited",()=>{
+ const d=fixture();
+ d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[0].hardware=[
+  {id:"HEAD",kind:"head",centerOffsetMm:-20,thicknessMm:12,acrossFlatsMm:30},
+  {id:"WASHER",kind:"washer",centerOffsetMm:-10,thicknessMm:4,outerDiameterMm:36,innerDiameterMm:22}
+ ];
+ const r=detail.validate(d);
+ assert.equal(r.valid,false);
+ assert.ok(r.errors.some(x=>x.includes("تداخل محوری")&&x.includes("HEAD")&&x.includes("WASHER")));
+ const audit=detail.auditHardwareAxialIntervals(d.bolts[0].hardware);
+ assert.equal(audit.status,"INTERFERENCE_DETECTED");
+ assert.equal(audit.pairs[0].status,"AXIAL_INTERFERENCE");
+ assert.equal(audit.pairs[0].overlapMm,2);
+});
+test("bolt hardware face contact and positive axial clearance are not false collisions",()=>{
+ const touching=[
+  {id:"HEAD",centerOffsetMm:-10,thicknessMm:8},
+  {id:"WASHER",centerOffsetMm:-4,thicknessMm:4},
+  {id:"NUT",centerOffsetMm:5,thicknessMm:10}
+ ];
+ const audit=detail.auditHardwareAxialIntervals(touching);
+ assert.equal(audit.status,"NO_AXIAL_INTERFERENCE_DETECTED");
+ assert.deepEqual(audit.pairs.map(p=>p.status),["FACE_CONTACT","AXIAL_CLEARANCE","AXIAL_CLEARANCE"]);
+ assert.equal(audit.pairs[0].overlapMm,0);
+});
+test("hardware axial audit reports malformed intervals as not assessable",()=>{
+ const audit=detail.auditHardwareAxialIntervals([
+  {id:"A",centerOffsetMm:0,thicknessMm:4},
+  {id:"B",centerOffsetMm:1,thicknessMm:0}
+ ]);
+ assert.equal(audit.status,"NOT_ASSESSABLE");
+ assert.equal(audit.pairs[0].status,"NOT_ASSESSABLE");
+});
