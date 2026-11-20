@@ -101,7 +101,8 @@ test("block shear resistance remains unavailable when actual path geometry is no
  const expected=0.75*(Math.min(0.6*m.FyMPa*p.AgvMm2,0.6*m.FuMPa*p.AnvMm2)+p.Ubs*m.FuMPa*p.AntMm2)/1000;
  assert.equal(r.blockShearChecks[0].check.status,"NOT_ASSESSABLE");
  assert.equal(r.blockShearChecks[0].check.capacityKN,null);
- assert.ok(Math.abs(r.blockShearChecks[0].check.provisionalResistanceKN-expected)<1e-10);
+ assert.equal(r.blockShearChecks[0].check.provisionalResistanceKN,null);
+ assert.equal(r.blockShearChecks[0].geometryEvidenceStatus,"NOT_ASSESSABLE");
  assert.equal(r.blockShearChecks[0].geometryEvidenceStatus,"NOT_ASSESSABLE");
  assert.equal(r.blockShearChecks[0].check.provisionalResistanceKN,null);
 });
