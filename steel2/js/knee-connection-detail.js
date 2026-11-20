@@ -105,6 +105,38 @@
   }
   return min;
  }
+ function clipConvex(subject,clip){
+  let out=subject.slice();const signed=clip.reduce((s,p,i)=>{const q=clip[(i+1)%clip.length];return s+p.x*q.y-q.x*p.y;},0),orient=signed>=0?1:-1;
+  for(let i=0;i<clip.length&&out.length;i++){const a=clip[i],b=clip[(i+1)%clip.length],inside=p=>orient*cross2(a,b,p)>=-1e-8,input=out;out=[];
+   for(let j=0;j<input.length;j++){const p=input[j],q=input[(j+1)%input.length],ip=inside(p),iq=inside(q);
+    if(ip&&iq)out.push(q);else if(ip!==iq){const dx=q.x-p.x,dy=q.y-p.y,ex=b.x-a.x,ey=b.y-a.y,den=dx*ey-dy*ex;
+     if(Math.abs(den)>1e-12){const t=((a.x-p.x)*ey-(a.y-p.y)*ex)/den;out.push({x:p.x+t*dx,y:p.y+t*dy});}if(!ip&&iq)out.push(q);}
+   }
+  }return out;
+ }
+ function polygonIntersectionArea(a,b){
+  let area=0;const ta=triangulatePolygon(a).map(t=>t.map(i=>a[i])),tb=triangulatePolygon(b).map(t=>t.map(i=>b[i]));
+  for(const x of ta)for(const y of tb){const p=clipConvex(x,y);if(p.length>=3)area+=Math.abs(p.reduce((s,v,i)=>{const q=p[(i+1)%p.length];return s+v.x*q.y-q.x*v.y;},0))/2;}return area;
+ }
+ function auditPlateInteractions(plates,tolerance=1e-6){
+  const pairs=[],items=Array.isArray(plates)?plates:[],dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),sub=(a,b)=>a.map((v,i)=>v-b[i]);
+  for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+   const a=items[i],b=items[j],fa=a.frame,fb=b.frame,base={firstPlateId:a.id,secondPlateId:b.id};
+   if(!fa?.axes||!fb?.axes||!Array.isArray(fa.originMm)||!Array.isArray(fb.originMm)||!positive(a.thicknessMm)||!positive(b.thicknessMm)||!Array.isArray(a.polygonMm)||!Array.isArray(b.polygonMm)){pairs.push({...base,status:"NOT_ASSESSABLE",reason:"داده چارچوب، ضخامت یا چندضلعی ورق ناقص است."});continue;}
+   const u=fa.axes.u,v=fa.axes.v,n=fa.axes.n,m=fb.axes.n,alignment=dot(n,m);
+   if(Math.abs(Math.abs(alignment)-1)>1e-6){pairs.push({...base,status:"NOT_ASSESSABLE",reason:"صفحات غیرموازی‌اند؛ این غربالگر فقط صفحات موازی/پادموازی را پوشش می‌دهد.",normalAlignment:alignment});continue;}
+   const separation=dot(sub(fb.originMm,fa.originMm),n),thicknessOverlap=(Number(a.thicknessMm)+Number(b.thicknessMm))/2-Math.abs(separation);
+   const projected=b.polygonMm.map(p=>{const point=fb.originMm.map((x,k)=>x+fb.axes.u[k]*p.x+fb.axes.v[k]*p.y),d=sub(point,fa.originMm);return{x:dot(d,u),y:dot(d,v)};});
+   let area;try{area=polygonIntersectionArea(a.polygonMm,projected);}catch(error){pairs.push({...base,status:"NOT_ASSESSABLE",reason:"محاسبه هم‌پوشانی چندضلعی ناموفق است: "+error.message});continue;}
+   let status,reason;if(area<=tolerance){status="NO_PROJECTED_OVERLAP";reason="سطوح تصویرشده هم‌پوشانی مساحتی ندارند.";}
+   else if(thicknessOverlap>tolerance){status="VOLUME_INTERFERENCE";reason="هم‌پوشانی مساحتی و ضخامت مثبت؛ تداخل حجمی در صفحات موازی.";}
+   else if(Math.abs(thicknessOverlap)<=tolerance){status="FACE_CONTACT";reason="سطوح تصویرشده هم‌پوشانی دارند اما بازه ضخامت‌ها فقط تماس دارند.";}
+   else{status="THICKNESS_CLEARANCE";reason="بین بازه ضخامت‌ها فاصله وجود دارد.";}
+   pairs.push({...base,status,reason,normalAlignment:alignment,planeSeparationMm:Number(separation.toFixed(9)),thicknessOverlapMm:Number(thicknessOverlap.toFixed(9)),projectedOverlapAreaMm2:Number(area.toFixed(6)),method:"parallel-plate-prism-intersection-screen"});
+  }
+  return{status:pairs.some(p=>p.status==="VOLUME_INTERFERENCE")?"INTERFERENCE_DETECTED":pairs.some(p=>p.status==="NOT_ASSESSABLE")?"PARTIALLY_ASSESSABLE":"NO_VOLUME_INTERFERENCE_DETECTED",pairs,
+   limitations:["فقط صفحات موازی یا پادموازی بررسی می‌شوند؛ صفحات غیرموازی NOT_ASSESSABLE هستند.","این کنترل فقط ورق با ورق را پوشش می‌دهد، نه پیچ، واشر، مهره، جوش یا اعضای نامنظم.","تلرانس ساخت، تغییرشکل و تماس چندجسمی عمومی مدل نشده‌اند."]};
+ }
  function analyzeHoleLayout(input,plateId,options={}){
   const checked=validate(input);
   if(!checked.valid)throw new Error("هندسه اتصال معتبر نیست: "+checked.errors.join(" | "));
@@ -424,17 +456,18 @@
       })};
     })};
   });
-  const welds=input.welds.map(w=>({id:String(w.id),plateId:String(w.plateId),faceReference:w.faceReference,
+  const plateInteractionAudit=auditPlateInteractions(input.plates);
+   const welds=input.welds.map(w=>({id:String(w.id),plateId:String(w.plateId),faceReference:w.faceReference,
    type:w.type,startGlobalM:toGlobal(w.startMm),endGlobalM:toGlobal(w.endMm)}));
   return{success:true,schema:"SAHROUD-KNEE-CONNECTION-GLOBAL-GEOMETRY-1.0",
    connectionId:String(input.connectionId),jointId:String(input.jointId),
    coordinateSystems:{platePolygonAndBolt:"plate-local mm",plateFrame:"connection-frame mm",
     weldEndpoints:"connection-frame mm",output:"global m"},
-   plates,welds,capacityDesigned:false,executionReady:false,
+   plates,plateInteractionAudit,welds,capacityDesigned:false,executionReady:false,
    limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ تماس بین ورق‌های مختلف هنوز کنترل نشده است.",
     "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ سرپیچ شش‌گوش و مهره شش‌گوش فقط با عرض آچارخور، ضخامت و موقعیت محوری صریح مدل می‌شوند؛ واشر به‌صورت حلقه ۳۲ضلعی تقریبی و با قطر داخلی/خارجی و ضخامت نقشه ساخته می‌شود. رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
  }
- const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,polygonDistance,analyzeHoleLayout,auditHardwareAxialIntervals,buildGlobalGeometry};
+ const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,polygonDistance,analyzeHoleLayout,auditHardwareAxialIntervals,auditPlateInteractions,buildGlobalGeometry};
  root.SahroudKneeConnectionDetail=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
