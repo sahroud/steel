@@ -89,6 +89,10 @@ for(let i=0;i<H.length;i++)for(let j=i+1;j<H.length;j++){
 const sorted=H.map(h=>({...h,s:dot(h.c,u),t:dot(h.c,v)})).sort((a,b)=>a.t-b.t),rows=[];
 for(const h of sorted){let r=rows.find(q=>Math.abs(q.t-h.t)<=tol);if(!r){r={t:h.t,holes:[]};rows.push(r);}r.holes.push(h);}
 rows.forEach(r=>r.holes.sort((a,b)=>a.s-b.s));
+// Practical screening envelope: ordinary connection layouts are reviewed up to four transverse bolt rows.
+// Larger/more unusual layouts require an explicitly reviewed topology rather than combinatorial guessing.
+const MAX_TRANSVERSE_ROWS=4;
+if(rows.length>MAX_TRANSVERSE_ROWS)return{valid:false,status:"NOT_ASSESSABLE",errors:["تعداد ردیف‌های عرضی پیچ ("+rows.length+") از دامنه متعارف این بررسی هندسی بیشتر است؛ حداکثر چهار ردیف پشتیبانی می‌شود و آرایش بزرگ‌تر باید با مسیر شکست مصوب و بازبینی مهندس بررسی شود."],rowCount:rows.length,maximumTransverseRows:MAX_TRANSVERSE_ROWS,candidates:[],capacityDesigned:false,connectionApproved:false,executionReady:false};
 const candidates=[],rejected=[],seen=new Set(),MAX_CANDIDATES=250;
 for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
  const a=rows[i],b=rows[j];
@@ -141,7 +145,7 @@ if(candidates.length>=MAX_CANDIDATES)rejected.push({reason:"حد بالای تع
 const candidateEnumerationComplete=!rejected.some(x=>x.truncated===true);
 return{valid:true,status:candidates.length?"GEOMETRY_CANDIDATES_FOUND":"NOT_ASSESSABLE",
  candidateEnumerationStatus:candidateEnumerationComplete?"COMPLETE_WITHIN_DECLARED_SEARCH":"TRUNCATED_REVIEW_REQUIRED",
- candidateEnumerationComplete,maximumCandidateCount:MAX_CANDIDATES,
+ candidateEnumerationComplete,maximumCandidateCount:MAX_CANDIDATES,maximumTransverseRows:MAX_TRANSVERSE_ROWS,
  plateId:String(p.id||input.plateId||""),rows:rows.map((r,i)=>({rowId:i+1,transverseProjectionMm:r.t,boltIds:r.holes.map(h=>h.id)})),
  candidates,rejected,capacityDesigned:false,connectionApproved:false,executionReady:false};
 }
