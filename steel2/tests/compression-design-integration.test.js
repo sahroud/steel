@@ -6,6 +6,8 @@ global.document = {
   addEventListener() {},
   getElementById() { return null; }
 };
+require("../js/member-demand-3d.js");
+require("../js/member-design-demand-3d.js");
 const api = require("../js/compression-design-integration.js");
 const model = {members:[{id:"M1",sectionKey:"column",length:6}]};
 const vector = [120000,0,0,0,0,0,-120000,0,0,0,0,0];
@@ -131,4 +133,37 @@ test("3D mapping rejects nonnumeric force components without coercing them", () 
     assert.equal(result.members[0].coverageComplete, false, String(bad));
     assert.equal(result.members[0].invalidCaseCount, 1, String(bad));
   }
+});
+
+test("3D compression integration invokes the concurrent station-level demand pipeline",()=>{
+ const axes={x:[1,0,0],y:[0,1,0],z:[0,0,1]};
+ const modelData={members:[{id:"M1",sectionKey:"column",length:6,sectionPropertyFingerprint:"fp",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true}]};
+ const sample=(x,n)=>({x,N:n,Vy:10,Vz:20,T:30,My:40,Mz:50});
+ const demandApi={
+  extractCase:(analysis)=>({memberCount:1,members:[{
+   id:"M1",length:6,sectionPropertyFingerprint:"fp",sectionOrientationVerified:true,
+   sectionRollDeg:0,localAxes:axes,localAxesVerified:true,
+   samples:[sample(0,analysis.loadCase==="C1"?100:200),sample(3,analysis.loadCase==="C1"?110:210),sample(6,analysis.loadCase==="C1"?120:220)]
+  }]})
+ };
+ global.SahroudMemberDemand3D=demandApi;
+ const combinations=[
+  {id:"C1",label:"ULS-1",analysis:{success:true}},
+  {id:"C2",label:"ULS-2",analysis:{success:true}}
+ ];
+ const result=api.buildConcurrentMemberDesignDemandFrom3D(combinations,modelData);
+ assert.equal(result.success,true,JSON.stringify(result.issues));
+ assert.equal(result.caseCount,2);
+ assert.equal(result.memberCount,1);
+ assert.equal(result.members[0].candidateCount,6);
+ assert.equal(result.members[0].candidates[1].combinationId,"C1");
+ assert.equal(result.members[0].candidates[1].x,3);
+ assert.equal(result.members[0].candidates[4].combinationId,"C2");
+ assert.equal(result.interactionReady,false);
+ assert.equal(result.capacityChecksReady,false);
+});
+test("concurrent member demand integration refuses missing solver cases",()=>{
+ const result=api.buildConcurrentMemberDesignDemandFrom3D([{id:"C1",members:[]}],model);
+ assert.equal(result.success,false);
+ assert.ok(result.issues.some(x=>x.includes("نتیجه موفق حل‌گر")));
 });
