@@ -91,7 +91,7 @@ test("plate section arithmetic remains provisional until areas are geometry-veri
  assert.ok(checks.every(x=>x.geometryEvidenceStatus==="USER_SUPPLIED_UNVERIFIED"));
  assert.ok(Math.abs(checks[0].provisionalResistanceKN-0.9*m.FyMPa*p.AgTensionMm2/1000)<1e-10);
  assert.ok(Math.abs(checks[1].provisionalResistanceKN-0.75*m.FuMPa*p.AeTensionMm2/1000)<1e-10);
- assert.ok(Math.abs(checks[2].provisionalResistanceKN-0.6*0.6*m.FyMPa*p.AgvMm2/1000)<1e-10);
+ assert.ok(Math.abs(checks[2].provisionalResistanceKN-1.0*0.6*m.FyMPa*p.AgvMm2/1000)<1e-10);
  assert.ok(Math.abs(checks[3].provisionalResistanceKN-0.75*0.6*m.FuMPa*p.AnvMm2/1000)<1e-10);
  assert.equal(r.plateChecks[0].status,"NOT_ASSESSABLE");
 });
