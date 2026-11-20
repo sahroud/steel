@@ -252,6 +252,12 @@ test("production roof and wall bracing form connected load paths to supports and
  const braces=model.members.filter(m=>m.sectionKey==="wallBrace"||m.sectionKey==="roofBrace");
  assert.ok(braces.some(m=>m.sectionKey==="wallBrace"),"production model contains wall braces");
  assert.ok(braces.some(m=>m.sectionKey==="roofBrace"),"production model contains roof braces");
+ braces.forEach(brace=>{
+  assert.equal(brace.analysisJointAssumption,"shared-node-rotational-continuity",
+   brace.id+" must disclose the solver's shared rotational joint assumption");
+  assert.equal(brace.physicalConnectionStatus,"unverified",
+   brace.id+" must not imply that the physical gusset/bolt connection is verified");
+ });
  const nonBrace=model.members.filter(m=>m.sectionKey!=="wallBrace"&&m.sectionKey!=="roofBrace");
  const supportIds=new Set(model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>n.id));
  const adjacency=new Map(model.nodes.map(n=>[n.id,[]]));
@@ -289,6 +295,8 @@ test("production roof and wall bracing form connected load paths to supports and
  assert.equal(result.success,true);
  assert.equal(result.loadAssemblyAudit.ok,true);
  assert.equal(result.equilibrium.ok,true);
+ assert.ok(result.limitations.some(item=>item.includes("بدون آزادسازی انتهایی عضو")),
+  "solver must disclose that member-end releases are not implemented");
  const braceResults=result.members.filter(m=>braces.some(b=>b.id===m.id));
  assert.equal(braceResults.length,braces.length);
  assert.ok(braceResults.some(m=>Math.abs(Number(m.localEndForces?.[0]||0))>1e-6||
