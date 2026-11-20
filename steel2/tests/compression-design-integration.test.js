@@ -72,3 +72,30 @@ test("empty or duplicate load-case labels block complete coverage", () => {
     assert.equal(rows[0].coverageComplete,false);
   }
 });
+
+test("3D mapping rejects truncated and overlong 12-component member force vectors", () => {
+  for (const badVector of [vector.slice(0,11), [...vector, 99]]) {
+    const result = api.buildCompressionDemandRowsFrom3D(
+      [{id:"ULS-BAD",members:[{id:"M1",length:6,localEndForces:badVector}]}],
+      model
+    );
+    assert.equal(result.success, false);
+    assert.ok(result.issues.some(x => x.includes("دقیقاً ۱۲ مؤلفه")));
+    assert.equal(result.members[0].coverageComplete, false);
+    assert.equal(result.members[0].invalidCaseCount, 1);
+  }
+});
+
+test("3D mapping rejects nonnumeric force components without coercing them", () => {
+  for (const bad of [null, "", "   ", true, Infinity, NaN]) {
+    const badVector = vector.slice();
+    badVector[5] = bad;
+    const result = api.buildCompressionDemandRowsFrom3D(
+      [{id:"ULS-BAD",members:[{id:"M1",length:6,localEndForces:badVector}]}],
+      model
+    );
+    assert.equal(result.success, false, String(bad));
+    assert.equal(result.members[0].coverageComplete, false, String(bad));
+    assert.equal(result.members[0].invalidCaseCount, 1, String(bad));
+  }
+});
