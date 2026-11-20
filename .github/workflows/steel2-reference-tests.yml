@@ -80,6 +80,7 @@ on:
       - "steel2/js/connection-demand-ui.js"
       - "steel2/js/knee-connection-geometry.js"
       - "steel2/js/knee-connection-detail.js"
+      - "steel2/js/knee-block-shear-geometry.js"
       - "steel2/js/knee-connection-detail-ui.js"
       - "steel2/js/foundation-soil-check.js"
       - "steel2/js/foundation-reaction-batch.js"
