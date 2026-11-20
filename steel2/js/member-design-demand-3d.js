@@ -75,6 +75,14 @@
             if(!old||Math.abs(values[k])>Math.abs(old.values[k]))row.governing[k]=candidate;
           });
         });
+        const sourceLength=memberById.get(id).length;
+        const recoveredLength=Number(member.length);
+        const requiredLength=sourceLength??(Number.isFinite(recoveredLength)&&recoveredLength>0?recoveredLength:null);
+        if(requiredLength===null)throw new Error("طول واقعی عضو "+id+" برای کنترل پوشش دو انتها مشخص نیست.");
+        const memberStations=[...seenStations].map(Number).sort((a,b)=>a-b);
+        if(memberStations.length<2||Math.abs(memberStations[0])>1e-8||
+           Math.abs(memberStations[memberStations.length-1]-requiredLength)>1e-8)
+          throw new Error("پوشش ایستگاه‌های عضو "+id+" در ترکیب "+item.id+" باید هر دو انتهای واقعی عضو را شامل شود.");
         const fingerprint=String(member.sectionPropertyFingerprint??"").trim();
         if(!fingerprint)throw new Error("شناسنامه مقطع عضو "+id+" در نتیجه تحلیل موجود نیست؛ تقاضا قابل اتصال به مقطع نیست.");
         if(member.sectionOrientationVerified!==true||!member.localAxesVerified||!member.localAxes)
