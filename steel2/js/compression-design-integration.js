@@ -96,8 +96,10 @@ function analyzeGroup(g){
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function buildCompressionDemandRows(forceResult){
  const members=Array.isArray(forceResult?.members)?forceResult.members:[];
- const expectedCaseCount=Number(forceResult?.expectedCaseCount)||0;
- const sourceComplete=forceResult?.success!==false;
+ const rawExpectedCaseCount=forceResult?.expectedCaseCount;
+ const expectedCaseCount=Number(rawExpectedCaseCount);
+ const expectedCaseCountValid=Number.isInteger(expectedCaseCount)&&expectedCaseCount>0;
+ const sourceComplete=forceResult?.success===true;
  const rows=members.map(m=>{
   const ends=Array.isArray(m.ends)?m.ends:[];
   let demand=0,caseLabel="",governing=null,validCount=0,invalidCount=0;
@@ -118,7 +120,7 @@ function buildCompressionDemandRows(forceResult){
    }
   });
   const nonAxial=ends.some(e=>{const v=Array.isArray(e.values)?e.values.map(Number):[];return v.length===12&&v.every(Number.isFinite)&&[1,2,3,4,5,7,8,9,10,11].some(i=>Math.abs(v[i])>1e-6);});
-  const coverageComplete=sourceComplete&&invalidCount===0&&validCount>0&&(!expectedCaseCount||validCount===expectedCaseCount);
+  const coverageComplete=sourceComplete&&expectedCaseCountValid&&invalidCount===0&&validCount===expectedCaseCount;
   return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,governing,simultaneousCases,axialOnlyCase:!!governing&&!nonAxial,interactionRequired:!!governing&&nonAxial,caseCount:validCount,expectedCaseCount,invalidCaseCount:invalidCount,coverageComplete};
  }).filter(r=>r.caseCount>0||r.invalidCaseCount>0).sort((a,b)=>a.sectionKey.localeCompare(b.sectionKey)||a.id.localeCompare(b.id));
  return rows;
@@ -128,6 +130,9 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
  if(!cases.length)return {success:false,issues:["نتایج ترکیبات تحلیل سه‌بعدی در دسترس نیستند."],members:[],expectedCaseCount:0};
  const modelMembers=Array.isArray(modelData?.members)?modelData.members:[];
  const issues=[],modelById=new Map(),resultIds=new Set();
+ const caseIds=cases.map(c=>String(c?.id??c?.label??c?.name??"").trim());
+ if(caseIds.some(id=>!id))issues.push("هر ترکیب بار باید شناسه صریح و غیرخالی داشته باشد؛ شماره ردیف جایگزین شناسه نیست.");
+ if(new Set(caseIds).size!==caseIds.length)issues.push("شناسه ترکیبات بار در نتایج سه‌بعدی تکراری است.");
  if(!modelMembers.length)issues.push("فهرست اعضای مدل مرجع موجود نیست؛ کنترل کامل بودن پوشش تحلیل ممکن نیست.");
  modelMembers.forEach((m,i)=>{
   const id=String(m?.id??"").trim();
@@ -136,7 +141,7 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
   else modelById.set(id,m);
  });
  cases.forEach((c,ci)=>{
-  const label=String(c?.id||c?.label||c?.name||ci+1);
+  const label=caseIds[ci]||"—";
   if(!Array.isArray(c?.members)){issues.push("فهرست اعضای ترکیب "+label+" موجود نیست.");return;}
   c.members.forEach(m=>{
    const id=String(m?.id??"").trim();
@@ -150,7 +155,7 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
   const source=modelById.get(id)||{};
   const sample=(cases.find(c=>Array.isArray(c?.members)&&c.members.some(m=>String(m?.id??"").trim()===id))?.members||[]).find(m=>String(m?.id??"").trim()===id)||{};
   const ends=cases.map((c,ci)=>{
-   const label=String(c?.id||c?.label||c?.name||"—");
+   const label=caseIds[ci]||"—";
    const matches=Array.isArray(c?.members)?c.members.filter(m=>String(m?.id??"").trim()===id):[];
    if(matches.length!==1)return {label,values:[],invalidForceVector:true};
    const forces=matches[0]?.localEndForces;
@@ -162,15 +167,15 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
  cases.forEach(c=>{
   const members=Array.isArray(c?.members)?c.members:[];
   const seen=members.map(m=>String(m?.id??"").trim()).filter(Boolean);
-  if(new Set(seen).size!==seen.length)issues.push("شناسه عضو تکراری در ترکیب "+String(c?.id||c?.label||"—")+".");
+  if(new Set(seen).size!==seen.length)issues.push("شناسه عضو تکراری در ترکیب "+(caseIds[cases.indexOf(c)]||"—")+".");
   modelById.forEach((_,id)=>{
    const count=seen.filter(x=>x===id).length;
-   if(count!==1)issues.push("عضو "+id+" در ترکیب "+String(c?.id||c?.label||"—")+" دقیقاً یک نتیجه ندارد.");
+   if(count!==1)issues.push("عضو "+id+" در ترکیب "+(caseIds[cases.indexOf(c)]||"—")+" دقیقاً یک نتیجه ندارد.");
   });
  });
  const success=issues.length===0;
  const prepared=buildCompressionDemandRows({members:rows,expectedCaseCount:cases.length,success});
- return {success,members:prepared,expectedCaseCount:cases.length,caseIds:cases.map(c=>String(c?.id||c?.label||c?.name||"—")),issues};
+ return {success,members:prepared,expectedCaseCount:cases.length,caseIds,issues};
 }
 
 function evaluateAxialOnlyMember(row,base,override,taperedEnabled){
@@ -306,5 +311,6 @@ function init(){
  $("btnCompressionCapacityRun")?.addEventListener("click",renderResults);
 }
 root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,capacityForMember,memberCapacityFromInput,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,buildCompressionDemandRowsFrom3D,selfTest,render};
+if(typeof module!=="undefined"&&module.exports)module.exports=root.SteelCompressionCapacityIntegration;
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
