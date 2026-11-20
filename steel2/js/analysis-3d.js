@@ -266,7 +266,7 @@ function condenseReleasedRotations(K,f,released){
  const Krr=r.map(i=>r.map(j=>K[i][j]));
  const fr=r.map(i=>f[i]),fa=a.map(i=>f[i]);
  const solveColumn=rhs=>solve(Krr,rhs);
- const invKra=Array.from({length:r.length},(_,j)=>{
+ const invKra=Array.from({length:a.length},(_,j)=>{
   const x=solveColumn(Kra.map(row=>row[j]));return x;
  });
  const invFr=solveColumn(fr);
