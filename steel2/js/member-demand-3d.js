@@ -5,10 +5,13 @@
 (function(root){
   "use strict";
   const COMPONENTS=["N","Vy","Vz","T","My","Mz"];
+  function isFiniteInput(value){
+    return (typeof value==="number"&&Number.isFinite(value))||
+      (typeof value==="string"&&value.trim()!==""&&Number.isFinite(Number(value)));
+  }
   function finite(value,label){
-    const n=Number(value);
-    if(!Number.isFinite(n))throw new Error(label+" باید عدد متناهی باشد.");
-    return n;
+    if(!isFiniteInput(value))throw new Error(label+" باید عدد متناهی و از نوع عدد یا رشته عددی باشد.");
+    return Number(value);
   }
   function validateMember(member){
     if(!member||!isFiniteInput(member.length)||!(Number(member.length)>0))throw new Error("طول عضو برای بازیابی نیروهای داخلی معتبر نیست.");
@@ -129,4 +132,5 @@
       note:"پوش تقاضا مؤلفه‌به‌مؤلفه و بین ترکیبات بار است؛ مؤلفه‌های حاکم ممکن است از ترکیبات متفاوت باشند و نباید به‌عنوان یک حالت هم‌زمان ترکیب شوند."};
   }
   root.SahroudMemberDemand3D={components:COMPONENTS.slice(),sectionForcesAt,stations,recoverMember,extractCase,envelope};
+  if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudMemberDemand3D;
 })(typeof window!=="undefined"?window:globalThis);
