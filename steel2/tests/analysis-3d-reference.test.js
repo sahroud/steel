@@ -2045,4 +2045,7 @@ test("local rotational end release rejects unknown or duplicate axes",()=>{
   assert.throws(()=>solver.analyze({...base,members:[{...base.members[0],endReleases:{i:["ry","ry"]}}]},{
     sectionResolver:()=>section,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]
   }),/تکراری/);
+  assert.throws(()=>solver.analyze({...base,members:[{...base.members[0],endReleases:{middle:["rx"]}}]}, {
+    sectionResolver:()=>section,supports:[{nodeId:"A",fixedDofs:[0,1,2,3,4,5]},{nodeId:"B",fixedDofs:[0,1,2,3,4,5]}]
+  }),/شناسه انتهای آزادسازی نامعتبر/);
 });
