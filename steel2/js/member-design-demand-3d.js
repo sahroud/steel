@@ -19,8 +19,8 @@
     model.members.forEach(member=>{
       const id=String(member?.id??"").trim();
       if(!id||memberById.has(id))throw new Error("شناسه اعضای مدل مرجع خالی یا تکراری است.");
-      const length=Number(member.length);
-      if(!Number.isFinite(length)||length<=0)throw new Error("طول عضو "+id+" برای کنترل ایستگاه‌های تقاضا معتبر نیست.");
+      const rawLength=Number(member.length);
+      const length=Number.isFinite(rawLength)&&rawLength>0?rawLength:null;
       memberById.set(id,{member,length});
     });
     const expected=new Set(memberById.keys());
@@ -52,8 +52,10 @@
             values[k]=n;
           });
           const candidate={combinationId:item.id,combination:item.label,x:Number(sample.x),values};
-          const length=memberById.get(id).length;
-          if(!Number.isFinite(candidate.x)||candidate.x< -1e-9||candidate.x>length+1e-9)
+          const sourceLength=memberById.get(id).length;
+          const recoveredLength=Number(member.length);
+          const length=sourceLength??(Number.isFinite(recoveredLength)&&recoveredLength>0?recoveredLength:null);
+          if(!Number.isFinite(candidate.x)||candidate.x< -1e-9||(length!==null&&candidate.x>length+1e-9))
             throw new Error("مختصات ایستگاه تقاضا برای عضو "+id+" خارج از طول عضو یا نامعتبر است.");
           const stationKey=candidate.x.toPrecision(12);
           if(seenStations.has(stationKey))throw new Error("ایستگاه تقاضای تکراری برای عضو "+id+" در ترکیب "+item.id+" ثبت شده است.");
