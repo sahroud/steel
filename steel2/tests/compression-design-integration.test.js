@@ -226,3 +226,75 @@ test("end-to-end real 3D solver actions reach concurrent member design candidate
  assert.equal(prepared.interactionReady,false);
  assert.equal(prepared.capacityChecksReady,false);
 });
+
+
+test("multi-member spatial frame transfers local-axis-specific six-component demand through both cases",()=>{
+ require("../js/analysis-3d.js");
+ const solver=global.SteelFrame3D;
+ const demandApi=require("../js/member-demand-3d.js");
+ require("../js/member-design-demand-3d.js");
+ global.SahroudMemberDemand3D=demandApi;
+ const section={E:200e9,G:80e9,A:0.018,Iy:4.5e-5,Iz:1.35e-4,J:3.1e-6};
+ const modelData={
+  nodes:[
+   {id:"BASE",x:0,y:0,z:0},
+   {id:"KNEE",x:0,y:0,z:3},
+   {id:"TIP",x:3,y:0,z:3}
+  ],
+  members:[
+   {id:"FRAME-COL",start:"BASE",end:"KNEE",sectionKey:"column",length:3,
+    referenceAxis:[0,1,0],sectionRollDeg:0,sectionOrientationVerified:true,
+    sectionPropertyFingerprint:"spatial-frame-section-v1",analysisLoad:{uniformLocal:[0,-80,25]}},
+   {id:"FRAME-RAF",start:"KNEE",end:"TIP",sectionKey:"rafter",length:3,
+    referenceAxis:[0,0,1],sectionRollDeg:0,sectionOrientationVerified:true,
+    sectionPropertyFingerprint:"spatial-frame-section-v1",analysisLoad:{uniformLocal:[0,-120,45]}}
+  ]
+ };
+ const cases=[
+  {id:"FRAME-ULS-A",label:"FRAME ULS A",factor:1},
+  {id:"FRAME-ULS-B",label:"FRAME ULS B",factor:1.35}
+ ].map(spec=>{
+  const analysis=solver.analyze(modelData,{
+   sectionResolver:()=>section,
+   supports:[{nodeId:"BASE",fixedDofs:[0,1,2,3,4,5]}],
+   nodalLoads:[{nodeId:"TIP",values:[0,-900*spec.factor,650*spec.factor,
+    140*spec.factor,90*spec.factor,70*spec.factor]}]
+  });
+  assert.equal(analysis.success,true);
+  assert.equal(analysis.loadAssemblyAudit.ok,true);
+  assert.equal(analysis.equilibrium.ok,true);
+  assert.equal(analysis.memberCount,2);
+  assert.deepEqual(analysis.members.map(m=>m.id),["FRAME-COL","FRAME-RAF"]);
+  assert.ok(analysis.members.every(m=>m.localEndForces.length===12));
+  return {id:spec.id,label:spec.label,analysis};
+ });
+ const [column,rafter]=cases[0].analysis.members;
+ assert.notDeepEqual(column.localAxes,rafter.localAxes,
+  "column and rafter must exercise different solver-local coordinate systems");
+ const prepared=api.buildConcurrentMemberDesignDemandFrom3D(cases,modelData);
+ assert.equal(prepared.success,true,JSON.stringify(prepared.issues));
+ assert.equal(prepared.caseCount,2);
+ assert.equal(prepared.memberCount,2);
+ for(const item of cases){
+  const recovered=demandApi.extractCase({
+   ...item.analysis,loadCase:item.id,loadCaseLabel:item.label
+  },modelData);
+  for(const member of recovered.members){
+   const row=prepared.members.find(x=>x.id===member.id);
+   assert.ok(row,"each physical frame member must be transferred");
+   const candidates=row.candidates.filter(c=>c.combinationId===item.id);
+   assert.equal(candidates.length,member.samples.length);
+   for(const station of member.samples){
+    const candidate=candidates.find(c=>Math.abs(c.x-station.x)<1e-10);
+    assert.ok(candidate,"every recovered station must survive integration");
+    for(const component of ["N","Vy","Vz","T","My","Mz"])
+     assert.equal(candidate.values[component],station[component],
+      item.id+" "+member.id+" "+component+" at x="+station.x);
+   }
+   assert.ok(candidates.some(c=>Math.abs(c.x)<1e-10));
+   assert.ok(candidates.some(c=>Math.abs(c.x-member.length)<1e-10));
+  }
+ }
+ assert.equal(prepared.interactionReady,false);
+ assert.equal(prepared.capacityChecksReady,false);
+});
