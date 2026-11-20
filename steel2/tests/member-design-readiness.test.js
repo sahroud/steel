@@ -5,7 +5,7 @@ const api=require("../js/member-design-readiness.js");
 function fixture(){
  const members=[{id:"C1",length:6,sectionKey:"column",sectionOrientationVerified:true,localAxes:{x:[1,0,0]},localAxesVerified:true,
   sectionProperties:{profile:"Built-up I",A:.02,Iy:.00008,Iz:.0009,J:.000001,E:200e9,G:77e9,SxTop:.00008,SxBottom:.00009,Sy:.00002,geometryType:"built-up-I"}}];
- const demand={success:true,members:[{id:"C1",candidates:[{combinationId:"ULS-1",x:0,values:{N:-1000,Vy:200,Vz:300,T:10,My:400,Mz:500}},{combinationId:"ULS-1",x:6,values:{N:-900,Vy:100,Vz:200,T:8,My:300,Mz:400}}]}]};
+ const demand={success:true,caseCount:1,members:[{id:"C1",candidates:[{combinationId:"ULS-1",x:0,values:{N:-1000,Vy:200,Vz:300,T:10,My:400,Mz:500}},{combinationId:"ULS-1",x:6,values:{N:-900,Vy:100,Vz:200,T:8,My:300,Mz:400}}]}]};
  return {model:{members},demand};
 }
 test("audits complete model-to-demand member coverage without claiming design approval",()=>{
@@ -61,6 +61,25 @@ test("requires valid local axes and confirmed section orientation",()=>{
  assert.equal(r.rows[0].inputStatus,"INCOMPLETE");
  assert.ok(r.rows[0].issues.some(x=>x.includes("محورهای محلی")));
  assert.ok(r.rows[0].issues.some(x=>x.includes("جهت نصب")));
+});
+test("rejects null and empty strings instead of silently treating them as zero",()=>{
+ const {model,demand}=fixture();demand.members[0].candidates[0].values.Vy=null;demand.members[0].candidates[1].x="";
+ const r=api.audit(model,demand);
+ assert.equal(r.rows[0].inputStatus,"INCOMPLETE");
+ assert.ok(r.rows[0].issues.some(x=>x.includes("تهی/غیرعددی")));
+ assert.ok(r.rows[0].issues.some(x=>x.includes("ایستگاه")));
+});
+test("requires coverage of every load combination declared by the 3D demand package",()=>{
+ const {model,demand}=fixture();demand.caseCount=2;
+ const r=api.audit(model,demand);
+ assert.equal(r.rows[0].inputStatus,"INCOMPLETE");
+ assert.ok(r.rows[0].issues.some(x=>x.includes("پوشش ترکیبات بار")));
+});
+test("rejects duplicate combination-station candidates",()=>{
+ const {model,demand}=fixture();demand.members[0].candidates.push({...demand.members[0].candidates[0]});
+ const r=api.audit(model,demand);
+ assert.equal(r.rows[0].inputStatus,"INCOMPLETE");
+ assert.ok(r.rows[0].issues.some(x=>x.includes("تکراری")));
 });
 test("throws when the model or design-demand package is absent",()=>{
  assert.throws(()=>api.audit({members:[]},{}),/مدل اعضا/);
