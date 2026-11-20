@@ -145,7 +145,7 @@ test("roof purlin, longitudinal wall girt and end-wall girt loads reach the 3D s
   member.analysisLoad={uniformLocal:local};
  });
  const section={E:200e9,G:80e9,A:0.012,Iy:2.5e-5,Iz:7.5e-5,J:1.8e-6};
- const supports=nodes.map(n=>({nodeId:n.id,fixedDofs:[0,1,2]}));
+ const supports=nodes.map(n=>({nodeId:n.id,fixedDofs:n.id.endsWith("-I")?[0,1,2,3,4,5]:[0,1,2]}));
  const result=solver.analyze({nodes,members},{sectionResolver:()=>section,supports});
  assert.equal(result.success,true);
  assert.equal(result.loadAssemblyAudit.ok,true);
