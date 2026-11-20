@@ -142,3 +142,25 @@ test("registry removes only its own reference-axis override when the section ori
  assert.equal(Object.hasOwn(member,"referenceAxis"),false);
  assert.equal(member.sectionOrientationVerified,false);
 });
+
+test("section registry rejects boolean and whitespace engineering properties",()=>{
+ for(const bad of [true,false,"   "]){
+  for(const key of ["A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy"])
+   assert.throws(()=>registry.normalize(section({[key]:bad}),"BAD"),new RegExp(key));
+  assert.throws(()=>registry.normalize(section({sectionRollDeg:bad}),"BAD"),/زاویه چرخش/);
+  assert.throws(()=>registry.normalize(section({sectionReferenceAxis:[0,bad,1]}),"BAD"),/محور مرجع/);
+  assert.throws(()=>registry.normalize(section({densityKgM3:bad}),"BAD"),/چگالی/);
+ }
+});
+test("geometry audit rejects boolean and whitespace coordinates and member lengths",()=>{
+ for(const bad of [true,false,"   "]){
+  const model={units:{length:"m",coordinates:"m",memberLength:"m"},
+   nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:bad,y:4,z:0}],
+   members:[{id:"M",start:"A",end:"B",length:4}]};
+  assert.equal(registry.auditGeometry(model).complete,false);
+  const model2={units:{length:"m",coordinates:"m",memberLength:"m"},
+   nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],
+   members:[{id:"M",start:"A",end:"B",length:bad}]};
+  assert.equal(registry.auditGeometry(model2).complete,false);
+ }
+});
