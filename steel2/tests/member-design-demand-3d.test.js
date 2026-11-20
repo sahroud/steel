@@ -19,7 +19,7 @@ test("exports exact source combination IDs with every concurrent demand candidat
  const x=input(),r=api.build(x.combinationRun,x.model,x.demandApi);
  assert.deepEqual(r.caseIds,["ULS-A","ULS-B"]);
  assert.equal(r.caseCount,2);assert.equal(r.members.length,2);
- assert.equal(r.members[0].candidates.length,2);
+ assert.equal(r.members[0].candidates.length,4);
  assert.deepEqual(Object.keys(r.members[0].candidates[0].values),["N","Vy","Vz","T","My","Mz"]);
 });
 test("rejects missing and duplicate combination identities",()=>{
