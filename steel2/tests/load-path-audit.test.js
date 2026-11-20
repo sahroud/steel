@@ -137,7 +137,7 @@ test("roof purlin, longitudinal wall girt and end-wall girt loads reach the 3D s
  members.forEach((member,index)=>{
   const [start,end]=pairs[index],a=nodes.find(n=>n.id===start),b=nodes.find(n=>n.id===end);
   const wind=structural.windMemberLineLoadGlobal(member,{span:12,rise:2},1,1);
-  const globalLoad=[wind[0]*1000,-Number(member.lineLoads.dead||0)*1000,wind[2]*1000];
+  const globalLoad=[wind[0]*1000,(wind[1]-Number(member.lineLoads.dead||0))*1000,wind[2]*1000];
   const local=solver.globalVectorToLocal([a.x,a.y,a.z],[b.x,b.y,b.z],globalLoad,member.sectionKey==="endGirt"?[0,1,0]:[1,0,0],0);
   member.start=start;member.end=end;
   member.referenceAxis=member.sectionKey==="endGirt"?[0,1,0]:[1,0,0];
