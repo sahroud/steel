@@ -213,3 +213,81 @@ test("triangular end-wall wind reaches the 3D solver with conserved force and ba
   assert.ok(Math.abs(reactionMy+appliedMy)<1e-7);
  }
 });
+
+
+test("production roof and wall bracing form connected load paths to supports and carry longitudinal solver demand",()=>{
+ const fs=require("node:fs"),path=require("node:path");
+ global.window=global;
+ global.document=global.document||{readyState:"loading",addEventListener(){},getElementById(){return null},querySelectorAll(){return[]}};
+ require("../js/load-transfer.js");
+ require("../js/analysis-3d.js");
+ const solver=global.SteelFrame3D;
+ const source=fs.readFileSync(path.join(__dirname,"../js/model-3d.js"),"utf8");
+ const extract=name=>{
+  const start=source.indexOf("function "+name+"(");assert.ok(start>=0,name+" exists");
+  const open=source.indexOf("{",start);let depth=0,end=-1;
+  for(let i=open;i<source.length;i++){if(source[i]==="{")depth++;else if(source[i]==="}"){depth--;if(depth===0){end=i+1;break;}}}
+  assert.ok(end>open);return source.slice(start,end);
+ };
+ const addNode=(nodes,x,y,z,kind)=>{
+  const old=nodes.find(n=>Math.abs(n.x-x)<1e-7&&Math.abs(n.y-y)<1e-7&&Math.abs(n.z-z)<1e-7);
+  if(old)return old;
+  const node={id:"N"+(nodes.length+1),x,y,z,kind:kind||"joint"};nodes.push(node);return node;
+ };
+ const addMember=(members,a,b,type,sectionKey,extra)=>{
+  members.push({id:"M"+(members.length+1),start:a.id,end:b.id,type,sectionKey:sectionKey||"unassigned",
+   length:Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),...(extra||{})});
+ };
+ const loads={deadLeft:0,deadRight:0,liveLeft:0,liveRight:0,snowLeft:0,snowRight:0,
+  windLeft:0,windRight:0,windWall:0,windEndFront:0,windEndBack:0,
+  deadAreaBasis:"horizontal-projection",liveAreaBasis:"horizontal-projection",snowAreaBasis:"horizontal-projection"};
+ const values={span:12,length:36,spacing:6,height:6,rise:2,modelPurlinSpacing:1.4,
+  modelGirtSpacing:1.5,modelEndPostSpacing:4,modelBraceBays:1,modelPurlinClipDeduction:0,modelPurlinAssemblyGap:0};
+ const val=(id,fallback)=>Number.isFinite(Number(values[id]))?Number(values[id]):fallback;
+ const footprint=new Function("return ("+extract("buildRoofPurlinWindFootprints")+")")();
+ const assign=new Function("SteelLoadTransfer","return ("+extract("assignGeometricMemberLineLoads")+")")(global.SteelLoadTransfer);
+ const build=new Function("val","addNode","addMember","SteelLoadTransfer","window","buildRoofPurlinWindFootprints","assignGeometricMemberLineLoads",
+  "return ("+extract("build")+")")(val,addNode,addMember,global.SteelLoadTransfer,{SteelLoads:{getData:()=>loads}},footprint,assign);
+ const model=build(),nodeById=new Map(model.nodes.map(n=>[n.id,n]));
+ const braces=model.members.filter(m=>m.sectionKey==="wallBrace"||m.sectionKey==="roofBrace");
+ assert.ok(braces.some(m=>m.sectionKey==="wallBrace"),"production model contains wall braces");
+ assert.ok(braces.some(m=>m.sectionKey==="roofBrace"),"production model contains roof braces");
+ const nonBrace=model.members.filter(m=>m.sectionKey!=="wallBrace"&&m.sectionKey!=="roofBrace");
+ const supportIds=new Set(model.nodes.filter(n=>n.kind==="base"||n.kind==="endwall-base").map(n=>n.id));
+ const adjacency=new Map(model.nodes.map(n=>[n.id,[]]));
+ model.members.forEach(m=>{
+  assert.ok(nodeById.has(m.start)&&nodeById.has(m.end),"every member endpoint exists");
+  adjacency.get(m.start).push(m.end);adjacency.get(m.end).push(m.start);
+ });
+ const reachesSupport=start=>{
+  const seen=new Set([start]),queue=[start];
+  while(queue.length){
+   const id=queue.shift();
+   if(supportIds.has(id))return true;
+   adjacency.get(id).forEach(next=>{if(!seen.has(next)){seen.add(next);queue.push(next);}});
+  }
+  return false;
+ };
+ braces.forEach(brace=>{
+  [brace.start,brace.end].forEach(nodeId=>{
+   assert.ok(nonBrace.some(m=>m.start===nodeId||m.end===nodeId),
+    brace.id+" endpoint "+nodeId+" must share a real frame/purlin/girt node");
+   assert.ok(reachesSupport(nodeId),brace.id+" endpoint "+nodeId+" must have a connected path to a support");
+  });
+ });
+ model.members.forEach(member=>{member.analysisLoad={uniformLocal:[0,0,0]};});
+ const supports=Array.from(supportIds,nodeId=>({nodeId,fixedDofs:[0,1,2]}));
+ const loadedNode=model.nodes.find(n=>Math.abs(n.x)<1e-7&&Math.abs(n.y-values.height)<1e-7&&Math.abs(n.z-values.spacing)<1e-7);
+ assert.ok(loadedNode,"loaded longitudinal portal node exists");
+ const result=solver.analyze(model,{sectionResolver:()=>({E:200e9,G:80e9,A:.012,Iy:2.5e-5,Iz:7.5e-5,J:1.8e-6}),
+  supports,nodalLoads:[{nodeId:loadedNode.id,values:[0,0,10000,0,0,0]}],releasePurlinRafterRotation:true});
+ assert.equal(result.success,true);
+ assert.equal(result.loadAssemblyAudit.ok,true);
+ assert.equal(result.equilibrium.ok,true);
+ const braceResults=result.members.filter(m=>braces.some(b=>b.id===m.id));
+ assert.equal(braceResults.length,braces.length);
+ assert.ok(braceResults.some(m=>Math.abs(Number(m.localEndForces?.[0]||0))>1e-6||
+  Math.abs(Number(m.localEndForces?.[6]||0))>1e-6),"longitudinal demand reaches at least one actual brace element");
+ const reactionZ=result.reactions.reduce((sum,reaction)=>sum+Number(reaction.values[2]||0),0);
+ assert.ok(Math.abs(reactionZ+10000)<1e-5,"support reactions balance the applied longitudinal load");
+});
