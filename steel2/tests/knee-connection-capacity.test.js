@@ -95,7 +95,7 @@ test("plate section arithmetic remains provisional until areas are geometry-veri
  assert.ok(Math.abs(checks[3].provisionalResistanceKN-0.75*0.6*m.FuMPa*p.AnvMm2/1000)<1e-10);
  assert.equal(r.plateChecks[0].status,"NOT_ASSESSABLE");
 });
-test("block shear arithmetic remains provisional until path areas are geometry-verified",()=>{
+test("block shear resistance remains unavailable when actual path geometry is not assessable",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c);
  const p=c.loadCases[0].blockShearChecks[0],m=d.plates[0].material;
  const expected=0.75*(Math.min(0.6*m.FyMPa*p.AgvMm2,0.6*m.FuMPa*p.AnvMm2)+p.Ubs*m.FuMPa*p.AntMm2)/1000;
@@ -280,4 +280,20 @@ test("rotated slotted-hole boundary is used in geometry extraction and is never 
 test("block shear geometry gate requires a nonzero explicit local force direction",()=>{
  const d=geometricDetailFixture(),p=geometricPathCheck(d);
  assert.equal(capacity.assessBlockShearGeometry(d,{...p,forceDirectionLocal:{x:0,y:0}}).status,"NOT_ASSESSABLE");
+});
+
+test("capacity calculation retains NOT_ASSESSABLE after geometric area match until code path and Ubs are verified",()=>{
+ const d=geometricDetailFixture(),p=geometricPathCheck(d),c=designFixture();
+ c.boltProperties=d.bolts.map(b=>({boltId:b.id,boltClass:"high-strength"}));
+ c.loadCases[0].boltActions=d.bolts.map(b=>({boltId:b.id,tensionKN:0,shearKN:0,pryingTensionKN:0}));
+ c.loadCases[0].bearingChecks=d.bolts.map(b=>({boltId:b.id,plateId:"P1",shearKN:0,LcMm:30,holeType:"standard"}));
+ c.loadCases[0].blockShearChecks=[{...p,demandKN:12,Ubs:1,
+  ubsBasis:"فرض ورودی؛ نیازمند تطبیق مستقل با متن رسمی",
+  pathReference:"DWG-01 / "+p.pathId}];
+ const result=capacity.calculate(d,c),block=result.blockShearChecks[0];
+ assert.equal(block.geometryEvidenceStatus,"GEOMETRY_MATCHED_CODE_REVIEW_REQUIRED");
+ assert.equal(block.check.status,"NOT_ASSESSABLE");
+ assert.equal(block.check.capacityKN,null);
+ assert.ok(Number.isFinite(block.check.provisionalResistanceKN));
+ assert.equal(result.connectionApproved,false);
 });
