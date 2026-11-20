@@ -52,3 +52,15 @@ test("merges overlapping hole deductions so a shared segment is not deducted twi
  const net=geo.subtractIntervals(20,[[2,8],[5,12],[11,15]]);
  assert.equal(net,7);
 });
+
+test("rejects a self-intersecting bolt-hole boundary before computing net lengths",()=>{
+ const d=fixture(),c=d.holes[0].polygon;
+ d.holes[0].polygon=[c[0],c[8],c[16],c[24],c[1],c[9],c[17],c[25]];
+ const r=geo.assess(d);assert.equal(r.valid,false);assert.equal(r.status,"NOT_ASSESSABLE");
+});
+test("rejects non-finite or zero-area plate boundaries",()=>{
+ const d=fixture();d.plate.polygonMm[0].x=Number.NaN;
+ assert.equal(geo.assess(d).valid,false);
+ const q=fixture();q.plate.polygonMm=[{x:0,y:0},{x:10,y:0},{x:20,y:0}];
+ assert.equal(geo.assess(q).valid,false);
+});
