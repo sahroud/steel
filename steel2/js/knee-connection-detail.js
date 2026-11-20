@@ -464,7 +464,7 @@
    coordinateSystems:{platePolygonAndBolt:"plate-local mm",plateFrame:"connection-frame mm",
     weldEndpoints:"connection-frame mm",output:"global m"},
    plates,plateInteractionAudit,welds,capacityDesigned:false,executionReady:false,
-   limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ تماس بین ورق‌های مختلف هنوز کنترل نشده است.",
+   limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ ممیزی ورق‌به‌ورق فقط برای صفحات موازی/پادموازی در plateInteractionAudit ارائه می‌شود و زوج‌های غیرموازی NOT_ASSESSABLE هستند.",
     "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ سرپیچ شش‌گوش و مهره شش‌گوش فقط با عرض آچارخور، ضخامت و موقعیت محوری صریح مدل می‌شوند؛ واشر به‌صورت حلقه ۳۲ضلعی تقریبی و با قطر داخلی/خارجی و ضخامت نقشه ساخته می‌شود. رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
  }
  const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,polygonDistance,analyzeHoleLayout,auditHardwareAxialIntervals,auditPlateInteractions,buildGlobalGeometry};
