@@ -28,7 +28,7 @@ test("reports candidate enumeration truncation instead of silently dropping path
  for(let row=0;row<18;row++){const y=-85+row*10;d.holes.push({id:"L"+row,xMm:20,yMm:y,polygon:circle(20,y,4)},{id:"R"+row,xMm:80,yMm:y,polygon:circle(80,y,4)});}
  const r=geo.assess(d);
  assert.equal(r.valid,true);
- assert.ok(r.rejected.some(x=>x.truncated===true));
+ assert.ok(r.rejected.some(x=>x.truncated===true));assert.equal(r.candidateEnumerationComplete,false);assert.equal(r.candidateEnumerationStatus,"TRUNCATED_REVIEW_REQUIRED");
 });
 
 test("rejects hole polygons outside or crossing the plate boundary before path enumeration",()=>{
