@@ -125,18 +125,25 @@ for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
      !tensionIds.has(lowBolt.id)||!tensionIds.has(highBolt.id)){
    rejected.push({boltPair:label,rows:[i+1,j+1],reason:"مسیر باید سوراخ‌های هر دو صفحه برشی و سوراخ‌های انتخابی صفحه کششی را واقعاً قطع کند."});continue;
   }
+  const intermediateRows=rows.slice(i+1,j),intermediateHoles=intermediateRows.flatMap((r,k)=>r.holes.filter(h=>tensionIds.has(h.id)).map(h=>({rowId:i+2+k,boltId:h.id})));
+  const missingIntermediate=intermediateRows.map((r,k)=>({rowId:i+2+k,holes:r.holes})).filter(r=>!r.holes.some(h=>tensionIds.has(h.id)));
+  if(missingIntermediate.length){
+   rejected.push({boltPair:label,rows:Array.from({length:j-i+1},(_,k)=>i+k+1),reason:"مسیر چندردیفه پیشنهادی، سوراخ حداقل یک ردیف میانی را در صفحه کششی قطع نمی‌کند؛ پیوستگی هندسی احراز نشد.",missingIntermediateRows:missingIntermediate.map(r=>r.rowId)});continue;
+  }
   const signature=[i,j,lowBolt.id,highBolt.id].join(":");
   if(seen.has(signature))continue;seen.add(signature);
   const sg=lines[0].grossLengthMm+lines[1].grossLengthMm,sn=lines[0].netGeometryLengthMm+lines[1].netGeometryLengthMm;
   const tg=lines[2].grossLengthMm,tn=lines[2].netGeometryLengthMm;
   candidates.push({pathId:"BS-"+(i+1)+"-"+(j+1)+"-"+lowBolt.id+"-"+highBolt.id,
-   plateId:String(p.id||input.plateId||""),rowIds:[i+1,j+1],terminalBoltIds:[lowBolt.id,highBolt.id],
-   pathType:Math.abs(lowBolt.s-highBolt.s)>1e-7?"STAGGERED_ZIGZAG":"STRAIGHT",
+   plateId:String(p.id||input.plateId||""),rowIds:Array.from({length:j-i+1},(_,k)=>i+k+1),terminalBoltIds:[lowBolt.id,highBolt.id],
+   intermediateBoltIds:intermediateHoles.map(h=>h.boltId),intermediateRowIds:intermediateHoles.map(h=>h.rowId),
+   topologyType:intermediateRows.length?"MULTI_ROW_CONTINUOUS":"TWO_ROW",
+   pathType:intermediateRows.length?"MULTI_ROW_CONTINUOUS":(Math.abs(lowBolt.s-highBolt.s)>1e-7?"STAGGERED_ZIGZAG":"STRAIGHT"),
    vertices:[p1,o1,o2,p2],lines,crossedHoleIds:crossed.sort(),
    gross:{AgvLengthMm:sg,AntLengthMm:tg},netGeometry:{AnvLengthMm:sn,AntLengthMm:tn},
    geometricAreas:{AgvMm2:sg*p.thicknessMm,AnvMm2:sn*p.thicknessMm,AntMm2:tn*p.thicknessMm},
    status:"GEOMETRY_CANDIDATE_ONLY",capacityAssessable:false,
-   limitations:["مسیر پلکانی بر اساس زوج پیچ‌های انتهایی از دو ردیف عرضی ساخته شده است؛ تمام توپولوژی‌های شکست ممکن یا مسیرهای ترکیبی چندردیفه لزوماً پوشش داده نشده‌اند.",
+   limitations:["مسیر چندردیفه فقط زمانی کاندید می‌شود که خط کششی هندسی، دست‌کم یک سوراخ را در تمام ردیف‌های میانی قطع کند؛ این شرط صرفاً پیوستگی هندسی اولیه است و مسیر شکست آیین‌نامه‌ای را اثبات نمی‌کند.",
     "کسر سوراخ صرفاً طول تقاطع چندضلعی سوراخ با خط مسیر است؛ ضرایب آیین‌نامه‌ای مسیر پلکانی، فاصله گام، Ubs و قواعد سوراخ لوبیایی هنوز اعمال نشده‌اند.",
     "مساحت‌ها صرفاً هندسی‌اند و به مقاومت طراحی یا PASS/FAIL تبدیل نمی‌شوند."]});
  }
