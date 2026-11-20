@@ -15,8 +15,15 @@
       throw new Error("مدل مرجع اعضا برای آماده‌سازی تقاضای طراحی موجود نیست.");
     if(!demandApi||typeof demandApi.extractCase!=="function")
       throw new Error("موتور بازیابی نیروهای داخلی سه‌بعدی در دسترس نیست.");
-    const expected=new Set(model.members.map(m=>String(m.id)));
-    if(expected.size!==model.members.length)throw new Error("شناسه اعضای مدل مرجع تکراری است.");
+    const memberById=new Map();
+    model.members.forEach(member=>{
+      const id=String(member?.id??"").trim();
+      if(!id||memberById.has(id))throw new Error("شناسه اعضای مدل مرجع خالی یا تکراری است.");
+      const length=Number(member.length);
+      if(!Number.isFinite(length)||length<=0)throw new Error("طول عضو "+id+" برای کنترل ایستگاه‌های تقاضا معتبر نیست.");
+      memberById.set(id,{member,length});
+    });
+    const expected=new Set(memberById.keys());
     const rows=new Map([...expected].map(id=>[id,{id,candidates:[],governing:{}}]));
     const seenCases=new Set();
     combinationRun.combinationResults.forEach(item=>{
@@ -25,12 +32,18 @@
       if(seenCases.has(String(item.id)))throw new Error("شناسه ترکیب بار تکراری است: "+item.id);
       seenCases.add(String(item.id));
       const recovered=demandApi.extractCase({...item.analysis,loadCase:item.id,loadCaseLabel:item.label},model);
-      if(recovered.memberCount!==expected.size)throw new Error("تعداد اعضای بازیابی‌شده با مدل مرجع یکسان نیست.");
       if(!Array.isArray(recovered.members))throw new Error("فهرست اعضای بازیابی‌شده در ترکیب "+item.id+" معتبر نیست.");
+      if(recovered.memberCount!==recovered.members.length||recovered.members.length!==expected.size)
+        throw new Error("تعداد واقعی اعضای بازیابی‌شده با مدل مرجع یکسان نیست.");
+      const recoveredIds=new Set();
       recovered.members.forEach(member=>{
-        const row=rows.get(String(member.id));
-        if(!row)throw new Error("عضو خارج از مدل مرجع در نتایج طراحی دیده شد: "+member.id);
-        if(!Array.isArray(member.samples)||!member.samples.length)throw new Error("ایستگاه‌های تقاضای عضو "+member.id+" در ترکیب "+item.id+" موجود نیست.");
+        const id=String(member?.id??"").trim();
+        if(!id||recoveredIds.has(id))throw new Error("شناسه عضو در نتایج ترکیب "+item.id+" خالی یا تکراری است: "+id);
+        recoveredIds.add(id);
+        const row=rows.get(id);
+        if(!row)throw new Error("عضو خارج از مدل مرجع در نتایج طراحی دیده شد: "+id);
+        if(!Array.isArray(member.samples)||!member.samples.length)throw new Error("ایستگاه‌های تقاضای عضو "+id+" در ترکیب "+item.id+" موجود نیست.");
+        const seenStations=new Set();
         member.samples.forEach(sample=>{
           const values={};
           COMPONENTS.forEach(k=>{
@@ -39,7 +52,12 @@
             values[k]=n;
           });
           const candidate={combinationId:item.id,combination:item.label,x:Number(sample.x),values};
-          if(!Number.isFinite(candidate.x))throw new Error("مختصات مقطع برای عضو "+member.id+" نامعتبر است.");
+          const length=memberById.get(id).length;
+          if(!Number.isFinite(candidate.x)||candidate.x< -1e-9||candidate.x>length+1e-9)
+            throw new Error("مختصات ایستگاه تقاضا برای عضو "+id+" خارج از طول عضو یا نامعتبر است.");
+          const stationKey=candidate.x.toPrecision(12);
+          if(seenStations.has(stationKey))throw new Error("ایستگاه تقاضای تکراری برای عضو "+id+" در ترکیب "+item.id+" ثبت شده است.");
+          seenStations.add(stationKey);
           row.candidates.push(candidate);
           COMPONENTS.forEach(k=>{
             const old=row.governing[k];
@@ -47,6 +65,8 @@
           });
         });
       });
+      const missing=[...expected].filter(id=>!recoveredIds.has(id));
+      if(missing.length)throw new Error("اعضای مدل در نتایج ترکیب "+item.id+" مفقودند: "+missing.join("، "));
     });
     if(seenCases.size!==combinationRun.caseCount)throw new Error("تعداد ترکیبات حل‌شده با تعداد مورد انتظار برابر نیست.");
     const members=[...rows.values()].map(row=>{
