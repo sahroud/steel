@@ -132,7 +132,12 @@ for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
  }
 }
 if(candidates.length>=MAX_CANDIDATES)rejected.push({reason:"حد بالای تعداد مسیرهای کاندید ("+MAX_CANDIDATES+") رسیده است؛ بررسی کامل آرایش پیچ نیازمند بازبینی مهندس است.",truncated:true});
-return{valid:true,status:candidates.length?"GEOMETRY_CANDIDATES_FOUND":"NOT_ASSESSABLE",plateId:String(p.id||input.plateId||""),rows:rows.map((r,i)=>({rowId:i+1,transverseProjectionMm:r.t,boltIds:r.holes.map(h=>h.id)})),candidates,rejected,capacityDesigned:false,connectionApproved:false,executionReady:false};
+const candidateEnumerationComplete=!rejected.some(x=>x.truncated===true);
+return{valid:true,status:candidates.length?"GEOMETRY_CANDIDATES_FOUND":"NOT_ASSESSABLE",
+ candidateEnumerationStatus:candidateEnumerationComplete?"COMPLETE_WITHIN_DECLARED_SEARCH":"TRUNCATED_REVIEW_REQUIRED",
+ candidateEnumerationComplete,maximumCandidateCount:MAX_CANDIDATES,
+ plateId:String(p.id||input.plateId||""),rows:rows.map((r,i)=>({rowId:i+1,transverseProjectionMm:r.t,boltIds:r.holes.map(h=>h.id)})),
+ candidates,rejected,capacityDesigned:false,connectionApproved:false,executionReady:false};
 }
 const api={SCHEMA:"SAHROUD-BLOCK-SHEAR-GEOMETRY-1.0",assess,linePolygonIntervals:intervals,subtractIntervals:subtract};root.SahroudKneeBlockShearGeometry=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
