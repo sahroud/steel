@@ -5,7 +5,9 @@
 (function(root){
  "use strict";
  const clone=v=>JSON.parse(JSON.stringify(v));
- const positive=(v,label)=>{const n=Number(v);if(!Number.isFinite(n)||n<=0)throw new Error(label+" باید مثبت و محدود باشد.");return n;};
+ const numericInput=v=>(typeof v==="number"&&Number.isFinite(v))||
+  (typeof v==="string"&&v.trim()!==""&&Number.isFinite(Number(v)));
+ const positive=(v,label)=>{if(!numericInput(v)||Number(v)<=0)throw new Error(label+" باید عدد مثبت و محدود باشد.");return Number(v);};
  function fingerprint(section){
   const keys=["profile","A","Iy","Iz","J","E","G","SxTop","SxBottom","Sy","massPerMeterKg","geometryType","sectionRollDeg","sectionOrientationConfirmed","sectionReferenceAxis"];
   const raw=keys.map(k=>{
@@ -21,16 +23,18 @@
   if(!section||typeof section!=="object")throw new Error("مقطع عضو "+memberId+" موجود نیست.");
   const A=positive(section.A,"A"),Iy=positive(section.Iy,"Iy"),Iz=positive(section.Iz,"Iz"),J=positive(section.J,"J");
   const E=positive(section.E,"E"),G=positive(section.G,"G");
-  if(section.sectionRollDeg!==undefined&&section.sectionRollDeg!==null&&!Number.isFinite(Number(section.sectionRollDeg)))throw new Error("زاویه چرخش مقطع عضو "+memberId+" باید متناهی باشد.");
+  if(section.sectionRollDeg!==undefined&&section.sectionRollDeg!==null&&!numericInput(section.sectionRollDeg))throw new Error("زاویه چرخش مقطع عضو "+memberId+" باید متناهی باشد.");
   if(section.sectionOrientationConfirmed===true&&(section.sectionRollDeg===undefined||section.sectionRollDeg===null))throw new Error("تأیید جهت نصب عضو "+memberId+" بدون زاویه صریح مجاز نیست.");
   let sectionReferenceAxis=null;
   if(section.sectionReferenceAxis!==undefined&&section.sectionReferenceAxis!==null){
-   if(!Array.isArray(section.sectionReferenceAxis)||section.sectionReferenceAxis.length!==3||section.sectionReferenceAxis.some(v=>!Number.isFinite(Number(v))))throw new Error("محور مرجع عضو "+memberId+" باید سه مؤلفه عددی متناهی داشته باشد.");
+   if(!Array.isArray(section.sectionReferenceAxis)||section.sectionReferenceAxis.length!==3||section.sectionReferenceAxis.some(v=>!numericInput(v)))throw new Error("محور مرجع عضو "+memberId+" باید سه مؤلفه عددی متناهی داشته باشد.");
    const axis=section.sectionReferenceAxis.map(Number),length=Math.hypot(...axis);
    if(!(length>1e-10))throw new Error("محور مرجع عضو "+memberId+" نباید بردار صفر باشد.");
    sectionReferenceAxis=axis.map(v=>v/length);
   }
-  const rho=Number.isFinite(Number(section.densityKgM3))&&Number(section.densityKgM3)>0?Number(section.densityKgM3):7850;
+  if(section.densityKgM3!==undefined&&section.densityKgM3!==null&&(!numericInput(section.densityKgM3)||Number(section.densityKgM3)<=0))
+   throw new Error("چگالی عضو باید عدد مثبت و محدود باشد.");
+  const rho=section.densityKgM3===undefined||section.densityKgM3===null?7850:Number(section.densityKgM3);
   const normalized={...clone(section),A,Iy,Iz,J,E,G};
   if(sectionReferenceAxis)normalized.sectionReferenceAxis=sectionReferenceAxis;
   normalized.massPerMeterKg=A*rho;
