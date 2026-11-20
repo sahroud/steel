@@ -405,3 +405,29 @@ test("global geometry includes separate hardware and weld interaction audit repo
  assert.equal(g.hardwarePlateInteractionAudit.pairs[0].status,"FACE_CONTACT");
  assert.equal(g.weldPlateInteractionAudit.pairs[0].status,"NOT_ASSESSABLE");
 });
+test("hardware is checked against a parallel non-host plate and detects volumetric penetration",()=>{
+ const d=fixture();d.plates.push({...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,20]}});
+ d.bolts[0].hardware=[{id:"W-OTHER",kind:"washer",centerOffsetMm:15,thicknessMm:4,outerDiameterMm:36,innerDiameterMm:22}];
+ const report=detail.auditHardwareOtherPlateInteractions(d);
+ assert.equal(report.pairs[0].status,"VOLUME_INTERFERENCE");
+ assert.ok(report.pairs[0].projectedMaterialOverlapAreaMm2>0);
+});
+test("hardware-to-nonhost-plate audit subtracts the target plate's bolt hole",()=>{
+ const d=fixture();d.plates.push({...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,20]}});
+ d.bolts.push({...d.bolts[0],id:"B3",plateId:"BACK-PLATE",xMm:0,yMm:-40});
+ d.bolts[0].hardware=[{id:"W-HOLE",kind:"washer",centerOffsetMm:15,thicknessMm:4,outerDiameterMm:36,innerDiameterMm:22}];
+ const report=detail.auditHardwareOtherPlateInteractions(d);
+ assert.equal(report.pairs[0].status,"NO_PROJECTED_OVERLAP");
+});
+test("hardware-to-nonhost-plate audit keeps nonparallel geometry not assessable",()=>{
+ const d=fixture();d.plates.push({...d.plates[0],id:"SIDE-PLATE",frame:{originMm:[0,0,0],axes:{u:[0,0,-1],v:[0,1,0],n:[1,0,0]}}});
+ d.bolts[0].hardware=[{id:"H-SIDE",kind:"head",centerOffsetMm:0,thicknessMm:12,acrossFlatsMm:30}];
+ assert.equal(detail.auditHardwareOtherPlateInteractions(d).pairs[0].status,"NOT_ASSESSABLE");
+});
+test("global geometry exposes non-host hardware interaction audit",()=>{
+ const d=fixture();d.plates.push({...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,20]}});
+ d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
+ d.bolts[0].hardware=[{id:"W-OTHER",kind:"washer",centerOffsetMm:15,thicknessMm:4,outerDiameterMm:36,innerDiameterMm:22}];
+ const g=detail.buildGlobalGeometry(d);
+ assert.equal(g.hardwareOtherPlateInteractionAudit.pairs[0].status,"VOLUME_INTERFERENCE");
+});
