@@ -8,8 +8,10 @@
  const ACTIONS=["N","Vy","Vz","T","My","Mz"];
  const POSITIVE_SECTION=["A","Iy","Iz","J","E","G"];
  const MODULI=["SxTop","SxBottom","Sy"];
- const finitePositive=v=>v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))&&Number(v)>0;
- const finiteValue=v=>v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v));
+ const finitePositive=v=>((typeof v==="number"&&Number.isFinite(v))||
+  (typeof v==="string"&&v.trim()!==""&&Number.isFinite(Number(v))))&&Number(v)>0;
+ const finiteValue=v=>(typeof v==="number"&&Number.isFinite(v))||
+  (typeof v==="string"&&v.trim()!==""&&Number.isFinite(Number(v)));
  function audit(model,demandRun){
   const errors=[],members=Array.isArray(model?.members)?model.members:[];
   if(!members.length)throw new Error("مدل اعضای فولادی خالی یا ناموجود است.");
