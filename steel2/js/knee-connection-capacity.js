@@ -214,13 +214,23 @@
     const plate=plateById.get(String(p.plateId)),m=plate.material;
     const ty=factor(method,PHI_TY,OMEGA_TY),tr=factor(method,PHI_RUPTURE,OMEGA_RUPTURE);
     const sy=factor(method,PHI_SY,OMEGA_SY),sr=factor(method,PHI_RUPTURE,OMEGA_RUPTURE);
-    const checks=[
-     demandCheck(c.id+":"+p.plateId,"plate-tensile-yield",p.tensionKN,ty*m.FyMPa*p.AgTensionMm2/1000,method,"10-2-9-4-1 / (17-9-2-10)"),
-     demandCheck(c.id+":"+p.plateId,"plate-tensile-rupture",p.tensionKN,tr*m.FuMPa*p.AeTensionMm2/1000,method,"10-2-9-4-1 / (18-9-2-10)"),
-     demandCheck(c.id+":"+p.plateId,"plate-shear-yield",p.shearKN,sy*0.6*m.FyMPa*p.AgvMm2/1000,method,"10-2-9-4-2 / (19-9-2-10)"),
-     demandCheck(c.id+":"+p.plateId,"plate-shear-rupture",p.shearKN,sr*0.6*m.FuMPa*p.AnvMm2/1000,method,"10-2-9-4-2 / (20-9-2-10)")
+    const provisional=[
+     {limitState:"plate-tensile-yield",demandKN:p.tensionKN,resistanceKN:ty*m.FyMPa*p.AgTensionMm2/1000,reference:"10-2-9-4-1 / (17-9-2-10)"},
+     {limitState:"plate-tensile-rupture",demandKN:p.tensionKN,resistanceKN:tr*m.FuMPa*p.AeTensionMm2/1000,reference:"10-2-9-4-1 / (18-9-2-10)"},
+     {limitState:"plate-shear-yield",demandKN:p.shearKN,resistanceKN:sy*0.6*m.FyMPa*p.AgvMm2/1000,reference:"10-2-9-4-2 / (19-9-2-10)"},
+     {limitState:"plate-shear-rupture",demandKN:p.shearKN,resistanceKN:sr*0.6*m.FuMPa*p.AnvMm2/1000,reference:"10-2-9-4-2 / (20-9-2-10)"}
     ];
-    plateChecks.push({caseId:c.id,plateId:p.plateId,checks,status:checks.some(x=>x.status==="FAIL")?"FAIL":"PASS",areaReference:p.areaReference});
+    // Section areas are user supplied and are not yet derived from the actual
+    // plate polygon, holes, connected elements and force path. Keep arithmetic
+    // visible for audit, but never label it as an assessed resistance.
+    const checks=provisional.map((x,i)=>({id:c.id+":"+p.plateId+":"+x.limitState,
+     limitState:x.limitState,demandKN:x.demandKN,capacityKN:null,
+     provisionalResistanceKN:x.resistanceKN,utilization:null,status:"NOT_ASSESSABLE",
+     method,reference:x.reference,
+     geometryEvidenceStatus:"USER_SUPPLIED_UNVERIFIED"}));
+    plateChecks.push({caseId:c.id,plateId:p.plateId,checks,status:"NOT_ASSESSABLE",
+     areaReference:p.areaReference,
+     limitations:["Ag، Ae، Agv وAnv از هندسه واقعی ورق، سوراخ‌ها و مسیر انتقال نیرو استخراج و راستی‌آزمایی نشده‌اند."]});
    }
    for(const p of c.blockShearChecks){
     const plate=plateById.get(String(p.plateId)),m=plate.material;
