@@ -7,6 +7,7 @@ function inside(p,P){let z=false;for(let i=0,j=P.length-1;i<P.length;j=i++){cons
 function hit(a,b,c,d){const r=sub(b,a),s=sub(d,c),den=cross(r,s);if(Math.abs(den)<E)return null;const t=cross(sub(c,a),s)/den,u=cross(sub(c,a),r)/den;return t>=-E&&t<=1+E&&u>=-E&&u<=1+E?Math.max(0,Math.min(1,t)):null;}
 function boundary(o,u,P){const R=Math.max(1,...P.map(p=>dist(p,o)))*4,a=sub(o,scale(u,R)),b=add(o,scale(u,R)),out=[];for(let i=0;i<P.length;i++){const t=hit(a,b,P[i],P[(i+1)%P.length]);if(t!==null){const p=add(a,scale(sub(b,a),t));if(!out.some(q=>dist(p,q)<1e-6))out.push(p);}}return out.sort((p,q)=>dot(sub(p,o),u)-dot(sub(q,o),u));}
 function insideSegment(a,b,P){for(let k=0;k<P.length;k++){const t=hit(a,b,P[k],P[(k+1)%P.length]);if(t!==null&&t>1e-7&&t<1-1e-7)return false;}for(let i=0;i<=64;i++)if(!inside(add(a,scale(sub(b,a),i/64)),P))return false;return true;}
+function sameBoundaryEdge(a,b,P){for(let i=0;i<P.length;i++)if(on(a,P[i],P[(i+1)%P.length])&&on(b,P[i],P[(i+1)%P.length]))return true;return false;}
 function intervals(a,b,P){const L=dist(a,b),d=sub(b,a);if(L<E)return[];const ts=[0,1];for(let i=0;i<P.length;i++){const t=hit(a,b,P[i],P[(i+1)%P.length]);if(t!==null)ts.push(t);}ts.sort((x,y)=>x-y);const u=ts.filter((t,i)=>!i||Math.abs(t-ts[i-1])>1e-7),out=[];for(let i=0;i<u.length-1;i++)if(inside(add(a,scale(d,(u[i]+u[i+1])/2)),P))out.push([u[i]*L,u[i+1]*L]);return out;}
 function subtract(L,ints){const a=ints.map(x=>[Math.max(0,x[0]),Math.min(L,x[1])]).filter(x=>x[1]>x[0]).sort((x,y)=>x[0]-y[0]);let n=0,last=0;for(const [s,e] of a){const q=Math.max(s,last);if(e>q)n+=e-q;last=Math.max(last,e);}return Math.max(0,L-n);}
 function assess(input){
@@ -28,6 +29,7 @@ for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
 const a=rows[i],b=rows[j],end=Math.max(a.holes.at(-1).s,b.holes.at(-1).s),o1=add(scale(u,end),scale(v,a.t)),o2=add(scale(u,end),scale(v,b.t));
 const lead=(o)=>boundary(o,u,P).filter(q=>dot(sub(q,o),u)<-E).at(-1),p1=lead(o1),p2=lead(o2);
 if(!p1||!p2){rejected.push({rows:[i+1,j+1],reason:"لبه آزاد باربر برای دو صفحه برشی یکتا نیست."});continue;}
+if(!sameBoundaryEdge(p1,p2,P)){rejected.push({rows:[i+1,j+1],reason:"دو صفحه برشی به یک قطعه پیوسته و مشترک از لبه آزاد باربر متصل نشده‌اند."});continue;}
 const q1=o1,q2=o2;
 if(!insideSegment(p1,q1,P)||!insideSegment(p2,q2,P)||!insideSegment(q1,q2,P)){rejected.push({rows:[i+1,j+1],reason:"مسیر پیشنهادی کاملاً داخل ورق نیست."});continue;}
 const lines=[{id:"S1",kind:"shear",a:p1,b:q1},{id:"S2",kind:"shear",a:p2,b:q2},{id:"T1",kind:"tension",a:q1,b:q2}],crossed=[];
