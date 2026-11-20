@@ -150,6 +150,21 @@ function buildCompressionDemandRows(forceResult){
  }).filter(r=>r.caseCount>0||r.invalidCaseCount>0).sort((a,b)=>a.sectionKey.localeCompare(b.sectionKey)||a.id.localeCompare(b.id));
  return rows;
 }
+function buildConcurrentMemberDesignDemandFrom3D(combinations,modelData){
+ const cases=Array.isArray(combinations)?combinations:[];
+ if(!cases.length||cases.some(c=>!c||!c.analysis||c.analysis.success!==true))
+  return {success:false,issues:["برای بازیابی ایستگاه‌های داخلی، نتیجه موفق حل‌گر هر ترکیب بار لازم است."],members:[]};
+ const builder=root.SahroudMemberDesignDemand3D;
+ const demandApi=root.SahroudMemberDemand3D;
+ if(!builder||typeof builder.build!=="function"||!demandApi||typeof demandApi.extractCase!=="function")
+  return {success:false,issues:["ماژول آماده‌سازی تقاضای هم‌زمان یا بازیابی نیروهای داخلی بارگذاری نشده است."],members:[]};
+ try{
+  const result=builder.build({success:true,caseCount:cases.length,combinationResults:cases},modelData,demandApi);
+  return {...result,success:result.success===true,issues:[]};
+ }catch(error){
+  return {success:false,issues:[String(error?.message||error)],members:[]};
+ }
+}
 function buildCompressionDemandRowsFrom3D(combinations,modelData){
  const cases=Array.isArray(combinations)?combinations:[];
  if(!cases.length)return {success:false,issues:["نتایج ترکیبات تحلیل سه‌بعدی در دسترس نیستند."],members:[],expectedCaseCount:0};
@@ -205,7 +220,9 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
  });
  const success=issues.length===0;
  const prepared=buildCompressionDemandRows({members:rows,expectedCaseCount:cases.length,success});
- return {success,members:prepared,expectedCaseCount:cases.length,caseIds,issues};
+ const concurrentDesignDemand=buildConcurrentMemberDesignDemandFrom3D(cases,modelData);
+ return {success,members:prepared,expectedCaseCount:cases.length,caseIds,issues,
+  concurrentDesignDemand,concurrentDesignDemandReady:concurrentDesignDemand.success===true};
 }
 
 function evaluateAxialOnlyMember(row,base,override,taperedEnabled){
@@ -315,6 +332,11 @@ function renderResults(){
   ? buildCompressionDemandRowsFrom3D(combinationResults,modelData)
   : root.SteelMemberForceEnvelope?.getLast?.();
  const demandRows=buildCompressionDemandRows(forceResult);
+ const concurrent=forceResult?.concurrentDesignDemand;
+ const concurrentDemandHtml=concurrent?.success
+  ? '<div class="notice">بسته تقاضای هم‌زمان اعضا آماده شد: '+concurrent.caseCount+' ترکیب بار، '+concurrent.memberCount+' عضو و '+concurrent.members.reduce((n,m)=>n+m.candidateCount,0)+' بردار هم‌زمانِ ایستگاه‌محور. هر بردار شش مؤلفه را از همان ترکیب و همان ایستگاه حفظ می‌کند. این فقط آماده‌سازی تقاضاست؛ اندرکنش و ظرفیت آیین‌نامه‌ای هنوز محاسبه نشده است.</div>'
+  : (Array.isArray(forceResult?.combinationResults)&&forceResult.combinationResults.length
+    ? '<div class="notice">آماده‌سازی تقاضای هم‌زمان اعضا انجام نشد؛ کنترل اندرکنش قابل ارزیابی نیست: '+esc((concurrent?.issues||["نتایج تحلیل فاقد بسته کامل حل‌گر هستند."]).join("؛ "))+'</div>' : '');
  const demandHtml=demandRows.length?'<h4>تقاضای فشاری و ظرفیت کمانش کلی در سطح عضو</h4><p class="notice">برای هر عضو، سه طول مهارنشده را مستقل وارد کنید. خواص مقطع و مصالح از فرم گروه ستون/رفتر خوانده می‌شود؛ قبل از استفاده باید یکسان بودن آن‌ها با عضو انتخابی را کنترل کنید.</p><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>شناسه عضو/قطعه</th><th>گروه</th><th>ترکیب حاکم</th><th>انتهای حاکم</th><th>فشار بیشینه (kN)</th><th>Lx (mm)</th><th>Ly (mm)</th><th>Lz (mm)</th><th>مرجع مهاربندی عضو (سند | ویرایش | محل | تأییدکننده)</th><th>ظرفیت LRFD φPn (kN)</th><th>ظرفیت ASD (kN)</th><th>نسبت محوری P/φPn</th><th>نتیجه غربال</th></tr></thead><tbody>'+demandRows.map(r=>{
   const ov=data.memberOverrides[String(r.id)]||{},g=r.sectionKey;
   let cap=null,screen=null,why="";
@@ -328,7 +350,7 @@ function renderResults(){
   }else if(!r.coverageComplete)why="پوشش ترکیبات سه‌بعدی ناقص است؛ ظرفیت/نسبت نمایش داده نمی‌شود.";
   return '<tr><td>'+esc(r.id)+'</td><td>'+esc(g)+'</td><td>'+esc(r.governingCase||'—')+'</td><td>'+esc(r.governing?.end||'—')+'</td><td>'+r.compressionDemand_kN.toFixed(2)+'</td>'+["Lx_mm","Ly_mm","Lz_mm"].map(k=>'<td><input type="number" min="1" step="any" data-member-id="'+esc(r.id)+'" data-member-length="'+k+'" value="'+(ov[k]??"")+'" style="width:92px"></td>').join("")+'<td><input type="text" data-member-id="'+esc(r.id)+'" data-member-restraint-evidence value="'+esc(evidenceText(ov.restraintEvidence))+'" placeholder="drawing.pdf | R1 | Detail 2 | designer" style="min-width:220px"></td><td>'+(cap?.ok?cap.LRFD.designStrength_kN.toFixed(2):"—")+'</td><td>'+(cap?.ok?cap.ASD.allowableStrength_kN.toFixed(2):"—")+'</td><td>'+(screen?.ok?screen.ratio.toFixed(3):"—")+'</td><td>'+(screen?.ok?(screen.withinAxialStrength?"در محدوده مقاومت محوری — غیرنهایی":"بیش از مقاومت محوری — مردود در غربال"):esc(why||"ابتدا طول‌های مهارنشده را وارد کنید"))+'</td></tr>';
 }).join("")+'</tbody></table></div><button type="button" class="btn" id="btnCompressionMemberRecalc">به‌روزرسانی ظرفیت اعضا</button>':'<div class="notice">برای نمایش تقاضای فشاری، ابتدا تحلیل سه‌بعدی و استخراج پوش نیروها را اجرا کنید.</div>';
- host.innerHTML=html+demandHtml+'<div class="notice">تقاضای فشاری از قرارداد علامت نیروی محلی حل‌گر استخراج شده است: کشش (Nᵢ منفی و Nⱼ مثبت) فشار محسوب نمی‌شود؛ فشار (Nᵢ مثبت و Nⱼ منفی) با بیشینه دو انتها گزارش می‌شود. این قرارداد با آزمون عضو محوری کنترل شده است. نسبت P/φPn فقط در حالتی نمایش داده می‌شود که بارگذاری حاکم واقعاً محوری باشد و در همان ترکیب هیچ خمش، برش یا پیچشی در دو انتهای عضو وجود نداشته باشد. در بارگذاری مرکب، محاسبه نسبت محوری مسدود است تا اندرکنش کامل پیاده‌سازی شود. همچنین کمانش موضعی، اعضای مرکب، مقاطع نامتقارن/متغیرعمق، اندرکنش فشار و خمش، تحلیل مرتبه دوم و کنترل لرزه‌ای خارج از دامنه‌اند. ظرفیت‌های نمایش‌داده‌شده فقط مقاومت کمانش کلی بر مبنای طول‌های واردشده هستند و به معنی قبولی عضو نیستند؛ تقاضا و ظرفیت تا زمان تأیید مبنای ترکیب‌بار و همه کنترل‌های لازم نباید به‌صورت نسبت بهره‌برداری یا قبولی/ردی تفسیر شوند.</div>';
+ host.innerHTML=html+demandHtml+concurrentDemandHtml+'<div class="notice">تقاضای فشاری از قرارداد علامت نیروی محلی حل‌گر استخراج شده است: کشش (Nᵢ منفی و Nⱼ مثبت) فشار محسوب نمی‌شود؛ فشار (Nᵢ مثبت و Nⱼ منفی) با بیشینه دو انتها گزارش می‌شود. این قرارداد با آزمون عضو محوری کنترل شده است. نسبت P/φPn فقط در حالتی نمایش داده می‌شود که بارگذاری حاکم واقعاً محوری باشد و در همان ترکیب هیچ خمش، برش یا پیچشی در دو انتهای عضو وجود نداشته باشد. در بارگذاری مرکب، محاسبه نسبت محوری مسدود است تا اندرکنش کامل پیاده‌سازی شود. همچنین کمانش موضعی، اعضای مرکب، مقاطع نامتقارن/متغیرعمق، اندرکنش فشار و خمش، تحلیل مرتبه دوم و کنترل لرزه‌ای خارج از دامنه‌اند. ظرفیت‌های نمایش‌داده‌شده فقط مقاومت کمانش کلی بر مبنای طول‌های واردشده هستند و به معنی قبولی عضو نیستند؛ تقاضا و ظرفیت تا زمان تأیید مبنای ترکیب‌بار و همه کنترل‌های لازم نباید به‌صورت نسبت بهره‌برداری یا قبولی/ردی تفسیر شوند.</div>';
  const recalc=$("btnCompressionMemberRecalc");if(recalc)recalc.addEventListener("click",()=>{readUI();renderResults();});
 }
 function init(){
@@ -340,7 +362,7 @@ function init(){
  anchor.insertAdjacentElement("afterend",p);render();
  $("btnCompressionCapacityRun")?.addEventListener("click",renderResults);
 }
-root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,capacityForMember,memberCapacityFromInput,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,buildCompressionDemandRowsFrom3D,selfTest,render};
+root.SteelCompressionCapacityIntegration={getData,readUI,setData,analyzeGroup,capacityForMember,memberCapacityFromInput,getSectionDefaults:sectionDefaults,buildCompressionDemandRows,buildCompressionDemandRowsFrom3D,buildConcurrentMemberDesignDemandFrom3D,selfTest,render};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.SteelCompressionCapacityIntegration;
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })(typeof window!=="undefined"?window:globalThis);
