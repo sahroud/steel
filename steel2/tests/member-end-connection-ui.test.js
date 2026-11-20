@@ -38,8 +38,9 @@ test("member end connection settings round-trip and reject invalid or duplicate 
 });
 test("stale member IDs are reported rather than applied to a different brace",()=>{
  api.setData([{memberId:"OLD-WALL",i:"pinned",j:"continuous"}]);
- const report=api.applyToModel(model());
+ const current=model();
+ const report=api.applyToModel(current);
  assert.deepEqual(report.orphanedMemberIds,["OLD-WALL"]);
- assert.equal(Object.hasOwn(model().members[0],"endReleases"),false);
+ assert.equal(Object.hasOwn(current.members[0],"endReleases"),false);
  api.setData([]);
 });
