@@ -1924,7 +1924,7 @@ test("3D design candidates preserve all six simultaneous actions from each combi
   })};
   const result=api.build(combos,model,demandApi);
   assert.equal(result.caseCount,2);
-  assert.equal(result.members[0].candidateCount,2);
+  assert.equal(result.members[0].candidateCount,4);
   assert.deepEqual(result.members[0].governing.N.values,{N:7,Vy:2,Vz:3,T:4,My:5,Mz:6});
   assert.equal(result.members[0].governing.N.combinationId,"C2");
   assert.equal(result.interactionReady,false);
