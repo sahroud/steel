@@ -563,7 +563,8 @@
   });
   const plateInteractionAudit=auditPlateInteractions(input.plates);
   const hardwarePlateInteractionAudit=auditHardwarePlateInteractions(input);
-  const weldPlateInteractionAudit=auditWeldPlateInteractions(input.welds);\n  const hardwareOtherPlateInteractionAudit=auditHardwareOtherPlateInteractions(input);
+  const weldPlateInteractionAudit=auditWeldPlateInteractions(input.welds);
+  const hardwareOtherPlateInteractionAudit=auditHardwareOtherPlateInteractions(input);
    const welds=input.welds.map(w=>({id:String(w.id),plateId:String(w.plateId),faceReference:w.faceReference,
    type:w.type,startGlobalM:toGlobal(w.startMm),endGlobalM:toGlobal(w.endMm)}));
   return{success:true,schema:"SAHROUD-KNEE-CONNECTION-GLOBAL-GEOMETRY-1.0",
