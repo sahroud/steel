@@ -88,6 +88,7 @@
       localAxesVerified:!!localAxes,
       localAxesConvention:"unit global direction vectors for solver local x/y/z; local x follows member i-to-j",
       sectionOrientationVerified:member.sectionOrientationVerified===true,
+      sectionPropertyFingerprint:member.sectionPropertyFingerprint||member.sectionProperties?.sectionPropertyFingerprint||null,
       sectionRollDeg:member.sectionRollDeg??member.sectionProperties?.sectionRollDeg??null,
       sectionOrientationSource:member.sectionOrientationSource||null,
       units:{force:"N",moment:"N.m",length:"m"}};
@@ -105,7 +106,7 @@
       const original=source.get(id);
       if(!original)throw new Error("عضو حل‌گر در مدل مرجع یافت نشد: "+id);
       return recoverMember({...result,sectionKey:original.sectionKey,
-        analysisLoad:original.analysisLoad,sectionRollDeg:original.sectionRollDeg??original.sectionProperties?.sectionRollDeg,
+        analysisLoad:original.analysisLoad,sectionProperties:original.sectionProperties,sectionPropertyFingerprint:original.sectionPropertyFingerprint??original.sectionProperties?.sectionPropertyFingerprint,sectionRollDeg:original.sectionRollDeg??original.sectionProperties?.sectionRollDeg,
         sectionOrientationVerified:original.sectionOrientationVerified===true},options?.subdivisions);
     });
     const missing=sourceModel.members.filter(m=>!seen.has(String(m.id))).map(m=>String(m.id));
