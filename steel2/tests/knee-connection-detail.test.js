@@ -462,7 +462,7 @@ test("fillet weld broadphase detects potential overlap with a non-host perpendic
 test("fillet weld broadphase rejects non-host plate outside weld depth interval",()=>{
  const d=fixture();d.welds[0].startMm=[-100,-60,0];d.welds[0].endMm=[-100,60,0];
  Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[1,0,0],connectedLegDirectionConnection:[0,0,1]});
- d.plates.push({id:"FAR-WEB",thicknessMm:4,frame:{originMm:[-96,0,30],axes:{u:[0,1,0],v:[0,0,1],n:[1,0,0]}},
+ d.plates.push({id:"FAR-WEB",thicknessMm:4,frame:{originMm:[-80,0,0],axes:{u:[0,1,0],v:[0,0,1],n:[1,0,0]}},
   polygonMm:[{x:-100,y:-100},{x:100,y:-100},{x:100,y:100},{x:-100,y:100}]});
  const r=detail.auditWeldPlateInteractions(d);assert.equal(r.otherPlatePairs[0].status,"NO_THICKNESS_OVERLAP");
 });
