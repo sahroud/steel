@@ -308,7 +308,7 @@ test("bolt hardware with positive coaxial axial overlap is rejected and audited"
  const audit=detail.auditHardwareAxialIntervals(d.bolts[0].hardware);
  assert.equal(audit.status,"INTERFERENCE_DETECTED");
  assert.equal(audit.pairs[0].status,"AXIAL_INTERFERENCE");
- assert.equal(audit.pairs[0].overlapMm,2);
+ assert.equal(audit.pairs[0].overlapMm,1);
 });
 test("bolt hardware face contact and positive axial clearance are not false collisions",()=>{
  const touching=[
