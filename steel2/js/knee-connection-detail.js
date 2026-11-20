@@ -51,6 +51,32 @@
   const t=l2?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/l2)):0;
   return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);
  }
+ function buildHolePolygon(b,semicircleSegments=16){
+  const x=Number(b.xMm),y=Number(b.yMm),r=Number(b.holeDiameterMm)/2;
+  if(!finite(x)||!finite(y)||!positive(r))throw new Error("ابعاد سوراخ برای تولید چندضلعی معتبر نیست.");
+  if(!["short-slotted","long-slotted"].includes(b.holeType)){
+   return Array.from({length:32},(_,i)=>({x:x+r*Math.cos(2*Math.PI*i/32),y:y+r*Math.sin(2*Math.PI*i/32)}));
+  }
+  const length=Number(b.slotLengthMm),width=Number(b.slotWidthMm),angle=Number(b.slotAngleDeg)*Math.PI/180;
+  if(!positive(length)||!positive(width)||length<width||!finite(angle))throw new Error("ابعاد شیار برای تولید هندسه معتبر نیست.");
+  const straight=(length-width)/2,ux=Math.cos(angle),uy=Math.sin(angle),nx=-uy,ny=ux;
+  const plus={x:x+straight*ux,y:y+straight*uy},minus={x:x-straight*ux,y:y-straight*uy};
+  const points=[];
+  for(let i=0;i<=semicircleSegments;i++){
+   const a=angle-Math.PI/2+i*Math.PI/semicircleSegments;
+   points.push({x:plus.x+r*Math.cos(a),y:plus.y+r*Math.sin(a)});
+  }
+  for(let i=0;i<=semicircleSegments;i++){
+   const a=angle+Math.PI/2+i*Math.PI/semicircleSegments;
+   points.push({x:minus.x+r*Math.cos(a),y:minus.y+r*Math.sin(a)});
+  }
+  return points;
+ }
+ function polygonsOverlap(a,b){
+  for(let i=0;i<a.length;i++)for(let j=0;j<b.length;j++)
+   if(intersects(a[i],a[(i+1)%a.length],b[j],b[(j+1)%b.length]))return true;
+  return pointInPolygon(a[0],b)||pointInPolygon(b[0],a);
+ }
  function validate(input){
   const errors=[],warnings=[];
   if(!input||typeof input!=="object")return{valid:false,errors:["رکورد جزئیات اتصال ارائه نشده است."],warnings,capacityDesigned:false,executionReady:false};
@@ -177,6 +203,29 @@
     }
     }
   });
+  // Validate the complete hole boundary, not only its centre. This is still
+  // geometry validation; no net-section or block-shear resistance is inferred.
+  const holeRecords=[];
+  (input.bolts||[]).forEach((b,i)=>{
+   if(!finite(b.xMm)||!finite(b.yMm)||!positive(b.holeDiameterMm)||!text(b.plateId))return;
+   const plate=(input.plates||[]).find(p=>String(p.id)===String(b.plateId));
+   if(!plate||!Array.isArray(plate.polygonMm)||plate.polygonMm.length<3)return;
+   let hole;
+   try{hole=buildHolePolygon(b);}catch(error){return;}
+   const poly=plate.polygonMm;
+   const outside=hole.some((p,j)=>{
+    const q=hole[(j+1)%hole.length],mid={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
+    if(!pointInPolygon(p,poly)||!pointInPolygon(mid,poly))return true;
+    return poly.some((a,k)=>intersects(p,q,a,poly[(k+1)%poly.length]));
+   });
+   if(outside)fail(errors,"تمام محیط سوراخ پیچ "+(b.id||i)+"، شامل انتهای شیار، باید داخل ورق میزبان باقی بماند.");
+   holeRecords.push({id:String(b.id),plateId:String(b.plateId),polygon:hole});
+  });
+  for(let i=0;i<holeRecords.length;i++)for(let j=i+1;j<holeRecords.length;j++){
+   const a=holeRecords[i],b=holeRecords[j];
+   if(a.plateId===b.plateId&&polygonsOverlap(a.polygon,b.polygon))
+    fail(errors,"محیط سوراخ‌های "+a.id+" و "+b.id+" در ورق "+a.plateId+" با یکدیگر تداخل دارد.");
+  }
   if(!Array.isArray(input.welds)||!input.welds.length)fail(errors,"خطوط جوش واقعی باید با ابتدا و انتهای هر قطعه تعریف شوند.");
   const weldIds=new Set();
   (input.welds||[]).forEach((w,i)=>{
@@ -255,6 +304,9 @@
       axisConnectionFrame:axis,axisGlobal,gripLengthMm:b.gripLengthMm,
       shank:{startGlobalM:toGlobal(start),endGlobalM:toGlobal(end),radiusMm:b.diameterMm/2},
       diameterMm:b.diameterMm,holeDiameterMm:b.holeDiameterMm,holeType:b.holeType,
+      holeGeometry:{method:["short-slotted","long-slotted"].includes(b.holeType)?"capsule-polygon-approximation":"32-segment-circle-approximation",
+       slotLengthMm:b.slotLengthMm||null,slotWidthMm:b.slotWidthMm||null,slotAngleDeg:b.slotAngleDeg??null,
+       verticesLocalMm:buildHolePolygon(b),verticesGlobalM:buildHolePolygon(b).map(p=>toGlobal(localToConnection(p.x,p.y)))},
       hardware:(b.hardware||[]).map(h=>{
        const axis=b.axisConnectionFrame.map(Number),ref=b.transverseReferenceConnectionFrame.map(Number);
        const second=[axis[1]*ref[2]-axis[2]*ref[1],axis[2]*ref[0]-axis[0]*ref[2],axis[0]*ref[1]-axis[1]*ref[0]];
@@ -290,7 +342,7 @@
    limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ تماس بین ورق‌های مختلف هنوز کنترل نشده است.",
     "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ سرپیچ شش‌گوش و مهره شش‌گوش فقط با عرض آچارخور، ضخامت و موقعیت محوری صریح مدل می‌شوند؛ واشر به‌صورت حلقه ۳۲ضلعی تقریبی و با قطر داخلی/خارجی و ضخامت نقشه ساخته می‌شود. رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
  }
- const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildGlobalGeometry};
+ const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,buildGlobalGeometry};
  root.SahroudKneeConnectionDetail=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
