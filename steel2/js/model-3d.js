@@ -658,7 +658,8 @@
         const c=addNode(nodes,x,height,f1.z,"brace"),d=addNode(nodes,x,0,f2.z,"brace");
         addMember(members,a,b,"مهاربند ضربدری دیوار","wallBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true,
           analysisJointAssumption:"shared-node-rotational-continuity",physicalConnectionStatus:"unverified"});
-        addMember(members,c,d,"مهاربند ضربدری دیوار","wallBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true});
+        addMember(members,c,d,"مهاربند ضربدری دیوار","wallBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true,
+          analysisJointAssumption:"shared-node-rotational-continuity",physicalConnectionStatus:"unverified"});
       });
       [-1,1].forEach(side=>{
         const x1=side<0?0:half,x2=side<0?half:span,y1=roofY(x1),y2=roofY(x2);
@@ -666,7 +667,8 @@
         const c=addNode(nodes,x2,y2,f1.z,"brace"),d=addNode(nodes,x1,y1,f2.z,"brace");
         addMember(members,a,b,"مهاربند ضربدری سقف","roofBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true,
           analysisJointAssumption:"shared-node-rotational-continuity",physicalConnectionStatus:"unverified"});
-        addMember(members,c,d,"مهاربند ضربدری سقف","roofBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true});
+        addMember(members,c,d,"مهاربند ضربدری سقف","roofBrace",{bay:bi+1,side:side<0?"left":"right",candidate:true,
+          analysisJointAssumption:"shared-node-rotational-continuity",physicalConnectionStatus:"unverified"});
       });
     });
     const loads=window.SteelLoads?.getData?.()||{};
