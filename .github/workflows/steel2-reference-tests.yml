@@ -41,6 +41,7 @@ on:
       - "steel2/js/connection-demand-registry.js"
       - "steel2/js/member-demand-3d.js"
       - "steel2/js/member-design-readiness.js"
+      - "steel2/js/member-design-demand-3d.js"
       - "steel2/js/connection-demand-ui.js"
       - "steel2/js/connection-weld-demand.js"
       - "steel2/js/connection-design.js"
