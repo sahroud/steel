@@ -86,6 +86,39 @@ test("3D mapping rejects truncated and overlong 12-component member force vector
   }
 });
 
+test("3D mapping preserves concurrent internal-force stations per combination", () => {
+  const samples = [
+    {x:0,N:1000,Vy:10,Vz:20,T:30,My:40,Mz:50},
+    {x:3,N:1100,Vy:11,Vz:21,T:31,My:41,Mz:51},
+    {x:6,N:1200,Vy:12,Vz:22,T:32,My:42,Mz:52}
+  ];
+  const result = api.buildCompressionDemandRowsFrom3D([
+    {id:"ULS-1",members:[{id:"M1",length:6,localEndForces:vector,samples}]},
+    {id:"ULS-2",members:[{id:"M1",length:6,localEndForces:vector,samples:samples.map(x=>({...x,My:x.My*2}))}]}
+  ], model);
+  const row=result.members[0];
+  assert.equal(result.success,true,JSON.stringify(result.issues));
+  assert.equal(row.stationCoverageComplete,true);
+  assert.deepEqual(row.stationCases[0].stations,samples);
+  assert.equal(row.stationCases[1].stations[1].My,82);
+  assert.equal(row.simultaneousCases.length,2);
+});
+test("missing, malformed, or incomplete internal-force stations are explicitly not assessable", () => {
+  const good = [
+    {x:0,N:1,Vy:0,Vz:0,T:0,My:0,Mz:0},
+    {x:6,N:1,Vy:0,Vz:0,T:0,My:0,Mz:0}
+  ];
+  const cases = [
+    {id:"NO-STATIONS",members:[{id:"M1",length:6,localEndForces:vector}]},
+    {id:"BAD-STATIONS",members:[{id:"M1",length:6,localEndForces:vector,samples:[...good,{x:3,N:1,Vy:0,Vz:0,T:0,My:0,Mz:Infinity}]}]},
+    {id:"NO-ENDPOINT",members:[{id:"M1",length:6,localEndForces:vector,samples:[{...good[0],x:1},good[1]]}]}
+  ];
+  for (const c of cases) {
+    const row=api.buildCompressionDemandRowsFrom3D([c],model).members[0];
+    assert.equal(row.stationCoverageComplete,false,c.id);
+    assert.equal(row.coverageComplete,true,c.id);
+  }
+});
 test("3D mapping rejects nonnumeric force components without coercing them", () => {
   for (const bad of [null, "", "   ", true, Infinity, NaN]) {
     const badVector = vector.slice();
