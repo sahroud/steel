@@ -166,9 +166,9 @@ test("roof purlin, longitudinal wall girt and end-wall girt loads reach the 3D s
 test("triangular end-wall wind reaches the 3D solver with conserved force and base moment for both signs",()=>{
  global.window=global;
  global.document=global.document||{readyState:"loading",addEventListener(){},getElementById(){return null},querySelectorAll(){return[]}};
- const transfer=require("../js/load-transfer.js");
+ require("../js/load-transfer.js");
  require("../js/analysis-3d.js");
- const solver=global.SteelFrame3D;
+ const transfer=global.SteelLoadTransfer,solver=global.SteelFrame3D;
  assert.ok(solver&&typeof solver.analyze==="function");
  const span=12,rise=2,eave=4,pressure=0.75,intervals=3,zFace=0;
  const section={E:200e9,G:80e9,A:0.012,Iy:2.5e-5,Iz:7.5e-5,J:1.8e-6};
