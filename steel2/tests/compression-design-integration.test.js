@@ -170,7 +170,8 @@ test("concurrent member demand integration refuses missing solver cases",()=>{
 
 
 test("end-to-end real 3D solver actions reach concurrent member design candidates unchanged",()=>{
- const solver=require("../js/analysis-3d.js");
+ require("../js/analysis-3d.js");
+ const solver=global.SteelFrame3D;
  const demandApi=require("../js/member-demand-3d.js");
  require("../js/member-design-demand-3d.js");
  global.SahroudMemberDemand3D=demandApi;
