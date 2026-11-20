@@ -131,3 +131,18 @@ test("knee weld demand UI reports local parallel and transverse components",()=>
  assert.match(source,/موازی محور جوش/);
  assert.match(source,/عمود بر محور جوش/);
 });
+
+test("block shear geometry audit module loads before knee UI",()=>{
+ const html=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
+ const detail=html.indexOf("js/knee-connection-detail.js");
+ const geometry=html.indexOf("js/knee-block-shear-geometry.js");
+ const ui=html.indexOf("js/knee-connection-detail-ui.js");
+ assert.ok(detail>=0&&geometry>detail&&ui>geometry);
+});
+test("knee detail UI exposes explicit force-direction candidate block shear audit without capacity approval",()=>{
+ assert.match(source,/btnKneeBlockShearGeometry/);
+ assert.match(source,/SahroudKneeBlockShearGeometry\.assess/);
+ assert.match(source,/SahroudKneeConnectionDetail\.analyzeHoleLayout/);
+ assert.match(source,/راستای نیرو باید با دو مؤلفه محلی صریح/);
+ assert.match(source,/هیچ ظرفیت، ضریب Ubs، کنترل آیین‌نامه‌ای یا PASS\/FAIL صادر نشده است/);
+});
