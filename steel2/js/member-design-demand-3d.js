@@ -27,7 +27,7 @@
       memberById.set(id,{member,length});
     });
     const expected=new Set(memberById.keys());
-    const rows=new Map([...expected].map(id=>[id,{id,candidates:[],governing:{}}]));
+    const rows=new Map([...expected].map(id=>[id,{id,candidates:[],governing:{},sectionPropertyFingerprint:null,sectionOrientationVerified:false,sectionRollDeg:null,localAxes:null}]));
     const seenCases=new Set();
     combinationRun.combinationResults.forEach(item=>{
       const caseId=String(item?.id??"").trim();
@@ -47,6 +47,19 @@
         const row=rows.get(id);
         if(!row)throw new Error("عضو خارج از مدل مرجع در نتایج طراحی دیده شد: "+id);
         if(!Array.isArray(member.samples)||!member.samples.length)throw new Error("ایستگاه‌های تقاضای عضو "+id+" در ترکیب "+item.id+" موجود نیست.");
+        const fingerprint=String(member.sectionPropertyFingerprint??"").trim();
+        if(!fingerprint)throw new Error("شناسنامه مقطع عضو "+id+" در نتیجه تحلیل موجود نیست؛ تقاضا قابل اتصال به مقطع نیست.");
+        if(member.sectionOrientationVerified!==true||!member.localAxesVerified||!member.localAxes)
+          throw new Error("جهت نصب یا محورهای محلی عضو "+id+" در نتیجه تحلیل تأیید نشده است.");
+        const axesKey=JSON.stringify(member.localAxes);
+        const rowMeta={fingerprint,roll:member.sectionRollDeg,axesKey};
+        if(row.sectionPropertyFingerprint===null){
+          row.sectionPropertyFingerprint=fingerprint;row.sectionOrientationVerified=true;
+          row.sectionRollDeg=member.sectionRollDeg;row.localAxes=member.localAxes;
+          row._axesKey=axesKey;
+        }else if(row.sectionPropertyFingerprint!==fingerprint||row.sectionRollDeg!==member.sectionRollDeg||row._axesKey!==axesKey){
+          throw new Error("شناسنامه مقطع، زاویه چرخش یا محورهای محلی عضو "+id+" بین ترکیبات بار یکسان نیست.");
+        }
         const seenStations=new Set();
         member.samples.forEach(sample=>{
           const values={};
@@ -77,7 +90,7 @@
     if(seenCases.size!==combinationRun.caseCount)throw new Error("تعداد ترکیبات حل‌شده با تعداد مورد انتظار برابر نیست.");
     const members=[...rows.values()].map(row=>{
       if(!row.candidates.length)throw new Error("هیچ بردار تقاضایی برای عضو "+row.id+" بازیابی نشد.");
-      return {...row,candidateCount:row.candidates.length};
+      const {_axesKey,...publicRow}=row;return {...publicRow,candidateCount:row.candidates.length};
     });
     return {success:true,method:"concurrent-six-component-per-combination-and-station",
       caseCount:seenCases.size,caseIds:[...seenCases],memberCount:members.length,members,
