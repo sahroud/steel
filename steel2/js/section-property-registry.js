@@ -55,8 +55,8 @@
   for(const node of nodes){
    const id=String(node&&node.id||"");
    if(!id||nodeMap.has(id)){errors.push("شناسه گره خالی یا تکراری است: "+id);continue;}
-   const xyz=[node.x,node.y,node.z].map(Number);
-   if(xyz.some(v=>!Number.isFinite(v))){errors.push("مختصات گره "+id+" نامعتبر است.");continue;}
+   const xyz=[node.x,node.y,node.z];
+   if(xyz.some(v=>!numericInput(v))){errors.push("مختصات گره "+id+" نامعتبر است.");continue;}
    nodeMap.set(id,{x:xyz[0],y:xyz[1],z:xyz[2]});
   }
   const seen=new Set(),items=[];
