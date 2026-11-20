@@ -10,7 +10,7 @@ function input(){
   {id:"ULS-B",label:"ULS B",analysis:{success:true}}
  ]};
  const demandApi={extractCase:analysis=>({memberCount:2,members:[
-  {id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+  {id:"M1",length:5,sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},{x:5,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
   {id:"M2",sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12},{x:4,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
  ]})};
  return {model,combinationRun,demandApi};
