@@ -151,9 +151,9 @@ test("roof purlin, longitudinal wall girt and end-wall girt loads reach the 3D s
  assert.equal(result.loadAssemblyAudit.ok,true);
  assert.equal(result.equilibrium.ok,true);
  assert.equal(result.memberCount,3);
- const expectedVerticalKN=-(0.48*6+1.2*6+1.05*12);
+ const purlinWind=structural.windMemberLineLoadGlobal(members[0],{span:12,rise:2},1,1);\n const expectedVerticalReactionKN=(0.48-purlinWind[1])*6+1.2*6+1.05*12;
  const reactionsY=result.reactions.reduce((sum,r)=>sum+Number(r.values[1]||0),0);
- assert.ok(Math.abs(reactionsY/1000-expectedVerticalKN)<1e-7);
+ assert.ok(Math.abs(reactionsY/1000-expectedVerticalReactionKN)<1e-7);
  const expectedWindXKN=structural.windMemberLineLoadGlobal(members[0],{span:12,rise:2},1,1)[0]*6+
   structural.windMemberLineLoadGlobal(members[1],{span:12,rise:2},1,1)[0]*6;
  const reactionsX=result.reactions.reduce((sum,r)=>sum+Number(r.values[0]||0),0);
