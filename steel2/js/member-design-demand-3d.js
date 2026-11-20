@@ -43,9 +43,14 @@
       recovered.members.forEach(member=>{
         const id=String(member?.id??"").trim();
         if(!id||recoveredIds.has(id))throw new Error("شناسه عضو در نتایج ترکیب "+item.id+" خالی یا تکراری است: "+id);
+        if(!rows.has(id))throw new Error("عضو خارج از مدل مرجع در نتایج طراحی دیده شد: "+id);
         recoveredIds.add(id);
+      });
+      const missing=[...expected].filter(id=>!recoveredIds.has(id));
+      if(missing.length)throw new Error("اعضای مدل در نتایج ترکیب "+item.id+" مفقودند: "+missing.join("، "));
+      recovered.members.forEach(member=>{
+        const id=String(member?.id??"").trim();
         const row=rows.get(id);
-        if(!row)throw new Error("عضو خارج از مدل مرجع در نتایج طراحی دیده شد: "+id);
         if(!Array.isArray(member.samples)||!member.samples.length)throw new Error("ایستگاه‌های تقاضای عضو "+id+" در ترکیب "+item.id+" موجود نیست.");
         const seenStations=new Set();
         member.samples.forEach(sample=>{
@@ -83,8 +88,6 @@
           throw new Error("شناسنامه مقطع، زاویه چرخش یا محورهای محلی عضو "+id+" بین ترکیبات بار یکسان نیست.");
         }
       });
-      const missing=[...expected].filter(id=>!recoveredIds.has(id));
-      if(missing.length)throw new Error("اعضای مدل در نتایج ترکیب "+item.id+" مفقودند: "+missing.join("، "));
     });
     if(seenCases.size!==combinationRun.caseCount)throw new Error("تعداد ترکیبات حل‌شده با تعداد مورد انتظار برابر نیست.");
     const members=[...rows.values()].map(row=>{
