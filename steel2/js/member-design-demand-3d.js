@@ -6,7 +6,8 @@
 (function(root){
   "use strict";
   const COMPONENTS=["N","Vy","Vz","T","My","Mz"];
-  const finiteInput=value=>value!==null&&value!==undefined&&value!==""&&Number.isFinite(Number(value));
+  const finiteInput=value=>(typeof value==="number"&&Number.isFinite(value))||
+    (typeof value==="string"&&value.trim()!==""&&Number.isFinite(Number(value)));
   function build(combinationRun,model,demandApi){
     if(!combinationRun||combinationRun.success!==true||
        !Number.isInteger(combinationRun.caseCount)||combinationRun.caseCount<=0||
