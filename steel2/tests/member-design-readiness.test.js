@@ -81,6 +81,15 @@ test("rejects duplicate combination-station candidates",()=>{
  assert.equal(r.rows[0].inputStatus,"INCOMPLETE");
  assert.ok(r.rows[0].issues.some(x=>x.includes("تکراری")));
 });
+test("rejects boolean and whitespace force components and station coordinates",()=>{
+ const {model,demand}=fixture();
+ for(const bad of [true,false,"   "]){
+  demand.members[0].candidates[0].values.Vy=bad;
+  assert.equal(api.audit(model,demand).rows[0].inputStatus,"INCOMPLETE");
+ }
+ const x=fixture();x.demand.members[0].candidates[0].x=false;
+ assert.equal(api.audit(x.model,x.demand).rows[0].inputStatus,"INCOMPLETE");
+});
 test("throws when the model or design-demand package is absent",()=>{
  assert.throws(()=>api.audit({members:[]},{}),/مدل اعضا/);
  const {model}=fixture();assert.throws(()=>api.audit(model,null),/بسته تقاضا/);
