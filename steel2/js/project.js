@@ -136,6 +136,11 @@
             data.memberInitialSections = window.SahroudMemberInitialSectionUI.getData();
         }
 
+        if (window.SahroudMemberEndConnectionUI &&
+            typeof window.SahroudMemberEndConnectionUI.getData === "function") {
+            data.memberEndConnections = window.SahroudMemberEndConnectionUI.getData();
+        }
+
         if (window.SteelOpenings &&
             typeof window.SteelOpenings.getData === "function") {
             data.openings = window.SteelOpenings.getData();
@@ -391,6 +396,11 @@
         if (data.climateLoadEngine && window.SteelClimateLoadEngine &&
             typeof window.SteelClimateLoadEngine.setData === "function") {
             window.SteelClimateLoadEngine.setData(data.climateLoadEngine);
+        }
+
+        if (window.SahroudMemberEndConnectionUI &&
+            typeof window.SahroudMemberEndConnectionUI.setData === "function") {
+            window.SahroudMemberEndConnectionUI.setData(data.memberEndConnections || []);
         }
 
         if (window.SteelStructuralModel && typeof window.SteelStructuralModel.setData === "function") {
