@@ -31,3 +31,35 @@ test("rejects a recovered member without station samples",()=>{
  const x=input();x.demandApi.extractCase=()=>({memberCount:2,members:[{id:"M1",samples:[]},{id:"M2",samples:[{x:1,N:0,Vy:0,Vz:0,T:0,My:0,Mz:0}]}]});
  assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/ایستگاه‌های تقاضا/);
 });
+
+test("rejects duplicate recovered member IDs even when reported count matches",()=>{
+ const x=input();
+ x.demandApi.extractCase=()=>({memberCount:2,members:[
+  {id:"M1",samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+  {id:"M1",samples:[{x:1,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]}
+ ]});
+ assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/تکراری/);
+});
+test("rejects a missing member hidden by an incorrect reported count",()=>{
+ const x=input();
+ x.demandApi.extractCase=()=>({memberCount:2,members:[
+  {id:"M1",samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]}
+ ]});
+ assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/تعداد واقعی/);
+});
+test("rejects demand stations outside the actual member length",()=>{
+ const x=input();
+ x.demandApi.extractCase=()=>({memberCount:2,members:[
+  {id:"M1",samples:[{x:5.1,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+  {id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+ ]});
+ assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/خارج از طول/);
+});
+test("rejects duplicate station coordinates within one member and combination",()=>{
+ const x=input();
+ x.demandApi.extractCase=()=>({memberCount:2,members:[
+  {id:"M1",samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},{x:0,N:2,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+  {id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+ ]});
+ assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/ایستگاه تقاضای تکراری/);
+});
