@@ -69,6 +69,10 @@
    "<div class='notice'>محاسبات زیر فقط حالت‌های حدی پیچی اتکایی و ورق را که داده‌های هندسی/تقاضای آن‌ها صریح وارد شده باشد بررسی می‌کند. توزیع نیرو بین پیچ‌ها و خطوط جوش، سطوح مقطع خالص، مسیر برش قالبی و اثر اهرمی باید مستند باشند. کنترل جوش فعلاً فقط جزئیات هندسی جوش گوشه را پوشش می‌دهد؛ ظرفیت جوش و فلز پایه هنوز تأیید نشده است.</div>"+
    "<div class='notice'><b>ورودی جوش منقطع:</b> برای هر قطعه، continuity='intermittent'، شناسه مشترک intermittentGroupId، وضعیت خوردگی corrosionCondition و مختصات startMm/endMm را وارد کنید. کاربرد intermittentUseCase باید یکی از web-to-flange-built-up-girder، flange-cover-plate، web-stiffener یا built-up-member-component باشد. وضعیت خوردگی corrosionCondition یکی از protected، painted، unpainted-noncorrosive یا weather-exposed-unpainted است. تمام قطعات یک گروه باید روی یک ورق و یک وجه و روی یک خط مستقیم باشند؛ برای هر ردیف یا وجه، گروه جدا تعریف کنید. در صورت نبود اطلاعات، نتیجه قابل ارزیابی نیست و نرم‌افزار فاصله را حدس نمی‌زند. فاصله آزاد بین قطعات متوالی، نه فاصله محور تا محور، سنجیده می‌شود.</div>"+
    "<div class='button-grid'><button id='btnKneeCapacityTemplate' class='btn secondary' type='button'>ساخت قالب داده‌های ظرفیت</button><button id='btnKneeCapacityRun' class='btn primary' type='button'>محاسبه ظرفیت‌های پیچی/ورق</button></div>"+
+   "<div class='field'><label for='kneeBlockShearPlateId'>شناسه ورق برای استخراج مسیر برش قالبی</label><input id='kneeBlockShearPlateId' type='text' placeholder='شناسه دقیق ورق از JSON'></div>"+
+   "<div class='field'><label>راستای نیروی محلی ورق (بدون حدس خودکار)</label><div class='button-grid'><input id='kneeBlockShearForceX' type='number' step='any' placeholder='Fx محلی'><input id='kneeBlockShearForceY' type='number' step='any' placeholder='Fy محلی'></div></div>"+
+   "<div class='button-grid'><button id='btnKneeBlockShearGeometry' class='btn secondary' type='button'>استخراج مسیرهای کاندید برش قالبی</button></div>"+
+   "<div id='kneeBlockShearGeometryResult' aria-live='polite' class='notice'>برای استخراج مسیر، ورق و راستای نیرو را صریح وارد کنید؛ این گزارش ظرفیت طراحی نیست.</div>"+
    "<div class='field'><label for='kneeCapacityJson'>تقاضاها، سطوح مقطع و مسیرهای گسیختگی (JSON)</label><textarea id='kneeCapacityJson' rows='16' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
    "<div id='kneeCapacityResult' aria-live='polite' class='notice'>محاسبه ظرفیت هنوز اجرا نشده است.</div>"+
    "<div class='field'><label for='kneeDetailJson'>جزئیات اتصال (JSON)</label><textarea id='kneeDetailJson' rows='18' spellcheck='false' dir='ltr' style='width:100%;font-family:monospace;white-space:pre;'></textarea></div>"+
@@ -178,6 +182,33 @@
      "<ul>"+report.notEvaluated.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
     $("kneeCapacityResult").dataset.valid="true";
    }catch(e){$("kneeCapacityResult").textContent="محاسبه ظرفیت متوقف شد: "+e.message;$("kneeCapacityResult").dataset.valid="false";}
+  });
+  $("btnKneeBlockShearGeometry").addEventListener("click",()=>{
+   try{
+    const detail=JSON.parse($("kneeDetailJson").value);
+    const plateId=$("kneeBlockShearPlateId").value.trim();
+    const fx=Number($("kneeBlockShearForceX").value),fy=Number($("kneeBlockShearForceY").value);
+    if(!plateId)throw new Error("شناسه ورق باید از نقشه و JSON انتخاب شود.");
+    if(!Number.isFinite(fx)||!Number.isFinite(fy)||(Math.hypot(fx,fy)<=1e-9))throw new Error("راستای نیرو باید با دو مؤلفه محلی صریح و غیرصفر وارد شود.");
+    const plate=(detail.plates||[]).find(p=>String(p.id)===plateId);
+    if(!plate)throw new Error("ورق با شناسه واردشده در جزئیات پیدا نشد.");
+    const layout=root.SahroudKneeConnectionDetail.analyzeHoleLayout(detail,plateId,{forceDirectionLocal:{x:fx,y:fy}});
+    const report=root.SahroudKneeBlockShearGeometry.assess({plate,holes:layout.holes,forceDirectionLocal:{x:fx,y:fy},rowToleranceMm:layout.rowToleranceMm});
+    const rows=(report.rows||[]).map(r=>"<tr><td>"+r.rowId+"</td><td>"+Number(r.transverseProjectionMm).toFixed(2)+"</td><td>"+r.boltIds.map(esc).join("، ")+"</td></tr>").join("");
+    const candidates=(report.candidates||[]).map(c=>"<tr><td>"+esc(c.pathId)+"</td><td>"+c.rowIds.join(" / ")+"</td><td>"+c.gross.AgvLengthMm.toFixed(2)+"</td><td>"+c.netGeometry.AnvLengthMm.toFixed(2)+"</td><td>"+c.gross.AntLengthMm.toFixed(2)+"</td><td>"+c.netGeometry.AntLengthMm.toFixed(2)+"</td><td>"+c.geometricAreas.AgvMm2.toFixed(1)+" / "+c.geometricAreas.AnvMm2.toFixed(1)+" / "+c.geometricAreas.AntMm2.toFixed(1)+"</td></tr>").join("");
+    const rejected=(report.rejected||[]).map(x=>"<li>ردیف‌های "+x.rows.join(" و ")+": "+esc(x.reason)+"</li>").join("");
+    $("kneeBlockShearGeometryResult").innerHTML="<p><b>وضعیت هندسی: "+esc(report.status)+"</b></p>"+
+     "<p>ردیف پیچ: "+(report.rows||[]).length+"؛ مسیر کاندید: "+(report.candidates||[]).length+"؛ مسیر ردشده: "+(report.rejected||[]).length+"</p>"+
+     "<div style='overflow-x:auto'><table><thead><tr><th>ردیف</th><th>مختصات عرضی (mm)</th><th>پیچ‌ها</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
+     "<div style='overflow-x:auto'><table><thead><tr><th>مسیر</th><th>ردیف‌ها</th><th>Agv طول</th><th>Anv طول هندسی</th><th>Ant طول</th><th>Ant خالص هندسی</th><th>مساحت‌های هندسی Agv/Anv/Ant (mm²)</th></tr></thead><tbody>"+candidates+"</tbody></table></div>"+
+     (rejected?"<h4>مسیرهای ردشده</h4><ul>"+rejected+"</ul>":"")+
+     "<p><b>این مقادیر فقط هندسه کاندید هستند؛ هیچ ظرفیت، ضریب Ubs، کنترل آیین‌نامه‌ای یا PASS/FAIL صادر نشده است.</b></p>"+
+     "<ul>"+(report.candidates||[]).flatMap(c=>c.limitations||[]).filter((x,i,a)=>a.indexOf(x)===i).map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
+    $("kneeBlockShearGeometryResult").dataset.valid=report.valid?"true":"false";
+   }catch(e){
+    $("kneeBlockShearGeometryResult").textContent="استخراج مسیر برش قالبی متوقف شد: "+e.message;
+    $("kneeBlockShearGeometryResult").dataset.valid="false";
+   }
   });
   $("btnKneeDetailMapDemand").addEventListener("click",()=>{
    try{
