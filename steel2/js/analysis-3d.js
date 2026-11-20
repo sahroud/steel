@@ -285,6 +285,7 @@ function memberReleasedRotations(member){
  const spec=member.endReleases;
  if(spec==null)return [];
  if(typeof spec!=="object"||Array.isArray(spec))throw Error("endReleases عضو "+member.id+" باید شیء با انتهای i/j باشد.");
+ Object.keys(spec).forEach(end=>{if(end!=="i"&&end!=="j")throw Error("شناسه انتهای آزادسازی نامعتبر در عضو "+member.id+": "+end);});
  const out=[];
  for(const end of ["i","j"]){
   const axes=spec[end];
