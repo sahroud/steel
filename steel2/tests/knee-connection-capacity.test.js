@@ -26,7 +26,7 @@ function designFixture(){
    weldActions:[{weldId:"W1",demandKN:4,direction:"axial-parallel-to-weld-axis",sourceReference:"CALC-01 page 6"}],
    bearingChecks:[{boltId:"B1",plateId:"P1",shearKN:8,LcMm:30,holeType:"standard"}],
    plateSectionChecks:[{plateId:"P1",tensionKN:10,shearKN:8,AgTensionMm2:1600,AeTensionMm2:1200,AgvMm2:800,AnvMm2:700,areaReference:"DWG-01 / net section S1"}],
-   blockShearChecks:[{plateId:"P1",demandKN:12,AgvMm2:500,AnvMm2:400,AntMm2:200,Ubs:1,ubsBasis:"تنش کششی یکنواخت در سطح کششی، CALC-01",pathReference:"DWG-01 / path BS-1"}]}]};
+   blockShearChecks:[{plateId:"P1",demandKN:12,AgvMm2:500,AnvMm2:400,AntMm2:200,Ubs:1,ubsBasis:"تنش کششی یکنواخت در سطح کششی، CALC-01",pathId:"BS-P1-01",pathReference:"DWG-01 / path BS-1"}]}]};
 }
 test("calculates a drawing-referenced bolt and plate limit-state set without approving the connection",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c);
@@ -200,7 +200,7 @@ test("rejects duplicate block-shear checks that hide an omitted plate",()=>{
 test("checks multiple distinct block-shear paths on the same plate independently",()=>{
  const d=detailFixture(),c=designFixture();
  c.loadCases[0].blockShearChecks.push({...c.loadCases[0].blockShearChecks[0],
-  demandKN:9,AgvMm2:450,AnvMm2:360,AntMm2:180,pathReference:"DWG-01 / path BS-2"});
+  demandKN:9,AgvMm2:450,AnvMm2:360,AntMm2:180,pathId:"BS-P1-02",pathReference:"DWG-01 / path BS-2"});
  const r=capacity.calculate(d,c);
  assert.equal(r.blockShearChecks.length,2);
  assert.deepEqual(r.blockShearChecks.map(x=>x.pathReference),["DWG-01 / path BS-1","DWG-01 / path BS-2"]);
@@ -210,4 +210,15 @@ test("rejects a duplicated block-shear path reference on the same plate",()=>{
  const d=detailFixture(),c=designFixture();
  c.loadCases[0].blockShearChecks.push({...c.loadCases[0].blockShearChecks[0]});
  assert.equal(capacity.validate(d,c).valid,false);
+});
+
+test("requires an explicit unique identity for each block-shear path",()=>{
+ const d=detailFixture(),c=designFixture();
+ delete c.loadCases[0].blockShearChecks[0].pathId;
+ assert.equal(capacity.validate(d,c).valid,false);
+ const e=designFixture();
+ e.loadCases[0].blockShearChecks.push({...e.loadCases[0].blockShearChecks[0],
+  pathId:"BS-P1-01",pathReference:"DWG-01 / path BS-2"});
+ assert.equal(capacity.validate(detailFixture(),e).valid,false);
+ assert.match(capacity.validate(detailFixture(),e).errors.join(" "),/شناسه مسیر/);
 });
