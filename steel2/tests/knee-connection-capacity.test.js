@@ -88,11 +88,14 @@ test("plate section checks evaluate gross yielding, net rupture, shear yielding 
  assert.deepEqual(checks.map(x=>x.limitState),["plate-tensile-yield","plate-tensile-rupture","plate-shear-yield","plate-shear-rupture"]);
  assert.ok(checks.every(x=>x.capacityKN>0));
 });
-test("block shear uses the explicit Ubs and path areas",()=>{
+test("block shear arithmetic remains provisional until path areas are geometry-verified",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c);
  const p=c.loadCases[0].blockShearChecks[0],m=d.plates[0].material;
  const expected=0.75*(Math.min(0.6*m.FyMPa*p.AgvMm2,0.6*m.FuMPa*p.AnvMm2)+p.Ubs*m.FuMPa*p.AntMm2)/1000;
- assert.ok(Math.abs(r.blockShearChecks[0].check.capacityKN-expected)<1e-10);
+ assert.equal(r.blockShearChecks[0].check.status,"NOT_ASSESSABLE");
+ assert.equal(r.blockShearChecks[0].check.capacityKN,null);
+ assert.ok(Math.abs(r.blockShearChecks[0].check.provisionalResistanceKN-expected)<1e-10);
+ assert.equal(r.blockShearChecks[0].geometryEvidenceStatus,"USER_SUPPLIED_UNVERIFIED");
 });
 test("missing prying assessment or per-bolt demand distribution prevents calculation",()=>{
  const d=detailFixture(),c=designFixture();delete c.loadCases[0].pryingAssessment;
