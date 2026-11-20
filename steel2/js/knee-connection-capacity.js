@@ -17,6 +17,32 @@
   const utilization=capacityKN>0?demandKN/capacityKN:Infinity;
   return{id,limitState,demandKN,capacityKN,utilization,status:utilization<=1+1e-9?"PASS":"FAIL",method,reference};
  }
+ function assessBlockShearGeometry(detail,check){
+  const geometry=root.SahroudKneeBlockShearGeometry,plate=(detail?.plates||[]).find(p=>String(p.id)===String(check?.plateId));
+  if(!geometry||typeof geometry.assess!=="function")return{status:"NOT_ASSESSABLE",reason:"ماژول هندسه مسیر بلوک برشی بارگذاری نشده است."};
+  if(!plate||!check?.forceDirectionLocal||!finite(check.forceDirectionLocal.x)||!finite(check.forceDirectionLocal.y)||
+     Math.hypot(check.forceDirectionLocal.x,check.forceDirectionLocal.y)<=1e-9)
+   return{status:"NOT_ASSESSABLE",reason:"ورق یا راستای نیروی محلی معتبر برای استخراج مسیر ارائه نشده است."};
+  let holes;
+  try{holes=(detail.bolts||[]).filter(b=>String(b.plateId)===String(plate.id)).map(b=>({
+   id:String(b.id),xMm:b.xMm,yMm:b.yMm,polygon:root.SahroudKneeConnectionDetail.buildHolePolygon(b)}));}
+  catch(error){return{status:"NOT_ASSESSABLE",reason:"تولید محیط واقعی سوراخ از داده نقشه ناموفق بود: "+error.message};}
+  const report=geometry.assess({plate:{id:String(plate.id),thicknessMm:plate.thicknessMm,polygonMm:plate.polygonMm},
+   holes,forceDirectionLocal:check.forceDirectionLocal,rowToleranceMm:check.rowToleranceMm??1});
+  if(!report.valid)return{status:"NOT_ASSESSABLE",reason:report.errors.join(" | "),report};
+  const candidate=report.candidates.find(c=>c.pathId===String(check.pathId));
+  if(!candidate)return{status:"NOT_ASSESSABLE",reason:"شناسه مسیر ورودی با هیچ مسیر کاندید استخراج‌شده از هندسه واقعی ورق و سوراخ‌ها تطبیق ندارد.",report};
+  const supplied={AgvMm2:check.AgvMm2,AnvMm2:check.AnvMm2,AntMm2:check.AntMm2},derived=candidate.geometricAreas,mismatches=[];
+  for(const key of Object.keys(supplied)){
+   const tolerance=Math.max(0.5,Math.abs(derived[key])*1e-6);
+   if(!finite(supplied[key])||Math.abs(supplied[key]-derived[key])>tolerance)
+    mismatches.push({area:key,suppliedMm2:supplied[key],derivedMm2:derived[key],toleranceMm2:tolerance});
+  }
+  if(mismatches.length)return{status:"NOT_ASSESSABLE",reason:"مساحت‌های ورودی با مساحت‌های استخراج‌شده از مسیر هندسی یکسان نیستند.",report,candidate,mismatches};
+  return{status:"GEOMETRY_MATCHED_CODE_REVIEW_REQUIRED",report,candidate,
+   verifiedAreasMm2:{AgvMm2:derived.AgvMm2,AnvMm2:derived.AnvMm2,AntMm2:derived.AntMm2},
+   limitations:["تطبیق هندسی مساحت‌ها به‌تنهایی مسیر شکست آیین‌نامه‌ای، قواعد سوراخ لوبیایی، ضرایب مسیر پلکانی یا مبنای Ubs را تأیید نمی‌کند."]};
+ }
  function validate(detail,design){
   const errors=[],warnings=[];
   if(!root.SahroudKneeConnectionDetail||typeof root.SahroudKneeConnectionDetail.validate!=="function")
@@ -131,6 +157,9 @@
     if(plateIds.has(plateId))blockShearPlateIds.add(plateId);
     ["demandKN","AgvMm2","AnvMm2","AntMm2"].forEach(k=>{if(!positive(p[k]))fail(errors,"مقدار "+k+" در برش قالبی باید مثبت و صریح باشد.");});
     if(![0.5,1].includes(p.Ubs))fail(errors,"Ubs فقط می‌تواند 0.5 یا 1 باشد و مبنای انتخاب باید مستند شود.");
+    if(!p.forceDirectionLocal||!finite(p.forceDirectionLocal.x)||!finite(p.forceDirectionLocal.y)||
+       Math.hypot(p.forceDirectionLocal.x,p.forceDirectionLocal.y)<=1e-9)
+     fail(errors,"راستای نیروی محلی ورق برای استخراج هندسه مسیر برش قالبی الزامی است.");
    });
    for(const plateId of plateIds){if(!blockShearPlateIds.has(plateId))fail(errors,"برای ورق "+plateId+" هیچ مسیر برش قالبی ارائه نشده است.");}
   });
@@ -233,20 +262,19 @@
      limitations:["Ag، Ae، Agv وAnv از هندسه واقعی ورق، سوراخ‌ها و مسیر انتقال نیرو استخراج و راستی‌آزمایی نشده‌اند."]});
    }
    for(const p of c.blockShearChecks){
-    const plate=plateById.get(String(p.plateId)),m=plate.material;
+    const plate=plateById.get(String(p.plateId)),m=plate.material,geometryAudit=assessBlockShearGeometry(detail,p);
     const Rn=Math.min(0.6*m.FyMPa*p.AgvMm2,0.6*m.FuMPa*p.AnvMm2)+p.Ubs*m.FuMPa*p.AntMm2;
-    const provisionalResistance=factor(method,PHI_RUPTURE,OMEGA_RUPTURE)*Rn/1000;
-    // Areas are currently user-entered values; a drawing reference alone does not
-    // prove that the net/gross shear and tension paths were derived from plate/hole geometry.
-    // Preserve the arithmetic as provisional only and never issue PASS/FAIL for this limit state.
+    const provisionalResistance=geometryAudit.status==="GEOMETRY_MATCHED_CODE_REVIEW_REQUIRED"
+     ?factor(method,PHI_RUPTURE,OMEGA_RUPTURE)*Rn/1000:null;
     const check={id:c.id+":"+p.plateId+":"+p.pathId,limitState:"plate-block-shear",
      demandKN:p.demandKN,capacityKN:null,provisionalResistanceKN:provisionalResistance,
      utilization:null,status:"NOT_ASSESSABLE",method,
-     reference:"مبحث دهم ۱۴۰۱، بند برش قالبی؛ سطوح Agv/Anv/Ant هنوز از هندسه ورق و سوراخ‌ها به‌طور خودکار استخراج و راستی‌آزمایی نشده‌اند."};
+     reference:"مبحث دهم ۱۴۰۱؛ تطبیق هندسی مسیر انجام می‌شود، اما مسیر شکست آیین‌نامه‌ای و مبنای Ubs هنوز نیازمند بررسی مستقل‌اند."};
     blockShearChecks.push({caseId:c.id,plateId:p.plateId,pathId:p.pathId,check,pathReference:p.pathReference,
-     geometryEvidenceStatus:"USER_SUPPLIED_UNVERIFIED",Ubs:p.Ubs,ubsBasis:p.ubsBasis,
-     limitations:["مساحت‌های Agv، Anv و Ant ورودی کاربر هستند و از مسیر هندسی اثبات‌شده استخراج نشده‌اند.",
-      "شماره نقشه و شناسه مسیر به‌تنهایی اثبات‌کننده مسیر واقعی شکست نیستند."]});
+     geometryEvidenceStatus:geometryAudit.status,geometryAudit,Ubs:p.Ubs,ubsBasis:p.ubsBasis,
+     limitations:["تطبیق مساحت هندسی به معنی تأیید مسیر شکست آیین‌نامه‌ای یا Ubs نیست.",
+      "ضرایب و قواعد مسیر پلکانی و سوراخ لوبیایی باید با متن رسمی مبحث دهم تطبیق داده شوند.",
+      "ظرفیت نهایی عمداً NOT_ASSESSABLE باقی می‌ماند."]});
    }
   }
   const every=[...boltChecks,...bearingChecks,...plateChecks.flatMap(p=>p.checks),...blockShearChecks.map(p=>p.check),...weldChecks.map(p=>p.check)];
@@ -267,7 +295,7 @@
     "قبولی این کنترل‌های جزئی به معنی قبولی کل اتصال یا آمادگی ساخت و اجرا نیست."
    ]};
  }
- const api={SCHEMA,validate,calculate};
+ const api={SCHEMA,validate,calculate,assessBlockShearGeometry};
  root.SahroudKneeConnectionCapacity=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
