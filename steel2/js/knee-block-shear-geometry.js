@@ -20,7 +20,28 @@ if(!finite(tol)||tol<=0)errors.push("تلرانس ردیف‌بندی باید �
 if(errors.length)return{valid:false,status:"NOT_ASSESSABLE",errors,candidates:[]};
 const P=p.polygonMm.map(q=>({x:+q.x,y:+q.y})),L=Math.hypot(fd.x,fd.y),u={x:fd.x/L,y:fd.y/L},v={x:-u.y,y:u.x};
 const H=holes.map(h=>({id:String(h.id),c:{x:+(h.center?.x??h.xMm),y:+(h.center?.y??h.yMm)},poly:h.polygon||h.polygonMm}));
-if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!Array.isArray(h.poly)||h.poly.length<8))return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه کامل محیط سوراخ‌ها الزامی است."],candidates:[]};
+if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!Array.isArray(h.poly)||h.poly.length<8||
+ h.poly.some(q=>!q||!finite(q.x)||!finite(q.y))))return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه کامل و متناهی محیط سوراخ‌ها الزامی است."],candidates:[]};
+const plateEdges=P.map((q,i)=>[q,P[(i+1)%P.length]]);
+for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
+ if(j===i+1||(i===0&&j===P.length-1))continue;
+ if(hit(P[i],P[(i+1)%P.length],P[j],P[(j+1)%P.length])!==null)
+  return{valid:false,status:"NOT_ASSESSABLE",errors:["مرز ورق خودمتقاطع است."],candidates:[]};
+}
+for(const h of H){
+ if(!inside(h.c,h.poly)||!h.poly.every(q=>inside(q,P)))
+  return{valid:false,status:"NOT_ASSESSABLE",errors:["مرکز و تمام محیط سوراخ "+h.id+" باید داخل ورق و داخل خود سوراخ معتبر باشند."],candidates:[]};
+ for(let i=0;i<h.poly.length;i++)for(const [a,b] of plateEdges)
+  if(hit(h.poly[i],h.poly[(i+1)%h.poly.length],a,b)!==null)
+   return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ "+h.id+" با مرز ورق تقاطع دارد یا از آن عبور می‌کند."],candidates:[]};
+}
+for(let i=0;i<H.length;i++)for(let j=i+1;j<H.length;j++){
+ let overlap=false;
+ for(let a=0;a<H[i].poly.length&&!overlap;a++)for(let b=0;b<H[j].poly.length;b++)
+  if(hit(H[i].poly[a],H[i].poly[(a+1)%H[i].poly.length],H[j].poly[b],H[j].poly[(b+1)%H[j].poly.length])!==null){overlap=true;break;}
+ if(overlap||inside(H[i].c,H[j].poly)||inside(H[j].c,H[i].poly))
+  return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ‌های "+H[i].id+" و "+H[j].id+" هم‌پوشانی دارد."],candidates:[]};
+}
 const sorted=H.map(h=>({...h,s:dot(h.c,u),t:dot(h.c,v)})).sort((a,b)=>a.t-b.t),rows=[];
 for(const h of sorted){let r=rows.find(q=>Math.abs(q.t-h.t)<=tol);if(!r){r={t:h.t,holes:[]};rows.push(r);}r.holes.push(h);}
 rows.forEach(r=>r.holes.sort((a,b)=>a.s-b.s));
