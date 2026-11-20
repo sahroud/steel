@@ -270,8 +270,13 @@ test("production roof and wall bracing form connected load paths to supports and
  };
  braces.forEach(brace=>{
   [brace.start,brace.end].forEach(nodeId=>{
-   assert.ok(nonBrace.some(m=>m.start===nodeId||m.end===nodeId),
-    brace.id+" endpoint "+nodeId+" must share a real frame/purlin/girt node");
+   const incident=nonBrace.filter(m=>m.start===nodeId||m.end===nodeId);
+   assert.ok(incident.length>0,
+    brace.id+" endpoint "+nodeId+" must share a real structural node");
+   const requiredPrimaryKey=brace.sectionKey==="wallBrace"?"column":"rafter";
+   assert.ok(incident.some(m=>m.sectionKey===requiredPrimaryKey),
+    brace.id+" endpoint "+nodeId+" must be connected by the same node ID to a real "+
+      requiredPrimaryKey+" member, not merely to an arbitrary non-brace member");
    assert.ok(reachesSupport(nodeId),brace.id+" endpoint "+nodeId+" must have a connected path to a support");
   });
  });
