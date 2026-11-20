@@ -161,3 +161,50 @@ test("roof purlin, longitudinal wall girt and end-wall girt loads reach the 3D s
  assert.ok(Math.abs(reactionsX/1000+expectedWindXKN)<1e-7);
  assert.ok(result.members.every(m=>m.localEndForces.length===12));
 });
+
+
+test("triangular end-wall wind reaches the 3D solver with conserved force and base moment for both signs",()=>{
+ global.window=global;
+ global.document=global.document||{readyState:"loading",addEventListener(){},getElementById(){return null},querySelectorAll(){return[]}};
+ const transfer=require("../js/load-transfer.js");
+ require("../js/analysis-3d.js");
+ const solver=global.SteelFrame3D;
+ assert.ok(solver&&typeof solver.analyze==="function");
+ const span=12,rise=2,eave=4,pressure=0.75,intervals=3,zFace=0;
+ const section={E:200e9,G:80e9,A:0.012,Iy:2.5e-5,Iz:7.5e-5,J:1.8e-6};
+ for(const sign of [1,-1]){
+  const actions=transfer.triangularGablePostEquivalentLoads(
+   pressure*sign,span,rise,eave,intervals
+  );
+  const nodes=[],members=[],nodalLoads=[];
+  actions.forEach(action=>{
+   const baseId="B"+action.post,headId="H"+action.post;
+   nodes.push({id:baseId,x:action.xM,y:0,z:zFace},{id:headId,x:action.xM,y:action.supportHeightM,z:zFace});
+   members.push({id:"C"+action.post,start:baseId,end:headId,sectionKey:"column"});
+   nodalLoads.push(
+    {nodeId:baseId,values:[0,0,action.baseForceKN*1000,0,action.momentYAboutSupportKNm*1000,0]},
+    {nodeId:headId,values:[0,0,action.topForceKN*1000,0,0,0]}
+   );
+  });
+  const supports=actions.map(action=>({nodeId:"B"+action.post,fixedDofs:[0,1,2,3,4,5]}));
+  const result=solver.analyze({nodes,members},{sectionResolver:()=>section,supports,nodalLoads});
+  assert.equal(result.success,true);
+  assert.equal(result.loadAssemblyAudit.ok,true);
+  assert.equal(result.equilibrium.ok,true);
+  const appliedFz=nodalLoads.reduce((sum,load)=>sum+load.values[2],0)/1000;
+  const appliedMy=nodalLoads.reduce((sum,load)=>sum+load.values[4],0)/1000000-
+   nodalLoads.reduce((sum,load)=>{
+    const node=nodes.find(n=>n.id===load.nodeId);
+    return sum+node.x*load.values[2];
+   },0)/1000000;
+  const analytic=transfer.triangularGableWindResultant(pressure*sign,span,rise);
+  const analyticMy=-pressure*sign*(span*span*rise/6);
+  assert.ok(Math.abs(appliedFz-analytic.resultantKN)<1e-9);
+  assert.ok(Math.abs(appliedMy-analyticMy)<1e-9);
+  assert.ok(Math.abs(result.equilibrium.appliedForce[2]/1000-appliedFz)<1e-7);
+  assert.ok(Math.abs(result.equilibrium.appliedMoment[1]/1000000-appliedMy)<1e-7);
+  assert.equal(result.reactions.length,actions.length);
+  const reactionFz=result.reactions.reduce((sum,reaction)=>sum+Number(reaction.values[2]||0),0)/1000;
+  assert.ok(Math.abs(reactionFz+appliedFz)<1e-7);
+ }
+});
