@@ -124,3 +124,12 @@ test("computes zero clearance for touching polygon boundaries",()=>{
  const a=[{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}],b=[{x:2,y:0},{x:4,y:0},{x:4,y:2},{x:2,y:2}];
  assert.ok(Math.abs(geo.polygonClearance(a,b))<1e-8);
 });
+
+test("rejects a hole polygon whose declared center is materially offset from its geometric centroid",()=>{
+ const d=fixture();
+ d.holes[0].polygon=d.holes[0].polygon.map(p=>({x:p.x+5,y:p.y}));
+ const r=geo.assess(d);
+ assert.equal(r.valid,false);
+ assert.equal(r.status,"NOT_ASSESSABLE");
+ assert.match(r.errors.join(" "),/مرکز هندسی/);
+});
