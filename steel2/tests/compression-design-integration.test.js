@@ -298,3 +298,104 @@ test("multi-member spatial frame transfers local-axis-specific six-component dem
  assert.equal(prepared.interactionReady,false);
  assert.equal(prepared.capacityChecksReady,false);
 });
+
+
+test("three-frame two-bay shed transfers every member station across all load combinations",()=>{
+ require("../js/analysis-3d.js");
+ const solver=global.SteelFrame3D;
+ const demandApi=require("../js/member-demand-3d.js");
+ require("../js/member-design-demand-3d.js");
+ global.SahroudMemberDemand3D=demandApi;
+ const section={E:200e9,G:80e9,A:0.016,Iy:3.8e-5,Iz:1.25e-4,J:2.8e-6};
+ const nodes=[],members=[];
+ const span=8,bay=6,eave=4,ridge=5.5;
+ const node=(id,x,y,z)=>{nodes.push({id,x,y,z});return id;};
+ const frames=[];
+ for(let frame=0;frame<3;frame++){
+  const y=frame*bay;
+  frames.push({
+   baseL:node("F"+frame+"-BL",0,y,0),
+   baseR:node("F"+frame+"-BR",span,y,0),
+   eaveL:node("F"+frame+"-EL",0,y,eave),
+   eaveR:node("F"+frame+"-ER",span,y,eave),
+   ridge:node("F"+frame+"-RG",span/2,y,ridge)
+  });
+ }
+ const add=(id,start,end,sectionKey,referenceAxis,q)=>{
+  const a=nodes.find(n=>n.id===start),b=nodes.find(n=>n.id===end);
+  const length=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+  members.push({id,start,end,length,sectionKey,type:sectionKey,
+   referenceAxis,sectionRollDeg:0,sectionOrientationVerified:true,
+   sectionPropertyFingerprint:"two-bay-shed-section-v1",
+   analysisLoad:{uniformLocal:q}});
+ };
+ frames.forEach((f,i)=>{
+  add("F"+i+"-COL-L",f.baseL,f.eaveL,"column",[0,1,0],[0,-35,8]);
+  add("F"+i+"-COL-R",f.baseR,f.eaveR,"column",[0,1,0],[0,-35,8]);
+  add("F"+i+"-RAF-L",f.eaveL,f.ridge,"rafter",[0,1,0],[0,-65,12]);
+  add("F"+i+"-RAF-R",f.ridge,f.eaveR,"rafter",[0,1,0],[0,-65,-12]);
+ });
+ for(let bayIndex=0;bayIndex<2;bayIndex++){
+  const a=frames[bayIndex],b=frames[bayIndex+1];
+  add("B"+bayIndex+"-EAVE-L",a.eaveL,b.eaveL,"tie",[0,0,1],[0,-18,0]);
+  add("B"+bayIndex+"-EAVE-R",a.eaveR,b.eaveR,"tie",[0,0,1],[0,-18,0]);
+  add("B"+bayIndex+"-RIDGE",a.ridge,b.ridge,"roofPurlin",[0,0,1],[0,-22,0]);
+  add("B"+bayIndex+"-SIDE-X1",a.baseL,b.eaveL,"brace",[1,0,0],[0,0,0]);
+  add("B"+bayIndex+"-SIDE-X2",a.eaveL,b.baseL,"brace",[1,0,0],[0,0,0]);
+  add("B"+bayIndex+"-ROOF-X1",a.eaveL,b.ridge,"brace",[0,0,1],[0,0,0]);
+  add("B"+bayIndex+"-ROOF-X2",a.ridge,b.eaveR,"brace",[0,0,1],[0,0,0]);
+ }
+ const modelData={nodes,members};
+ const supports=frames.flatMap(f=>[
+  {nodeId:f.baseL,fixedDofs:[0,1,2,3,4,5]},
+  {nodeId:f.baseR,fixedDofs:[0,1,2,3,4,5]}
+ ]);
+ const combinations=[
+  {id:"SHED-ULS-G",label:"SHED ULS G",factor:1},
+  {id:"SHED-ULS-S",label:"SHED ULS S",factor:1.25}
+ ].map(spec=>{
+  const nodalLoads=frames.flatMap(f=>[
+   {nodeId:f.ridge,values:[0,-700*spec.factor,120*spec.factor,35*spec.factor,20*spec.factor,15*spec.factor]},
+   {nodeId:f.eaveL,values:[0,-180*spec.factor,60*spec.factor,0,0,0]},
+   {nodeId:f.eaveR,values:[0,-180*spec.factor,-60*spec.factor,0,0,0]}
+  ]);
+  const analysis=solver.analyze(modelData,{sectionResolver:()=>section,supports,nodalLoads});
+  assert.equal(analysis.success,true);
+  assert.equal(analysis.loadAssemblyAudit.ok,true);
+  assert.equal(analysis.equilibrium.ok,true);
+  assert.equal(analysis.memberCount,members.length);
+  assert.equal(analysis.nodeCount,nodes.length);
+  assert.deepEqual(analysis.members.map(m=>m.id),members.map(m=>m.id));
+  assert.ok(analysis.members.every(m=>m.localEndForces.length===12));
+  return {id:spec.id,label:spec.label,analysis};
+ });
+ const orientations=new Set(combinations[0].analysis.members.map(m=>JSON.stringify(m.localAxes)));
+ assert.ok(orientations.size>=4,"columns, rafters, longitudinal members and braces exercise distinct spatial local axes");
+ const prepared=api.buildConcurrentMemberDesignDemandFrom3D(combinations,modelData);
+ assert.equal(prepared.success,true,JSON.stringify(prepared.issues));
+ assert.equal(prepared.caseCount,2);
+ assert.equal(prepared.memberCount,members.length);
+ for(const combination of combinations){
+  const recovered=demandApi.extractCase({
+   ...combination.analysis,loadCase:combination.id,loadCaseLabel:combination.label
+  },modelData);
+  assert.equal(recovered.memberCount,members.length);
+  for(const member of recovered.members){
+   const row=prepared.members.find(x=>x.id===member.id);
+   assert.ok(row,"member "+member.id+" must be transferred");
+   const candidates=row.candidates.filter(c=>c.combinationId===combination.id);
+   assert.equal(candidates.length,member.samples.length,member.id+" station count");
+   for(const station of member.samples){
+    const candidate=candidates.find(c=>Math.abs(c.x-station.x)<1e-10);
+    assert.ok(candidate,member.id+" station "+station.x+" must be preserved");
+    for(const component of ["N","Vy","Vz","T","My","Mz"])
+     assert.ok(Math.abs(candidate.values[component]-station[component])<1e-8,
+      combination.id+" "+member.id+" "+component+" at x="+station.x);
+   }
+   assert.ok(candidates.some(c=>Math.abs(c.x)<1e-10),member.id+" start endpoint");
+   assert.ok(candidates.some(c=>Math.abs(c.x-member.length)<1e-8),member.id+" end endpoint");
+  }
+ }
+ assert.equal(prepared.interactionReady,false);
+ assert.equal(prepared.capacityChecksReady,false);
+});
