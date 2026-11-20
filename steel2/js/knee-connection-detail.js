@@ -54,9 +54,11 @@
  function buildHolePolygon(b,semicircleSegments=16){
   const x=Number(b.xMm),y=Number(b.yMm),r=Number(b.holeDiameterMm)/2;
   if(!finite(x)||!finite(y)||!positive(r))throw new Error("ابعاد سوراخ برای تولید چندضلعی معتبر نیست.");
-  if(!["short-slotted","long-slotted"].includes(b.holeType)){
+  if(["standard","oversized"].includes(b.holeType)){
    return Array.from({length:32},(_,i)=>({x:x+r*Math.cos(2*Math.PI*i/32),y:y+r*Math.sin(2*Math.PI*i/32)}));
   }
+  if(!["short-slotted","long-slotted"].includes(b.holeType))
+   throw new Error("نوع سوراخ برای تولید هندسه مشخص یا پشتیبانی‌شده نیست.");
   const length=Number(b.slotLengthMm),width=Number(b.slotWidthMm),angle=Number(b.slotAngleDeg)*Math.PI/180;
   if(!positive(length)||!positive(width)||length<width||!finite(angle))throw new Error("ابعاد شیار برای تولید هندسه معتبر نیست.");
   const straight=(length-width)/2,ux=Math.cos(angle),uy=Math.sin(angle),nx=-uy,ny=ux;
