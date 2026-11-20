@@ -207,3 +207,30 @@ test("rejects invalid washer dimensions and non-perpendicular hardware reference
  e.bolts[0].hardware=[{id:"H1",kind:"head",centerOffsetMm:-24,thicknessMm:12,acrossFlatsMm:30}];
  assert.equal(detail.validate(e).valid,false);
 });
+
+test("full circular hole boundary must remain inside the host plate",()=>{
+ const d=fixture();d.bolts[0].xMm=290;
+ const r=detail.validate(d);assert.equal(r.valid,false);
+ assert.ok(r.errors.some(x=>x.includes("تمام محیط سوراخ")));
+});
+test("slotted hole ends must remain inside the host plate even when its centre is inside",()=>{
+ const d=fixture();d.bolts[0].xMm=285;d.bolts[0].holeType="long-slotted";
+ d.bolts[0].slotLengthMm=40;d.bolts[0].slotWidthMm=22;d.bolts[0].slotAngleDeg=0;
+ const r=detail.validate(d);assert.equal(r.valid,false);
+ assert.ok(r.errors.some(x=>x.includes("تمام محیط سوراخ")));
+});
+test("overlapping holes on the same plate are rejected by their full boundaries",()=>{
+ const d=fixture();d.bolts[1].yMm=-20;
+ const r=detail.validate(d);assert.equal(r.valid,false);
+ assert.ok(r.errors.some(x=>x.includes("تداخل دارد")));
+});
+test("global geometry exports drawing-oriented circular and slotted hole boundaries",()=>{
+ const d=fixture();d.bolts[1].holeType="short-slotted";
+ d.bolts[1].slotLengthMm=40;d.bolts[1].slotWidthMm=22;d.bolts[1].slotAngleDeg=90;
+ const g=detail.buildGlobalGeometry(d),holes=g.plates[0].bolts;
+ assert.equal(holes[0].holeGeometry.method,"32-segment-circle-approximation");
+ assert.equal(holes[0].holeGeometry.verticesLocalMm.length,32);
+ assert.equal(holes[1].holeGeometry.method,"capsule-polygon-approximation");
+ assert.equal(holes[1].holeGeometry.verticesLocalMm.length,34);
+ assert.ok(holes[1].holeGeometry.verticesGlobalM.every(p=>p.length===3&&p.every(Number.isFinite)));
+});
