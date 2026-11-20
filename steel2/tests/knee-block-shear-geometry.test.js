@@ -27,3 +27,12 @@ test("reports candidate enumeration truncation instead of silently dropping path
  const r=geo.assess(d);
  assert.ok(r.rejected.some(x=>x.truncated===true));
 });
+
+test("rejects hole polygons outside or crossing the plate boundary before path enumeration",()=>{
+ const d=fixture();d.holes[0].polygon=d.holes[0].polygon.map(p=>({x:p.x-150,y:p.y}));
+ const r=geo.assess(d);assert.equal(r.valid,false);assert.equal(r.status,"NOT_ASSESSABLE");
+});
+test("rejects overlapping bolt-hole polygons before candidate generation",()=>{
+ const d=fixture();d.holes[1].polygon=d.holes[0].polygon.map(p=>({x:p.x,y:p.y}));
+ const r=geo.assess(d);assert.equal(r.valid,false);assert.match(r.errors.join(" "),/هم‌پوشانی/);
+});
