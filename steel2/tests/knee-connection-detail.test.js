@@ -300,7 +300,7 @@ test("bolt hardware with positive coaxial axial overlap is rejected and audited"
  d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];
  d.bolts[0].hardware=[
   {id:"HEAD",kind:"head",centerOffsetMm:-20,thicknessMm:12,acrossFlatsMm:30},
-  {id:"WASHER",kind:"washer",centerOffsetMm:-10,thicknessMm:4,outerDiameterMm:36,innerDiameterMm:22}
+  {id:"WASHER",kind:"washer",centerOffsetMm:-13,thicknessMm:4,outerDiameterMm:36,innerDiameterMm:22}
  ];
  const r=detail.validate(d);
  assert.equal(r.valid,false);
