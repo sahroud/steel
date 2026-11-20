@@ -47,19 +47,6 @@
         const row=rows.get(id);
         if(!row)throw new Error("عضو خارج از مدل مرجع در نتایج طراحی دیده شد: "+id);
         if(!Array.isArray(member.samples)||!member.samples.length)throw new Error("ایستگاه‌های تقاضای عضو "+id+" در ترکیب "+item.id+" موجود نیست.");
-        const fingerprint=String(member.sectionPropertyFingerprint??"").trim();
-        if(!fingerprint)throw new Error("شناسنامه مقطع عضو "+id+" در نتیجه تحلیل موجود نیست؛ تقاضا قابل اتصال به مقطع نیست.");
-        if(member.sectionOrientationVerified!==true||!member.localAxesVerified||!member.localAxes)
-          throw new Error("جهت نصب یا محورهای محلی عضو "+id+" در نتیجه تحلیل تأیید نشده است.");
-        const axesKey=JSON.stringify(member.localAxes);
-        const rowMeta={fingerprint,roll:member.sectionRollDeg,axesKey};
-        if(row.sectionPropertyFingerprint===null){
-          row.sectionPropertyFingerprint=fingerprint;row.sectionOrientationVerified=true;
-          row.sectionRollDeg=member.sectionRollDeg;row.localAxes=member.localAxes;
-          row._axesKey=axesKey;
-        }else if(row.sectionPropertyFingerprint!==fingerprint||row.sectionRollDeg!==member.sectionRollDeg||row._axesKey!==axesKey){
-          throw new Error("شناسنامه مقطع، زاویه چرخش یا محورهای محلی عضو "+id+" بین ترکیبات بار یکسان نیست.");
-        }
         const seenStations=new Set();
         member.samples.forEach(sample=>{
           const values={};
@@ -83,6 +70,18 @@
             if(!old||Math.abs(values[k])>Math.abs(old.values[k]))row.governing[k]=candidate;
           });
         });
+        const fingerprint=String(member.sectionPropertyFingerprint??"").trim();
+        if(!fingerprint)throw new Error("شناسنامه مقطع عضو "+id+" در نتیجه تحلیل موجود نیست؛ تقاضا قابل اتصال به مقطع نیست.");
+        if(member.sectionOrientationVerified!==true||!member.localAxesVerified||!member.localAxes)
+          throw new Error("جهت نصب یا محورهای محلی عضو "+id+" در نتیجه تحلیل تأیید نشده است.");
+        const axesKey=JSON.stringify(member.localAxes);
+        if(row.sectionPropertyFingerprint===null){
+          row.sectionPropertyFingerprint=fingerprint;row.sectionOrientationVerified=true;
+          row.sectionRollDeg=member.sectionRollDeg;row.localAxes=member.localAxes;
+          row._axesKey=axesKey;
+        }else if(row.sectionPropertyFingerprint!==fingerprint||row.sectionRollDeg!==member.sectionRollDeg||row._axesKey!==axesKey){
+          throw new Error("شناسنامه مقطع، زاویه چرخش یا محورهای محلی عضو "+id+" بین ترکیبات بار یکسان نیست.");
+        }
       });
       const missing=[...expected].filter(id=>!recoveredIds.has(id));
       if(missing.length)throw new Error("اعضای مدل در نتایج ترکیب "+item.id+" مفقودند: "+missing.join("، "));
