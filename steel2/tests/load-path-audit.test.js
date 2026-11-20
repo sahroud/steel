@@ -198,9 +198,11 @@ test("triangular end-wall wind reaches the 3D solver with conserved force and ba
     return sum+node.x*load.values[2];
    },0)/1000000;
   const analytic=transfer.triangularGableWindResultant(pressure*sign,span,rise);
+  const actionMy=actions.reduce((sum,action)=>sum+action.momentYAboutSupportKNm-action.xM*action.resultantKN,0);
   const analyticMy=-pressure*sign*(span*span*rise/4);
   assert.ok(Math.abs(appliedFz-analytic.resultantKN)<1e-9);
-  assert.ok(Math.abs(appliedMy-analyticMy)<1e-9);
+  assert.ok(Math.abs(appliedMy-actionMy)<1e-9,JSON.stringify({appliedMy,actionMy}));
+  assert.ok(Math.abs(actionMy-analyticMy)<1e-9,JSON.stringify({actionMy,analyticMy}));
   assert.ok(Math.abs(result.equilibrium.appliedForce[2]/1000-appliedFz)<1e-7);
   assert.ok(Math.abs(result.equilibrium.appliedMoment[1]/1000000-appliedMy)<1e-7);
   assert.equal(result.reactions.length,actions.length);
