@@ -195,12 +195,16 @@
     const layout=root.SahroudKneeConnectionDetail.analyzeHoleLayout(detail,plateId,{forceDirectionLocal:{x:fx,y:fy}});
     const report=root.SahroudKneeBlockShearGeometry.assess({plate,holes:layout.holes,forceDirectionLocal:{x:fx,y:fy},rowToleranceMm:layout.rowToleranceMm});
     const rows=(report.rows||[]).map(r=>"<tr><td>"+r.rowId+"</td><td>"+Number(r.transverseProjectionMm).toFixed(2)+"</td><td>"+r.boltIds.map(esc).join("، ")+"</td></tr>").join("");
-    const candidates=(report.candidates||[]).map(c=>"<tr><td>"+esc(c.pathId)+"</td><td>"+c.rowIds.join(" / ")+"</td><td>"+c.gross.AgvLengthMm.toFixed(2)+"</td><td>"+c.netGeometry.AnvLengthMm.toFixed(2)+"</td><td>"+c.gross.AntLengthMm.toFixed(2)+"</td><td>"+c.netGeometry.AntLengthMm.toFixed(2)+"</td><td>"+c.geometricAreas.AgvMm2.toFixed(1)+" / "+c.geometricAreas.AnvMm2.toFixed(1)+" / "+c.geometricAreas.AntMm2.toFixed(1)+"</td></tr>").join("");
-    const rejected=(report.rejected||[]).map(x=>"<li>ردیف‌های "+x.rows.join(" و ")+": "+esc(x.reason)+"</li>").join("");
+    const candidates=(report.candidates||[]).map(c=>"<tr><td>"+esc(c.pathId)+"</td><td>"+esc(c.pathType)+"</td><td>"+c.rowIds.join(" / ")+"</td><td>"+c.terminalBoltIds.map(esc).join(" / ")+"</td><td>"+c.gross.AgvLengthMm.toFixed(2)+"</td><td>"+c.netGeometry.AnvLengthMm.toFixed(2)+"</td><td>"+c.gross.AntLengthMm.toFixed(2)+"</td><td>"+c.netGeometry.AntLengthMm.toFixed(2)+"</td><td>"+c.geometricAreas.AgvMm2.toFixed(1)+" / "+c.geometricAreas.AnvMm2.toFixed(1)+" / "+c.geometricAreas.AntMm2.toFixed(1)+"</td></tr>").join("");
+    const holeRows=(layout.holes||[]).map(h=>"<tr><td>"+esc(h.id)+"</td><td>"+esc(h.holeType)+"</td><td>"+h.edgeClearanceMm.toFixed(2)+"</td></tr>").join("");
+    const clearanceRows=(layout.holeClearances||[]).map(h=>"<tr><td>"+esc(h.holeA)+"</td><td>"+esc(h.holeB)+"</td><td>"+h.clearDistanceMm.toFixed(2)+"</td></tr>").join("");
+    const rejected=(report.rejected||[]).map(x=>"<li>"+(x.rows?"ردیف‌های "+x.rows.join(" و "):x.boltPair?"زوج پیچ "+esc(x.boltPair):"گزارش")+" : "+esc(x.reason)+(x.truncated?" (فهرست مسیرها محدود شده است)":"")+"</li>").join("");
     $("kneeBlockShearGeometryResult").innerHTML="<p><b>وضعیت هندسی: "+esc(report.status)+"</b></p>"+
      "<p>ردیف پیچ: "+(report.rows||[]).length+"؛ مسیر کاندید: "+(report.candidates||[]).length+"؛ مسیر ردشده: "+(report.rejected||[]).length+"</p>"+
      "<div style='overflow-x:auto'><table><thead><tr><th>ردیف</th><th>مختصات عرضی (mm)</th><th>پیچ‌ها</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
-     "<div style='overflow-x:auto'><table><thead><tr><th>مسیر</th><th>ردیف‌ها</th><th>Agv طول</th><th>Anv طول هندسی</th><th>Ant طول</th><th>Ant خالص هندسی</th><th>مساحت‌های هندسی Agv/Anv/Ant (mm²)</th></tr></thead><tbody>"+candidates+"</tbody></table></div>"+
+     "<div style='overflow-x:auto'><table><thead><tr><th>مسیر</th><th>نوع</th><th>ردیف‌ها</th><th>پیچ‌های انتهایی</th><th>Agv طول</th><th>Anv طول هندسی</th><th>Ant طول</th><th>Ant خالص هندسی</th><th>مساحت‌های هندسی Agv/Anv/Ant (mm²)</th></tr></thead><tbody>"+candidates+"</tbody></table></div>"+
+     "<h4>فاصله محیط سوراخ تا لبه ورق (mm)</h4><div style='overflow-x:auto'><table><thead><tr><th>پیچ</th><th>نوع سوراخ</th><th>فاصله هندسی</th></tr></thead><tbody>"+holeRows+"</tbody></table></div>"+
+     "<h4>فاصله خالص بین محیط سوراخ‌ها (mm)</h4><div style='overflow-x:auto'><table><thead><tr><th>پیچ اول</th><th>پیچ دوم</th><th>فاصله هندسی</th></tr></thead><tbody>"+clearanceRows+"</tbody></table></div>"+
      (rejected?"<h4>مسیرهای ردشده</h4><ul>"+rejected+"</ul>":"")+
      "<p><b>این مقادیر فقط هندسه کاندید هستند؛ هیچ ظرفیت، ضریب Ubs، کنترل آیین‌نامه‌ای یا PASS/FAIL صادر نشده است.</b></p>"+
      "<ul>"+(report.candidates||[]).flatMap(c=>c.limitations||[]).filter((x,i,a)=>a.indexOf(x)===i).map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
