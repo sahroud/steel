@@ -1,6 +1,6 @@
 /* SAHROUD STEEL - background worker for 3D frame analysis */
 "use strict";
-importScripts("./analysis-3d.js?v=20261119sectionroll3");
+importScripts("./analysis-3d.js?v=20261120endrelease1");
 self.onmessage=function(event){
   const data=event.data||{};
   try{
