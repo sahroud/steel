@@ -26,6 +26,12 @@ function simplePolygon(P){
  }
  return true;
 }
+
+function pointSegmentDistance(p,a,b){const d=sub(b,a),l=dot(d,d);if(l<E)return dist(p,a);const t=Math.max(0,Math.min(1,dot(sub(p,a),d)/l));return dist(p,add(a,scale(d,t)));}
+function polygonClearance(A,B){let best=Infinity;for(let i=0;i<A.length;i++)for(let j=0;j<B.length;j++){best=Math.min(best,pointSegmentDistance(A[i],B[j],B[(j+1)%B.length]),pointSegmentDistance(B[j],A[i],A[(i+1)%A.length]));}return best;}
+function convexPolygon(P){let sign=0;for(let i=0;i<P.length;i++){const z=cross(sub(P[(i+1)%P.length],P[i]),sub(P[(i+2)%P.length],P[(i+1)%P.length]));if(Math.abs(z)<=1e-9)continue;const s=Math.sign(z);if(sign&&s!==sign)return false;sign=s;}return sign!==0;}
+function polygonEdgeClearance(P,edges){let best=Infinity;for(let i=0;i<P.length;i++)for(const [a,b] of edges)best=Math.min(best,pointSegmentDistance(P[i],a,b),pointSegmentDistance(a,P[i],P[(i+1)%P.length]),pointSegmentDistance(b,P[i],P[(i+1)%P.length]));return best;}
+
 function segmentParameters(a,b,c,d){
  const r=sub(b,a),e=sub(d,c),rr=dot(r,r),den=cross(r,e),ca=sub(c,a),out=[];
  if(rr<E)return out;
@@ -63,9 +69,9 @@ if(!finite(tol)||tol<=0)errors.push("تلرانس ردیف‌بندی باید �
 if(errors.length)return{valid:false,status:"NOT_ASSESSABLE",errors,candidates:[]};
 const P=p.polygonMm.map(q=>({x:+q.x,y:+q.y})),L=Math.hypot(fd.x,fd.y),u={x:fd.x/L,y:fd.y/L},v={x:-u.y,y:u.x};
 if(!simplePolygon(P))return{valid:false,status:"NOT_ASSESSABLE",errors:["چندضلعی ورق باید ساده، غیرخودمتقاطع، دارای مساحت غیرصفر و مختصات متناهی باشد."],candidates:[]};
-const H=holes.map(h=>({id:String(h.id),c:{x:+(h.center?.x??h.xMm),y:+(h.center?.y??h.yMm)},poly:h.polygon||h.polygonMm}));
-if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!simplePolygon(h.poly)||h.poly.length<8))
- return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه هر سوراخ باید یک چندضلعی ساده، معتبر و متناهی با حداقل هشت رأس باشد."],candidates:[]};
+const holeIds=holes.map(h=>String(h.id));\nif(holeIds.some((id,i)=>!id||holeIds.indexOf(id)!==i))return{valid:false,status:"NOT_ASSESSABLE",errors:["شناسه سوراخ‌ها باید خالی‌نباشد و یکتا باشد."],candidates:[]};\nconst H=holes.map(h=>({id:String(h.id),c:{x:+(h.center?.x??h.xMm),y:+(h.center?.y??h.yMm)},poly:h.polygon||h.polygonMm}));
+if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!simplePolygon(h.poly)||h.poly.length<8||!convexPolygon(h.poly)))
+ return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه هر سوراخ باید یک چندضلعی ساده، محدب، معتبر و متناهی با حداقل هشت رأس باشد؛ برای سوراخ لوبیایی، محیط باید از هندسه شیار و زاویه واقعی ساخته شده باشد."],candidates:[]};
 const plateEdges=P.map((q,i)=>[q,P[(i+1)%P.length]]);
 for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
  if(j===i+1||(i===0&&j===P.length-1))continue;
@@ -83,8 +89,8 @@ for(let i=0;i<H.length;i++)for(let j=i+1;j<H.length;j++){
  let overlap=false;
  for(let a=0;a<H[i].poly.length&&!overlap;a++)for(let b=0;b<H[j].poly.length;b++)
   if(segmentsTouch(H[i].poly[a],H[i].poly[(a+1)%H[i].poly.length],H[j].poly[b],H[j].poly[(b+1)%H[j].poly.length])){overlap=true;break;}
- if(overlap||inside(H[i].c,H[j].poly)||inside(H[j].c,H[i].poly))
-  return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ‌های "+H[i].id+" و "+H[j].id+" هم‌پوشانی دارد."],candidates:[]};
+ const clearance=polygonClearance(H[i].poly,H[j].poly);\n if(overlap||inside(H[i].c,H[j].poly)||inside(H[j].c,H[i].poly))
+  return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ‌های "+H[i].id+" و "+H[j].id+" هم‌پوشانی دارد."],candidates:[]};\n holeGeometryAudit.push({holePair:[H[i].id,H[j].id],clearanceMm:clearance});
 }
 const sorted=H.map(h=>({...h,s:dot(h.c,u),t:dot(h.c,v)})).sort((a,b)=>a.t-b.t),rows=[];
 for(const h of sorted){let r=rows.find(q=>Math.abs(q.t-h.t)<=tol);if(!r){r={t:h.t,holes:[]};rows.push(r);}r.holes.push(h);}
@@ -135,7 +141,7 @@ for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
   const sg=lines[0].grossLengthMm+lines[1].grossLengthMm,sn=lines[0].netGeometryLengthMm+lines[1].netGeometryLengthMm;
   const tg=lines[2].grossLengthMm,tn=lines[2].netGeometryLengthMm;
   candidates.push({pathId:"BS-"+(i+1)+"-"+(j+1)+"-"+lowBolt.id+"-"+highBolt.id,
-   plateId:String(p.id||input.plateId||""),rowIds:Array.from({length:j-i+1},(_,k)=>i+k+1),terminalBoltIds:[lowBolt.id,highBolt.id],
+   plateId:String(p.id||input.plateId||""),geometryStatus:"GEOMETRICALLY_SCREENED",clearanceAudit:holeGeometryAudit,rowIds:Array.from({length:j-i+1},(_,k)=>i+k+1),terminalBoltIds:[lowBolt.id,highBolt.id],
    intermediateBoltIds:intermediateHoles.map(h=>h.boltId),intermediateRowIds:intermediateHoles.map(h=>h.rowId),
    topologyType:intermediateRows.length?"MULTI_ROW_CONTINUOUS":"TWO_ROW",
    pathType:intermediateRows.length?"MULTI_ROW_CONTINUOUS":(Math.abs(lowBolt.s-highBolt.s)>1e-7?"STAGGERED_ZIGZAG":"STRAIGHT"),
@@ -156,5 +162,5 @@ return{valid:true,status:candidates.length?"GEOMETRY_CANDIDATES_FOUND":"NOT_ASSE
  plateId:String(p.id||input.plateId||""),rows:rows.map((r,i)=>({rowId:i+1,transverseProjectionMm:r.t,boltIds:r.holes.map(h=>h.id)})),
  candidates,rejected,capacityDesigned:false,connectionApproved:false,executionReady:false};
 }
-const api={SCHEMA:"SAHROUD-BLOCK-SHEAR-GEOMETRY-1.0",assess,linePolygonIntervals:intervals,subtractIntervals:subtract};root.SahroudKneeBlockShearGeometry=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
+const api={SCHEMA:"SAHROUD-BLOCK-SHEAR-GEOMETRY-1.0",assess,linePolygonIntervals:intervals,subtractIntervals:subtract,polygonClearance,convexPolygon};root.SahroudKneeBlockShearGeometry=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
