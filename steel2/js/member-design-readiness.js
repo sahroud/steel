@@ -85,6 +85,21 @@
    }
    if(m.sectionOrientationVerified!==true)issues.push("جهت نصب مقطع با مرجع واقعی تأیید نشده است.");
    if(!m.localAxes||m.localAxesVerified!==true)issues.push("محورهای محلی عضو به‌صورت معتبر به مدل طراحی پیوند نخورده‌اند.");
+   const modelFingerprint=String(m.sectionPropertyFingerprint||section?.sectionPropertyFingerprint||"").trim();
+   const demandFingerprint=String(demand?.sectionPropertyFingerprint||"").trim();
+   if(!modelFingerprint)issues.push("اثر انگشت مشخصات مقطع فعلی عضو موجود نیست.");
+   if(!demandFingerprint)issues.push("اثر انگشت مقطع زمان تحلیل در بسته تقاضا موجود نیست.");
+   else if(modelFingerprint&&demandFingerprint!==modelFingerprint)
+    issues.push("مشخصات مقطع پس از تحلیل تغییر کرده است؛ تقاضای قدیمی با مقطع فعلی قابل استفاده نیست.");
+   if(demand){
+    if(demand.sectionOrientationVerified!==true)issues.push("تأیید جهت نصب مقطع در بسته تقاضای تحلیل موجود نیست.");
+    if(!demand.localAxes||!demand.localAxesVerified)issues.push("محورهای محلی زمان تحلیل در بسته تقاضا موجود نیست.");
+    else if(m.localAxes&&JSON.stringify(demand.localAxes)!==JSON.stringify(m.localAxes))
+     issues.push("محورهای محلی مدل فعلی با دستگاه مختصات زمان تحلیل یکسان نیستند.");
+    if(demand.sectionRollDeg!==m.sectionRollDeg&&
+       Number(demand.sectionRollDeg)!==Number(m.sectionRollDeg))
+     issues.push("زاویه چرخش مقطع فعلی با زاویه زمان تحلیل متفاوت است.");
+   }
    const key=String(m.sectionKey||m.role||m.type||"unspecified");
    rows.push({memberId:id,sectionKey:key,lengthM:finitePositive(m.length)?length:null,
     sectionProfile:section?.profile||section?.designation||section?.name||null,
