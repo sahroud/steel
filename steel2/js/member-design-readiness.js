@@ -12,6 +12,21 @@
   (typeof v==="string"&&v.trim()!==""&&Number.isFinite(Number(v))))&&Number(v)>0;
  const finiteValue=v=>(typeof v==="number"&&Number.isFinite(v))||
   (typeof v==="string"&&v.trim()!==""&&Number.isFinite(Number(v)));
+ function validAxes(axes){
+  if(!axes||typeof axes!=="object")return false;
+  const names=["x","y","z"],v=names.map(k=>axes[k]);
+  if(v.some(a=>!Array.isArray(a)||a.length!==3||a.some(x=>!finiteValue(x))))return false;
+  const a=v.map(x=>x.map(Number)),dot=(x,y)=>x.reduce((s,n,i)=>s+n*y[i],0);
+  const cross=(x,y)=>[x[1]*y[2]-x[2]*y[1],x[2]*y[0]-x[0]*y[2],x[0]*y[1]-x[1]*y[0]];
+  const norm=x=>Math.hypot(...x);
+  return a.every(x=>Math.abs(norm(x)-1)<=1e-6)&&
+   Math.abs(dot(a[0],a[1]))<=1e-6&&Math.abs(dot(a[0],a[2]))<=1e-6&&
+   Math.abs(dot(a[1],a[2]))<=1e-6&&cross(a[0],a[1]).every((x,i)=>Math.abs(x-a[2][i])<=1e-6);
+ }
+ function sameAxes(a,b){
+  if(!validAxes(a)||!validAxes(b))return false;
+  return ["x","y","z"].every(k=>a[k].every((v,i)=>Math.abs(Number(v)-Number(b[k][i]))<=1e-8));
+ }
  function audit(model,demandRun){
   const errors=[],members=Array.isArray(model?.members)?model.members:[];
   if(!members.length)throw new Error("مدل اعضای فولادی خالی یا ناموجود است.");
@@ -84,8 +99,12 @@
     }
    }
    if(m.sectionOrientationVerified!==true)issues.push("جهت نصب مقطع با مرجع واقعی تأیید نشده است.");
-   if(!m.localAxes||m.localAxesVerified!==true)issues.push("محورهای محلی عضو به‌صورت معتبر به مدل طراحی پیوند نخورده‌اند.");
-   const modelFingerprint=String(m.sectionPropertyFingerprint||section?.sectionPropertyFingerprint||"").trim();
+   if(!validAxes(m.localAxes)||m.localAxesVerified!==true)issues.push("محورهای محلی عضو باید یکه، متعامد و راست‌گرد و به مدل طراحی پیوندخورده باشند.");
+   const memberFingerprint=String(m.sectionPropertyFingerprint||"").trim();
+   const sectionFingerprint=String(section?.sectionPropertyFingerprint||"").trim();
+   const modelFingerprint=sectionFingerprint||memberFingerprint;
+   if(memberFingerprint&&sectionFingerprint&&memberFingerprint!==sectionFingerprint)
+    issues.push("اثر انگشت مشخصات مقطع عضو با شناسنامه خواص مقطع آن ناسازگار است.");
    const demandFingerprint=String(demand?.sectionPropertyFingerprint||"").trim();
    if(!modelFingerprint)issues.push("اثر انگشت مشخصات مقطع فعلی عضو موجود نیست.");
    if(!demandFingerprint)issues.push("اثر انگشت مقطع زمان تحلیل در بسته تقاضا موجود نیست.");
@@ -93,8 +112,8 @@
     issues.push("مشخصات مقطع پس از تحلیل تغییر کرده است؛ تقاضای قدیمی با مقطع فعلی قابل استفاده نیست.");
    if(demand){
     if(demand.sectionOrientationVerified!==true)issues.push("تأیید جهت نصب مقطع در بسته تقاضای تحلیل موجود نیست.");
-    if(!demand.localAxes||!demand.localAxesVerified)issues.push("محورهای محلی زمان تحلیل در بسته تقاضا موجود نیست.");
-    else if(m.localAxes&&JSON.stringify(demand.localAxes)!==JSON.stringify(m.localAxes))
+    if(!validAxes(demand.localAxes)||!demand.localAxesVerified)issues.push("محورهای محلی زمان تحلیل در بسته تقاضا موجود نیست یا معتبر نیست.");
+    else if(validAxes(m.localAxes)&&!sameAxes(demand.localAxes,m.localAxes))
      issues.push("محورهای محلی مدل فعلی با دستگاه مختصات زمان تحلیل یکسان نیستند.");
     if(demand.sectionRollDeg!==m.sectionRollDeg&&
        Number(demand.sectionRollDeg)!==Number(m.sectionRollDeg))
