@@ -104,10 +104,16 @@ function buildCompressionDemandRows(forceResult){
   const ends=Array.isArray(m.ends)?m.ends:[];
   let demand=0,caseLabel="",governing=null,validCount=0,invalidCount=0;
   const simultaneousCases=[];
-  ends.forEach(e=>{
+  const labels=ends.map(e=>String(e?.label??"").trim());
+  const labelsValid=labels.every(Boolean)&&new Set(labels).size===labels.length;
+  ends.forEach((e,ei)=>{
    const raw=Array.isArray(e.values)?e.values:[];
-   const v=raw.map(Number);
-   if(v.length!==12||!v.every(Number.isFinite)){invalidCount++;simultaneousCases.push({label:String(e.label||""),valid:false,source:e.source||null});return;}
+   const rawValuesValid=raw.length===12&&raw.every(x=>
+    (typeof x==="number"&&Number.isFinite(x))||
+    (typeof x==="string"&&x.trim()!==""&&Number.isFinite(Number(x)))
+   );
+   const v=rawValuesValid?raw.map(Number):[];
+   if(!rawValuesValid||!labelsValid){invalidCount++;simultaneousCases.push({label:String(e.label||""),valid:false,source:e.source||null,reason:!labelsValid?"شناسه ترکیب بار خالی یا تکراری است.":"بردار نیرو باید دقیقاً ۱۲ مقدار عددی معتبر داشته باشد."});return;}
    validCount++;
    simultaneousCases.push({label:String(e.label||""),valid:true,source:e.source||null,vector:v.slice(),endI:{N:v[0],Vy:v[1],Vz:v[2],T:v[3],My:v[4],Mz:v[5]},endJ:{N:v[6],Vy:v[7],Vz:v[8],T:v[9],My:v[10],Mz:v[11]}});
    const ni=v[0],nj=v[6],candidate=Math.max(0,ni,-nj);
@@ -120,7 +126,7 @@ function buildCompressionDemandRows(forceResult){
    }
   });
   const nonAxial=ends.some(e=>{const v=Array.isArray(e.values)?e.values.map(Number):[];return v.length===12&&v.every(Number.isFinite)&&[1,2,3,4,5,7,8,9,10,11].some(i=>Math.abs(v[i])>1e-6);});
-  const coverageComplete=sourceComplete&&expectedCaseCountValid&&invalidCount===0&&validCount===expectedCaseCount;
+  const coverageComplete=sourceComplete&&expectedCaseCountValid&&labelsValid&&invalidCount===0&&validCount===expectedCaseCount;
   return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,governing,simultaneousCases,axialOnlyCase:!!governing&&!nonAxial,interactionRequired:!!governing&&nonAxial,caseCount:validCount,expectedCaseCount,invalidCaseCount:invalidCount,coverageComplete};
  }).filter(r=>r.caseCount>0||r.invalidCaseCount>0).sort((a,b)=>a.sectionKey.localeCompare(b.sectionKey)||a.id.localeCompare(b.id));
  return rows;
