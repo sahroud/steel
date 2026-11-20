@@ -451,3 +451,24 @@ test("global weld geometry carries generated fillet prism or explicit null",()=>
  const d=fixture();d.welds[0].startMm=[-80,-60,0];d.welds[0].endMm=[-80,60,0];Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[1,0,0],connectedLegDirectionConnection:[0,0,1]});
  const g=detail.buildGlobalGeometry(d);assert.ok(g.welds[0].solidGeometry);assert.equal(g.welds[0].solidGeometry.verticesGlobalM.length,6);
 });
+test("fillet weld broadphase detects potential overlap with a non-host perpendicular plate",()=>{
+ const d=fixture();d.welds[0].startMm=[-100,-60,0];d.welds[0].endMm=[-100,60,0];
+ Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[1,0,0],connectedLegDirectionConnection:[0,0,1]});
+ d.plates.push({id:"WEB-PLATE",thicknessMm:4,frame:{originMm:[-96,0,0],axes:{u:[0,1,0],v:[0,0,1],n:[1,0,0]}},
+  polygonMm:[{x:-100,y:-100},{x:100,y:-100},{x:100,y:100},{x:-100,y:100}]});
+ const r=detail.auditWeldPlateInteractions(d);assert.equal(r.otherPlatePairs[0].status,"POTENTIAL_INTERFERENCE");
+ assert.ok(r.otherPlatePairs[0].projectedConvexHullOverlapAreaMm2>0);
+});
+test("fillet weld broadphase rejects non-host plate outside weld depth interval",()=>{
+ const d=fixture();d.welds[0].startMm=[-100,-60,0];d.welds[0].endMm=[-100,60,0];
+ Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[1,0,0],connectedLegDirectionConnection:[0,0,1]});
+ d.plates.push({id:"FAR-WEB",thicknessMm:4,frame:{originMm:[-96,0,30],axes:{u:[0,1,0],v:[0,0,1],n:[1,0,0]}},
+  polygonMm:[{x:-100,y:-100},{x:100,y:-100},{x:100,y:100},{x:-100,y:100}]});
+ const r=detail.auditWeldPlateInteractions(d);assert.equal(r.otherPlatePairs[0].status,"NO_THICKNESS_OVERLAP");
+});
+test("fillet weld broadphase reports incomplete non-host plate frame as not assessable",()=>{
+ const d=fixture();d.welds[0].startMm=[-100,-60,0];d.welds[0].endMm=[-100,60,0];
+ Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[1,0,0],connectedLegDirectionConnection:[0,0,1]});
+ d.plates.push({id:"UNKNOWN-PLATE",thicknessMm:4,polygonMm:[{x:0,y:0},{x:10,y:0},{x:10,y:10}]});
+ const r=detail.auditWeldPlateInteractions(d);assert.equal(r.otherPlatePairs[0].status,"NOT_ASSESSABLE");
+});
