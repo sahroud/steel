@@ -43,3 +43,32 @@ test("complete uniquely identified 3D combinations preserve full member coverage
   assert.equal(result.members[0].coverageComplete, true);
   assert.equal(result.members[0].caseCount, 2);
 });
+
+test("null, empty, boolean and non-finite force components never coerce to zero", () => {
+  for (const bad of [null, "", "   ", true, Infinity, NaN]) {
+    const values = [1000,0,0,0,0,0,-1000,0,0,0,0,0];
+    values[4] = bad;
+    const rows = api.buildCompressionDemandRows({
+      success:true, expectedCaseCount:1,
+      members:[{id:"M1",sectionKey:"column",ends:[{label:"ULS-1",values}]}]
+    });
+    assert.equal(rows[0].coverageComplete,false, String(bad));
+    assert.equal(rows[0].invalidCaseCount,1, String(bad));
+  }
+});
+
+test("empty or duplicate load-case labels block complete coverage", () => {
+  for (const ends of [
+    [{label:"",values:[1000,0,0,0,0,0,-1000,0,0,0,0,0]}],
+    [
+      {label:"ULS-1",values:[1000,0,0,0,0,0,-1000,0,0,0,0,0]},
+      {label:"ULS-1",values:[1200,0,0,0,0,0,-1200,0,0,0,0,0]}
+    ]
+  ]) {
+    const rows=api.buildCompressionDemandRows({
+      success:true,expectedCaseCount:ends.length,
+      members:[{id:"M1",sectionKey:"column",ends}]
+    });
+    assert.equal(rows[0].coverageComplete,false);
+  }
+});
