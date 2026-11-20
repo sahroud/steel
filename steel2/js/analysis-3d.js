@@ -273,7 +273,7 @@ function condenseReleasedRotations(K,f,released){
  const Kc=zeros(12,12),fc=Array(12).fill(0);
  for(let i=0;i<a.length;i++){
   fc[a[i]]=fa[i]-dot(Kar[i],invFr);
-  for(let j=0;j<a.length;j++)Kc[a[i]][a[j]]=Kaa[i][j]-dot(Kar[i],invKra.map(col=>col[j]));
+  for(let j=0;j<a.length;j++)Kc[a[i]][a[j]]=Kaa[i][j]-dot(Kar[i],invKra[j]);
  }
  const recover=da=>{
   const rhs=fr.map((v,i)=>v-dot(Kra[i],da));
