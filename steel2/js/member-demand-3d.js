@@ -116,13 +116,33 @@
       memberCount:members.length,members,units:{force:"N",moment:"N.m",length:"m"},
       note:"نیروهای داخلی با تعادل قطعه چپ عضو و بار گسترده یکنواخت محلی بازیابی شده‌اند. نمونه‌برداری و نقاط صفر برش برای تقاضای خمشی درج شده‌اند؛ این خروجی به‌تنهایی ظرفیت یا قبولی آیین‌نامه‌ای نیست."};
   }
+  function axesEqual(a,b,tolerance=1e-8){
+    if(a===null||b===null)return a===b;
+    return ["x","y","z"].every(axis=>a[axis].every((value,i)=>Math.abs(value-b[axis][i])<=tolerance));
+  }
   function envelope(cases,model,options){
     if(!Array.isArray(cases)||!cases.length)throw new Error("حداقل یک نتیجه تحلیل ترکیبات بار لازم است.");
     const recovered=cases.map(item=>extractCase(item,model,options));
     const map=new Map();
     recovered.forEach(result=>result.members.forEach(member=>{
       let row=map.get(member.id);
-      if(!row){row={id:member.id,sectionKey:member.sectionKey,components:{}};COMPONENTS.forEach(k=>row.components[k]=null);map.set(member.id,row);}
+      if(!row){
+        row={id:member.id,sectionKey:member.sectionKey,components:{},
+          localAxes:member.localAxes,localAxesVerified:member.localAxesVerified,
+          localAxesConvention:member.localAxesConvention,
+          sectionOrientationVerified:member.sectionOrientationVerified,
+          sectionPropertyFingerprint:member.sectionPropertyFingerprint,
+          sectionRollDeg:member.sectionRollDeg,units:member.units};
+        COMPONENTS.forEach(k=>row.components[k]=null);
+        map.set(member.id,row);
+      }else{
+        const sameFingerprint=row.sectionPropertyFingerprint===member.sectionPropertyFingerprint;
+        const sameRoll=row.sectionRollDeg===member.sectionRollDeg;
+        const sameAxes=axesEqual(row.localAxes,member.localAxes);
+        const sameOrientation=row.sectionOrientationVerified===member.sectionOrientationVerified;
+        if(!sameFingerprint||!sameRoll||!sameAxes||!sameOrientation)
+          throw new Error("پوش عضو "+member.id+" متوقف شد؛ مشخصات مقطع، چرخش یا محورهای محلی بین ترکیبات بار یکسان نیستند.");
+      }
       COMPONENTS.forEach(k=>{
         const candidate=member.extrema[k],old=row.components[k];
         if(!old||candidate.absolute>old.absolute)row.components[k]={...candidate,combination:result.caseLabel,caseId:result.caseId};
@@ -130,7 +150,7 @@
     }));
     return {success:true,caseCount:recovered.length,memberCount:map.size,members:[...map.values()],
       cases:recovered,units:{force:"N",moment:"N.m",length:"m"},
-      note:"پوش تقاضا مؤلفه‌به‌مؤلفه و بین ترکیبات بار است؛ مؤلفه‌های حاکم ممکن است از ترکیبات متفاوت باشند و نباید به‌عنوان یک حالت هم‌زمان ترکیب شوند."};
+      note:"پوش تقاضا مؤلفه‌به‌مؤلفه و بین ترکیبات بار است؛ مشخصات محور و جهت نصب مقطع نیز از همه ترکیبات کنترل و در خلاصه عضو حفظ شده‌اند. مؤلفه‌های حاکم ممکن است از ترکیبات متفاوت باشند و نباید به‌عنوان یک حالت هم‌زمان ترکیب شوند."};
   }
   root.SahroudMemberDemand3D={components:COMPONENTS.slice(),sectionForcesAt,stations,recoverMember,extractCase,envelope};
   if(typeof module!=="undefined"&&module.exports)module.exports=root.SahroudMemberDemand3D;
