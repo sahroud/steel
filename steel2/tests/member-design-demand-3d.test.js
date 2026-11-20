@@ -63,3 +63,30 @@ test("rejects duplicate station coordinates within one member and combination",(
  ]});
  assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/ایستگاه تقاضای تکراری/);
 });
+
+test("rejects null and empty force components instead of coercing them to zero",()=>{
+ for(const bad of [null,undefined,""]){
+  const x=input();
+  x.demandApi.extractCase=()=>({memberCount:2,members:[
+   {id:"M1",samples:[{x:0,N:bad,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+   {id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+  ]});
+  assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/تهی یا نامعتبر/);
+ }
+});
+test("rejects null or empty station coordinates instead of treating them as zero",()=>{
+ for(const bad of [null,""]){
+  const x=input();
+  x.demandApi.extractCase=()=>({memberCount:2,members:[
+   {id:"M1",samples:[{x:bad,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+   {id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+  ]});
+  assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/مختصات ایستگاه/);
+ }
+});
+test("rejects non-integer or zero combination counts",()=>{
+ for(const count of [0,1.5,"2"]){
+  const x=input();x.combinationRun.caseCount=count;
+  assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/نتایج کامل/);
+ }
+});
