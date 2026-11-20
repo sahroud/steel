@@ -406,14 +406,14 @@ test("global geometry includes separate hardware and weld interaction audit repo
  assert.equal(g.weldPlateInteractionAudit.pairs[0].status,"NOT_ASSESSABLE");
 });
 test("hardware is checked against a parallel non-host plate and detects volumetric penetration",()=>{
- const d=fixture();d.plates.push({...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,20]}});
+ const d=fixture();d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];d.plates.push({...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,20]}});
  d.bolts[0].hardware=[{id:"W-OTHER",kind:"washer",centerOffsetMm:15,thicknessMm:4,outerDiameterMm:36,innerDiameterMm:22}];
  const report=detail.auditHardwareOtherPlateInteractions(d);
  assert.equal(report.pairs[0].status,"VOLUME_INTERFERENCE");
  assert.ok(report.pairs[0].projectedMaterialOverlapAreaMm2>0);
 });
 test("hardware-to-nonhost-plate audit subtracts the target plate's bolt hole",()=>{
- const d=fixture();d.plates.push({...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,20]}});
+ const d=fixture();d.bolts[0].transverseReferenceConnectionFrame=[1,0,0];d.plates.push({...d.plates[0],id:"BACK-PLATE",frame:{...d.plates[0].frame,originMm:[0,0,20]}});
  d.bolts.push({...d.bolts[0],id:"B3",plateId:"BACK-PLATE",xMm:0,yMm:-40});
  d.bolts[0].hardware=[{id:"W-HOLE",kind:"washer",centerOffsetMm:15,thicknessMm:4,outerDiameterMm:36,innerDiameterMm:22}];
  const report=detail.auditHardwareOtherPlateInteractions(d);
