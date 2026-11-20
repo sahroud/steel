@@ -30,6 +30,15 @@ function simplePolygon(P){
 function pointSegmentDistance(p,a,b){const d=sub(b,a),l=dot(d,d);if(l<E)return dist(p,a);const t=Math.max(0,Math.min(1,dot(sub(p,a),d)/l));return dist(p,add(a,scale(d,t)));}
 function polygonClearance(A,B){let best=Infinity;for(let i=0;i<A.length;i++)for(let j=0;j<B.length;j++){best=Math.min(best,pointSegmentDistance(A[i],B[j],B[(j+1)%B.length]),pointSegmentDistance(B[j],A[i],A[(i+1)%A.length]));}return best;}
 function convexPolygon(P){let sign=0;for(let i=0;i<P.length;i++){const z=cross(sub(P[(i+1)%P.length],P[i]),sub(P[(i+2)%P.length],P[(i+1)%P.length]));if(Math.abs(z)<=1e-9)continue;const s=Math.sign(z);if(sign&&s!==sign)return false;sign=s;}return sign!==0;}
+function polygonCentroid(P){
+ let twiceArea=0,cx=0,cy=0;
+ for(let i=0;i<P.length;i++){
+  const a=P[i],b=P[(i+1)%P.length],z=a.x*b.y-b.x*a.y;
+  twiceArea+=z;cx+=(a.x+b.x)*z;cy+=(a.y+b.y)*z;
+ }
+ if(Math.abs(twiceArea)<=E)return null;
+ return{x:cx/(3*twiceArea),y:cy/(3*twiceArea)};
+}
 function polygonEdgeClearance(P,edges){let best=Infinity;for(let i=0;i<P.length;i++)for(const [a,b] of edges)best=Math.min(best,pointSegmentDistance(P[i],a,b),pointSegmentDistance(a,P[i],P[(i+1)%P.length]),pointSegmentDistance(b,P[i],P[(i+1)%P.length]));return best;}
 
 function segmentParameters(a,b,c,d){
@@ -74,6 +83,11 @@ if(holeIds.some((id,i)=>!id||holeIds.indexOf(id)!==i))return{valid:false,status:
 const H=holes.map(h=>({id:String(h.id),c:{x:+(h.center?.x??h.xMm),y:+(h.center?.y??h.yMm)},poly:h.polygon||h.polygonMm}));
 if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!simplePolygon(h.poly)||h.poly.length<8||!convexPolygon(h.poly)))
  return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه هر سوراخ باید یک چندضلعی ساده، محدب، معتبر و متناهی با حداقل هشت رأس باشد؛ برای سوراخ لوبیایی، محیط باید از هندسه شیار و زاویه واقعی ساخته شده باشد."],candidates:[]};
+for(const h of H){
+ const centroid=polygonCentroid(h.poly);
+ if(!centroid||dist(centroid,h.c)>0.01)
+  return{valid:false,status:"NOT_ASSESSABLE",errors:["مرکز ثبت‌شده سوراخ "+h.id+" با مرکز هندسی چندضلعی محیط سوراخ منطبق نیست (حد مجاز 0.01 mm)."],candidates:[]};
+}
 const plateEdges=P.map((q,i)=>[q,P[(i+1)%P.length]]);
 const holeGeometryAudit=H.map(h=>({holeId:h.id,plateEdgeClearanceMm:polygonEdgeClearance(h.poly,plateEdges)}));
 for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
