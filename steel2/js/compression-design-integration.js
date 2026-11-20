@@ -165,7 +165,12 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
    const matches=Array.isArray(c?.members)?c.members.filter(m=>String(m?.id??"").trim()===id):[];
    if(matches.length!==1)return {label,values:[],invalidForceVector:true};
    const forces=matches[0]?.localEndForces;
-   return {label,source:c?.source||null,values:Array.isArray(forces)?forces.slice(0,12):[],invalidForceVector:false};
+   const forceVectorValid=Array.isArray(forces)&&forces.length===12&&forces.every(value=>
+    (typeof value==="number"&&Number.isFinite(value))||
+    (typeof value==="string"&&value.trim()!==""&&Number.isFinite(Number(value)))
+   );
+   if(!forceVectorValid)issues.push("بردار نیروهای انتهایی عضو "+id+" در ترکیب "+label+" باید دقیقاً ۱۲ مؤلفه عددی معتبر داشته باشد.");
+   return {label,source:c?.source||null,values:Array.isArray(forces)?forces.slice():[],invalidForceVector:!forceVectorValid};
   });
   return {id,parentMemberId:sample.parentMemberId||source.parentMemberId||null,taperSegmentIndex:sample.taperSegmentIndex??source.taperSegmentIndex??null,
    sectionKey:String(source.sectionKey||sample.sectionKey||source.section?.sectionKey||""),length:Number(sample.length||source.length)||null,ends};
