@@ -167,3 +167,61 @@ test("concurrent member demand integration refuses missing solver cases",()=>{
  assert.equal(result.success,false);
  assert.ok(result.issues.some(x=>x.includes("نتیجه موفق حل‌گر")));
 });
+
+
+test("end-to-end real 3D solver actions reach concurrent member design candidates unchanged",()=>{
+ const solver=require("../js/analysis-3d.js");
+ const demandApi=require("../js/member-demand-3d.js");
+ require("../js/member-design-demand-3d.js");
+ global.SahroudMemberDemand3D=demandApi;
+ const section={E:200e9,G:80e9,A:0.012,Iy:3.2e-5,Iz:1.1e-4,J:2.5e-6};
+ const modelData={
+  nodes:[{id:"FIX",x:0,y:0,z:0},{id:"TIP",x:3,y:0,z:0}],
+  members:[{id:"REAL-CANT",start:"FIX",end:"TIP",sectionKey:"column",length:3,
+   referenceAxis:[0,0,1],sectionRollDeg:0,sectionOrientationVerified:true,
+   sectionPropertyFingerprint:"real-solver-reference-section-v1",
+   analysisLoad:{uniformLocal:[0,-200,0]}}]
+ };
+ const cases=[
+  {id:"REAL-ULS-1",label:"REAL ULS 1",nodalLoads:[{nodeId:"TIP",values:[0,-1000,0,0,0,0]}]},
+  {id:"REAL-ULS-2",label:"REAL ULS 2",nodalLoads:[{nodeId:"TIP",values:[0,-1500,0,0,0,0]}]}
+ ].map(spec=>{
+  const analysis=solver.analyze(modelData,{
+   sectionResolver:()=>section,
+   supports:[{nodeId:"FIX",fixedDofs:[0,1,2,3,4,5]}],
+   nodalLoads:spec.nodalLoads
+  });
+  assert.equal(analysis.success,true);
+  assert.equal(analysis.loadAssemblyAudit.ok,true);
+  assert.equal(analysis.equilibrium.ok,true);
+  assert.equal(analysis.memberCount,1);
+  assert.equal(analysis.members[0].id,"REAL-CANT");
+  assert.equal(analysis.members[0].length,3);
+  assert.equal(analysis.members[0].localEndForces.length,12);
+  return {id:spec.id,label:spec.label,analysis};
+ });
+ const prepared=api.buildConcurrentMemberDesignDemandFrom3D(cases,modelData);
+ assert.equal(prepared.success,true,JSON.stringify(prepared.issues));
+ assert.equal(prepared.caseCount,2);
+ assert.equal(prepared.memberCount,1);
+ const row=prepared.members[0];
+ assert.ok(row.candidateCount>4);
+ for(const item of cases){
+  const recovered=demandApi.extractCase({
+   ...item.analysis,loadCase:item.id,loadCaseLabel:item.label
+  },modelData);
+  const member=recovered.members[0];
+  const candidates=row.candidates.filter(c=>c.combinationId===item.id);
+  assert.ok(candidates.some(c=>Math.abs(c.x)<1e-10));
+  assert.ok(candidates.some(c=>Math.abs(c.x-3)<1e-10));
+  for(const station of [member.samples[0],member.samples[member.samples.length-1]]){
+   const candidate=candidates.find(c=>Math.abs(c.x-station.x)<1e-10);
+   assert.ok(candidate,"solver-derived end station must be preserved");
+   for(const component of ["N","Vy","Vz","T","My","Mz"])
+    assert.equal(candidate.values[component],station[component],
+     item.id+" "+component+" at x="+station.x);
+  }
+ }
+ assert.equal(prepared.interactionReady,false);
+ assert.equal(prepared.capacityChecksReady,false);
+});
