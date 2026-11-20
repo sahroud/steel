@@ -8,6 +8,18 @@ function hit(a,b,c,d){const r=sub(b,a),s=sub(d,c),den=cross(r,s);if(Math.abs(den
 function boundary(o,u,P){const R=Math.max(1,...P.map(p=>dist(p,o)))*4,a=sub(o,scale(u,R)),b=add(o,scale(u,R)),out=[];for(let i=0;i<P.length;i++){const t=hit(a,b,P[i],P[(i+1)%P.length]);if(t!==null){const p=add(a,scale(sub(b,a),t));if(!out.some(q=>dist(p,q)<1e-6))out.push(p);}}return out.sort((p,q)=>dot(sub(p,o),u)-dot(sub(q,o),u));}
 function insideSegment(a,b,P){for(let k=0;k<P.length;k++){const t=hit(a,b,P[k],P[(k+1)%P.length]);if(t!==null&&t>1e-7&&t<1-1e-7)return false;}for(let i=0;i<=64;i++)if(!inside(add(a,scale(sub(b,a),i/64)),P))return false;return true;}
 function sameBoundaryEdge(a,b,P){for(let i=0;i<P.length;i++)if(on(a,P[i],P[(i+1)%P.length])&&on(b,P[i],P[(i+1)%P.length]))return true;return false;}
+function simplePolygon(P){
+ if(!Array.isArray(P)||P.length<3||P.some(q=>!q||!finite(q.x)||!finite(q.y)))return false;
+ let area=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length];if(dist(a,b)<=1e-8)return false;area+=a.x*b.y-b.x*a.y;}
+ if(Math.abs(area)<=1e-8)return false;
+ for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
+  if(j===i+1||(i===0&&j===P.length-1))continue;
+  const a=P[i],b=P[(i+1)%P.length],c=P[j],d=P[(j+1)%P.length];
+  const o1=cross(sub(b,a),sub(c,a)),o2=cross(sub(b,a),sub(d,a)),o3=cross(sub(d,c),sub(a,c)),o4=cross(sub(d,c),sub(b,c));
+  if((o1*o2< -1e-12&&o3*o4< -1e-12)||on(c,a,b)||on(d,a,b)||on(a,c,d)||on(b,c,d))return false;
+ }
+ return true;
+}
 function segmentParameters(a,b,c,d){
  const r=sub(b,a),e=sub(d,c),rr=dot(r,r),den=cross(r,e),ca=sub(c,a),out=[];
  if(rr<E)return out;
@@ -44,9 +56,10 @@ if(!fd||!finite(fd.x)||!finite(fd.y)||Math.hypot(fd.x,fd.y)<E)errors.push("را�
 if(!finite(tol)||tol<=0)errors.push("تلرانس ردیف‌بندی باید مثبت باشد.");
 if(errors.length)return{valid:false,status:"NOT_ASSESSABLE",errors,candidates:[]};
 const P=p.polygonMm.map(q=>({x:+q.x,y:+q.y})),L=Math.hypot(fd.x,fd.y),u={x:fd.x/L,y:fd.y/L},v={x:-u.y,y:u.x};
+if(!simplePolygon(P))return{valid:false,status:"NOT_ASSESSABLE",errors:["چندضلعی ورق باید ساده، غیرخودمتقاطع، دارای مساحت غیرصفر و مختصات متناهی باشد."],candidates:[]};
 const H=holes.map(h=>({id:String(h.id),c:{x:+(h.center?.x??h.xMm),y:+(h.center?.y??h.yMm)},poly:h.polygon||h.polygonMm}));
-if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!Array.isArray(h.poly)||h.poly.length<8||
- h.poly.some(q=>!q||!finite(q.x)||!finite(q.y))))return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه کامل و متناهی محیط سوراخ‌ها الزامی است."],candidates:[]};
+if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!simplePolygon(h.poly)||h.poly.length<8))
+ return{valid:false,status:"NOT_ASSESSABLE",errors:["هندسه هر سوراخ باید یک چندضلعی ساده، معتبر و متناهی با حداقل هشت رأس باشد."],candidates:[]};
 const plateEdges=P.map((q,i)=>[q,P[(i+1)%P.length]]);
 for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
  if(j===i+1||(i===0&&j===P.length-1))continue;
