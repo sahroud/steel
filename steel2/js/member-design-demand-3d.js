@@ -6,8 +6,10 @@
 (function(root){
   "use strict";
   const COMPONENTS=["N","Vy","Vz","T","My","Mz"];
+  const finiteInput=value=>value!==null&&value!==undefined&&value!==""&&Number.isFinite(Number(value));
   function build(combinationRun,model,demandApi){
     if(!combinationRun||combinationRun.success!==true||
+       !Number.isInteger(combinationRun.caseCount)||combinationRun.caseCount<=0||
        !Array.isArray(combinationRun.combinationResults)||
        combinationRun.combinationResults.length!==combinationRun.caseCount)
       throw new Error("نتایج کامل همه ترکیبات بار برای آماده‌سازی تقاضای طراحی لازم است.");
@@ -27,11 +29,12 @@
     const rows=new Map([...expected].map(id=>[id,{id,candidates:[],governing:{}}]));
     const seenCases=new Set();
     combinationRun.combinationResults.forEach(item=>{
-      if(!item||!item.analysis||!item.analysis.success||!item.label||item.id===null||item.id===undefined||String(item.id).trim()==="")
+      const caseId=String(item?.id??"").trim();
+      if(!item||!item.analysis||!item.analysis.success||!String(item.label??"").trim()||!caseId)
         throw new Error("نتیجه حل‌گر یا شناسه یکی از ترکیبات بار ناقص است.");
-      if(seenCases.has(String(item.id)))throw new Error("شناسه ترکیب بار تکراری است: "+item.id);
-      seenCases.add(String(item.id));
-      const recovered=demandApi.extractCase({...item.analysis,loadCase:item.id,loadCaseLabel:item.label},model);
+      if(seenCases.has(caseId))throw new Error("شناسه ترکیب بار تکراری است: "+caseId);
+      seenCases.add(caseId);
+      const recovered=demandApi.extractCase({...item.analysis,loadCase:caseId,loadCaseLabel:item.label},model);
       if(!Array.isArray(recovered.members))throw new Error("فهرست اعضای بازیابی‌شده در ترکیب "+item.id+" معتبر نیست.");
       if(recovered.memberCount!==recovered.members.length||recovered.members.length!==expected.size)
         throw new Error("تعداد واقعی اعضای بازیابی‌شده با مدل مرجع یکسان نیست.");
@@ -47,11 +50,11 @@
         member.samples.forEach(sample=>{
           const values={};
           COMPONENTS.forEach(k=>{
-            const n=Number(sample[k]);
-            if(!Number.isFinite(n))throw new Error("مؤلفه "+k+" برای عضو "+member.id+" نامعتبر است.");
-            values[k]=n;
+            if(!finiteInput(sample?.[k]))throw new Error("مؤلفه "+k+" برای عضو "+id+" تهی یا نامعتبر است.");
+            values[k]=Number(sample[k]);
           });
-          const candidate={combinationId:item.id,combination:item.label,x:Number(sample.x),values};
+          if(!finiteInput(sample?.x))throw new Error("مختصات ایستگاه برای عضو "+id+" تهی یا نامعتبر است.");
+          const candidate={combinationId:caseId,combination:String(item.label).trim(),x:Number(sample.x),values};
           const sourceLength=memberById.get(id).length;
           const recoveredLength=Number(member.length);
           const length=sourceLength??(Number.isFinite(recoveredLength)&&recoveredLength>0?recoveredLength:null);
