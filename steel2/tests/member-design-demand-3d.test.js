@@ -3,14 +3,15 @@ const test=require("node:test");
 const assert=require("node:assert/strict");
 const api=require("../js/member-design-demand-3d.js");
 function input(){
- const model={members:[{id:"M1",length:5},{id:"M2",length:4}]};
+ const axes={x:[1,0,0],y:[0,1,0],z:[0,0,1]};
+ const model={members:[{id:"M1",length:5,sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true},{id:"M2",length:4,sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true}]};
  const combinationRun={success:true,caseCount:2,combinationResults:[
   {id:"ULS-A",label:"ULS A",analysis:{success:true}},
   {id:"ULS-B",label:"ULS B",analysis:{success:true}}
  ]};
  const demandApi={extractCase:analysis=>({memberCount:2,members:[
-  {id:"M1",samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
-  {id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+  {id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+  {id:"M2",sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
  ]})};
  return {model,combinationRun,demandApi};
 }
@@ -108,3 +109,6 @@ test("rejects non-integer or zero combination counts",()=>{
   assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/نتایج کامل/);
  }
 });
+
+test("rejects changed section fingerprints and local axes across load combinations",()=>{const x=input();x.demandApi.extractCase=(analysis)=>({memberCount:2,members:[{id:"M1",sectionPropertyFingerprint:analysis.loadCase==="ULS-A"?"fp-M1":"changed",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localAxesVerified:true,samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},{id:"M2",sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localAxesVerified:true,samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}]});assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/شناسنامه مقطع/);});
+test("rejects demand without explicit section identity and local orientation",()=>{const x=input();x.demandApi.extractCase=()=>({memberCount:2,members:[{id:"M1",samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},{id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}]});assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/شناسنامه مقطع/);});
