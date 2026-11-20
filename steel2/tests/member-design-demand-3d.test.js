@@ -84,6 +84,24 @@ test("rejects null or empty station coordinates instead of treating them as zero
   assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/مختصات ایستگاه/);
  }
 });
+test("rejects boolean and whitespace force values and station coordinates",()=>{
+ for(const bad of [true,false,"   "]){
+  const x=input();
+  x.demandApi.extractCase=()=>({memberCount:2,members:[
+   {id:"M1",samples:[{x:0,N:bad,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+   {id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+  ]});
+  assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/تهی یا نامعتبر/);
+ }
+ for(const bad of [true,false,"   "]){
+  const x=input();
+  x.demandApi.extractCase=()=>({memberCount:2,members:[
+   {id:"M1",samples:[{x:bad,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+   {id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+  ]});
+  assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/مختصات ایستگاه/);
+ }
+});
 test("rejects non-integer or zero combination counts",()=>{
  for(const count of [0,1.5,"2"]){
   const x=input();x.combinationRun.caseCount=count;
