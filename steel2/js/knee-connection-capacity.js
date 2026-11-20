@@ -263,9 +263,12 @@
    }
    for(const p of c.blockShearChecks){
     const plate=plateById.get(String(p.plateId)),m=plate.material,geometryAudit=assessBlockShearGeometry(detail,p);
-    const Rn=Math.min(0.6*m.FyMPa*p.AgvMm2,0.6*m.FuMPa*p.AnvMm2)+p.Ubs*m.FuMPa*p.AntMm2;
-    const provisionalResistance=geometryAudit.status==="GEOMETRY_MATCHED_CODE_REVIEW_REQUIRED"
-     ?factor(method,PHI_RUPTURE,OMEGA_RUPTURE)*Rn/1000:null;
+    let provisionalResistance=null;
+    if(geometryAudit.status==="GEOMETRY_MATCHED_CODE_REVIEW_REQUIRED"){
+     const a=geometryAudit.verifiedAreasMm2;
+     const Rn=Math.min(0.6*m.FyMPa*a.AgvMm2,0.6*m.FuMPa*a.AnvMm2)+p.Ubs*m.FuMPa*a.AntMm2;
+     provisionalResistance=factor(method,PHI_RUPTURE,OMEGA_RUPTURE)*Rn/1000;
+    }
     const check={id:c.id+":"+p.plateId+":"+p.pathId,limitState:"plate-block-shear",
      demandKN:p.demandKN,capacityKN:null,provisionalResistanceKN:provisionalResistance,
      utilization:null,status:"NOT_ASSESSABLE",method,
