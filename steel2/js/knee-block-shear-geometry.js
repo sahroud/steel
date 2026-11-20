@@ -24,24 +24,55 @@ if(H.some(h=>!h.id||!finite(h.c.x)||!finite(h.c.y)||!Array.isArray(h.poly)||h.po
 const sorted=H.map(h=>({...h,s:dot(h.c,u),t:dot(h.c,v)})).sort((a,b)=>a.t-b.t),rows=[];
 for(const h of sorted){let r=rows.find(q=>Math.abs(q.t-h.t)<=tol);if(!r){r={t:h.t,holes:[]};rows.push(r);}r.holes.push(h);}
 rows.forEach(r=>r.holes.sort((a,b)=>a.s-b.s));
-const candidates=[],rejected=[];
+const candidates=[],rejected=[],seen=new Set(),MAX_CANDIDATES=250;
 for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
-const a=rows[i],b=rows[j],end=Math.max(a.holes.at(-1).s,b.holes.at(-1).s),o1=add(scale(u,end),scale(v,a.t)),o2=add(scale(u,end),scale(v,b.t));
-const lead=(o)=>boundary(o,u,P).filter(q=>dot(sub(q,o),u)<-E).at(-1),p1=lead(o1),p2=lead(o2);
-if(!p1||!p2){rejected.push({rows:[i+1,j+1],reason:"لبه آزاد باربر برای دو صفحه برشی یکتا نیست."});continue;}
-if(!sameBoundaryEdge(p1,p2,P)){rejected.push({rows:[i+1,j+1],reason:"دو صفحه برشی به یک قطعه پیوسته و مشترک از لبه آزاد باربر متصل نشده‌اند."});continue;}
-const q1=o1,q2=o2;
-if(!insideSegment(p1,q1,P)||!insideSegment(p2,q2,P)||!insideSegment(q1,q2,P)){rejected.push({rows:[i+1,j+1],reason:"مسیر پیشنهادی کاملاً داخل ورق نیست."});continue;}
-const lines=[{id:"S1",kind:"shear",a:p1,b:q1},{id:"S2",kind:"shear",a:p2,b:q2},{id:"T1",kind:"tension",a:q1,b:q2}],crossed=[];
-for(const line of lines){line.grossLengthMm=dist(line.a,line.b);line.holeIntersections=[];for(const h of H){const ints=intervals(line.a,line.b,h.poly);if(ints.length){const x=[Math.min(...ints.map(z=>z[0])),Math.max(...ints.map(z=>z[1]))];line.holeIntersections.push({holeId:h.id,fromMm:x[0],toMm:x[1],deductionMm:x[1]-x[0]});if(!crossed.includes(h.id))crossed.push(h.id);}}line.netGeometryLengthMm=subtract(line.grossLengthMm,line.holeIntersections.map(h=>[h.fromMm,h.toMm]));}
-const shearAIds=new Set(lines[0].holeIntersections.map(h=>h.holeId)),shearBIds=new Set(lines[1].holeIntersections.map(h=>h.holeId)),tensionIds=new Set(lines[2].holeIntersections.map(h=>h.holeId));
-const terminalHasBothRows=a.holes.some(h=>tensionIds.has(h.id))&&b.holes.some(h=>tensionIds.has(h.id));
-if(!a.holes.some(h=>shearAIds.has(h.id))||!b.holes.some(h=>shearBIds.has(h.id))||!terminalHasBothRows){
- rejected.push({rows:[i+1,j+1],reason:"مسیر باید سوراخ‌های هر دو صفحه برشی و سوراخ‌های ردیف انتهایی در هر دو سمت را واقعاً قطع کند."});continue;
+ const a=rows[i],b=rows[j];
+ for(const lowBolt of a.holes)for(const highBolt of b.holes){
+  if(candidates.length>=MAX_CANDIDATES)break;
+  const o1=add(scale(u,lowBolt.s),scale(v,a.t)),o2=add(scale(u,highBolt.s),scale(v,b.t));
+  const lead=(o)=>boundary(o,u,P).filter(q=>dot(sub(q,o),u)<-E).at(-1);
+  const p1=lead(o1),p2=lead(o2);
+  const label=lowBolt.id+"~"+highBolt.id;
+  if(!p1||!p2){rejected.push({boltPair:label,rows:[i+1,j+1],reason:"لبه آزاد باربر برای دو صفحه برشی یکتا نیست."});continue;}
+  if(!sameBoundaryEdge(p1,p2,P)){rejected.push({boltPair:label,rows:[i+1,j+1],reason:"دو صفحه برشی به یک قطعه پیوسته و مشترک از لبه آزاد باربر متصل نشده‌اند."});continue;}
+  if(!insideSegment(p1,o1,P)||!insideSegment(p2,o2,P)||!insideSegment(o1,o2,P)){
+   rejected.push({boltPair:label,rows:[i+1,j+1],reason:"یکی از اضلاع مسیر پلکانی پیشنهادی کاملاً داخل ورق قرار ندارد."});continue;
+  }
+  const lines=[{id:"S1",kind:"shear",a:p1,b:o1},{id:"S2",kind:"shear",a:p2,b:o2},{id:"T1",kind:"tension",a:o1,b:o2}],crossed=[];
+  for(const line of lines){
+   line.grossLengthMm=dist(line.a,line.b);line.holeIntersections=[];
+   for(const h of H){
+    const ints=intervals(line.a,line.b,h.poly);
+    if(ints.length){
+     const x=[Math.min(...ints.map(z=>z[0])),Math.max(...ints.map(z=>z[1]))];
+     line.holeIntersections.push({holeId:h.id,fromMm:x[0],toMm:x[1],deductionMm:x[1]-x[0]});
+     if(!crossed.includes(h.id))crossed.push(h.id);
+    }
+   }
+   line.netGeometryLengthMm=subtract(line.grossLengthMm,line.holeIntersections.map(h=>[h.fromMm,h.toMm]));
+  }
+  const shearAIds=new Set(lines[0].holeIntersections.map(h=>h.holeId)),shearBIds=new Set(lines[1].holeIntersections.map(h=>h.holeId)),tensionIds=new Set(lines[2].holeIntersections.map(h=>h.holeId));
+  if(!a.holes.some(h=>shearAIds.has(h.id))||!b.holes.some(h=>shearBIds.has(h.id))||
+     !tensionIds.has(lowBolt.id)||!tensionIds.has(highBolt.id)){
+   rejected.push({boltPair:label,rows:[i+1,j+1],reason:"مسیر باید سوراخ‌های هر دو صفحه برشی و سوراخ‌های انتخابی صفحه کششی را واقعاً قطع کند."});continue;
+  }
+  const signature=[i,j,lowBolt.id,highBolt.id].join(":");
+  if(seen.has(signature))continue;seen.add(signature);
+  const sg=lines[0].grossLengthMm+lines[1].grossLengthMm,sn=lines[0].netGeometryLengthMm+lines[1].netGeometryLengthMm;
+  const tg=lines[2].grossLengthMm,tn=lines[2].netGeometryLengthMm;
+  candidates.push({pathId:"BS-"+(i+1)+"-"+(j+1)+"-"+lowBolt.id+"-"+highBolt.id,
+   plateId:String(p.id||input.plateId||""),rowIds:[i+1,j+1],terminalBoltIds:[lowBolt.id,highBolt.id],
+   pathType:Math.abs(lowBolt.s-highBolt.s)>1e-7?"STAGGERED_ZIGZAG":"STRAIGHT",
+   vertices:[p1,o1,o2,p2],lines,crossedHoleIds:crossed.sort(),
+   gross:{AgvLengthMm:sg,AntLengthMm:tg},netGeometry:{AnvLengthMm:sn,AntLengthMm:tn},
+   geometricAreas:{AgvMm2:sg*p.thicknessMm,AnvMm2:sn*p.thicknessMm,AntMm2:tn*p.thicknessMm},
+   status:"GEOMETRY_CANDIDATE_ONLY",capacityAssessable:false,
+   limitations:["مسیر پلکانی بر اساس زوج پیچ‌های انتهایی از دو ردیف عرضی ساخته شده است؛ تمام توپولوژی‌های شکست ممکن یا مسیرهای ترکیبی چندردیفه لزوماً پوشش داده نشده‌اند.",
+    "کسر سوراخ صرفاً طول تقاطع چندضلعی سوراخ با خط مسیر است؛ ضرایب آیین‌نامه‌ای مسیر پلکانی، فاصله گام، Ubs و قواعد سوراخ لوبیایی هنوز اعمال نشده‌اند.",
+    "مساحت‌ها صرفاً هندسی‌اند و به مقاومت طراحی یا PASS/FAIL تبدیل نمی‌شوند."]});
+ }
 }
-const sg=lines[0].grossLengthMm+lines[1].grossLengthMm,sn=lines[0].netGeometryLengthMm+lines[1].netGeometryLengthMm,tg=lines[2].grossLengthMm,tn=lines[2].netGeometryLengthMm;
-candidates.push({pathId:"BS-"+(i+1)+"-"+(j+1),plateId:String(p.id||input.plateId||""),rowIds:[i+1,j+1],vertices:[p1,q1,q2,p2],lines,crossedHoleIds:crossed.sort(),gross:{AgvLengthMm:sg,AntLengthMm:tg},netGeometry:{AnvLengthMm:sn,AntLengthMm:tn},geometricAreas:{AgvMm2:sg*p.thicknessMm,AnvMm2:sn*p.thicknessMm,AntMm2:tn*p.thicknessMm},status:"GEOMETRY_CANDIDATE_ONLY",capacityAssessable:false,limitations:["候选路径由两行横向螺栓及板边界构造；未枚举其他破坏机制或确定控制路径。","孔洞扣减为多边形与路径的几何交长；规范对错列孔、长圆孔及 Ubs 的规则尚未应用。","几何面积不是设计承载力，不得产生 PASS/FAIL。"]});
-}
+if(candidates.length>=MAX_CANDIDATES)rejected.push({reason:"حد بالای تعداد مسیرهای کاندید ("+MAX_CANDIDATES+") رسیده است؛ بررسی کامل آرایش پیچ نیازمند بازبینی مهندس است.",truncated:true});
 return{valid:true,status:candidates.length?"GEOMETRY_CANDIDATES_FOUND":"NOT_ASSESSABLE",plateId:String(p.id||input.plateId||""),rows:rows.map((r,i)=>({rowId:i+1,transverseProjectionMm:r.t,boltIds:r.holes.map(h=>h.id)})),candidates,rejected,capacityDesigned:false,connectionApproved:false,executionReady:false};
 }
 const api={SCHEMA:"SAHROUD-BLOCK-SHEAR-GEOMETRY-1.0",assess,linePolygonIntervals:intervals,subtractIntervals:subtract};root.SahroudKneeBlockShearGeometry=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
