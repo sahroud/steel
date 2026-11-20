@@ -234,3 +234,20 @@ test("global geometry exports drawing-oriented circular and slotted hole boundar
  assert.equal(holes[1].holeGeometry.verticesLocalMm.length,34);
  assert.ok(holes[1].holeGeometry.verticesGlobalM.every(p=>p.length===3&&p.every(Number.isFinite)));
 });
+
+test("hole-layout audit groups bolts into rows along an explicit force direction",()=>{
+ const d=fixture();d.bolts[1].xMm=80;d.bolts[1].yMm=-40;
+ const a=detail.analyzeHoleLayout(d,"END-PLATE",{forceDirectionLocal:{x:1,y:0},rowToleranceMm:1});
+ assert.equal(a.status,"GEOMETRY_AUDIT_ONLY");
+ assert.equal(a.blockShearPathsDerived,false);
+ assert.equal(a.rows.length,1);
+ assert.deepEqual(a.rows[0].holes.map(h=>h.id),["B1","B2"]);
+ assert.ok(Math.abs(a.holeClearances[0].clearDistanceMm-58)<1e-6);
+ assert.ok(a.holes.every(h=>h.edgeClearanceMm>0));
+});
+test("hole-layout audit keeps separate transverse rows and requires explicit force direction",()=>{
+ const d=fixture();
+ const a=detail.analyzeHoleLayout(d,"END-PLATE",{forceDirectionLocal:{x:1,y:0}});
+ assert.equal(a.rows.length,2);
+ assert.throws(()=>detail.analyzeHoleLayout(d,"END-PLATE",{}),/راستای نیرو/);
+});
