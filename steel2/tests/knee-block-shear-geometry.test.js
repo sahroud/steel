@@ -34,7 +34,7 @@ test("rejects unusual layouts above four transverse bolt rows for explicit engin
 test("reports candidate enumeration truncation instead of silently dropping paths",()=>{
  const d=fixture(),circle=(x,y,r)=>Array.from({length:32},(_,k)=>({x:x+r*Math.cos(2*Math.PI*k/32),y:y+r*Math.sin(2*Math.PI*k/32)}));
  d.holes=[];
- for(let row=0;row<18;row++){const y=-85+row*10;d.holes.push({id:"L"+row,xMm:20,yMm:y,polygon:circle(20,y,4)},{id:"R"+row,xMm:80,yMm:y,polygon:circle(80,y,4)});}
+ for(let row=0;row<4;row++){const y=-60+row*40;for(let col=0;col<18;col++){const x=10+col*10;d.holes.push({id:"R"+row+"B"+col,xMm:x,yMm:y,polygon:circle(x,y,2)});}}
  const r=geo.assess(d);
  assert.equal(r.valid,true);
  assert.ok(r.rejected.some(x=>x.truncated===true));assert.equal(r.candidateEnumerationComplete,false);assert.equal(r.candidateEnumerationStatus,"TRUNCATED_REVIEW_REQUIRED");
