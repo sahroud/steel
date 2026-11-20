@@ -20,15 +20,17 @@
     const rows=new Map([...expected].map(id=>[id,{id,candidates:[],governing:{}}]));
     const seenCases=new Set();
     combinationRun.combinationResults.forEach(item=>{
-      if(!item||!item.analysis||!item.analysis.success||!item.label)
-        throw new Error("نتیجه حل‌گر یکی از ترکیبات بار ناقص است.");
-      if(seenCases.has(item.id))throw new Error("شناسه ترکیب بار تکراری است: "+item.id);
-      seenCases.add(item.id);
+      if(!item||!item.analysis||!item.analysis.success||!item.label||item.id===null||item.id===undefined||String(item.id).trim()==="")
+        throw new Error("نتیجه حل‌گر یا شناسه یکی از ترکیبات بار ناقص است.");
+      if(seenCases.has(String(item.id)))throw new Error("شناسه ترکیب بار تکراری است: "+item.id);
+      seenCases.add(String(item.id));
       const recovered=demandApi.extractCase({...item.analysis,loadCase:item.id,loadCaseLabel:item.label},model);
       if(recovered.memberCount!==expected.size)throw new Error("تعداد اعضای بازیابی‌شده با مدل مرجع یکسان نیست.");
+      if(!Array.isArray(recovered.members))throw new Error("فهرست اعضای بازیابی‌شده در ترکیب "+item.id+" معتبر نیست.");
       recovered.members.forEach(member=>{
         const row=rows.get(String(member.id));
         if(!row)throw new Error("عضو خارج از مدل مرجع در نتایج طراحی دیده شد: "+member.id);
+        if(!Array.isArray(member.samples)||!member.samples.length)throw new Error("ایستگاه‌های تقاضای عضو "+member.id+" در ترکیب "+item.id+" موجود نیست.");
         member.samples.forEach(sample=>{
           const values={};
           COMPONENTS.forEach(k=>{
@@ -52,7 +54,7 @@
       return {...row,candidateCount:row.candidates.length};
     });
     return {success:true,method:"concurrent-six-component-per-combination-and-station",
-      caseCount:seenCases.size,memberCount:members.length,members,
+      caseCount:seenCases.size,caseIds:[...seenCases],memberCount:members.length,members,
       units:{force:"N",moment:"N.m",length:"m"},
       interactionReady:false,capacityChecksReady:false,
       note:"هر candidate شش مؤلفه N,Vy,Vz,T,My,Mz را از یک ترکیب بار و یک مقطع نگه می‌دارد. حاکم‌های جداگانه مؤلفه‌ها الزاماً هم‌زمان نیستند. ظرفیت و کنترل آیین‌نامه‌ای در این ماژول محاسبه نمی‌شود."};
