@@ -64,3 +64,12 @@ test("rejects non-finite or zero-area plate boundaries",()=>{
  const q=fixture();q.plate.polygonMm=[{x:0,y:0},{x:10,y:0},{x:20,y:0}];
  assert.equal(geo.assess(q).valid,false);
 });
+
+test("rejects a bolt hole that only touches the plate boundary with zero edge clearance",()=>{
+ const d=fixture();d.holes[0].xMm=-89;d.holes[0].polygon=d.holes[0].polygon.map(p=>({x:p.x-109,y:p.y+40}));
+ const r=geo.assess(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("تماس دارد")));
+});
+test("rejects bolt-hole boundaries that touch without positive clear spacing",()=>{
+ const d=fixture();d.holes[1].xMm=42;d.holes[1].polygon=d.holes[1].polygon.map(p=>({x:p.x-38,y:p.y+40}));
+ const r=geo.assess(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("هم‌پوشانی")));
+});
