@@ -154,3 +154,10 @@ test("knee UI reports staggered block-shear candidates and geometric hole cleara
  assert.match(source,/clearDistanceMm/);
  assert.match(source,/x\.truncated/);
 });
+
+test("knee block-shear UI displays path-specific hole-to-hole and hole-to-edge clearances",()=>{
+ assert.match(source,/c\.clearanceAudit/);
+ assert.match(source,/plateEdgeClearanceMm/);
+ assert.match(source,/holePair/);
+ assert.match(source,/ممیزی فاصله هندسی برای مسیرهای کاندید/);
+});
