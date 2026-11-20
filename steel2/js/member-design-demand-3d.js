@@ -66,7 +66,7 @@
           const length=sourceLength??(Number.isFinite(recoveredLength)&&recoveredLength>0?recoveredLength:null);
           if(!Number.isFinite(candidate.x)||candidate.x< -1e-9||(length!==null&&candidate.x>length+1e-9))
             throw new Error("مختصات ایستگاه تقاضا برای عضو "+id+" خارج از طول عضو یا نامعتبر است.");
-          const stationKey=candidate.x.toPrecision(12);
+          const stationKey=candidate.x.toFixed(12);
           if(seenStations.has(stationKey))throw new Error("ایستگاه تقاضای تکراری برای عضو "+id+" در ترکیب "+item.id+" ثبت شده است.");
           seenStations.add(stationKey);
           row.candidates.push(candidate);
