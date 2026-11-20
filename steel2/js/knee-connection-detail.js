@@ -236,11 +236,51 @@
     "footprint شش‌گوش با شش رأس و واشر با حلقه ۴۸ضلعی تقریب زده می‌شود؛ رزوه، تغییرشکل و تلرانس ساخت مدل نشده‌اند.",
     "سوراخ‌های ورق غیرمیزبان از سطح ماده کسر می‌شوند؛ تماس چندجسمی عمومی یا تداخل با اعضای نامنظم بررسی نمی‌شود."]};
  }
- function auditWeldPlateInteractions(welds){
-  const pairs=(Array.isArray(welds)?welds:[]).map(w=>({weldId:String(w.id),plateId:String(w.plateId),status:"NOT_ASSESSABLE",
-   reason:"برای حجم جوش، راستای مقطع، شکل گلویی/ساق در فضای سه‌بعدی و مرز اتصال به ورق مدل جامد کافی وجود ندارد؛ قرارگیری خط ریشه روی صفحه به‌تنهایی نفوذ یا عدم نفوذ را تعیین نمی‌کند."}));
-  return{status:pairs.length?"NOT_ASSESSABLE":"NOT_ASSESSABLE",pairs,
-   limitation:"کنترل برخورد حجمی جوش با ورق عمداً صادر نمی‌شود تا تماس ریشه جوش با نفوذ ناخواسته اشتباه نشود."};
+ function auditWeldPlateInteractions(input){
+  const pairs=[],solids=[],plates=Array.isArray(input?.plates)?input.plates:[],welds=Array.isArray(input?.welds)?input.welds:[];
+  const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const norm=a=>Math.hypot(...a),scale=(a,k)=>a.map(v=>v*k),add=(a,b)=>a.map((v,i)=>v+b[i]);
+  for(const w of welds){
+   const base={weldId:String(w.id),plateId:String(w.plateId),type:w.type};
+   const plate=plates.find(p=>String(p.id)===String(w.plateId));
+   if(w.type!=="fillet"||!plate?.frame?.axes||!positive(w.legSizeMm)||![1,-1].includes(w.plateFaceSide)||
+    !vec(w.plateLegDirectionConnection,3)||!vec(w.connectedLegDirectionConnection,3)){
+    pairs.push({...base,status:"NOT_ASSESSABLE",reason:"برای ساخت حجم جوش گوشه، نوع جوش، ساق، سمت وجه و دو راستای واحد leg در دستگاه اتصال باید صریح باشند؛ جوش شیاری به مدل آماده‌سازی شیار نیاز دارد."});continue;
+   }
+   const axis=w.endMm.map((v,i)=>v-w.startMm[i]),L=norm(axis),t=scale(axis,1/L);
+   const a=w.plateLegDirectionConnection.map(Number),b=w.connectedLegDirectionConnection.map(Number),n=plate.frame.axes.n.map(Number);
+   if(Math.abs(norm(a)-1)>1e-6||Math.abs(norm(b)-1)>1e-6||Math.abs(dot(t,a))>1e-6||Math.abs(dot(t,b))>1e-6||
+    Math.abs(dot(a,b))>1e-6||Math.abs(dot(a,n))>1e-6||dot(b,n)*w.plateFaceSide<=0.5){
+    pairs.push({...base,status:"NOT_ASSESSABLE",reason:"دو راستای ساق باید واحد، عمود بر خط جوش و بر یکدیگر باشند؛ ساق روی ورق مماس و ساق قطعه متصل‌شونده رو به بیرون وجه انتخابی باشد."});continue;
+   }
+   const frame=plate.frame,origin=frame.originMm.map(Number),u=frame.axes.u.map(Number),v=frame.axes.v.map(Number);
+   const toGlobal=p=>{const q=p.map(x=>x/1000),cf=input.connectionFrame;return[0,1,2].map(i=>cf.originM[i]+cf.axes.x[i]*q[0]+cf.axes.y[i]*q[1]+cf.axes.z[i]*q[2]);};
+   const roots=[w.startMm,w.endMm].map(p=>add(p,scale(n,w.plateFaceSide*plate.thicknessMm/2)));
+   const vertices=roots.flatMap(root=>[root,add(root,scale(a,w.legSizeMm)),add(root,scale(b,w.legSizeMm))]);
+   const toPlateLocal=p=>{const delta=p.map((x,i)=>x-origin[i]);return{x:dot(delta,u),y:dot(delta,v)};};
+   const hostFaceSide=roots.every(p=>Math.abs(dot(p.map((x,i)=>x-origin[i]),n)-w.plateFaceSide*plate.thicknessMm/2)<=1e-6);
+   const rootInside=roots.every(p=>pointInPolygon(toPlateLocal(p),plate.polygonMm));
+   const legAOutward=vertices.every((p,i)=>i%3!==1||Math.abs(dot(p.map((x,j)=>x-origin[j]),n)-w.plateFaceSide*plate.thicknessMm/2)<=1e-6);
+   if(!hostFaceSide||!rootInside||!legAOutward){
+    pairs.push({...base,status:"NOT_ASSESSABLE",reason:"ریشه جوش یا ساق روی ورق با وجه/پلی‌گون میزبان منطبق نیست؛ حجم جوش صادر نشد."});continue;
+   }
+   const globalVertices=vertices.map(toGlobal);
+   const triangles=[[0,1,2],[3,5,4],[0,3,4],[0,4,1],[1,4,5],[1,5,2],[2,5,3],[2,3,0]];
+   const solid={weldId:String(w.id),plateId:String(w.plateId),geometryType:"triangular-fillet-prism",
+    legSizeMm:w.legSizeMm,rootFaceSide:w.plateFaceSide,verticesConnectionMm:vertices,verticesGlobalM:globalVertices,
+    faces:triangles.map(face=>face.map(i=>globalVertices[i])),volumeMm3:L*w.legSizeMm*w.legSizeMm/2,
+    hostPlateContact:{status:"ROOT_FACE_CONTACT_ONLY",rootPointsGlobalM:roots.map(toGlobal)},
+    assumptions:["مقطع جوش گوشه مثلث قائم‌الزاویه با دو ساق مساوی legSizeMm مدل شده است.",
+     "پروفیل جوش در طول مستقیم خط جوش ثابت فرض شده است؛ شروع/پایان، crater، تحدب/تقعر، نفوذ و گرده واقعی مدل نشده‌اند."]};
+   solids.push(solid);
+   pairs.push({...base,status:"GEOMETRY_BUILT_HOST_FACE_CONTACT_ONLY",
+    reason:"منشور مثلثی جوش با جهت‌گیری صریح ساخته شد؛ فقط تماس ریشه با وجه میزبان کنترل شده و برخورد با ورق‌های دیگر هنوز ارزیابی نشده است.",
+    volumeMm3:solid.volumeMm3,legSizeMm:w.legSizeMm,plateFaceSide:w.plateFaceSide});
+  }
+  return{status:pairs.length&&pairs.every(p=>p.status==="GEOMETRY_BUILT_HOST_FACE_CONTACT_ONLY")?"GEOMETRY_BUILT_HOST_CONTACT_ONLY":"PARTIALLY_ASSESSABLE",pairs,solids,
+   limitations:["مدل منشور مثلثی فقط برای جوش گوشه با جهت‌گیری صریح دو ساق است؛ جوش شیاری NOT_ASSESSABLE باقی می‌ماند.",
+    "این مرحله برخورد حجم جوش با ورق‌های غیرمیزبان، اعضای متصل‌شونده، پیچ‌ها و سایر جوش‌ها را بررسی نمی‌کند.",
+    "تماس ریشه با وجه میزبان کنترل می‌شود؛ کیفیت جوش، نفوذ، گلویی مؤثر، مقاومت و تأیید آیین‌نامه‌ای از این هندسه نتیجه نمی‌شود."]};
  }
  function analyzeHoleLayout(input,plateId,options={}){
   const checked=validate(input);
@@ -563,10 +603,10 @@
   });
   const plateInteractionAudit=auditPlateInteractions(input.plates);
   const hardwarePlateInteractionAudit=auditHardwarePlateInteractions(input);
-  const weldPlateInteractionAudit=auditWeldPlateInteractions(input.welds);
+  const weldPlateInteractionAudit=auditWeldPlateInteractions(input);
   const hardwareOtherPlateInteractionAudit=auditHardwareOtherPlateInteractions(input);
    const welds=input.welds.map(w=>({id:String(w.id),plateId:String(w.plateId),faceReference:w.faceReference,
-   type:w.type,startGlobalM:toGlobal(w.startMm),endGlobalM:toGlobal(w.endMm)}));
+   type:w.type,startGlobalM:toGlobal(w.startMm),endGlobalM:toGlobal(w.endMm),solidGeometry:weldPlateInteractionAudit.solids.find(s=>s.weldId===String(w.id))||null}));
   return{success:true,schema:"SAHROUD-KNEE-CONNECTION-GLOBAL-GEOMETRY-1.0",
    connectionId:String(input.connectionId),jointId:String(input.jointId),
    coordinateSystems:{platePolygonAndBolt:"plate-local mm",plateFrame:"connection-frame mm",
