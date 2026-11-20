@@ -51,6 +51,23 @@
   const t=l2?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/l2)):0;
   return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);
  }
+ function auditHardwareAxialIntervals(hardware){
+  const parts=Array.isArray(hardware)?hardware:[];
+  const pairs=[];
+  for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){
+   const a=parts[i],b=parts[j];
+   if(!finite(a.centerOffsetMm)||!positive(a.thicknessMm)||!finite(b.centerOffsetMm)||!positive(b.thicknessMm)){
+    pairs.push({firstId:a.id||null,secondId:b.id||null,status:"NOT_ASSESSABLE",overlapMm:null});continue;
+   }
+   const a0=a.centerOffsetMm-a.thicknessMm/2,a1=a.centerOffsetMm+a.thicknessMm/2;
+   const b0=b.centerOffsetMm-b.thicknessMm/2,b1=b.centerOffsetMm+b.thicknessMm/2;
+   const overlap=Math.min(a1,b1)-Math.max(a0,b0);
+   const status=overlap>1e-6?"AXIAL_INTERFERENCE":Math.abs(overlap)<=1e-6?"FACE_CONTACT":"AXIAL_CLEARANCE";
+   pairs.push({firstId:a.id||null,secondId:b.id||null,status,overlapMm:Number(overlap.toFixed(9))});
+  }
+  return{method:"coaxial-axial-interval-screen",status:pairs.some(p=>p.status==="NOT_ASSESSABLE")?"NOT_ASSESSABLE":pairs.some(p=>p.status==="AXIAL_INTERFERENCE")?"INTERFERENCE_DETECTED":"NO_AXIAL_INTERFERENCE_DETECTED",pairs,
+   limitation:"فقط هم‌پوشانی بازه‌های محوری قطعات هم‌محور یک پیچ بررسی می‌شود؛ این ممیزی جایگزین کنترل جامد سه‌بعدی عمومی، تماس با ورق یا کنترل رزوه نیست."};
+ }
  function buildHolePolygon(b,semicircleSegments=16){
   const x=Number(b.xMm),y=Number(b.yMm),r=Number(b.holeDiameterMm)/2;
   if(!finite(x)||!finite(y)||!positive(r))throw new Error("ابعاد سوراخ برای تولید چندضلعی معتبر نیست.");
@@ -238,6 +255,10 @@
      if(h.kind!=="washer"&&(!positive(h.acrossFlatsMm)||h.acrossFlatsMm<=b.diameterMm))
       fail(errors,"عرض آچارخور سرپیچ/مهره "+(h.id||j)+" باید صریح و بزرگ‌تر از قطر پیچ باشد.");
     });
+    const hardwareAudit=auditHardwareAxialIntervals(b.hardware);
+    hardwareAudit.pairs.filter(pair=>pair.status==="AXIAL_INTERFERENCE").forEach(pair=>
+     fail(errors,"تداخل محوری قطعات جانبی پیچ "+(b.id||i)+" بین "+pair.firstId+" و "+pair.secondId+"؛ هم‌پوشانی مثبت "+pair.overlapMm+" mm است.")
+    );
    }
    if(!text(b.plateId)||!plateIds.has(String(b.plateId)))fail(errors,"شناسه ورق میزبان پیچ "+(b.id||i)+" باید صریح و معتبر باشد.");
    if(!["standard","oversized","short-slotted","long-slotted"].includes(b.holeType))fail(errors,"نوع سوراخ پیچ "+(b.id||i)+" باید از گزینه‌های تعریف‌شده انتخاب شود.");
@@ -377,6 +398,7 @@
       holeGeometry:{method:["short-slotted","long-slotted"].includes(b.holeType)?"capsule-polygon-approximation":"32-segment-circle-approximation",
        slotLengthMm:b.slotLengthMm||null,slotWidthMm:b.slotWidthMm||null,slotAngleDeg:b.slotAngleDeg??null,
        verticesLocalMm:buildHolePolygon(b),verticesGlobalM:buildHolePolygon(b).map(p=>toGlobal(localToConnection(p.x,p.y)))},
+      hardwareAxialAudit:auditHardwareAxialIntervals(b.hardware||[]),
       hardware:(b.hardware||[]).map(h=>{
        const axis=b.axisConnectionFrame.map(Number),ref=b.transverseReferenceConnectionFrame.map(Number);
        const second=[axis[1]*ref[2]-axis[2]*ref[1],axis[2]*ref[0]-axis[0]*ref[2],axis[0]*ref[1]-axis[1]*ref[0]];
@@ -412,7 +434,7 @@
    limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ تماس بین ورق‌های مختلف هنوز کنترل نشده است.",
     "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ سرپیچ شش‌گوش و مهره شش‌گوش فقط با عرض آچارخور، ضخامت و موقعیت محوری صریح مدل می‌شوند؛ واشر به‌صورت حلقه ۳۲ضلعی تقریبی و با قطر داخلی/خارجی و ضخامت نقشه ساخته می‌شود. رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
  }
- const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,polygonDistance,analyzeHoleLayout,buildGlobalGeometry};
+ const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,polygonDistance,analyzeHoleLayout,auditHardwareAxialIntervals,buildGlobalGeometry};
  root.SahroudKneeConnectionDetail=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
