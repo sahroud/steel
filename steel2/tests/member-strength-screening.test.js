@@ -19,3 +19,11 @@ test("shear screening does not label nominal shear as design strength or pass", 
   assert.match(source, /برای اعلام قبول\/رد عضو معتبر نیست/);
   assert.doesNotMatch(source, /قبول مقدماتی/);
 });
+
+test("flexure screen explicitly discloses its single-plane limitation and excludes biaxial approval", () => {
+  const source = fs.readFileSync(path.join(root, "flexure.js"), "utf8");
+  assert.match(source, /غربال تک‌صفحه‌ای مقدماتی خمش/);
+  assert.match(source, /کنترل خمش دومحوره نیست/);
+  assert.match(source, /مؤلفه لنگر عمود بر این صفحه/);
+  assert.match(source, /نباید با کنترل تقاضای شش‌مؤلفه‌ای تحلیل سه‌بعدی/);
+});
