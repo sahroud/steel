@@ -201,6 +201,7 @@
     const rejected=(report.rejected||[]).map(x=>"<li>"+(x.rows?"ردیف‌های "+x.rows.join(" و "):x.boltPair?"زوج پیچ "+esc(x.boltPair):"گزارش")+" : "+esc(x.reason)+(x.truncated?" (فهرست مسیرها محدود شده است)":"")+"</li>").join("");
     $("kneeBlockShearGeometryResult").innerHTML="<p><b>وضعیت هندسی: "+esc(report.status)+"</b></p>"+
      "<p>ردیف پیچ: "+(report.rows||[]).length+"؛ مسیر کاندید: "+(report.candidates||[]).length+"؛ مسیر ردشده: "+(report.rejected||[]).length+"</p>"+
+     "<p><b>کامل بودن جست‌وجوی مسیرها: "+(report.candidateEnumerationComplete?"کامل در محدوده الگوریتم":"محدود؛ بررسی مهندس الزامی است")+"</b></p>"+
      "<div style='overflow-x:auto'><table><thead><tr><th>ردیف</th><th>مختصات عرضی (mm)</th><th>پیچ‌ها</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
      "<div style='overflow-x:auto'><table><thead><tr><th>مسیر</th><th>نوع</th><th>ردیف‌ها</th><th>پیچ‌های انتهایی</th><th>Agv طول</th><th>Anv طول هندسی</th><th>Ant طول</th><th>Ant خالص هندسی</th><th>مساحت‌های هندسی Agv/Anv/Ant (mm²)</th></tr></thead><tbody>"+candidates+"</tbody></table></div>"+
      "<h4>فاصله محیط سوراخ تا لبه ورق (mm)</h4><div style='overflow-x:auto'><table><thead><tr><th>پیچ</th><th>نوع سوراخ</th><th>فاصله هندسی</th></tr></thead><tbody>"+holeRows+"</tbody></table></div>"+
