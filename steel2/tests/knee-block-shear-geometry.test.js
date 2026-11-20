@@ -105,3 +105,22 @@ test("rejects bolt-hole boundaries that touch without positive clear spacing",()
  const d=fixture();d.holes[1].xMm=42;d.holes[1].yMm=-40;d.holes[1].polygon=d.holes[1].polygon.map(p=>({x:p.x-38,y:p.y}));
  const r=geo.assess(d);assert.equal(r.valid,false);assert.ok(r.errors.some(x=>x.includes("هم‌پوشانی")));
 });
+
+test("rejects duplicate hole identifiers so path identities remain unambiguous",()=>{
+ const d=fixture();d.holes[1].id=d.holes[0].id;
+ const r=geo.assess(d);assert.equal(r.valid,false);assert.equal(r.status,"NOT_ASSESSABLE");assert.match(r.errors.join(" "),/یکتا/);
+});
+test("rejects concave hole polygons instead of treating a generic polygon as a round or slotted bolt hole",()=>{
+ const d=fixture();d.holes[0].polygon=[{x:10,y:-50},{x:30,y:-50},{x:25,y:-40},{x:30,y:-30},{x:10,y:-30},{x:15,y:-40},{x:10,y:-35},{x:5,y:-40}];
+ const r=geo.assess(d);assert.equal(r.valid,false);assert.equal(r.status,"NOT_ASSESSABLE");
+});
+test("reports geometric clearance between convex hole boundaries",()=>{
+ const d=fixture(),r=geo.assess(d);
+ assert.equal(r.valid,true);
+ const c=r.candidates[0].clearanceAudit.find(x=>x.holePair);
+ assert.ok(c);assert.ok(c.clearanceMm>0);
+});
+test("computes zero clearance for touching polygon boundaries",()=>{
+ const a=[{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}],b=[{x:2,y:0},{x:4,y:0},{x:4,y:2},{x:2,y:2}];
+ assert.ok(Math.abs(geo.polygonClearance(a,b))<1e-8);
+});
