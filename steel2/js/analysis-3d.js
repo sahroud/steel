@@ -256,6 +256,50 @@ function auditMemberSectionProperties(model,sectionsByMemberId){
     readyForCodeDesign:members.length>0&&evidenced===members.length,groups,members,
     note:"این ممیزی فقط کامل و مثبت‌بودن E، G، A، Iy، Iz و J را می‌سنجد. مقادیر ورودی معتبر تا زمان ثبت مرجع کاتالوگ/نقشه و تأیید مستند، داده تأییدشده طراحی محسوب نمی‌شوند."};
 }
+function condenseReleasedRotations(K,f,released){
+ const r=Array.from(new Set(released)).sort((a,b)=>a-b);
+ if(!r.length)return {K,f,released:[],recover:()=>[]};
+ const a=Array.from({length:12},(_,i)=>i).filter(i=>!r.includes(i));
+ const Kaa=a.map(i=>a.map(j=>K[i][j]));
+ const Kar=a.map(i=>r.map(j=>K[i][j]));
+ const Kra=r.map(i=>a.map(j=>K[i][j]));
+ const Krr=r.map(i=>r.map(j=>K[i][j]));
+ const fr=r.map(i=>f[i]),fa=a.map(i=>f[i]);
+ const solveColumn=rhs=>solve(Krr,rhs);
+ const invKra=Array.from({length:r.length},(_,j)=>{
+  const x=solveColumn(Kra.map(row=>row[j]));return x;
+ });
+ const invFr=solveColumn(fr);
+ const Kc=zeros(12,12),fc=Array(12).fill(0);
+ for(let i=0;i<a.length;i++){
+  fc[a[i]]=fa[i]-dot(Kar[i],invFr);
+  for(let j=0;j<a.length;j++)Kc[a[i]][a[j]]=Kaa[i][j]-dot(Kar[i],invKra.map(col=>col[j]));
+ }
+ const recover=da=>{
+  const rhs=fr.map((v,i)=>v-dot(Kra[i],da));
+  return solveColumn(rhs);
+ };
+ return {K:Kc,f:fc,released:r,retained:a,recover};
+}
+function memberReleasedRotations(member){
+ const spec=member.endReleases;
+ if(spec==null)return [];
+ if(typeof spec!=="object"||Array.isArray(spec))throw Error("endReleases عضو "+member.id+" باید شیء با انتهای i/j باشد.");
+ const out=[];
+ for(const end of ["i","j"]){
+  const axes=spec[end];
+  if(axes==null)continue;
+  if(!Array.isArray(axes))throw Error("آزادسازی انتهای "+end+" عضو "+member.id+" باید آرایه محورهای محلی باشد.");
+  const map={rx:0,ry:1,rz:2};
+  const seen=new Set();
+  axes.forEach(axis=>{
+   if(!Object.prototype.hasOwnProperty.call(map,axis))throw Error("محور آزادسازی نامعتبر در عضو "+member.id+": "+axis);
+   if(seen.has(axis))throw Error("محور آزادسازی تکراری در عضو "+member.id+": "+axis);
+   seen.add(axis);out.push((end==="i"?3:9)+map[axis]);
+  });
+ }
+ return out;
+}
 function analyze(model,options){
  options=options||{};
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل هندسی معتبر ارائه نشده است.");
@@ -292,19 +336,25 @@ function analyze(model,options){
   const p=props(m);if(!p)throw Error("مقطع عضو "+m.id+" ("+m.type+") تخصیص نیافته است.");
   for(const key of ["E","G","A","Iy","Iz","J"])if(!(Number.isFinite(Number(p[key]))&&Number(p[key])>0))throw Error("خاصیت "+key+" برای عضو "+m.id+" ناقص یا نامعتبر است.");
   const a=[nodes[ia].x,nodes[ia].y,nodes[ia].z],b=[nodes[ib].x,nodes[ib].y,nodes[ib].z];
-  const tr=makeTransform(a,b,m.referenceAxis||options.referenceAxis,m.sectionRollDeg),kl=frameLocalStiffness(p,tr.L),kg=mul(transpose(tr.T),mul(kl,tr.T));
+  const tr=makeTransform(a,b,m.referenceAxis||options.referenceAxis,m.sectionRollDeg),kl=frameLocalStiffness(p,tr.L);
+  const released=memberReleasedRotations(m);
+  if(released.length&&(options.releasePurlinRafterRotation===true)&&(m.sectionKey||"")==="roofPurlin"&&
+   (purlinEndRotationDof.has(String(m.id)+":i")||purlinEndRotationDof.has(String(m.id)+":j")))
+   throw Error("برای عضو "+m.id+" آزادسازی عمومی و آزادسازی ویژه پرلین هم‌زمان مجاز نیست.");
   const ids=Array.from({length:6},(_,i)=>ia*6+i).concat(Array.from({length:6},(_,i)=>ib*6+i));
   if(options.releasePurlinRafterRotation===true&&(m.sectionKey||"")==="roofPurlin"){
    const ri=purlinEndRotationDof.get(String(m.id)+":i"),rj=purlinEndRotationDof.get(String(m.id)+":j");
    if(ri){ids[3]=ri[0];ids[4]=ri[1];}
    if(rj){ids[9]=rj[0];ids[10]=rj[1];}
   }
-  addBlock(K,ids,kg);
   const q=m.analysisLoad&&m.analysisLoad.uniformLocal?m.analysisLoad.uniformLocal.map(Number):[0,0,0];
   if(q.length!==3||q.some(v=>!Number.isFinite(v)))throw Error("بار گسترده محلی عضو "+m.id+" معتبر نیست.");
-  const fl=equivalentUniformLoad(q,tr.L),fg=mul(transpose(tr.T),fl.map(v=>[v])).map(r=>r[0]);
+  const fl=equivalentUniformLoad(q,tr.L),condensed=condenseReleasedRotations(kl,fl,released);
+  const ke=mul(transpose(tr.T),mul(condensed.K,tr.T));
+  addBlock(K,ids,ke);
+  const fg=mul(transpose(tr.T),condensed.f.map(v=>[v])).map(r=>r[0]);
   ids.forEach((id,i)=>F[id]+=fg[i]);
-  elements.push({member:m,ids,kl,T:tr.T,L:tr.L,axes:tr.axes,fl,props:p});
+  elements.push({member:m,ids,kl,T:tr.T,L:tr.L,axes:tr.axes,fl,props:p,release:condensed});
  }
  (options.nodalLoads||[]).forEach(load=>{
   const ni=nodeMap.get(load.nodeId);if(ni===undefined)throw Error("گره بارگذاری‌شده یافت نشد: "+load.nodeId);
@@ -403,9 +453,14 @@ function analyze(model,options){
   momentResidualNm:momentResidual,relativeForceResidual,relativeMomentResidual,
   ok:relativeForceResidual<=1e-6&&relativeMomentResidual<=1e-6,freeDofCount:free.length};
  const results=elements.map(e=>{
-  const dg=e.ids.map(i=>D[i]),dl=mul(e.T,dg.map(v=>[v])).map(r=>r[0]),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
+  const dg=e.ids.map(i=>D[i]),dl=mul(e.T,dg.map(v=>[v])).map(r=>r[0]);
+  if(e.release.released.length){
+   const da=e.release.retained.map(i=>dl[i]),dr=e.release.recover(da);
+   e.release.released.forEach((id,i)=>{dl[id]=dr[i];});
+  }
+  const q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
-  return {id:e.member.id,type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,sectionRollDeg:e.member.sectionRollDeg??null,section:e.props};
+  return {id:e.member.id,type:e.member.type,length:e.L,localEndForces:end,releasedLocalRotations:e.release.released,localAxes:e.axes,sectionRollDeg:e.member.sectionRollDeg??null,section:e.props};
  });
  let maxTranslation=0,maxDisplacement=null;
  nodes.forEach((n,i)=>{
@@ -417,7 +472,7 @@ function analyze(model,options){
   }
  });
  const reactions=nodes.map((n,i)=>({nodeId:n.id,values:R.slice(i*6,i*6+6).map((v,d)=>fixed.has(i*6+d)?v:0)})).filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
- return {success:true,method:"3D linear elastic direct stiffness",solverAlgorithm:useSparse?"diagonally-scaled-sparse-conjugate-gradient":"dense-gaussian-elimination",units:"N,m,Pa",loadAssemblyAudit,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
+ return {success:true,method:"3D linear elastic direct stiffness",solverAlgorithm:useSparse?"diagonally-scaled-sparse-conjugate-gradient":"dense-gaussian-elimination",units:"N,m,Pa",loadAssemblyAudit,nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","آزادسازی عمومی فقط برای دوران‌های محلی صریحاً اعلام‌شده در endReleases؛ رفتار اتصال فیزیکی باید جداگانه مستند شود","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
 root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,globalVectorToLocal,equivalentUniformLoad,calculateGlobalLoadResultants,auditMemberOrientation,auditMemberSectionProperties,solve,solveSparseConjugateGradient};
 })(typeof window!=="undefined"?window:globalThis);
