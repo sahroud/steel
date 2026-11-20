@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, "../js");
 test("flexure screening never reports a member as passed", () => {
   const source = fs.readFileSync(path.join(root, "flexure.js"), "utf8");
   assert.match(source, /غیرقابل ارزیابی نهایی/);
-  assert.match(source, /بدون نتیجه قبولی/);
+  assert.match(source, /غربال تک‌صفحه‌ای مقدماتی خمش/);
   assert.match(source, /برای اعلام قبول\/رد عضو معتبر نیست/);
   assert.doesNotMatch(source, /قبول مقدماتی/);
 });
