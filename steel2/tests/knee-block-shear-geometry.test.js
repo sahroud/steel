@@ -4,3 +4,11 @@ function fixture(){const circle=(x,y,r)=>Array.from({length:32},(_,i)=>({x:x+r*M
 test("derives geometric candidate path from two transverse bolt rows without asserting capacity",()=>{const r=geo.assess(fixture());assert.equal(r.valid,true);assert.equal(r.candidates.length,1);const p=r.candidates[0];assert.deepEqual(p.rowIds,[1,2]);assert.equal(p.status,"GEOMETRY_CANDIDATE_ONLY");assert.equal(p.capacityAssessable,false);assert.ok(p.geometricAreas.AgvMm2>p.geometricAreas.AnvMm2);assert.ok(p.geometricAreas.AntMm2>0);assert.deepEqual(p.crossedHoleIds,["B1","B2","B3","B4"]);});
 test("rejects missing force direction, invalid thickness and incomplete hole geometry",()=>{let d=fixture();delete d.forceDirectionLocal;assert.equal(geo.assess(d).valid,false);d=fixture();d.plate.thicknessMm=0;assert.equal(geo.assess(d).valid,false);d=fixture();delete d.holes[0].polygon;assert.equal(geo.assess(d).valid,false);});
 test("does not fabricate a candidate when the plate has no valid leading free edge",()=>{const d=fixture();d.plate.polygonMm=[{x:0,y:-50},{x:150,y:-50},{x:150,y:50},{x:0,y:50}];d.holes.forEach(h=>h.xMm=20);const r=geo.assess(d);assert.equal(r.candidates.length,1);assert.equal(r.candidates[0].capacityAssessable,false);});
+
+test("rejects a candidate whose shear planes terminate on different segments of a notched free edge",()=>{
+ const d=fixture();
+ d.plate.polygonMm=[{x:-100,y:-100},{x:200,y:-100},{x:200,y:100},{x:-100,y:100},{x:-50,y:0}];
+ const r=geo.assess(d);
+ assert.equal(r.candidates.length,0);
+ assert.ok(r.rejected.some(x=>x.reason.includes("لبه آزاد")));
+});
