@@ -265,3 +265,32 @@ test("hole polygon builder rejects unknown hole types instead of silently treati
  assert.throws(()=>detail.buildHolePolygon({...bolt,holeType:"unrecognized"}),/نوع سوراخ/);
  assert.throws(()=>detail.buildHolePolygon({...bolt,holeType:undefined}),/نوع سوراخ/);
 });
+
+test("weld endpoints inside a concave plate do not permit a weld path through the notch",()=>{
+ const d=fixture();
+ d.plates[0].polygonMm=[
+  {x:0,y:0},{x:100,y:0},{x:100,y:100},{x:60,y:100},
+  {x:60,y:40},{x:40,y:40},{x:40,y:100},{x:0,y:100}
+ ];
+ d.bolts[0].xMm=20;d.bolts[0].yMm=80;
+ d.bolts[1].xMm=80;d.bolts[1].yMm=80;
+ d.welds[0].startMm=[20,80,0];
+ d.welds[0].endMm=[80,80,0];
+ const r=detail.validate(d);
+ assert.equal(detail.pointInPolygon({x:20,y:80},d.plates[0].polygonMm),true);
+ assert.equal(detail.pointInPolygon({x:80,y:80},d.plates[0].polygonMm),true);
+ assert.equal(r.valid,false);
+ assert.ok(r.errors.some(x=>x.includes("مسیر کامل خط جوش")));
+});
+test("weld path wholly inside a concave plate remains geometrically valid",()=>{
+ const d=fixture();
+ d.plates[0].polygonMm=[
+  {x:0,y:0},{x:100,y:0},{x:100,y:100},{x:60,y:100},
+  {x:60,y:40},{x:40,y:40},{x:40,y:100},{x:0,y:100}
+ ];
+ d.bolts[0].xMm=20;d.bolts[0].yMm=80;
+ d.bolts[1].xMm=20;d.bolts[1].yMm=20;
+ d.welds[0].startMm=[10,80,0];
+ d.welds[0].endMm=[30,80,0];
+ assert.equal(detail.validate(d).valid,true);
+});
