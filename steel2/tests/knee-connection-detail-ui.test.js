@@ -161,3 +161,12 @@ test("knee block-shear UI displays path-specific hole-to-hole and hole-to-edge c
  assert.match(source,/holePair/);
  assert.match(source,/ممیزی فاصله هندسی برای مسیرهای کاندید/);
 });
+
+test("knee capacity UI shows geometry evidence for each block-shear path and handles unavailable capacities",()=>{
+ assert.match(source,/blockGeometryRows/);
+ assert.match(source,/geometryEvidenceStatus/);
+ assert.match(source,/geometryAudit/);
+ assert.match(source,/ممیزی هندسه مسیرهای برش قالبی/);
+ assert.match(source,/fmt\(x\.capacityKN\)/);
+ assert.match(source,/ratio\(x\.utilization\)/);
+});
