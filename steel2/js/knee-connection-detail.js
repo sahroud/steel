@@ -292,14 +292,30 @@
     const frame=plate.frame,poly=plate.polygonMm;
     if(frame&&vec(frame.originMm,3)&&frame.axes&&["u","v","n"].every(k=>vec(frame.axes[k],3))&&Array.isArray(poly)&&poly.length>=3){
      const dot=(a,b)=>a.reduce((sum,v,j)=>sum+v*b[j],0);
-     [w.startMm,w.endMm].forEach((point,endIndex)=>{
-      if(!vec(point,3))return;
+     const localEndpoints=[w.startMm,w.endMm].map((point,endIndex)=>{
+      if(!vec(point,3))return null;
       const delta=point.map((v,j)=>v-frame.originMm[j]);
       const local={x:dot(delta,frame.axes.u),y:dot(delta,frame.axes.v)};
       const offset=dot(delta,frame.axes.n);
       if(Math.abs(offset)>0.1)fail(errors,"انتهای "+(endIndex?"دوم":"اول")+" خط جوش "+(w.id||i)+" روی صفحه ورق "+plate.id+" قرار ندارد.");
       if(!pointInPolygon(local,poly))fail(errors,"انتهای "+(endIndex?"دوم":"اول")+" خط جوش "+(w.id||i)+" خارج از محدوده چندضلعی ورق "+plate.id+" است.");
+      return local;
      });
+     if(localEndpoints.every(Boolean)){
+      const [a,b]=localEndpoints;
+      for(let edge=0;edge<poly.length;edge++){
+       const c=poly[edge],d=poly[(edge+1)%poly.length];
+       if(!intersects(a,b,c,d))continue;
+       // Boundary contact is permitted only at a weld endpoint.
+       if(!onSegment(c,d,a)&&!onSegment(c,d,b)){
+        fail(errors,"مسیر کامل خط جوش "+(w.id||i)+" از مرز چندضلعی ورق "+plate.id+" عبور می‌کند یا با آن تماس میانی دارد.");
+        break;
+       }
+      }
+      const samples=[0.25,0.5,0.75].map(t=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}));
+      if(samples.some(point=>!pointInPolygon(point,poly)))
+       fail(errors,"تمام طول خط جوش "+(w.id||i)+" باید داخل محدوده ورق "+plate.id+" باقی بماند.");
+     }
     }
    }
    if(!text(w.faceReference))fail(errors,"سطح/وجه اتصال خط جوش "+(w.id||i)+" باید با ارجاع نقشه مشخص شود.");
