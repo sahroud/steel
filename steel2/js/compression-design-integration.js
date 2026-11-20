@@ -104,6 +104,7 @@ function buildCompressionDemandRows(forceResult){
   const ends=Array.isArray(m.ends)?m.ends:[];
   let demand=0,caseLabel="",governing=null,validCount=0,invalidCount=0;
   const simultaneousCases=[];
+  const stationCases=[];
   const labels=ends.map(e=>String(e?.label??"").trim());
   const labelsValid=labels.every(Boolean)&&new Set(labels).size===labels.length;
   ends.forEach((e,ei)=>{
@@ -113,6 +114,23 @@ function buildCompressionDemandRows(forceResult){
     (typeof x==="string"&&x.trim()!==""&&Number.isFinite(Number(x)))
    );
    const v=rawValuesValid?raw.map(Number):[];
+   const rawStations=Array.isArray(e.stations)?e.stations:null;
+   const stationRows=rawStations?rawStations.map(st=>({x:st?.x,N:st?.N,Vy:st?.Vy,Vz:st?.Vz,T:st?.T,My:st?.My,Mz:st?.Mz})):null;
+   const stationValuesValid=!!stationRows&&stationRows.length>=2&&stationRows.every(st=>
+    ["x","N","Vy","Vz","T","My","Mz"].every(k=>
+     (typeof st[k]==="number"&&Number.isFinite(st[k]))||
+     (typeof st[k]==="string"&&st[k].trim()!==""&&Number.isFinite(Number(st[k])))
+    )
+   );
+   const normalizedStations=stationValuesValid?stationRows.map(st=>Object.fromEntries(
+    Object.entries(st).map(([k,value])=>[k,Number(value)])
+   )).sort((a,b)=>a.x-b.x):null;
+   const stationLength=Number(m.length_m??m.length);
+   const stationEndpointsValid=stationValuesValid&&Number.isFinite(stationLength)&&stationLength>0&&
+    Math.abs(normalizedStations[0].x)<=1e-8&&Math.abs(normalizedStations[normalizedStations.length-1].x-stationLength)<=1e-8&&
+    normalizedStations.every((st,i)=>st.x>=-1e-8&&st.x<=stationLength+1e-8&&(i===0||st.x-normalizedStations[i-1].x>1e-10));
+   stationCases.push({label:String(e.label||""),valid:stationEndpointsValid,stations:stationEndpointsValid?normalizedStations:[],
+    reason:!rawStations?"نمونه‌های مقاطع داخلی از تحلیل/بازیابی نیرو دریافت نشده‌اند.":!stationValuesValid?"داده ایستگاه باید حداقل دو ردیف با x و شش مؤلفه عددی متناهی داشته باشد.":!stationEndpointsValid?"ایستگاه‌ها باید یکتا و شامل هر دو انتهای عضو در بازه طول باشند.":null});
    if(!rawValuesValid||!labelsValid){invalidCount++;simultaneousCases.push({label:String(e.label||""),valid:false,source:e.source||null,reason:!labelsValid?"شناسه ترکیب بار خالی یا تکراری است.":"بردار نیرو باید دقیقاً ۱۲ مقدار عددی معتبر داشته باشد."});return;}
    validCount++;
    simultaneousCases.push({label:String(e.label||""),valid:true,source:e.source||null,vector:v.slice(),endI:{N:v[0],Vy:v[1],Vz:v[2],T:v[3],My:v[4],Mz:v[5]},endJ:{N:v[6],Vy:v[7],Vz:v[8],T:v[9],My:v[10],Mz:v[11]}});
@@ -127,7 +145,8 @@ function buildCompressionDemandRows(forceResult){
   });
   const nonAxial=ends.some(e=>{const v=Array.isArray(e.values)?e.values.map(Number):[];return v.length===12&&v.every(Number.isFinite)&&[1,2,3,4,5,7,8,9,10,11].some(i=>Math.abs(v[i])>1e-6);});
   const coverageComplete=sourceComplete&&expectedCaseCountValid&&labelsValid&&invalidCount===0&&validCount===expectedCaseCount;
-  return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,governing,simultaneousCases,axialOnlyCase:!!governing&&!nonAxial,interactionRequired:!!governing&&nonAxial,caseCount:validCount,expectedCaseCount,invalidCaseCount:invalidCount,coverageComplete};
+  const stationCoverageComplete=stationCases.length===expectedCaseCount&&stationCases.every(st=>st.valid);
+  return {id:String(m.id||""),parentMemberId:m.parentMemberId||null,taperSegmentIndex:m.taperSegmentIndex||null,sectionKey:String(m.sectionKey||""),length_m:Number(m.length)||null,compressionDemand_kN:demand/1000,governingCase:caseLabel,governing,simultaneousCases,stationCases,stationCoverageComplete,axialOnlyCase:!!governing&&!nonAxial,interactionRequired:!!governing&&nonAxial,caseCount:validCount,expectedCaseCount,invalidCaseCount:invalidCount,coverageComplete};
  }).filter(r=>r.caseCount>0||r.invalidCaseCount>0).sort((a,b)=>a.sectionKey.localeCompare(b.sectionKey)||a.id.localeCompare(b.id));
  return rows;
 }
@@ -170,7 +189,7 @@ function buildCompressionDemandRowsFrom3D(combinations,modelData){
     (typeof value==="string"&&value.trim()!==""&&Number.isFinite(Number(value)))
    );
    if(!forceVectorValid)issues.push("بردار نیروهای انتهایی عضو "+id+" در ترکیب "+label+" باید دقیقاً ۱۲ مؤلفه عددی معتبر داشته باشد.");
-   return {label,source:c?.source||null,values:Array.isArray(forces)?forces.slice():[],invalidForceVector:!forceVectorValid};
+   return {label,source:c?.source||null,values:Array.isArray(forces)?forces.slice():[],stations:Array.isArray(matches[0]?.samples)?matches[0].samples.map(st=>({...st})):null,invalidForceVector:!forceVectorValid};
   });
   return {id,parentMemberId:sample.parentMemberId||source.parentMemberId||null,taperSegmentIndex:sample.taperSegmentIndex??source.taperSegmentIndex??null,
    sectionKey:String(source.sectionKey||sample.sectionKey||source.section?.sectionKey||""),length:Number(sample.length||source.length)||null,ends};
