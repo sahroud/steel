@@ -236,6 +236,16 @@
     "footprint شش‌گوش با شش رأس و واشر با حلقه ۴۸ضلعی تقریب زده می‌شود؛ رزوه، تغییرشکل و تلرانس ساخت مدل نشده‌اند.",
     "سوراخ‌های ورق غیرمیزبان از سطح ماده کسر می‌شوند؛ تماس چندجسمی عمومی یا تداخل با اعضای نامنظم بررسی نمی‌شود."]};
  }
+ function convexHull2D(points){
+  const p=points.slice().sort((a,b)=>a.x-b.x||a.y-b.y);
+  if(p.length<3)throw new Error("برای پوش محدب حداقل سه نقطه لازم است.");
+  const cross=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x),lower=[],upper=[];
+  for(const q of p){while(lower.length>=2&&cross(lower[lower.length-2],lower[lower.length-1],q)<=1e-9)lower.pop();lower.push(q);}
+  for(let i=p.length-1;i>=0;i--){const q=p[i];while(upper.length>=2&&cross(upper[upper.length-2],upper[upper.length-1],q)<=1e-9)upper.pop();upper.push(q);}
+  lower.pop();upper.pop();const hull=lower.concat(upper);
+  if(hull.length<3)throw new Error("پوش محدب تصویرشده مساحت ندارد.");
+  return hull;
+ }
  function auditWeldPlateInteractions(input){
   const pairs=[],solids=[],plates=Array.isArray(input?.plates)?input.plates:[],welds=Array.isArray(input?.welds)?input.welds:[];
   const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
@@ -273,13 +283,43 @@
     assumptions:["مقطع جوش گوشه مثلث قائم‌الزاویه با دو ساق مساوی legSizeMm مدل شده است.",
      "پروفیل جوش در طول مستقیم خط جوش ثابت فرض شده است؛ شروع/پایان، crater، تحدب/تقعر، نفوذ و گرده واقعی مدل نشده‌اند."]};
    solids.push(solid);
+   const otherPlatePairs=[];
+   for(const target of plates){
+    if(String(target.id)===String(plate.id))continue;
+    const otherBase={weldId:String(w.id),hostPlateId:String(plate.id),otherPlateId:String(target.id)};
+    const tf=target.frame;
+    if(!tf?.axes||!vec(tf.originMm,3)||!vec(tf.axes.u,3)||!vec(tf.axes.v,3)||!vec(tf.axes.n,3)||
+      !positive(target.thicknessMm)||!Array.isArray(target.polygonMm)||target.polygonMm.length<3){
+     otherPlatePairs.push({...otherBase,status:"NOT_ASSESSABLE",reason:"چارچوب، ضخامت یا چندضلعی ورق غیرمیزبان ناقص است."});continue;
+    }
+    const n2=tf.axes.n.map(Number),o2=tf.originMm.map(Number),u2=tf.axes.u.map(Number),v2=tf.axes.v.map(Number);
+    const local=vertices.map(p=>{const delta=p.map((x,i)=>x-o2[i]);return{x:dot(delta,u2),y:dot(delta,v2),depth:dot(delta,n2)};});
+    const hull=convexHull2D(local.map(p=>({x:p.x,y:p.y})));
+    let area;
+    try{area=polygonIntersectionArea(hull,target.polygonMm);}catch(error){
+     otherPlatePairs.push({...otherBase,status:"NOT_ASSESSABLE",reason:"تقاطع تصویر محدب جوش با ورق محاسبه نشد: "+error.message});continue;
+    }
+    const minDepth=Math.min(...local.map(p=>p.depth)),maxDepth=Math.max(...local.map(p=>p.depth)),half=Number(target.thicknessMm)/2;
+    const depthOverlap=Math.min(maxDepth,half)-Math.max(minDepth,-half);
+    let status,reason;
+    if(area<=1e-6){status="NO_PROJECTED_OVERLAP";reason="پوش محدب تصویرشده حجم جوش با چندضلعی ورق هم‌پوشانی ندارد.";}
+    else if(depthOverlap<=1e-6){status="NO_THICKNESS_OVERLAP";reason="تصویر جوش هم‌پوشانی دارد، اما بازه عمقی جوش و ضخامت ورق جدا یا مماس است.";}
+    else{status="POTENTIAL_INTERFERENCE";reason="پوش محدب تصویرشده و بازه عمقی هم‌پوشانی دارند؛ این غربالگر فقط برخورد محتمل را نشان می‌دهد و تداخل واقعی جامد را اثبات نمی‌کند.";}
+    otherPlatePairs.push({...otherBase,status,reason,projectedConvexHullOverlapAreaMm2:Number(area.toFixed(6)),
+     weldDepthRangeMm:[Number(minDepth.toFixed(6)),Number(maxDepth.toFixed(6))],plateDepthRangeMm:[-half,half],
+     depthOverlapMm:Number(depthOverlap.toFixed(6)),method:"weld-convex-projection-and-depth-broadphase"});
+   }
    pairs.push({...base,status:"GEOMETRY_BUILT_HOST_FACE_CONTACT_ONLY",
-    reason:"منشور مثلثی جوش با جهت‌گیری صریح ساخته شد؛ فقط تماس ریشه با وجه میزبان کنترل شده و برخورد با ورق‌های دیگر هنوز ارزیابی نشده است.",
-    volumeMm3:solid.volumeMm3,legSizeMm:w.legSizeMm,plateFaceSide:w.plateFaceSide});
+    reason:"منشور مثلثی ساخته شد؛ تماس ریشه با وجه میزبان کنترل شده و ورق‌های غیرمیزبان با غربالگر پوش محدب/عمق بررسی شدند.",
+    volumeMm3:solid.volumeMm3,legSizeMm:solid.legSizeMm,plateFaceSide:solid.plateFaceSide,otherPlatePairs});
   }
-  return{status:solids.length===0?"NOT_ASSESSABLE":pairs.every(p=>p.status==="GEOMETRY_BUILT_HOST_FACE_CONTACT_ONLY")?"GEOMETRY_BUILT_HOST_CONTACT_ONLY":"PARTIALLY_ASSESSABLE",pairs,solids,
+  const otherPairs=pairs.flatMap(p=>p.otherPlatePairs||[]);
+  return{status:solids.length===0?"NOT_ASSESSABLE":pairs.some(p=>p.status!=="GEOMETRY_BUILT_HOST_FACE_CONTACT_ONLY")||otherPairs.some(p=>p.status==="NOT_ASSESSABLE")?"PARTIALLY_ASSESSABLE":
+   otherPairs.some(p=>p.status==="POTENTIAL_INTERFERENCE")?"POTENTIAL_INTERFERENCE_DETECTED":"GEOMETRY_BUILT_HOST_CONTACT_ONLY",
+   pairs,solids,otherPlatePairs:otherPairs,
    limitations:["مدل منشور مثلثی فقط برای جوش گوشه با جهت‌گیری صریح دو ساق است؛ جوش شیاری NOT_ASSESSABLE باقی می‌ماند.",
-    "این مرحله برخورد حجم جوش با ورق‌های غیرمیزبان، اعضای متصل‌شونده، پیچ‌ها و سایر جوش‌ها را بررسی نمی‌کند.",
+    "برخورد با ورق غیرمیزبان فقط با پوش محدب تصویرشده و بازه عمقی غربال می‌شود؛ POTENTIAL_INTERFERENCE اثبات تداخل واقعی نیست و ممکن است مثبت کاذب داشته باشد.",
+    "تقاطع دقیق سطح مثلثی منشور با مرز ورق، اعضای متصل‌شونده، پیچ‌ها و سایر جوش‌ها هنوز مدل نشده‌اند.",
     "تماس ریشه با وجه میزبان کنترل می‌شود؛ کیفیت جوش، نفوذ، گلویی مؤثر، مقاومت و تأیید آیین‌نامه‌ای از این هندسه نتیجه نمی‌شود."]};
  }
  function analyzeHoleLayout(input,plateId,options={}){
