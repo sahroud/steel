@@ -179,6 +179,63 @@
     "واشر به‌صورت حلقه هم‌مرکز و سرپیچ/مهره با حدود شعاعی محافظه‌کارانه بررسی می‌شوند؛ وضعیت شش‌گوش در ناحیه مبهم NOT_ASSESSABLE است.",
     "این غربالگر جایگزین مدل جامد سه‌بعدی عمومی، تماس رزوه، تغییرشکل، تلرانس ساخت یا کنترل چندجسمی نیست."]};
  }
+ function auditHardwareOtherPlateInteractions(input,tolerance=1e-6){
+  const pairs=[],plates=Array.isArray(input?.plates)?input.plates:[],bolts=Array.isArray(input?.bolts)?input.bolts:[];
+  const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const sub=(a,b)=>a.map((v,i)=>v-b[i]);
+  for(const bolt of bolts){
+   if(!Array.isArray(bolt.hardware)||!bolt.hardware.length)continue;
+   const host=plates.find(p=>String(p.id)===String(bolt.plateId));
+   if(!host?.frame?.axes||!vec(bolt.axisConnectionFrame,3)||!vec(bolt.transverseReferenceConnectionFrame,3))continue;
+   const axis=bolt.axisConnectionFrame.map(Number),ref=bolt.transverseReferenceConnectionFrame.map(Number),side=cross(axis,ref);
+   const boltCenter=host.frame.originMm.map((v,i)=>v+host.frame.axes.u[i]*bolt.xMm+host.frame.axes.v[i]*bolt.yMm);
+   for(const h of bolt.hardware)for(const plate of plates){
+    if(String(plate.id)===String(host.id))continue;
+    const base={boltId:String(bolt.id),hardwareId:String(h.id),kind:h.kind,hostPlateId:String(host.id),otherPlateId:String(plate.id)};
+    const frame=plate.frame,axes=frame?.axes;
+    if(!axes||!vec(frame.originMm,3)||!vec(axes.u,3)||!vec(axes.v,3)||!vec(axes.n,3)||!positive(plate.thicknessMm)){
+     pairs.push({...base,status:"NOT_ASSESSABLE",reason:"چارچوب یا ضخامت ورق غیرمیزبان ناقص است."});continue;
+    }
+    const alignment=dot(axis,axes.n);
+    if(Math.abs(Math.abs(alignment)-1)>1e-6){
+     pairs.push({...base,status:"NOT_ASSESSABLE",reason:"محور قطعه و نرمال ورق غیرمیزبان موازی نیستند؛ برخورد مایل در این غربالگر پوشش داده نمی‌شود.",normalAlignment:alignment});continue;
+    }
+    if(!positive(h.thicknessMm)||!finite(h.centerOffsetMm)||!positive(h.acrossFlatsMm)&&h.kind!=="washer"||h.kind==="washer"&&(!positive(h.outerDiameterMm)||!positive(h.innerDiameterMm))){
+     pairs.push({...base,status:"NOT_ASSESSABLE",reason:"ابعاد قطعه جانبی برای ساخت footprint معتبر کافی نیست."});continue;
+    }
+    const center=boltCenter.map((v,i)=>v+axis[i]*Number(h.centerOffsetMm));
+    const signed=dot(sub(center,frame.originMm),axes.n),half=Number(h.thicknessMm)/2,plateHalf=Number(plate.thicknessMm)/2;
+    const axialOverlap=Math.min(signed+half,plateHalf)-Math.max(signed-half,-plateHalf);
+    const count=h.kind==="washer"?48:6,outer=h.kind==="washer"?Number(h.outerDiameterMm)/2:Number(h.acrossFlatsMm)/Math.sqrt(3);
+    const inner=h.kind==="washer"?Number(h.innerDiameterMm)/2:0;
+    const toLocal=(radius,k)=>{const a=2*Math.PI*k/count,p=center.map((v,i)=>v+radius*Math.cos(a)*ref[i]+radius*Math.sin(a)*side[i]),delta=sub(p,frame.originMm);return{x:dot(delta,axes.u),y:dot(delta,axes.v)};};
+    const outerPoly=Array.from({length:count},(_,k)=>toLocal(outer,k));
+    const innerPoly=h.kind==="washer"?Array.from({length:count},(_,k)=>toLocal(inner,k)):null;
+    let overlapArea;
+    try{
+     overlapArea=polygonIntersectionArea(outerPoly,plate.polygonMm);
+     if(innerPoly)overlapArea-=polygonIntersectionArea(innerPoly,plate.polygonMm);
+     const holes=bolts.filter(b=>String(b.plateId)===String(plate.id)).map(b=>buildHolePolygon(b));
+     for(const hole of holes){
+      let cut=polygonIntersectionArea(outerPoly,hole);
+      if(innerPoly)cut-=polygonIntersectionArea(innerPoly,hole);
+      overlapArea-=Math.max(0,cut);
+     }
+    }catch(error){pairs.push({...base,status:"NOT_ASSESSABLE",reason:"محاسبه هم‌پوشانی footprint با ورق ناموفق بود: "+error.message});continue;}
+    overlapArea=Math.max(0,overlapArea);
+    let status,reason;
+    if(overlapArea<=tolerance){status="NO_PROJECTED_OVERLAP";reason="اثر footprint قطعه با ماده ورق غیرمیزبان هم‌پوشانی مساحتی ندارد.";}
+    else if(axialOverlap>tolerance){status="VOLUME_INTERFERENCE";reason="هم‌پوشانی footprint با ماده ورق غیرمیزبان و هم‌پوشانی مثبت ضخامت‌ها تشخیص داده شد.";}
+    else if(Math.abs(axialOverlap)<=tolerance){status="FACE_CONTACT";reason="footprint با ماده ورق هم‌پوشانی دارد و بازه ضخامت‌ها فقط تماس دارند.";}
+    else{status="AXIAL_CLEARANCE";reason="قطعه در راستای نرمال ورق غیرمیزبان فاصله دارد.";}
+    pairs.push({...base,status,reason,normalAlignment:alignment,planeOffsetMm:Number(signed.toFixed(9)),axialOverlapMm:Number(axialOverlap.toFixed(9)),projectedMaterialOverlapAreaMm2:Number(overlapArea.toFixed(6)),method:"coaxial-hardware-to-nonhost-plate-prism-screen"});
+   }
+  }
+  return{status:pairs.some(p=>p.status==="VOLUME_INTERFERENCE")?"INTERFERENCE_DETECTED":pairs.some(p=>p.status==="NOT_ASSESSABLE")?"PARTIALLY_ASSESSABLE":"NO_VOLUME_INTERFERENCE_DETECTED",pairs,
+   limitations:["فقط ورق‌های غیرمیزبان با نرمال موازی/پادموازی محور قطعه بررسی می‌شوند؛ هندسه مایل NOT_ASSESSABLE است.",
+    "footprint شش‌گوش با شش رأس و واشر با حلقه ۴۸ضلعی تقریب زده می‌شود؛ رزوه، تغییرشکل و تلرانس ساخت مدل نشده‌اند.",
+    "سوراخ‌های ورق غیرمیزبان از سطح ماده کسر می‌شوند؛ تماس چندجسمی عمومی یا تداخل با اعضای نامنظم بررسی نمی‌شود."]};
+ }
  function auditWeldPlateInteractions(welds){
   const pairs=(Array.isArray(welds)?welds:[]).map(w=>({weldId:String(w.id),plateId:String(w.plateId),status:"NOT_ASSESSABLE",
    reason:"برای حجم جوش، راستای مقطع، شکل گلویی/ساق در فضای سه‌بعدی و مرز اتصال به ورق مدل جامد کافی وجود ندارد؛ قرارگیری خط ریشه روی صفحه به‌تنهایی نفوذ یا عدم نفوذ را تعیین نمی‌کند."}));
@@ -506,18 +563,18 @@
   });
   const plateInteractionAudit=auditPlateInteractions(input.plates);
   const hardwarePlateInteractionAudit=auditHardwarePlateInteractions(input);
-  const weldPlateInteractionAudit=auditWeldPlateInteractions(input.welds);
+  const weldPlateInteractionAudit=auditWeldPlateInteractions(input.welds);\n  const hardwareOtherPlateInteractionAudit=auditHardwareOtherPlateInteractions(input);
    const welds=input.welds.map(w=>({id:String(w.id),plateId:String(w.plateId),faceReference:w.faceReference,
    type:w.type,startGlobalM:toGlobal(w.startMm),endGlobalM:toGlobal(w.endMm)}));
   return{success:true,schema:"SAHROUD-KNEE-CONNECTION-GLOBAL-GEOMETRY-1.0",
    connectionId:String(input.connectionId),jointId:String(input.jointId),
    coordinateSystems:{platePolygonAndBolt:"plate-local mm",plateFrame:"connection-frame mm",
     weldEndpoints:"connection-frame mm",output:"global m"},
-   plates,plateInteractionAudit,hardwarePlateInteractionAudit,weldPlateInteractionAudit,welds,capacityDesigned:false,executionReady:false,
+   plates,plateInteractionAudit,hardwarePlateInteractionAudit,hardwareOtherPlateInteractionAudit,weldPlateInteractionAudit,welds,capacityDesigned:false,executionReady:false,
    limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ ممیزی ورق‌به‌ورق فقط برای صفحات موازی/پادموازی در plateInteractionAudit ارائه می‌شود و زوج‌های غیرموازی NOT_ASSESSABLE هستند.",
     "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ سرپیچ شش‌گوش و مهره شش‌گوش فقط با عرض آچارخور، ضخامت و موقعیت محوری صریح مدل می‌شوند؛ واشر به‌صورت حلقه ۳۲ضلعی تقریبی و با قطر داخلی/خارجی و ضخامت نقشه ساخته می‌شود. رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
  }
- const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,polygonDistance,analyzeHoleLayout,auditHardwareAxialIntervals,auditPlateInteractions,auditHardwarePlateInteractions,auditWeldPlateInteractions,buildGlobalGeometry};
+ const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,polygonDistance,analyzeHoleLayout,auditHardwareAxialIntervals,auditPlateInteractions,auditHardwarePlateInteractions,auditHardwareOtherPlateInteractions,auditWeldPlateInteractions,buildGlobalGeometry};
  root.SahroudKneeConnectionDetail=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
