@@ -203,10 +203,13 @@ test("triangular end-wall wind reaches the 3D solver with conserved force and ba
   assert.ok(Math.abs(appliedFz-analytic.resultantKN)<1e-9);
   assert.ok(Math.abs(appliedMy-actionMy)<1e-9,JSON.stringify({appliedMy,actionMy}));
   assert.ok(Math.abs(actionMy-analyticMy)<1e-9,JSON.stringify({actionMy,analyticMy}));
-  assert.ok(Math.abs(result.equilibrium.appliedForce[2]/1000-appliedFz)<1e-7);
-  assert.ok(Math.abs(result.equilibrium.appliedMoment[1]/1000000-appliedMy)<1e-7);
   assert.equal(result.reactions.length,actions.length);
   const reactionFz=result.reactions.reduce((sum,reaction)=>sum+Number(reaction.values[2]||0),0)/1000;
+  const reactionMy=result.reactions.reduce((sum,reaction)=>{
+   const node=nodes.find(n=>n.id===reaction.nodeId);
+   return sum+Number(reaction.values[4]||0)-Number(node.x)*Number(reaction.values[2]||0);
+  },0)/1000;
   assert.ok(Math.abs(reactionFz+appliedFz)<1e-7);
+  assert.ok(Math.abs(reactionMy+appliedMy)<1e-7);
  }
 });
