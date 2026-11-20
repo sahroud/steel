@@ -11,7 +11,7 @@ function input(){
  ]};
  const demandApi={extractCase:analysis=>({memberCount:2,members:[
   {id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
-  {id:"M2",sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+  {id:"M2",sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12},{x:4,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
  ]})};
  return {model,combinationRun,demandApi};
 }
@@ -110,5 +110,14 @@ test("rejects non-integer or zero combination counts",()=>{
  }
 });
 
-test("rejects changed section fingerprints and local axes across load combinations",()=>{const x=input();x.demandApi.extractCase=(analysis)=>({memberCount:2,members:[{id:"M1",sectionPropertyFingerprint:analysis.loadCase==="ULS-A"?"fp-M1":"changed",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localAxesVerified:true,samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},{id:"M2",sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localAxesVerified:true,samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}]});assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/شناسنامه مقطع/);});
-test("rejects demand without explicit section identity and local orientation",()=>{const x=input();x.demandApi.extractCase=()=>({memberCount:2,members:[{id:"M1",samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},{id:"M2",samples:[{x:2,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}]});assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/شناسنامه مقطع/);});
+test("rejects changed section fingerprints and local axes across load combinations",()=>{const x=input();x.demandApi.extractCase=(analysis)=>({memberCount:2,members:[{id:"M1",sectionPropertyFingerprint:analysis.loadCase==="ULS-A"?"fp-M1":"changed",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localAxesVerified:true,samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},{x:5,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},{id:"M2",sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localAxesVerified:true,samples:[{x:0,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12},{x:4,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}]});assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/شناسنامه مقطع/);});
+test("rejects demand without explicit section identity and local orientation",()=>{const x=input();x.demandApi.extractCase=()=>({memberCount:2,members:[{id:"M1",samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},{x:5,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},{id:"M2",samples:[{x:0,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12},{x:4,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}]});assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/شناسنامه مقطع/);});
+
+test("requires both physical member ends in every load-combination station set",()=>{
+ const x=input();
+ x.demandApi.extractCase=()=>({memberCount:2,members:[
+  {id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localAxesVerified:true,samples:[{x:0,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6},{x:4,N:1,Vy:2,Vz:3,T:4,My:5,Mz:6}]},
+  {id:"M2",sectionPropertyFingerprint:"fp-M2",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:{x:[1,0,0],y:[0,1,0],z:[0,0,1]},localAxesVerified:true,samples:[{x:0,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12},{x:4,N:7,Vy:8,Vz:9,T:10,My:11,Mz:12}]}
+ ]});
+ assert.throws(()=>api.build(x.combinationRun,x.model,x.demandApi),/هر دو انتهای واقعی عضو/);
+});
