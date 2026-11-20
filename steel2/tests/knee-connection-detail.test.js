@@ -432,7 +432,7 @@ test("global geometry exposes non-host hardware interaction audit",()=>{
  assert.equal(g.hardwareOtherPlateInteractionAudit.pairs[0].status,"VOLUME_INTERFERENCE");
 });
 test("fillet weld solid is built from explicit orthogonal leg directions and contacts host face",()=>{
- const d=fixture();d.welds[0].startMm=[-80,-60,0];d.welds[0].endMm=[-80,60,0];Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[0,1,0],connectedLegDirectionConnection:[0,0,1]});
+ const d=fixture();d.welds[0].startMm=[-80,-60,0];d.welds[0].endMm=[-80,60,0];Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[1,0,0],connectedLegDirectionConnection:[0,0,1]});
  const r=detail.auditWeldPlateInteractions(d);assert.equal(r.pairs[0].status,"GEOMETRY_BUILT_HOST_FACE_CONTACT_ONLY");
  assert.equal(r.solids[0].geometryType,"triangular-fillet-prism");assert.equal(r.solids[0].volumeMm3,3840);
  assert.equal(r.solids[0].hostPlateContact.status,"ROOT_FACE_CONTACT_ONLY");
@@ -448,6 +448,6 @@ test("groove weld solid remains not assessable without explicit groove preparati
  assert.equal(detail.auditWeldPlateInteractions(d).pairs[0].status,"NOT_ASSESSABLE");
 });
 test("global weld geometry carries generated fillet prism or explicit null",()=>{
- const d=fixture();d.welds[0].startMm=[-80,-60,0];d.welds[0].endMm=[-80,60,0];Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[0,1,0],connectedLegDirectionConnection:[0,0,1]});
+ const d=fixture();d.welds[0].startMm=[-80,-60,0];d.welds[0].endMm=[-80,60,0];Object.assign(d.welds[0],{plateFaceSide:1,plateLegDirectionConnection:[1,0,0],connectedLegDirectionConnection:[0,0,1]});
  const g=detail.buildGlobalGeometry(d);assert.ok(g.welds[0].solidGeometry);assert.equal(g.welds[0].solidGeometry.verticesGlobalM.length,6);
 });
