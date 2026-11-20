@@ -1905,7 +1905,7 @@ test("3D design candidates preserve all six simultaneous actions from each combi
   require("../js/member-design-demand-3d.js");
   const api=globalThis.SahroudMemberDesignDemand3D;
   const axes={x:[1,0,0],y:[0,1,0],z:[0,0,1]};
-  const model={members:[{id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true}]};
+  const model={members:[{id:"M1",length:2,sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true}]};
   const mk=(id,label,vals)=>({
     id,label,
     analysis:{success:true,loadCase:id,loadCaseLabel:label,members:[{
@@ -1919,7 +1919,7 @@ test("3D design candidates preserve all six simultaneous actions from each combi
   ]};
   const demandApi={extractCase:(analysis,source)=>({
     success:true,memberCount:1,members:[{
-      id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:analysis.loadCase==="C1"?1:7,Vy:2,Vz:3,T:4,My:5,Mz:6}]
+      id:"M1",sectionPropertyFingerprint:"fp-M1",sectionOrientationVerified:true,sectionRollDeg:0,localAxes:axes,localAxesVerified:true,samples:[{x:0,N:analysis.loadCase==="C1"?1:7,Vy:2,Vz:3,T:4,My:5,Mz:6},{x:2,N:analysis.loadCase==="C1"?1:7,Vy:2,Vz:3,T:4,My:5,Mz:6}]
     }]
   })};
   const result=api.build(combos,model,demandApi);
