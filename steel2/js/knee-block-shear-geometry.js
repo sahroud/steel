@@ -8,6 +8,12 @@ function hit(a,b,c,d){const r=sub(b,a),s=sub(d,c),den=cross(r,s);if(Math.abs(den
 function boundary(o,u,P){const R=Math.max(1,...P.map(p=>dist(p,o)))*4,a=sub(o,scale(u,R)),b=add(o,scale(u,R)),out=[];for(let i=0;i<P.length;i++){const t=hit(a,b,P[i],P[(i+1)%P.length]);if(t!==null){const p=add(a,scale(sub(b,a),t));if(!out.some(q=>dist(p,q)<1e-6))out.push(p);}}return out.sort((p,q)=>dot(sub(p,o),u)-dot(sub(q,o),u));}
 function insideSegment(a,b,P){for(let k=0;k<P.length;k++){const t=hit(a,b,P[k],P[(k+1)%P.length]);if(t!==null&&t>1e-7&&t<1-1e-7)return false;}for(let i=0;i<=64;i++)if(!inside(add(a,scale(sub(b,a),i/64)),P))return false;return true;}
 function sameBoundaryEdge(a,b,P){for(let i=0;i<P.length;i++)if(on(a,P[i],P[(i+1)%P.length])&&on(b,P[i],P[(i+1)%P.length]))return true;return false;}
+function segmentsTouch(a,b,c,d){
+ const o1=cross(sub(b,a),sub(c,a)),o2=cross(sub(b,a),sub(d,a)),o3=cross(sub(d,c),sub(a,c)),o4=cross(sub(d,c),sub(b,c));
+ const scaleE=1e-8*Math.max(1,dist(a,b),dist(c,d));
+ if(o1*o2< -scaleE*scaleE&&o3*o4< -scaleE*scaleE)return true;
+ return on(c,a,b)||on(d,a,b)||on(a,c,d)||on(b,c,d);
+}
 function simplePolygon(P){
  if(!Array.isArray(P)||P.length<3||P.some(q=>!q||!finite(q.x)||!finite(q.y)))return false;
  let area=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length];if(dist(a,b)<=1e-8)return false;area+=a.x*b.y-b.x*a.y;}
@@ -70,13 +76,13 @@ for(const h of H){
  if(!inside(h.c,h.poly)||!h.poly.every(q=>inside(q,P)))
   return{valid:false,status:"NOT_ASSESSABLE",errors:["مرکز و تمام محیط سوراخ "+h.id+" باید داخل ورق و داخل خود سوراخ معتبر باشند."],candidates:[]};
  for(let i=0;i<h.poly.length;i++)for(const [a,b] of plateEdges)
-  if(hit(h.poly[i],h.poly[(i+1)%h.poly.length],a,b)!==null)
-   return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ "+h.id+" با مرز ورق تقاطع دارد یا از آن عبور می‌کند."],candidates:[]};
+  if(segmentsTouch(h.poly[i],h.poly[(i+1)%h.poly.length],a,b))
+   return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ "+h.id+" با مرز ورق تماس دارد یا از آن عبور می‌کند؛ فاصله لبه صفر/نامعتبر است."],candidates:[]};
 }
 for(let i=0;i<H.length;i++)for(let j=i+1;j<H.length;j++){
  let overlap=false;
  for(let a=0;a<H[i].poly.length&&!overlap;a++)for(let b=0;b<H[j].poly.length;b++)
-  if(hit(H[i].poly[a],H[i].poly[(a+1)%H[i].poly.length],H[j].poly[b],H[j].poly[(b+1)%H[j].poly.length])!==null){overlap=true;break;}
+  if(segmentsTouch(H[i].poly[a],H[i].poly[(a+1)%H[i].poly.length],H[j].poly[b],H[j].poly[(b+1)%H[j].poly.length])){overlap=true;break;}
  if(overlap||inside(H[i].c,H[j].poly)||inside(H[j].c,H[i].poly))
   return{valid:false,status:"NOT_ASSESSABLE",errors:["محیط سوراخ‌های "+H[i].id+" و "+H[j].id+" هم‌پوشانی دارد."],candidates:[]};
 }
