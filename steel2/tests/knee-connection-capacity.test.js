@@ -204,6 +204,8 @@ test("checks multiple distinct block-shear paths on the same plate independently
  const r=capacity.calculate(d,c);
  assert.equal(r.blockShearChecks.length,2);
  assert.deepEqual(r.blockShearChecks.map(x=>x.pathReference),["DWG-01 / path BS-1","DWG-01 / path BS-2"]);
+  assert.deepEqual(r.blockShearChecks.map(x=>x.pathId),["BS-P1-01","BS-P1-02"]);
+  assert.equal(new Set(r.blockShearChecks.map(x=>x.check.id)).size,2);
 });
 
 test("rejects a duplicated block-shear path reference on the same plate",()=>{
