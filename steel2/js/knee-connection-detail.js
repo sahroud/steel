@@ -77,6 +77,58 @@
    if(intersects(a[i],a[(i+1)%a.length],b[j],b[(j+1)%b.length]))return true;
   return pointInPolygon(a[0],b)||pointInPolygon(b[0],a);
  }
+ function polygonDistance(a,b){
+  if(polygonsOverlap(a,b))return 0;
+  let min=Infinity;
+  for(let i=0;i<a.length;i++)for(let j=0;j<b.length;j++){
+   min=Math.min(min,edgeDistance(a[i],b[j],b[(j+1)%b.length]),
+    edgeDistance(b[j],a[i],a[(i+1)%a.length]));
+  }
+  return min;
+ }
+ function analyzeHoleLayout(input,plateId,options={}){
+  const checked=validate(input);
+  if(!checked.valid)throw new Error("هندسه اتصال معتبر نیست: "+checked.errors.join(" | "));
+  const plate=input.plates.find(p=>String(p.id)===String(plateId));
+  if(!plate)throw new Error("ورق مورد تحلیل پیدا نشد: "+plateId);
+  const direction=options.forceDirectionLocal;
+  if(!direction||!finite(direction.x)||!finite(direction.y)||Math.hypot(direction.x,direction.y)<=1e-9)
+   throw new Error("بردار راستای نیرو در صفحه محلی ورق باید صریح و غیرصفر باشد.");
+  const tolerance=options.rowToleranceMm===undefined?1:Number(options.rowToleranceMm);
+  if(!positive(tolerance))throw new Error("تلرانس دسته‌بندی ردیف پیچ باید مثبت باشد.");
+  const length=Math.hypot(direction.x,direction.y),fx=direction.x/length,fy=direction.y/length;
+  const tx=-fy,ty=fx,holes=input.bolts.filter(b=>String(b.plateId)===String(plateId)).map(b=>{
+   const polygon=buildHolePolygon(b);
+   const edgeClearance=Math.min(...polygon.flatMap((p,i)=>plate.polygonMm.map((a,j)=>edgeDistance(p,a,plate.polygonMm[(j+1)%plate.polygonMm.length]))));
+   return{id:String(b.id),center:{x:b.xMm,y:b.yMm},holeType:b.holeType,polygon,
+    longitudinalProjection:b.xMm*fx+b.yMm*fy,transverseProjection:b.xMm*tx+b.yMm*ty,
+    edgeClearanceMm:edgeClearance};
+  });
+  const sorted=holes.slice().sort((a,b)=>a.transverseProjection-b.transverseProjection||a.longitudinalProjection-b.longitudinalProjection);
+  const groups=[];
+  for(const hole of sorted){
+   let group=groups.find(g=>Math.abs(g.transverseProjection-hole.transverseProjection)<=tolerance);
+   if(!group){group={transverseProjection:hole.transverseProjection,holes:[]};groups.push(group);}
+   group.holes.push(hole);
+  }
+  const rows=groups.map((g,index)=>({rowId:"ROW-"+(index+1),
+   transverseProjectionMm:g.transverseProjection,
+   holes:g.holes.slice().sort((a,b)=>a.longitudinalProjection-b.longitudinalProjection).map(h=>({
+    id:h.id,longitudinalProjectionMm:h.longitudinalProjection,center:h.center,
+    holeType:h.holeType,edgeClearanceMm:h.edgeClearanceMm}))}));
+  const clearances=[];
+  for(let i=0;i<holes.length;i++)for(let j=i+1;j<holes.length;j++)
+   clearances.push({holeA:holes[i].id,holeB:holes[j].id,
+    clearDistanceMm:polygonDistance(holes[i].polygon,holes[j].polygon)});
+  return{plateId:String(plateId),coordinateSystem:"plate-local mm",
+   forceDirectionLocal:{x:fx,y:fy},transverseDirectionLocal:{x:tx,y:ty},
+   rowToleranceMm:tolerance,holes:holes.map(h=>({id:h.id,center:h.center,holeType:h.holeType,
+    polygon:h.polygon,edgeClearanceMm:h.edgeClearanceMm})),
+   rows,holeClearances:clearances,
+   status:"GEOMETRY_AUDIT_ONLY",blockShearPathsDerived:false,
+   limitations:["ردیف‌بندی فقط بر اساس تصویر مختصات مرکز سوراخ‌ها روی راستای عمود بر نیرو و تلرانس اعلام‌شده انجام می‌شود.",
+    "این ردیف‌ها مسیر شکست برش قالبی نیستند؛ انتخاب لبه باربر، مسیرهای برشی/کششی، طول‌های مؤثر و سطوح Agv/Anv/Ant هنوز باید با قیود هندسی و جهت انتقال نیرو استخراج و کنترل شوند."]};
+ }
  function validate(input){
   const errors=[],warnings=[];
   if(!input||typeof input!=="object")return{valid:false,errors:["رکورد جزئیات اتصال ارائه نشده است."],warnings,capacityDesigned:false,executionReady:false};
@@ -342,7 +394,7 @@
    limitations:["سطوح دوطرفه و وجوه جانبی ورق با فرض صریح مرجع ضخامت mid-plane ساخته شده‌اند؛ تماس بین ورق‌های مختلف هنوز کنترل نشده است.",
     "هندسه بدنه پیچ فقط به‌صورت محور و استوانه اسمی با طول صریح نقشه ساخته می‌شود؛ سرپیچ شش‌گوش و مهره شش‌گوش فقط با عرض آچارخور، ضخامت و موقعیت محوری صریح مدل می‌شوند؛ واشر به‌صورت حلقه ۳۲ضلعی تقریبی و با قطر داخلی/خارجی و ضخامت نقشه ساخته می‌شود. رزوه، پیش‌تنیدگی، سطح تماس، نفوذ جوش و توزیع نیرو میان اجزا هنوز مدل نشده‌اند."]};
  }
- const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,buildGlobalGeometry};
+ const api={SCHEMA,validate,pointInPolygon,edgeDistance,buildHolePolygon,polygonsOverlap,polygonDistance,analyzeHoleLayout,buildGlobalGeometry};
  root.SahroudKneeConnectionDetail=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
