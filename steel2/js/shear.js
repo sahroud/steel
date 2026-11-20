@@ -58,14 +58,14 @@
         const Vn = 0.6 * mat.Fy * Aw * Cv;
 
         // ضریب مقاومت مقدماتی
-        const phiVn = Vn;
+        const screeningCapacityKN = Vn;
 
         return {
             Aw,
             ratio,
             Cv,
             Vn: Vn / 1000,
-            phiVn: phiVn / 1000
+            screeningCapacityKN: screeningCapacityKN / 1000
         };
     }
 
@@ -137,8 +137,8 @@
                             const V = Math.abs(f.V);
 
                             const ratio =
-                                capacity.phiVn > 0
-                                    ? V / capacity.phiVn
+                                capacity.screeningCapacityKN > 0
+                                    ? V / capacity.screeningCapacityKN
                                     : Infinity;
 
                             if (ratio > worst.ratio) {
@@ -161,7 +161,7 @@
             });
 
             out.innerHTML = `
-                <h4>نتایج کنترل مقدماتی برش</h4>
+                <h4>غربال عددی مقدماتی برش — بدون نتیجه قبولی</h4>
 
                 <div style="overflow-x:auto">
                     <table style="width:100%;min-width:750px">
@@ -170,7 +170,7 @@
                                 <th>عضو</th>
                                 <th>Aw (m²)</th>
                                 <th>Cv</th>
-                                <th>φVn تقریبی (kN)</th>
+                                <th>Vn تخمینی غربال (kN)</th>
                                 <th>Vu (kN)</th>
                                 <th>Vu/φVn</th>
                                 <th>نتیجه</th>
@@ -185,14 +185,14 @@
                                     <td>${r.name}</td>
                                     <td>${fmt(r.capacity.Aw)}</td>
                                     <td>${fmt(r.capacity.Cv)}</td>
-                                    <td>${fmt(r.capacity.phiVn)}</td>
+                                    <td>${fmt(r.capacity.screeningCapacityKN)}</td>
                                     <td>${fmt(r.worst.V)}</td>
                                     <td>${fmt(r.worst.ratio)}</td>
                                     <td>
                                         ${
                                             r.worst.ratio <= 1
-                                                ? "قبول مقدماتی"
-                                                : "نیاز به بررسی"
+                                                ? "غیرقابل ارزیابی نهایی"
+                                                : "غیرقابل ارزیابی نهایی"
                                         }
                                     </td>
                                     <td>${r.worst.combination}</td>
@@ -206,7 +206,7 @@
                 <div class="notice">
                     <b>هشدار مهندسی</b>
                     <p>
-                        این کنترل فقط تخمین مقدماتی مقاومت برشی جان
+                        این کنترل فقط تخمین مقدماتی مقاومت اسمی برشی جان است؛ ضریب مقاومت طراحی اعمال نشده و
                         بر اساس ابعاد واردشده است.
                     </p>
                     <p>
@@ -216,7 +216,7 @@
                         هنوز کنترل نشده‌اند.
                     </p>
                     <p>
-                        نتیجه قبول مقدماتی به معنی تأیید طراحی
+                        این غربال برای اعلام قبول/رد عضو معتبر نیست. نتیجه آن تأیید طراحی
                         اجرایی یا ایمنی سازه نیست.
                     </p>
         `;
