@@ -68,7 +68,7 @@
    const a=nodeMap.get(String(member.start??"")),b=nodeMap.get(String(member.end??""));
    if(!a||!b){errors.push("گره ابتدا/انتها برای عضو "+id+" موجود نیست.");continue;}
    const geometricLengthM=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
-   const storedLengthM=Number(member.length);
+   const storedLengthM=numericInput(member.length)?Number(member.length):NaN;
    if(!(geometricLengthM>0)||!Number.isFinite(geometricLengthM)){errors.push("طول هندسی عضو "+id+" صفر یا نامعتبر است.");continue;}
    if(!Number.isFinite(storedLengthM)||storedLengthM<=0){errors.push("طول ذخیره‌شده عضو "+id+" معتبر نیست.");continue;}
    const errorM=Math.abs(storedLengthM-geometricLengthM);
