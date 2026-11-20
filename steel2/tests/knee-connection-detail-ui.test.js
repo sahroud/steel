@@ -146,3 +146,11 @@ test("knee detail UI exposes explicit force-direction candidate block shear audi
  assert.match(source,/راستای نیرو باید با دو مؤلفه محلی صریح/);
  assert.match(source,/هیچ ظرفیت، ضریب Ubs، کنترل آیین‌نامه‌ای یا PASS\/FAIL صادر نشده است/);
 });
+
+test("knee UI reports staggered block-shear candidates and geometric hole clearances",()=>{
+ assert.match(source,/c\.pathType/);
+ assert.match(source,/terminalBoltIds/);
+ assert.match(source,/edgeClearanceMm/);
+ assert.match(source,/clearDistanceMm/);
+ assert.match(source,/x\.truncated/);
+});
