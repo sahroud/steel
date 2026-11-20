@@ -39,3 +39,16 @@ test("rejects overlapping bolt-hole polygons before candidate generation",()=>{
  const d=fixture();d.holes[1].xMm=20;d.holes[1].yMm=-40;d.holes[1].polygon=d.holes[0].polygon.map(p=>({x:p.x,y:p.y}));
  const r=geo.assess(d);assert.equal(r.valid,false);assert.match(r.errors.join(" "),/هم‌پوشانی/);
 });
+
+test("includes collinear overlap with a hole boundary in geometric net-length deduction",()=>{
+ const square=[{x:0,y:0},{x:10,y:0},{x:10,y:10},{x:0,y:10}];
+ const spans=geo.linePolygonIntervals({x:-5,y:0},{x:15,y:0},square);
+ assert.equal(spans.length,1);
+ assert.ok(Math.abs(spans[0][0]-5)<1e-8);
+ assert.ok(Math.abs(spans[0][1]-15)<1e-8);
+ assert.equal(geo.subtractIntervals(20,spans),10);
+});
+test("merges overlapping hole deductions so a shared segment is not deducted twice",()=>{
+ const net=geo.subtractIntervals(20,[[2,8],[5,12],[11,15]]);
+ assert.equal(net,7);
+});
