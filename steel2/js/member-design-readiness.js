@@ -17,7 +17,11 @@
    throw new Error("بسته تقاضای طراحی سه‌بعدی معتبر در دسترس نیست.");
   const expectedCaseCount=Number(demandRun.caseCount);
   const caseCountValid=Number.isInteger(expectedCaseCount)&&expectedCaseCount>0;
+  const expectedCaseIds=Array.isArray(demandRun.caseIds)?demandRun.caseIds.map(v=>String(v??"").trim()):[];
+  const expectedCaseSet=new Set(expectedCaseIds);
+  const caseIdentityValid=caseCountValid&&expectedCaseIds.length===expectedCaseCount&&expectedCaseSet.size===expectedCaseCount&&expectedCaseIds.every(Boolean);
   if(!caseCountValid)errors.push("تعداد ترکیبات بار مورد انتظار در بسته تقاضا معتبر نیست.");
+  if(!caseIdentityValid)errors.push("فهرست شناسه‌های یکتای ترکیبات بار برای تطبیق دقیق موجود یا معتبر نیست.");
   const modelById=new Map();
   members.forEach(m=>{
    const id=String(m?.id??"").trim();
@@ -62,7 +66,7 @@
        issues.push("مختصات ایستگاه تقاضای شماره "+(index+1)+" خارج از طول عضو یا نامعتبر است.");
       const combo=String(candidate?.combinationId??"").trim();
       if(!combo)issues.push("شناسه ترکیب بار در تقاضای شماره "+(index+1)+" ثبت نشده است.");
-      else combinations.add(combo);
+      else { combinations.add(combo); if(caseIdentityValid&&!expectedCaseSet.has(combo))issues.push("شناسه ترکیب بار "+combo+" در فهرست ترکیبات واقعی تحلیل وجود ندارد."); }
       if(combo&&xValid){
        const stationKey=combo+"@"+x.toPrecision(12);
        if(stations.has(stationKey))issues.push("ایستگاه تقاضای تکراری برای ترکیب "+combo+" در عضو "+id+" ثبت شده است.");
@@ -71,6 +75,10 @@
      });
      if(caseCountValid&&combinations.size!==expectedCaseCount)
       issues.push("پوشش ترکیبات بار عضو کامل نیست: "+combinations.size+" از "+expectedCaseCount+" ترکیب.");
+     if(caseIdentityValid){
+      const missingCases=expectedCaseIds.filter(caseId=>!combinations.has(caseId));
+      if(missingCases.length)issues.push("ترکیبات واقعی تحلیل برای عضو مفقودند: "+missingCases.join("، "));
+     }
     }
    }
    if(m.sectionOrientationVerified!==true)issues.push("جهت نصب مقطع با مرجع واقعی تأیید نشده است.");
