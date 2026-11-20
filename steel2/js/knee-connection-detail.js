@@ -277,7 +277,7 @@
     reason:"منشور مثلثی جوش با جهت‌گیری صریح ساخته شد؛ فقط تماس ریشه با وجه میزبان کنترل شده و برخورد با ورق‌های دیگر هنوز ارزیابی نشده است.",
     volumeMm3:solid.volumeMm3,legSizeMm:w.legSizeMm,plateFaceSide:w.plateFaceSide});
   }
-  return{status:pairs.length&&pairs.every(p=>p.status==="GEOMETRY_BUILT_HOST_FACE_CONTACT_ONLY")?"GEOMETRY_BUILT_HOST_CONTACT_ONLY":"PARTIALLY_ASSESSABLE",pairs,solids,
+  return{status:solids.length===0?"NOT_ASSESSABLE":pairs.every(p=>p.status==="GEOMETRY_BUILT_HOST_FACE_CONTACT_ONLY")?"GEOMETRY_BUILT_HOST_CONTACT_ONLY":"PARTIALLY_ASSESSABLE",pairs,solids,
    limitations:["مدل منشور مثلثی فقط برای جوش گوشه با جهت‌گیری صریح دو ساق است؛ جوش شیاری NOT_ASSESSABLE باقی می‌ماند.",
     "این مرحله برخورد حجم جوش با ورق‌های غیرمیزبان، اعضای متصل‌شونده، پیچ‌ها و سایر جوش‌ها را بررسی نمی‌کند.",
     "تماس ریشه با وجه میزبان کنترل می‌شود؛ کیفیت جوش، نفوذ، گلویی مؤثر، مقاومت و تأیید آیین‌نامه‌ای از این هندسه نتیجه نمی‌شود."]};
