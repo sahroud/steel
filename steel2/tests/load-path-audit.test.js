@@ -295,8 +295,8 @@ test("production roof and wall bracing form connected load paths to supports and
  assert.equal(result.success,true);
  assert.equal(result.loadAssemblyAudit.ok,true);
  assert.equal(result.equilibrium.ok,true);
- assert.ok(result.limitations.some(item=>item.includes("بدون آزادسازی انتهایی عضو")),
-  "solver must disclose that member-end releases are not implemented");
+ assert.ok(result.limitations.some(item=>item.includes("endReleases")),
+  "solver must disclose the explicit scope and semantics of local end releases");
  const braceResults=result.members.filter(m=>braces.some(b=>b.id===m.id));
  assert.equal(braceResults.length,braces.length);
  assert.ok(braceResults.some(m=>Math.abs(Number(m.localEndForces?.[0]||0))>1e-6||
