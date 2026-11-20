@@ -225,9 +225,18 @@
    for(const p of c.blockShearChecks){
     const plate=plateById.get(String(p.plateId)),m=plate.material;
     const Rn=Math.min(0.6*m.FyMPa*p.AgvMm2,0.6*m.FuMPa*p.AnvMm2)+p.Ubs*m.FuMPa*p.AntMm2;
-    const resistance=factor(method,PHI_RUPTURE,OMEGA_RUPTURE)*Rn/1000;
-    const check=demandCheck(c.id+":"+p.plateId+":"+p.pathId,"plate-block-shear",p.demandKN,resistance,method,"10-2-9-4-3 / (21-9-2-10)");
-    blockShearChecks.push({caseId:c.id,plateId:p.plateId,pathId:p.pathId,check,pathReference:p.pathReference,Ubs:p.Ubs,ubsBasis:p.ubsBasis});
+    const provisionalResistance=factor(method,PHI_RUPTURE,OMEGA_RUPTURE)*Rn/1000;
+    // Areas are currently user-entered values; a drawing reference alone does not
+    // prove that the net/gross shear and tension paths were derived from plate/hole geometry.
+    // Preserve the arithmetic as provisional only and never issue PASS/FAIL for this limit state.
+    const check={id:c.id+":"+p.plateId+":"+p.pathId,limitState:"plate-block-shear",
+     demandKN:p.demandKN,capacityKN:null,provisionalResistanceKN:provisionalResistance,
+     utilization:null,status:"NOT_ASSESSABLE",method,
+     reference:"مبحث دهم ۱۴۰۱، بند برش قالبی؛ سطوح Agv/Anv/Ant هنوز از هندسه ورق و سوراخ‌ها به‌طور خودکار استخراج و راستی‌آزمایی نشده‌اند."};
+    blockShearChecks.push({caseId:c.id,plateId:p.plateId,pathId:p.pathId,check,pathReference:p.pathReference,
+     geometryEvidenceStatus:"USER_SUPPLIED_UNVERIFIED",Ubs:p.Ubs,ubsBasis:p.ubsBasis,
+     limitations:["مساحت‌های Agv، Anv و Ant ورودی کاربر هستند و از مسیر هندسی اثبات‌شده استخراج نشده‌اند.",
+      "شماره نقشه و شناسه مسیر به‌تنهایی اثبات‌کننده مسیر واقعی شکست نیستند."]});
    }
   }
   const every=[...boltChecks,...bearingChecks,...plateChecks.flatMap(p=>p.checks),...blockShearChecks.map(p=>p.check),...weldChecks.map(p=>p.check)];
