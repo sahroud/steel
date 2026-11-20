@@ -1,4 +1,4 @@
-/* SAHROUD STEEL — concurrent 3D design-demand candidates
+/* SAHROUD STEEL — concurrent 3D design-demand candidates (identity-audited)
  * Keeps all six section actions from the SAME load combination and station.
  * This module prepares design inputs; it does not calculate code capacities.
  * Units: N, N.m, m.
