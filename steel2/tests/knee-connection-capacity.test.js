@@ -82,11 +82,18 @@ test("bearing and tearout checks distinguish the long-slot transverse direction"
  assert.ok(Math.abs(r.bearing.capacityKN-expectedBearing)<1e-10);
  assert.ok(Math.abs(r.tear.capacityKN-expectedTear)<1e-10);
 });
-test("plate section checks evaluate gross yielding, net rupture, shear yielding and shear rupture",()=>{
+test("plate section arithmetic remains provisional until areas are geometry-verified",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c);
+ const p=c.loadCases[0].plateSectionChecks[0],m=d.plates[0].material;
  const checks=r.plateChecks[0].checks;
  assert.deepEqual(checks.map(x=>x.limitState),["plate-tensile-yield","plate-tensile-rupture","plate-shear-yield","plate-shear-rupture"]);
- assert.ok(checks.every(x=>x.capacityKN>0));
+ assert.ok(checks.every(x=>x.status==="NOT_ASSESSABLE"&&x.capacityKN===null));
+ assert.ok(checks.every(x=>x.geometryEvidenceStatus==="USER_SUPPLIED_UNVERIFIED"));
+ assert.ok(Math.abs(checks[0].provisionalResistanceKN-0.9*m.FyMPa*p.AgTensionMm2/1000)<1e-10);
+ assert.ok(Math.abs(checks[1].provisionalResistanceKN-0.75*m.FuMPa*p.AeTensionMm2/1000)<1e-10);
+ assert.ok(Math.abs(checks[2].provisionalResistanceKN-0.6*0.6*m.FyMPa*p.AgvMm2/1000)<1e-10);
+ assert.ok(Math.abs(checks[3].provisionalResistanceKN-0.75*0.6*m.FuMPa*p.AnvMm2/1000)<1e-10);
+ assert.equal(r.plateChecks[0].status,"NOT_ASSESSABLE");
 });
 test("block shear arithmetic remains provisional until path areas are geometry-verified",()=>{
  const d=detailFixture(),c=designFixture(),r=capacity.calculate(d,c);
