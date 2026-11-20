@@ -102,3 +102,61 @@ test("foundation-bearing wall weight is not silently assigned to steel girts",()
 test("seismic lateral distribution rejects vertical axis",()=>{
  assert.throws(()=>seismic.distributeApprovedBaseShear({baseShearKN:50,axisIndex:1,sourceVerified:true,sourceReference:"S-01",points:[{nodeId:"R",weight:1}]}),/محور افقی/);
 });
+
+
+test("roof purlin, longitudinal wall girt and end-wall girt loads reach the 3D solver with conserved resultants",()=>{
+ global.window=global;
+ global.document=global.document||{readyState:"loading",addEventListener(){},getElementById(){return null},querySelectorAll(){return[]}};
+ require("../js/load-transfer.js");
+ require("../js/model-3d.js");
+ require("../js/analysis-3d.js");
+ const structural=global.SteelStructuralModel,solver=global.SteelFrame3D;
+ assert.ok(structural&&solver);
+ const members=[
+  {id:"P-LEFT",sectionKey:"roofPurlin",side:"left",tributaryWidth:1.2},
+  {id:"WG-LEFT",sectionKey:"wallGirt",side:"left",tributaryHeight:1.5},
+  {id:"EG-FRONT",sectionKey:"endGirt",endFace:"front",tributaryHeight:1.5}
+ ];
+ const loads={
+  deadLeft:0.4,deadRight:0.4,liveLeft:0,liveRight:0,snowLeft:0,snowRight:0,
+  windLeft:0.6,windRight:-0.4,windWall:0.5,windEndFront:-0.3,windEndBack:0,
+  wallDeadSupportPath:"girts",wallDeadLeft:0.8,wallDeadRight:0,
+  endWallDeadFront:0.7,endWallDeadBack:0,
+  deadAreaBasis:"sloped-surface",liveAreaBasis:"horizontal-projection",snowAreaBasis:"horizontal-projection"
+ };
+ structural.assignGeometricMemberLineLoads(members,{span:12,rise:2,length:6,height:4},[6],loads);
+ assert.ok(Math.abs(members[0].lineLoads.dead-0.48)<1e-12);
+ assert.ok(Math.abs(members[1].lineLoads.dead-1.2)<1e-12);
+ assert.ok(Math.abs(members[2].lineLoads.dead-1.05)<1e-12);
+ const nodes=[
+  {id:"P-I",x:2,y:4.6666666667,z:0},{id:"P-J",x:2,y:4.6666666667,z:6},
+  {id:"W-I",x:0,y:2,z:0},{id:"W-J",x:0,y:2,z:6},
+  {id:"E-I",x:0,y:2,z:0},{id:"E-J",x:12,y:2,z:0}
+ ];
+ const pairs=[["P-I","P-J"],["W-I","W-J"],["E-I","E-J"]];
+ members.forEach((member,index)=>{
+  const [start,end]=pairs[index],a=nodes.find(n=>n.id===start),b=nodes.find(n=>n.id===end);
+  const wind=structural.windMemberLineLoadGlobal(member,{span:12,rise:2},1,1);
+  const globalLoad=[wind[0]*1000,-Number(member.lineLoads.dead||0)*1000,wind[2]*1000];
+  const local=solver.globalVectorToLocal([a.x,a.y,a.z],[b.x,b.y,b.z],globalLoad,member.sectionKey==="endGirt"?[0,1,0]:[1,0,0],0);
+  member.start=start;member.end=end;
+  member.referenceAxis=member.sectionKey==="endGirt"?[0,1,0]:[1,0,0];
+  member.sectionRollDeg=0;
+  member.analysisLoad={uniformLocal:local};
+ });
+ const section={E:200e9,G:80e9,A:0.012,Iy:2.5e-5,Iz:7.5e-5,J:1.8e-6};
+ const supports=nodes.map(n=>({nodeId:n.id,fixedDofs:[0,1,2,3,4,5]}));
+ const result=solver.analyze({nodes,members},{sectionResolver:()=>section,supports});
+ assert.equal(result.success,true);
+ assert.equal(result.loadAssemblyAudit.ok,true);
+ assert.equal(result.equilibrium.ok,true);
+ assert.equal(result.memberCount,3);
+ const expectedVerticalKN=-(0.48*6+1.2*6+1.05*12);
+ const reactionsY=result.reactions.reduce((sum,r)=>sum+Number(r.values[1]||0),0);
+ assert.ok(Math.abs(reactionsY/1000-expectedVerticalKN)<1e-7);
+ const expectedWindXKN=structural.windMemberLineLoadGlobal(members[0],{span:12,rise:2},1,1)[0]*6+
+  structural.windMemberLineLoadGlobal(members[1],{span:12,rise:2},1,1)[0]*6;
+ const reactionsX=result.reactions.reduce((sum,r)=>sum+Number(r.values[0]||0),0);
+ assert.ok(Math.abs(reactionsX/1000+expectedWindXKN)<1e-7);
+ assert.ok(result.members.every(m=>m.localEndForces.length===12));
+});
