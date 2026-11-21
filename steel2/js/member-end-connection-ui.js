@@ -23,7 +23,8 @@
  }
  function applyToModel(model){
   if(!model||!Array.isArray(model.members))throw new TypeError("مدل اعضا برای اعمال تنظیم اتصال معتبر نیست.");
-  const byId=new Map(model.members.map(m=>[String(m.id),m]));
+  const braceMembers=model.members.filter(m=>["wallBrace","roofBrace"].includes(m.sectionKey));
+  const validBraceIds=new Set(braceMembers.map(m=>String(m.id)));
   for(const member of model.members){
    if(!["wallBrace","roofBrace"].includes(member.sectionKey))continue;
    const prior=records.get(String(member.id));
@@ -37,8 +38,8 @@
    // This is a modelling assumption only, never evidence of a built connection.
    member.physicalConnectionStatus="unverified";
   }
-  const orphaned=[...records.keys()].filter(id=>!byId.has(id));
-  return {appliedCount:[...records.keys()].filter(id=>byId.has(id)).length,orphanedMemberIds:orphaned};
+  const orphaned=[...records.keys()].filter(id=>!validBraceIds.has(id));
+  return {appliedCount:[...records.keys()].filter(id=>validBraceIds.has(id)).length,orphanedMemberIds:orphaned};
  }
  function invalidate(memberId){
   if(root.SteelStructuralModel){
