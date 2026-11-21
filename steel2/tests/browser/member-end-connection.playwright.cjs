@@ -11,7 +11,13 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
   const pageErrors = [];
+  const consoleErrors = [];
+  const failedRequests = [];
+  const badResponses = [];
   page.on("pageerror", error => pageErrors.push(error.message));
+  page.on("console", message => { if (message.type() === "error") consoleErrors.push(message.text()); });
+  page.on("requestfailed", request => failedRequests.push({ url: request.url(), error: request.failure()?.errorText || "unknown" }));
+  page.on("response", response => { if (response.status() >= 400) badResponses.push({ url: response.url(), status: response.status() }); });
 
   try {
     const response = await page.goto(baseURL, { waitUntil: "commit", timeout: 30000 });
@@ -24,9 +30,9 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
         steelProject: typeof window.SteelProject,
         braceUI: typeof window.SahroudMemberEndConnectionUI,
         scripts: [...document.scripts].map(s => s.src).filter(Boolean),
-        loaded: performance.getEntriesByType("resource").filter(r => /project.js|member-end-connection-ui.js/.test(r.name)).map(r => r.name)
+        loaded: performance.getEntriesByType("resource").filter(r => /project.js|member-end-connection-ui.js/.test(r.name)).map(r => ({ name: r.name, duration: r.duration, transferSize: r.transferSize }))
       }));
-      throw new Error("Application globals did not initialize: " + JSON.stringify({ diagnostics, pageErrors }));
+      throw new Error("Application globals did not initialize: " + JSON.stringify({ diagnostics, pageErrors, consoleErrors, failedRequests, badResponses }));
     }
 
     await page.locator("#btnBuildFullModel").waitFor({ state: "visible" });
