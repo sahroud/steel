@@ -29,8 +29,21 @@ const watchdog = setTimeout(() => {
     stage = "load index.html";
     const response = await page.goto(baseURL, { waitUntil: "commit", timeout: 30000 });
     assert.ok(response && response.ok(), "index.html should load successfully");
-    // page.goto(waitUntil: commit) only confirms response headers; wait until all classic scripts and DOMContentLoaded handlers have run.
-    await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
+    // Wait on the document's observable readiness state rather than a load-event waiter.
+    // If a blocking script prevents parsing from completing, capture the exact browser state.
+    try {
+      await page.waitForFunction(() => document.readyState !== "loading", null, { timeout: 30000 });
+    } catch (error) {
+      const diagnostics = await page.evaluate(() => ({
+        readyState: document.readyState,
+        title: document.title,
+        bodyPresent: Boolean(document.body),
+        scriptCount: document.scripts.length,
+        scripts: [...document.scripts].map(s => ({ src: s.src || "[inline]", ready: s.readyState || null })),
+        loadedResources: performance.getEntriesByType("resource").filter(r => /\.js(?:\?|$)/.test(r.name)).map(r => r.name).slice(-25)
+      })).catch(e => ({ evaluateError: e.message }));
+      throw new Error("HTML document did not finish parsing: " + JSON.stringify({ diagnostics, pageErrors, consoleErrors, failedRequests, badResponses, cause: error.message }));
+    }
     try {
       await page.waitForFunction(() => Boolean(window.SteelProject && window.SahroudMemberEndConnectionUI), null, { timeout: 12000 });
     } catch (error) {
