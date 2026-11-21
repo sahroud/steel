@@ -29,6 +29,8 @@ const watchdog = setTimeout(() => {
     stage = "load index.html";
     const response = await page.goto(baseURL, { waitUntil: "commit", timeout: 30000 });
     assert.ok(response && response.ok(), "index.html should load successfully");
+    // page.goto(waitUntil: commit) only confirms response headers; wait until all classic scripts and DOMContentLoaded handlers have run.
+    await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
     try {
       await page.waitForFunction(() => Boolean(window.SteelProject && window.SahroudMemberEndConnectionUI), null, { timeout: 12000 });
     } catch (error) {
