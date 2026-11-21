@@ -6,8 +6,18 @@ const { chromium } = require("playwright");
 
 const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
 let stage = "launch Chromium";
+let requestedScripts = [];
+let failedRequests = [];
+let badResponses = [];
+let consoleErrors = [];
+let pageErrors = [];
 const watchdog = setTimeout(() => {
   console.error("Browser round-trip exceeded 180 seconds at stage: " + stage);
+  console.error("Scripts requested before stall: " + JSON.stringify(requestedScripts));
+  console.error("Failed requests: " + JSON.stringify(failedRequests));
+  console.error("Bad responses: " + JSON.stringify(badResponses));
+  console.error("Console errors: " + JSON.stringify(consoleErrors));
+  console.error("Page errors: " + JSON.stringify(pageErrors));
   process.exit(124);
 }, 180000);
 
@@ -16,10 +26,7 @@ const watchdog = setTimeout(() => {
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
-  const pageErrors = [];
-  const consoleErrors = [];
-  const failedRequests = [];
-  const badResponses = [];
+  page.on("request", request => { if (/\\.js(?:\\?|$)/.test(request.url())) requestedScripts.push(request.url()); });
   page.on("pageerror", error => pageErrors.push(error.message));
   page.on("console", message => { if (message.type() === "error") consoleErrors.push(message.text()); });
   page.on("requestfailed", request => failedRequests.push({ url: request.url(), error: request.failure()?.errorText || "unknown" }));
