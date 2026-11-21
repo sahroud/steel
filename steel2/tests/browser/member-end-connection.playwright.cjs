@@ -45,7 +45,20 @@ const watchdog = setTimeout(() => {
     }
 
     stage = "build full shed model";
-    await page.locator("#btnBuildFullModel").waitFor({ state: "visible" });
+    try {
+      await page.locator("#btnBuildFullModel").waitFor({ state: "visible", timeout: 15000 });
+    } catch (error) {
+      const diagnostics = await page.evaluate(() => ({
+        readyState: document.readyState,
+        frameDrawing: Boolean(document.getElementById("frameDrawing")),
+        drawingPanel: Boolean(document.getElementById("frameDrawing")?.closest(".panel")),
+        shedLayoutPanel: Boolean(document.getElementById("shedLayoutPanel")),
+        buildButton: Boolean(document.getElementById("btnBuildFullModel")),
+        steelStructuralModel: typeof window.SteelStructuralModel,
+        braceUI: typeof window.SahroudMemberEndConnectionUI
+      }));
+      throw new Error("Full-model UI did not initialize: " + JSON.stringify({ diagnostics, pageErrors, consoleErrors, failedRequests, badResponses, cause: error.message }));
+    }
     await page.locator("#btnBuildFullModel").click();
     await page.locator("#braceConnectionMember").waitFor({ state: "visible", timeout: 30000 });
 
