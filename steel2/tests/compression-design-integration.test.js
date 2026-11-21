@@ -369,7 +369,32 @@ test("three-frame two-bay shed transfers every member station across all load co
   assert.ok(analysis.members.every(m=>m.localEndForces.length===12));
   return {id:spec.id,label:spec.label,analysis};
  });
- const orientations=new Set(combinations[0].analysis.members.map(m=>JSON.stringify(m.localAxes)));
+ // Re-run the same 3D shed with each independently selected brace end released.
+  // The release must survive model cloning/analysis and return zero local end moments.
+  for(const end of ["i","j"]){
+   const targetId="B0-SIDE-X1";
+   const releasedModel={nodes,members:members.map(m=>m.id===targetId
+    ?{...m,endReleases:{[end]:["rx","ry","rz"]}}
+    :{...m})};
+   const factor=1;
+   const nodalLoads=frames.flatMap(f=>[
+    {nodeId:f.ridge,values:[0,-700*factor,120*factor,35*factor,20*factor,15*factor]},
+    {nodeId:f.eaveL,values:[0,-180*factor,60*factor,0,0,0]},
+    {nodeId:f.eaveR,values:[0,-180*factor,-60*factor,0,0,0]}
+   ]);
+   const releasedAnalysis=solver.analyze(releasedModel,{sectionResolver:()=>section,supports,nodalLoads});
+   assert.equal(releasedAnalysis.success,true,"released "+end+" end: "+JSON.stringify(releasedAnalysis.issues||[]));
+   assert.equal(releasedAnalysis.loadAssemblyAudit.ok,true);
+   assert.equal(releasedAnalysis.equilibrium.ok,true);
+   const releasedMember=releasedAnalysis.members.find(m=>m.id===targetId);
+   assert.deepEqual(releasedMember.releasedLocalRotations,end==="i"?[3,4,5]:[9,10,11]);
+   for(const dof of (end==="i"?[3,4,5]:[9,10,11]))
+    assert.ok(Math.abs(releasedMember.localEndForces[dof])<1e-6,
+     "released "+end+" end local moment component "+dof+" must be zero");
+   assert.ok(Math.abs(releasedAnalysis.equilibrium.relativeForceResidual)<1e-8);
+   assert.ok(Math.abs(releasedAnalysis.equilibrium.relativeMomentResidual)<1e-8);
+  }
+  const orientations=new Set(combinations[0].analysis.members.map(m=>JSON.stringify(m.localAxes)));
  assert.ok(orientations.size>=4,"columns, rafters, longitudinal members and braces exercise distinct spatial local axes");
  const prepared=api.buildConcurrentMemberDesignDemandFrom3D(combinations,modelData);
  assert.equal(prepared.success,true,JSON.stringify(prepared.issues));
