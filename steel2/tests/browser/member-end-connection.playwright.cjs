@@ -14,7 +14,7 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
   page.on("pageerror", error => pageErrors.push(error.message));
 
   try {
-    const response = await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: 60000 });
+    const response = await page.goto(baseURL, { waitUntil: "commit", timeout: 30000 });
     assert.ok(response && response.ok(), "index.html should load successfully");
     await page.waitForFunction(() => Boolean(window.SteelProject && window.SahroudMemberEndConnectionUI), null, { timeout: 30000 });
 
@@ -72,7 +72,7 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
     assert.deepEqual(restored.item, { memberId: braceId, i: "continuous", j: "pinned" });
     assert.deepEqual(restored.autosaveItem, restored.item);
 
-    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.reload({ waitUntil: "commit", timeout: 30000 });
     await page.waitForFunction(() => document.getElementById("projectName")?.value === "آزمون واقعی مرورگر");
     const afterReload = await page.evaluate(id =>
       window.SahroudMemberEndConnectionUI.getData().find(x => x.memberId === id) || null, braceId);
