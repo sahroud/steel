@@ -16,7 +16,18 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
   try {
     const response = await page.goto(baseURL, { waitUntil: "commit", timeout: 30000 });
     assert.ok(response && response.ok(), "index.html should load successfully");
-    await page.waitForFunction(() => Boolean(window.SteelProject && window.SahroudMemberEndConnectionUI), null, { timeout: 30000 });
+    try {
+      await page.waitForFunction(() => Boolean(window.SteelProject && window.SahroudMemberEndConnectionUI), null, { timeout: 12000 });
+    } catch (error) {
+      const diagnostics = await page.evaluate(() => ({
+        readyState: document.readyState,
+        steelProject: typeof window.SteelProject,
+        braceUI: typeof window.SahroudMemberEndConnectionUI,
+        scripts: [...document.scripts].map(s => s.src).filter(Boolean),
+        loaded: performance.getEntriesByType("resource").filter(r => /project.js|member-end-connection-ui.js/.test(r.name)).map(r => r.name)
+      }));
+      throw new Error("Application globals did not initialize: " + JSON.stringify({ diagnostics, pageErrors }));
+    }
 
     await page.locator("#btnBuildFullModel").waitFor({ state: "visible" });
     await page.locator("#btnBuildFullModel").click();
