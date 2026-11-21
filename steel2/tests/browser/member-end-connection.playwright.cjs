@@ -26,7 +26,7 @@ const watchdog = setTimeout(() => {
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
-  page.on("request", request => { if (/\\.js(?:\\?|$)/.test(request.url())) requestedScripts.push(request.url()); });
+  page.on("request", request => { if (/\.js(?:\?|$)/.test(request.url())) requestedScripts.push(request.url()); });
   page.on("pageerror", error => pageErrors.push(error.message));
   page.on("console", message => { if (message.type() === "error") consoleErrors.push(message.text()); });
   page.on("requestfailed", request => failedRequests.push({ url: request.url(), error: request.failure()?.errorText || "unknown" }));
