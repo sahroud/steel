@@ -5,11 +5,17 @@ const fs = require("node:fs");
 const { chromium } = require("playwright");
 
 const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
+let stage = "launch Chromium";
+const watchdog = setTimeout(() => {
+  console.error("Browser round-trip exceeded 180 seconds at stage: " + stage);
+  process.exit(124);
+}, 180000);
 
 (async () => {
   const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
+  page.setDefaultTimeout(15000);
   const pageErrors = [];
   const consoleErrors = [];
   const failedRequests = [];
@@ -20,6 +26,7 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
   page.on("response", response => { if (response.status() >= 400) badResponses.push({ url: response.url(), status: response.status() }); });
 
   try {
+    stage = "load index.html";
     const response = await page.goto(baseURL, { waitUntil: "commit", timeout: 30000 });
     assert.ok(response && response.ok(), "index.html should load successfully");
     try {
@@ -35,10 +42,12 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
       throw new Error("Application globals did not initialize: " + JSON.stringify({ diagnostics, pageErrors, consoleErrors, failedRequests, badResponses }));
     }
 
+    stage = "build full shed model";
     await page.locator("#btnBuildFullModel").waitFor({ state: "visible" });
     await page.locator("#btnBuildFullModel").click();
     await page.locator("#braceConnectionMember").waitFor({ state: "visible", timeout: 30000 });
 
+    stage = "select brace and edit I/J releases";
     const memberSelect = page.locator("#braceConnectionMember");
     await page.waitForFunction(() => {
       const select = document.getElementById("braceConnectionMember");
@@ -55,6 +64,7 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
       return member?.endReleases?.i?.join(",") === "rx,ry,rz";
     }, braceId, { timeout: 10000 });
 
+    stage = "export project JSON";
     const [download] = await Promise.all([
       page.waitForEvent("download"),
       page.locator("#btnSave").click()
@@ -66,6 +76,7 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
       item.memberId === braceId && item.i === "pinned" && item.j === "continuous"
     ), "exported JSON should preserve independent I/J selections");
 
+    stage = "import JSON and verify autosave";
     const importPayload = Buffer.from(JSON.stringify({
       ...exported,
       projectName: "آزمون واقعی مرورگر",
@@ -89,14 +100,17 @@ const baseURL = process.env.SAHROUD_STEEL_BASE_URL || "http://127.0.0.1:4173";
     assert.deepEqual(restored.item, { memberId: braceId, i: "continuous", j: "pinned" });
     assert.deepEqual(restored.autosaveItem, restored.item);
 
+    stage = "reload and verify restored state";
     await page.reload({ waitUntil: "commit", timeout: 30000 });
     await page.waitForFunction(() => document.getElementById("projectName")?.value === "آزمون واقعی مرورگر");
     const afterReload = await page.evaluate(id =>
       window.SahroudMemberEndConnectionUI.getData().find(x => x.memberId === id) || null, braceId);
     assert.deepEqual(afterReload, { memberId: braceId, i: "continuous", j: "pinned" });
     assert.deepEqual(pageErrors, [], "browser should not emit uncaught page errors");
+    stage = "completed";
     process.stdout.write("PASS: Chromium page load, shed build, brace I/J editing, JSON download/import, autosave and reload round-trip.\\n");
   } finally {
+    clearTimeout(watchdog);
     await context.close();
     await browser.close();
   }
