@@ -171,16 +171,28 @@
         });
     }
     function scan(root) {
-        if (!root) return;
+        if (!root) return false;
 
-        if (root.matches && root.matches(".panel")) {
+        let changed = false;
+        if (root.matches && root.matches(".panel") &&
+            root.dataset.smartOrganized !== "1") {
+            const before = root.dataset.smartOrganized;
             organize(root);
+            changed = before !== root.dataset.smartOrganized;
         }
 
         if (root.querySelectorAll) {
-            root.querySelectorAll(".panel").forEach(organize);
+            root.querySelectorAll(".panel:not([data-smart-organized='1'])").forEach(panel => {
+                const before = panel.dataset.smartOrganized;
+                organize(panel);
+                if (before !== panel.dataset.smartOrganized) changed = true;
+            });
         }
-        renumberPanels();
+
+        // Renumber only when a genuinely new panel was organized.
+        // Text/title mutations from our own organizer must not retrigger this work.
+        if (changed) renumberPanels();
+        return changed;
     }
 
     function cleanLegacyControls() {
@@ -205,11 +217,14 @@
         const observer = new MutationObserver(records => {
             records.forEach(record => {
                 record.addedNodes.forEach(node => {
-                    if (node.nodeType === 1) {
-                        scan(node);
-                    }
+                    if (node.nodeType !== 1) return;
+                    // Ignore ordinary UI/text mutations. Only newly inserted,
+                    // not-yet-organized panels require work.
+                    const hasNewPanel =
+                        (node.matches && node.matches(".panel:not([data-smart-organized='1'])")) ||
+                        (node.querySelector && node.querySelector(".panel:not([data-smart-organized='1'])"));
+                    if (hasNewPanel) scan(node);
                 });
-                renumberPanels();
             });
         });
 
