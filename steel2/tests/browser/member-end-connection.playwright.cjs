@@ -25,6 +25,22 @@ const watchdog = setTimeout(() => {
   const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Debugger.enable");
+  let debuggerPauseCaptured = false;
+  cdp.on("Debugger.paused", event => {
+    if (!debuggerPauseCaptured) {
+      debuggerPauseCaptured = true;
+      const frames = (event.callFrames || []).slice(0, 12).map(frame => ({
+        functionName: frame.functionName,
+        url: frame.url,
+        lineNumber: frame.location?.lineNumber,
+        columnNumber: frame.location?.columnNumber
+      }));
+      console.error("Chromium main-thread stack during document-load stall: " + JSON.stringify(frames));
+    }
+    cdp.send("Debugger.resume").catch(() => {});
+  });
   page.setDefaultTimeout(15000);
   page.on("request", request => { if (/\.js(?:\?|$)/.test(request.url())) requestedScripts.push(request.url()); });
   page.on("pageerror", error => pageErrors.push(error.message));
@@ -36,6 +52,8 @@ const watchdog = setTimeout(() => {
     stage = "load index.html";
     const response = await page.goto(baseURL, { waitUntil: "commit", timeout: 30000 });
     assert.ok(response && response.ok(), "index.html should load successfully");
+    // Interrupt a potentially blocked parser/main thread and capture the executing script stack.
+    setTimeout(() => cdp.send("Debugger.pause").catch(() => {}), 5000);
     // Wait on the document's observable readiness state rather than a load-event waiter.
     // If a blocking script prevents parsing from completing, capture the exact browser state.
     try {
