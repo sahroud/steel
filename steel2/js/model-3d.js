@@ -714,8 +714,10 @@
         [sa,sb].forEach(c=>el("circle",{cx:c.x,cy:c.y,r:2.6,fill:"#f59e0b",stroke:"#78350f","stroke-width":0.8}));
       }
     }));
-    const title=el("text",{x:W/2,y:25,"text-anchor":"middle",fill:"#123b52","font-size":17,"font-family":"Tahoma,Arial"});title.textContent="مدل سه‌بعدی جانمایی اجزای سوله";
-    const note=el("text",{x:W/2,y:455,"text-anchor":"middle",fill:"#64748b","font-size":11,"font-family":"Tahoma,Arial"});note.textContent="نمای شماتیک آکسونومتریک ـ مقیاس تصویری";
+    const title=el("text",{x:W/2,y:25,"text-anchor":"middle",fill:"#123b52","font-size":17,"font-family":"Tahoma,Arial"});title.textContent="مدل سه‌بعدی سوله با سقف دوشیب";
+    const dimensions=el("text",{x:W/2,y:45,"text-anchor":"middle",fill:"#334155","font-size":12,"font-family":"Tahoma,Arial"});
+    dimensions.textContent="دهانه "+g.span+" m  |  طول "+g.length+" m  |  ارتفاع ستون "+g.height+" m  |  شیب "+Number(g.roofSlopePercent).toFixed(1)+"٪  |  تعداد قاب "+g.frames.length;
+    const note=el("text",{x:W/2,y:455,"text-anchor":"middle",fill:"#64748b","font-size":11,"font-family":"Tahoma,Arial"});note.textContent="نمای شماتیک آکسونومتریک ـ جانمایی قاب‌ها، رفترها، پرلین‌ها و مهاربندها؛ نه نقشه اجرایی";
     return true;
   }
   function renderCriticalRafterDiagram(result, contextLabel) {
