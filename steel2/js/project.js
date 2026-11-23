@@ -74,11 +74,13 @@
 
     function updateRoofGeometry() {
         const span = Number($("span")?.value);
-        const rise = Number($("rise")?.value);
+        const slopePercent = Number($("roofSlope")?.value);
         const height = Number($("height")?.value);
-        if (!(span > 0) || !(rise >= 0) || !(height > 0)) return;
-        const slope = rise / (span / 2) * 100;
-        if ($("roofSlopeDisplay")) $("roofSlopeDisplay").textContent = slope.toFixed(1).replace(".", "٫") + "٪";
+        if (!(span > 0) || !Number.isFinite(slopePercent) || slopePercent < 0 || !(height > 0)) return;
+        const rise = span / 2 * slopePercent / 100;
+        const riseField = $("rise");
+        if (riseField) riseField.value = String(Number(rise.toFixed(4)));
+        if ($("roofSlopeDisplay")) $("roofSlopeDisplay").textContent = slopePercent.toFixed(1).replace(".", "٫") + "٪";
         if ($("roofRiseDisplay")) $("roofRiseDisplay").textContent = rise.toFixed(2).replace(".", "٫") + " متر";
         if ($("roofTotalHeightDisplay")) $("roofTotalHeightDisplay").textContent = (height + rise).toFixed(2).replace(".", "٫") + " متر";
         if (window.SteelDrawing && typeof window.SteelDrawing.drawFrame === "function") window.SteelDrawing.drawFrame();
@@ -107,6 +109,7 @@
             length: getNumber("length"),
             spacing: getNumber("spacing"),
             height: getNumber("height"),
+            roofSlope: getNumber("roofSlope"),
             rise: getNumber("rise"),
             frames: getNumber("frames"),
 
@@ -237,8 +240,12 @@
             }
         }
 
+        if (!Number.isFinite(d.roofSlope) || d.roofSlope < 0) {
+            return "شیب سقف باید عددی معتبر و بزرگ‌تر یا مساوی صفر باشد.";
+        }
+
         if (!Number.isFinite(d.rise) || d.rise < 0) {
-            return "ارتفاع تاج نمی‌تواند منفی باشد.";
+            return "افزایش ارتفاع تاج محاسبه‌شده معتبر نیست.";
         }
 
         const loads = [
@@ -341,6 +348,7 @@
             "length",
             "spacing",
             "height",
+            "roofSlope",
             "rise",
             "dead",
             "live",
@@ -354,7 +362,17 @@
             }
         });
 
-        // ارتفاع تاج از فایل پروژه بازیابی می‌شود؛ شیب از rise و نصف دهانه محاسبه می‌شود.
+        // مهاجرت پروژه‌های قدیمی: اگر درصد شیب ذخیره نشده باشد، از rise و دهانه استخراج می‌شود.
+        if ($("roofSlope")) {
+            const savedSlope = Number(data.roofSlope);
+            const legacyRise = Number(data.rise);
+            const span = Number(data.span);
+            $("roofSlope").value = Number.isFinite(savedSlope) && savedSlope >= 0
+                ? String(savedSlope)
+                : (span > 0 && Number.isFinite(legacyRise) && legacyRise >= 0
+                    ? String(legacyRise / (span / 2) * 100)
+                    : "20");
+        }
         updateRoofGeometry();
 
         if ($("baseConnection")) {
@@ -503,7 +521,7 @@
             }
         });
 
-        ["span", "rise", "height"].forEach(function (id) {
+        ["span", "roofSlope", "height"].forEach(function (id) {
             const el = $(id);
             if (el) el.addEventListener("input", updateRoofGeometry);
         });
