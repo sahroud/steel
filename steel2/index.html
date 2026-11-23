@@ -231,17 +231,22 @@
         <div class="panel-title">
             <h3>۵ ـ نمایش قاب</h3>
         </div>
+        <p class="geometry-hint">نمای سه‌بعدی، مدل کامل سوله را با ابعاد و اجزای پیش‌فرض نمایش می‌دهد.</p>
         <div class="drawing-area">
             <svg id="frameDrawing"
-                 viewBox="0 0 600 300"
+                 viewBox="0 0 900 480"
+                 role="img" aria-label="مدل سه‌بعدی سوله با سقف دوشیب"
+                 xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="0" width="900" height="480" fill="#f8fafc"/>
+                <text x="450" y="240" text-anchor="middle" fill="#64748b" font-size="18">مدل سه‌بعدی پس از بارگذاری نمایش داده می‌شود</text>
+            </svg>
+        </div>
+        <div class="panel-title"><h3>نمای دوبعدی قاب عرضی ـ سقف دوشیب</h3></div>
+        <div class="drawing-area">
+            <svg id="frameDrawing2D" viewBox="0 0 600 300" role="img"
+                 aria-label="ترسیم دوبعدی قاب عرضی سوله با سقف دوشیب"
                  xmlns="http://www.w3.org/2000/svg">
                 <rect x="0" y="0" width="600" height="300" fill="#f8fafc"/>
-                <line x1="50" y1="250" x2="550" y2="250"
-                      stroke="#64748b" stroke-width="2"/>
-                <text x="300" y="150" text-anchor="middle"
-                      fill="#64748b" font-size="18">
-                    قاب پس از اتصال فایل ترسیم نمایش داده می‌شود
-                </text>
             </svg>
         </div>
         <div class="drawing-info">
