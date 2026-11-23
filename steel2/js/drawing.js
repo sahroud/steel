@@ -6,7 +6,7 @@
     const NS = "http://www.w3.org/2000/svg";
 
     function drawFrame() {
-        const svg = document.getElementById("frameDrawing");
+        const svg = document.getElementById("frameDrawing2D") || document.getElementById("frameDrawing");
         if (!svg) {
             console.error("SVG frameDrawing پیدا نشد.");
             return false;
@@ -20,9 +20,11 @@
         const span = get("span");
         const height = get("height");
         const rise = get("rise");
+        const slopePercent = get("roofSlope");
 
         if (!Number.isFinite(span) || !Number.isFinite(height) ||
-            !Number.isFinite(rise) || span <= 0 || height <= 0 || rise < 0) {
+            !Number.isFinite(rise) || span <= 0 || height <= 0 || rise < 0 ||
+            !Number.isFinite(slopePercent) || slopePercent < 0) {
             return false;
         }
 
@@ -173,7 +175,8 @@
             `rotate(-90 ${dimX - 5} ${(baseY + eaveY) / 2})`);
 
         label(midX + 45, ridgeY + 18, `اختلاف ارتفاع تاج و ستون: ${rise} m`, 11, "#9a3412");
-        label(W / 2, 18, "نمای دوبعدی قاب سوله", 13, "#123b52");
+        label(W / 2, 18, "نمای دوبعدی قاب عرضی ـ سقف دوشیب", 13, "#123b52");
+        label(midX, ridgeY + 38, `شیب هر طرف سقف: ${slopePercent.toFixed(1)}٪`, 11, "#9a3412");
 
         const status = document.getElementById("projectStatus");
         if (status) {
@@ -192,7 +195,7 @@
             field.addEventListener("change", drawFrame);
             field.dataset.drawingListener = "1";
         }
-        ["span", "height"].forEach(id => {
+        ["span", "height", "rise", "roofSlope"].forEach(id => {
             const input = document.getElementById(id);
             if (input && !input.dataset.frameDrawingListener) {
                 input.addEventListener("input", drawFrame);
