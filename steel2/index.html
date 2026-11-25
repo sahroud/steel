@@ -336,11 +336,12 @@
         <pre id="anchorGroupResult" class="notice" aria-live="polite">پس از ورود داده واقعی و فعال‌بودن کنترل فونداسیون، محاسبه را اجرا کنید.</pre>
         <hr>
         <h4>کنترل مقدماتی خمش نوار صفحه‌ستون</h4>
-        <div class="notice">برای هر انکر، تقاضای کشش و پیش‌آمدگی صفحه از وجه ستون/تکیه‌گاه تا خط اثر انکر و عرض مؤثر نوار باید از نقشه واقعی تعیین شود. مدل فقط نوار کنسولی با Mu=T×a/beff و φMn=φFy t²/4 را کنترل می‌کند؛ اثر پریینگ و تماس واقعی بتن هنوز منظور نشده است.</div>
+        <div class="notice">برای هر انکر، تقاضای کشش و پیش‌آمدگی صفحه از وجه ستون/تکیه‌گاه تا خط اثر انکر و عرض مؤثر نوار باید از نقشه واقعی تعیین شود. مدل فقط نوار کنسولی با Mu=T×ضریب پریینگ×a/beff و φMn=φFy t²/4 را کنترل می‌کند. ضریب پریینگ را کاربر وارد می‌کند؛ نرم‌افزار آن را از هندسه استخراج نمی‌کند. تماس واقعی بتن هنوز مدل نشده است.</div>
         <div class="form-grid">
           <div class="field"><label for="basePlateThicknessMM">ضخامت صفحه‌ستون (mm)</label><input id="basePlateThicknessMM" type="number" min="0" step="any" value="20"></div>
           <div class="field"><label for="basePlateFyMPa">تنش تسلیم صفحه Fy (MPa)</label><input id="basePlateFyMPa" type="number" min="0" step="any" placeholder="طبق گواهی مصالح"></div>
           <div class="field"><label for="basePlatePhi">ضریب مقاومت φ</label><input id="basePlatePhi" type="number" min="0" max="1" step="any" value="0.9"></div>
+          <div class="field"><label for="basePlatePryingFactor">ضریب تشدید پریینگ (ورودی مستند مهندس)</label><input id="basePlatePryingFactor" type="number" min="1" step="any" placeholder="حداقل ۱؛ مستند وارد شود"></div>
           <div class="field"><label for="basePlateGeometryRef">مرجع نقشه و جزئیات صفحه‌ستون</label><input id="basePlateGeometryRef" type="text" placeholder="شماره نقشه و جزئیات"></div>
         </div>
         <div class="field"><label for="basePlateStripInput">تقاضا و هندسه نوار هر انکر (JSON)</label>
