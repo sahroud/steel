@@ -109,6 +109,8 @@ test("reaction mapping converts force and moment signs and units", () => {
   assert.equal(mapped.MxkNm, -20);
   assert.equal(mapped.MzkNm, 10);
   assert.deepEqual(mapped.horizontalReactionsKN, { Fx: 12, Fz: -5 });
+  assert.equal(mapped.torsionalReactionKNm, -3);
+  assert.deepEqual(mapped.conversion, { vertical: "Fy solver reaction on structure is converted to positive downward compression on footing", moments: "Mx, My and Mz are reversed from support-on-structure to structure-on-footing", widthAxis: "X", lengthAxis: "Z", verticalAxis: "Y" });
 });
 
 test("reaction mapping requires footing-bearing check metadata", () => {
