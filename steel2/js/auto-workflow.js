@@ -119,7 +119,7 @@
       const windRegistry=window.SteelClimateLoadEngine?.getData?.();
       const windCodeReady=!!windRegistry&&windRegistry.cases?.filter(x=>String(x.type).includes("wind")).every(x=>x.eligibleForCodeDesign===true)&&windRegistry.windCalculation?.status==="code-verified-and-applied";
       addLine(rows,"اعتبار آیین‌نامه‌ای و انتقال بار باد",windCodeReady,windCodeReady?"ضرایب باد تأیید و به مدل منتقل شده‌اند.":"بارهای باد فعلی ورودی مقدماتی/دستی هستند؛ ضرایب فشار خارجی و داخلی و نواحی موضعی هنوز تأیید و به مدل سه‌بعدی اعمال نشده‌اند. ترکیب بار باد برای جلوگیری از نتیجه گمراه‌کننده ساخته نشد.");
-      addLine(rows,"اتصال واکنش‌های سازه به کنترل پی و خاک",false,"واکنش‌های حل‌گر سه‌بعدی هنوز به‌صورت خودکار به فرم کنترل پی منتقل نمی‌شوند. کنترل باربری پی به واکنش‌های بهره‌برداری SLS، مشخصات ژئوتکنیک و مرجع معتبر نیاز دارد؛ نتایج ULS یا واکنش‌های قاب دوبعدی را جایگزین آن نکنید.");
+      addLine(rows,"دفتر ثبت واکنش‌های تکیه‌گاهی سه‌بعدی",false,"حل‌گر برای هر تحلیل سه‌بعدی دفتر واکنش امضادار، مختصات گره، درجات آزادی مقید و واحدهای N و N.m تولید می‌کند. این دفتر به‌تنهایی مجوز انتقال بار به کنترل پی نیست؛ فقط ترکیبات SLS معتبر با مرجع بارگذاری و ژئوتکنیک قابل استفاده‌اند.");
 
       if(window.SteelLoads?.syncLegacyInputs)window.SteelLoads.syncLegacyInputs();
       const loadOK=window.SteelLoads?.check?.()===true;
@@ -203,6 +203,10 @@
             }
           }
           model3D.last3DCombinationResults=threeDResults;
+          const __sahroudReactionLedgerCount=threeDResults.filter(item=>item.success&&item.equilibriumOK&&Array.isArray(item.result?.supportReactionLedger)).length;
+          const __sahroudSlsLedgerCount=threeDResults.filter(item=>item.success&&item.equilibriumOK&&Array.isArray(item.result?.supportReactionLedger)&&(/\\bSLS\\b|بهره‌برداری/i.test(String(item.label||"")))).length;
+          addLine(rows,"آمادگی واکنش‌ها برای کنترل پی",false,
+            "دفتر واکنش معتبر از نظر حل و تعادل برای "+__sahroudReactionLedgerCount+" ترکیب سه‌بعدی تولید شد؛ از این تعداد "+__sahroudSlsLedgerCount+" ترکیب با برچسب SLS/بهره‌برداری شناسایی شد. انتقال خودکار به پی هنوز مسدود است تا ترکیب بهره‌برداری، علامت محورها و مرجع ژئوتکنیک تأیید شوند؛ ULS جایگزین SLS نیست.");
         } else {
           addLine(rows,"تحلیل سه‌بعدی قاب‌های طولی و اعضای فرعی",false,
             "تابع تحلیل سه‌بعدی در نسخه بارگذاری‌شده در دسترس نیست.");
