@@ -83,3 +83,18 @@ test("anchor steel capacity flags tension and shear failures independently",()=>
  assert.throws(()=>api.checkAnchorSteelCapacity({...base,capacitySourceReference:""}),/مرجع ظرفیت/);
  assert.throws(()=>api.checkAnchorSteelCapacity({...base,anchors:[{...base.anchors[0],designShearCapacityKN:0}]}),/مثبت/);
 });
+
+test("concrete anchor failure screening compares all four supplied design capacities",()=>{
+ const r=api.checkConcreteAnchorFailure({geometrySourceReference:"BP-01 edge distances and embedment",capacitySourceReference:"approved anchor design calculation",combinationDefinition:"ULS-3",
+  anchors:[{id:"A1",tensionDemandKN:30,resultantShearDemandKN:12,concreteBreakoutTensionCapacityKN:50,pulloutTensionCapacityKN:45,concreteEdgeShearCapacityKN:20,pryoutShearCapacityKN:18}]});
+ assert.equal(r.success,true); assert.equal(r.anchors[0].checks.length,4);
+ assert.equal(r.anchors[0].governingMode.mode,"pullout-tension");
+});
+test("concrete anchor failure screening flags governing concrete mode and rejects missing capacities",()=>{
+ const base={geometrySourceReference:"BP-01",capacitySourceReference:"design calc",combinationDefinition:"ULS-4",
+  anchors:[{id:"A1",tensionDemandKN:40,resultantShearDemandKN:15,concreteBreakoutTensionCapacityKN:30,pulloutTensionCapacityKN:50,concreteEdgeShearCapacityKN:10,pryoutShearCapacityKN:20}]};
+ const r=api.checkConcreteAnchorFailure(base);
+ assert.equal(r.success,false); assert.equal(r.anchors[0].governingMode.mode,"concrete-edge-shear");
+ assert.throws(()=>api.checkConcreteAnchorFailure({...base,anchors:[{...base.anchors[0],pryoutShearCapacityKN:0}]}),/مثبت/);
+ assert.throws(()=>api.checkConcreteAnchorFailure({...base,geometrySourceReference:""}),/مرجع هندسه/);
+});
