@@ -6,8 +6,8 @@ const source = fs.readFileSync(require.resolve("../js/model-3d.js"), "utf8");
 
 test("wind pressure is transferred from roof purlins normal to both roof slopes", () => {
   assert.match(source, /m\.sectionKey==="roofPurlin"/);
-  assert.match(source, /windLeft\).*slope\/norm/);
-  assert.match(source, /windRight\).*slope\/norm/);
+  assert.match(source, /global\[0\]\+=left\*slope\/norm-right\*slope\/norm/);
+  assert.match(source, /global\[1\]-=\(left\+right\)\/norm/);
   assert.match(source, /\(left\+right\)\/norm/);
 });
 
