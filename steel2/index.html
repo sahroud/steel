@@ -226,6 +226,81 @@
         </div>
     </section>
 
+    <section class="panel" id="foundationSoilPanel">
+        <div class="panel-title">
+            <h3>کنترل مقدماتی فشار باربری پی و خاک</h3>
+            <span class="status">نیازمند اطلاعات ژئوتکنیک و SLS</span>
+        </div>
+        <div class="notice">
+            این بخش فعلاً واکنش‌ها را خودکار از تحلیل سازه دریافت نمی‌کند. فقط واکنش‌های بهره‌برداری SLS دارای مرجع معتبر را وارد کنید؛ نتایج ULS، بارهای فرضی و ظرفیت خاک بدون گزارش ژئوتکنیک پذیرفته نیستند. این کنترل جایگزین کنترل نشست، لغزش، واژگونی، پانچ و طراحی آرماتور نیست.
+        </div>
+        <div class="field">
+            <label><input id="soilControlEnabled" type="checkbox"> فعال‌سازی کنترل با داده‌های مستند</label>
+        </div>
+        <div class="form-grid">
+            <div class="field">
+                <label for="soilType">تیپ خاک طبق گزارش ژئوتکنیک</label>
+                <select id="soilType">
+                    <option value="">انتخاب نشده</option>
+                    <option value="I">تیپ I</option>
+                    <option value="II">تیپ II</option>
+                    <option value="III">تیپ III</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="soilQa">ظرفیت مجاز باربری qa (kPa)</label>
+                <input id="soilQa" type="number" min="0" step="any" placeholder="از گزارش ژئوتکنیک">
+            </div>
+            <div class="field">
+                <label for="soilQaBasis">مبنای ظرفیت مجاز</label>
+                <select id="soilQaBasis">
+                    <option value="">انتخاب نشده</option>
+                    <option value="gross">ناخالص (Gross)</option>
+                    <option value="net">خالص (Net)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="soilSource">مرجع گزارش ژئوتکنیک، شماره گزارش و صفحه</label>
+                <input id="soilSource" type="text" placeholder="مرجع دقیق و قابل پیگیری">
+            </div>
+            <div class="field">
+                <label for="soilFootingB">عرض پی B (متر)</label>
+                <input id="soilFootingB" type="number" min="0" step="any" placeholder="ابعاد واقعی پی">
+            </div>
+            <div class="field">
+                <label for="soilFootingL">طول پی L (متر)</label>
+                <input id="soilFootingL" type="number" min="0" step="any" placeholder="ابعاد واقعی پی">
+            </div>
+            <div class="field">
+                <label for="soilFootingThickness">ضخامت پی (متر)</label>
+                <input id="soilFootingThickness" type="number" min="0" step="any" placeholder="ضخامت واقعی">
+            </div>
+            <div class="field">
+                <label for="soilCoverAboveFooting">ارتفاع خاک روی پی (متر)</label>
+                <input id="soilCoverAboveFooting" type="number" min="0" step="any" placeholder="ارتفاع واقعی">
+            </div>
+            <div class="field">
+                <label for="concreteUnitWeight">وزن مخصوص بتن (kN/m³)</label>
+                <input id="concreteUnitWeight" type="number" min="0" step="any" value="25">
+            </div>
+            <div class="field">
+                <label for="soilUnitWeight">وزن مخصوص خاک (kN/m³)</label>
+                <input id="soilUnitWeight" type="number" min="0" step="any" placeholder="از گزارش ژئوتکنیک">
+            </div>
+        </div>
+        <div class="field">
+            <label for="soilReactionCases">حالت‌های واکنش بهره‌برداری SLS (JSON)</label>
+            <textarea id="soilReactionCases" rows="7" spellcheck="false">[]</textarea>
+        </div>
+        <div class="notice">
+            ساختار هر حالت: {"name":"SLS-1","NkN":300,"MxkNm":0,"MzkNm":0,"sourceReference":"شماره گزارش تحلیل، صفحه و ترکیب بار"}. نیروها و لنگرها باید با قرارداد علامت و محورهای پی منطبق باشند. نمونه بالا صرفاً راهنمای قالب است، نه بار طراحی.
+        </div>
+        <div class="button-grid">
+            <button id="btnRunSoilCheck" class="btn primary" type="button" disabled>اجرای کنترل فشار باربری</button>
+        </div>
+        <pre id="soilCheckResult" class="notice" aria-live="polite">برای شروع، کنترل را فعال و تمام اطلاعات مستند را وارد کنید.</pre>
+    </section>
+
     <section class="panel" id="cantileverCheckPanel">
         <div class="panel-title">
             <h3>کنترل کنسول‌های رفتر</h3>
