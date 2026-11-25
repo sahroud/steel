@@ -13,7 +13,7 @@
   const t=finite(d.plateThicknessMM,"ضخامت صفحه‌ستون");
   const fy=finite(d.plateFyMPa,"تنش تسلیم صفحه Fy");
   const phi=d.phi===undefined?0.9:finite(d.phi,"ضریب مقاومت");
-  const pryingFactor=finite(d.pryingFactor,"ضریب تشدید کشش ناشی از پریینگ");
+  const pryingFactor=d.pryingFactor===undefined?1:finite(d.pryingFactor,"ضریب تشدید کشش ناشی از پریینگ");
   if(!(t>0&&fy>0&&phi>0&&phi<=1&&pryingFactor>=1))throw new Error("ضخامت، Fy و ضریب مقاومت معتبر و ضریب پریینگ حداقل ۱ باشد.");
   if(typeof d.geometrySourceReference!=="string"||!d.geometrySourceReference.trim())throw new Error("مرجع نقشه صفحه‌ستون و محل انکر الزامی است.");
   if(!Array.isArray(d.anchors)||!d.anchors.length)throw new Error("حداقل یک رکورد تقاضای انکر لازم است.");
