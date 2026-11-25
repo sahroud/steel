@@ -6,58 +6,15 @@ on:
       - "main"
       - "refactor/stepwise-shed-workflow"
     paths:
-      - "steel2/js/analysis-3d.js"
-      - "steel2/js/analysis-3d-worker.js"
-      - "steel2/js/model-3d.js"
-      - "steel2/js/auto-workflow.js"
-      - "steel2/js/load-combination-runner-3d.js"
-      - "steel2/js/loads.js"
-      - "steel2/js/app.js"
-      - "steel2/js/design-scope.js"
-      - "steel2/js/wall-foundation-transfer.js"
-      - "steel2/js/foundation-soil-check.js"
-      - "steel2/js/foundation-reaction-batch.js"
-      - "steel2/js/foundation-action-mapping.js"
-      - "steel2/js/foundation-action-mapping-ui.js"
-      - "steel2/js/foundation-sizing.js"
-      - "steel2/js/foundation-sizing-ui.js"
-      - "steel2/js/foundation-uls-reaction-batch.js"
-      - "steel2/js/foundation-uls-action-mapping.js"
-      - "steel2/js/foundation-uls-action-mapping-ui.js"
-      - "steel2/js/foundation-design-input.js"
-      - "steel2/js/foundation-design-input-ui.js"
-      - "steel2/index.html"
-      - "steel2/js/load-transfer.js"
-      - "steel2/js/load-path-audit.js"
-      - "steel2/js/seismic-load-path.js"
-      - "steel2/js/crane-design.js"
-      - "steel2/js/climate-load-engine.js"
-      - "steel2/js/sections.js"
-      - "steel2/js/final-report.js"
-      - "steel2/js/connection-readiness.js"
-      - "steel2/js/knee-connection-geometry.js"
-      - "steel2/index.html"
+      - "steel2/js/**"
       - "steel2/tests/**"
+      - "steel2/index.html"
       - ".github/workflows/steel2-reference-tests.yml"
   pull_request:
     paths:
-      - "steel2/js/analysis-3d.js"
-      - "steel2/js/analysis-3d-worker.js"
-      - "steel2/js/model-3d.js"
-      - "steel2/js/loads.js"
-      - "steel2/js/app.js"
-      - "steel2/js/design-scope.js"
-      - "steel2/js/load-path-audit.js"
-      - "steel2/js/seismic-load-path.js"
-      - "steel2/js/load-transfer.js"
-      - "steel2/js/climate-load-engine.js"
-      - "steel2/js/sections.js"
-      - "steel2/js/final-report.js"
-      - "steel2/js/connection-readiness.js"
-      - "steel2/js/knee-connection-geometry.js"
-      - "steel2/js/foundation-soil-check.js"
-      - "steel2/js/foundation-reaction-batch.js"
+      - "steel2/js/**"
       - "steel2/tests/**"
+      - "steel2/index.html"
       - ".github/workflows/steel2-reference-tests.yml"
 
 jobs:
@@ -70,33 +27,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Check syntax of active model and load modules
+      - name: Check syntax of active steel2 modules
         run: |
+          node --check steel2/js/analysis-3d.js
           node --check steel2/js/model-3d.js
           node --check steel2/js/auto-workflow.js
           node --check steel2/js/loads.js
-          node --check steel2/js/app.js
-          node --check steel2/js/design-scope.js
-          node --check steel2/js/wall-foundation-transfer.js
-          node --check steel2/js/foundation-soil-check.js
-          node --check steel2/js/foundation-reaction-batch.js
-          node --check steel2/js/foundation-action-mapping.js
-          node --check steel2/js/foundation-action-mapping-ui.js
-          node --check steel2/js/foundation-sizing.js
-          node --check steel2/js/foundation-sizing-ui.js
-          node --check steel2/js/foundation-uls-reaction-batch.js
-          node --check steel2/js/foundation-uls-action-mapping.js
-          node --check steel2/js/foundation-uls-action-mapping-ui.js
-          node --check steel2/js/foundation-design-input.js
-          node --check steel2/js/foundation-design-input-ui.js
-          node --check steel2/js/load-path-audit.js
-          node --check steel2/js/seismic-load-path.js
-          node --check steel2/js/crane-design.js
-          node --check steel2/js/load-transfer.js
           node --check steel2/js/climate-load-engine.js
-          node --check steel2/js/sections.js
-          node --check steel2/js/final-report.js
-          node --check steel2/js/connection-readiness.js
-          node --check steel2/js/knee-connection-geometry.js
-      - name: Run independent 3D solver reference tests
-        run: node --test steel2/tests/load-scenarios.test.js steel2/tests/analysis-3d-reference.test.js steel2/tests/connection-readiness.test.js steel2/tests/load-path-audit.test.js steel2/tests/wall-foundation-transfer.test.js steel2/tests/foundation-soil-check.test.js steel2/tests/foundation-soil-panel-ui.test.js steel2/tests/foundation-reaction-export.test.js steel2/tests/foundation-reaction-batch.test.js steel2/tests/foundation-reaction-batch-ui.test.js steel2/tests/foundation-action-mapping.test.js steel2/tests/foundation-action-mapping-ui.test.js steel2/tests/foundation-sizing.test.js steel2/tests/foundation-sizing-ui.test.js steel2/tests/foundation-uls-reaction-batch.test.js steel2/tests/foundation-uls-action-mapping.test.js steel2/tests/foundation-uls-action-mapping-ui.test.js steel2/tests/foundation-design-input.test.js steel2/tests/foundation-design-input-ui.test.js
+          node --check steel2/js/foundation-soil-check.js
+          node --check steel2/js/app.js
+      - name: Run all available steel2 reference tests
+        run: node --test steel2/tests/*.test.js
