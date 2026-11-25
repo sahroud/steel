@@ -12,6 +12,42 @@
   if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())throw new Error("مرجع گزارش ژئوتکنیک و شماره صفحه/بند الزامی است.");
   return Object.freeze({soilType,allowableBearingKPa:qa,allowableBearingBasis:d.allowableBearingBasis,sourceReference:d.sourceReference.trim()});
  }
+ function mapSupportReactionToSlsCase(input){
+  const d=input||{};
+  if(d.solverSuccess!==true||d.equilibriumOK!==true)
+   throw new Error("تبدیل واکنش فقط برای حل موفق با تعادل تأییدشده مجاز است.");
+  if(String(d.loadCaseType||"").toUpperCase()!=="SLS")
+   throw new Error("تبدیل واکنش به پی فقط برای حالت بار صریحاً تأییدشده SLS مجاز است؛ ULS پذیرفته نیست.");
+  if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())
+   throw new Error("مرجع مستند تحلیل SLS برای تبدیل واکنش الزامی است.");
+  if(!["X","Z"].includes(d.footingWidthAxis)||!["X","Z"].includes(d.footingLengthAxis)||d.footingWidthAxis===d.footingLengthAxis||d.verticalAxis!=="Y")
+   throw new Error("جهت محورهای پی باید صریح و عمود بر هم باشد: عرض/طول در X و Z و قائم در Y.");
+  const ledger=d.ledgerEntry;
+  if(!ledger||!ledger.nodeId||!ledger.coordinatesM||!ledger.reactionN||!ledger.reactionNm)
+   throw new Error("رکورد واکنش تکیه‌گاهی کامل نیست.");
+  if(!Array.isArray(ledger.fixedDofs)||![0,1,2].every(x=>ledger.fixedDofs.includes(x)))
+   throw new Error("هر سه انتقال گره پایه باید مقید و واکنش‌های انتقالی ثبت شده باشند.");
+  if(ledger.units?.force!=="N"||ledger.units?.moment!=="N.m")
+   throw new Error("واحدهای رکورد واکنش باید N و N.m باشند.");
+  const fy=finite(ledger.reactionN.Fy,"واکنش قائم Fy");
+  const mx=finite(ledger.reactionNm.Mx,"واکنش Mx");
+  const mz=finite(ledger.reactionNm.Mz,"واکنش Mz");
+  const fx=finite(ledger.reactionN.Fx,"واکنش Fx");
+  const fz=finite(ledger.reactionN.Fz,"واکنش Fz");
+  const nodeId=String(ledger.nodeId);
+  return Object.freeze({
+   name:String(d.loadCaseName||"SLS reaction "+nodeId),
+   NkN:fy/1000,
+   MxkNm:-mx/1000000,
+   MzkNm:-mz/1000000,
+   sourceReference:d.sourceReference.trim(),
+   supportNodeId:nodeId,
+   supportCoordinatesM:{x:finite(ledger.coordinatesM.x,"مختصات X"),y:finite(ledger.coordinatesM.y,"مختصات Y"),z:finite(ledger.coordinatesM.z,"مختصات Z")},
+   horizontalReactionsKN:{Fx:fx/1000,Fz:fz/1000},
+   conversion:{vertical:"Fy solver reaction on structure is converted to positive downward compression on footing",moments:"Mx and Mz are reversed from support-on-structure to structure-on-footing",widthAxis:d.footingWidthAxis,lengthAxis:d.footingLengthAxis,verticalAxis:"Y"},
+   limitations:["این تبدیل فقط واکنش گره پایه را به کنش قائم و لنگرهای سازگار با محورهای جهانی X/Z تبدیل می‌کند.","واکنش‌های افقی Fx/Fz جداگانه گزارش می‌شوند و در کنترل فشار قائم فعلی منظور نشده‌اند؛ کنترل لغزش و برش لازم است.","مرکزیت ستون نسبت به مرکز پی، ابعاد واقعی پی، شناژها، پدستال و خروج از مرکزیت هندسی هنوز باید جداگانه تعیین شوند."]
+  });
+ }
  function checkRectangularFooting(input){
   const d=input||{},soil=validateSoil(d.soil);
   const B=finite(d.Bm,"عرض پی"),L=finite(d.Lm,"طول پی");
@@ -102,7 +138,7 @@
    }catch(error){out.textContent="کنترل خاک انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
   });
  }
- const api=Object.freeze({validateSoil,checkRectangularFooting,render,get lastResult(){return lastResult;}});
+ const api=Object.freeze({validateSoil,checkRectangularFooting,mapSupportReactionToSlsCase,render,get lastResult(){return lastResult;}});
  root.SahroudFoundationSoilCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
  if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",render);else render();}
