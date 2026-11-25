@@ -20,6 +20,10 @@
    throw new Error("تبدیل واکنش به پی فقط برای حالت بار صریحاً تأییدشده SLS مجاز است؛ ULS پذیرفته نیست.");
   if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())
    throw new Error("مرجع مستند تحلیل SLS برای تبدیل واکنش الزامی است.");
+  if(d.serviceabilityCheck!=="foundation-bearing")
+   throw new Error("نوع کنترل بهره‌برداری باید صریحاً foundation-bearing باشد.");
+  if(typeof d.combinationDefinition!=="string"||!d.combinationDefinition.trim())
+   throw new Error("تعریف دقیق ترکیب بار SLS برای تبدیل واکنش الزامی است.");
   if(d.footingWidthAxis!=="X"||d.footingLengthAxis!=="Z"||d.verticalAxis!=="Y")
    throw new Error("جهت محورهای پی باید صریح و عمود بر هم باشد: عرض/طول در X و Z و قائم در Y.");
   const ledger=d.ledgerEntry;
@@ -41,6 +45,8 @@
    MxkNm:-mx/1000000,
    MzkNm:-mz/1000000,
    sourceReference:d.sourceReference.trim(),
+   serviceabilityCheck:d.serviceabilityCheck,
+   combinationDefinition:d.combinationDefinition.trim(),
    supportNodeId:nodeId,
    supportCoordinatesM:{x:finite(ledger.coordinatesM.x,"مختصات X"),y:finite(ledger.coordinatesM.y,"مختصات Y"),z:finite(ledger.coordinatesM.z,"مختصات Z")},
    horizontalReactionsKN:{Fx:fx/1000,Fz:fz/1000},
@@ -69,6 +75,10 @@
     throw new Error("نام حالت "+(name||"(بدون نام)")+" باید صریحاً SLS یا بهره‌برداری باشد؛ بارهای ULS یا بار منفرد پذیرفته نمی‌شوند.");
    if(typeof c.sourceReference!=="string"||!c.sourceReference.trim())
     throw new Error("مرجع گزارش تحلیل/جدول واکنش برای حالت "+name+" الزامی است.");
+   if(c.serviceabilityCheck!=="foundation-bearing")
+    throw new Error("نوع کنترل حالت "+name+" باید صریحاً foundation-bearing باشد.");
+   if(typeof c.combinationDefinition!=="string"||!c.combinationDefinition.trim())
+    throw new Error("تعریف دقیق ترکیب بار بهره‌برداری برای حالت "+name+" الزامی است.");
    const reactionN=finite(c.NkN,"نیروی قائم واکنش "+name);
    const momentValue=(value,label)=>value===undefined||value===null||value===""?0:finite(value,label);
    const Mx=momentValue(c.MxkNm,"لنگر Mx "+name),Mz=momentValue(c.MzkNm,"لنگر Mz "+name);
@@ -82,7 +92,7 @@
    const qMaxChecked=soil.allowableBearingBasis==="gross"?qMaxGross:qMaxNet;
    const qMinChecked=soil.allowableBearingBasis==="gross"?qMinGross:qMinNet;
    const bearingPass=fullContact&&qMaxChecked<=soil.allowableBearingKPa+1e-9;
-   return Object.freeze({name,sourceReference:c.sourceReference.trim(),reactionNkN:reactionN,NkN:N,MxkNm:Mx,MzkNm:Mz,
+   return Object.freeze({name,sourceReference:c.sourceReference.trim(),serviceabilityCheck:c.serviceabilityCheck,combinationDefinition:c.combinationDefinition.trim(),reactionNkN:reactionN,NkN:N,MxkNm:Mx,MzkNm:Mz,
     footingWeightKN:footingWeight,soilCoverWeightKN:soilCoverWeight,totalAddedWeightKN:footingWeight+soilCoverWeight,
     overburdenAtBaseKPa:overburden,areaM2:A,eccentricityX_m:ex,eccentricityZ_m:ez,
     qAverageGrossKPa:qAvg,qMaxGrossKPa:qMaxGross,qMinGrossKPa:qMinGross,
@@ -104,7 +114,7 @@
     "کنترل نشست، ظرفیت نهایی، لغزش، واژگونی، آب زیرزمینی، اثر لایه‌بندی، اندرکنش پی‌ها و طراحی آرماتور/برش پانچ در این ماژول انجام نمی‌شود.",
     "وزن شناژ، پدستال، دیوار، خاک جانبی، بارهای افقی و لنگر ناشی از اجزای خارج از مرکز در این محاسبه منظور نشده‌اند.",
     "وزن مخصوص بتن و خاک و ارتفاع پوشش باید از مشخصات واقعی پروژه/گزارش ژئوتکنیک وارد شوند؛ مقادیر پیش‌فرض ساخته نشده‌اند.",
-    "بارهای ورودی باید ترکیبات بهره‌برداری (SLS) تأییدشده از تحلیل سازه باشند؛ نتایج ULS یا یک حالت بار منفرد جایگزین آن نیستند.",
+    "بارهای ورودی باید ترکیب SLS مستند و متناسب با کنترل foundation-bearing باشند؛ صرف درج برچسب SLS یا نام‌گذاری دلخواه، اعتبار ترکیب را اثبات نمی‌کند.",
     "تیپ I/II/III جایگزین ظرفیت باربری، پارامترهای مقاومت یا کنترل نشست گزارش ژئوتکنیک نیست."
    ])});
  }
