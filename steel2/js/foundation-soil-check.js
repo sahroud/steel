@@ -157,7 +157,7 @@
      result.success?"کنترل فشار باربری در همه حالت‌های واردشده قبول شد.":"کنترل فشار باربری مردود یا مسدود است.",
      "تیپ خاک: "+result.soil.soilType+" | مبنای qa: "+result.soil.allowableBearingBasis+" | مرجع: "+result.soil.sourceReference+" | qa="+fmt(result.soil.allowableBearingKPa)+" kPa",
      "ابعاد پی: "+fmt(result.footing.B_m)+" × "+fmt(result.footing.L_m)+" m | وزن پی="+fmt(result.footing.footingWeightKN)+" kN | وزن خاک روی پی="+fmt(result.footing.soilCoverWeightKN)+" kN",
-     ...result.results.map(x=>x.name+" | کنترل="+x.serviceabilityCheck+" | ترکیب="+x.combinationDefinition+" | مرجع="+x.sourceReference+" | N کل="+fmt(x.NkN)+" kN | qmax ناخالص="+fmt(x.qMaxGrossKPa)+" | qmax خالص="+fmt(x.qMaxNetKPa)+" kPa | "+x.status),
+     ...result.results.map(x=>x.name+" | کنترل="+x.serviceabilityCheck+" | ترکیب="+x.combinationDefinition+" | مرجع="+x.sourceReference+" | N کل="+fmt(x.NkN)+" kN | آفست ستون X/Z="+fmt(x.columnOffsetXM)+"/"+fmt(x.columnOffsetZM)+" m | eX/eZ="+fmt(x.eccentricityX_m)+"/"+fmt(x.eccentricityZ_m)+" m | qmax/qmin ناخالص="+fmt(x.qMaxGrossKPa)+"/"+fmt(x.qMinGrossKPa)+" | qmax خالص="+fmt(x.qMaxNetKPa)+" kPa | "+x.status),
      "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
     ].join("\n");
     out.style.color=result.success?"#15803d":"#b45309";lastResult=result;
