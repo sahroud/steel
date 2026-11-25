@@ -451,3 +451,48 @@ test("anchor demand mapping rejects SLS, imbalance, and incomplete base data", (
   assert.throws(()=>api.mapSupportReactionToAnchorDemand({...base,equilibriumOK:false}),/تعادل/);
   assert.throws(()=>api.mapSupportReactionToAnchorDemand({...base,ledgerEntry:{...base.ledgerEntry,fixedDofs:[0,1]}}),/انتقالی/);
 });
+
+test("anchor group elastic distribution is uniform under concentric uplift", () => {
+ const r=api.distributeAnchorTension({
+  upliftDemandKN:120,MxKNm:0,MzKNm:0,geometrySourceReference:"نقشه آزمایشی آرایش انکر",
+  anchors:[
+   {id:"A1",xMM:-100,zMM:-100},{id:"A2",xMM:100,zMM:-100},
+   {id:"A3",xMM:-100,zMM:100},{id:"A4",xMM:100,zMM:100}
+  ]
+ });
+ assert.equal(r.success,true);
+ assert.equal(r.maximumAnchorTensionKN,30);
+ assert.ok(r.anchors.every(x=>Math.abs(x.tensionDemandKN-30)<1e-9));
+});
+
+test("anchor group distribution includes biaxial elastic moment effects", () => {
+ const r=api.distributeAnchorTension({
+  upliftDemandKN:0,MxKNm:10,MzKNm:20,geometrySourceReference:"anchor layout drawing",
+  anchors:[
+   {id:"A1",xMM:-100,zMM:-100},{id:"A2",xMM:100,zMM:-100},
+   {id:"A3",xMM:-100,zMM:100},{id:"A4",xMM:100,zMM:100}
+  ]
+ });
+ assert.equal(r.success,true);
+ assert.deepEqual(r.anchors.map(x=>Number(x.tensionDemandKN.toFixed(3))),[37.5,12.5,12.5,0]);
+});
+
+test("anchor group distribution blocks tension-only assumption when an anchor would be in compression", () => {
+ const r=api.distributeAnchorTension({
+  upliftDemandKN:10,MxKNm:100,MzKNm:0,geometrySourceReference:"drawing",
+  anchors:[
+   {id:"A1",xMM:-100,zMM:-100},{id:"A2",xMM:100,zMM:-100},
+   {id:"A3",xMM:-100,zMM:100},{id:"A4",xMM:100,zMM:100}
+  ]
+ });
+ assert.equal(r.success,false);
+ assert.equal(r.status,"invalid-unilateral-contact-assumption");
+ assert.ok(r.compressionSideAnchorIds.length>0);
+});
+
+test("anchor group distribution rejects collinear, duplicate and undocumented geometry", () => {
+ const common={upliftDemandKN:10,MxKNm:0,MzKNm:0,geometrySourceReference:"drawing"};
+ assert.throws(()=>api.distributeAnchorTension({...common,anchors:[{id:"1",xMM:0,zMM:0},{id:"2",xMM:10,zMM:0},{id:"3",xMM:20,zMM:0}]}),/غیرمنفرد/);
+ assert.throws(()=>api.distributeAnchorTension({...common,anchors:[{id:"1",xMM:0,zMM:0},{id:"1",xMM:10,zMM:0},{id:"3",xMM:0,zMM:10}]}),/تکراری/);
+ assert.throws(()=>api.distributeAnchorTension({...common,geometrySourceReference:"",anchors:[{id:"1",xMM:0,zMM:0},{id:"2",xMM:10,zMM:0},{id:"3",xMM:0,zMM:10}]}),/مرجع/);
+});
