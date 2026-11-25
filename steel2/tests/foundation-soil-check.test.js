@@ -26,7 +26,9 @@ const base = {
     MzkNm: 0,
     sourceReference: "تحلیل آزمایشی، ترکیب بهره‌برداری مستند",
     serviceabilityCheck: "foundation-bearing",
-    combinationDefinition: "تعریف ترکیب بهره‌برداری مستند در گزارش آزمایشی"
+    combinationDefinition: "تعریف ترکیب بهره‌برداری مستند در گزارش آزمایشی",
+    columnOffsetXM: 0,
+    columnOffsetZM: 0
   }]
 };
 
@@ -286,4 +288,40 @@ test("reaction mapping rejects non-finite torsion and coordinates", () => {
   assert.throws(() => api.mapSupportReactionToSlsCase({
     ...input, ledgerEntry: { ...input.ledgerEntry, reactionNm: { Mx: 0, My: Infinity, Mz: 0 } }
   }), /واکنش My/);
+});
+
+
+test("includes explicit column axis offsets in footing resultant moments", () => {
+  const r = api.checkRectangularFooting({
+    ...base,
+    cases: [{
+      ...base.cases[0], NkN: 300,
+      MxkNm: 0, MzkNm: 0,
+      columnOffsetXM: 0.2, columnOffsetZM: -0.1
+    }]
+  }).results[0];
+  assert.equal(r.resultantMxkNm, -30);
+  assert.equal(r.resultantMzkNm, -60);
+  assert.equal(r.eccentricityX_m, -60 / 396);
+  assert.equal(r.eccentricityZ_m, -30 / 396);
+});
+
+test("requires explicit column-to-footing offsets, including intentional zero", () => {
+  const c = { ...base.cases[0] };
+  delete c.columnOffsetXM;
+  assert.throws(() => api.checkRectangularFooting({
+    ...base, cases: [c]
+  }), /فاصله محور ستون/);
+});
+
+test("column offset can cause loss of full soil contact", () => {
+  const r = api.checkRectangularFooting({
+    ...base,
+    cases: [{
+      ...base.cases[0], NkN: 300,
+      columnOffsetXM: 0.8, columnOffsetZM: 0
+    }]
+  }).results[0];
+  assert.equal(r.fullContact, false);
+  assert.equal(r.status, "blocked-no-tension-contact");
 });
