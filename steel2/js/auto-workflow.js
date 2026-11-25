@@ -116,6 +116,9 @@
     try {
       const climate=hasUsableClimate();
       addLine(rows,"تخصیص خودکار بار باد و برف شهر",climate.ok,climate.detail);
+      const windRegistry=window.SteelClimateLoadEngine?.getData?.();
+      const windCodeReady=!!windRegistry&&windRegistry.cases?.filter(x=>String(x.type).includes("wind")).every(x=>x.eligibleForCodeDesign===true)&&windRegistry.windCalculation?.status==="code-verified-and-applied";
+      addLine(rows,"اعتبار آیین‌نامه‌ای و انتقال بار باد",windCodeReady,windCodeReady?"ضرایب باد تأیید و به مدل منتقل شده‌اند.":"بارهای باد فعلی ورودی مقدماتی/دستی هستند؛ ضرایب فشار خارجی و داخلی و نواحی موضعی هنوز تأیید و به مدل سه‌بعدی اعمال نشده‌اند. ترکیب بار باد برای جلوگیری از نتیجه گمراه‌کننده ساخته نشد.");
 
       if(window.SteelLoads?.syncLegacyInputs)window.SteelLoads.syncLegacyInputs();
       const loadOK=window.SteelLoads?.check?.()===true;
