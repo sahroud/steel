@@ -43,9 +43,9 @@
     };
 
     const combinations = [
-        { name: "ULS-1 ـ 1.4D", dead: 1.4, live: 0, snow: 0 },
-        { name: "ULS-2 ـ 1.2D + 1.6L + 0.5S", dead: 1.2, live: 1.6, snow: 0.5 },
-        { name: "ULS-3 ـ 1.2D + 1.6S + 0.5L", dead: 1.2, live: 0.5, snow: 1.6 }
+        { id: "gravity-draft-1", name: "سناریوی ثقلی مقدماتی ۱ ـ 1.4D", dead: 1.4, live: 0, snow: 0, classification: "preliminary-gravity-only", status: "not-code-verified", includesWind: false, includesSeismic: false },
+        { id: "gravity-draft-2", name: "سناریوی ثقلی مقدماتی ۲ ـ 1.2D + 1.6Lr + 0.5S", dead: 1.2, live: 1.6, snow: 0.5, classification: "preliminary-gravity-only", status: "not-code-verified", includesWind: false, includesSeismic: false },
+        { id: "gravity-draft-3", name: "سناریوی ثقلی مقدماتی ۳ ـ 1.2D + 0.5Lr + 1.6S", dead: 1.2, live: 0.5, snow: 1.6, classification: "preliminary-gravity-only", status: "not-code-verified", includesWind: false, includesSeismic: false }
     ];
 
     let initialized = false;
@@ -244,12 +244,13 @@
                 اطلاعات بارگذاری آماده ورود است.
             </div>
 
-            <h4>و ـ ضرایب ترکیبات بار (پیش‌نویس)</h4>
+            <h4>و ـ سناریوهای ثقلی مقدماتی (غیرقابل استفاده به‌عنوان مجموعه کامل ULS)</h4>
 
             <div class="notice">
-                ضرایب زیر صرفاً برای آماده‌سازی ساختار نرم‌افزار هستند.
-                تا زمان تعیین و تأیید ضوابط آیین‌نامه‌ای پروژه،
-                نباید مبنای طراحی یا کنترل اعضا قرار گیرند.
+                این سه سناریو فقط بارهای D، بار زنده بام Lr و برف S را ترکیب می‌کنند.
+                باد W، زلزله E، باران R، اثرات قائم/افقی زلزله، حالات علامت‌دار و سایر ترکیبات لازم در آن‌ها وجود ندارد.
+                بنابراین این سناریوها مجموعه کامل ULS یا ترکیبات تأییدشده مبحث ششم نیستند و فقط برای آزمون مقدماتی حل‌گر نگهداری شده‌اند.
+                ضریب بار زنده این صفحه به‌عنوان Lr (بار زنده بام) تفسیر می‌شود، نه بار زنده طبقات.
             </div>
 
             <div id="loadCombinations"></div>
@@ -290,7 +291,7 @@
                         >
                     </div>
                     <div class="field">
-                        <label>ضریب بار زنده</label>
+                        <label>ضریب بار زنده بام (Lr)</label>
                         <input
                             type="number"
                             step="0.01"
@@ -367,7 +368,13 @@
         });
 
         state.combinations = combinations.map((item, index) => ({
+            id: item.id,
             name: item.name,
+            classification: item.classification,
+            status: item.status,
+            includesWind: item.includesWind,
+            includesSeismic: item.includesSeismic,
+            liveLoadKind: "Lr",
             dead: number($("comboDead" + index)?.value),
             live: number($("comboLive" + index)?.value),
             snow: number($("comboSnow" + index)?.value)
