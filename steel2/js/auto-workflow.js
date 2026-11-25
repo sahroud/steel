@@ -323,17 +323,22 @@
     }
   }
   function init() {
-    if($("steelAutoWorkflowPanel"))return;
     const main=document.querySelector("main");if(!main)return;
-    const panel=document.createElement("section");
-    panel.className="panel";panel.id="steelAutoWorkflowPanel";
-    panel.innerHTML='<div class="panel-title"><h3>اجرای هوشمند و یکپارچه پروژه</h3><span class="status">اجرای خودکار مراحل وابسته</span></div>'+
-      '<div class="notice">با یک فرمان، نرم‌افزار مراحل قابل انجام را به ترتیب اجرا می‌کند: تکمیل مقاطع از ابعاد تیرورق موجود، تحلیل قاب و ترکیبات بار، استخراج تقاضا، کنترل‌های مقدماتی، بهینه‌سازی پرلین و کنترل کنسول و اتصالات. اطلاعات واقعیِ نامعلوم مانند طول مهارنشده، گواهی فولاد و داده اقلیمیِ تأییدنشده حدس زده نمی‌شوند.</div>'+
-      '<div class="button-grid"><button type="button" id="btnSteelAutoWorkflow" class="btn primary">آماده‌سازی و تحلیل خودکار کل پروژه</button></div>'+
-      '<div id="steelAutoWorkflowResults" class="notice">برای اجرای زنجیره محاسبات، دکمه بالا را بزنید.</div>';
-    const first=main.querySelector(".panel");
-    if(first)main.insertBefore(panel,first);else main.appendChild(panel);
-    $("btnSteelAutoWorkflow").addEventListener("click",run);
+    let panel=$("steelAutoWorkflowPanel");
+    if(!panel) {
+      panel=document.createElement("section");
+      panel.className="panel";panel.id="steelAutoWorkflowPanel";
+      panel.innerHTML='<div class="panel-title"><h3>اجرای خودکار کل پروژه</h3><span class="status">شروع سریع</span></div>'+
+        '<div class="notice">مراحل قابل انجام پروژه را به ترتیب اجرا می‌کند؛ داده‌های نامعلوم را حدس نمی‌زند.</div>'+
+        '<div class="button-grid"><button type="button" id="btnSteelAutoWorkflow" class="btn primary">اجرای خودکار پروژه</button></div>'+
+        '<div id="steelAutoWorkflowResults" class="notice">برای آغاز، دکمه بالا را بزنید.</div>';
+      main.insertBefore(panel,main.firstChild);
+    }
+    const button=$("btnSteelAutoWorkflow");
+    if(button && button.dataset.workflowBound!=="1") {
+      button.addEventListener("click",run);
+      button.dataset.workflowBound="1";
+    }
   }
   window.SteelAutoWorkflow={run};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
