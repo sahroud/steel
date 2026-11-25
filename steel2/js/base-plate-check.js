@@ -230,7 +230,40 @@
     "این غربال ظرفیت گروه جایگزین طراحی کامل و کنترل آیین‌نامه‌ای نیست."
    ])});
  }
- const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity,checkConcreteAnchorFailure,checkAnchorSteelInteraction,checkAnchorGroupCapacity});
+
+ function checkAnchorGeometry(input){
+  const d=input||{};
+  if(typeof d.geometrySourceReference!=="string"||!d.geometrySourceReference.trim())throw new Error("مرجع نقشه و هندسه بتن الزامی است.");
+  const width=finite(d.concreteWidthMM,"عرض عضو بتنی"),length=finite(d.concreteLengthMM,"طول عضو بتنی"),hef=finite(d.effectiveEmbedmentMM,"عمق مؤثر مهاری");
+  const minEdge=finite(d.minimumEdgeDistanceMM,"حداقل فاصله لبه مجاز"),minSpacing=finite(d.minimumAnchorSpacingMM,"حداقل فاصله محور انکرها");
+  if(width<=0||length<=0||hef<=0||minEdge<0||minSpacing<0)throw new Error("ابعاد و عمق مهاری باید مثبت و حداقل فاصله‌ها نامنفی باشند.");
+  if(!Array.isArray(d.anchors)||d.anchors.length<2)throw new Error("حداقل دو انکر با مختصات لازم است.");
+  const ids=new Set(),anchors=d.anchors.map(a=>{
+   const id=String(a?.id??"").trim(),x=finite(a.xMM,"مختصات X انکر"),z=finite(a.zMM,"مختصات Z انکر");
+   if(!id||ids.has(id))throw new Error("شناسه انکرها باید یکتا و غیرخالی باشد.");ids.add(id);
+   if(x<0||x>width||z<0||z>length)throw new Error("مختصات انکر "+id+" خارج از محدوده عضو بتنی است.");
+   const edges={xMin:x,xMax:width-x,zMin:z,zMax:length-z};
+   const governingEdge=Math.min(...Object.values(edges));
+   return Object.freeze({id,xMM:x,zMM:z,edgeDistancesMM:Object.freeze(edges),governingEdgeDistanceMM:governingEdge,edgePass:governingEdge+1e-9>=minEdge});
+  });
+  const pairs=[];
+  for(let i=0;i<anchors.length;i++)for(let j=i+1;j<anchors.length;j++){
+   const spacing=Math.hypot(anchors[i].xMM-anchors[j].xMM,anchors[i].zMM-anchors[j].zMM);
+   pairs.push(Object.freeze({anchorA:anchors[i].id,anchorB:anchors[j].id,spacingMM:spacing,pass:spacing+1e-9>=minSpacing}));
+  }
+  const edgePass=anchors.every(a=>a.edgePass),spacingPass=pairs.every(p=>p.pass);
+  return Object.freeze({success:edgePass&&spacingPass,edgePass,spacingPass,anchors:Object.freeze(anchors),pairs:Object.freeze(pairs),
+   concreteWidthMM:width,concreteLengthMM:length,effectiveEmbedmentMM:hef,minimumEdgeDistanceMM:minEdge,minimumAnchorSpacingMM:minSpacing,
+   geometrySourceReference:d.geometrySourceReference.trim(),
+   limitations:Object.freeze([
+    "این بخش فقط هندسه مختصات، فاصله‌های لبه و فاصله محور انکرها را با حداقل‌های ورودی مقایسه می‌کند؛ حداقل‌ها باید از ضابطه و نوع انکر مصوب استخراج شوند.",
+    "عمق مؤثر مهاری صرفاً ثبت می‌شود و کفایت آن یا ظرفیت شکست بتن محاسبه نمی‌شود.",
+    "ضخامت عضو، آرماتور، ترک‌خوردگی، مخروط شکست، هم‌پوشانی گروه، فاصله لبه در راستاهای بارگذاری، اثر خروج از مرکز و اندرکنش بررسی نشده‌اند.",
+    "مختصات باید نسبت به مرز واقعی عضو بتنی و در یک دستگاه مختصات واحد تعریف شوند.",
+    "این کنترل هندسی جایگزین طراحی آیین‌نامه‌ای انکر نیست."
+   ])});
+ }
+ const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity,checkConcreteAnchorFailure,checkAnchorSteelInteraction,checkAnchorGroupCapacity,checkAnchorGeometry});
  root.SahroudBasePlateCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
