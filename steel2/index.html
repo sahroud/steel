@@ -408,6 +408,25 @@
         <div class="button-grid"><button id="btnCheckConcreteAnchor" class="btn primary" type="button" disabled>غربال ظرفیت شکست بتن/انکر</button></div>
         <pre id="concreteAnchorResult" class="notice" aria-live="polite">ظرفیت‌های طراحی مستند را وارد کنید.</pre>
 
+
+        <hr>
+        <h4>کنترل اندرکنش کشش و برش فولاد انکر</h4>
+        <div class="notice">این پنل رابطه اندرکنش را به‌صورت عمومی و فقط با توان‌ها و حدی که از ضابطه حاکم وارد می‌کنید ارزیابی می‌کند. هیچ رابطه آیین‌نامه‌ای به‌طور خودکار فرض نشده است. اگر ضابطه پروژه رابطه دیگری دارد، این مدل را برای تأیید نهایی به‌کار نبرید.</div>
+        <div class="field"><label for="anchorInteractionInput">رابطه، مرجع و تقاضا/ظرفیت هر انکر (JSON)</label>
+        <textarea id="anchorInteractionInput" rows="19" spellcheck="false">{
+  "geometrySourceReference": "نقشه و محاسبه توزیع تقاضای انکر",
+  "capacitySourceReference": "گواهی و محاسبات ظرفیت طراحی فولاد",
+  "interactionRuleReference": "مرجع رابطه اندرکنش مصوب پروژه",
+  "combinationDefinition": "شناسه ترکیب بار ULS",
+  "interactionLimit": 1,
+  "tensionExponent": 1,
+  "shearExponent": 1,
+  "anchors": [
+    {"id":"A1","tensionDemandKN":30,"shearXDemandKN":4,"shearZDemandKN":3,"designTensionCapacityKN":60,"designShearCapacityKN":10}
+  ]
+}</textarea></div>
+        <div class="button-grid"><button id="btnCheckAnchorInteraction" class="btn primary" type="button" disabled>کنترل اندرکنش کشش و برش</button></div>
+        <pre id="anchorInteractionResult" class="notice" aria-live="polite">مقادیر و مرجع رابطه معتبر را وارد کنید.</pre>
         <pre id="basePlateBendingResult" class="notice" aria-live="polite">ابتدا کنترل فونداسیون را فعال کنید و داده‌های نقشه را وارد نمایید.</pre>
     </section>
 
@@ -488,8 +507,8 @@
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
 <script src="js/ui-organization.js?v=20261112compact3"></script>
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
-<script src="js/base-plate-check.js?v=20261125-concrete1"></script>
-<script src="js/base-plate-ui.js?v=20261125-concrete1"></script>
+<script src="js/base-plate-check.js?v=20261125-interaction1"></script>
+<script src="js/base-plate-ui.js?v=20261125-interaction1"></script>
 <script src="js/auto-workflow.js?v=20261125-combo-metadata3"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
