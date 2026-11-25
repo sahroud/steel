@@ -372,3 +372,32 @@ test("sliding check reports failure when resistance is insufficient", () => {
   assert.equal(r.factorOfSafety, 0.4);
   assert.equal(r.success, false);
 });
+
+test("sliding check requires explicit zero-capable horizontal inputs", () => {
+  assert.throws(() => api.checkFootingSliding({
+    normalCompressionKN: 100,
+    horizontalActionsKN: { Fx: "", Fz: 0 },
+    interfaceFrictionCoefficient: 0.5,
+    requiredFactorOfSafety: 1.5,
+    sourceReference: "report",
+    combinationDefinition: "combination"
+  }), /Fx/);
+});
+
+test("sliding check handles zero horizontal demand without division by zero", () => {
+  const r = api.checkFootingSliding({
+    normalCompressionKN: 100,
+    horizontalActionsKN: { Fx: 0, Fz: 0 },
+    interfaceFrictionCoefficient: 0.5,
+    requiredFactorOfSafety: 1.5,
+    sourceReference: "report",
+    combinationDefinition: "combination"
+  });
+  assert.equal(r.horizontalResultantKN, 0);
+  assert.equal(r.factorOfSafety, Infinity);
+  assert.equal(r.success, true);
+});
+
+test("sliding checker is exported for browser and Node consumers", () => {
+  assert.equal(typeof api.checkFootingSliding, "function");
+});
