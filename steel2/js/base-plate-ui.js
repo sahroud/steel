@@ -5,8 +5,8 @@
   const button=$("btnCheckBasePlateBending"),enabled=$("soilControlEnabled");
   if(!button||button.dataset.bound==="1")return;
   button.dataset.bound="1";
-  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
-  const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;const c=$("btnCheckConcreteAnchor");if(c)c.disabled=!enabled?.checked;};
+  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","anchorInteractionInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
+  const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;const c=$("btnCheckConcreteAnchor");if(c)c.disabled=!enabled?.checked;const i=$("btnCheckAnchorInteraction");if(i)i.disabled=!enabled?.checked;};
   enabled?.addEventListener("change",sync);sync();
   const bearingButton=$("btnCheckBasePlateBearing");
   if(bearingButton)bearingButton.addEventListener("click",()=>{
@@ -57,6 +57,22 @@
     ].join("\\n");
     out.style.color="#b45309";
    }catch(e){out.textContent="کنترل شکست بتن انجام نشد: "+e.message;out.style.color="#b45309";}
+  });
+
+  const interactionButton=$("btnCheckAnchorInteraction");
+  if(interactionButton)interactionButton.addEventListener("click",()=>{
+   const out=$("anchorInteractionResult");
+   try{
+    const r=root.SahroudBasePlateCheck.checkAnchorSteelInteraction(JSON.parse($("anchorInteractionInput").value));
+    const f=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:4});
+    out.textContent=[
+     r.success?"نتیجه: مقدار رابطه اندرکنش در محدوده مجاز واردشده است.":"نتیجه: رابطه اندرکنش از حد مجاز واردشده عبور کرده است.",
+     ...r.anchors.map(a=>a.id+" | نسبت کشش="+f(a.tensionRatio)+" | نسبت برش="+f(a.shearRatio)+" | مقدار رابطه="+f(a.interactionValue)+" / حد="+f(a.interactionLimit)+" | "+a.status),
+     "رابطه: "+r.method+" | مرجع ضابطه: "+r.interactionRuleReference+" | مرجع ظرفیت: "+r.capacitySourceReference+" | ترکیب: "+r.combinationDefinition,
+     "محدودیت‌ها:",...r.limitations.map(x=>"• "+x)
+    ].join("\\n");
+    out.style.color="#b45309";
+   }catch(e){out.textContent="کنترل اندرکنش انجام نشد: "+e.message;out.style.color="#b45309";}
   });
   button.addEventListener("click",()=>{
    const out=$("basePlateBendingResult");
