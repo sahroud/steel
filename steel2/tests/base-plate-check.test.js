@@ -98,3 +98,16 @@ test("concrete anchor failure screening flags governing concrete mode and reject
  assert.throws(()=>api.checkConcreteAnchorFailure({...base,anchors:[{...base.anchors[0],pryoutShearCapacityKN:0}]}),/مثبت/);
  assert.throws(()=>api.checkConcreteAnchorFailure({...base,geometrySourceReference:""}),/مرجع هندسه/);
 });
+
+test("anchor steel interaction evaluates explicitly supplied interaction envelope",()=>{
+ const r=api.checkAnchorSteelInteraction({geometrySourceReference:"BP-01",capacitySourceReference:"anchor design calc",interactionRuleReference:"project-approved interaction rule",combinationDefinition:"ULS-5",interactionLimit:1,tensionExponent:1,shearExponent:1,
+  anchors:[{id:"A1",tensionDemandKN:30,shearXDemandKN:4,shearZDemandKN:3,designTensionCapacityKN:60,designShearCapacityKN:10}]});
+ assert.equal(r.success,true); assert.equal(r.anchors[0].interactionValue,0.8);
+});
+test("anchor steel interaction rejects exceeded envelope and missing rule provenance",()=>{
+ const base={geometrySourceReference:"BP-01",capacitySourceReference:"calc",interactionRuleReference:"rule",combinationDefinition:"ULS-6",interactionLimit:1,tensionExponent:1,shearExponent:1,
+  anchors:[{id:"A1",tensionDemandKN:50,shearXDemandKN:8,shearZDemandKN:6,designTensionCapacityKN:60,designShearCapacityKN:10}]};
+ assert.equal(api.checkAnchorSteelInteraction(base).success,false);
+ assert.throws(()=>api.checkAnchorSteelInteraction({...base,interactionRuleReference:""}),/اندرکنش/);
+ assert.throws(()=>api.checkAnchorSteelInteraction({...base,interactionLimit:0}),/مثبت/);
+});
