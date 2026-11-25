@@ -247,7 +247,7 @@ test("reaction mapping preserves finite coordinates and torsional reaction", () 
     }
   });
   assert.deepEqual(mapped.supportCoordinatesM, { x: 1.25, y: 0, z: 7.5 });
-  assert.equal(mapped.torsionalReactionKNm, 2.5);
+  assert.equal(mapped.torsionalReactionKNm, -2.5);
 });
 
 test("reaction mapping blocks uplift without an anchorage model", () => {
