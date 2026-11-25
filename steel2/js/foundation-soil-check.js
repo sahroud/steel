@@ -20,7 +20,7 @@
    throw new Error("تبدیل واکنش به پی فقط برای حالت بار صریحاً تأییدشده SLS مجاز است؛ ULS پذیرفته نیست.");
   if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())
    throw new Error("مرجع مستند تحلیل SLS برای تبدیل واکنش الزامی است.");
-  if(!["X","Z"].includes(d.footingWidthAxis)||!["X","Z"].includes(d.footingLengthAxis)||d.footingWidthAxis===d.footingLengthAxis||d.verticalAxis!=="Y")
+  if(d.footingWidthAxis!=="X"||d.footingLengthAxis!=="Z"||d.verticalAxis!=="Y")
    throw new Error("جهت محورهای پی باید صریح و عمود بر هم باشد: عرض/طول در X و Z و قائم در Y.");
   const ledger=d.ledgerEntry;
   if(!ledger||!ledger.nodeId||!ledger.coordinatesM||!ledger.reactionN||!ledger.reactionNm)
