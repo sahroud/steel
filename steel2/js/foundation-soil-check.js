@@ -164,7 +164,7 @@
   if(!panel||panel.dataset.soilCheckInitialized==="true")return;
   panel.dataset.soilCheckInitialized="true";
   const $=id=>root.document.getElementById(id);
-  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilQaBasis","soilSource","soilFootingB","soilFootingL","sizingMinB","sizingMaxB","sizingStepB","sizingMinL","sizingMaxL","sizingStepL","sizingShape","btnSearchFootingDimensions","soilFootingThickness","soilCoverAboveFooting","concreteUnitWeight","soilUnitWeight","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch","foundationUlsBatchInput","btnMapFoundationUlsActions","foundationReactionSense","selectedFoundationNodeId","foundationLocalGeometryInput","btnMapFoundationActions","footingDesignInputJson","btnValidateFootingDesignInput"];
+  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilQaBasis","soilSource","soilFootingB","soilFootingL","sizingMinB","sizingMaxB","sizingStepB","sizingMinL","sizingMaxL","sizingStepL","sizingShape","btnSearchFootingDimensions","soilFootingThickness","soilCoverAboveFooting","concreteUnitWeight","soilUnitWeight","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch","foundationUlsBatchInput","btnMapFoundationUlsActions","foundationReactionSense","selectedFoundationNodeId","foundationLocalGeometryInput","btnMapFoundationActions","footingDesignInputJson","btnValidateFootingDesignInput","slidingNormalKN","slidingFxKN","slidingFzKN","slidingMu","slidingRequiredFS","slidingAdditionalResistanceKN","slidingSource","slidingCombination","btnRunSlidingCheck"];
   const update=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled.checked;});};
   enabled.addEventListener("change",update);update();
   $("btnRunSoilCheck").addEventListener("click",()=>{
@@ -186,6 +186,34 @@
     ].join("\n");
     out.style.color=result.success?"#15803d":"#b45309";lastResult=result;
    }catch(error){out.textContent="کنترل خاک انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
+  });
+  const slidingButton=$("btnRunSlidingCheck");
+  if(slidingButton)slidingButton.addEventListener("click",()=>{
+   const out=$("slidingCheckResult");
+   try{
+    const result=checkFootingSliding({
+     normalCompressionKN:$("slidingNormalKN").value,
+     horizontalActionsKN:{Fx:$("slidingFxKN").value,Fz:$("slidingFzKN").value},
+     interfaceFrictionCoefficient:$("slidingMu").value,
+     requiredFactorOfSafety:$("slidingRequiredFS").value,
+     additionalResistanceKN:$("slidingAdditionalResistanceKN").value===""?0:$("slidingAdditionalResistanceKN").value,
+     sourceReference:$("slidingSource").value,
+     combinationDefinition:$("slidingCombination").value
+    });
+    const f=n=>Number.isFinite(n)?Number(n).toFixed(3):"بی‌نهایت";
+    out.textContent=[
+     result.success?"نتیجه: کنترل لغزش قبول است.":"نتیجه: کنترل لغزش مردود است.",
+     "برآیند نیروی افقی H = "+f(result.horizontalResultantKN)+" kN",
+     "مقاومت اصطکاکی μN = "+f(result.frictionResistanceKN)+" kN",
+     "مقاومت اضافی مستند = "+f(result.additionalResistanceKN)+" kN",
+     "مجموع مقاومت = "+f(result.totalResistanceKN)+" kN",
+     "ضریب اطمینان محاسبه‌شده = "+f(result.factorOfSafety)+" | ضریب اطمینان لازم = "+f(result.requiredFactorOfSafety),
+     "مرجع: "+result.sourceReference,
+     "ترکیب بار: "+result.combinationDefinition,
+     "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
+    ].join("\n");
+    out.style.color=result.success?"#15803d":"#b45309";lastResult=result;
+   }catch(error){out.textContent="کنترل لغزش انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
   });
  }
  const api=Object.freeze({validateSoil,checkRectangularFooting,checkFootingSliding,mapSupportReactionToSlsCase,render,get lastResult(){return lastResult;}});
