@@ -5,8 +5,8 @@
   const button=$("btnCheckBasePlateBending"),enabled=$("soilControlEnabled");
   if(!button||button.dataset.bound==="1")return;
   button.dataset.bound="1";
-  const fields=["basePlateBearingInput","anchorSteelInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
-  const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;};
+  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
+  const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;const c=$("btnCheckConcreteAnchor");if(c)c.disabled=!enabled?.checked;};
   enabled?.addEventListener("change",sync);sync();
   const bearingButton=$("btnCheckBasePlateBearing");
   if(bearingButton)bearingButton.addEventListener("click",()=>{
@@ -41,6 +41,23 @@
    }catch(e){out.textContent="کنترل فولاد انکر انجام نشد: "+e.message;out.style.color="#b45309";}
   });
 
+
+  const concreteButton=$("btnCheckConcreteAnchor");
+  if(concreteButton)concreteButton.addEventListener("click",()=>{
+   const out=$("concreteAnchorResult");
+   try{
+    const r=root.SahroudBasePlateCheck.checkConcreteAnchorFailure(JSON.parse($("concreteAnchorInput").value));
+    const f=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:3});
+    const labels={"concrete-breakout-tension":"شکست مخروطی بتن در کشش","pullout-tension":"بیرون‌کشیدگی در کشش","concrete-edge-shear":"شکست لبه بتن در برش","pryout-shear":"Pryout در برش"};
+    out.textContent=[
+     r.success?"نتیجه: تمام مقایسه‌های ظرفیت بتنِ واردشده قبول‌اند؛ کنترل گروه و اندرکنش انجام نشده است.":"نتیجه: حداقل یک حالت شکست بتن/انکر از ظرفیت طراحی واردشده عبور کرده است.",
+     ...r.anchors.map(a=>a.id+" | "+a.checks.map(x=>labels[x.mode]+": "+f(x.demandKN)+"/"+f(x.capacityKN)+" kN، نسبت "+f(x.utilization)+(x.pass?" قبول":" مردود")).join(" ؛ ")+" | حاکم: "+labels[a.governingMode.mode]),
+     "مرجع هندسه: "+r.geometrySourceReference+" | مرجع ظرفیت: "+r.capacitySourceReference+" | ترکیب: "+r.combinationDefinition,
+     "محدودیت‌ها:",...r.limitations.map(x=>"• "+x)
+    ].join("\\n");
+    out.style.color="#b45309";
+   }catch(e){out.textContent="کنترل شکست بتن انجام نشد: "+e.message;out.style.color="#b45309";}
+  });
   button.addEventListener("click",()=>{
    const out=$("basePlateBendingResult");
    try{
