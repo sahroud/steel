@@ -301,6 +301,21 @@
             <button id="btnRunSoilCheck" class="btn primary" type="button" disabled>اجرای کنترل فشار باربری</button>
         </div>
         <pre id="soilCheckResult" class="notice" aria-live="polite">برای شروع، کنترل را فعال و تمام اطلاعات مستند را وارد کنید.</pre>
+        <hr>
+        <h4>کنترل لغزش پی ـ مستقل از کنترل فشار باربری</h4>
+        <div class="notice">نیروی قائم باید فشار مؤثر واقعی در ترکیب بار کنترل لغزش باشد و اثر وزن پی/خاک و هر کاهش نیروی مؤثر لازم را در بر گیرد. Fx و Fz باید کنش افقی وارد بر پی باشند. ضریب اصطکاک و ضریب اطمینان از مبنای طراحی/گزارش ژئوتکنیک اخذ شوند. مقاومت اضافی را فقط با مستند قابل دفاع وارد کنید؛ مقدار صفر یعنی بدون احتساب آن.</div>
+        <div class="form-grid">
+            <div class="field"><label for="slidingNormalKN">نیروی قائم فشاری مؤثر N (kN)</label><input id="slidingNormalKN" type="number" step="any" min="0" placeholder="از ترکیب بار و وزن مؤثر"></div>
+            <div class="field"><label for="slidingFxKN">کنش افقی Fx (kN)</label><input id="slidingFxKN" type="number" step="any" placeholder="کنش سازه بر پی"></div>
+            <div class="field"><label for="slidingFzKN">کنش افقی Fz (kN)</label><input id="slidingFzKN" type="number" step="any" placeholder="کنش سازه بر پی"></div>
+            <div class="field"><label for="slidingMu">ضریب اصطکاک سطح تماس μ</label><input id="slidingMu" type="number" step="any" min="0" placeholder="طبق گزارش/مبنای طراحی"></div>
+            <div class="field"><label for="slidingRequiredFS">ضریب اطمینان لازم</label><input id="slidingRequiredFS" type="number" step="any" min="0" placeholder="طبق مبنای طراحی"></div>
+            <div class="field"><label for="slidingAdditionalResistanceKN">مقاومت اضافی مستند (kN)</label><input id="slidingAdditionalResistanceKN" type="number" step="any" min="0" value="0"></div>
+            <div class="field"><label for="slidingSource">مرجع ژئوتکنیک/طراحی و صفحه</label><input id="slidingSource" type="text" placeholder="شماره گزارش و صفحه/بند"></div>
+            <div class="field"><label for="slidingCombination">تعریف دقیق ترکیب بار لغزش</label><input id="slidingCombination" type="text" placeholder="ترکیب بار و مبنای کنترل"></div>
+        </div>
+        <div class="button-grid"><button id="btnRunSlidingCheck" class="btn primary" type="button" disabled>اجرای کنترل لغزش</button></div>
+        <pre id="slidingCheckResult" class="notice" aria-live="polite">ورودی‌های مستند را وارد و کنترل را فعال کنید.</pre>
     </section>
 
     <section class="panel" id="cantileverCheckPanel">
