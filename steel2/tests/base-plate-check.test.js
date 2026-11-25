@@ -68,3 +68,18 @@ test("base plate bearing contact requires explicit references and valid values",
  assert.throws(()=>api.checkBasePlateBearingContact({...base,sourceReference:""}),/مرجع/);
  assert.throws(()=>api.checkBasePlateBearingContact({...base,combinationDefinition:""}),/ترکیب بار/);
 });
+
+test("anchor steel capacity checks per-anchor tension and resultant shear independently",()=>{
+ const r=api.checkAnchorSteelCapacity({geometrySourceReference:"BP-01",capacitySourceReference:"anchor certificate/design basis",combinationDefinition:"ULS-1",
+  anchors:[{id:"A1",tensionDemandKN:40,shearXDemandKN:3,shearZDemandKN:4,designTensionCapacityKN:50,designShearCapacityKN:10}]});
+ assert.equal(r.success,true); assert.equal(r.anchors[0].resultantShearDemandKN,5);
+ assert.equal(r.anchors[0].tensionUtilization,0.8); assert.equal(r.interactionChecked,false);
+});
+test("anchor steel capacity flags tension and shear failures independently",()=>{
+ const base={geometrySourceReference:"BP-01",capacitySourceReference:"cert",combinationDefinition:"ULS-2",
+  anchors:[{id:"A1",tensionDemandKN:60,shearXDemandKN:8,shearZDemandKN:6,designTensionCapacityKN:50,designShearCapacityKN:10}]};
+ const r=api.checkAnchorSteelCapacity(base);
+ assert.equal(r.success,false); assert.equal(r.anchors[0].tensionPass,false); assert.equal(r.anchors[0].shearPass,true);
+ assert.throws(()=>api.checkAnchorSteelCapacity({...base,capacitySourceReference:""}),/مرجع ظرفیت/);
+ assert.throws(()=>api.checkAnchorSteelCapacity({...base,anchors:[{...base.anchors[0],designShearCapacityKN:0}]}),/مثبت/);
+});
