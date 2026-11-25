@@ -78,7 +78,48 @@
     "این کنترل مقدماتی جایگزین کنترل‌های آیین‌نامه‌ای صفحه‌ستون و بتن نیست."
    ])});
  }
- const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact});
+
+ function checkAnchorSteelCapacity(input){
+  const d=input||{};
+  if(typeof d.geometrySourceReference!=="string"||!d.geometrySourceReference.trim())throw new Error("مرجع نقشه و آرایش انکرها الزامی است.");
+  if(typeof d.capacitySourceReference!=="string"||!d.capacitySourceReference.trim())throw new Error("مرجع ظرفیت طراحی فولاد انکر الزامی است.");
+  if(typeof d.combinationDefinition!=="string"||!d.combinationDefinition.trim())throw new Error("تعریف ترکیب بار ULS الزامی است.");
+  if(!Array.isArray(d.anchors)||!d.anchors.length)throw new Error("حداقل یک انکر لازم است.");
+  const ids=new Set();
+  const anchors=d.anchors.map(a=>{
+   const id=String(a?.id??"").trim();
+   if(!id||ids.has(id))throw new Error("شناسه انکرها باید یکتا و غیرخالی باشد.");
+   ids.add(id);
+   const T=finite(a.tensionDemandKN,"تقاضای کشش انکر "+id);
+   const Vx=finite(a.shearXDemandKN,"تقاضای برش X انکر "+id);
+   const Vz=finite(a.shearZDemandKN,"تقاضای برش Z انکر "+id);
+   const Tc=finite(a.designTensionCapacityKN,"ظرفیت طراحی کششی فولاد انکر "+id);
+   const Vc=finite(a.designShearCapacityKN,"ظرفیت طراحی برشی فولاد انکر "+id);
+   if(T<0||Tc<=0||Vc<=0)throw new Error("تقاضاها نباید منفی و ظرفیت‌های طراحی باید مثبت باشند.");
+   const V=Math.hypot(Vx,Vz), tensionRatio=T/Tc, shearRatio=V/Vc;
+   return Object.freeze({id,tensionDemandKN:T,shearXDemandKN:Vx,shearZDemandKN:Vz,
+    resultantShearDemandKN:V,designTensionCapacityKN:Tc,designShearCapacityKN:Vc,
+    tensionUtilization:tensionRatio,shearUtilization:shearRatio,
+    tensionPass:tensionRatio<=1+1e-9,shearPass:shearRatio<=1+1e-9,
+    status:tensionRatio<=1+1e-9&&shearRatio<=1+1e-9?"pass-independent-steel-checks":"fail-independent-steel-checks"});
+  });
+  return Object.freeze({success:anchors.every(a=>a.tensionPass&&a.shearPass),
+   method:"independent per-anchor steel tension and resultant shear demand-to-design-capacity screening",
+   interactionChecked:false,anchors:Object.freeze(anchors),
+   maximumTensionUtilization:Math.max(...anchors.map(a=>a.tensionUtilization)),
+   maximumShearUtilization:Math.max(...anchors.map(a=>a.shearUtilization)),
+   geometrySourceReference:d.geometrySourceReference.trim(),capacitySourceReference:d.capacitySourceReference.trim(),
+   combinationDefinition:d.combinationDefinition.trim(),
+   limitations:Object.freeze([
+    "ظرفیت‌های طراحی کششی و برشی فولاد انکر باید از گواهی محصول و مبنای طراحی معتبر استخراج و توسط مهندس تأیید شوند؛ نرم‌افزار آن‌ها را از قطر، رده یا رزوه حدس نمی‌زند.",
+    "کنترل کشش و برش به‌صورت مستقل انجام شده است؛ اندرکنش کشش-برش طبق ضابطه حاکم بررسی نشده و قبولی این دو کنترل به‌تنهایی قبولی ترکیبی نیست.",
+    "شکست مخروطی بتن، بیرون‌کشیدگی، pryout، شکست لبه بتن، فاصله لبه، عمق مهاری، اثر گروه، آرماتور مهاری و شکست جوش/صفحه کنترل نمی‌شوند.",
+    "تقاضا باید برای هر انکر از تحلیل معتبر گروه انکر و با لحاظ سختی صفحه، تماس و پریینگ استخراج شده باشد؛ ورودی این تابع آن را محاسبه نمی‌کند.",
+    "این غربال مقدماتی جایگزین طراحی آیین‌نامه‌ای یا تأیید نهایی اتصال نیست."
+   ])});
+ }
+
+ const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity});
  root.SahroudBasePlateCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
