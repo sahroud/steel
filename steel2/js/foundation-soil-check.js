@@ -64,6 +64,47 @@
    limitations:["این تبدیل فقط واکنش گره پایه را به کنش قائم و لنگرهای سازگار با محورهای جهانی X/Z تبدیل می‌کند.","نیروهای افقی و گشتاور پیچشی با علامت کنش سازه بر پی (مخالف واکنش تکیه‌گاه بر سازه) گزارش می‌شوند و در کنترل فشار قائم فعلی منظور نشده‌اند؛ کنترل لغزش و برش لازم است.","مرکزیت ستون نسبت به مرکز پی، ابعاد واقعی پی، شناژها، پدستال و خروج از مرکزیت هندسی هنوز باید جداگانه تعیین شوند."]
   });
  }
+ function mapSupportReactionToAnchorDemand(input){
+  const d=input||{};
+  if(d.solverSuccess!==true||d.equilibriumOK!==true)
+   throw new Error("استخراج تقاضای انکر فقط برای حل موفق با تعادل تأییدشده مجاز است.");
+  if(String(d.loadCaseType||"").toUpperCase()!=="ULS")
+   throw new Error("استخراج تقاضای کششی انکر باید از ترکیب حدی ULS صریح و مستند انجام شود؛ SLS جایگزین آن نیست.");
+  if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())
+   throw new Error("مرجع مستند تحلیل ULS برای استخراج تقاضای انکر الزامی است.");
+  if(typeof d.combinationDefinition!=="string"||!d.combinationDefinition.trim())
+   throw new Error("تعریف دقیق ترکیب بار ULS برای استخراج تقاضای انکر الزامی است.");
+  if(d.footingWidthAxis!=="X"||d.footingLengthAxis!=="Z"||d.verticalAxis!=="Y")
+   throw new Error("محورهای پایه باید صریح باشند: عرض X، طول Z و قائم Y.");
+  const ledger=d.ledgerEntry;
+  if(!ledger||!ledger.nodeId||!ledger.coordinatesM||!ledger.reactionN||!ledger.reactionNm)
+   throw new Error("رکورد واکنش پایه برای استخراج تقاضای انکر کامل نیست.");
+  if(!Array.isArray(ledger.fixedDofs)||![0,1,2].every(x=>ledger.fixedDofs.includes(x)))
+   throw new Error("سه درجه آزادی انتقالی پایه باید مقید باشند.");
+  if(ledger.units?.force!=="N"||ledger.units?.moment!=="N.m")
+   throw new Error("واحدهای واکنش پایه باید N و N.m باشند.");
+  const nodeId=String(ledger.nodeId).trim();
+  if(!nodeId)throw new Error("شناسه گره پایه الزامی است.");
+  const coordinates={x:finite(ledger.coordinatesM.x,"مختصات X"),y:finite(ledger.coordinatesM.y,"مختصات Y"),z:finite(ledger.coordinatesM.z,"مختصات Z")};
+  const fy=finite(ledger.reactionN.Fy,"واکنش قائم Fy");
+  const fx=finite(ledger.reactionN.Fx,"واکنش Fx"),fz=finite(ledger.reactionN.Fz,"واکنش Fz");
+  const mx=finite(ledger.reactionNm.Mx,"واکنش Mx"),my=finite(ledger.reactionNm.My,"واکنش My"),mz=finite(ledger.reactionNm.Mz,"واکنش Mz");
+  const upliftKN=Math.max(0,-fy/1000);
+  return Object.freeze({
+   supportNodeId:nodeId,supportCoordinatesM:Object.freeze(coordinates),
+   upliftDemandKN:upliftKN,
+   horizontalActionsKN:Object.freeze({Fx:-fx/1000,Fz:-fz/1000}),
+   momentDemandsKNm:Object.freeze({Mx:-mx/1000000,My:-my/1000000,Mz:-mz/1000000}),
+   sourceReference:d.sourceReference.trim(),combinationDefinition:d.combinationDefinition.trim(),
+   loadCaseType:"ULS",
+   limitations:Object.freeze([
+    "این خروجی فقط تقاضای کلی گره پایه را از واکنش حل‌گر استخراج می‌کند؛ نیروی کششی بین انکرها توزیع نشده است.",
+    "برای محاسبه کشش هر انکر، آرایش و مختصات انکرها، ابعاد و سختی صفحه‌ستون، تماس فشاری صفحه و بتن، اثر اهرمی/پریینگ و سختی اتصال لازم است.",
+    "ظرفیت فولاد انکر، بیرون‌کشیدگی، مخروط شکست بتن، pryout، فاصله لبه، عمق مهاری، گروه انکر و اندرکنش کشش-برش هنوز کنترل نشده‌اند؛ این خروجی کنترل ظرفیت یا تأیید اتصال نیست.",
+    "گشتاورها در مرکز گره پایه گزارش می‌شوند؛ انتقال به صفحه‌ستون با خروج از مرکزیت هندسی یا توزیع بین انکرها انجام نشده است."
+   ])
+  });
+ }
  function checkFootingSliding(input){
   const d=input||{};
   if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())throw new Error("مرجع گزارش ژئوتکنیک/طراحی برای کنترل لغزش الزامی است.");
@@ -217,7 +258,7 @@
    }catch(error){out.textContent="کنترل لغزش انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
   });
  }
- const api=Object.freeze({validateSoil,checkRectangularFooting,checkFootingSliding,mapSupportReactionToSlsCase,render,get lastResult(){return lastResult;}});
+ const api=Object.freeze({validateSoil,checkRectangularFooting,checkFootingSliding,mapSupportReactionToSlsCase,mapSupportReactionToAnchorDemand,render,get lastResult(){return lastResult;}});
  root.SahroudFoundationSoilCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
  if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",render);else render();}
