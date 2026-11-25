@@ -171,16 +171,30 @@
       } catch(e) {
         comboRun={success:false,error:e?.message||String(e)};
       }
-      const comboOK=!!comboRun?.success&&Array.isArray(window.SteelAnalysis?.combinationResults)&&window.SteelAnalysis.combinationResults.length>0;
-      addLine(rows,"تحلیل قاب و همه ترکیبات بار موجود",comboOK,
-        comboOK?"تمام "+window.SteelAnalysis.combinationResults.length+" حالت ترکیب بار موجود تحلیل شدند.":(comboRun?.error||"تحلیل ترکیبات بار خروجی معتبر تولید نکرد؛ پیام تحلیل را بررسی کنید."));
+      const comboOK=!!comboRun?.success&&Array.isArray(comboRun.cases)&&comboRun.cases.length>0;
+      addLine(rows,"تحلیل سه‌بعدی ترکیبات بار موجود",comboOK,
+        comboOK?"تمام "+comboRun.cases.length+" حالت ترکیب بار سه‌بعدی موجود حل شدند.":(comboRun?.error||"تحلیل سه‌بعدی ترکیبات بار خروجی معتبر تولید نکرد؛ پیام تحلیل را بررسی کنید."));
+
+      // کنترل‌های اعضا و گزارش فعلی بر ساختار نتایج قاب دوبعدی متکی‌اند.
+      // این تحلیل مستقل، پس از حل سه‌بعدی اجرا می‌شود تا نتایج دو مدل با هم مخلوط نشوند.
+      let legacyComboRun=null;
+      try {
+        const legacyRunner=window.SteelAnalysis?.calculateLegacy2DCombinations;
+        if(typeof legacyRunner==="function") legacyComboRun=legacyRunner();
+        else legacyComboRun={success:false,error:"تابع تحلیل مرجع دوبعدی در دسترس نیست."};
+      } catch(e) {
+        legacyComboRun={success:false,error:e?.message||String(e)};
+      }
+      const legacyComboOK=!!legacyComboRun?.success&&Array.isArray(window.SteelAnalysis?.combinationResults)&&window.SteelAnalysis.combinationResults.length>0;
+      addLine(rows,"تحلیل دوبعدی مرجع برای کنترل اعضا و گزارش",legacyComboOK,
+        legacyComboOK?"نتایج مرجع دوبعدی و ترکیب حاکم برای کنترل‌های فعلی و گزارش آماده شد.":(legacyComboRun?.error||"نتایج مرجع دوبعدی برای کنترل اعضا تولید نشد."));
 
       if(comboOK) {
-        const hasMemberDemand=window.SteelAnalysis.combinationResults.some(item=>
+        const hasMemberDemand=legacyComboOK&&window.SteelAnalysis.combinationResults.some(item=>
           item.memberEnvelopes&&Object.keys(item.memberEnvelopes).length>0);
         addLine(rows,"استخراج تقاضای طراحی اعضا از تحلیل ترکیبات",
           hasMemberDemand,
-          hasMemberDemand?"تقاضا و پوش نیروهای اعضا در جدول تفکیکی تحلیل ترکیبات بار تولید شده است؛ دکمه مستقل دیگری برای این مرحله در صفحه وجود ندارد.":"در نتایج ترکیبات، جدول تقاضای تفکیکی اعضا تولید نشده است.");
+          hasMemberDemand?"تقاضا و پوش نیروهای اعضا از تحلیل مرجع دوبعدی تولید شده است؛ نتایج سه‌بعدی جداگانه نگهداری می‌شوند.":"در نتایج مرجع دوبعدی، جدول تقاضای تفکیکی اعضا تولید نشده است.");
 
         const model3D=window.SteelStructuralModel;
         const threeDResults=[];
