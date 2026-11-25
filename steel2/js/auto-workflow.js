@@ -277,6 +277,25 @@
       addLine(rows,"تعیین خودکار خواص هندسی مقاطع",true,
         "خواص هندسی ستون و رفتر در صورت وجود ابعاد معتبر از تیرورق محاسبه می‌شود؛ این کار جایگزین تأیید گرید و خواص مکانیکی فولاد نیست.");
 
+      // Build the consolidated report only after all preceding calculations.
+      // The report module performs its own input/result checks and displays
+      // an explicit error instead of creating a misleading partial report.
+      const reportButton = $("btnFinalReport");
+      const reportOutput = $("finalReportResults");
+      if (reportButton && reportOutput) {
+        reportOutput.innerHTML = "";
+        reportButton.click();
+        const reportReady = !!reportOutput.querySelector("#printableFinalReport");
+        const reportMessage = reportOutput.innerText || reportOutput.textContent || "";
+        addLine(rows,"ساخت خودکار گزارش تجمیعی طراحی",reportReady,
+          reportReady
+            ? "گزارش ترکیبات بار، تقاضای اعضا و کنترل‌های موجود ساخته شد؛ چاپ یا ذخیره PDF با دکمه گزارش انجام می‌شود."
+            : (reportMessage.trim() || "ماژول گزارش خروجی قابل چاپ تولید نکرد؛ ورودی‌ها یا کنترل‌های گزارش ناقص‌اند."));
+      } else {
+        addLine(rows,"ساخت خودکار گزارش تجمیعی طراحی",false,
+          "پنل گزارش نهایی یا دکمه تهیه گزارش در صفحه ایجاد نشده است.");
+      }
+
       setReport(rows,"گزارش اجرای خودکار پروژه — نتایج مقدماتی");
       if(window.SteelProject?.setStatus)window.SteelProject.setStatus("اجرای خودکار مراحل وابسته انجام شد؛ موارد ناقص در گزارش اجرای خودکار مشخص شده‌اند.");
     } catch (error) {
