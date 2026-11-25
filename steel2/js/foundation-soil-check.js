@@ -105,6 +105,66 @@
    ])
   });
  }
+ function solveThreeByThree(A,b){
+  const m=A.map((row,i)=>[...row,b[i]]);
+  for(let c=0;c<3;c++){
+   let pivot=c;
+   for(let r=c+1;r<3;r++)if(Math.abs(m[r][c])>Math.abs(m[pivot][c]))pivot=r;
+   if(Math.abs(m[pivot][c])<1e-10)throw new Error("آرایش انکرها برای تعیین توزیع دوبعدی کشش پایدار و غیرمنفرد نیست.");
+   [m[c],m[pivot]]=[m[pivot],m[c]];
+   const div=m[c][c];for(let j=c;j<4;j++)m[c][j]/=div;
+   for(let r=0;r<3;r++)if(r!==c){const k=m[r][c];for(let j=c;j<4;j++)m[r][j]-=k*m[c][j];}
+  }
+  return [m[0][3],m[1][3],m[2][3]];
+ }
+ function distributeAnchorTension(input){
+  const d=input||{};
+  const U=finite(d.upliftDemandKN,"نیروی بلندکننده کل U");
+  const Mx=finite(d.MxKNm,"لنگر Mx");
+  const Mz=finite(d.MzKNm,"لنگر Mz");
+  if(U<0)throw new Error("نیروی بلندکننده کل نباید منفی باشد؛ علامت را طبق قرارداد کنش وارد بر صفحه‌ستون بررسی کنید.");
+  if(!Array.isArray(d.anchors)||d.anchors.length<3)throw new Error("حداقل سه مختصات انکر برای توزیع دوبعدی لازم است.");
+  if(typeof d.geometrySourceReference!=="string"||!d.geometrySourceReference.trim())throw new Error("مرجع نقشه/هندسه آرایش انکرها الزامی است.");
+  const anchors=d.anchors.map((p,i)=>({
+   id:String(p?.id??"").trim(),
+   x:finite(p?.xMM,"مختصات X انکر "+(i+1)),
+   z:finite(p?.zMM,"مختصات Z انکر "+(i+1))
+  }));
+  if(anchors.some(p=>!p.id))throw new Error("شناسه هر انکر الزامی است.");
+  if(new Set(anchors.map(p=>p.id)).size!==anchors.length)throw new Error("شناسه انکرها نباید تکراری باشد.");
+  if(new Set(anchors.map(p=>p.x+","+p.z)).size!==anchors.length)throw new Error("مختصات انکرها نباید تکراری باشد.");
+  const cx=anchors.reduce((s,p)=>s+p.x,0)/anchors.length;
+  const cz=anchors.reduce((s,p)=>s+p.z,0)/anchors.length;
+  const pts=anchors.map(p=>({...p,x:p.x-cx,z:p.z-cz}));
+  const sx=pts.reduce((s,p)=>s+p.x,0),sz=pts.reduce((s,p)=>s+p.z,0);
+  const sxx=pts.reduce((s,p)=>s+p.x*p.x,0),szz=pts.reduce((s,p)=>s+p.z*p.z,0);
+  const sxz=pts.reduce((s,p)=>s+p.x*p.z,0);
+  // T_i = c + a*x_i + b*z_i. Moments: Mx=sum(z_i*T_i), Mz=-sum(x_i*T_i).
+  const [c,a,b]=solveThreeByThree(
+   [[anchors.length,sx,sz],[sx,sxx,sxz],[sz,sxz,szz]],
+   [U*1000,-Mz*1e6,Mx*1e6]
+  );
+  const raw=pts.map(p=>({id:p.id,xMM:p.x+cx,zMM:p.z+cz,tensionKN:(c+a*p.x+b*p.z)/1000}));
+  const tolerance=1e-8;
+  const compressionSide=raw.filter(p=>p.tensionKN < -tolerance);
+  const results=raw.map(p=>({...p,tensionDemandKN:Math.max(0,p.tensionKN),assumedTensionOnly:p.tensionKN>=-tolerance}));
+  return Object.freeze({
+   success:compressionSide.length===0,
+   status:compressionSide.length===0?"elastic-all-anchors-in-tension":"invalid-unilateral-contact-assumption",
+   anchorCount:anchors.length,centroidMM:{x:cx,z:cz},
+   upliftDemandKN:U,MxKNm:Mx,MzKNm:Mz,
+   anchors:Object.freeze(results.map(Object.freeze)),
+   maximumAnchorTensionKN:Math.max(0,...results.map(p=>p.tensionDemandKN)),
+   compressionSideAnchorIds:Object.freeze(compressionSide.map(p=>p.id)),
+   geometrySourceReference:d.geometrySourceReference.trim(),
+   limitations:Object.freeze([
+    "توزیع بر پایه صفحه صلب و رفتار الاستیک خطی گروه انکر با سختی محوری یکسان و فرض فعال بودن کشش همه انکرها است.",
+    "اگر هر انکری وارد فشار شود، فرض کشش همه انکرها معتبر نیست؛ تماس فشاری بتن/صفحه‌ستون و حل یک‌طرفه غیرخطی هنوز مدل نشده و نتیجه باید متوقف تلقی شود.",
+    "ضخامت و خمش صفحه‌ستون، پریینگ، سختی و انعطاف صفحه، جوش، ظرفیت کششی فولاد انکر، بیرون‌کشیدگی، مخروط شکست بتن، pryout، فاصله لبه، عمق مهاری، اثر گروه و اندرکنش کشش-برش کنترل نشده‌اند.",
+    "این خروجی فقط تقاضای الاستیک مقدماتی را تخمین می‌زند و کنترل ظرفیت یا تأیید طراحی اتصال نیست."
+   ])
+  });
+ }
  function checkFootingSliding(input){
   const d=input||{};
   if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())throw new Error("مرجع گزارش ژئوتکنیک/طراحی برای کنترل لغزش الزامی است.");
@@ -258,7 +318,7 @@
    }catch(error){out.textContent="کنترل لغزش انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
   });
  }
- const api=Object.freeze({validateSoil,checkRectangularFooting,checkFootingSliding,mapSupportReactionToSlsCase,mapSupportReactionToAnchorDemand,render,get lastResult(){return lastResult;}});
+ const api=Object.freeze({validateSoil,checkRectangularFooting,checkFootingSliding,mapSupportReactionToSlsCase,mapSupportReactionToAnchorDemand,distributeAnchorTension,render,get lastResult(){return lastResult;}});
  root.SahroudFoundationSoilCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
  if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",render);else render();}
