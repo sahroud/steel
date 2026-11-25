@@ -325,3 +325,50 @@ test("column offset can cause loss of full soil contact", () => {
   assert.equal(r.fullContact, false);
   assert.equal(r.status, "blocked-no-tension-contact");
 });
+
+
+test("sliding check uses explicit friction data and biaxial horizontal resultant", () => {
+  const r = api.checkFootingSliding({
+    normalCompressionKN: 400,
+    horizontalActionsKN: { Fx: 30, Fz: 40 },
+    interfaceFrictionCoefficient: 0.5,
+    requiredFactorOfSafety: 1.5,
+    sourceReference: "گزارش ژئوتکنیک، بند اصطکاک سطح تماس",
+    combinationDefinition: "ترکیب بار مستند کنترل لغزش"
+  });
+  assert.equal(r.horizontalResultantKN, 50);
+  assert.equal(r.frictionResistanceKN, 200);
+  assert.equal(r.factorOfSafety, 4);
+  assert.equal(r.success, true);
+});
+
+test("sliding check rejects missing or invalid geotechnical inputs", () => {
+  assert.throws(() => api.checkFootingSliding({
+    normalCompressionKN: 100,
+    horizontalActionsKN: { Fx: 10, Fz: 0 },
+    requiredFactorOfSafety: 1.5,
+    sourceReference: "report",
+    combinationDefinition: "combination"
+  }), /ضریب اصطکاک/);
+  assert.throws(() => api.checkFootingSliding({
+    normalCompressionKN: 0,
+    horizontalActionsKN: { Fx: 10, Fz: 0 },
+    interfaceFrictionCoefficient: 0.5,
+    requiredFactorOfSafety: 1.5,
+    sourceReference: "report",
+    combinationDefinition: "combination"
+  }), /نیروی قائم/);
+});
+
+test("sliding check reports failure when resistance is insufficient", () => {
+  const r = api.checkFootingSliding({
+    normalCompressionKN: 100,
+    horizontalActionsKN: { Fx: 50, Fz: 0 },
+    interfaceFrictionCoefficient: 0.2,
+    requiredFactorOfSafety: 1.5,
+    sourceReference: "report",
+    combinationDefinition: "combination"
+  });
+  assert.equal(r.factorOfSafety, 0.4);
+  assert.equal(r.success, false);
+});
