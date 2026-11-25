@@ -350,6 +350,23 @@
   {"id":"A2","tensionDemandKN":30,"projectionMM":80,"effectiveWidthMM":100}
 ]</textarea></div>
         <div class="button-grid"><button id="btnCheckBasePlateBending" class="btn primary" type="button" disabled>اجرای کنترل خمش صفحه‌ستون</button></div>
+        <hr>
+        <h4>کنترل فشار تماس صفحه‌ستون با گروت/بتن</h4>
+        <div class="notice">مدل صفحه صلب با توزیع خطی فشار در تماس کامل؛ در صورت منفی‌شدن فشار حداقل، نتیجه مسدود می‌شود و تحلیل تماس جزئی لازم است. ظرفیت مجاز باید از مبنای معتبر پروژه وارد شود.</div>
+        <div class="field"><label for="basePlateBearingInput">هندسه، نیروها و ظرفیت تماس (JSON)</label>
+        <textarea id="basePlateBearingInput" rows="12" spellcheck="false">{
+  "plateWidthMM": 400,
+  "plateLengthMM": 500,
+  "compressionKN": 400,
+  "MxKNm": 0,
+  "MzKNm": 0,
+  "allowableBearingMPa": 8,
+  "geometrySourceReference": "شماره نقشه صفحه‌ستون",
+  "sourceReference": "مرجع معتبر ظرفیت تماس بتن/گروت",
+  "combinationDefinition": "شناسه ترکیب بار ULS"
+}</textarea></div>
+        <div class="button-grid"><button id="btnCheckBasePlateBearing" class="btn primary" type="button" disabled>کنترل فشار تماس بتن/گروت</button></div>
+        <pre id="basePlateBearingResult" class="notice" aria-live="polite">داده واقعی پروژه و مبنای ظرفیت تماس را وارد کنید.</pre>
         <pre id="basePlateBendingResult" class="notice" aria-live="polite">ابتدا کنترل فونداسیون را فعال کنید و داده‌های نقشه را وارد نمایید.</pre>
     </section>
 
@@ -430,8 +447,8 @@
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
 <script src="js/ui-organization.js?v=20261112compact3"></script>
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
-<script src="js/base-plate-check.js?v=20261125-prying-default1"></script>
-<script src="js/base-plate-ui.js?v=20261125-prying-default1"></script>
+<script src="js/base-plate-check.js?v=20261125-bearing1"></script>
+<script src="js/base-plate-ui.js?v=20261125-bearing1"></script>
 <script src="js/auto-workflow.js?v=20261125-combo-metadata3"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
