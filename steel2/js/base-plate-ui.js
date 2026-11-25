@@ -5,7 +5,7 @@
   const button=$("btnCheckBasePlateBending"),enabled=$("soilControlEnabled");
   if(!button||button.dataset.bound==="1")return;
   button.dataset.bound="1";
-  const fields=["basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlateGeometryRef","basePlateStripInput"];
+  const fields=["basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
   const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;};
   enabled?.addEventListener("change",sync);sync();
   button.addEventListener("click",()=>{
@@ -16,14 +16,15 @@
      plateThicknessMM:$("basePlateThicknessMM").value,
      plateFyMPa:$("basePlateFyMPa").value,
      phi:$("basePlatePhi").value,
+     pryingFactor:$("basePlatePryingFactor").value,
      geometrySourceReference:$("basePlateGeometryRef").value,
      anchors
     });
     const f=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:3});
     out.textContent=[
      result.success?"نتیجه: خمش نوار صفحه در مدل ساده‌شده قبول است؛ این به معنی تأیید صفحه‌ستون نیست.":"نتیجه: خمش نوار صفحه در مدل ساده‌شده مردود است یا به بازطراحی نیاز دارد.",
-     "ضخامت="+f(result.plateThicknessMM)+" mm | Fy="+f(result.plateFyMPa)+" MPa | φ="+f(result.phi),
-     ...result.anchors.map(a=>a.id+" | Mu="+f(a.momentDemandNmmPerMM)+" N.mm/mm | φMn="+f(a.designMomentCapacityNmmPerMM)+" N.mm/mm | نسبت="+f(a.utilization)+" | "+a.status),
+     "ضخامت="+f(result.plateThicknessMM)+" mm | Fy="+f(result.plateFyMPa)+" MPa | φ="+f(result.phi)+" | ضریب پریینگ ورودی="+f(result.pryingFactor),
+     ...result.anchors.map(a=>a.id+" | کشش تشدیدشده="+f(a.pryingAmplifiedTensionKN)+" kN | Mu="+f(a.momentDemandNmmPerMM)+" N.mm/mm | φMn="+f(a.designMomentCapacityNmmPerMM)+" N.mm/mm | نسبت="+f(a.utilization)+" | "+a.status),
      "بیشترین نسبت تقاضا به ظرفیت: "+f(result.maximumUtilization),
      "مرجع هندسه: "+result.geometrySourceReference,
      "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
