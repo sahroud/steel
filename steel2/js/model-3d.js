@@ -650,6 +650,7 @@
       if(!combo)throw new Error("ضرایب ترکیب بار انتخابی در دسترس نیستند.");
       selected={key:loadCase,label:combo.name,direction:[0,-1,0],
         factors:{dead:Number(combo.dead)||0,live:Number(combo.live)||0,snow:Number(combo.snow)||0},
+        windFactor:Number(combo.wind)||0,windSign:Number(combo.windSign)||1,
         deadFactor:Number(combo.dead)||0};
     }
     if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود.");
@@ -707,7 +708,7 @@
       const totalLineLoad=lineLoad+selfWeightLineLoad;
       const tr=window.SteelFrame3D.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z]);
       let global;
-      if(selected.key==="wind"||selected.windFactor>0){
+      if(selected.key==="wind"||Number(selected.windFactor)!==0){
         // Wind inputs are signed NET pressures (kN/m²), not basic wind speed.
         const windFactor=selected.key==="wind"?1:selected.windFactor;
         const windSign=selected.key==="wind"?1:selected.windSign;
