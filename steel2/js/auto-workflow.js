@@ -186,16 +186,18 @@
         const threeDResults=[];
         if(typeof model3D?.analyze3D==="function") {
           const combos=window.SteelLoads?.getData?.().combinations||[];
-          if(!combos.length) addLine(rows,"تحلیل سه‌بعدی ترکیبات بار",false,"هیچ ترکیب باری در بانک بارگذاری ثبت نشده است؛ تحلیل ترکیبی اجرا نشد.");
+          if(!combos.length) addLine(rows,"تحلیل سه‌بعدی سناریوهای بار",false,"هیچ سناریوی باری در بانک بارگذاری ثبت نشده است؛ تحلیل ترکیبی اجرا نشد.");
+          const __draftGravityOnly=combos.some(x=>x.classification==="preliminary-gravity-only"||x.status==="not-code-verified");
+          if(__draftGravityOnly) addLine(rows,"وضعیت مجموعه ترکیبات بار",false,"سناریوهای فعلی فقط D، Lr و S را پوشش می‌دهند و فاقد باد، زلزله و سایر ترکیبات لازم‌اند؛ نتیجه آن‌ها تحلیل مقدماتی ثقلی است، نه طراحی نهایی یا کنترل کامل ULS.");
           for(let i=0;i<Math.min(combos.length,3);i++) {
             try {
               const result=await model3D.analyze3D("combo"+i);
               const equilibriumOK=!!result?.equilibrium?.ok;
               threeDResults.push({index:i,label:combos[i]?.name||("ترکیب "+(i+1)),success:!!result?.success,equilibriumOK,result});
-              addLine(rows,"تحلیل سه‌بعدی "+(combos[i]?.name||("ترکیب "+(i+1))),
+              addLine(rows,"تحلیل سه‌بعدی مقدماتی "+(combos[i]?.name||("سناریو "+(i+1))),
                 !!result?.success&&equilibriumOK,
                 result?.success
-                  ? "مدل سه‌بعدی حل شد؛ "+result.nodeCount+" گره و "+result.memberCount+" عضو. کنترل تعادل "+(equilibriumOK?"قبول شد.":"نیازمند بررسی است.")+" بیشینه جابه‌جایی: "+(Number.isFinite(Number(result.maxTranslation))?(Number(result.maxTranslation)*1000).toFixed(3):"نامشخص")+" میلی‌متر. "+(result.warning||"")
+                  ? "مدل سه‌بعدی در سناریوی ثقلی مقدماتی حل شد؛ "+result.nodeCount+" گره و "+result.memberCount+" عضو. کنترل تعادل "+(equilibriumOK?"قبول شد.":"نیازمند بررسی است.")+" بیشینه جابه‌جایی: "+(Number.isFinite(Number(result.maxTranslation))?(Number(result.maxTranslation)*1000).toFixed(3):"نامشخص")+" میلی‌متر. "+(result.warning||"")
                   : "حل‌گر سه‌بعدی نتیجه معتبر تولید نکرد.");
             } catch(e) {
               threeDResults.push({index:i,label:combos[i]?.name||("ترکیب "+(i+1)),success:false,error:e?.message||String(e)});
