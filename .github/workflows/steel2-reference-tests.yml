@@ -35,6 +35,8 @@ jobs:
           node --check steel2/js/loads.js
           node --check steel2/js/climate-load-engine.js
           node --check steel2/js/foundation-soil-check.js
+          node --check steel2/js/base-plate-check.js
+          node --check steel2/js/base-plate-ui.js
           node --check steel2/js/app.js
       - name: Run all available steel2 reference tests
         run: node --test steel2/tests/*.test.js
