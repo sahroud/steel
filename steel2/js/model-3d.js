@@ -76,10 +76,13 @@
         stage("مرحله ۲ از ۳: مونتاژ ماتریس سختی و بارگذاری اعضا…");
         stage("مرحله ۳ از ۳: حل دستگاه معادلات سه‌بعدی؛ لطفاً صفحه را نبندید…");
         const result=await analyze3D(lc);
-        box.textContent="تحلیل سه‌بعدی با موفقیت حل شد. حالت بار: "+result.loadCaseLabel+
+        const equilibriumOK=!!result.equilibrium?.ok;
+        const solveOK=result.success===true;
+        const maxDisp=Number.isFinite(Number(result.maxTranslation))?(Number(result.maxTranslation)*1000).toFixed(3):"نامشخص";
+        box.textContent=(solveOK&&equilibriumOK?"حل عددی و کنترل تعادل با موفقیت انجام شد. ":"هشدار: "+(solveOK?"حل عددی انجام شد، اما تعادل سازه تأیید نشده است. ":"حل‌گر موفقیت را تأیید نکرده است. "))+"حالت بار: "+result.loadCaseLabel+
           " | گره‌ها: "+result.nodeCount+" | اعضا: "+result.memberCount+
-          " | بیشینه جابه‌جایی انتقالی: "+(result.maxTranslation*1000).toFixed(3)+" میلی‌متر"+
-          " | گره‌های دارای واکنش تکیه‌گاهی: "+result.reactions.length+
+          " | بیشینه جابه‌جایی انتقالی: "+maxDisp+" میلی‌متر"+
+          " | گره‌های دارای واکنش تکیه‌گاهی: "+(result.reactions?.length||0)+
           (result.criticalDisplacement
             ? " | گره بحرانی: "+result.criticalDisplacement.nodeId+" ("+result.criticalDisplacement.kind+")"+
               " | مختصات X/Y/Z: "+[result.criticalDisplacement.coordinates.x,result.criticalDisplacement.coordinates.y,result.criticalDisplacement.coordinates.z].map(v=>v.toFixed(3)).join(" / ")+" متر"+
@@ -111,7 +114,7 @@
         }else{
           box.textContent+="\nگزارش نیروهای اعضای بحرانی در دسترس نیست.";
         }
-        box.style.color="#15803d";
+        box.style.color=(solveOK&&equilibriumOK)?"#15803d":"#b45309";
         window.SteelStructuralModel.last3DResult=result;
         renderCriticalRafterDiagram(result,"تحلیل مدل اصلی");
       } catch(e) {
