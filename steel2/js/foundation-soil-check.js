@@ -92,9 +92,15 @@
    const reactionN=finite(c.NkN,"نیروی قائم واکنش "+name);
    const momentValue=(value,label)=>value===undefined||value===null||value===""?0:finite(value,label);
    const Mx=momentValue(c.MxkNm,"لنگر Mx "+name),Mz=momentValue(c.MzkNm,"لنگر Mz "+name);
+   if(c.columnOffsetXM===undefined||c.columnOffsetZM===undefined)
+    throw new Error("فاصله محور ستون تا مرکز پی در دو راستای X و Z برای حالت "+name+" باید صریحاً وارد شود؛ مقدار صفر نیز باید آگاهانه ثبت شود.");
+   const columnOffsetX=finite(c.columnOffsetXM,"خروج از مرکزیت ستون در X "+name);
+   const columnOffsetZ=finite(c.columnOffsetZM,"خروج از مرکزیت ستون در Z "+name);
    const N=reactionN+footingWeight+soilCoverWeight;
    if(!(N>0))throw new Error("مجموع نیروی قائم شامل واکنش، وزن پی و خاک روی پی در "+name+" باید فشاری و مثبت باشد.");
-   const ex=Mz/N,ez=Mx/N,qAvg=N/A;
+   const MxTotal=Mx+reactionN*columnOffsetZ;
+   const MzTotal=Mz-reactionN*columnOffsetX;
+   const ex=MzTotal/N,ez=MxTotal/N,qAvg=N/A;
    const qMaxGross=qAvg*(1+6*Math.abs(ex)/B+6*Math.abs(ez)/L);
    const qMinGross=qAvg*(1-6*Math.abs(ex)/B-6*Math.abs(ez)/L);
    const qMaxNet=qMaxGross-overburden,qMinNet=qMinGross-overburden;
@@ -102,7 +108,7 @@
    const qMaxChecked=soil.allowableBearingBasis==="gross"?qMaxGross:qMaxNet;
    const qMinChecked=soil.allowableBearingBasis==="gross"?qMinGross:qMinNet;
    const bearingPass=fullContact&&qMaxChecked<=soil.allowableBearingKPa+1e-9;
-   return Object.freeze({name,sourceReference:c.sourceReference.trim(),serviceabilityCheck:c.serviceabilityCheck,combinationDefinition:c.combinationDefinition.trim(),reactionNkN:reactionN,NkN:N,MxkNm:Mx,MzkNm:Mz,
+   return Object.freeze({name,sourceReference:c.sourceReference.trim(),serviceabilityCheck:c.serviceabilityCheck,combinationDefinition:c.combinationDefinition.trim(),reactionNkN:reactionN,NkN:N,MxkNm:Mx,MzkNm:Mz,columnOffsetXM:columnOffsetX,columnOffsetZM:columnOffsetZ,resultantMxkNm:MxTotal,resultantMzkNm:MzTotal,
     footingWeightKN:footingWeight,soilCoverWeightKN:soilCoverWeight,totalAddedWeightKN:footingWeight+soilCoverWeight,
     overburdenAtBaseKPa:overburden,areaM2:A,eccentricityX_m:ex,eccentricityZ_m:ez,
     qAverageGrossKPa:qAvg,qMaxGrossKPa:qMaxGross,qMinGrossKPa:qMinGross,
@@ -111,13 +117,13 @@
     status:!fullContact?"blocked-no-tension-contact":qMaxChecked>soil.allowableBearingKPa?"fail-bearing-pressure":"pass-bearing-pressure"});
   });
   return Object.freeze({success:results.every(x=>x.bearingPass),
-   method:"linear-elastic rectangular footing pressure; full-contact only; centered footing and soil-cover weights included",
+   method:"linear-elastic rectangular footing pressure; full-contact only; column-axis offsets included; footing and soil-cover weights centered",
    soil,footing:Object.freeze({B_m:B,L_m:L,areaM2:A,thicknessM:thickness,soilCoverAboveFootingM:cover,
     concreteUnitWeightKNm3:gammaConcrete,soilUnitWeightKNm3:gammaSoil,footingWeightKN:footingWeight,
     soilCoverWeightKN:soilCoverWeight,overburdenAtBaseKPa:overburden}),
    results:Object.freeze(results),
    limitations:Object.freeze([
-    "وزن پی و وزن خاک روی آن به‌صورت بار قائم متمرکز در مرکز هندسی پی منظور شده‌اند؛ خروج از مرکزیت این وزن‌ها صفر فرض شده است.",
+    "وزن پی و خاک پوششی در مرکز هندسی پی منظور شده‌اند؛ خروج از مرکزیت ستون فقط از فاصله محور ستون تا مرکز پی در هر حالت بار محاسبه می‌شود.",
     "مبنای gross/net باید دقیقاً با تعریف ظرفیت مجاز در گزارش ژئوتکنیک یکسان باشد؛ برای net، سربار اولیه خاک تا زیر پی از فشار ناخالص کسر شده است.",
     "این کنترل فقط فشار تماس قائم پی مستطیلی با توزیع خطی و فرض تماس کامل را بررسی می‌کند؛ qmin ناخالص معیار تشخیص جداشدگی است.",
     "اگر qmin ناخالص منفی شود، تحلیل تماس جزئی/بلندشدگی لازم است؛ فشار کششی به خاک مجاز فرض نشده است.",
