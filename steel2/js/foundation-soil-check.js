@@ -27,13 +27,15 @@
   const A=B*L,footingWeight=A*thickness*gammaConcrete,soilCoverWeight=A*cover*gammaSoil;
   const overburden=gammaSoil*(cover+thickness);
   const results=d.cases.map((c,index)=>{
-   const name=String(c.name||("case-"+(index+1)));
-   if(!/^SLS(?:[-_ ]|$)/i.test(name)&&!name.includes("بهره‌برداری"))
-    throw new Error("حالت "+name+" ترکیب بهره‌برداری SLS مشخص‌شده نیست؛ بارهای ULS یا بار منفرد پذیرفته نمی‌شوند.");
+   const name=String(c.name||"").trim();
+   const normalizedName=name.toUpperCase();
+   if(!/^SLS(?:[-_ ]|$)/i.test(normalizedName)&&!name.includes("بهره‌برداری"))
+    throw new Error("نام حالت "+(name||"(بدون نام)")+" باید صریحاً SLS یا بهره‌برداری باشد؛ بارهای ULS یا بار منفرد پذیرفته نمی‌شوند.");
    if(typeof c.sourceReference!=="string"||!c.sourceReference.trim())
     throw new Error("مرجع گزارش تحلیل/جدول واکنش برای حالت "+name+" الزامی است.");
    const reactionN=finite(c.NkN,"نیروی قائم واکنش "+name);
-   const Mx=finite(c.MxkNm||0,"لنگر Mx "+name),Mz=finite(c.MzkNm||0,"لنگر Mz "+name);
+   const momentValue=(value,label)=>value===undefined||value===null||value===""?0:finite(value,label);
+   const Mx=momentValue(c.MxkNm,"لنگر Mx "+name),Mz=momentValue(c.MzkNm,"لنگر Mz "+name);
    const N=reactionN+footingWeight+soilCoverWeight;
    if(!(N>0))throw new Error("مجموع نیروی قائم شامل واکنش، وزن پی و خاک روی پی در "+name+" باید فشاری و مثبت باشد.");
    const ex=Mz/N,ez=Mx/N,qAvg=N/A;
