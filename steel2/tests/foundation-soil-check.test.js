@@ -24,7 +24,9 @@ const base = {
     NkN: 300,
     MxkNm: 0,
     MzkNm: 0,
-    sourceReference: "تحلیل آزمایشی، ترکیب بهره‌برداری مستند"
+    sourceReference: "تحلیل آزمایشی، ترکیب بهره‌برداری مستند",
+    serviceabilityCheck: "foundation-bearing",
+    combinationDefinition: "تعریف ترکیب بهره‌برداری مستند در گزارش آزمایشی"
   }]
 };
 
@@ -51,6 +53,13 @@ test("rejects ULS cases even if source is supplied", () => {
     ...base,
     cases: [{ ...base.cases[0], name: "ULS-1" }]
   }), /SLS/);
+});
+
+test("requires an explicit serviceability combination definition", () => {
+  assert.throws(() => api.checkRectangularFooting({
+    ...base,
+    cases: [{ ...base.cases[0], combinationDefinition: "" }]
+  }), /تعریف دقیق/);
 });
 
 test("requires a geotechnical source", () => {
