@@ -658,6 +658,7 @@
     // API هم‌زمان برای اجرای زنجیره‌ای، بدون تأخیر دکمه
     if (window.SteelAnalysis) {
         window.SteelAnalysis.calculateCombinations = calculateCombinations;
+        window.SteelAnalysis.calculateLegacy2DCombinations = calculateLegacy2DCombinations;
     }
 
     function save() {
