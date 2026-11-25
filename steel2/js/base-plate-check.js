@@ -162,7 +162,46 @@
    ])});
  }
 
- const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity,checkConcreteAnchorFailure});
+
+ function checkAnchorSteelInteraction(input){
+  const d=input||{};
+  for(const [k,label] of [["geometrySourceReference","مرجع هندسه و آرایش انکر"],["capacitySourceReference","مرجع ظرفیت طراحی فولاد"],["interactionRuleReference","مرجع ضابطه اندرکنش کشش-برش"],["combinationDefinition","تعریف ترکیب بار ULS"]]){
+   if(typeof d[k]!=="string"||!d[k].trim())throw new Error(label+" الزامی است.");
+  }
+  const limit=finite(d.interactionLimit,"حد مجاز رابطه اندرکنش");
+  const tensionExponent=finite(d.tensionExponent,"توان نسبت کشش");
+  const shearExponent=finite(d.shearExponent,"توان نسبت برش");
+  if(!(limit>0&&tensionExponent>0&&shearExponent>0))throw new Error("حد رابطه و توان‌ها باید مثبت باشند.");
+  if(!Array.isArray(d.anchors)||!d.anchors.length)throw new Error("حداقل یک انکر لازم است.");
+  const ids=new Set();
+  const anchors=d.anchors.map(a=>{
+   const id=String(a?.id??"").trim();
+   if(!id||ids.has(id))throw new Error("شناسه انکرها باید یکتا و غیرخالی باشد.");
+   ids.add(id);
+   const T=finite(a.tensionDemandKN,"تقاضای کشش "+id), Vx=finite(a.shearXDemandKN,"برش X "+id), Vz=finite(a.shearZDemandKN,"برش Z "+id);
+   const Tc=finite(a.designTensionCapacityKN,"ظرفیت طراحی کششی "+id), Vc=finite(a.designShearCapacityKN,"ظرفیت طراحی برشی "+id);
+   if(T<0||Tc<=0||Vc<=0)throw new Error("تقاضاها نباید منفی و ظرفیت‌ها باید مثبت باشند.");
+   const V=Math.hypot(Vx,Vz), tr=T/Tc, vr=V/Vc;
+   const interaction=Math.pow(tr,tensionExponent)+Math.pow(vr,shearExponent);
+   const pass=interaction<=limit+1e-9;
+   return Object.freeze({id,tensionRatio:tr,shearRatio:vr,resultantShearDemandKN:V,
+    interactionValue:interaction,interactionLimit:limit,pass,status:pass?"pass-user-defined-interaction-envelope":"fail-user-defined-interaction-envelope"});
+  });
+  return Object.freeze({success:anchors.every(a=>a.pass),anchors:Object.freeze(anchors),
+   interactionLimit:limit,tensionExponent,shearExponent,
+   interactionRuleReference:d.interactionRuleReference.trim(),capacitySourceReference:d.capacitySourceReference.trim(),
+   geometrySourceReference:d.geometrySourceReference.trim(),combinationDefinition:d.combinationDefinition.trim(),
+   method:"user-specified power interaction envelope: (T/Td)^p + (V/Vd)^q <= limit",
+   limitations:Object.freeze([
+    "این تابع رابطه اندرکنش را از روی ورودی کاربر ارزیابی می‌کند و هیچ ضابطه یا رابطه آیین‌نامه‌ای را به‌طور پیش‌فرض انتخاب نمی‌کند.",
+    "حد مجاز و توان‌های رابطه باید دقیقاً از ضابطه حاکم بر پروژه و برای نوع انکر/حالت حدی مربوط استخراج و توسط مهندس تأیید شوند؛ مقادیر نمونه یا فرضی، مبنای طراحی نیستند.",
+    "ظرفیت‌های کششی و برشی باید ظرفیت طراحی فولاد انکر و مربوط به همان ترکیب بار باشند؛ کنترل شکست بتن و اثر گروه در این تابع انجام نمی‌شود.",
+    "تقاضای هر انکر باید با تحلیل معتبر صفحه، تماس، توزیع گروه و پریینگ تعیین شده باشد.",
+    "این محاسبه عمومی جایگزین کنترل آیین‌نامه‌ای نیست؛ اگر ضابطه رابطه غیرتوانی یا حدود جداگانه دارد، این مدل قابل استفاده نیست."
+   ])});
+ }
+
+ const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity,checkConcreteAnchorFailure,checkAnchorSteelInteraction});
  root.SahroudBasePlateCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
