@@ -101,7 +101,7 @@ test("reaction mapping converts force and moment signs and units", () => {
       coordinatesM: { x: 0, y: 0, z: 6 },
       fixedDofs: [0, 1, 2],
       reactionN: { Fx: 12000, Fy: 300000, Fz: -5000 },
-      reactionNm: { Mx: 20000000, Mz: -10000000 },
+      reactionNm: { Mx: 20000000, My: 3000000, Mz: -10000000 },
       units: { force: "N", moment: "N.m" }
     }
   });
@@ -227,4 +227,61 @@ test("reaction mapping rejects incomplete or non-finite reaction ledger values",
   assert.throws(() => api.mapSupportReactionToSlsCase({
     ...input, ledgerEntry: { ...input.ledgerEntry, units: { force: "kN", moment: "N.m" } }
   }), /واحدها/);
+});
+
+
+test("reaction mapping preserves finite coordinates and torsional reaction", () => {
+  const mapped = api.mapSupportReactionToSlsCase({
+    solverSuccess: true, equilibriumOK: true, loadCaseType: "SLS",
+    sourceReference: "test source", serviceabilityCheck: "foundation-bearing",
+    combinationDefinition: "D + Lr", footingWidthAxis: "X",
+    footingLengthAxis: "Z", verticalAxis: "Y",
+    ledgerEntry: {
+      nodeId: "base-a", coordinatesM: { x: 1.25, y: 0, z: 7.5 },
+      fixedDofs: [0, 1, 2],
+      reactionN: { Fx: 1000, Fy: 200000, Fz: -2000 },
+      reactionNm: { Mx: 4000000, My: 2500000, Mz: -6000000 },
+      units: { force: "N", moment: "N.m" }
+    }
+  });
+  assert.deepEqual(mapped.supportCoordinatesM, { x: 1.25, y: 0, z: 7.5 });
+  assert.equal(mapped.torsionalReactionKNm, 2.5);
+});
+
+test("reaction mapping blocks uplift without an anchorage model", () => {
+  assert.throws(() => api.mapSupportReactionToSlsCase({
+    solverSuccess: true, equilibriumOK: true, loadCaseType: "SLS",
+    sourceReference: "test source", serviceabilityCheck: "foundation-bearing",
+    combinationDefinition: "D + Lr", footingWidthAxis: "X",
+    footingLengthAxis: "Z", verticalAxis: "Y",
+    ledgerEntry: {
+      nodeId: "base-uplift", coordinatesM: { x: 0, y: 0, z: 0 },
+      fixedDofs: [0, 1, 2],
+      reactionN: { Fx: 0, Fy: -10000, Fz: 0 },
+      reactionNm: { Mx: 0, My: 0, Mz: 0 },
+      units: { force: "N", moment: "N.m" }
+    }
+  }), /بلندکننده/);
+});
+
+test("reaction mapping rejects non-finite torsion and coordinates", () => {
+  const input = {
+    solverSuccess: true, equilibriumOK: true, loadCaseType: "SLS",
+    sourceReference: "test source", serviceabilityCheck: "foundation-bearing",
+    combinationDefinition: "D + Lr", footingWidthAxis: "X",
+    footingLengthAxis: "Z", verticalAxis: "Y",
+    ledgerEntry: {
+      nodeId: "base-invalid", coordinatesM: { x: 0, y: 0, z: 0 },
+      fixedDofs: [0, 1, 2],
+      reactionN: { Fx: 0, Fy: 100000, Fz: 0 },
+      reactionNm: { Mx: 0, My: 0, Mz: 0 },
+      units: { force: "N", moment: "N.m" }
+    }
+  };
+  assert.throws(() => api.mapSupportReactionToSlsCase({
+    ...input, ledgerEntry: { ...input.ledgerEntry, coordinatesM: { x: NaN, y: 0, z: 0 } }
+  }), /مختصات X/);
+  assert.throws(() => api.mapSupportReactionToSlsCase({
+    ...input, ledgerEntry: { ...input.ledgerEntry, reactionNm: { Mx: 0, My: Infinity, Mz: 0 } }
+  }), /واکنش My/);
 });
