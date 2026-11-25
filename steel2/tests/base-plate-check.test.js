@@ -111,3 +111,14 @@ test("anchor steel interaction rejects exceeded envelope and missing rule proven
  assert.throws(()=>api.checkAnchorSteelInteraction({...base,interactionRuleReference:""}),/اندرکنش/);
  assert.throws(()=>api.checkAnchorSteelInteraction({...base,interactionLimit:0}),/مثبت/);
 });
+
+test("anchor group screening compares total group demands with externally derived group capacities",()=>{
+ const r=api.checkAnchorGroupCapacity({geometrySourceReference:"BP-02 anchor layout",groupCapacitySourceReference:"approved group calculation including overlapping cones",combinationDefinition:"ULS-G1",anchorCount:4,groupTensionDemandKN:120,groupTensionBreakoutDesignCapacityKN:180,groupPulloutDesignCapacityKN:160,groupShearDemandKN:40,groupEdgeShearDesignCapacityKN:70,groupPryoutDesignCapacityKN:60});
+ assert.equal(r.success,true);assert.equal(r.checks.length,4);assert.equal(r.checks[0].utilization,120/180);
+});
+test("anchor group screening rejects failed capacities and missing group provenance",()=>{
+ const base={geometrySourceReference:"BP-02",groupCapacitySourceReference:"group calc",combinationDefinition:"ULS-G2",anchorCount:4,groupTensionDemandKN:120,groupTensionBreakoutDesignCapacityKN:100,groupPulloutDesignCapacityKN:160,groupShearDemandKN:40,groupEdgeShearDesignCapacityKN:70,groupPryoutDesignCapacityKN:60};
+ assert.equal(api.checkAnchorGroupCapacity(base).success,false);
+ assert.throws(()=>api.checkAnchorGroupCapacity({...base,groupCapacitySourceReference:""}),/مرجع/);
+ assert.throws(()=>api.checkAnchorGroupCapacity({...base,anchorCount:1}),/حداقل ۲/);
+});
