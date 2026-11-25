@@ -5,9 +5,25 @@
   const button=$("btnCheckBasePlateBending"),enabled=$("soilControlEnabled");
   if(!button||button.dataset.bound==="1")return;
   button.dataset.bound="1";
-  const fields=["basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
+  const fields=["basePlateBearingInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
   const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;};
   enabled?.addEventListener("change",sync);sync();
+  const bearingButton=$("btnCheckBasePlateBearing");
+  if(bearingButton)bearingButton.addEventListener("click",()=>{
+   const out=$("basePlateBearingResult");
+   try{
+    const result=root.SahroudBasePlateCheck.checkBasePlateBearingContact(JSON.parse($("basePlateBearingInput").value));
+    const f=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:4});
+    out.textContent=[
+     result.success?"نتیجه: فشار تماس در مدل خطی و با فرض تماس کامل قابل قبول است.":result.status==="blocked-partial-contact-analysis-required"?"نتیجه مسدود: فشار کششی/جداشدگی محتمل است؛ تحلیل تماس جزئی لازم است.":"نتیجه: فشار تماس از ظرفیت مجاز واردشده بیشتر است.",
+     "فشار متوسط="+f(result.averagePressureMPa)+" MPa | بیشینه="+f(result.qMaxMPa)+" MPa | کمینه="+f(result.qMinMPa)+" MPa | ظرفیت مجاز="+f(result.allowableBearingMPa)+" MPa",
+     "مرجع هندسه: "+result.geometrySourceReference+" | مرجع ظرفیت: "+result.sourceReference+" | ترکیب: "+result.combinationDefinition,
+     "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
+    ].join("\\n");
+    out.style.color="#b45309";
+   }catch(e){out.textContent="کنترل فشار تماس انجام نشد: "+e.message;out.style.color="#b45309";}
+  });
+
   button.addEventListener("click",()=>{
    const out=$("basePlateBendingResult");
    try{
