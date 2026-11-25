@@ -119,6 +119,7 @@
       const windRegistry=window.SteelClimateLoadEngine?.getData?.();
       const windCodeReady=!!windRegistry&&windRegistry.cases?.filter(x=>String(x.type).includes("wind")).every(x=>x.eligibleForCodeDesign===true)&&windRegistry.windCalculation?.status==="code-verified-and-applied";
       addLine(rows,"اعتبار آیین‌نامه‌ای و انتقال بار باد",windCodeReady,windCodeReady?"ضرایب باد تأیید و به مدل منتقل شده‌اند.":"بارهای باد فعلی ورودی مقدماتی/دستی هستند؛ ضرایب فشار خارجی و داخلی و نواحی موضعی هنوز تأیید و به مدل سه‌بعدی اعمال نشده‌اند. ترکیب بار باد برای جلوگیری از نتیجه گمراه‌کننده ساخته نشد.");
+      addLine(rows,"اتصال واکنش‌های سازه به کنترل پی و خاک",false,"واکنش‌های حل‌گر سه‌بعدی هنوز به‌صورت خودکار به فرم کنترل پی منتقل نمی‌شوند. کنترل باربری پی به واکنش‌های بهره‌برداری SLS، مشخصات ژئوتکنیک و مرجع معتبر نیاز دارد؛ نتایج ULS یا واکنش‌های قاب دوبعدی را جایگزین آن نکنید.");
 
       if(window.SteelLoads?.syncLegacyInputs)window.SteelLoads.syncLegacyInputs();
       const loadOK=window.SteelLoads?.check?.()===true;
