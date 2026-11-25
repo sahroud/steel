@@ -7,7 +7,29 @@
 <meta name="theme-color" content="#123b52">
 <title>Sahroud Steel | تحلیل مقدماتی سوله</title>
 <link rel="stylesheet" href="style.css?v=20261112compact1">
-</head>
+<style id="sahroud-home-layout">
+  .sahroud-home{margin:12px 0 10px;padding:16px 16px 13px;border-radius:16px;background:linear-gradient(135deg,#123b52,#176b87);color:#fff}
+  .sahroud-home h2{margin:5px 0 7px;font-size:21px;color:#fff}
+  .sahroud-home p{margin:0;color:#e6f1f5;line-height:1.8;font-size:13px}
+  .home-kicker{font-size:11px;color:#b9dce8;font-weight:700}
+  .home-steps{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .home-steps span{font-size:11px;padding:5px 9px;border:1px solid #ffffff55;border-radius:20px;color:#fff}
+  .workflow-home{border:2px solid #16845b!important;border-radius:16px!important;padding:14px!important;margin:10px 0 14px!important;background:#fff}
+  .workflow-home .panel-title{margin:0 0 5px}
+  .workflow-home .panel-title h3{font-size:18px;color:#123b52}
+  .workflow-home-description{font-size:12px;line-height:1.8;color:#526875;margin:5px 0 10px}
+  #btnSteelAutoWorkflow{display:block;width:100%;min-height:58px;font-size:17px;font-weight:800;border-radius:12px;background:#147a55;color:#fff;box-shadow:0 4px 12px #147a5533}
+  #steelAutoWorkflowResults{margin-top:10px;font-size:12px}
+  #steelAutoWorkflowResults:empty{display:none}
+  #primaryInputsPanel{border:1px solid #d4e0e6;border-radius:14px}
+  @media(max-width:650px){
+    .sahroud-home{padding:13px;border-radius:12px}
+    .sahroud-home h2{font-size:19px}
+    .workflow-home{padding:11px!important}
+    .workflow-home .panel-title h3{font-size:16px}
+    #btnSteelAutoWorkflow{min-height:60px;font-size:16px}
+  }
+</style>\n</head>
 <body>
 
 <header class="header">
@@ -23,9 +45,18 @@
 
 <main class="container">
 
-    <section class="welcome">
-        <h2>طراحی و تحلیل مقدماتی سوله</h2>
-        <p>ورود مشخصات هندسی، بارگذاری اولیه، ترسیم قاب و بررسی نتایج تحلیل</p>
+    <section class="welcome sahroud-home">
+        <div class="home-kicker">محیط یکپارچه طراحی سازه فولادی</div>
+        <h2>میزکار پروژه سوله</h2>
+        <p>ابتدا اجرای خودکار را آغاز کنید؛ سپس ورودی‌ها، مدل، کنترل‌ها و گزارش را از بخش‌های مرتب‌شده دنبال کنید.</p>
+        <div class="home-steps"><span>۱. ورودی‌ها</span><span>۲. تحلیل</span><span>۳. کنترل‌ها</span><span>۴. گزارش</span></div>
+    </section>
+
+    <section class="panel workflow-home" id="steelAutoWorkflowPanel">
+        <div class="panel-title"><h3>اجرای خودکار کل پروژه</h3><span class="status">شروع سریع</span></div>
+        <p class="workflow-home-description">مراحل قابل انجام را به ترتیب اجرا می‌کند و موارد فاقد داده معتبر را برای تکمیل مشخص می‌کند؛ داده‌های نامعلوم را حدس نمی‌زند.</p>
+        <button type="button" id="btnSteelAutoWorkflow" class="btn primary">▶ اجرای خودکار پروژه</button>
+        <div id="steelAutoWorkflowResults" class="notice">برای آغاز زنجیره محاسبات، دکمه اجرای خودکار را بزنید.</div>
     </section>
 
     <div class="quick-actions" role="group" aria-label="عملیات سریع پروژه">
@@ -543,11 +574,11 @@
 <script src="js/cantilever-check.js?v=1"></script>
 <script src="js/connection-design.js?v=20261110d"></script>
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
-<script src="js/ui-organization.js?v=20261126-workflow-first1"></script>
+<script src="js/ui-organization.js?v=20261126-home-rebuild1"></script>
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
 <script src="js/base-plate-check.js?v=20261125-geometry1"></script>
 <script src="js/base-plate-ui.js?v=20261125-geometry1"></script>
-<script src="js/auto-workflow.js?v=20261125-dual-combo-report1"></script>
+<script src="js/auto-workflow.js?v=20261126-home-rebuild1"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
 <script src="js/dropbox-integration.js?v=20261112projectupload1"></script>
