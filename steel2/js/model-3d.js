@@ -92,6 +92,22 @@
           (result.selfWeight&&result.selfWeight.included?" | وزن خود فولاد افزوده‌شده: "+result.selfWeight.totalKN.toFixed(2)+" کیلونیوتن در "+result.selfWeight.memberCount+" عضو"+(result.selfWeight.bySectionGroup?" | تفکیک وزن گروه‌ها: "+Object.entries(result.selfWeight.bySectionGroup).map(([k,v])=>k+"="+v.totalKN.toFixed(2)+"kN، "+v.count+" عضو، "+v.lengthM.toFixed(1)+"m").join("؛ "):""):"")+
           (result.equilibrium?" | کنترل تعادل نیرو: "+(result.equilibrium.relativeForceResidual*100).toExponential(2)+"٪؛ تعادل لنگر: "+(result.equilibrium.relativeMomentResidual*100).toExponential(2)+"٪؛ "+(result.equilibrium.ok?"تعادل کلی برقرار":"هشدار: عدم تعادل کلی"):" | کنترل تعادل در دسترس نیست")+
           ". خودوزن با فرض وزن مخصوص 78.5 kN/m³ و مساحت مقطع ثبت‌شده محاسبه شده است؛ تحلیل خطی مرتبه اول است، P-Delta و کنترل کمانش در آن لحاظ نشده است. هر پرلین به‌صورت قطعه مستقل بین دو قاب مدل شده است؛ دوران‌های انتهایی هر قطعه از رفتر و از قطعه پرلین دهانه مجاور جدا هستند (فرض مفصل ایده‌آل). سختی واقعی کلیپس و پیچ‌ها، لغزش و خروج از صفحه هنوز مدل نشده و نتیجه تأیید طراحی یا کنترل آیین‌نامه‌ای نیست.";
+        const supportAudit=result.supportReactionLedgerAudit;
+        const supportLedger=Array.isArray(result.supportReactionLedger)?result.supportReactionLedger:[];
+        box.textContent+="\\n\\nممیزی دفتر واکنش پایه‌ها: "+(supportAudit?.complete?"کامل و معتبر":"ناقص یا نامعتبر")+
+          " | پایه‌ها: "+(supportAudit?.supportCount??"—")+" | رکوردها: "+supportLedger.length+
+          (supportAudit?.missingNodeIds?.length?" | شناسه‌های مفقود: "+supportAudit.missingNodeIds.join("، "):"");
+        if(supportLedger.length){
+          box.textContent+="\\nواکنش هر پایه (Fx/Fy/Fz بر حسب kN؛ Mx/My/Mz بر حسب kN·m؛ مختصات بر حسب m):";
+          supportLedger.forEach((item,index)=>{
+            const c=item.coordinatesM||{},f=item.reactionN||{},m=item.reactionNm||{};
+            const fmt=v=>Number.isFinite(Number(v))?(Number(v)/1000).toFixed(3):"نامعتبر";
+            box.textContent+="\\n"+(index+1)+") "+item.nodeId+" ["+(item.nodeKind||"پایه")+"]"+
+              " | X/Y/Z: "+[c.x,c.y,c.z].map(v=>Number.isFinite(Number(v))?Number(v).toFixed(3):"—").join(" / ")+
+              " | F: "+[f.Fx,f.Fy,f.Fz].map(fmt).join(" / ")+
+              " | M: "+[m.Mx,m.My,m.Mz].map(fmt).join(" / ");
+          });
+        }
         if(Array.isArray(result.criticalMemberReport)&&result.criticalMemberReport.length){
           const fmt=(v,factor=1,d=3)=>Number.isFinite(Number(v))?(Number(v)*factor).toFixed(d):"—";
           const lines=["","گزارش تشخیصی اعضای متصل به گره بحرانی:",
