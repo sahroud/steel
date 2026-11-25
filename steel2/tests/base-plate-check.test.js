@@ -36,3 +36,12 @@ test("base plate strip check rejects missing geometry, duplicate IDs and invalid
 test("base plate strip checker is exported for browser and Node consumers",()=>{
  assert.equal(typeof api.checkBasePlateCantileverBending,"function");
 });
+
+test("base plate strip check defaults prying factor to 1 when omitted",()=>{
+ const r=api.checkBasePlateCantileverBending({
+  plateThicknessMM:20,plateFyMPa:240,geometrySourceReference:"drawing",
+  anchors:[{id:"A1",tensionDemandKN:10,projectionMM:40,effectiveWidthMM:100}]
+ });
+ assert.equal(r.pryingFactor,1);
+ assert.equal(r.anchors[0].pryingAmplifiedTensionKN,10);
+});
