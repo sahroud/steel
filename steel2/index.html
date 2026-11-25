@@ -367,6 +367,23 @@
 }</textarea></div>
         <div class="button-grid"><button id="btnCheckBasePlateBearing" class="btn primary" type="button" disabled>کنترل فشار تماس بتن/گروت</button></div>
         <pre id="basePlateBearingResult" class="notice" aria-live="polite">داده واقعی پروژه و مبنای ظرفیت تماس را وارد کنید.</pre>
+
+        <hr>
+        <h4>کنترل مستقل مقاومت فولاد انکربولت</h4>
+        <div class="notice">تقاضای هر انکر باید از توزیع معتبر گروه انکر و اثرات صفحه/پریینگ به دست آید. ظرفیت طراحی کششی و برشی را از گواهی محصول و مبنای طراحی وارد کنید. این بخش فقط کشش و برش فولاد را جداگانه می‌سنجد؛ اندرکنش کشش-برش و شکست بتن را کنترل نمی‌کند.</div>
+        <div class="field"><label for="anchorSteelInput">تقاضا و ظرفیت طراحی هر انکر (JSON)</label>
+        <textarea id="anchorSteelInput" rows="13" spellcheck="false">{
+  "geometrySourceReference": "شماره نقشه صفحه‌ستون و آرایش انکرها",
+  "capacitySourceReference": "گواهی سازنده و مبنای طراحی ظرفیت فولاد",
+  "combinationDefinition": "شناسه ترکیب بار ULS",
+  "anchors": [
+    {"id":"A1","tensionDemandKN":30,"shearXDemandKN":0,"shearZDemandKN":0,"designTensionCapacityKN":60,"designShearCapacityKN":30},
+    {"id":"A2","tensionDemandKN":30,"shearXDemandKN":0,"shearZDemandKN":0,"designTensionCapacityKN":60,"designShearCapacityKN":30}
+  ]
+}</textarea></div>
+        <div class="button-grid"><button id="btnCheckAnchorSteel" class="btn primary" type="button" disabled>کنترل کشش و برش فولاد انکر</button></div>
+        <pre id="anchorSteelResult" class="notice" aria-live="polite">ظرفیت‌های واقعی و مستند را وارد کنید.</pre>
+
         <pre id="basePlateBendingResult" class="notice" aria-live="polite">ابتدا کنترل فونداسیون را فعال کنید و داده‌های نقشه را وارد نمایید.</pre>
     </section>
 
@@ -447,8 +464,8 @@
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
 <script src="js/ui-organization.js?v=20261112compact3"></script>
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
-<script src="js/base-plate-check.js?v=20261125-bearing1"></script>
-<script src="js/base-plate-ui.js?v=20261125-bearing2"></script>
+<script src="js/base-plate-check.js?v=20261125-anchorsteel1"></script>
+<script src="js/base-plate-ui.js?v=20261125-anchorsteel1"></script>
 <script src="js/auto-workflow.js?v=20261125-combo-metadata3"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
