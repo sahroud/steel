@@ -58,7 +58,8 @@
    combinationDefinition:d.combinationDefinition.trim(),
    supportNodeId:nodeId,
    supportCoordinatesM:coordinates,
-   horizontalReactionsKN:{Fx:fx/1000,Fz:fz/1000},\n   torsionalReactionKNm:my/1000000,
+   horizontalReactionsKN:{Fx:fx/1000,Fz:fz/1000},
+   torsionalReactionKNm:my/1000000,
    conversion:{vertical:"Fy solver reaction on structure is converted to positive downward compression on footing",moments:"Mx and Mz are reversed from support-on-structure to structure-on-footing",widthAxis:d.footingWidthAxis,lengthAxis:d.footingLengthAxis,verticalAxis:"Y"},
    limitations:["این تبدیل فقط واکنش گره پایه را به کنش قائم و لنگرهای سازگار با محورهای جهانی X/Z تبدیل می‌کند.","واکنش‌های افقی Fx/Fz جداگانه گزارش می‌شوند و در کنترل فشار قائم فعلی منظور نشده‌اند؛ کنترل لغزش و برش لازم است.","مرکزیت ستون نسبت به مرکز پی، ابعاد واقعی پی، شناژها، پدستال و خروج از مرکزیت هندسی هنوز باید جداگانه تعیین شوند."]
   });
