@@ -42,7 +42,7 @@ test("3D solver preserves zero-valued support reaction records for every restrai
   const result=globalThis.SteelFrame3D.analyze(unloaded,{
     supports:[
       {nodeId:"A",fixedDofs:[0,1,2,3,4,5]},
-      {nodeId:"B",fixedDofs:[0,1,2,3,4,5]}
+      {nodeId:"B",fixedDofs:[1]}
     ],
     sectionResolver:()=>section
   });
