@@ -201,7 +201,36 @@
    ])});
  }
 
- const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity,checkConcreteAnchorFailure,checkAnchorSteelInteraction});
+
+ function checkAnchorGroupCapacity(input){
+  const d=input||{};
+  for(const [k,label] of [["geometrySourceReference","مرجع نقشه و آرایش گروه انکر"],["groupCapacitySourceReference","مرجع ظرفیت طراحی گروه با لحاظ اثر هم‌پوشانی"],["combinationDefinition","تعریف ترکیب بار ULS"]]){
+   if(typeof d[k]!=="string"||!d[k].trim())throw new Error(label+" الزامی است.");
+  }
+  const count=finite(d.anchorCount,"تعداد انکرهای گروه");
+  if(!Number.isInteger(count)||count<2)throw new Error("تعداد انکرهای گروه باید عدد صحیح و حداقل ۲ باشد.");
+  const checks=[
+   ["tensionBreakout","کشش شکست مخروطی گروه","groupTensionDemandKN","groupTensionBreakoutDesignCapacityKN"],
+   ["tensionPullout","کشش بیرون‌کشیدگی گروه","groupTensionDemandKN","groupPulloutDesignCapacityKN"],
+   ["shearEdge","برش شکست لبه گروه","groupShearDemandKN","groupEdgeShearDesignCapacityKN"],
+   ["shearPryout","برش pryout گروه","groupShearDemandKN","groupPryoutDesignCapacityKN"]
+  ].map(([mode,label,dk,ck])=>{
+   const demand=finite(d[dk],label+"؛ تقاضای گروه"),capacity=finite(d[ck],label+"؛ ظرفیت طراحی گروه");
+   if(demand<0||capacity<=0)throw new Error("تقاضای گروه نباید منفی و ظرفیت گروه باید مثبت باشد.");
+   return Object.freeze({mode,label,demandKN:demand,designCapacityKN:capacity,utilization:demand/capacity,pass:demand<=capacity+1e-9});
+  });
+  return Object.freeze({success:checks.every(x=>x.pass),anchorCount:count,checks:Object.freeze(checks),
+   geometrySourceReference:d.geometrySourceReference.trim(),groupCapacitySourceReference:d.groupCapacitySourceReference.trim(),combinationDefinition:d.combinationDefinition.trim(),
+   individualAnchorChecksIncluded:false,
+   limitations:Object.freeze([
+    "این کنترل فقط تقاضای کل گروه را با ظرفیت طراحی کل گروه که کاربر وارد کرده مقایسه می‌کند؛ ظرفیت گروه را از ظرفیت انکرهای منفرد جمع نمی‌زند.",
+    "ظرفیت‌های گروه باید اثر هم‌پوشانی مخروط‌های شکست، فاصله انکرها، فاصله لبه، عمق مهاری، ضخامت عضو، ترک‌خوردگی و آرماتور را طبق ضابطه معتبر دربرگیرند.",
+    "تقاضای گروه باید از تحلیل سازگار با توزیع واقعی نیرو و خروج از مرکز گروه استخراج شود؛ این تابع توزیع نیرو را محاسبه نمی‌کند.",
+    "کنترل انکر منفرد، اندرکنش کشش-برش، شکست فولاد، آرماتور مکمل، خمش صفحه و اتصال به بتن جداگانه لازم‌اند.",
+    "این غربال ظرفیت گروه جایگزین طراحی کامل و کنترل آیین‌نامه‌ای نیست."
+   ])});
+ }
+ const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity,checkConcreteAnchorFailure,checkAnchorSteelInteraction,checkAnchorGroupCapacity});
  root.SahroudBasePlateCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
