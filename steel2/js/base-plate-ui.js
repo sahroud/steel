@@ -5,7 +5,7 @@
   const button=$("btnCheckBasePlateBending"),enabled=$("soilControlEnabled");
   if(!button||button.dataset.bound==="1")return;
   button.dataset.bound="1";
-  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","anchorInteractionInput","anchorGroupInput","anchorGeometryInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
+  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","anchorInteractionInput","anchorGroupCapacityInput","anchorGeometryInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
   const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;const c=$("btnCheckConcreteAnchor");if(c)c.disabled=!enabled?.checked;const i=$("btnCheckAnchorInteraction");if(i)i.disabled=!enabled?.checked;const g=$("btnCheckAnchorGroup");if(g)g.disabled=!enabled?.checked;const geo=$("btnCheckAnchorGeometry");if(geo)geo.disabled=!enabled?.checked;};
   enabled?.addEventListener("change",sync);sync();
   const bearingButton=$("btnCheckBasePlateBearing");
@@ -77,9 +77,9 @@
   });
   const groupButton=$("btnCheckAnchorGroup");
   if(groupButton)groupButton.addEventListener("click",()=>{
-   const out=$("anchorGroupResult");
+   const out=$("anchorGroupCapacityResult");
    try{
-    const r=root.SahroudBasePlateCheck.checkAnchorGroupCapacity(JSON.parse($("anchorGroupInput").value));
+    const r=root.SahroudBasePlateCheck.checkAnchorGroupCapacity(JSON.parse($("anchorGroupCapacityInput").value));
     const f=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:4});
     out.textContent=[r.success?"نتیجه: تقاضای کل گروه در هر چهار ظرفیت طراحی گروهِ واردشده قرار دارد.":"نتیجه: دست‌کم یک تقاضای کل گروه از ظرفیت طراحی گروه عبور کرده است.",
      ...r.checks.map(x=>x.label+" | تقاضا="+f(x.demandKN)+" kN | ظرفیت گروه="+f(x.designCapacityKN)+" kN | نسبت="+f(x.utilization)+" | "+(x.pass?"قبول":"مردود")),
