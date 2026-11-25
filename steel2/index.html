@@ -410,6 +410,24 @@
 
 
         <hr>
+        <h4>کنترل ظرفیت کل گروه انکر و هم‌پوشانی شکست بتن</h4>
+        <div class="notice">تقاضای کل گروه و ظرفیت طراحی کل گروه را وارد کنید. ظرفیت گروه باید از محاسبه معتبر با لحاظ هم‌پوشانی مخروط‌ها، فاصله انکرها و لبه، عمق مهاری و آرماتور استخراج شده باشد. نرم‌افزار ظرفیت گروه را از جمع ظرفیت انکرهای منفرد حدس نمی‌زند.</div>
+        <div class="field"><label for="anchorGroupInput">تقاضا و ظرفیت طراحی کل گروه (JSON)</label>
+        <textarea id="anchorGroupInput" rows="17" spellcheck="false">{
+  "geometrySourceReference": "شماره نقشه و آرایش واقعی گروه انکر",
+  "groupCapacitySourceReference": "محاسبات معتبر ظرفیت گروه با لحاظ هم‌پوشانی مخروط‌ها",
+  "combinationDefinition": "شناسه ترکیب بار ULS",
+  "anchorCount": 4,
+  "groupTensionDemandKN": 120,
+  "groupTensionBreakoutDesignCapacityKN": 180,
+  "groupPulloutDesignCapacityKN": 160,
+  "groupShearDemandKN": 40,
+  "groupEdgeShearDesignCapacityKN": 70,
+  "groupPryoutDesignCapacityKN": 60
+}</textarea></div>
+        <div class="button-grid"><button id="btnCheckAnchorGroup" class="btn primary" type="button" disabled>کنترل ظرفیت کل گروه انکر</button></div>
+        <pre id="anchorGroupResult" class="notice" aria-live="polite">ظرفیت‌های طراحی کل گروه و مرجع محاسبات را وارد کنید.</pre>
+
         <h4>کنترل اندرکنش کشش و برش فولاد انکر</h4>
         <div class="notice">این پنل رابطه اندرکنش را به‌صورت عمومی و فقط با توان‌ها و حدی که از ضابطه حاکم وارد می‌کنید ارزیابی می‌کند. هیچ رابطه آیین‌نامه‌ای به‌طور خودکار فرض نشده است. اگر ضابطه پروژه رابطه دیگری دارد، این مدل را برای تأیید نهایی به‌کار نبرید.</div>
         <div class="field"><label for="anchorInteractionInput">رابطه، مرجع و تقاضا/ظرفیت هر انکر (JSON)</label>
@@ -507,8 +525,8 @@
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
 <script src="js/ui-organization.js?v=20261112compact3"></script>
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
-<script src="js/base-plate-check.js?v=20261125-interaction1"></script>
-<script src="js/base-plate-ui.js?v=20261125-interaction1"></script>
+<script src="js/base-plate-check.js?v=20261125-group1"></script>
+<script src="js/base-plate-ui.js?v=20261125-group1"></script>
 <script src="js/auto-workflow.js?v=20261125-combo-metadata3"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
