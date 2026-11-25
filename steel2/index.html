@@ -316,6 +316,24 @@
         </div>
         <div class="button-grid"><button id="btnRunSlidingCheck" class="btn primary" type="button" disabled>اجرای کنترل لغزش</button></div>
         <pre id="slidingCheckResult" class="notice" aria-live="polite">ورودی‌های مستند را وارد و کنترل را فعال کنید.</pre>
+        <hr>
+        <h4>توزیع مقدماتی کشش بین انکربولت‌ها</h4>
+        <div class="notice">ورودی باید از تقاضای ULS معتبر و نقشه واقعی آرایش انکرها تهیه شود. مختصات X و Z بر حسب میلی‌متر، لنگرها بر حسب kN.m و نیروی بلندکننده بر حسب kN است. مدل فعلی صفحه‌ستون را صلب و انکرها را هم‌سختی و الاستیک فرض می‌کند؛ اگر هر انکر وارد فشار شود، نتیجه مسدود است و تحلیل تماس یک‌طرفه لازم خواهد بود. این ابزار ظرفیت انکر یا بتن را کنترل نمی‌کند.</div>
+        <div class="field"><label for="anchorGroupInput">داده تقاضا و مختصات انکرها (JSON)</label>
+        <textarea id="anchorGroupInput" rows="12" spellcheck="false">{
+  "upliftDemandKN": 120,
+  "MxKNm": 0,
+  "MzKNm": 0,
+  "geometrySourceReference": "شماره نقشه صفحه‌ستون و جزئیات انکر",
+  "anchors": [
+    {"id":"A1","xMM":-100,"zMM":-100},
+    {"id":"A2","xMM":100,"zMM":-100},
+    {"id":"A3","xMM":-100,"zMM":100},
+    {"id":"A4","xMM":100,"zMM":100}
+  ]
+}</textarea></div>
+        <div class="button-grid"><button id="btnMapAnchorGroup" class="btn primary" type="button" disabled>محاسبه توزیع کشش انکرها</button></div>
+        <pre id="anchorGroupResult" class="notice" aria-live="polite">پس از ورود داده واقعی و فعال‌بودن کنترل فونداسیون، محاسبه را اجرا کنید.</pre>
     </section>
 
     <section class="panel" id="cantileverCheckPanel">
@@ -394,7 +412,7 @@
 <script src="js/connection-design.js?v=20261110d"></script>
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
 <script src="js/ui-organization.js?v=20261112compact3"></script>
-<script src="js/foundation-soil-check.js?v=20261125-anchor-demand1"></script>
+<script src="js/foundation-soil-check.js?v=20261125-anchor-group-ui1"></script>
 <script src="js/auto-workflow.js?v=20261125-combo-metadata3"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
