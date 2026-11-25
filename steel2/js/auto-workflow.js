@@ -109,7 +109,7 @@
       return false;
     }
   }
-  function run() {
+  async function run() {
     if(busy)return;
     busy=true;
     const rows=[];
@@ -178,8 +178,30 @@
           hasMemberDemand,
           hasMemberDemand?"تقاضا و پوش نیروهای اعضا در جدول تفکیکی تحلیل ترکیبات بار تولید شده است؛ دکمه مستقل دیگری برای این مرحله در صفحه وجود ندارد.":"در نتایج ترکیبات، جدول تقاضای تفکیکی اعضا تولید نشده است.");
 
-        addLine(rows,"تحلیل سه‌بعدی قاب‌های طولی و اعضای فرعی",false,
-          "حل‌گر فعلی فقط قاب عرضی دوبعدی نمونه را حل می‌کند. نیروهای طولی پرلین‌ها، قیدهای دیوار، ستونک‌های انتهایی و مهاربندها هنوز در ماتریس سختی سه‌بعدی تحلیل نشده‌اند؛ بنابراین طراحی نهایی این اعضا از این مدل هندسی قابل استخراج نیست.");
+        const model3D=window.SteelStructuralModel;
+        const threeDResults=[];
+        if(typeof model3D?.analyze3D==="function") {
+          const combos=window.SteelLoads?.getData?.().combinations||[];
+          for(let i=0;i<Math.min(combos.length,3);i++) {
+            try {
+              const result=await model3D.analyze3D("combo"+i);
+              const equilibriumOK=!!result?.equilibrium?.ok;
+              threeDResults.push({index:i,label:combos[i]?.name||("ترکیب "+(i+1)),success:!!result?.success,equilibriumOK,result});
+              addLine(rows,"تحلیل سه‌بعدی "+(combos[i]?.name||("ترکیب "+(i+1))),
+                !!result?.success&&equilibriumOK,
+                result?.success
+                  ? "مدل سه‌بعدی حل شد؛ "+result.nodeCount+" گره و "+result.memberCount+" عضو. کنترل تعادل "+(equilibriumOK?"قبول شد.":"نیازمند بررسی است.")+" بیشینه جابه‌جایی: "+(Number(result.maxTranslation)*1000).toFixed(3)+" میلی‌متر. "+(result.warning||"")
+                  : "حل‌گر سه‌بعدی نتیجه معتبر تولید نکرد.");
+            } catch(e) {
+              threeDResults.push({index:i,label:combos[i]?.name||("ترکیب "+(i+1)),success:false,error:e?.message||String(e)});
+              addLine(rows,"تحلیل سه‌بعدی "+(combos[i]?.name||("ترکیب "+(i+1))),false,e?.message||String(e));
+            }
+          }
+          model3D.last3DCombinationResults=threeDResults;
+        } else {
+          addLine(rows,"تحلیل سه‌بعدی قاب‌های طولی و اعضای فرعی",false,
+            "تابع تحلیل سه‌بعدی در نسخه بارگذاری‌شده در دسترس نیست.");
+        }
 
         const bucklingMessage=$("bucklingMessage");
         if($("combinationBucklingResults"))$("combinationBucklingResults").innerHTML="";
