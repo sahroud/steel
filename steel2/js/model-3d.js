@@ -651,6 +651,11 @@
       selected={key:loadCase,label:combo.name,direction:[0,-1,0],
         factors:{dead:Number(combo.dead)||0,live:Number(combo.live)||0,snow:Number(combo.snow)||0},
         windFactor:Number(combo.wind)||0,windSign:Number(combo.windSign)||1,
+        classification:combo.classification||"unclassified",
+        status:combo.status||"unverified",
+        liveLoadKind:combo.liveLoadKind||"unspecified",
+        includesWind:combo.includesWind===true,
+        includesSeismic:combo.includesSeismic===true,
         deadFactor:Number(combo.dead)||0};
     }
     if(!selected)throw new Error("حالت بار انتخابی پشتیبانی نمی‌شود.");
@@ -845,6 +850,11 @@
     }
     result.loadCase=selected.key;
     result.loadCaseLabel=selected.label;
+    result.combinationClassification=selected.classification||"single-load-case";
+    result.combinationStatus=selected.status||"unverified";
+    result.liveLoadKind=selected.liveLoadKind||"unspecified";
+    result.includesWind=selected.includesWind===true;
+    result.includesSeismic=selected.includesSeismic===true;
     result.supportType=fixed?"گیردار":"مفصلی";
     result.selfWeight={included:selected.deadFactor>0,deadLoadFactor:selected.deadFactor,unitWeightKNm3:steelUnitWeightKNm3,totalKN:selfWeightKN,memberCount:selfWeightMemberCount,bySectionGroup:selfWeightByGroup};
     result.connectionModel="اتصال پرلین به رفتر: تقریب کلیپس/نبشی دوپیچه؛ انتقال جابه‌جایی مشترک است، دو دوران خمشی پرلین از رفتر جدا شده‌اند و دوران حول محور طولی پرلین مشترک باقی مانده است. این مدل سختی واقعی اتصال را محاسبه نمی‌کند.";
