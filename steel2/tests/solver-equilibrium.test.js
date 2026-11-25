@@ -33,3 +33,24 @@ test("3D solver exposes applied load, support reaction and residual ledgers",()=
   assert.equal(result.equilibrium.forceResidualN.length,3);
   assert.equal(result.equilibrium.momentResidualNm.length,3);
 });
+
+test("3D solver preserves zero-valued support reaction records for every restrained node",()=>{
+  const unloaded={
+    nodes:[{id:"A",x:0,y:0,z:0},{id:"B",x:4,y:0,z:0}],
+    members:[{id:"AB",start:"A",end:"B",type:"beam"}]
+  };
+  const result=globalThis.SteelFrame3D.analyze(unloaded,{
+    supports:[
+      {nodeId:"A",fixedDofs:[0,1,2,3,4,5]},
+      {nodeId:"B",fixedDofs:[0,1,2,3,4,5]}
+    ],
+    sectionResolver:()=>section
+  });
+  assert.equal(result.success,true);
+  assert.equal(result.supportReactionsAll.length,2);
+  assert.deepEqual(result.supportReactionsAll.map(x=>x.nodeId),["A","B"]);
+  assert.deepEqual(result.supportReactionsAll.map(x=>x.values),[
+    [0,0,0,0,0,0],[0,0,0,0,0,0]
+  ]);
+  assert.equal(result.reactions.length,0,"legacy nonzero-only reactions remain available");
+});
