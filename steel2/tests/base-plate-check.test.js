@@ -122,3 +122,19 @@ test("anchor group screening rejects failed capacities and missing group provena
  assert.throws(()=>api.checkAnchorGroupCapacity({...base,groupCapacitySourceReference:""}),/مرجع/);
  assert.throws(()=>api.checkAnchorGroupCapacity({...base,anchorCount:1}),/حداقل ۲/);
 });
+
+test("anchor geometry checks edge distances and pair spacing from concrete boundaries",()=>{
+ const r=api.checkAnchorGeometry({geometrySourceReference:"concrete member drawing C1",concreteWidthMM:500,concreteLengthMM:600,effectiveEmbedmentMM:180,minimumEdgeDistanceMM:75,minimumAnchorSpacingMM:100,
+  anchors:[{id:"A1",xMM:100,zMM:100},{id:"A2",xMM:300,zMM:100}]});
+ assert.equal(r.success,true);assert.equal(r.anchors[0].governingEdgeDistanceMM,100);assert.equal(r.pairs[0].spacingMM,200);
+});
+test("anchor geometry flags inadequate edge distance and spacing",()=>{
+ const r=api.checkAnchorGeometry({geometrySourceReference:"C1",concreteWidthMM:300,concreteLengthMM:300,effectiveEmbedmentMM:100,minimumEdgeDistanceMM:80,minimumAnchorSpacingMM:120,
+  anchors:[{id:"A1",xMM:50,zMM:50},{id:"A2",xMM:150,zMM:50}]});
+ assert.equal(r.success,false);assert.equal(r.edgePass,false);assert.equal(r.spacingPass,false);
+});
+test("anchor geometry rejects anchors outside concrete and invalid inputs",()=>{
+ const base={geometrySourceReference:"C1",concreteWidthMM:300,concreteLengthMM:300,effectiveEmbedmentMM:100,minimumEdgeDistanceMM:50,minimumAnchorSpacingMM:100,anchors:[{id:"A1",xMM:50,zMM:50},{id:"A2",xMM:250,zMM:50}]};
+ assert.throws(()=>api.checkAnchorGeometry({...base,anchors:[...base.anchors,{id:"A3",xMM:301,zMM:50}]}),/خارج/);
+ assert.throws(()=>api.checkAnchorGeometry({...base,geometrySourceReference:""}),/مرجع/);
+});
