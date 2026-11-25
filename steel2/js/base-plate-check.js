@@ -46,7 +46,39 @@
     "این خروجی ظرفیت نهایی اتصال یا تأیید آیین‌نامه‌ای نیست؛ طراحی نهایی نیازمند تحلیل سازگار صفحه/تماس و کنترل ضوابط معتبر پروژه است."
    ])});
  }
- const api=Object.freeze({checkBasePlateCantileverBending});
+
+ function checkBasePlateBearingContact(input){
+  const d=input||{};
+  const B=finite(d.plateWidthMM,"عرض صفحه‌ستون");
+  const L=finite(d.plateLengthMM,"طول صفحه‌ستون");
+  const N=finite(d.compressionKN,"نیروی فشاری صفحه‌ستون");
+  const Mx=finite(d.MxKNm,"لنگر حول محور X");
+  const Mz=finite(d.MzKNm,"لنگر حول محور Z");
+  const qa=finite(d.allowableBearingMPa,"تنش/ظرفیت مجاز تماس بتن یا گروت");
+  if(!(B>0&&L>0&&N>0&&qa>0))throw new Error("ابعاد، نیروی فشاری و ظرفیت مجاز تماس باید مثبت باشند.");
+  if(typeof d.geometrySourceReference!=="string"||!d.geometrySourceReference.trim())throw new Error("مرجع هندسه صفحه‌ستون الزامی است.");
+  if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())throw new Error("مرجع گزارش مصالح/ژئوتکنیک یا مبنای ظرفیت تماس الزامی است.");
+  if(typeof d.combinationDefinition!=="string"||!d.combinationDefinition.trim())throw new Error("تعریف ترکیب بار فشاری و لنگرها الزامی است.");
+  const area=B*L, qAvg=N*1000/area;
+  const qMx=6*Math.abs(Mx)*1e6/(B*L*L);
+  const qMz=6*Math.abs(Mz)*1e6/(L*B*B);
+  const qMax=qAvg+qMx+qMz, qMin=qAvg-qMx-qMz;
+  const fullContact=qMin>=-1e-9;
+  const bearingPass=fullContact&&qMax<=qa+1e-9;
+  return Object.freeze({success:bearingPass,method:"rigid rectangular plate; linear full-contact pressure; biaxial moments; no tensile contact",
+   plateWidthMM:B,plateLengthMM:L,compressionKN:N,MxKNm:Mx,MzKNm:Mz,areaMM2:area,
+   averagePressureMPa:qAvg,qMaxMPa:qMax,qMinMPa:qMin,allowableBearingMPa:qa,fullContact,bearingPass,
+   geometrySourceReference:d.geometrySourceReference.trim(),sourceReference:d.sourceReference.trim(),combinationDefinition:d.combinationDefinition.trim(),
+   status:!fullContact?"blocked-partial-contact-analysis-required":qMax>qa?"fail-bearing-pressure":"pass-full-contact-bearing",
+   limitations:Object.freeze([
+    "صفحه کاملاً صلب و توزیع خطی فشار تماس مستطیلی فرض شده است؛ انعطاف صفحه و سختی واقعی گروت/بتن مدل نشده‌اند.",
+    "اگر فشار حداقل منفی شود، تماس جزئی و ناحیه جداشده ایجاد می‌شود؛ این مدل آن را حل نمی‌کند و نتیجه مسدود است.",
+    "ظرفیت مجاز تماس باید از مبنای معتبر طراحی بتن/گروت و مشخصات پروژه وارد شود؛ این ماژول آن را از مقاومت بتن استخراج نمی‌کند.",
+    "کنترل خردشدگی موضعی، پخش بار در پی، مقاومت بتن، آرماتور، پانچ، لغزش، انکر و جوش در این تابع انجام نمی‌شود.",
+    "این کنترل مقدماتی جایگزین کنترل‌های آیین‌نامه‌ای صفحه‌ستون و بتن نیست."
+   ])});
+ }
+ const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact});
  root.SahroudBasePlateCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
