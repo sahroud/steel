@@ -167,7 +167,7 @@
         if(typeof window.SteelAnalysis?.calculateCombinations!=="function") {
           throw new Error("تابع محاسبه هم‌زمان ترکیبات بار در دسترس نیست؛ فایل app.js را به‌روزرسانی کنید.");
         }
-        comboRun=window.SteelAnalysis.calculateCombinations();
+        comboRun=await window.SteelAnalysis.calculateCombinations();
       } catch(e) {
         comboRun={success:false,error:e?.message||String(e)};
       }
