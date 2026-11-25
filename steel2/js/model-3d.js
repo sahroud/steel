@@ -752,19 +752,17 @@
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports);
     // Keep a traceable, signed support-reaction ledger for later SLS foundation mapping.
     // Solver units are N and N.m; global Y is vertical in this model.
-    const reactionByNode=new Map((result.reactions||[]).map(item=>[String(item.nodeId),item.values||[]]));
-    const nodeById=new Map(analysisModel.nodes.map(node=>[String(node.id),node]));
     result.supportReactionLedger=supports.map(support=>{
-      const node=nodeById.get(String(support.nodeId));
-      const values=reactionByNode.get(String(support.nodeId))||[0,0,0,0,0,0];
-      const fixedDofs=[...support.fixedDofs];
+      const __sahroudReactionLedgerNode20261125=analysisModel.nodes.find(item=>String(item.id)===String(support.nodeId));
+      const __sahroudReactionLedgerEntry20261125=(result.reactions||[]).find(item=>String(item.nodeId)===String(support.nodeId));
+      const __sahroudReactionLedgerValues20261125=__sahroudReactionLedgerEntry20261125?.values||[0,0,0,0,0,0];
       return {
         nodeId:support.nodeId,
-        nodeKind:node?.kind||null,
-        coordinatesM:node?{x:Number(node.x)||0,y:Number(node.y)||0,z:Number(node.z)||0}:null,
-        fixedDofs,
-        reactionN:{Fx:Number(values[0])||0,Fy:Number(values[1])||0,Fz:Number(values[2])||0},
-        reactionNm:{Mx:Number(values[3])||0,My:Number(values[4])||0,Mz:Number(values[5])||0},
+        nodeKind:__sahroudReactionLedgerNode20261125?.kind||null,
+        coordinatesM:__sahroudReactionLedgerNode20261125?{x:Number(__sahroudReactionLedgerNode20261125.x)||0,y:Number(__sahroudReactionLedgerNode20261125.y)||0,z:Number(__sahroudReactionLedgerNode20261125.z)||0}:null,
+        fixedDofs:[...support.fixedDofs],
+        reactionN:{Fx:Number(__sahroudReactionLedgerValues20261125[0])||0,Fy:Number(__sahroudReactionLedgerValues20261125[1])||0,Fz:Number(__sahroudReactionLedgerValues20261125[2])||0},
+        reactionNm:{Mx:Number(__sahroudReactionLedgerValues20261125[3])||0,My:Number(__sahroudReactionLedgerValues20261125[4])||0,Mz:Number(__sahroudReactionLedgerValues20261125[5])||0},
         units:{force:"N",moment:"N.m",coordinates:"m"},
         signConvention:"Global axes; signed solver reactions. Global Y is vertical; do not convert to footing actions without confirming local footing axes and sign convention."
       };
