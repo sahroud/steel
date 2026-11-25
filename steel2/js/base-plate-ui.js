@@ -5,8 +5,8 @@
   const button=$("btnCheckBasePlateBending"),enabled=$("soilControlEnabled");
   if(!button||button.dataset.bound==="1")return;
   button.dataset.bound="1";
-  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","anchorInteractionInput","anchorGroupInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
-  const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;const c=$("btnCheckConcreteAnchor");if(c)c.disabled=!enabled?.checked;const i=$("btnCheckAnchorInteraction");if(i)i.disabled=!enabled?.checked;const g=$("btnCheckAnchorGroup");if(g)g.disabled=!enabled?.checked;};
+  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","anchorInteractionInput","anchorGroupInput","anchorGeometryInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
+  const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;const c=$("btnCheckConcreteAnchor");if(c)c.disabled=!enabled?.checked;const i=$("btnCheckAnchorInteraction");if(i)i.disabled=!enabled?.checked;const g=$("btnCheckAnchorGroup");if(g)g.disabled=!enabled?.checked;const geo=$("btnCheckAnchorGeometry");if(geo)geo.disabled=!enabled?.checked;};
   enabled?.addEventListener("change",sync);sync();
   const bearingButton=$("btnCheckBasePlateBearing");
   if(bearingButton)bearingButton.addEventListener("click",()=>{
@@ -60,6 +60,21 @@
   });
 
 
+
+  const geometryButton=$("btnCheckAnchorGeometry");
+  if(geometryButton)geometryButton.addEventListener("click",()=>{
+   const out=$("anchorGeometryResult");
+   try{
+    const r=root.SahroudBasePlateCheck.checkAnchorGeometry(JSON.parse($("anchorGeometryInput").value));
+    const f=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:2});
+    out.textContent=[r.success?"نتیجه: فاصله‌های هندسی انکرها از حداقل‌های ورودی کمتر نیست.":"نتیجه: حداقل یکی از فاصله‌های لبه یا محور انکرها ناکافی است.",
+     ...r.anchors.map(a=>a.id+" | لبه‌های X-/X+/Z-/Z+ = "+Object.values(a.edgeDistancesMM).map(f).join(" / ")+" mm | حداقل="+f(a.governingEdgeDistanceMM)+" mm | "+(a.edgePass?"قبول":"مردود")),
+     ...r.pairs.map(p=>p.anchorA+"–"+p.anchorB+" | فاصله محور="+f(p.spacingMM)+" mm | "+(p.pass?"قبول":"مردود")),
+     "عمق مؤثر ثبت‌شده="+f(r.effectiveEmbedmentMM)+" mm | مرجع هندسه: "+r.geometrySourceReference,
+     "محدودیت‌ها:",...r.limitations.map(x=>"• "+x)].join("\\n");
+    out.style.color="#b45309";
+   }catch(e){out.textContent="کنترل هندسه انکر انجام نشد: "+e.message;out.style.color="#b45309";}
+  });
   const groupButton=$("btnCheckAnchorGroup");
   if(groupButton)groupButton.addEventListener("click",()=>{
    const out=$("anchorGroupResult");
