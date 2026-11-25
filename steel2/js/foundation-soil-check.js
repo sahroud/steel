@@ -68,11 +68,12 @@
   const d=input||{};
   if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())throw new Error("مرجع گزارش ژئوتکنیک/طراحی برای کنترل لغزش الزامی است.");
   if(typeof d.combinationDefinition!=="string"||!d.combinationDefinition.trim())throw new Error("تعریف ترکیب بار کنترل لغزش الزامی است.");
-  const N=finite(d.normalCompressionKN,"نیروی قائم فشاری مؤثر");
-  const Fx=finite(d.horizontalActionsKN?.Fx,"نیروی افقی Fx");
-  const Fz=finite(d.horizontalActionsKN?.Fz,"نیروی افقی Fz");
-  const mu=finite(d.interfaceFrictionCoefficient,"ضریب اصطکاک سطح تماس");
-  const requiredFS=finite(d.requiredFactorOfSafety,"ضریب اطمینان لازم در برابر لغزش");
+  const requiredFinite=(v,label)=>{if(v===undefined||v===null||String(v).trim()==="")throw new Error(label+" باید صریحاً وارد شود؛ برای مقدار واقعی صفر، صفر را وارد کنید.");return finite(v,label);};
+  const N=requiredFinite(d.normalCompressionKN,"نیروی قائم فشاری مؤثر");
+  const Fx=requiredFinite(d.horizontalActionsKN?.Fx,"نیروی افقی Fx");
+  const Fz=requiredFinite(d.horizontalActionsKN?.Fz,"نیروی افقی Fz");
+  const mu=requiredFinite(d.interfaceFrictionCoefficient,"ضریب اصطکاک سطح تماس");
+  const requiredFS=requiredFinite(d.requiredFactorOfSafety,"ضریب اطمینان لازم در برابر لغزش");
   const additionalResistance=d.additionalResistanceKN===undefined?0:finite(d.additionalResistanceKN,"مقاومت اضافی مستند");
   if(!(N>0)||mu<0||!(requiredFS>0)||additionalResistance<0)
    throw new RangeError("نیروی قائم باید مثبت و ضریب اصطکاک/مقاومت اضافی نامنفی و ضریب اطمینان لازم مثبت باشد.");
