@@ -54,3 +54,21 @@ test("3D solver preserves zero-valued support reaction records for every restrai
   ]);
   assert.equal(result.reactions.length,0,"legacy nonzero-only reactions remain available");
 });
+
+test("3D solver preserves every support reaction and balances a multi-support frame",()=>{
+  const result=globalThis.SteelFrame3D.analyze(cantilever,{
+    supports:[
+      {nodeId:"A",fixedDofs:[0,1,2,3,4,5]},
+      {nodeId:"B",fixedDofs:[0,1,2,3,4,5]}
+    ],
+    sectionResolver:()=>section
+  });
+  assert.equal(result.success,true);
+  assert.equal(result.supportReactionsAll.length,2);
+  assert.deepEqual(result.supportReactionsAll.map(x=>x.nodeId),["A","B"]);
+  assert.ok(result.supportReactionsAll.every(x=>x.values.length===6&&x.values.every(Number.isFinite)));
+  const vertical=result.supportReactionsAll.reduce((sum,x)=>sum+x.values[1],0);
+  assert.ok(Math.abs(vertical-4000)<1e-6,"support vertical reactions must balance 4,000 N");
+  assert.equal(result.equilibrium.ok,true);
+  assert.ok(result.reactions.length>=1);
+});
