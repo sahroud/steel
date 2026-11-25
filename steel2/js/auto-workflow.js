@@ -204,7 +204,7 @@
           }
           model3D.last3DCombinationResults=threeDResults;
           const __sahroudReactionLedgerCount=threeDResults.filter(item=>item.success&&item.equilibriumOK&&Array.isArray(item.result?.supportReactionLedger)).length;
-          const __sahroudSlsLedgerCount=threeDResults.filter(item=>item.success&&item.equilibriumOK&&Array.isArray(item.result?.supportReactionLedger)&&(/\\bSLS\\b|بهره‌برداری/i.test(String(item.label||"")))).length;
+          const __sahroudSlsLedgerCount=threeDResults.filter(item=>item.success&&item.equilibriumOK&&Array.isArray(item.result?.supportReactionLedger)&&(/\bSLS\b|بهره‌برداری/i.test(String(item.label||"")))).length;
           addLine(rows,"آمادگی واکنش‌ها برای کنترل پی",false,
             "دفتر واکنش معتبر از نظر حل و تعادل برای "+__sahroudReactionLedgerCount+" ترکیب سه‌بعدی تولید شد؛ از این تعداد "+__sahroudSlsLedgerCount+" ترکیب با برچسب SLS/بهره‌برداری شناسایی شد. انتقال خودکار به پی هنوز مسدود است تا ترکیب بهره‌برداری، علامت محورها و مرجع ژئوتکنیک تأیید شوند؛ ULS جایگزین SLS نیست.");
         } else {
