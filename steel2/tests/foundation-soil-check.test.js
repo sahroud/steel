@@ -179,7 +179,7 @@ test("reaction mapping requires all translational restraints", () => {
       coordinatesM: { x: 0, y: 0, z: 0 },
       fixedDofs: [0, 1],
       reactionN: { Fx: 0, Fy: 1, Fz: 0 },
-      reactionNm: { Mx: 0, Mz: 0 },
+      reactionNm: { Mx: 0, My: 0, Mz: 0 },
       units: { force: "N", moment: "N.m" }
     }
   }), /انتقالی/);
