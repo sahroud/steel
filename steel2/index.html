@@ -410,6 +410,26 @@
 
 
         <hr>
+        <h4>کنترل هندسه انکر، فاصله لبه و فاصله محورها</h4>
+        <div class="notice">مختصات انکرها را نسبت به مرز واقعی عضو بتنی وارد کنید. حداقل فاصله‌های مجاز باید از ضابطه و نوع انکر استخراج شوند. این کنترل هندسی است و ظرفیت بتن یا کفایت عمق مهاری را محاسبه نمی‌کند.</div>
+        <div class="field"><label for="anchorGeometryInput">ابعاد عضو، عمق مهاری و مختصات انکرها (JSON)</label>
+        <textarea id="anchorGeometryInput" rows="17" spellcheck="false">{
+  "geometrySourceReference": "شماره نقشه عضو بتنی و آرایش انکر",
+  "concreteWidthMM": 500,
+  "concreteLengthMM": 600,
+  "effectiveEmbedmentMM": 180,
+  "minimumEdgeDistanceMM": 75,
+  "minimumAnchorSpacingMM": 100,
+  "anchors": [
+    {"id":"A1","xMM":100,"zMM":100},
+    {"id":"A2","xMM":300,"zMM":100},
+    {"id":"A3","xMM":100,"zMM":300},
+    {"id":"A4","xMM":300,"zMM":300}
+  ]
+}</textarea></div>
+        <div class="button-grid"><button id="btnCheckAnchorGeometry" class="btn primary" type="button" disabled>کنترل هندسه و فاصله انکرها</button></div>
+        <pre id="anchorGeometryResult" class="notice" aria-live="polite">هندسه واقعی عضو و مختصات انکرها را وارد کنید.</pre>
+
         <h4>کنترل ظرفیت کل گروه انکر و هم‌پوشانی شکست بتن</h4>
         <div class="notice">تقاضای کل گروه و ظرفیت طراحی کل گروه را وارد کنید. ظرفیت گروه باید از محاسبه معتبر با لحاظ هم‌پوشانی مخروط‌ها، فاصله انکرها و لبه، عمق مهاری و آرماتور استخراج شده باشد. نرم‌افزار ظرفیت گروه را از جمع ظرفیت انکرهای منفرد حدس نمی‌زند.</div>
         <div class="field"><label for="anchorGroupInput">تقاضا و ظرفیت طراحی کل گروه (JSON)</label>
@@ -525,8 +545,8 @@
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
 <script src="js/ui-organization.js?v=20261112compact3"></script>
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
-<script src="js/base-plate-check.js?v=20261125-group1"></script>
-<script src="js/base-plate-ui.js?v=20261125-group1"></script>
+<script src="js/base-plate-check.js?v=20261125-geometry1"></script>
+<script src="js/base-plate-ui.js?v=20261125-geometry1"></script>
 <script src="js/auto-workflow.js?v=20261125-combo-metadata3"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
