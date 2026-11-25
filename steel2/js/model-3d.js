@@ -772,6 +772,26 @@
         signConvention:"Global axes; signed solver reactions. Global Y is vertical; do not convert to footing actions without confirming local footing axes and sign convention."
       };
     });
+    const supportIds=supports.map(item=>String(item.nodeId));
+    const ledgerIds=result.supportReactionLedger.map(item=>String(item.nodeId));
+    const ledgerUniqueIds=new Set(ledgerIds);
+    const ledgerCoordinatesValid=result.supportReactionLedger.every(item=>
+      item.coordinatesM&&[item.coordinatesM.x,item.coordinatesM.y,item.coordinatesM.z].every(Number.isFinite));
+    const ledgerReactionsValid=result.supportReactionLedger.every(item=>
+      [...Object.values(item.reactionN),...Object.values(item.reactionNm)].every(Number.isFinite));
+    result.supportReactionLedgerAudit={
+      supportCount:supports.length,
+      ledgerCount:result.supportReactionLedger.length,
+      uniqueSupportCount:ledgerUniqueIds.size,
+      missingNodeIds:supportIds.filter(id=>!ledgerUniqueIds.has(id)),
+      unexpectedNodeIds:ledgerIds.filter(id=>!supportIds.includes(id)),
+      coordinatesValid:ledgerCoordinatesValid,
+      reactionsFinite:ledgerReactionsValid,
+      complete:supportIds.length===ledgerIds.length&&ledgerUniqueIds.size===supportIds.length&&
+        supportIds.every(id=>ledgerIds.includes(id))&&ledgerCoordinatesValid&&ledgerReactionsValid
+    };
+    if(!result.supportReactionLedgerAudit.complete)
+      throw new Error("دفتر واکنش تکیه‌گاه‌ها ناقص یا دارای شناسه تکراری/مختصات/واکنش نامعتبر است؛ انتقال به فونداسیون متوقف شد.");
 
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
