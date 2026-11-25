@@ -759,7 +759,7 @@
     // Solver units are N and N.m; global Y is vertical in this model.
     result.supportReactionLedger=supports.map(support=>{
       const node=analysisModel.nodes.find(item=>String(item.id)===String(support.nodeId));
-      const reactionEntry=(result.reactions||[]).find(item=>String(item.nodeId)===String(support.nodeId));
+      const reactionEntry=(result.supportReactionsAll||[]).find(item=>String(item.nodeId)===String(support.nodeId));
       const values=reactionEntry?.values;
       return {
         nodeId:support.nodeId,
