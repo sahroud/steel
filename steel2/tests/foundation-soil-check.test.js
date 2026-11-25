@@ -184,3 +184,47 @@ test("reaction mapping requires all translational restraints", () => {
     }
   }), /انتقالی/);
 });
+
+test("reaction mapping preserves the support identity and coordinates", () => {
+  const mapped = api.mapSupportReactionToSlsCase({
+    solverSuccess: true, equilibriumOK: true, loadCaseType: "SLS",
+    sourceReference: "تحلیل آزمایشی، ترکیب SLS مستند",
+    serviceabilityCheck: "foundation-bearing",
+    combinationDefinition: "D + Lr؛ تعریف آزمایشی",
+    footingWidthAxis: "X", footingLengthAxis: "Z", verticalAxis: "Y",
+    ledgerEntry: {
+      nodeId: "base-west-02",
+      coordinatesM: { x: -6, y: 0, z: 18 },
+      fixedDofs: [0, 1, 2],
+      reactionN: { Fx: 0, Fy: 250000, Fz: 0 },
+      reactionNm: { Mx: 0, Mz: 0 },
+      units: { force: "N", moment: "N.m" }
+    }
+  });
+  assert.equal(mapped.supportNodeId, "base-west-02");
+  assert.deepEqual(mapped.supportCoordinatesM, { x: -6, y: 0, z: 18 });
+});
+
+test("reaction mapping rejects incomplete or non-finite reaction ledger values", () => {
+  const input = {
+    solverSuccess: true, equilibriumOK: true, loadCaseType: "SLS",
+    sourceReference: "تحلیل آزمایشی",
+    serviceabilityCheck: "foundation-bearing",
+    combinationDefinition: "D + Lr؛ تعریف آزمایشی",
+    footingWidthAxis: "X", footingLengthAxis: "Z", verticalAxis: "Y",
+    ledgerEntry: {
+      nodeId: "base-1",
+      coordinatesM: { x: 0, y: 0, z: 0 },
+      fixedDofs: [0, 1, 2],
+      reactionN: { Fx: 0, Fy: 250000, Fz: 0 },
+      reactionNm: { Mx: 0, Mz: 0 },
+      units: { force: "N", moment: "N.m" }
+    }
+  };
+  assert.throws(() => api.mapSupportReactionToSlsCase({
+    ...input, ledgerEntry: { ...input.ledgerEntry, reactionN: { Fx: 0, Fy: "bad", Fz: 0 } }
+  }), /عدد محدود/);
+  assert.throws(() => api.mapSupportReactionToSlsCase({
+    ...input, ledgerEntry: { ...input.ledgerEntry, units: { force: "kN", moment: "N.m" } }
+  }), /واحدها/);
+});
