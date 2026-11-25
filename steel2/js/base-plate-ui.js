@@ -24,6 +24,23 @@
    }catch(e){out.textContent="کنترل فشار تماس انجام نشد: "+e.message;out.style.color="#b45309";}
   });
 
+
+  const steelButton=$("btnCheckAnchorSteel");
+  if(steelButton)steelButton.addEventListener("click",()=>{
+   const out=$("anchorSteelResult");
+   try{
+    const r=root.SahroudBasePlateCheck.checkAnchorSteelCapacity(JSON.parse($("anchorSteelInput").value));
+    const f=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:3});
+    out.textContent=[
+     r.success?"نتیجه: کنترل‌های مستقل کشش و برش فولاد انکر قبول‌اند؛ کنترل اندرکنش هنوز انجام نشده است.":"نتیجه: دست‌کم یکی از کنترل‌های مستقل کشش یا برش فولاد انکر مردود است.",
+     ...r.anchors.map(a=>a.id+" | کشش "+f(a.tensionDemandKN)+"/"+f(a.designTensionCapacityKN)+" kN، نسبت "+f(a.tensionUtilization)+" | برش برآیند "+f(a.resultantShearDemandKN)+"/"+f(a.designShearCapacityKN)+" kN، نسبت "+f(a.shearUtilization)+" | "+a.status),
+     "مرجع هندسه: "+r.geometrySourceReference+" | مرجع ظرفیت: "+r.capacitySourceReference+" | ترکیب: "+r.combinationDefinition,
+     "محدودیت‌ها:",...r.limitations.map(x=>"• "+x)
+    ].join("\\n");
+    out.style.color="#b45309";
+   }catch(e){out.textContent="کنترل فولاد انکر انجام نشد: "+e.message;out.style.color="#b45309";}
+  });
+
   button.addEventListener("click",()=>{
    const out=$("basePlateBendingResult");
    try{
