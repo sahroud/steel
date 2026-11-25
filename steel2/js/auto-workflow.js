@@ -246,6 +246,12 @@
 
       setReport(rows,"گزارش اجرای خودکار پروژه — نتایج مقدماتی");
       if(window.SteelProject?.setStatus)window.SteelProject.setStatus("اجرای خودکار مراحل وابسته انجام شد؛ موارد ناقص در گزارش اجرای خودکار مشخص شده‌اند.");
+    } catch (error) {
+      addLine(rows,"خطای پیش‌بینی‌نشده در اجرای خودکار",false,error?.stack||error?.message||String(error));
+      try { setReport(rows,"گزارش اجرای خودکار — خطای اجرایی"); }
+      catch (reportError) { console.error("SAHROUD STEEL report rendering failed:",reportError); }
+      console.error("SAHROUD STEEL auto workflow failed:",error);
+      if(window.SteelProject?.setStatus) window.SteelProject.setStatus("اجرای خودکار با خطا متوقف شد؛ جزئیات در گزارش و کنسول ثبت شد.");
     } finally {
       busy=false;
     }
