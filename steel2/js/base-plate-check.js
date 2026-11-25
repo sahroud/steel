@@ -119,7 +119,50 @@
    ])});
  }
 
- const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity});
+
+ function checkConcreteAnchorFailure(input){
+  const d=input||{};
+  if(typeof d.geometrySourceReference!=="string"||!d.geometrySourceReference.trim())throw new Error("مرجع هندسه، فاصله لبه و عمق مهاری الزامی است.");
+  if(typeof d.capacitySourceReference!=="string"||!d.capacitySourceReference.trim())throw new Error("مرجع ظرفیت‌های طراحی بتن/انکر الزامی است.");
+  if(typeof d.combinationDefinition!=="string"||!d.combinationDefinition.trim())throw new Error("تعریف ترکیب بار ULS الزامی است.");
+  if(!Array.isArray(d.anchors)||!d.anchors.length)throw new Error("حداقل یک رکورد تقاضا و ظرفیت انکر لازم است.");
+  const ids=new Set();
+  const anchors=d.anchors.map(a=>{
+   const id=String(a?.id??"").trim();
+   if(!id||ids.has(id))throw new Error("شناسه انکرها باید یکتا و غیرخالی باشد.");
+   ids.add(id);
+   const T=finite(a.tensionDemandKN,"تقاضای کشش انکر "+id);
+   const V=finite(a.resultantShearDemandKN,"تقاضای برش برآیند انکر "+id);
+   const caps={
+    concreteBreakoutTensionKN:finite(a.concreteBreakoutTensionCapacityKN,"ظرفیت طراحی شکست مخروطی بتن در کشش "+id),
+    pulloutTensionKN:finite(a.pulloutTensionCapacityKN,"ظرفیت طراحی بیرون‌کشیدگی در کشش "+id),
+    concreteEdgeShearKN:finite(a.concreteEdgeShearCapacityKN,"ظرفیت طراحی شکست لبه بتن در برش "+id),
+    pryoutShearKN:finite(a.pryoutShearCapacityKN,"ظرفیت طراحی pryout در برش "+id)
+   };
+   if(T<0||V<0||Object.values(caps).some(x=>x<=0))throw new Error("تقاضاها نباید منفی و تمام ظرفیت‌های طراحی باید مثبت باشند.");
+   const checks=[
+    {mode:"concrete-breakout-tension",demandKN:T,capacityKN:caps.concreteBreakoutTensionKN},
+    {mode:"pullout-tension",demandKN:T,capacityKN:caps.pulloutTensionKN},
+    {mode:"concrete-edge-shear",demandKN:V,capacityKN:caps.concreteEdgeShearKN},
+    {mode:"pryout-shear",demandKN:V,capacityKN:caps.pryoutShearKN}
+   ].map(x=>({...x,utilization:x.demandKN/x.capacityKN,pass:x.demandKN<=x.capacityKN+1e-9}));
+   return Object.freeze({id,checks:Object.freeze(checks),success:checks.every(x=>x.pass),
+    governingMode:checks.reduce((p,x)=>x.utilization>p.utilization?x:p),status:checks.every(x=>x.pass)?"pass-capacity-screening":"fail-capacity-screening"});
+  });
+  return Object.freeze({success:anchors.every(a=>a.success),anchors:Object.freeze(anchors),
+   interactionChecked:false,groupEffectsChecked:false,
+   geometrySourceReference:d.geometrySourceReference.trim(),capacitySourceReference:d.capacitySourceReference.trim(),
+   combinationDefinition:d.combinationDefinition.trim(),
+   limitations:Object.freeze([
+    "این بخش فقط تقاضای ورودی را با ظرفیت‌های طراحی ورودی مقایسه می‌کند؛ هیچ ظرفیت بتن یا انکر را از روی مقاومت بتن، قطر، عمق کاشت یا فاصله لبه تولید نمی‌کند.",
+    "ظرفیت‌های شکست مخروطی بتن، بیرون‌کشیدگی، شکست لبه بتن و pryout باید برای هندسه واقعی، بتن ترک‌خورده/ترک‌نخورده، فاصله لبه، فاصله انکرها، عمق مهاری، ضخامت عضو و آرماتور از ضابطه معتبر استخراج شوند.",
+    "اثر گروه انکر، هم‌پوشانی مخروط‌ها، خروج از مرکز گروه، آرماتور مکمل، شکست فولاد و اندرکنش کشش-برش در این تابع محاسبه نشده‌اند.",
+    "برای کنترل محافظه‌کارانه، ظرفیت‌های واردشده باید ظرفیت طراحی نهایی و سازگار با همان ترکیب بار باشند؛ استفاده از مقاومت اسمی به‌جای ظرفیت طراحی مجاز نیست.",
+    "این غربال جایگزین طراحی کامل اتصال و کنترل آیین‌نامه‌ای نیست."
+   ])});
+ }
+
+ const api=Object.freeze({checkBasePlateCantileverBending,checkBasePlateBearingContact,checkAnchorSteelCapacity,checkConcreteAnchorFailure});
  root.SahroudBasePlateCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
