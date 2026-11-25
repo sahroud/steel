@@ -401,3 +401,53 @@ test("sliding check handles zero horizontal demand without division by zero", ()
 test("sliding checker is exported for browser and Node consumers", () => {
   assert.equal(typeof api.checkFootingSliding, "function");
 });
+
+test("anchor demand mapping extracts ULS uplift and reverses base actions", () => {
+  const r=api.mapSupportReactionToAnchorDemand({
+    solverSuccess:true,equilibriumOK:true,loadCaseType:"ULS",
+    sourceReference:"تحلیل ULS آزمایشی، جدول واکنش",
+    combinationDefinition:"ترکیب حدی مستند آزمایشی",
+    footingWidthAxis:"X",footingLengthAxis:"Z",verticalAxis:"Y",
+    ledgerEntry:{
+      nodeId:"base-anchor-01",coordinatesM:{x:2,y:0,z:4},
+      fixedDofs:[0,1,2],
+      reactionN:{Fx:12000,Fy:-80000,Fz:-6000},
+      reactionNm:{Mx:15000000,My:-2000000,Mz:9000000},
+      units:{force:"N",moment:"N.m"}
+    }
+  });
+  assert.equal(r.upliftDemandKN,80);
+  assert.deepEqual(r.horizontalActionsKN,{Fx:-12,Fz:6});
+  assert.deepEqual(r.momentDemandsKNm,{Mx:-15,My:2,Mz:-9});
+  assert.equal(r.supportNodeId,"base-anchor-01");
+});
+
+test("anchor demand mapping reports zero uplift for compression", () => {
+  const r=api.mapSupportReactionToAnchorDemand({
+    solverSuccess:true,equilibriumOK:true,loadCaseType:"ULS",
+    sourceReference:"report",combinationDefinition:"ULS combo",
+    footingWidthAxis:"X",footingLengthAxis:"Z",verticalAxis:"Y",
+    ledgerEntry:{
+      nodeId:"base-compression",coordinatesM:{x:0,y:0,z:0},
+      fixedDofs:[0,1,2],reactionN:{Fx:0,Fy:250000,Fz:0},
+      reactionNm:{Mx:0,My:0,Mz:0},units:{force:"N",moment:"N.m"}
+    }
+  });
+  assert.equal(r.upliftDemandKN,0);
+});
+
+test("anchor demand mapping rejects SLS, imbalance, and incomplete base data", () => {
+  const base={
+    solverSuccess:true,equilibriumOK:true,loadCaseType:"ULS",
+    sourceReference:"report",combinationDefinition:"ULS combo",
+    footingWidthAxis:"X",footingLengthAxis:"Z",verticalAxis:"Y",
+    ledgerEntry:{
+      nodeId:"base",coordinatesM:{x:0,y:0,z:0},fixedDofs:[0,1,2],
+      reactionN:{Fx:0,Fy:-10000,Fz:0},reactionNm:{Mx:0,My:0,Mz:0},
+      units:{force:"N",moment:"N.m"}
+    }
+  };
+  assert.throws(()=>api.mapSupportReactionToAnchorDemand({...base,loadCaseType:"SLS"}),/ULS/);
+  assert.throws(()=>api.mapSupportReactionToAnchorDemand({...base,equilibriumOK:false}),/تعادل/);
+  assert.throws(()=>api.mapSupportReactionToAnchorDemand({...base,ledgerEntry:{...base.ledgerEntry,fixedDofs:[0,1]}}),/انتقالی/);
+});
