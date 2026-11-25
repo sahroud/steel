@@ -62,6 +62,13 @@ test("requires an explicit serviceability combination definition", () => {
   }), /تعریف دقیق/);
 });
 
+test("requires the footing-bearing serviceability check type", () => {
+  assert.throws(() => api.checkRectangularFooting({
+    ...base,
+    cases: [{ ...base.cases[0], serviceabilityCheck: "roof-deflection" }]
+  }), /foundation-bearing/);
+});
+
 test("requires a geotechnical source", () => {
   assert.throws(() => api.checkRectangularFooting({
     ...base,
@@ -100,6 +107,21 @@ test("reaction mapping converts force and moment signs and units", () => {
   assert.equal(mapped.MxkNm, -20);
   assert.equal(mapped.MzkNm, 10);
   assert.deepEqual(mapped.horizontalReactionsKN, { Fx: 12, Fz: -5 });
+});
+
+test("reaction mapping requires footing-bearing check metadata", () => {
+  assert.throws(() => api.mapSupportReactionToSlsCase({
+    solverSuccess: true,
+    equilibriumOK: true,
+    loadCaseType: "SLS",
+    sourceReference: "test",
+    serviceabilityCheck: "roof-deflection",
+    combinationDefinition: "D + L",
+    footingWidthAxis: "X",
+    footingLengthAxis: "Z",
+    verticalAxis: "Y",
+    ledgerEntry: {}
+  }), /foundation-bearing/);
 });
 
 test("reaction mapping rejects ULS", () => {
