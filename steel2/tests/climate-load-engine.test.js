@@ -15,7 +15,7 @@ function loadEngine() {
     windDirection: "left-to-right"
   };
   const sandbox = {
-    document: { readyState: "loading", getElementById: () => null, addEventListener: () => {} },
+    document: { readyState: "loading", getElementById: () => null, querySelector: () => null, addEventListener: () => {} },
     window: { SteelLoads: { getData: () => loads } },
     Date
   };
