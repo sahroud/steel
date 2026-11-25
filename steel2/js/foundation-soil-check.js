@@ -266,7 +266,7 @@
   if(!panel||panel.dataset.soilCheckInitialized==="true")return;
   panel.dataset.soilCheckInitialized="true";
   const $=id=>root.document.getElementById(id);
-  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilQaBasis","soilSource","soilFootingB","soilFootingL","sizingMinB","sizingMaxB","sizingStepB","sizingMinL","sizingMaxL","sizingStepL","sizingShape","btnSearchFootingDimensions","soilFootingThickness","soilCoverAboveFooting","concreteUnitWeight","soilUnitWeight","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch","foundationUlsBatchInput","btnMapFoundationUlsActions","foundationReactionSense","selectedFoundationNodeId","foundationLocalGeometryInput","btnMapFoundationActions","footingDesignInputJson","btnValidateFootingDesignInput","slidingNormalKN","slidingFxKN","slidingFzKN","slidingMu","slidingRequiredFS","slidingAdditionalResistanceKN","slidingSource","slidingCombination","btnRunSlidingCheck"];
+  const enabled=$("soilControlEnabled"),fields=["soilType","soilQa","soilQaBasis","soilSource","soilFootingB","soilFootingL","sizingMinB","sizingMaxB","sizingStepB","sizingMinL","sizingMaxL","sizingStepL","sizingShape","btnSearchFootingDimensions","soilFootingThickness","soilCoverAboveFooting","concreteUnitWeight","soilUnitWeight","soilReactionCases","btnRunSoilCheck","foundationSlsBatchInput","btnValidateFoundationSlsBatch","foundationUlsBatchInput","btnMapFoundationUlsActions","foundationReactionSense","selectedFoundationNodeId","foundationLocalGeometryInput","btnMapFoundationActions","footingDesignInputJson","btnValidateFootingDesignInput","slidingNormalKN","slidingFxKN","slidingFzKN","slidingMu","slidingRequiredFS","slidingAdditionalResistanceKN","slidingSource","slidingCombination","btnRunSlidingCheck","anchorGroupInput","btnMapAnchorGroup"];
   const update=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled.checked;});};
   enabled.addEventListener("change",update);update();
   $("btnRunSoilCheck").addEventListener("click",()=>{
@@ -288,6 +288,26 @@
     ].join("\n");
     out.style.color=result.success?"#15803d":"#b45309";lastResult=result;
    }catch(error){out.textContent="کنترل خاک انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
+  });
+  const anchorGroupButton=$("btnMapAnchorGroup");
+  if(anchorGroupButton)anchorGroupButton.addEventListener("click",()=>{
+   const out=$("anchorGroupResult");
+   try{
+    const payload=JSON.parse($("anchorGroupInput").value);
+    const result=distributeAnchorTension(payload);
+    const f=n=>Number(n).toFixed(3);
+    out.textContent=[
+     result.success?"توزیع الاستیک مقدماتی محاسبه شد؛ این نتیجه تأیید ظرفیت نیست.":"نتیجه مسدود است: فرض کشش همه انکرها معتبر نیست.",
+     "تعداد انکرها: "+result.anchorCount+" | مرکز گروه X/Z: "+f(result.centroidMM.x)+"/"+f(result.centroidMM.z)+" mm",
+     "U="+f(result.upliftDemandKN)+" kN | Mx="+f(result.MxKNm)+" kN.m | Mz="+f(result.MzKNm)+" kN.m",
+     ...result.anchors.map(a=>a.id+" | X/Z="+f(a.xMM)+"/"+f(a.zMM)+" mm | کشش تقاضا="+f(a.tensionDemandKN)+" kN"+(a.assumedTensionOnly?"":" | نیازمند مدل تماس")),
+     "بیشترین کشش انکر: "+f(result.maximumAnchorTensionKN)+" kN",
+     "انکرهای با پاسخ فشاری/نامعتبر: "+(result.compressionSideAnchorIds.join(", ")||"ندارد"),
+     "مرجع هندسه: "+result.geometrySourceReference,
+     "محدودیت‌ها:",...result.limitations.map(x=>"• "+x)
+    ].join("\n");
+    out.style.color=result.success?"#b45309":"#b45309";
+   }catch(error){out.textContent="توزیع کشش محاسبه نشد: "+error.message;out.style.color="#b45309";}
   });
   const slidingButton=$("btnRunSlidingCheck");
   if(slidingButton)slidingButton.addEventListener("click",()=>{
