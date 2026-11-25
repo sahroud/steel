@@ -197,7 +197,7 @@ test("reaction mapping preserves the support identity and coordinates", () => {
       coordinatesM: { x: -6, y: 0, z: 18 },
       fixedDofs: [0, 1, 2],
       reactionN: { Fx: 0, Fy: 250000, Fz: 0 },
-      reactionNm: { Mx: 0, Mz: 0 },
+      reactionNm: { Mx: 0, My: 0, Mz: 0 },
       units: { force: "N", moment: "N.m" }
     }
   });
@@ -217,7 +217,7 @@ test("reaction mapping rejects incomplete or non-finite reaction ledger values",
       coordinatesM: { x: 0, y: 0, z: 0 },
       fixedDofs: [0, 1, 2],
       reactionN: { Fx: 0, Fy: 250000, Fz: 0 },
-      reactionNm: { Mx: 0, Mz: 0 },
+      reactionNm: { Mx: 0, My: 0, Mz: 0 },
       units: { force: "N", moment: "N.m" }
     }
   };
