@@ -64,6 +64,30 @@
    limitations:["این تبدیل فقط واکنش گره پایه را به کنش قائم و لنگرهای سازگار با محورهای جهانی X/Z تبدیل می‌کند.","نیروهای افقی و گشتاور پیچشی با علامت کنش سازه بر پی (مخالف واکنش تکیه‌گاه بر سازه) گزارش می‌شوند و در کنترل فشار قائم فعلی منظور نشده‌اند؛ کنترل لغزش و برش لازم است.","مرکزیت ستون نسبت به مرکز پی، ابعاد واقعی پی، شناژها، پدستال و خروج از مرکزیت هندسی هنوز باید جداگانه تعیین شوند."]
   });
  }
+ function checkFootingSliding(input){
+  const d=input||{};
+  if(typeof d.sourceReference!=="string"||!d.sourceReference.trim())throw new Error("مرجع گزارش ژئوتکنیک/طراحی برای کنترل لغزش الزامی است.");
+  if(typeof d.combinationDefinition!=="string"||!d.combinationDefinition.trim())throw new Error("تعریف ترکیب بار کنترل لغزش الزامی است.");
+  const N=finite(d.normalCompressionKN,"نیروی قائم فشاری مؤثر");
+  const Fx=finite(d.horizontalActionsKN?.Fx,"نیروی افقی Fx");
+  const Fz=finite(d.horizontalActionsKN?.Fz,"نیروی افقی Fz");
+  const mu=finite(d.interfaceFrictionCoefficient,"ضریب اصطکاک سطح تماس");
+  const requiredFS=finite(d.requiredFactorOfSafety,"ضریب اطمینان لازم در برابر لغزش");
+  const additionalResistance=d.additionalResistanceKN===undefined?0:finite(d.additionalResistanceKN,"مقاومت اضافی مستند");
+  if(!(N>0)||mu<0||!(requiredFS>0)||additionalResistance<0)
+   throw new RangeError("نیروی قائم باید مثبت و ضریب اصطکاک/مقاومت اضافی نامنفی و ضریب اطمینان لازم مثبت باشد.");
+  const H=Math.hypot(Fx,Fz),friction=mu*N,resistance=friction+additionalResistance;
+  const factorOfSafety=H<=1e-12?Infinity:resistance/H;
+  const pass=factorOfSafety>=requiredFS;
+  return Object.freeze({success:pass,status:pass?"pass-sliding":"fail-sliding",normalCompressionKN:N,
+   horizontalActionsKN:Object.freeze({Fx,Fz}),horizontalResultantKN:H,interfaceFrictionCoefficient:mu,
+   frictionResistanceKN:friction,additionalResistanceKN:additionalResistance,totalResistanceKN:resistance,
+   factorOfSafety,requiredFactorOfSafety:requiredFS,sourceReference:d.sourceReference.trim(),
+   combinationDefinition:d.combinationDefinition.trim(),
+   limitations:Object.freeze(["این کنترل، مدل ساده اصطکاک پایه به‌علاوه مقاومت اضافی مستند است؛ مقاومت اضافی نباید بدون مستندات ژئوتکنیک/سازه‌ای منظور شود.",
+   "اثر فشار جانبی غیرفعال خاک، چسبندگی، آب زیرزمینی، کاهش نیروی قائم مؤثر، اندرکنش پی و کنترل ظرفیت اجزای انتقال برش به‌صورت خودکار محاسبه نمی‌شود.",
+   "ترکیب بار و ضریب اطمینان باید مطابق مبنای طراحی و آیین‌نامه پروژه تعیین و مستند شوند."])});
+ }
  function checkRectangularFooting(input){
   const d=input||{},soil=validateSoil(d.soil);
   const B=finite(d.Bm,"عرض پی"),L=finite(d.Lm,"طول پی");
@@ -164,7 +188,7 @@
    }catch(error){out.textContent="کنترل خاک انجام نشد: "+error.message;out.style.color="#b45309";lastResult=null;}
   });
  }
- const api=Object.freeze({validateSoil,checkRectangularFooting,mapSupportReactionToSlsCase,render,get lastResult(){return lastResult;}});
+ const api=Object.freeze({validateSoil,checkRectangularFooting,checkFootingSliding,mapSupportReactionToSlsCase,render,get lastResult(){return lastResult;}});
  root.SahroudFoundationSoilCheck=api;
  if(typeof module!=="undefined"&&module.exports)module.exports=api;
  if(root.document){if(root.document.readyState==="loading")root.document.addEventListener("DOMContentLoaded",render);else render();}
