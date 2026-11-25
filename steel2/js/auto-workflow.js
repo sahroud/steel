@@ -182,6 +182,7 @@
         const threeDResults=[];
         if(typeof model3D?.analyze3D==="function") {
           const combos=window.SteelLoads?.getData?.().combinations||[];
+          if(!combos.length) addLine(rows,"تحلیل سه‌بعدی ترکیبات بار",false,"هیچ ترکیب باری در بانک بارگذاری ثبت نشده است؛ تحلیل ترکیبی اجرا نشد.");
           for(let i=0;i<Math.min(combos.length,3);i++) {
             try {
               const result=await model3D.analyze3D("combo"+i);
@@ -190,7 +191,7 @@
               addLine(rows,"تحلیل سه‌بعدی "+(combos[i]?.name||("ترکیب "+(i+1))),
                 !!result?.success&&equilibriumOK,
                 result?.success
-                  ? "مدل سه‌بعدی حل شد؛ "+result.nodeCount+" گره و "+result.memberCount+" عضو. کنترل تعادل "+(equilibriumOK?"قبول شد.":"نیازمند بررسی است.")+" بیشینه جابه‌جایی: "+(Number(result.maxTranslation)*1000).toFixed(3)+" میلی‌متر. "+(result.warning||"")
+                  ? "مدل سه‌بعدی حل شد؛ "+result.nodeCount+" گره و "+result.memberCount+" عضو. کنترل تعادل "+(equilibriumOK?"قبول شد.":"نیازمند بررسی است.")+" بیشینه جابه‌جایی: "+(Number.isFinite(Number(result.maxTranslation))?(Number(result.maxTranslation)*1000).toFixed(3):"نامشخص")+" میلی‌متر. "+(result.warning||"")
                   : "حل‌گر سه‌بعدی نتیجه معتبر تولید نکرد.");
             } catch(e) {
               threeDResults.push({index:i,label:combos[i]?.name||("ترکیب "+(i+1)),success:false,error:e?.message||String(e)});
