@@ -137,8 +137,12 @@
     if (legacyResults) legacyResults.hidden = true;
     const comboButton = $("btnCombinations");
     if (comboButton) comboButton.textContent = "تحلیل ترکیبات بار سه‌بعدی";
-    const staleWorkflow = $("steelAutoWorkflowPanel");
-    if (staleWorkflow) staleWorkflow.hidden = true;
+    // The integrated workflow is the primary one-click project command.
+    // Keep it visible; only the obsolete single-frame analysis remains hidden.
+    const integratedWorkflow = $("steelAutoWorkflowPanel");
+    if (integratedWorkflow) integratedWorkflow.hidden = false;
+    const drawButton = $("btnDraw");
+    if (drawButton) drawButton.textContent = "بازترسیم قاب";
   }
 
   function scan(root) {
