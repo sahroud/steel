@@ -33,12 +33,21 @@
    throw new Error("هر سه انتقال گره پایه باید مقید و واکنش‌های انتقالی ثبت شده باشند.");
   if(ledger.units?.force!=="N"||ledger.units?.moment!=="N.m")
    throw new Error("واحدهای رکورد واکنش باید N و N.m باشند.");
+  const nodeId=String(ledger.nodeId||"").trim();
+  if(!nodeId)throw new Error("شناسه گره پایه الزامی است.");
+  const coordinates={
+   x:finite(ledger.coordinatesM.x,"مختصات X"),
+   y:finite(ledger.coordinatesM.y,"مختصات Y"),
+   z:finite(ledger.coordinatesM.z,"مختصات Z")
+  };
   const fy=finite(ledger.reactionN.Fy,"واکنش قائم Fy");
   const mx=finite(ledger.reactionNm.Mx,"واکنش Mx");
+  const my=finite(ledger.reactionNm.My,"واکنش My");
   const mz=finite(ledger.reactionNm.Mz,"واکنش Mz");
   const fx=finite(ledger.reactionN.Fx,"واکنش Fx");
   const fz=finite(ledger.reactionN.Fz,"واکنش Fz");
-  const nodeId=String(ledger.nodeId);
+  if(fy < -1e-6)
+   throw new Error("واکنش قائم کششی/بلندکننده است؛ کنترل فشار باربری پی بدون مدل مهار کششی و کنترل بلندشدگی مجاز نیست.");
   return Object.freeze({
    name:String(d.loadCaseName||"SLS reaction "+nodeId),
    NkN:fy/1000,
@@ -48,8 +57,8 @@
    serviceabilityCheck:d.serviceabilityCheck,
    combinationDefinition:d.combinationDefinition.trim(),
    supportNodeId:nodeId,
-   supportCoordinatesM:{x:finite(ledger.coordinatesM.x,"مختصات X"),y:finite(ledger.coordinatesM.y,"مختصات Y"),z:finite(ledger.coordinatesM.z,"مختصات Z")},
-   horizontalReactionsKN:{Fx:fx/1000,Fz:fz/1000},
+   supportCoordinatesM:coordinates,
+   horizontalReactionsKN:{Fx:fx/1000,Fz:fz/1000},\n   torsionalReactionKNm:my/1000000,
    conversion:{vertical:"Fy solver reaction on structure is converted to positive downward compression on footing",moments:"Mx and Mz are reversed from support-on-structure to structure-on-footing",widthAxis:d.footingWidthAxis,lengthAxis:d.footingLengthAxis,verticalAxis:"Y"},
    limitations:["این تبدیل فقط واکنش گره پایه را به کنش قائم و لنگرهای سازگار با محورهای جهانی X/Z تبدیل می‌کند.","واکنش‌های افقی Fx/Fz جداگانه گزارش می‌شوند و در کنترل فشار قائم فعلی منظور نشده‌اند؛ کنترل لغزش و برش لازم است.","مرکزیت ستون نسبت به مرکز پی، ابعاد واقعی پی، شناژها، پدستال و خروج از مرکزیت هندسی هنوز باید جداگانه تعیین شوند."]
   });
