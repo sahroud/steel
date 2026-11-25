@@ -750,6 +750,25 @@
     }));
     if(!supports.length)throw new Error("هیچ گره پایه‌ای برای تعریف تکیه‌گاه پیدا نشد.");
     const result=await run3DAnalysisInWorker(analysisModel,sectionsByMemberId,supports);
+    // Keep a traceable, signed support-reaction ledger for later SLS foundation mapping.
+    // Solver units are N and N.m; global Y is vertical in this model.
+    const reactionByNode=new Map((result.reactions||[]).map(item=>[String(item.nodeId),item.values||[]]));
+    const nodeById=new Map(analysisModel.nodes.map(node=>[String(node.id),node]));
+    result.supportReactionLedger=supports.map(support=>{
+      const node=nodeById.get(String(support.nodeId));
+      const values=reactionByNode.get(String(support.nodeId))||[0,0,0,0,0,0];
+      const fixedDofs=[...support.fixedDofs];
+      return {
+        nodeId:support.nodeId,
+        nodeKind:node?.kind||null,
+        coordinatesM:node?{x:Number(node.x)||0,y:Number(node.y)||0,z:Number(node.z)||0}:null,
+        fixedDofs,
+        reactionN:{Fx:Number(values[0])||0,Fy:Number(values[1])||0,Fz:Number(values[2])||0},
+        reactionNm:{Mx:Number(values[3])||0,My:Number(values[4])||0,Mz:Number(values[5])||0},
+        units:{force:"N",moment:"N.m",coordinates:"m"},
+        signConvention:"Global axes; signed solver reactions. Global Y is vertical; do not convert to footing actions without confirming local footing axes and sign convention."
+      };
+    });
 
     if(result.maxDisplacement){
       const criticalNode=analysisModel.nodes.find(n=>n.id===result.maxDisplacement.nodeId);
