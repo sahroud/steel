@@ -5,8 +5,8 @@
   const button=$("btnCheckBasePlateBending"),enabled=$("soilControlEnabled");
   if(!button||button.dataset.bound==="1")return;
   button.dataset.bound="1";
-  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","anchorInteractionInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
-  const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;const c=$("btnCheckConcreteAnchor");if(c)c.disabled=!enabled?.checked;const i=$("btnCheckAnchorInteraction");if(i)i.disabled=!enabled?.checked;};
+  const fields=["basePlateBearingInput","anchorSteelInput","concreteAnchorInput","anchorInteractionInput","anchorGroupInput","basePlateThicknessMM","basePlateFyMPa","basePlatePhi","basePlatePryingFactor","basePlateGeometryRef","basePlateStripInput"];
+  const sync=()=>{fields.forEach(id=>{const e=$(id);if(e)e.disabled=!enabled?.checked;});button.disabled=!enabled?.checked;const b=$("btnCheckBasePlateBearing");if(b)b.disabled=!enabled?.checked;const a=$("btnCheckAnchorSteel");if(a)a.disabled=!enabled?.checked;const c=$("btnCheckConcreteAnchor");if(c)c.disabled=!enabled?.checked;const i=$("btnCheckAnchorInteraction");if(i)i.disabled=!enabled?.checked;const g=$("btnCheckAnchorGroup");if(g)g.disabled=!enabled?.checked;};
   enabled?.addEventListener("change",sync);sync();
   const bearingButton=$("btnCheckBasePlateBearing");
   if(bearingButton)bearingButton.addEventListener("click",()=>{
@@ -59,6 +59,20 @@
    }catch(e){out.textContent="کنترل شکست بتن انجام نشد: "+e.message;out.style.color="#b45309";}
   });
 
+
+  const groupButton=$("btnCheckAnchorGroup");
+  if(groupButton)groupButton.addEventListener("click",()=>{
+   const out=$("anchorGroupResult");
+   try{
+    const r=root.SahroudBasePlateCheck.checkAnchorGroupCapacity(JSON.parse($("anchorGroupInput").value));
+    const f=n=>Number(n).toLocaleString("fa-IR",{maximumFractionDigits:4});
+    out.textContent=[r.success?"نتیجه: تقاضای کل گروه در هر چهار ظرفیت طراحی گروهِ واردشده قرار دارد.":"نتیجه: دست‌کم یک تقاضای کل گروه از ظرفیت طراحی گروه عبور کرده است.",
+     ...r.checks.map(x=>x.label+" | تقاضا="+f(x.demandKN)+" kN | ظرفیت گروه="+f(x.designCapacityKN)+" kN | نسبت="+f(x.utilization)+" | "+(x.pass?"قبول":"مردود")),
+     "تعداد انکر="+f(r.anchorCount)+" | مرجع هندسه: "+r.geometrySourceReference+" | مرجع ظرفیت گروه: "+r.groupCapacitySourceReference+" | ترکیب: "+r.combinationDefinition,
+     "محدودیت‌ها:",...r.limitations.map(x=>"• "+x)].join("\\n");
+    out.style.color="#b45309";
+   }catch(e){out.textContent="کنترل گروه انکر انجام نشد: "+e.message;out.style.color="#b45309";}
+  });
   const interactionButton=$("btnCheckAnchorInteraction");
   if(interactionButton)interactionButton.addEventListener("click",()=>{
    const out=$("anchorInteractionResult");
