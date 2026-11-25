@@ -467,14 +467,14 @@ test("anchor group elastic distribution is uniform under concentric uplift", () 
 
 test("anchor group distribution includes biaxial elastic moment effects", () => {
  const r=api.distributeAnchorTension({
-  upliftDemandKN:0,MxKNm:10,MzKNm:20,geometrySourceReference:"anchor layout drawing",
+  upliftDemandKN:300,MxKNm:10,MzKNm:20,geometrySourceReference:"anchor layout drawing",
   anchors:[
    {id:"A1",xMM:-100,zMM:-100},{id:"A2",xMM:100,zMM:-100},
    {id:"A3",xMM:-100,zMM:100},{id:"A4",xMM:100,zMM:100}
   ]
  });
  assert.equal(r.success,true);
- assert.deepEqual(r.anchors.map(x=>Number(x.tensionDemandKN.toFixed(3))),[37.5,12.5,12.5,0]);
+ assert.deepEqual(r.anchors.map(x=>Number(x.tensionDemandKN.toFixed(3))),[100,0,150,50]);
 });
 
 test("anchor group distribution blocks tension-only assumption when an anchor would be in compression", () => {
