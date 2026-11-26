@@ -18,6 +18,20 @@ form.addEventListener("input",()=>{updateGeometry();schedule();});form.addEventL
 nav.forEach((b,i)=>b.addEventListener("click",()=>go(i)));
 document.getElementById("prevBtn").addEventListener("click",()=>go(index-1));
 document.getElementById("nextBtn").addEventListener("click",()=>{if(index<pages.length-1)go(index+1);else{saveLocal();setStatus("ورودی‌ها ذخیره شدند؛ موتور محاسباتی در مرحله اتصال قرار دارد.");}});
+document.getElementById("buildGeometryBtn").addEventListener("click",()=>{
+ const out=document.getElementById("geometryResult");
+ try{
+  const result=window.SahroudSteelGeometry.build(data());
+  window.SahroudSteelV3Model=result.model;
+  const g=result.model.geometry;
+  const groups=Object.entries(result.groups).map(([k,v])=>k+": "+v).join("، ");
+  out.textContent=(result.validation.valid?"مدل هندسی تولید شد. ":"مدل تولید شد اما خطای اعتبارسنجی دارد. ")+
+   "تعداد قاب: "+g.frameCount+" | گره‌ها: "+result.validation.nodeCount+
+   " | اعضا: "+result.validation.memberCount+" | تکیه‌گاه‌های هندسی: "+result.validation.supportCount+
+   " | گروه اعضا: "+groups+" | نوع سقف: "+(g.roofType==="mono"?"تک‌شیب":"دوشیب")+
+   " . "+result.model.scope+(result.validation.errors.length?" خطاها: "+result.validation.errors.join("؛ "):"");
+ }catch(error){out.textContent="تولید مدل هندسی متوقف شد: "+error.message;}
+});
 document.getElementById("solverTestBtn").addEventListener("click",()=>{
  const out=document.getElementById("solverTestResult");
  try{
