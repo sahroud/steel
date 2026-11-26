@@ -153,7 +153,19 @@ document.getElementById("solverTestBtn").addEventListener("click",()=>{
  }catch(error){out.textContent="اجرای آزمون با خطا متوقف شد: "+error.message;}
 });
 document.getElementById("engineCheckBtn").addEventListener("click",()=>{const result=window.SahroudEngineAdapter?.validateForEngine?.(data());const out=document.getElementById("engineReadiness");if(!result){out.textContent="ماژول اتصال موتور بارگذاری نشده است.";return;}out.innerHTML="<h3>"+(result.ready?"ورودی‌های پایه از نظر ساختاری آماده‌اند":"ورودی‌های پایه ناقص‌اند")+"</h3>"+(result.errors.length?("<b>موارد مانع:</b><ul>"+result.errors.map(x=>"<li>"+x+"</li>").join("")+"</ul>"):"")+(result.warnings.length?("<b>هشدارها و محدودیت‌ها:</b><ul>"+result.warnings.map(x=>"<li>"+x+"</li>").join("")+"</ul>"):"")+"<p>این بررسی فقط آمادگی داده‌ها را می‌سنجد و به‌معنای اجرای تحلیل یا تأیید سازه نیست.</p>";});
-document.getElementById("roofGravityLoadBtn").addEventListener("click",()=>{\n const out=document.getElementById("roofGravityLoadResult");\n try{\n  if(!window.SahroudSteelLoads||!window.SahroudSteelGeometry||!window.SahroudSteel3D)throw Error("ماژول تولید بار، هندسه یا موتور تحلیل بارگذاری نشده است.");\n  const built=window.SahroudSteelGeometry.build(data());\n  if(!built.validation.valid)throw Error("هندسه معتبر نیست: "+built.validation.errors.join("؛ "));\n  const r=window.SahroudSteelLoads.generate(built.model,{deadLoad:field("deadLoad").value,liveLoad:field("liveLoad").value},window.SahroudSteel3D);\n  window.SahroudSteelV3LoadCases=r.cases;\n  const d=r.cases.DEAD_ROOF.totalVertical_kN,l=r.cases.LIVE_ROOF.totalVertical_kN;\n  out.textContent="دو حالت بار مستقل تولید شد. بار مرده سقف: "+d.toFixed(2)+" kN | بار زنده سقف: "+l.toFixed(2)+" kN | ردیف‌های پرلین: "+r.rows.length+". "+r.scope;\n }catch(error){out.textContent="تولید بار سقف متوقف شد: "+error.message;}\n});\ndocument.getElementById("saveBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data(),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="sahroud-steel-project.json";a.click();URL.revokeObjectURL(url);setStatus("فایل پشتیبان پروژه آماده شد");});
+document.getElementById("roofGravityLoadBtn").addEventListener("click",()=>{
+ const out=document.getElementById("roofGravityLoadResult");
+ try{
+  if(!window.SahroudSteelLoads||!window.SahroudSteelGeometry||!window.SahroudSteel3D)throw Error("ماژول تولید بار، هندسه یا موتور تحلیل بارگذاری نشده است.");
+  const built=window.SahroudSteelGeometry.build(data());
+  if(!built.validation.valid)throw Error("هندسه معتبر نیست: "+built.validation.errors.join("؛ "));
+  const r=window.SahroudSteelLoads.generate(built.model,{deadLoad:field("deadLoad").value,liveLoad:field("liveLoad").value},window.SahroudSteel3D);
+  window.SahroudSteelV3LoadCases=r.cases;
+  const d=r.cases.DEAD_ROOF.totalVertical_kN,l=r.cases.LIVE_ROOF.totalVertical_kN;
+  out.textContent="دو حالت بار مستقل تولید شد. بار مرده سقف: "+d.toFixed(2)+" kN | بار زنده سقف: "+l.toFixed(2)+" kN | ردیف‌های پرلین: "+r.rows.length+". "+r.scope;
+ }catch(error){out.textContent="تولید بار سقف متوقف شد: "+error.message;}
+});
+document.getElementById("saveBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data(),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="sahroud-steel-project.json";a.click();URL.revokeObjectURL(url);setStatus("فایل پشتیبان پروژه آماده شد");});
 document.getElementById("openBtn").addEventListener("click",()=>document.getElementById("fileInput").click());
 document.getElementById("fileInput").addEventListener("change",async e=>{const f=e.target.files?.[0];if(!f)return;try{load(JSON.parse(await f.text()));setStatus("پروژه بارگذاری شد");}catch(err){setStatus("فایل پروژه معتبر نیست");}e.target.value="";});
 try{const saved=localStorage.getItem(key);if(saved)load(JSON.parse(saved));}catch(e){setStatus("پروژه ذخیره‌شده قابل بازیابی نبود");}
