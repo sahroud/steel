@@ -79,7 +79,7 @@
 <article><b>فونداسیون و نقشه‌ها</b><span>پی، تیرهای رابط، آرماتور و جزئیات اجرایی</span><em>در انتظار طراحی</em></article>
 <article><b>گزارش نهایی</b><span>گزارش محاسبات، منابع، فرضیات و فهرست موارد ناقص</span><em>در انتظار تولید</em></article>
 </div><div class="callout warning">در این مرحله رابط و مدل داده پایه ساخته شده‌اند؛ نتایج مهندسی تا اتصال و اعتبارسنجی موتورهای محاسباتی تولید نمی‌شوند.</div><button type="button" id="engineCheckBtn" class="primary">بررسی آمادگی اتصال موتورهای محاسباتی</button><div id="engineReadiness" class="readiness" aria-live="polite"></div>
-<div class="callout"><b>تولید مدل هندسی مستقل</b><p>مدل هندسی اولیه برای سقف دوشیب یا تک‌شیب، قاب‌ها، پرلین‌ها، قیدها و مهاربندهای پیشنهادی.</p>
+<div class="callout"><b>تولید حالت‌های بار ثقلی سقف</b><p>بار مرده و بار زنده سطحی سقف به‌طور جداگانه و با عرض بارگیر هندسی روی پرلین‌های طولی توزیع می‌شوند. این مرحله هنوز ترکیبات بار آیین‌نامه‌ای، برف بام، باد، جرثقیل یا تحلیل سازه را انجام نمی‌دهد.</p><button type="button" id="roofGravityLoadBtn" class="secondary">تولید بار مرده و زنده سقف</button><div id="roofGravityLoadResult" class="readiness" aria-live="polite"></div></div>\n<div class="callout"><b>تولید مدل هندسی مستقل</b><p>مدل هندسی اولیه برای سقف دوشیب یا تک‌شیب، قاب‌ها، پرلین‌ها، قیدها و مهاربندهای پیشنهادی.</p>
 <button type="button" id="buildGeometryBtn" class="primary">تولید مدل هندسی پروژه</button><div id="geometryResult" class="readiness" aria-live="polite"></div></div>
 <div class="callout"><b>آزمون هندسه دو نوع سقف</b><p>کنترل تعداد قاب‌ها، گره‌ها، اعضا، تکیه‌گاه‌ها و اتصال هندسی در دو حالت سقف.</p><button type="button" id="geometryTestBtn" class="secondary">آزمون هندسه دوشیب و تک‌شیب</button><div id="geometryTestResult" class="readiness" aria-live="polite"></div></div>
 <div class="callout"><b>غربال اولیه پایداری مدل سه‌بعدی</b><p>با مقاطع واقعی ثبت‌شده و تکیه‌گاه انتخابی، ماتریس سختی مدل بدون بارگذاری حل می‌شود تا ناپایداری عددی یا درجات آزادی آزاد آشکار شود. این آزمون، تحلیل بارگذاری یا اثبات پایداری آیین‌نامه‌ای نیست.</p><button type="button" id="stabilityScreenBtn" class="secondary">اجرای غربال اولیه مدل سه‌بعدی</button><div id="stabilityScreenResult" class="readiness" aria-live="polite"></div></div><div class="callout"><b>آزمون مستقل هسته تحلیل</b><p>این آزمون فقط یک تیر طره‌ای مرجع را بررسی می‌کند و به‌معنای تحلیل پروژه سوله نیست.</p>
@@ -88,11 +88,11 @@
 </form>
 <footer>SAHROUD STEEL · ابزار کمکی مهندس محاسب · خروجی اجرایی فقط پس از تکمیل کنترل‌ها و تأیید مهندس مسئول</footer>
 </main>
-<script src="engine-core.js?v=1" defer></script><script src="section-catalog.js?v=4" defer></script>
+<script src="engine-core.js?v=1" defer></script><script src="load-generator.js?v=1" defer></script><script src="section-catalog.js?v=4" defer></script>
 <script src="engine-geometry.js?v=1" defer></script>
 <script src="engine-self-test.js?v=1" defer></script>
 <script src="geometry-self-test.js?v=1" defer></script>
 <script src="engine-adapter.js?v=2" defer></script>
 <script src="section-profile-generator.js?v=1" defer></script>
-<script src="section-geometry.js?v=2"></script><script src="app.js?v=13" defer></script>
+<script src="section-geometry.js?v=2"></script><script src="app.js?v=14" defer></script>
 </body></html>
