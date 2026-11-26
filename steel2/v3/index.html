@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#123b52">
+<title>SAHROUD STEEL | طراحی سوله</title>
+<link rel="stylesheet" href="app.css?v=1">
+</head>
+<body>
+<header class="topbar"><div class="brand"><span class="mark">S</span><div><b>SAHROUD STEEL</b><small>سامانه طراحی و مستندسازی سوله فولادی</small></div></div><span class="version">بازطراحی یکپارچه</span></header>
+<main class="shell">
+<section class="intro"><div><small>میزکار مهندسی</small><h1>پروژه جدید سوله</h1><p>ورودی‌ها را یک‌بار ثبت کنید؛ مدل، تحلیل، طراحی و گزارش در یک مسیر پیوسته آماده می‌شوند.</p></div><div class="actions"><button id="saveBtn" class="secondary">ذخیره پروژه</button><button id="openBtn" class="secondary">بازکردن فایل</button><input id="fileInput" type="file" accept=".json" hidden></div></section>
+<div class="progress"><span id="progressFill"></span></div>
+<nav class="steps" id="steps" aria-label="مراحل پروژه">
+<button data-step="project" class="active">۱. پروژه</button><button data-step="geometry">۲. هندسه</button><button data-step="system">۳. سیستم سازه‌ای</button><button data-step="loads">۴. بارگذاری</button><button data-step="materials">۵. مصالح و مقاطع</button><button data-step="foundation">۶. فونداسیون</button><button data-step="results">۷. خروجی‌ها</button>
+</nav>
+<form id="projectForm" novalidate>
+<section class="page active" data-page="project"><h2>مشخصات پروژه</h2><p class="hint">اطلاعات شناسنامه‌ای پروژه و مبانی طراحی را وارد کنید.</p><div class="grid">
+<label>نام پروژه<input name="projectName" value="سوله صنعتی" required></label>
+<label>کارفرما<input name="owner" value="شرکت شهرک‌های صنعتی"></label>
+<label>طراح<input name="designer" value="مهندس احمد نوری"></label>
+<label>شهر پروژه<select name="city"><option value="shahroud" selected>شاهرود</option><option value="semnan">سمنان</option><option value="tehran">تهران</option><option value="mashhad">مشهد</option><option value="custom">سایر / ورود دستی</option></select></label>
+<label>آیین‌نامه بارگذاری<select name="loadingCode"><option value="INBR6-1398">مبحث ششم ۱۳۹۸ (نیازمند کنترل و تأیید نسخه)</option></select></label>
+<label>آیین‌نامه فولاد<select name="steelCode"><option value="INBR10">مبحث دهم (نسخه در مبانی پروژه ثبت شود)</option></select></label>
+<label class="wide">توضیحات و مبانی خاص<textarea name="projectNotes" rows="3" placeholder="شرایط ویژه محل، محدودیت‌های ساخت و ..."></textarea></label>
+</div></section>
+<section class="page" data-page="geometry"><h2>هندسه سوله</h2><p class="hint">ابعاد اصلی را وارد کنید. تعداد قاب‌ها و شیب از هندسه محاسبه می‌شود.</p><div class="grid">
+<label>نوع سقف<select name="roofType"><option value="gable" selected>دوشیب</option><option value="mono">تک‌شیب</option></select></label>
+<label>دهانه (متر)<input name="span" type="number" min="1" step=".1" value="12" required></label>
+<label>طول (متر)<input name="length" type="number" min="1" step=".1" value="36" required></label>
+<label>فاصله قاب‌ها (متر)<input name="frameSpacing" type="number" min="1" step=".1" value="6" required></label>
+<label>ارتفاع ستون (متر)<input name="columnHeight" type="number" min="1" step=".1" value="6" required></label>
+<label>شیب سقف (%)<input name="roofSlope" type="number" min="1" max="60" step=".5" value="20" required></label>
+<label>پیش‌آمدگی جانبی (متر)<input name="sideOverhang" type="number" min="0" step=".05" value=".8"></label>
+<label>پیش‌آمدگی طولی (متر)<input name="endOverhang" type="number" min="0" step=".05" value=".8"></label>
+<label>تعداد قاب‌ها<input name="frameCount" value="7" readonly></label>
+<label>ارتفاع تاج (متر)<input name="ridgeHeight" value="7.2" readonly></label>
+</div><div class="preview"><div><b>نمای شماتیک قاب</b><small id="geometrySummary">۱۲ × ۳۶ متر | شیب ۲۰٪</small></div><svg id="framePreview" viewBox="0 0 640 260" role="img" aria-label="پیش‌نمایش قاب سوله"></svg></div></section>
+<section class="page" data-page="system"><h2>سیستم سازه‌ای و تجهیزات</h2><p class="hint">گزینه‌های این بخش مبنای ساخت مدل سه‌بعدی و کنترل پایداری هستند.</p><div class="grid">
+<label>شرایط پای ستون<select name="baseCondition"><option value="pinned" selected>مفصلی</option><option value="fixed">گیردار</option></select></label>
+<label>جرثقیل<select name="crane"><option value="none" selected>بدون جرثقیل</option><option value="5">۵ تن</option><option value="10">۱۰ تن</option><option value="20">۲۰ تن</option></select></label>
+<label>موقعیت مهاربندی طولی<select name="longitudinalBracing"><option value="end-bays" selected>دهانه‌های ابتدا و انتها</option><option value="custom">انتخاب دهانه‌ها</option></select></label>
+<label>مهاربندی سقف<select name="roofBracing"><option value="aligned" selected>هم‌راستا با مهاربندی دیوار</option><option value="custom">تعیین مستقل</option></select></label>
+<label>نوع پوشش سقف<select name="roofCladding"><option value="sandwich" selected>ساندویچ پانل</option><option value="sheet">ورق و عایق</option><option value="other">سایر</option></select></label>
+<label>بازشوهای بزرگ<select name="openings"><option value="none" selected>ندارد</option><option value="front">درِ انتهایی</option><option value="multiple">چند بازشو (نیازمند جانمایی)</option></select></label>
+</div><div class="callout">مهاربندی، بازشوها و شرایط واقعی اتصال باید با نقشه معماری و مسیر انتقال بار تطبیق داده شوند؛ نرم‌افزار محل مهاربند را بدون ورودی مشخص قطعی نمی‌کند.</div></section>
+<section class="page" data-page="loads"><h2>بارگذاری و شرایط اقلیمی</h2><p class="hint">بارهای ورودی و منبع هر داده باید مشخص باشد. مقادیر صفر به‌معنای تأیید نبود بار نیست.</p><div class="grid">
+<label>بار مرده سقف (kN/m²)<input name="deadLoad" type="number" min="0" step=".01" value=".50"></label>
+<label>بار زنده سقف (kN/m²)<input name="liveLoad" type="number" min="0" step=".01" value=".75"></label>
+<label>بار برف زمین (kN/m²)<input name="snowLoad" type="number" min="0" step=".01" placeholder="از منبع معتبر"></label>
+<label>سرعت مبنای باد (km/h)<input name="windSpeed" type="number" min="0" step="1" placeholder="از مبحث ششم / منبع معتبر"></label>
+<label>رده زمین<select name="terrain"><option value="suburban" selected>شهری / حومه</option><option value="open">باز</option><option value="rough">متراکم</option></select></label>
+<label>وضعیت بازشو<select name="enclosure"><option value="enclosed" selected>بسته</option><option value="partially">نیمه‌باز</option><option value="open">باز</option></select></label>
+<label class="wide">منبع باد و برف<input name="climateSource" placeholder="شماره جدول، بند آیین‌نامه، گزارش یا مرجع داده"></label>
+</div><div class="callout warning">انتخاب شهر به‌تنهایی برای تولید بار باد و برف کافی نیست. اگر منبع یا داده اقلیمی معتبر موجود نباشد، تحلیل نهایی بارگذاری باید متوقف و به‌عنوان داده ناقص گزارش شود.</div></section>
+<section class="page" data-page="materials"><h2>مصالح و مقاطع</h2><div class="grid">
+<label>گرید فولاد<select name="steelGrade"><option value="ST37" selected>ST37</option><option value="ST52">ST52</option><option value="custom">مشخصات سفارشی</option></select></label>
+<label>Fy فولاد (MPa)<input name="steelFy" type="number" min="1" value="240"></label>
+<label>E فولاد (GPa)<input name="steelE" type="number" min="1" value="200"></label>
+<label>روش انتخاب مقطع<select name="sectionStrategy"><option value="economic" selected>اقتصادی و کفایت‌سنجی</option><option value="manual">ورود دستی مقاطع</option></select></label>
+<label>حداقل ضخامت جان (mm)<select name="webThickness"><option>6</option><option selected>8</option><option>10</option><option>12</option></select></label>
+<label>حداقل ضخامت بال (mm)<select name="flangeThickness"><option>6</option><option selected>8</option><option>10</option><option>12</option></select></label>
+<label>گرید بتن<select name="concreteGrade"><option value="C25" selected>C25</option><option value="C30">C30</option><option value="C35">C35</option></select></label>
+</div><div class="callout">انتخاب نهایی مقطع باید پس از تحلیل همه ترکیبات بار، کنترل پایداری، اندرکنش نیروها و محدودیت‌های ساخت انجام شود. این صفحه فقط مبانی و حدود انتخاب را ثبت می‌کند.</div></section>
+<section class="page" data-page="foundation"><h2>فونداسیون و خاک</h2><div class="grid">
+<label>تیپ خاک<select name="soilType"><option value="">نامشخص تا گزارش ژئوتکنیک</option><option value="I">تیپ I</option><option value="II">تیپ II</option><option value="III">تیپ III</option></select></label>
+<label>ظرفیت مجاز خاک (kPa)<input name="soilQa" type="number" min="0" placeholder="از گزارش ژئوتکنیک"></label>
+<label>مبنای ظرفیت مجاز<select name="soilQaBasis"><option value="">انتخاب نشده</option><option value="gross">ناخالص</option><option value="net">خالص</option></select></label>
+<label>ضخامت دال کف (cm)<input name="slabThickness" type="number" min="0" value="15"></label>
+<label>عمق پی (m)<input name="footingDepth" type="number" min="0" step=".05" value=".8"></label>
+<label>ابعاد اولیه پی (m)<input name="footingSize" value="1.8 × 1.8" readonly></label>
+<label class="wide">مرجع ژئوتکنیک و شماره صفحه<input name="soilSource" placeholder="مرجع دقیق گزارش؛ بدون آن کنترل خاک معتبر نیست"></label>
+</div><div class="callout warning">ابعاد پی، تیر رابط و آرماتورهای اولیه صرفاً نقطه شروع طراحی هستند. کنترل نشست، لغزش، واژگونی، پانچ، برش و آرماتور باید با واکنش‌های مستند و داده ژئوتکنیک انجام شود.</div></section>
+<section class="page" data-page="results"><h2>خروجی‌های پروژه</h2><p class="hint">پس از اتصال و اجرای موتورهای محاسباتی، خروجی‌ها در این صفحه به‌صورت یک گزارش یکپارچه ارائه می‌شوند.</p><div class="output-list">
+<article><b>مدل سازه‌ای</b><span>نمای دوبعدی و سه‌بعدی، هندسه، اعضا و مهاربندی</span><em>در انتظار تحلیل</em></article>
+<article><b>تحلیل و بارگذاری</b><span>ترکیبات بار، تعادل، واکنش‌ها، تغییرمکان و نیروهای اعضا</span><em>در انتظار تحلیل</em></article>
+<article><b>طراحی اعضا و اتصالات</b><span>مقاطع، لاپه‌ها، جوش، پیچ، ورق‌ها و صفحه‌ستون</span><em>در انتظار طراحی</em></article>
+<article><b>فونداسیون و نقشه‌ها</b><span>پی، تیرهای رابط، آرماتور و جزئیات اجرایی</span><em>در انتظار طراحی</em></article>
+<article><b>گزارش نهایی</b><span>گزارش محاسبات، منابع، فرضیات و فهرست موارد ناقص</span><em>در انتظار تولید</em></article>
+</div><div class="callout warning">در این مرحله رابط و مدل داده پایه ساخته شده‌اند؛ نتایج مهندسی تا اتصال و اعتبارسنجی موتورهای محاسباتی تولید نمی‌شوند.</div></section>
+<div class="form-footer"><button type="button" id="prevBtn" class="secondary">مرحله قبل</button><span id="saveState" role="status">ذخیره خودکار فعال است</span><button type="button" id="nextBtn" class="primary">مرحله بعد</button></div>
+</form>
+<footer>SAHROUD STEEL · ابزار کمکی مهندس محاسب · خروجی اجرایی فقط پس از تکمیل کنترل‌ها و تأیید مهندس مسئول</footer>
+</main>
+<script src="app.js?v=1" defer></script>
+</body></html>
