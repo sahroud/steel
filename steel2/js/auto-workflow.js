@@ -206,14 +206,10 @@
       // این تحلیل مستقل، پس از حل سه‌بعدی اجرا می‌شود تا نتایج دو مدل با هم مخلوط نشوند.
       updateProgress("محاسبه مرجع دوبعدی برای کنترل اعضا و گزارش",68);
       await paintNow();
-      let legacyComboRun=null;
-      try {
-        const legacyRunner=window.SteelAnalysis?.calculateLegacy2DCombinations;
-        if(typeof legacyRunner==="function") legacyComboRun=legacyRunner();
-        else legacyComboRun={success:false,error:"تابع تحلیل مرجع دوبعدی در دسترس نیست."};
-      } catch(e) {
-        legacyComboRun={success:false,error:e?.message||String(e)};
-      }
+      // The legacy 2D combination solver is synchronous and can block the
+      // mobile UI thread. Do not invoke it from the one-click workflow.
+      // Keep the workflow responsive and clearly mark dependent checks as pending.
+      const legacyComboRun={success:false,error:"تحلیل مرجع دوبعدیِ هم‌زمان از اجرای خودکار کنار گذاشته شد تا صفحه روی گوشی قفل نکند؛ اجرای جداگانه/غیرهم‌زمان لازم است."};
       const legacyComboOK=!!legacyComboRun?.success&&Array.isArray(window.SteelAnalysis?.combinationResults)&&window.SteelAnalysis.combinationResults.length>0;
       addLine(rows,"تحلیل دوبعدی مرجع برای کنترل اعضا و گزارش",legacyComboOK,
         legacyComboOK?"نتایج مرجع دوبعدی و ترکیب حاکم برای کنترل‌های فعلی و گزارش آماده شد.":(legacyComboRun?.error||"نتایج مرجع دوبعدی برای کنترل اعضا تولید نشد."));
