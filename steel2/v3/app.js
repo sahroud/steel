@@ -104,7 +104,8 @@ document.getElementById("customSectionApplyBtn").addEventListener("click",()=>{
   if(!(J>0&&Number.isFinite(J)))throw Error("برای ثبت مقطع در مدل، J معتبر باید جداگانه وارد شود؛ محاسبه‌گر آن را حدس نمی‌زند.");
   const area=document.getElementById("sectionCatalogInput"),c=JSON.parse(area.value);
   const group=document.getElementById("customSectionGroup").value;
-  const isCold=/^[CZ]/i.test(document.getElementById("customSectionName").value.trim());\n  c.groups[group]={profile:document.getElementById("customSectionName").value.trim()||"مقطع سفارشی",A_cm2:p.A_cm2,Iy_cm4:p.Iy_cm4,Iz_cm4:p.Iz_cm4,J_cm4:J,Ixy_cm4:p.Ixy_cm4,principalI1_cm4:p.principalI1_cm4,principalI2_cm4:p.principalI2_cm4,principalAngle_deg:p.principalAngle_deg,advancedColdFormed:isCold};
+  const isCold=/^[CZ]/i.test(document.getElementById("customSectionName").value.trim());
+  c.groups[group]={profile:document.getElementById("customSectionName").value.trim()||"مقطع سفارشی",A_cm2:p.A_cm2,Iy_cm4:p.Iy_cm4,Iz_cm4:p.Iz_cm4,J_cm4:J,Ixy_cm4:p.Ixy_cm4,principalI1_cm4:p.principalI1_cm4,principalI2_cm4:p.principalI2_cm4,principalAngle_deg:p.principalAngle_deg,advancedColdFormed:isCold};
   area.value=JSON.stringify(c,null,2);
   out.textContent="مقطع در بانک ثبت شد. "+(isCold?"هشدار: Z/C سردنورد به علت مرکز برش خارج از مرکز، کمانش موضعی/اعوجاجی و اثر پیچش، فعلاً برای تحلیل سازه‌ای خودکار مسدود است؛ ثبت آن فقط برای بانک هندسی است. ":"")+"مقدار J و جهت‌گیری باید از مرجع معتبر کنترل شوند.";
  }catch(e){out.textContent="ثبت انجام نشد: "+e.message;}
@@ -185,12 +186,16 @@ document.getElementById("roofGravityLoadBtn").addEventListener("click",()=>{
 document.getElementById("roofGravityAnalyzeBtn").addEventListener("click",()=>{
  const out=document.getElementById("roofGravityAnalysisResult");
  try{
-  if(!window.SahroudSteel3D||!window.SahroudSteelSections||!window.SahroudSteelGeometry)throw Error("موتور تحلیل، بانک مقاطع یا مولد هندسه بارگذاری نشده است.");
-  const cases=window.SahroudSteelV3LoadCases;
-  if(!cases||!cases.DEAD_ROOF||!cases.LIVE_ROOF)throw Error("ابتدا دکمه «تولید بار مرده و زنده سقف» را اجرا کنید.");
-  const catalog=JSON.parse(document.getElementById("sectionCatalogInput").value);
+  if(!window.SahroudSteel3D||!window.SahroudSteelSections||!window.SahroudSteelGeometry||!window.SahroudSteelLoads)throw Error("موتور تحلیل، بانک مقاطع، مولد هندسه یا مولد بارگذاری بارگذاری نشده است.");
   const built=window.SahroudSteelGeometry.build(data());
   if(!built.validation.valid)throw Error("هندسه معتبر نیست: "+built.validation.errors.join("؛ "));
+  // Rebuild load cases from the current form values to prevent stale geometry or loads.
+  const generated=window.SahroudSteelLoads.generate(built.model,{
+   deadLoad:field("deadLoad").value,liveLoad:field("liveLoad").value
+  },window.SahroudSteel3D);
+  const cases=generated.cases;
+  window.SahroudSteelV3LoadCases=cases;
+  const catalog=JSON.parse(document.getElementById("sectionCatalogInput").value);
   const check=window.SahroudSteelSections.validate(built.model,catalog);
   if(!check.valid)throw Error("تحلیل به علت نقص مقاطع متوقف شد: "+check.errors.slice(0,8).join("؛ ")+(check.errors.length>8?" و "+(check.errors.length-8)+" مورد دیگر.":""));
   const resolver=window.SahroudSteelSections.resolve(built.model,catalog);
@@ -209,15 +214,16 @@ document.getElementById("roofGravityAnalyzeBtn").addEventListener("click",()=>{
   const fmt=v=>Number(v).toExponential(3);
   const describe=(name,label)=>{
    const r=results[name],m=r.maxDisplacement;
-   const reactions=r.reactions.length;
    return label+": بیشینه انتقال "+fmt(r.maxTranslation*1000)+" mm در گره "+(m?m.nodeId:"—")+
-    "؛ تعداد تکیه‌گاه‌های دارای واکنش "+reactions+
-    "؛ خطای نسبی تعادل نیرو "+fmt(r.equilibrium.relativeForceResidual)+
+    "؛ واکنش‌های غیرصفر "+r.reactions.length+
+    "؛ باقیمانده نسبی تعادل نیرو "+fmt(r.equilibrium.relativeForceResidual)+
     " و لنگر "+fmt(r.equilibrium.relativeMomentResidual);
   };
-  out.textContent="تحلیل خطی هر دو حالت بارگذاری موفق شد. "+describe("DEAD_ROOF","بار مرده")+
+  out.textContent="تحلیل خطی هر دو حالت بارگذاری با داده‌های فعلی فرم انجام شد. "+describe("DEAD_ROOF","بار مرده")+
    " | "+describe("LIVE_ROOF","بار زنده")+
-   ". نتایج عددی خام در window.SahroudSteelV3AnalysisResults نگهداری شد. این نتایج بدون ترکیبات آیین‌نامه‌ای، بار برف بام، باد، جرثقیل، P-Delta، کمانش و طراحی مقاومت/اتصالات است و تأیید نهایی سازه محسوب نمی‌شود.";
+   ". بار مرده کل برآوردشده "+generated.cases.DEAD_ROOF.totalVertical_kN.toFixed(2)+
+   " kN و بار زنده "+generated.cases.LIVE_ROOF.totalVertical_kN.toFixed(2)+
+   " kN است. نتایج خام در window.SahroudSteelV3AnalysisResults نگهداری شد. این تحلیل بدون ترکیبات آیین‌نامه‌ای، برف بام، باد، جرثقیل، P-Delta، کمانش و طراحی مقاومت/اتصالات است و تأیید نهایی سازه محسوب نمی‌شود.";
  }catch(error){out.textContent="تحلیل بار سقف متوقف شد: "+error.message+" هیچ نتیجه طراحی یا تأیید سازه‌ای صادر نشد.";}
 });
 document.getElementById("saveBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data(),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="sahroud-steel-project.json";a.click();URL.revokeObjectURL(url);setStatus("فایل پشتیبان پروژه آماده شد");});
