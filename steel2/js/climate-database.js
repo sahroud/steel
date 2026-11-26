@@ -24,15 +24,28 @@ function refreshStatus(){
 }
 function loadSelectedCity(){
  const id=$("climateCity")?.value, r=records[id]; if(!r)return;
- if($("climateCustomCity"))$("climateCustomCity").value=r.name;
- if($("climateGroundSnow"))$("climateGroundSnow").value=r.groundSnow===null?"":r.groundSnow;
- if($("climateBasicWind"))$("climateBasicWind").value=r.basicWind===null?"":r.basicWind;
- if($("climateElevation"))$("climateElevation").value=r.elevation===null?"":r.elevation;
- if($("climateSource"))$("climateSource").value=r.source||"";
+ const values={
+  city:id,customCity:r.name,
+  basicWind:r.basicWind===null?"":String(r.basicWind),
+  groundSnow:r.groundSnow===null?"":String(r.groundSnow),
+  elevation:r.elevation===null?"":String(r.elevation),
+  source:r.source||""
+ };
+ if($("city"))$("city").value=id;
+ if($("climateCustomCity"))$("climateCustomCity").value=values.customCity;
+ if($("climateGroundSnow"))$("climateGroundSnow").value=values.groundSnow;
+ if($("climateBasicWind"))$("climateBasicWind").value=values.basicWind;
+ if($("climateElevation"))$("climateElevation").value=values.elevation;
+ if($("climateSource"))$("climateSource").value=values.source;
+ // انتقال یکپارچه اطلاعات محل به موتور بارگذاری؛ بار برف زمین جایگزین بار برف بام نمی‌شود.
+ if(window.SteelLoads?.getData&&window.SteelLoads?.setData){
+  const loads=window.SteelLoads.getData();
+  window.SteelLoads.setData({...loads,climate:{...(loads.climate||{}),...values}});
+ }
  const status=$("climateNotice");
  if(status)status.textContent=(r.basicWind!==null||r.groundSnow!==null)
-   ?"مبحث ششم ۱۳۹۸ برای شاهرود: V=۹۰ km/h، q≈۰٫۳۸۳ kN/m²، منطقه برف ۳ و Ps=۱٫۰ kN/m². Ps بار مبناست و بار نهایی بام باید جداگانه محاسبه شود."
-   :"برای این شهر هنوز داده عددی ثبت نشده است؛ مقادیر شهر قبلی پاک شدند تا اشتباهاً به این شهر تخصیص نیابند.";
+   ?("اطلاعات اقلیمی "+r.name+" بارگذاری شد. سرعت باد و برف زمین از رکورد شهر خوانده شده‌اند؛ بار نهایی بام، ضرایب باد، زلزله و پارامترهای وابسته باید جداگانه طبق ضوابط کنترل شوند. "+(r.status||""))
+   :"برای "+r.name+" هنوز داده عددی ثبت نشده است؛ مقدار شهر قبلی پاک شد تا اشتباهاً به این شهر تخصیص نیابد.";
  refreshStatus();
 }
 function addOptions(){
@@ -42,8 +55,11 @@ function addOptions(){
   if(legacy&&![...legacy.options].some(o=>o.value===id)){const o=document.createElement("option");o.value=id;o.textContent=name;legacy.appendChild(o);}
  });
  sel.addEventListener("change",loadSelectedCity);
- // Keep the initial climate form aligned with the project default city.
- if(!sel.value && records.shahroud) sel.value="shahroud";
+ // Use the saved project city when available; otherwise Shahroud is the project-wide default.
+ const projectCity=legacy?.value;
+ const preferred=projectCity&&records[projectCity]?projectCity:"shahroud";
+ if(!sel.value || !records[sel.value]) sel.value=preferred;
+ if(legacy&&records[sel.value]) legacy.value=sel.value;
  loadSelectedCity();
 }
 function saveCurrentCity(){
