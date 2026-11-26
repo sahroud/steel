@@ -152,6 +152,17 @@
       tributaryWidthsM:list.filter(m=>Number(m.tributaryWidth)>0).map(m=>Number(m.tributaryWidth)),
       tributaryHeightsM:list.filter(m=>Number(m.tributaryHeight)>0).map(m=>Number(m.tributaryHeight))
     });
+    const nodeById=new Map(model.nodes.map(n=>[String(n.id),n]));
+    const endGirtNodes=members.filter(m=>m.sectionKey==="endGirt")
+      .flatMap(m=>[nodeById.get(String(m.start)),nodeById.get(String(m.end))])
+      .filter(Boolean);
+    const highestEndGirtY=endGirtNodes.length?Math.max(...endGirtNodes.map(n=>Number(n.y)||0)):0;
+    const rise=Math.max(0,Number(model.geometry.rise)||0);
+    const span=Math.max(0,Number(model.geometry.span)||0);
+    const gableHeightAboveLastGirt=Math.max(0,rise-(highestEndGirtY-(Number(model.geometry.height)||0)));
+    // Geometric estimate only; it is not a verified tributary area or load.
+    const estimatedUnassignedGableAreaM2=rise>0
+      ? span*gableHeightAboveLastGirt*gableHeightAboveLastGirt/(2*rise):0;
     return {
       status:"geometry-inventory-only",available:true,designEligibility:false,
       geometry:{spanM:model.geometry.span,lengthM:model.geometry.length,
@@ -165,8 +176,10 @@
         endFront:summarize(groups.endFront),endBack:summarize(groups.endBack)
       },
       endWall:{frontGirtCount:groups.endFront.length,rearGirtCount:groups.endBack.length,
+        highestHorizontalGirtY_m:highestEndGirtY,
+        estimatedGableAreaAboveHighestGirt_m2:estimatedUnassignedGableAreaM2,
         gableAreaCoverage:"not-modeled-as-distributed-end-wall-area",
-        note:"لاپه‌های انتهایی فعلی فقط در ترازهای لاپه ساخته می‌شوند؛ سهم بارگیر مثلثی بالای آخرین لاپه به عضو یا مسیر انتقال دیگری اختصاص نیافته است."},
+        note:"مساحت هندسی تقریبی بخش بالای بالاترین لاپه افقی محاسبه شده است؛ این عدد تخصیص بارگیر یا بار طراحی نیست و پوشش کامل دیوار انتهایی را تأیید نمی‌کند."},
       blockers:[
         "این ممیزی فقط وجود هندسه و داده عرض/ارتفاع بارگیر را فهرست می‌کند؛ تبدیل بار یا اعمال بار به حل‌گر انجام نمی‌دهد.",
         "تفکیک نواحی باد لبه، گوشه و میدان هنوز مدل نشده است.",
@@ -356,7 +369,7 @@
     out.textContent="ممیزی هندسه (صرفاً فهرست‌برداری، بدون اعمال بار): پرلین چپ/راست "+g.roofLeft.memberCount+"/"+g.roofRight.memberCount+
       "؛ لاپه طولی چپ/راست "+g.longWallLeft.memberCount+"/"+g.longWallRight.memberCount+
       "؛ لاپه انتهایی جلو/عقب "+g.endFront.memberCount+"/"+g.endBack.memberCount+
-      ". ناحیه مثلثی دیوار انتهایی بالای لاپه آخر در بارگذاری توزیعی پوشش داده نشده است. طراحی‌پذیری: خیر.";
+      ". مساحت هندسی تقریبی گابل بالای بالاترین لاپه: "+(Number(a.endWall.estimatedGableAreaAboveHighestGirt_m2)||0).toFixed(2)+" m² (صرفاً ممیزی هندسه، نه بارگیر تأییدشده). طراحی‌پذیری: خیر.";
   }
   function setData(data) {
     restoredMeta=data&&typeof data==="object"?{
