@@ -50,6 +50,9 @@
 <label>بار زنده سقف (kN/m²)<input name="liveLoad" type="number" min="0" step=".01" value=".75"></label>
 <label>بار برف مبنای زمین Ps (kN/m²)<input name="snowLoad" type="number" min="0" step=".01" value="1.00"></label>
 <label>منطقه بار برف<input name="snowRegion" type="number" min="1" max="6" step="1" value="3" readonly></label>
+<label>ضریب اهمیت برف Ie<input name="snowImportance" type="number" min=".8" max="1.2" step=".1" value="1.0"></label>
+<label>ضریب شرایط دمایی Ct<select name="snowThermal"><option value="1" selected>1.0 — ساختمان معمولی</option><option value="1.1">1.1 — کمی بالاتر از صفر</option><option value="1.2">1.2 — بدون گرمایش / زیر بام باز</option><option value="1.3">1.3 — همواره زیر صفر</option></select></label>
+<label>نوع سطح پوشش سقف<select name="roofSurface"><option value="">انتخاب کنید</option><option value="slippery">لغزنده و صاف (مانند ورق فلزی صاف)</option><option value="nonSlippery">غیرلغزنده یا دارای مانع لغزش</option></select></label>
 <label>سرعت مبنای باد (km/h)<input name="windSpeed" type="number" min="0" step="1" value="90"></label>
 <label>فشار مبنای باد q (kN/m²)<input name="windPressure" type="number" min="0" step=".01" value=".38" readonly></label>
 <label>ارتفاع مبنای ایستگاه (متر)<input name="climateElevation" type="number" min="0" step="1" value="1349"></label>
@@ -95,11 +98,11 @@
 </form>
 <footer>SAHROUD STEEL · ابزار کمکی مهندس محاسب · خروجی اجرایی فقط پس از تکمیل کنترل‌ها و تأیید مهندس مسئول</footer>
 </main>
-<script src="engine-core.js?v=1" defer></script><script src="load-generator.js?v=2" defer></script><script src="section-catalog.js?v=4" defer></script>
+<script src="engine-core.js?v=1" defer></script><script src="load-generator.js?v=3" defer></script><script src="section-catalog.js?v=4" defer></script>
 <script src="engine-geometry.js?v=1" defer></script>
 <script src="engine-self-test.js?v=1" defer></script>
 <script src="geometry-self-test.js?v=1" defer></script>
 <script src="engine-adapter.js?v=2" defer></script>
 <script src="section-profile-generator.js?v=1" defer></script>
-<script src="section-geometry.js?v=2"></script><script src="app.js?v=17" defer></script>
+<script src="section-geometry.js?v=2"></script><script src="app.js?v=18" defer></script>
 </body></html>
