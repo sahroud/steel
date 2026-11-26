@@ -553,25 +553,29 @@
 <script>
 (function () {
     "use strict";
-    const slope = 0.20;
+    const defaultSlope = 0.20;
     const fmt = value => Number(value).toLocaleString("fa-IR", {minimumFractionDigits:2, maximumFractionDigits:2});
-    window.updateRoofGeometry = function () {
+    window.updateRoofGeometry = function (recalculateDefaultRise = false) {
         const span = Number(document.getElementById("span")?.value);
         const height = Number(document.getElementById("height")?.value);
         const riseField = document.getElementById("rise");
-        if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(height) || height <= 0) return;
-        const rise = span * 0.5 * slope;
-        if (riseField) riseField.value = rise.toFixed(6);
+        if (!Number.isFinite(span) || span <= 0 || !Number.isFinite(height) || height <= 0 || !riseField) return;
+        if (recalculateDefaultRise) riseField.value = (span * 0.5 * defaultSlope).toFixed(6);
+        const rise = Number(riseField.value);
+        if (!Number.isFinite(rise) || rise < 0) return;
+        const slope = rise / (span * 0.5);
         const slopeEl = document.getElementById("roofSlopeDisplay");
         const riseEl = document.getElementById("roofRiseDisplay");
         const totalEl = document.getElementById("roofTotalHeightDisplay");
-        if (slopeEl) slopeEl.textContent = "۲۰٪";
+        if (slopeEl) slopeEl.textContent = fmt(slope * 100) + "٪";
         if (riseEl) riseEl.textContent = fmt(rise) + " متر";
         if (totalEl) totalEl.textContent = fmt(height + rise) + " متر";
     };
-    ["span", "height"].forEach(id => document.getElementById(id)?.addEventListener("input", window.updateRoofGeometry));
-    window.addEventListener("DOMContentLoaded", window.updateRoofGeometry);
-    window.updateRoofGeometry();
+    document.getElementById("span")?.addEventListener("input", () => window.updateRoofGeometry(true));
+    document.getElementById("height")?.addEventListener("input", () => window.updateRoofGeometry(false));
+    document.getElementById("rise")?.addEventListener("input", () => window.updateRoofGeometry(false));
+    window.addEventListener("DOMContentLoaded", () => window.updateRoofGeometry(true));
+    window.updateRoofGeometry(true);
 })();
 </script>
 <script defer src="js/project.js?v=20261112purlinmigration1"></script>
