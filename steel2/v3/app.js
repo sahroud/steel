@@ -87,9 +87,9 @@ document.getElementById("customSectionApplyBtn").addEventListener("click",()=>{
   if(!(J>0&&Number.isFinite(J)))throw Error("برای ثبت مقطع در مدل، J معتبر باید جداگانه وارد شود؛ محاسبه‌گر آن را حدس نمی‌زند.");
   const area=document.getElementById("sectionCatalogInput"),c=JSON.parse(area.value);
   const group=document.getElementById("customSectionGroup").value;
-  c.groups[group]={profile:document.getElementById("customSectionName").value.trim()||"مقطع سفارشی",A_cm2:p.A_cm2,Iy_cm4:p.Iy_cm4,Iz_cm4:p.Iz_cm4,J_cm4:J};
+  const isCold=/^[CZ]/i.test(document.getElementById("customSectionName").value.trim());\n  c.groups[group]={profile:document.getElementById("customSectionName").value.trim()||"مقطع سفارشی",A_cm2:p.A_cm2,Iy_cm4:p.Iy_cm4,Iz_cm4:p.Iz_cm4,J_cm4:J,Ixy_cm4:p.Ixy_cm4,principalI1_cm4:p.principalI1_cm4,principalI2_cm4:p.principalI2_cm4,principalAngle_deg:p.principalAngle_deg,advancedColdFormed:isCold};
   area.value=JSON.stringify(c,null,2);
-  out.textContent="مقطع در گروه انتخابی بانک ثبت شد. توجه: جهت محورهای محلی عضو و مقدار J باید پیش از تحلیل توسط مهندس کنترل شوند.";
+  out.textContent="مقطع در بانک ثبت شد. "+(isCold?"هشدار: Z/C سردنورد به علت مرکز برش خارج از مرکز، کمانش موضعی/اعوجاجی و اثر پیچش، فعلاً برای تحلیل سازه‌ای خودکار مسدود است؛ ثبت آن فقط برای بانک هندسی است. ":"")+"مقدار J و جهت‌گیری باید از مرجع معتبر کنترل شوند.";
  }catch(e){out.textContent="ثبت انجام نشد: "+e.message;}
 });
 document.getElementById("sectionTemplateBtn").addEventListener("click",()=>{
