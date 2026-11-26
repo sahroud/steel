@@ -18,6 +18,14 @@ form.addEventListener("input",()=>{updateGeometry();schedule();});form.addEventL
 nav.forEach((b,i)=>b.addEventListener("click",()=>go(i)));
 document.getElementById("prevBtn").addEventListener("click",()=>go(index-1));
 document.getElementById("nextBtn").addEventListener("click",()=>{if(index<pages.length-1)go(index+1);else{saveLocal();setStatus("ورودی‌ها ذخیره شدند؛ موتور محاسباتی در مرحله اتصال قرار دارد.");}});
+document.getElementById("solverTestBtn").addEventListener("click",()=>{
+ const out=document.getElementById("solverTestResult");
+ try{
+  const result=window.SahroudSteelEngineTests.run();
+  const t=result.tests[0];
+  out.innerHTML="<h3>"+(result.passed?"آزمون مرجع با موفقیت گذشت":"آزمون مرجع ناموفق بود")+"</h3><p>تغییرمکان نوک تیر: "+t.actualTipDeflectionM.toExponential(5)+" متر؛ مقدار نظری: "+t.expectedTipDeflectionM.toExponential(5)+" متر.</p><p>خطای نسبی تغییرمکان: "+(t.displacementRelativeError*100).toExponential(3)+"٪؛ واکنش تکیه‌گاهی: "+t.supportReactionYN.toFixed(3)+" نیوتن.</p><p>"+(t.equilibrium.ok?"تعادل نیرو و لنگر برقرار است.":"کنترل تعادل ناموفق است.")+"</p><p>این نتیجه فقط اعتبارسنجی اولیه حل‌گر با یک مثال مرجع است؛ مدل سوله هنوز به این موتور متصل نشده است.</p>";
+ }catch(error){out.textContent="اجرای آزمون با خطا متوقف شد: "+error.message;}
+});
 document.getElementById("engineCheckBtn").addEventListener("click",()=>{const result=window.SahroudEngineAdapter?.validateForEngine?.(data());const out=document.getElementById("engineReadiness");if(!result){out.textContent="ماژول اتصال موتور بارگذاری نشده است.";return;}out.innerHTML="<h3>"+(result.ready?"ورودی‌های پایه از نظر ساختاری آماده‌اند":"ورودی‌های پایه ناقص‌اند")+"</h3>"+(result.errors.length?("<b>موارد مانع:</b><ul>"+result.errors.map(x=>"<li>"+x+"</li>").join("")+"</ul>"):"")+(result.warnings.length?("<b>هشدارها و محدودیت‌ها:</b><ul>"+result.warnings.map(x=>"<li>"+x+"</li>").join("")+"</ul>"):"")+"<p>این بررسی فقط آمادگی داده‌ها را می‌سنجد و به‌معنای اجرای تحلیل یا تأیید سازه نیست.</p>";});
 document.getElementById("saveBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data(),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="sahroud-steel-project.json";a.click();URL.revokeObjectURL(url);setStatus("فایل پشتیبان پروژه آماده شد");});
 document.getElementById("openBtn").addEventListener("click",()=>document.getElementById("fileInput").click());
