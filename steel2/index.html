@@ -606,6 +606,27 @@
 <script src="js/base-plate-check.js?v=20261125-geometry1"></script>
 <script src="js/base-plate-ui.js?v=20261125-geometry1"></script>
 <script src="js/auto-workflow.js?v=20261126-mobile-progress3"></script>
+<script>
+(function(){
+  const s=document.createElement("script");
+  s.src="js/auto-workflow.js?v=20261126-mobile-progress4";
+  s.onerror=function(){
+    const b=document.getElementById("btnSteelAutoWorkflow");
+    const o=document.getElementById("steelAutoWorkflowResults");
+    if(o)o.innerHTML="<strong>خطا: فایل اجرای خودکار بارگذاری نشد.</strong><p>اتصال اینترنت یا نشانی فایل جاوااسکریپت را بررسی کنید.</p>";
+    if(b){b.disabled=false;b.textContent="بارگذاری مجدد اجرای خودکار";b.onclick=function(){location.reload();};}
+  };
+  document.querySelectorAll('script[src*="auto-workflow.js"]').forEach(function(x){x.onerror=s.onerror;});
+  document.addEventListener("click",function(e){
+    const b=e.target.closest("#btnSteelAutoWorkflow");
+    if(!b)return;
+    if(!window.SteelAutoWorkflow||typeof window.SteelAutoWorkflow.run!=="function"){
+      const o=document.getElementById("steelAutoWorkflowResults");
+      if(o)o.innerHTML="<strong>خطا: کد اجرای خودکار در صفحه فعال نشده است.</strong><p>کلیک دریافت شد، اما فایل اجرا در دسترس نیست. صفحه را یک‌بار تازه‌سازی کنید.</p>";
+    }
+  },true);
+})();
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
 <script src="js/dropbox-integration.js?v=20261112projectupload1"></script>
