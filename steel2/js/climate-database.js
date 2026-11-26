@@ -115,7 +115,7 @@ function getData(){return {schema:"sahroud-steel-climate-db",version:1,records:J
 function setData(data){
  if(!data||data.schema!=="sahroud-steel-climate-db"||!data.records)return;
  const cleanNumber=v=>v===null||v===undefined||v===""?null:(Number.isFinite(Number(v))?Number(v):null);
- Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
+ Object.keys(data.records).forEach(id=>{const r=data.records[id];if(!r||typeof r!=="object")return;records[id]={id,name:String(r.name||id),basicWind:cleanNumber(r.basicWind),groundSnow:cleanNumber(r.groundSnow),basicWindPressure:cleanNumber(r.basicWindPressure),snowRegion:cleanNumber(r.snowRegion),elevation:cleanNumber(r.elevation),siteCoordinates:r.siteCoordinates&&Number.isFinite(Number(r.siteCoordinates.latitude))&&Number.isFinite(Number(r.siteCoordinates.longitude))?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,elevationSource:String(r.elevationSource||""),source:String(r.source||""),sourceDate:String(r.sourceDate||""),status:String(r.status||"")};});
  applyShahroudReference();
  refreshStatus();
  // پس از بازیابی بانک ذخیره‌شده، مقادیر شهر انتخاب‌شده را نیز به ورودی‌های پروژه منتقل کن.
