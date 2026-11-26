@@ -77,7 +77,7 @@ document.getElementById("customSectionCalcBtn").addEventListener("click",()=>{
  const out=document.getElementById("customSectionResult");
  try{
   const p=readCustomSection();
-  out.textContent="مساحت: "+p.A_cm2.toFixed(3)+" cm² | مرکز سطح: ("+p.cx_mm.toFixed(2)+", "+p.cy_mm.toFixed(2)+") mm | I قوی: "+p.Iy_cm4.toFixed(2)+" cm⁴ | I ضعیف: "+p.Iz_cm4.toFixed(2)+" cm⁴. ثابت پیچشی J محاسبه نشده است.";
+  out.textContent="مساحت: "+p.A_cm2.toFixed(3)+" cm² | مرکز سطح: ("+p.cx_mm.toFixed(2)+", "+p.cy_mm.toFixed(2)+") mm | Ix: "+p.Iy_cm4.toFixed(2)+" cm⁴ | Iy: "+p.Iz_cm4.toFixed(2)+" cm⁴ | Ixy: "+p.Ixy_cm4.toFixed(2)+" cm⁴ | ممان‌های اصلی: "+p.principalI1_cm4.toFixed(2)+" و "+p.principalI2_cm4.toFixed(2)+" cm⁴ | زاویه محور اصلی: "+p.principalAngle_deg.toFixed(2)+" درجه. این محورها به نگاشت محلی حل‌گر اعمال نشده‌اند؛ J و مرکز برش/کمانش موضعی نیز محاسبه نشده‌اند.";
  }catch(e){out.textContent="محاسبه انجام نشد: "+e.message;}
 });
 document.getElementById("customSectionApplyBtn").addEventListener("click",()=>{
