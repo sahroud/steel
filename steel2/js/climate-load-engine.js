@@ -129,6 +129,53 @@
       ?"فشار خالص هر شش سطح برای دو حالت علامت فشار داخلی محاسبه شد. q="+r.q.toFixed(3)+" kN/m². مقادیر هنوز دستی/تأییدنشده‌اند و به تحلیل سه‌بعدی منتقل نمی‌شوند."
       :"برای محاسبه همه سطوح، ضرایب مشترک Iw، Ce، Ct، Cg، Cd، Cgi، قدرمطلق Cpi و Cp هر شش سطح را وارد کنید.";
   }
+  function getStructuralWindGeometryAudit() {
+    const structural=window.SteelStructuralModel;
+    const model=structural&&typeof structural.getData==="function"?structural.getData():null;
+    if(!model||!Array.isArray(model.members)||!model.geometry){
+      return {status:"model-not-built",available:false,designEligibility:false,
+        note:"مدل هندسی هنوز در دسترس نیست؛ ممیزی مسیر انتقال باد انجام نشده است."};
+    }
+    const members=model.members;
+    const groups={
+      roofLeft:members.filter(m=>m.sectionKey==="roofPurlin"&&m.side==="left"),
+      roofRight:members.filter(m=>m.sectionKey==="roofPurlin"&&m.side==="right"),
+      longWallLeft:members.filter(m=>m.sectionKey==="wallGirt"&&m.side==="left"),
+      longWallRight:members.filter(m=>m.sectionKey==="wallGirt"&&m.side==="right"),
+      endFront:members.filter(m=>m.sectionKey==="endGirt"&&m.endFace==="front"),
+      endBack:members.filter(m=>m.sectionKey==="endGirt"&&m.endFace==="rear")
+    };
+    const summarize=list=>({
+      memberCount:list.length,
+      missingTributaryMetadata:list.filter(m=>
+        !(Number(m.tributaryWidth)>0||Number(m.tributaryHeight)>0)).length,
+      tributaryWidthsM:list.filter(m=>Number(m.tributaryWidth)>0).map(m=>Number(m.tributaryWidth)),
+      tributaryHeightsM:list.filter(m=>Number(m.tributaryHeight)>0).map(m=>Number(m.tributaryHeight))
+    });
+    return {
+      status:"geometry-inventory-only",available:true,designEligibility:false,
+      geometry:{spanM:model.geometry.span,lengthM:model.geometry.length,
+        heightM:model.geometry.height,riseM:model.geometry.rise,
+        frameCount:Array.isArray(model.geometry.frames)?model.geometry.frames.length:null,
+        roofPurlinSpacingM:model.geometry.roofPurlinSpacing,
+        wallGirtSpacingM:model.geometry.wallGirtSpacing},
+      groups:{
+        roofLeft:summarize(groups.roofLeft),roofRight:summarize(groups.roofRight),
+        longWallLeft:summarize(groups.longWallLeft),longWallRight:summarize(groups.longWallRight),
+        endFront:summarize(groups.endFront),endBack:summarize(groups.endBack)
+      },
+      endWall:{frontGirtCount:groups.endFront.length,rearGirtCount:groups.endBack.length,
+        gableAreaCoverage:"not-modeled-as-distributed-end-wall-area",
+        note:"لاپه‌های انتهایی فعلی فقط در ترازهای لاپه ساخته می‌شوند؛ سهم بارگیر مثلثی بالای آخرین لاپه به عضو یا مسیر انتقال دیگری اختصاص نیافته است."},
+      blockers:[
+        "این ممیزی فقط وجود هندسه و داده عرض/ارتفاع بارگیر را فهرست می‌کند؛ تبدیل بار یا اعمال بار به حل‌گر انجام نمی‌دهد.",
+        "تفکیک نواحی باد لبه، گوشه و میدان هنوز مدل نشده است.",
+        "سهم بارگیر اعضای کناری و مسیر انتقال پوشش به قاب/مهاربند نیازمند کنترل است.",
+        "ناحیه مثلثی دیوار انتهایی بالای آخرین لاپه در بارگذاری توزیعی پوشش داده نشده است.",
+        "جهت و علامت بار جهانی باید برای هر سطح و جهت باد مستقلاً تأیید شود."
+      ]
+    };
+  }
   function getData() {
     const loads = window.SteelLoads && window.SteelLoads.getData ? window.SteelLoads.getData() : {};
     const climate = loads.climate || {};
@@ -173,6 +220,7 @@
         netConvention:"Pnet = Pexternal - Pinternal",
         transferAudit:{
           status:"calculated-not-applied-to-structural-model",
+          geometryAudit:getStructuralWindGeometryAudit(),
           pressureUnit:"kN/m2",
           targetMemberGroups:{
             "roof-left":"roofPurlin:left",
