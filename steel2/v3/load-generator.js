@@ -9,6 +9,21 @@
   if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل هندسی معتبر نیست.");
   if(!engine||typeof engine.makeTransform!=="function")throw Error("تبدیل محورهای محلی موتور تحلیل در دسترس نیست.");
   const dead=Number(inputs?.deadLoad),live=Number(inputs?.liveLoad);
+  const snowGround=Number(inputs?.snowLoad),snowImportance=Number(inputs?.snowImportance),snowThermal=Number(inputs?.snowThermal);
+  const snowRegion=Number(inputs?.snowRegion),roofSlopePercent=Number(inputs?.roofSlope);
+  const roofSurface=String(inputs?.roofSurface||"");
+  if(!Number.isFinite(snowGround)||snowGround<0)throw Error("بار برف مبنای زمین باید عددی و نامنفی باشد.");
+  if(!Number.isFinite(snowImportance)||snowImportance<=0)throw Error("ضریب اهمیت برف باید از جدول مربوط به گروه خطرپذیری وارد شود.");
+  if(!Number.isFinite(snowThermal)||snowThermal<1||snowThermal>1.3)throw Error("ضریب شرایط دمایی برف باید بین 1 تا 1.3 باشد.");
+  if(!Number.isFinite(snowRegion)||snowRegion<1||snowRegion>6)throw Error("منطقه بار برف معتبر نیست.");
+  if(!Number.isFinite(roofSlopePercent)||roofSlopePercent<0)throw Error("شیب سقف برای محاسبه برف معتبر نیست.");
+  if(!["slippery","nonSlippery"].includes(roofSurface))throw Error("نوع سطح پوشش سقف را برای محاسبه ضریب شیب برف انتخاب کنید.");
+  if(snowRegion>3)throw Error("برای مناطق برف 4 تا 6، ضریب برف‌گیری Ce باید با جدول رسمی و شرایط سایت تعیین شود؛ این نسخه فقط منطقه 1 تا 3 را خودکار پشتیبانی می‌کند.");
+  const alpha=Math.atan(roofSlopePercent/100)*180/Math.PI;
+  const alpha0=roofSurface==="slippery"?(snowThermal===1?5:(snowThermal<=1.1?10:15)):(snowThermal===1?30:45);
+  const snowSlope=alpha<=alpha0?1:(alpha>=70?0:1-(alpha-alpha0)/(70-alpha0));
+  const snowExposure=1;
+  const snowRoof=snowGround*snowImportance*snowExposure*snowThermal*snowSlope;
   if(!Number.isFinite(dead)||dead<0)throw Error("بار مرده سقف باید عددی و نامنفی باشد.");
   if(!Number.isFinite(live)||live<0)throw Error("بار زنده سقف باید عددی و نامنفی باشد.");
   const nodes=new Map(model.nodes.map(n=>[n.id,n]));
@@ -35,7 +50,7 @@
    tributary.set(r.key,width);
   });
   const cases={};
-  [["DEAD_ROOF",dead],["LIVE_ROOF",live]].forEach(([name,pressure])=>{
+  [["DEAD_ROOF",dead],["LIVE_ROOF",live],["BALANCED_SNOW_ROOF",snowRoof]].forEach(([name,pressure])=>{
    const members=model.members.map(m=>{
     if(m.sectionKey!=="roofPurlin")return {...m,analysisLoad:undefined};
     const width=tributary.get(String(m.row??m.id));
@@ -56,7 +71,7 @@
    },0);
    cases[name]={model:{...model,members},pressure_kN_m2:pressure,totalVertical_kN:totalN/1000};
   });
-  return {cases,rows:ordered.map((r,i)=>({row:r.key,tributaryWidth_m:tributary.get(r.key)})),scope:"بار مرده و زنده سطحی سقف به‌صورت دو حالت بارگذاری مستقل، با توزیع بارگیر هندسی روی پرلین‌های طولی. این تابع ترکیبات آیین‌نامه‌ای، برف بام، باد، بار جرثقیل، بار پوشش دیوار یا تحلیل سازه را تولید نمی‌کند."};
+  return {cases,rows:ordered.map((r,i)=>({row:r.key,tributaryWidth_m:tributary.get(r.key)})),snow:{ground_kN_m2:snowGround,importanceFactor:snowImportance,exposureFactor:snowExposure,thermalFactor:snowThermal,slopeAngle_deg:alpha,slopeFactor:snowSlope,balancedRoof_kN_m2:snowRoof,region:snowRegion},scope:"بار مرده، زنده و برف متوازن سقف به‌صورت حالت‌های مستقل و با توزیع بارگیر هندسی روی پرلین‌های طولی. برف نامتوازن/جزئی/انباشتگی/لغزش، باد، جرثقیل، پوشش دیوار و ترکیبات بار هنوز تولید نمی‌شوند."};
  }
  root.SahroudSteelLoads={generate};
 })(window);
