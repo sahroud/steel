@@ -179,8 +179,8 @@ document.getElementById("roofGravityLoadBtn").addEventListener("click",()=>{
   if(!built.validation.valid)throw Error("هندسه معتبر نیست: "+built.validation.errors.join("؛ "));
   const r=window.SahroudSteelLoads.generate(built.model,{deadLoad:field("deadLoad").value,liveLoad:field("liveLoad").value,snowLoad:field("snowLoad").value,snowRegion:field("snowRegion").value,snowImportance:field("snowImportance").value,snowThermal:field("snowThermal").value,roofSurface:field("roofSurface").value,roofSlope:field("roofSlope").value},window.SahroudSteel3D);
   window.SahroudSteelV3LoadCases=r.cases;
-  const d=r.cases.DEAD_ROOF.totalVertical_kN,l=r.cases.LIVE_ROOF.totalVertical_kN;
-  out.textContent="دو حالت بار مستقل تولید شد. بار مرده سقف: "+d.toFixed(2)+" kN | بار زنده سقف: "+l.toFixed(2)+" kN | ردیف‌های پرلین: "+r.rows.length+". "+r.scope;
+  const d=r.cases.DEAD_ROOF.totalVertical_kN,l=r.cases.LIVE_ROOF.totalVertical_kN,sn=r.cases.BALANCED_SNOW_ROOF.totalVertical_kN;
+  out.textContent="سه حالت بار مستقل تولید شد. مرده: "+d.toFixed(2)+" kN | زنده: "+l.toFixed(2)+" kN | برف متوازن: "+sn.toFixed(2)+" kN (Pr="+r.snow.balancedRoof_kN_m2.toFixed(3)+" kN/m²، Cs="+r.snow.slopeFactor.toFixed(3)+") | ردیف پرلین: "+r.rows.length+". "+r.scope;
  }catch(error){out.textContent="تولید بار سقف متوقف شد: "+error.message;}
 });
 document.getElementById("roofGravityAnalyzeBtn").addEventListener("click",()=>{
@@ -222,7 +222,7 @@ document.getElementById("roofGravityAnalyzeBtn").addEventListener("click",()=>{
   out.textContent="تحلیل خطی هر دو حالت بارگذاری با داده‌های فعلی فرم انجام شد. "+describe("DEAD_ROOF","بار مرده")+
    " | "+describe("LIVE_ROOF","بار زنده")+" | "+describe("BALANCED_SNOW_ROOF","برف متوازن")+
    ". بار برف متوازن محاسبه‌شده "+generated.snow.balancedRoof_kN_m2.toFixed(3)+" kN/m² (Cs="+generated.snow.slopeFactor.toFixed(3)+"). بار مرده کل برآوردشده "+generated.cases.DEAD_ROOF.totalVertical_kN.toFixed(2)+
-   " kN و بار زنده "+generated.cases.LIVE_ROOF.totalVertical_kN.toFixed(2)+
+   " kN، بار زنده "+generated.cases.LIVE_ROOF.totalVertical_kN.toFixed(2)+" kN و برف متوازن کل "+generated.cases.BALANCED_SNOW_ROOF.totalVertical_kN.toFixed(2)+
    " kN است. نتایج خام در window.SahroudSteelV3AnalysisResults نگهداری شد. این تحلیل بدون ترکیبات آیین‌نامه‌ای، برف نامتوازن/جزئی/انباشتگی/لغزش، باد، جرثقیل، P-Delta، کمانش و طراحی مقاومت/اتصالات است و تأیید نهایی سازه محسوب نمی‌شود.";
  }catch(error){out.textContent="تحلیل بار سقف متوقف شد: "+error.message+" هیچ نتیجه طراحی یا تأیید سازه‌ای صادر نشد.";}
 });
