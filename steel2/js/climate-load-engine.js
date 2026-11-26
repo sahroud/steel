@@ -153,24 +153,24 @@
       tributaryHeightsM:list.filter(m=>Number(m.tributaryHeight)>0).map(m=>Number(m.tributaryHeight))
     });
     const nodeById=new Map(model.nodes.map(n=>[String(n.id),n]));
-    const endGirtNodes=members.filter(m=>m.sectionKey==="endGirt")
-      .flatMap(m=>[nodeById.get(String(m.start)),nodeById.get(String(m.end))])
-      .filter(Boolean);
-    const highestEndGirtY=endGirtNodes.length?Math.max(...endGirtNodes.map(n=>Number(n.y)||0)):0;
     const rise=Math.max(0,Number(model.geometry.rise)||0);
     const span=Math.max(0,Number(model.geometry.span)||0);
     const eavesHeight=Math.max(0,Number(model.geometry.height)||0);
-    const roofPeakHeight=eavesHeight+rise;
-    // Area of the end-wall profile above the highest horizontal girt:
-    // below eaves = rectangular strip + roof triangle; above eaves = similar triangle.
-    // This is geometry only, not a verified tributary area or design load.
-    const girtBelowEaves=Math.max(0,eavesHeight-highestEndGirtY);
-    const gableHeightAboveEaves=Math.max(0,roofPeakHeight-Math.max(eavesHeight,highestEndGirtY));
-    const estimatedUnassignedGableAreaM2=span*girtBelowEaves+
-      (rise>0?span*rise/2:0);
-    const correctedUnassignedGableAreaM2=highestEndGirtY<=eavesHeight
-      ? span*(eavesHeight-highestEndGirtY)+span*rise/2
-      : (rise>0?span*gableHeightAboveEaves*gableHeightAboveEaves/(2*rise):0);
+    const gableAudit=face=>{
+      const faceMembers=members.filter(m=>m.sectionKey==="endGirt"&&m.endFace===face);
+      const faceNodes=faceMembers.flatMap(m=>[nodeById.get(String(m.start)),nodeById.get(String(m.end))]).filter(Boolean);
+      const highestY=faceNodes.length?Math.max(...faceNodes.map(n=>Number(n.y)||0)):0;
+      const peak=eavesHeight+rise;
+      const aboveEaves=Math.max(0,peak-Math.max(eavesHeight,highestY));
+      const area=highestY<=eavesHeight
+        ? span*(eavesHeight-highestY)+span*rise/2
+        : (rise>0?span*aboveEaves*aboveEaves/(2*rise):0);
+      return {girtCount:faceMembers.length,highestHorizontalGirtY_m:highestY,
+        estimatedGableAreaAboveHighestGirt_m2:area};
+    };
+    // Separate front/rear checks avoid masking a missing or lower girt row on one end.
+    // Areas are geometric estimates only, not verified tributary areas or design loads.
+    const frontGableAudit=gableAudit("front"),rearGableAudit=gableAudit("rear");
     return {
       status:"geometry-inventory-only",available:true,designEligibility:false,
       geometry:{spanM:model.geometry.span,lengthM:model.geometry.length,
@@ -184,15 +184,16 @@
         endFront:summarize(groups.endFront),endBack:summarize(groups.endBack)
       },
       endWall:{frontGirtCount:groups.endFront.length,rearGirtCount:groups.endBack.length,
-        highestHorizontalGirtY_m:highestEndGirtY,
-        estimatedGableAreaAboveHighestGirt_m2:correctedUnassignedGableAreaM2,
+        front:frontGableAudit,rear:rearGableAudit,
+        highestHorizontalGirtY_m:Math.max(frontGableAudit.highestHorizontalGirtY_m,rearGableAudit.highestHorizontalGirtY_m),
+        estimatedGableAreaAboveHighestGirt_m2:Math.max(frontGableAudit.estimatedGableAreaAboveHighestGirt_m2,rearGableAudit.estimatedGableAreaAboveHighestGirt_m2),
         gableAreaCoverage:"not-modeled-as-distributed-end-wall-area",
         note:"مساحت هندسی تقریبی بخش بالای بالاترین لاپه افقی محاسبه شده است؛ این عدد تخصیص بارگیر یا بار طراحی نیست و پوشش کامل دیوار انتهایی را تأیید نمی‌کند."},
       blockers:[
         "این ممیزی فقط وجود هندسه و داده عرض/ارتفاع بارگیر را فهرست می‌کند؛ تبدیل بار یا اعمال بار به حل‌گر انجام نمی‌دهد.",
         "تفکیک نواحی باد لبه، گوشه و میدان هنوز مدل نشده است.",
         "سهم بارگیر اعضای کناری و مسیر انتقال پوشش به قاب/مهاربند نیازمند کنترل است.",
-        "ناحیه مثلثی دیوار انتهایی بالای آخرین لاپه در بارگذاری توزیعی پوشش داده نشده است.",
+        "ناحیه دیوار انتهایی بالای آخرین لاپه در هر دو جبهه جلو و عقب جداگانه ممیزی می‌شود؛ بارگذاری توزیعی آن هنوز مدل نشده است.",
         "جهت و علامت بار جهانی باید برای هر سطح و جهت باد مستقلاً تأیید شود."
       ]
     };
