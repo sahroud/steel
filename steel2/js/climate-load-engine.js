@@ -158,6 +158,17 @@
     const eavesHeight=Math.max(0,Number(model.geometry.height)||0);
     const gableAudit=face=>{
       const faceMembers=members.filter(m=>m.sectionKey==="endGirt"&&m.endFace===face);
+      const lineLoadAudit=faceMembers.reduce((audit,m)=>{
+        const line=m.lineLoads;
+        if(!line||!Number.isFinite(Number(line.pressureKPa))||!Number.isFinite(Number(line.tributaryHeight))||!Number.isFinite(Number(line.windEnd))){
+          audit.notAvailable++;
+          return audit;
+        }
+        const expected=Number(line.pressureKPa)*Number(line.tributaryHeight);
+        if(Math.abs(expected-Number(line.windEnd))>Math.max(0.001,Math.abs(expected)*0.001))audit.mismatch++;
+        audit.checked++;
+        return audit;
+      },{checked:0,mismatch:0,notAvailable:0});
       const faceNodes=faceMembers.flatMap(m=>[nodeById.get(String(m.start)),nodeById.get(String(m.end))]).filter(Boolean);
       const highestY=faceNodes.length?Math.max(...faceNodes.map(n=>Number(n.y)||0)):0;
       const peak=eavesHeight+rise;
@@ -166,7 +177,8 @@
         ? span*(eavesHeight-highestY)+span*rise/2
         : (rise>0?span*aboveEaves*aboveEaves/(2*rise):0);
       return {girtCount:faceMembers.length,highestHorizontalGirtY_m:highestY,
-        estimatedGableAreaAboveHighestGirt_m2:area};
+        estimatedGableAreaAboveHighestGirt_m2:area,
+        pressureToLineLoadAudit:lineLoadAudit};
     };
     // Separate front/rear checks avoid masking a missing or lower girt row on one end.
     // Areas are geometric estimates only, not verified tributary areas or design loads.
