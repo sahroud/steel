@@ -42,6 +42,9 @@ function addOptions(){
   if(legacy&&![...legacy.options].some(o=>o.value===id)){const o=document.createElement("option");o.value=id;o.textContent=name;legacy.appendChild(o);}
  });
  sel.addEventListener("change",loadSelectedCity);
+ // Keep the initial climate form aligned with the project default city.
+ if(!sel.value && records.shahroud) sel.value="shahroud";
+ loadSelectedCity();
 }
 function saveCurrentCity(){
  const c=currentClimate(),id=c.city||"other",name=(c.customCity||"").trim()||"شهر بدون نام";
