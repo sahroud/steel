@@ -51,7 +51,13 @@
       out.textContent = "ابتدا سرعت مبنای باد را در اطلاعات اقلیمی وارد کنید.";
       return;
     }
-    const qText = "فشار مبنا q = " + r.q.toFixed(3) + " kN/m². ";
+    const loads = window.SteelLoads?.getData?.() || {};
+    const climate = loads.climate || {};
+    const referenceQ = finite(climate.basicWindPressure);
+    const referenceText = referenceQ === null ? "" :
+      " فشار مرجع ذخیره‌شده بانک شهر = " + referenceQ.toFixed(3) + " kN/m²؛ اختلاف با مقدار محاسبه‌شده = " +
+      (r.q-referenceQ).toFixed(3) + " kN/m². این مقایسه صرفاً کنترل سازگاری داده است و مقدار مرجع جایگزین محاسبه نمی‌شود.";
+    const qText = "فشار مبنای محاسبه‌شده q = " + r.q.toFixed(3) + " kN/m². " + referenceText;
     if (!r.complete) {
       out.textContent = qText + "برای محاسبه فشار خارجی و داخلی، همه ضرایب این بخش باید از متن معتبر مبحث ششم ۱۳۹۸ وارد شوند. هیچ ضریب پیش‌فرض یا حدسی اعمال نمی‌شود.";
       return;
@@ -170,11 +176,16 @@
         city:climate.city||"", customCity:climate.customCity||"",
         elevation:climate.elevation||"", groundSnow:climate.groundSnow||"",
         basicWind:climate.basicWind||"", basicWindUnit:"km/h",
-        basicWindPressure:finite(climate.basicWind)===null?null:0.000613*Math.pow(Number(climate.basicWind)/3.6,2),
+        basicWindPressureReference:finite(climate.basicWindPressure),
+        basicWindPressureCalculated:finite(climate.basicWind)===null?null:0.000613*Math.pow(Number(climate.basicWind)/3.6,2),
         basicWindPressureUnit:"kN/m2", groundSnowUnit:"kN/m2",
+        snowRegion:finite(climate.snowRegion), siteCoordinates:climate.siteCoordinates||null,
+        elevationSource:climate.elevationSource||"", source:climate.source||"",
+        sourceDate:climate.sourceDate||"", climateStatus:climate.climateStatus||"وضعیت منبع ثبت نشده",
         siteElevationASL:finite(climate.elevation), terrain:climate.terrain||"",
         topography:climate.topography||"", openingState:climate.openingState||"",
         dominantOpening:climate.dominantOpening||"",
+        snowLoadStatus:"ground-snow-reference-only; roof-snow coefficients and unbalanced cases not calculated",
         windCalculationStatus:"basic-pressure-only; terrain and building coefficients not yet applied"
       },
       windDirection:loads.windDirection||"not-specified", cases, restoredMeta
