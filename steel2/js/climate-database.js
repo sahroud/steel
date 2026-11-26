@@ -26,10 +26,15 @@ function loadSelectedCity(){
  const id=$("climateCity")?.value, r=records[id]; if(!r)return;
  const values={
   city:id,customCity:r.name,
-  basicWind:r.basicWind===null?"":String(r.basicWind),
-  groundSnow:r.groundSnow===null?"":String(r.groundSnow),
-  elevation:r.elevation===null?"":String(r.elevation),
-  source:r.source||""
+  basicWind:r.basicWind===null||r.basicWind===undefined?"":String(r.basicWind),
+  basicWindPressure:r.basicWindPressure===null||r.basicWindPressure===undefined?"":String(r.basicWindPressure),
+  groundSnow:r.groundSnow===null||r.groundSnow===undefined?"":String(r.groundSnow),
+  snowRegion:r.snowRegion===null||r.snowRegion===undefined?"":Number(r.snowRegion),
+  elevation:r.elevation===null||r.elevation===undefined?"":String(r.elevation),
+  siteCoordinates:r.siteCoordinates&&Number.isFinite(Number(r.siteCoordinates.latitude))&&Number.isFinite(Number(r.siteCoordinates.longitude))
+   ?{latitude:Number(r.siteCoordinates.latitude),longitude:Number(r.siteCoordinates.longitude)}:null,
+  elevationSource:r.elevationSource||"",
+  source:r.source||"",sourceDate:r.sourceDate||"",climateStatus:r.status||"فاقد داده تأییدشده"
  };
  if($("city"))$("city").value=id;
  if($("climateCustomCity"))$("climateCustomCity").value=values.customCity;
