@@ -37,13 +37,22 @@
     const db=window.SteelClimateDB?.getData?.();
     const id=$("climateCity")?.value;
     const record=db?.records?.[id];
-    if(record && record.status && /تأیید رسمی|verified|معتبر و تأیید/i.test(record.status) &&
-       Number.isFinite(Number(record.basicWind)) &&
-       Number.isFinite(Number(record.groundSnow))) {
-      window.SteelClimateDB.loadSelectedCity?.();
-      return {ok:true,detail:"داده شهر از بانک با وضعیت تأییدشده به ورودی‌ها منتقل شد."};
+    const numeric=v=>v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v));
+    if(!record) return {ok:false,detail:"برای شهر انتخابی رکوردی در بانک اقلیم وجود ندارد؛ مقدار شهر دیگری جایگزین نمی‌شود."};
+    // Null and empty strings must never pass as numeric zero.
+    const hasWind=numeric(record.basicWind), hasSnow=numeric(record.groundSnow);
+    const approved=!!record.status&&/تأیید رسمی|verified|معتبر و تأیید/i.test(record.status);
+    window.SteelClimateDB.loadSelectedCity?.();
+    const values=[];
+    if(hasWind) values.push("سرعت باد "+Number(record.basicWind).toFixed(1)+" km/h");
+    if(hasSnow) values.push("برف زمین "+Number(record.groundSnow).toFixed(2)+" kN/m²");
+    if(numeric(record.basicWindPressure)) values.push("فشار مرجع "+Number(record.basicWindPressure).toFixed(3)+" kN/m²");
+    if(numeric(record.snowRegion)) values.push("منطقه برف "+Number(record.snowRegion));
+    const valueText=values.length?" مقادیر ثبت‌شده: "+values.join("؛ ")+".":" هنوز مقدار عددی باد یا برف ثبت نشده است.";
+    if(approved&&hasWind&&hasSnow) {
+      return {ok:true,detail:"رکورد شهر دارای وضعیت تأییدشده است و به ورودی‌های پروژه منتقل شد."+valueText+" ضرایب نهایی باد و برف بام همچنان باید جداگانه کنترل شوند."};
     }
-    return {ok:false,detail:"برای شهر انتخابی هنوز رکورد باد و برفِ تأییدشده در بانک وجود ندارد؛ نرم‌افزار نباید مقدار حدسی جایگزین کند."};
+    return {ok:false,detail:"رکورد این شهر هنوز برای طراحی نهایی تأیید نشده است؛ این وضعیت مانع اعلام طراحی آیین‌نامه‌ای معتبر می‌شود، اما اجرای محاسبات مقدماتی موجود را متوقف نمی‌کند."+valueText+" وضعیت منبع: "+(record.status||"ثبت‌نشده")+". هیچ مقدار حدسی جایگزین نمی‌شود."};
   }
   function blankOrZero(id) {
     const el=$(id); return !el || el.value.trim()==="" || Number(el.value)===0;
