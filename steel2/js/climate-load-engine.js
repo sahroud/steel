@@ -159,10 +159,18 @@
     const highestEndGirtY=endGirtNodes.length?Math.max(...endGirtNodes.map(n=>Number(n.y)||0)):0;
     const rise=Math.max(0,Number(model.geometry.rise)||0);
     const span=Math.max(0,Number(model.geometry.span)||0);
-    const gableHeightAboveLastGirt=Math.max(0,rise-(highestEndGirtY-(Number(model.geometry.height)||0)));
-    // Geometric estimate only; it is not a verified tributary area or load.
-    const estimatedUnassignedGableAreaM2=rise>0
-      ? span*gableHeightAboveLastGirt*gableHeightAboveLastGirt/(2*rise):0;
+    const eavesHeight=Math.max(0,Number(model.geometry.height)||0);
+    const roofPeakHeight=eavesHeight+rise;
+    // Area of the end-wall profile above the highest horizontal girt:
+    // below eaves = rectangular strip + roof triangle; above eaves = similar triangle.
+    // This is geometry only, not a verified tributary area or design load.
+    const girtBelowEaves=Math.max(0,eavesHeight-highestEndGirtY);
+    const gableHeightAboveEaves=Math.max(0,roofPeakHeight-Math.max(eavesHeight,highestEndGirtY));
+    const estimatedUnassignedGableAreaM2=span*girtBelowEaves+
+      (rise>0?span*rise/2:0);
+    const correctedUnassignedGableAreaM2=highestEndGirtY<=eavesHeight
+      ? span*(eavesHeight-highestEndGirtY)+span*rise/2
+      : (rise>0?span*gableHeightAboveEaves*gableHeightAboveEaves/(2*rise):0);
     return {
       status:"geometry-inventory-only",available:true,designEligibility:false,
       geometry:{spanM:model.geometry.span,lengthM:model.geometry.length,
@@ -177,7 +185,7 @@
       },
       endWall:{frontGirtCount:groups.endFront.length,rearGirtCount:groups.endBack.length,
         highestHorizontalGirtY_m:highestEndGirtY,
-        estimatedGableAreaAboveHighestGirt_m2:estimatedUnassignedGableAreaM2,
+        estimatedGableAreaAboveHighestGirt_m2:correctedUnassignedGableAreaM2,
         gableAreaCoverage:"not-modeled-as-distributed-end-wall-area",
         note:"مساحت هندسی تقریبی بخش بالای بالاترین لاپه افقی محاسبه شده است؛ این عدد تخصیص بارگیر یا بار طراحی نیست و پوشش کامل دیوار انتهایی را تأیید نمی‌کند."},
       blockers:[
