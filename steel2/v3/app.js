@@ -15,6 +15,23 @@ function go(n){index=Math.max(0,Math.min(pages.length-1,n));pages.forEach((p,i)=
 function updateGeometry(){const span=Number(field("span").value),length=Number(field("length").value),spacing=Number(field("frameSpacing").value),height=Number(field("columnHeight").value),slope=Number(field("roofSlope").value),type=field("roofType").value;if(!(span>0&&length>0&&spacing>0&&height>0&&slope>0))return;const bays=Math.ceil(length/spacing),rise=type==="mono"?span*slope/100:span/2*slope/100;field("frameCount").value=bays+1;field("ridgeHeight").value=(height+rise).toFixed(2);document.getElementById("geometrySummary").textContent=span+" × "+length+" متر | شیب "+slope+"٪ | "+(bays+1)+" قاب";drawFrame(span,height,rise,type);}
 function drawFrame(span,height,rise,type){const svg=document.getElementById("framePreview");svg.innerHTML="";const ns="http://www.w3.org/2000/svg";const el=(tag,attrs)=>{const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));svg.appendChild(e);return e;};const left=130,right=510,base=218,top=base- Math.min(145,height*18),peak=base-Math.min(205,(height+rise)*18),mid=(left+right)/2;el("line",{x1:40,y1:base,x2:600,y2:base,stroke:"#8a9ca5","stroke-width":2});el("line",{x1:left,y1:base,x2:left,y2:top,stroke:"#176b9b","stroke-width":8,"stroke-linecap":"round"});el("line",{x1:right,y1:base,x2:right,y2:top,stroke:"#176b9b","stroke-width":8,"stroke-linecap":"round"});if(type==="mono"){el("line",{x1:left,y1:top,x2:right,y2:peak,stroke:"#d97706","stroke-width":8,"stroke-linecap":"round"});}else{el("line",{x1:left,y1:top,x2:mid,y2:peak,stroke:"#d97706","stroke-width":8,"stroke-linecap":"round"});el("line",{x1:mid,y1:peak,x2:right,y2:top,stroke:"#d97706","stroke-width":8,"stroke-linecap":"round"});}const t=el("text",{x:320,y:25,"text-anchor":"middle",fill:"#345766","font-size":14});t.textContent=type==="mono"?"قاب تک‌شیب":"قاب دوشیب";}
 form.addEventListener("input",()=>{updateGeometry();schedule();});form.addEventListener("change",()=>{updateGeometry();schedule();});
+field("city").addEventListener("change",()=>{
+ const shahroud=field("city").value==="shahroud";
+ const notice=document.getElementById("climateNotice");
+ if(shahroud){
+  field("snowLoad").value="1.00";field("snowRegion").value="3";
+  field("windSpeed").value="90";field("windPressure").value="0.38";
+  field("climateElevation").value="1349";field("climateLatitude").value="36.421";
+  field("climateLongitude").value="54.957";
+  field("climateSource").value="پیش‌فرض اولیه شاهرود؛ نیازمند تطبیق با نسخه نهایی رسمی مبحث ششم ۱۳۹۸ و محل دقیق پروژه";
+  notice.textContent="پیش‌فرض شاهرود: منطقه برف ۳ و Ps=1.00 kN/m²، سرعت مبنای باد ۹۰ km/h و q=0.38 kN/m²؛ ارتفاع ایستگاه ۱۳۴۹ متر. مقادیر برای شروع‌اند و پیش از طراحی نهایی باید با نسخه رسمی لازم‌الاجرای مبحث ششم ۱۳۹۸ و محل دقیق پروژه تأیید شوند.";
+ }else{
+  ["snowLoad","snowRegion","windSpeed","windPressure","climateElevation","climateLatitude","climateLongitude"].forEach(k=>field(k).value="");
+  field("climateSource").value="";
+  notice.textContent="برای این شهر هنوز پروفایل اقلیمی تأییدشده در بانک نرم‌افزار ثبت نشده است؛ مقادیر را از مرجع رسمی محل پروژه وارد کنید. نرم‌افزار نباید مقادیر شاهرود را به شهر دیگر تعمیم دهد.";
+ }
+ schedule();
+});
 nav.forEach((b,i)=>b.addEventListener("click",()=>go(i)));
 document.getElementById("prevBtn").addEventListener("click",()=>go(index-1));
 document.getElementById("nextBtn").addEventListener("click",()=>{if(index<pages.length-1)go(index+1);else{saveLocal();setStatus("ورودی‌ها ذخیره شدند؛ موتور محاسباتی در مرحله اتصال قرار دارد.");}});
