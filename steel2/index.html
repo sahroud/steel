@@ -605,18 +605,16 @@
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
 <script src="js/base-plate-check.js?v=20261125-geometry1"></script>
 <script src="js/base-plate-ui.js?v=20261125-geometry1"></script>
-<script src="js/auto-workflow.js?v=20261126-mobile-progress3"></script>
+<script src="js/auto-workflow.js?v=20261126-mobile-progress4"></script>
 <script>
 (function(){
-  const s=document.createElement("script");
-  s.src="js/auto-workflow.js?v=20261126-mobile-progress4";
-  s.onerror=function(){
+  function showLoadError(){
     const b=document.getElementById("btnSteelAutoWorkflow");
     const o=document.getElementById("steelAutoWorkflowResults");
     if(o)o.innerHTML="<strong>خطا: فایل اجرای خودکار بارگذاری نشد.</strong><p>اتصال اینترنت یا نشانی فایل جاوااسکریپت را بررسی کنید.</p>";
     if(b){b.disabled=false;b.textContent="بارگذاری مجدد اجرای خودکار";b.onclick=function(){location.reload();};}
-  };
-  document.querySelectorAll('script[src*="auto-workflow.js"]').forEach(function(x){x.onerror=s.onerror;});
+  }
+  document.querySelectorAll('script[src*="auto-workflow.js"]').forEach(function(x){x.addEventListener("error",showLoadError);});
   document.addEventListener("click",function(e){
     const b=e.target.closest("#btnSteelAutoWorkflow");
     if(!b)return;
