@@ -10,6 +10,12 @@
   if(!engine||typeof engine.makeTransform!=="function")throw Error("تبدیل محورهای محلی موتور تحلیل در دسترس نیست.");
   const dead=Number(inputs?.deadLoad),live=Number(inputs?.liveLoad);
   const snowGround=Number(inputs?.snowLoad),snowImportance=Number(inputs?.snowImportance),snowThermal=Number(inputs?.snowThermal);
+  const windwardWall=Number(inputs?.windwardWallNet),leewardWall=Number(inputs?.leewardWallNet);
+  const windwardRoof=Number(inputs?.windwardRoofNet),leewardRoof=Number(inputs?.leewardRoofNet);
+  for(const [key,label] of [["windwardWallNet","فشار خالص دیوار بادگیر"],["leewardWallNet","فشار خالص دیوار پشت به باد"],["windwardRoofNet","فشار خالص شیب بادگیر سقف"],["leewardRoofNet","فشار خالص شیب پشت به باد سقف"]]){
+   if(inputs?.[key]===undefined||String(inputs[key]).trim()==="")throw Error(label+" باید از محاسبات مبحث ششم وارد شود؛ مقدار خالی پذیرفته نیست.");
+   if(!Number.isFinite(Number(inputs[key])))throw Error(label+" عدد معتبر نیست.");
+  }
   const snowRegion=Number(inputs?.snowRegion),roofSlopePercent=Number(inputs?.roofSlope);
   const roofSurface=String(inputs?.roofSurface||"");
   if(!Number.isFinite(snowGround)||snowGround<0)throw Error("بار برف مبنای زمین باید عددی و نامنفی باشد.");
@@ -71,7 +77,55 @@
    },0);
    cases[name]={model:{...model,members},pressure_kN_m2:pressure,totalVertical_kN:totalN/1000};
   });
-  return {cases,rows:ordered.map((r,i)=>({row:r.key,tributaryWidth_m:tributary.get(r.key)})),snow:{ground_kN_m2:snowGround,importanceFactor:snowImportance,exposureFactor:snowExposure,thermalFactor:snowThermal,slopeAngle_deg:alpha,slopeFactor:snowSlope,balancedRoof_kN_m2:snowRoof,region:snowRegion},scope:"بار مرده، زنده و برف متوازن سقف به‌صورت حالت‌های مستقل و با توزیع بارگیر هندسی روی پرلین‌های طولی. برف نامتوازن/جزئی/انباشتگی/لغزش، باد، جرثقیل، پوشش دیوار و ترکیبات بار هنوز تولید نمی‌شوند."};
+  const frameZ=(model.geometry?.frames||[]).map(Number);
+  if(frameZ.length<2)throw Error("برای توزیع باد روی قاب‌ها، مختصات حداقل دو قاب لازم است.");
+  const frameWidth=new Map();
+  frameZ.forEach((z,i)=>{
+   const left=i===0?0:(z-frameZ[i-1])/2;
+   const right=i===frameZ.length-1?0:(frameZ[i+1]-z)/2;
+   const w=left+right;
+   if(!(w>0))throw Error("عرض بارگیر باد برای قاب "+(i+1)+" نامعتبر است.");
+   frameWidth.set(i+1,w);
+  });
+  function makeWindCase(name,fromLeft){
+   const members=model.members.map(m=>{
+    const isColumn=m.sectionKey==="column"&&m.axis==="transverse";
+    const isRafter=m.sectionKey==="rafter"&&m.axis==="transverse";
+    if(!isColumn&&!isRafter)return {...m,analysisLoad:undefined};
+    const a=nodes.get(m.start),b=nodes.get(m.end);
+    const frameNo=Number(m.frame),width=frameWidth.get(frameNo);
+    if(!width)throw Error("عرض بارگیر باد برای عضو "+m.id+" تعیین نشد.");
+    let global;
+    if(isColumn){
+     const left=Math.abs(Number(a.x))<1e-6;
+     const p=fromLeft?(left?windwardWall:leewardWall):(left?leewardWall:windwardWall);
+     global=[p*(left?1:-1)*width*1000,0,0];
+    }else{
+     const midX=(Number(a.x)+Number(b.x))/2;
+     const leftSlope=midX<Number(model.geometry.span)/2;
+     const windwardSlope=fromLeft?leftSlope:!leftSlope;
+     const p=windwardSlope?windwardRoof:leewardRoof;
+     const dx=Number(b.x)-Number(a.x),dy=Number(b.y)-Number(a.y);
+     const L=Math.hypot(dx,dy,Number(b.z)-Number(a.z));
+     if(!(L>0))throw Error("طول عضو سقف برای بار باد نامعتبر است.");
+     const outward=[-dy/L,dx/L,0];
+     global=outward.map(v=>-p*v*width*1000);
+    }
+    const tr=engine.makeTransform([a.x,a.y,a.z],[b.x,b.y,b.z],[0,0,1]);
+    const local=tr.axes?["x","y","z"].map(k=>dot(tr.axes[k],global)):null;
+    if(!local||local.some(v=>!Number.isFinite(v)))throw Error("تبدیل بار باد عضو "+m.id+" ناموفق بود.");
+    return {...m,analysisLoad:{uniformLocal:local}};
+   });
+   const totalN=members.reduce((sum,m)=>{
+    if(!m.analysisLoad)return sum;
+    const a=nodes.get(m.start),b=nodes.get(m.end),L=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+    return sum+Math.hypot(...m.analysisLoad.uniformLocal)*L;
+   },0);
+   cases[name]={model:{...model,members},resultant_kN:totalN/1000,direction:fromLeft?"باد از چپ به راست (+X)":"باد از راست به چپ (-X)"};
+  }
+  makeWindCase("WIND_FROM_LEFT",true);
+  makeWindCase("WIND_FROM_RIGHT",false);
+  return {cases,rows:ordered.map((r,i)=>({row:r.key,tributaryWidth_m:tributary.get(r.key)})),snow:{ground_kN_m2:snowGround,importanceFactor:snowImportance,exposureFactor:snowExposure,thermalFactor:snowThermal,slopeAngle_deg:alpha,slopeFactor:snowSlope,balancedRoof_kN_m2:snowRoof,region:snowRegion},scope:"بار مرده، زنده و برف متوازن روی پرلین‌ها؛ باد عرضی روی ستون‌ها و رفترهای قاب‌های اصلی با فشار خالص ورودی کاربر. فشارهای باد باید قبلاً طبق مبحث ششم و با ضرایب خارجی/داخلی تعیین شوند. باد طولی روی دیوارهای انتهایی، اثرات دینامیکی، پیچش کلی، اجزای فرعی و ترکیبات بار هنوز پوشش داده نشده‌اند."};
  }
  root.SahroudSteelLoads={generate};
 })(window);
