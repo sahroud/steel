@@ -32,6 +32,15 @@ document.getElementById("buildGeometryBtn").addEventListener("click",()=>{
    " . "+result.model.scope+(result.validation.errors.length?" خطاها: "+result.validation.errors.join("؛ "):"");
  }catch(error){out.textContent="تولید مدل هندسی متوقف شد: "+error.message;}
 });
+document.getElementById("geometryTestBtn").addEventListener("click",()=>{
+ const out=document.getElementById("geometryTestResult");
+ try{
+  const r=window.SahroudSteelGeometryTests.run();
+  out.textContent=(r.passed?"هر دو آزمون هندسه موفق بودند. ":"آزمون هندسه ناموفق بود. ")+
+   r.tests.map(t=>(t.roofType==="gable"?"دوشیب":"تک‌شیب")+": "+t.frames+" قاب، "+t.nodes+" گره، "+t.members+" عضو، "+t.supports+" تکیه‌گاه، خیز "+t.riseM+" متر").join(" | ")+
+   " . "+r.scope;
+ }catch(error){out.textContent="آزمون هندسه ناموفق: "+error.message;}
+});
 document.getElementById("solverTestBtn").addEventListener("click",()=>{
  const out=document.getElementById("solverTestResult");
  try{
