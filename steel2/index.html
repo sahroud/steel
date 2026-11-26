@@ -3,10 +3,10 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#123b52">
 <title>Sahroud Steel | تحلیل مقدماتی سوله</title>
-<link rel="stylesheet" href="style.css?v=20261112compact1">
+<link rel="stylesheet" href="style.css?v=20261126-mobile-progress2">
 <style id="sahroud-home-layout">
   .sahroud-home{margin:12px 0 10px;padding:16px 16px 13px;border-radius:16px;background:linear-gradient(135deg,#123b52,#176b87);color:#fff}
   .sahroud-home h2{margin:5px 0 7px;font-size:21px;color:#fff}
@@ -29,6 +29,33 @@
     .workflow-home .panel-title h3{font-size:16px}
     #btnSteelAutoWorkflow{min-height:60px;font-size:16px}
   }
+
+  /* Mobile viewport containment: avoid sideways drift on narrow phones */
+  html,body{width:100%;max-width:100%;overflow-x:clip}
+  body{min-width:0}
+  main.container,main{width:100%;max-width:1100px;min-width:0;margin-inline:auto;padding-inline:clamp(10px,2.5vw,18px)}
+  .container *,main *{min-width:0}
+  .form-grid,.geometry-grid,.button-grid,.quick-actions,.roof-auto-summary{min-width:0;max-width:100%}
+  input,select,textarea,button{max-width:100%}
+  .drawing-area{overflow-x:auto}
+  #steelAutoWorkflowPanel{min-width:0;max-width:100%}
+  #steelAutoWorkflowPanel .workflow-live-status{padding:10px 12px;margin:8px 0;border:1px solid #cbdde5;border-radius:10px;background:#f4f9fb;color:#123b52}
+  #steelAutoWorkflowPanel .workflow-live-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700}
+  #steelAutoWorkflowPanel .workflow-live-step{font-size:12px;line-height:1.7;margin:5px 0}
+  #steelAutoWorkflowPanel .workflow-live-progress{display:block;width:100%;height:12px;margin:8px 0 4px;accent-color:#16845b}
+  #steelAutoWorkflowPanel .workflow-live-percent{font-size:12px;font-weight:700}
+  #steelAutoWorkflowPanel .workflow-live-error{color:#a32323;font-weight:700}
+  #btnSteelAutoWorkflow[disabled]{opacity:.8;filter:saturate(.7);transform:none}
+  @media(max-width:650px){
+    main.container,main{width:100%;padding-inline:10px;margin:8px auto}
+    header.header{padding:12px 10px;gap:8px;flex-wrap:wrap}
+    .header .brand{min-width:0;max-width:100%}
+    .header .version{font-size:11px}
+    section,.panel,.card{max-width:100%;min-width:0}
+    .roof-auto-summary{grid-template-columns:1fr}
+    .workflow-home{padding:10px!important}
+  }
+
 </style>\n</head>
 <body>
 
@@ -574,11 +601,11 @@
 <script src="js/cantilever-check.js?v=1"></script>
 <script src="js/connection-design.js?v=20261110d"></script>
 <script src="js/purlin-cantilever-connection.js?v=20261110l"></script>
-<script src="js/ui-organization.js?v=20261126-home-rebuild1"></script>
+<script src="js/ui-organization.js?v=20261126-mobile-progress2"></script>
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
 <script src="js/base-plate-check.js?v=20261125-geometry1"></script>
 <script src="js/base-plate-ui.js?v=20261125-geometry1"></script>
-<script src="js/auto-workflow.js?v=20261126-home-rebuild1"></script>
+<script src="js/auto-workflow.js?v=20261126-mobile-progress2"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/dropbox@10.46.0/dist/Dropbox-sdk.min.js"></script>
 <script src="js/dropbox-integration.js?v=20261112projectupload1"></script>
