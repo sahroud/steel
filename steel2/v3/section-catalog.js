@@ -12,7 +12,38 @@ const IPE=[
 ["IPE550",129.36,61819.73,2477.06,87.18],["IPE600",155.20,91598.93,3557.40,149.59]
 ].map(([name,A_cm2,Iy_cm4,Iz_cm4,J_cm4])=>({name,series:"IPE",A_cm2,Iy_cm4,Iz_cm4,J_cm4,source:"STALA 2019 Full Cross Section Properties"}));
 function template(){const groups={};Object.keys(GROUPS).forEach(k=>groups[k]={profile:"",A_cm2:null,Iy_cm4:null,Iz_cm4:null,J_cm4:null});return {schema:"sahroud-steel-section-catalog",version:1,units:{area:"cm2",inertia:"cm4"},material:{grade:"S235 / ST37",E_GPa:200,G_GPa:77,Fy_MPa:235},materials:{steel:{density_kg_m3:7850,grades:[{name:"ST37 / S235",standard:"EN 10025-2 / معادل‌سازی نیازمند گواهی",fy_by_thickness_MPa:[{max_mm:16,value:235},{max_mm:40,value:225},{max_mm:100,value:215}]},{name:"ST44 / S275",standard:"EN 10025-2 / معادل‌سازی نیازمند گواهی",fy_by_thickness_MPa:[{max_mm:16,value:275},{max_mm:40,value:265},{max_mm:63,value:255},{max_mm:80,value:245},{max_mm:100,value:235}]},{name:"ST52 / S355",standard:"EN 10025-2 / معادل‌سازی نیازمند گواهی",fy_by_thickness_MPa:[{max_mm:16,value:355},{max_mm:40,value:345},{max_mm:63,value:335},{max_mm:80,value:325},{max_mm:100,value:315}]}]},concrete:[{grade:"C25",fck_MPa:25},{grade:"C30",fck_MPa:30},{grade:"C35",fck_MPa:35}],reinforcement:[{grade:"A2 / S340",fy_MPa:340},{grade:"A3 / S400",fy_MPa:400},{grade:"A4 / S500",fy_MPa:500}]},groups};}
-function validate(model,c){const errors=[],warnings=[],keys=[...new Set((model?.members||[]).map(m=>m.sectionKey))];if(c?.schema!=="sahroud-steel-section-catalog"||c.version!==1)errors.push("ساختار یا نسخه بانک مقاطع معتبر نیست.");if(c?.units?.area!=="cm2"||c?.units?.inertia!=="cm4")errors.push("واحدها باید cm2 و cm4 باشند.");for(const k of ["E_GPa","G_GPa"])if(!(Number(c?.material?.[k])>0))errors.push("مقدار معتبر "+k+" لازم است.");if(!(Number(c?.material?.Fy_MPa)>0))warnings.push("Fy برای تحلیل الاستیک لازم نیست؛ برای طراحی مقاومت لازم است.");keys.forEach(k=>{if(!GROUPS[k]){errors.push("گروه ناشناخته: "+k);return;}const p=c?.groups?.[k];if(!p){errors.push("مقطع "+GROUPS[k]+" تعریف نشده است.");return;}FIELDS.forEach(f=>{if(!(Number(p[f])>0&&Number.isFinite(Number(p[f]))))errors.push(GROUPS[k]+": "+f+" ناقص یا نامعتبر است.");});if(p.advancedColdFormed===true)errors.push(GROUPS[k]+": مقطع سردنورد Z/C تا پیاده‌سازی مرکز برش، پیچش خارج از مرکز، محورهای اصلی در دستگاه عضو و کمانش موضعی/اعوجاجی، برای تحلیل خودکار مجاز نیست.");});return {valid:errors.length===0,errors,warnings,groups:keys};}
+function validate(model,c){
+ const errors=[],warnings=[],members=Array.isArray(model?.members)?model.members:[],nodes=Array.isArray(model?.nodes)?model.nodes:[],keys=[...new Set(members.map(m=>m.sectionKey))];
+ if(c?.schema!=="sahroud-steel-section-catalog"||c.version!==1)errors.push("ساختار یا نسخه بانک مقاطع معتبر نیست.");
+ if(c?.units?.area!=="cm2"||c?.units?.inertia!=="cm4")errors.push("واحدها باید cm2 و cm4 باشند.");
+ for(const k of ["E_GPa","G_GPa"])if(!(Number.isFinite(Number(c?.material?.[k]))&&Number(c.material[k])>0))errors.push("مقدار معتبر "+k+" لازم است.");
+ if(!(Number(c?.material?.Fy_MPa)>0))warnings.push("Fy برای تحلیل الاستیک لازم نیست؛ برای طراحی مقاومت لازم است.");
+ if(!members.length)errors.push("مدل هیچ عضوی ندارد؛ تخصیص مقاطع ممکن نیست.");
+ if(!nodes.length)errors.push("مدل هیچ گره‌ای ندارد.");
+ const nodeIds=new Set();
+ nodes.forEach((n,i)=>{
+  if(n?.id===undefined||n?.id===null||nodeIds.has(String(n.id)))errors.push("شناسه گره در ردیف "+(i+1)+" خالی یا تکراری است.");
+  else nodeIds.add(String(n.id));
+  for(const axis of ["x","y","z"])if(!Number.isFinite(Number(n?.[axis])))errors.push("مختصات "+axis+" گره "+String(n?.id??i+1)+" معتبر نیست.");
+ });
+ const memberIds=new Set();
+ members.forEach((m,i)=>{
+  if(m?.id===undefined||m?.id===null||memberIds.has(String(m.id)))errors.push("شناسه عضو در ردیف "+(i+1)+" خالی یا تکراری است.");
+  else memberIds.add(String(m.id));
+  if(!nodeIds.has(String(m?.start))||!nodeIds.has(String(m?.end)))errors.push("اتصال عضو "+String(m?.id??i+1)+" به گره ناموجود است.");
+  if(String(m?.start)===String(m?.end))errors.push("دو انتهای عضو "+String(m?.id??i+1)+" یکسان است.");
+  if(!GROUPS[m?.sectionKey])errors.push("گروه مقطع عضو "+String(m?.id??i+1)+" ناشناخته است.");
+ });
+ keys.forEach(k=>{
+  if(!GROUPS[k]){errors.push("گروه ناشناخته: "+k);return;}
+  const p=c?.groups?.[k];
+  if(!p){errors.push("مقطع "+GROUPS[k]+" تعریف نشده است.");return;}
+  FIELDS.forEach(f=>{if(!(Number(p[f])>0&&Number.isFinite(Number(p[f]))))errors.push(GROUPS[k]+": "+f+" ناقص یا نامعتبر است.");});
+  if(!String(p.profile||"").trim())warnings.push(GROUPS[k]+": نام/شناسه مقطع ثبت نشده است؛ مشخصات عددی موجود است اما قابلیت ردیابی مقطع ضعیف خواهد بود.");
+  if(p.advancedColdFormed===true)errors.push(GROUPS[k]+": مقطع سردنورد Z/C تا پیاده‌سازی مرکز برش، پیچش خارج از مرکز، محورهای اصلی در دستگاه عضو و کمانش موضعی/اعوجاجی، برای تحلیل خودکار مجاز نیست.");
+ });
+ return {valid:errors.length===0,errors,warnings,groups:keys};
+}
 function resolve(model,c){const v=validate(model,c);if(!v.valid)throw Error(v.errors.join(" "));const E=Number(c.material.E_GPa)*1e9,G=Number(c.material.G_GPa)*1e9,map={};v.groups.forEach(k=>{const p=c.groups[k];map[k]={E,G,A:Number(p.A_cm2)*1e-4,Iy:Number(p.Iy_cm4)*1e-8,Iz:Number(p.Iz_cm4)*1e-8,J:Number(p.J_cm4)*1e-8,profile:String(p.profile||"")};});return m=>map[m.sectionKey]||null;}
 function supports(model,condition){const fixedDofs=condition==="fixed"?[0,1,2,3,4,5]:[0,1,2];return (model.supportNodes||[]).map(nodeId=>({nodeId,fixedDofs:[...fixedDofs]}));}
 function assignProfile(catalog,group,profileName){const p=IPE.find(x=>x.name===profileName);if(!p)throw Error("مقطع در بانک استاندارد IPE یافت نشد.");if(!GROUPS[group])throw Error("گروه عضو نامعتبر است.");catalog.groups[group]={profile:p.name,A_cm2:p.A_cm2,Iy_cm4:p.Iy_cm4,Iz_cm4:p.Iz_cm4,J_cm4:p.J_cm4};return catalog;}
