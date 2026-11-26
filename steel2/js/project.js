@@ -378,6 +378,15 @@
             }
         }
 
+        // شهر انتخاب‌شده در پروژه را پیش از بازیابی بانک اقلیم همگام کن.
+        // در غیر این صورت فرم اقلیم ممکن است روی شهر پیش‌فرض بماند.
+        if (data.city && $("climateCity")) {
+            const climateCity = $("climateCity");
+            if ([...climateCity.options].some(option => option.value === data.city)) {
+                climateCity.value = data.city;
+            }
+        }
+
         if (data.climateDatabase && window.SteelClimateDB &&
             typeof window.SteelClimateDB.setData === "function") {
             window.SteelClimateDB.setData(data.climateDatabase);
