@@ -605,7 +605,7 @@
 <script src="js/foundation-soil-check.js?v=20261125-baseplate-ui1"></script>
 <script src="js/base-plate-check.js?v=20261125-geometry1"></script>
 <script src="js/base-plate-ui.js?v=20261125-geometry1"></script>
-<script src="js/auto-workflow.js?v=20261126-mobile-noblock1"></script>
+<script src="js/auto-workflow.js?v=20261126-mobile-noblock2"></script>
 <script>
 (function(){
   function showLoadError(){
@@ -618,6 +618,10 @@
   document.addEventListener("click",function(e){
     const b=e.target.closest("#btnSteelAutoWorkflow");
     if(!b)return;
+    const out=document.getElementById("steelAutoWorkflowResults");
+    if(out){
+      out.innerHTML="<div class='workflow-live-status' role='status' aria-live='polite'><div class='workflow-live-heading'><span>درخواست اجرا دریافت شد</span><span class='workflow-live-percent'>۱٪</span></div><div class='workflow-live-step'>در حال آغاز اجرای خودکار…</div><progress class='workflow-live-progress' max='100' value='1'></progress><div class='workflow-live-step'>اگر این وضعیت تغییر نکرد، اجرای محاسبات آغاز نشده است.</div></div>";
+    }
     if(!window.SteelAutoWorkflow||typeof window.SteelAutoWorkflow.run!=="function"){
       const o=document.getElementById("steelAutoWorkflowResults");
       if(o)o.innerHTML="<strong>خطا: کد اجرای خودکار در صفحه فعال نشده است.</strong><p>کلیک دریافت شد، اما فایل اجرا در دسترس نیست. صفحه را یک‌بار تازه‌سازی کنید.</p>";
