@@ -48,12 +48,17 @@
 <section class="page" data-page="loads"><h2>بارگذاری و شرایط اقلیمی</h2><p class="hint">بارهای ورودی و منبع هر داده باید مشخص باشد. مقادیر صفر به‌معنای تأیید نبود بار نیست.</p><div class="grid">
 <label>بار مرده سقف (kN/m²)<input name="deadLoad" type="number" min="0" step=".01" value=".50"></label>
 <label>بار زنده سقف (kN/m²)<input name="liveLoad" type="number" min="0" step=".01" value=".75"></label>
-<label>بار برف زمین (kN/m²)<input name="snowLoad" type="number" min="0" step=".01" placeholder="از منبع معتبر"></label>
-<label>سرعت مبنای باد (km/h)<input name="windSpeed" type="number" min="0" step="1" placeholder="از مبحث ششم / منبع معتبر"></label>
+<label>بار برف مبنای زمین Ps (kN/m²)<input name="snowLoad" type="number" min="0" step=".01" value="1.00"></label>
+<label>منطقه بار برف<input name="snowRegion" type="number" min="1" max="6" step="1" value="3" readonly></label>
+<label>سرعت مبنای باد (km/h)<input name="windSpeed" type="number" min="0" step="1" value="90"></label>
+<label>فشار مبنای باد q (kN/m²)<input name="windPressure" type="number" min="0" step=".01" value=".38" readonly></label>
+<label>ارتفاع مبنای ایستگاه (متر)<input name="climateElevation" type="number" min="0" step="1" value="1349"></label>
+<label>عرض جغرافیایی<input name="climateLatitude" type="number" step=".001" value="36.421" readonly></label>
+<label>طول جغرافیایی<input name="climateLongitude" type="number" step=".001" value="54.957" readonly></label>
 <label>رده زمین<select name="terrain"><option value="suburban" selected>شهری / حومه</option><option value="open">باز</option><option value="rough">متراکم</option></select></label>
 <label>وضعیت بازشو<select name="enclosure"><option value="enclosed" selected>بسته</option><option value="partially">نیمه‌باز</option><option value="open">باز</option></select></label>
-<label class="wide">منبع باد و برف<input name="climateSource" placeholder="شماره جدول، بند آیین‌نامه، گزارش یا مرجع داده"></label>
-</div><div class="callout warning">انتخاب شهر به‌تنهایی برای تولید بار باد و برف کافی نیست. اگر منبع یا داده اقلیمی معتبر موجود نباشد، تحلیل نهایی بارگذاری باید متوقف و به‌عنوان داده ناقص گزارش شود.</div></section>
+<label class="wide">منبع باد و برف<input name="climateSource" value="پیش‌فرض اولیه شاهرود؛ نیازمند تطبیق با نسخه نهایی رسمی مبحث ششم ۱۳۹۸ و محل دقیق پروژه"></label>
+</div><div class="callout warning" id="climateNotice">پیش‌فرض شاهرود: منطقه برف ۳ و Ps=1.00 kN/m²، سرعت مبنای باد ۹۰ km/h و q=0.38 kN/m²؛ ارتفاع ایستگاه ۱۳۴۹ متر. این مقادیر برای شروع ورود اطلاعات‌اند؛ پیش از طراحی نهایی باید با نسخه رسمی لازم‌الاجرای مبحث ششم ۱۳۹۸، نقشه‌های محل دقیق پروژه، توپوگرافی و کاربری تطبیق و تأیید شوند. بار برف بام هنوز باید با ضرایب اهمیت، دما، برف‌گیری و شیب محاسبه شود.</div></section>
 <section class="page" data-page="materials"><h2>مصالح و مقاطع</h2><div class="grid">
 <label>گرید فولاد<select name="steelGrade"><option value="ST37" selected>ST37 / S235</option><option value="ST44">ST44 / S275</option><option value="ST52">ST52 / S355</option><option value="custom">مشخصات سفارشی</option></select></label>
 <label>Fy فولاد (MPa)<input name="steelFy" type="number" min="1" value="235"></label>
@@ -95,5 +100,5 @@
 <script src="geometry-self-test.js?v=1" defer></script>
 <script src="engine-adapter.js?v=2" defer></script>
 <script src="section-profile-generator.js?v=1" defer></script>
-<script src="section-geometry.js?v=2"></script><script src="app.js?v=14" defer></script>
+<script src="section-geometry.js?v=2"></script><script src="app.js?v=15" defer></script>
 </body></html>
