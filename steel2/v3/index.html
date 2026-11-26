@@ -58,7 +58,7 @@
 <label>گرید فولاد<select name="steelGrade"><option value="ST37" selected>ST37</option><option value="ST52">ST52</option><option value="custom">مشخصات سفارشی</option></select></label>
 <label>Fy فولاد (MPa)<input name="steelFy" type="number" min="1" value="240"></label>
 <label>E فولاد (GPa)<input name="steelE" type="number" min="1" value="200"></label>
-<label>روش انتخاب مقطع<select name="sectionStrategy"><option value="economic" selected>اقتصادی و کفایت‌سنجی</option><option value="manual">ورود دستی مقاطع</option></select></label>
+<div class="wide callout"><b>بانک مشخصات واقعی مقاطع</b><p>مقادیر را از نقشه ساخت یا مدارک معتبر وارد کنید. واحد سطح cm² و واحد ممان‌های اینرسی و ثابت پیچشی cm⁴ است.</p><textarea id="sectionCatalogInput" rows="12" dir="ltr" spellcheck="false" placeholder="ابتدا ساختار نمونه بانک مقاطع را بسازید."></textarea><div class="actions"><button type="button" id="sectionTemplateBtn" class="secondary">ساختار نمونه بانک مقاطع</button><button type="button" id="sectionValidateBtn" class="primary">اعتبارسنجی مقاطع پروژه</button></div><div id="sectionCatalogResult" class="readiness" aria-live="polite"></div></div><label>روش انتخاب مقطع<select name="sectionStrategy"><option value="economic" selected>اقتصادی و کفایت‌سنجی</option><option value="manual">ورود دستی مقاطع</option></select></label>
 <label>حداقل ضخامت جان (mm)<select name="webThickness"><option>6</option><option selected>8</option><option>10</option><option>12</option></select></label>
 <label>حداقل ضخامت بال (mm)<select name="flangeThickness"><option>6</option><option selected>8</option><option>10</option><option>12</option></select></label>
 <label>گرید بتن<select name="concreteGrade"><option value="C25" selected>C25</option><option value="C30">C30</option><option value="C35">C35</option></select></label>
@@ -88,10 +88,10 @@
 </form>
 <footer>SAHROUD STEEL · ابزار کمکی مهندس محاسب · خروجی اجرایی فقط پس از تکمیل کنترل‌ها و تأیید مهندس مسئول</footer>
 </main>
-<script src="engine-core.js?v=1" defer></script>
+<script src="engine-core.js?v=1" defer></script>\n<script src="section-catalog.js?v=1" defer></script>
 <script src="engine-geometry.js?v=1" defer></script>
 <script src="engine-self-test.js?v=1" defer></script>
 <script src="geometry-self-test.js?v=1" defer></script>
 <script src="engine-adapter.js?v=2" defer></script>
-<script src="app.js?v=5" defer></script>
+<script src="app.js?v=6" defer></script>
 </body></html>
