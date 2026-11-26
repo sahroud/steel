@@ -470,6 +470,11 @@
       }
     });
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
+    // Refresh the climate panel after geometry changes so its wind-path audit
+    // reflects the newly built member groups rather than a stale pre-build state.
+    if(typeof window.SteelClimateLoadEngine?.updateSummary==="function"){
+      window.SteelClimateLoadEngine.updateSummary();
+    }
     return model;
   }
   function draw() {
