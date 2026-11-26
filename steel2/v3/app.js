@@ -182,6 +182,44 @@ document.getElementById("roofGravityLoadBtn").addEventListener("click",()=>{
   out.textContent="دو حالت بار مستقل تولید شد. بار مرده سقف: "+d.toFixed(2)+" kN | بار زنده سقف: "+l.toFixed(2)+" kN | ردیف‌های پرلین: "+r.rows.length+". "+r.scope;
  }catch(error){out.textContent="تولید بار سقف متوقف شد: "+error.message;}
 });
+document.getElementById("roofGravityAnalyzeBtn").addEventListener("click",()=>{
+ const out=document.getElementById("roofGravityAnalysisResult");
+ try{
+  if(!window.SahroudSteel3D||!window.SahroudSteelSections||!window.SahroudSteelGeometry)throw Error("موتور تحلیل، بانک مقاطع یا مولد هندسه بارگذاری نشده است.");
+  const cases=window.SahroudSteelV3LoadCases;
+  if(!cases||!cases.DEAD_ROOF||!cases.LIVE_ROOF)throw Error("ابتدا دکمه «تولید بار مرده و زنده سقف» را اجرا کنید.");
+  const catalog=JSON.parse(document.getElementById("sectionCatalogInput").value);
+  const built=window.SahroudSteelGeometry.build(data());
+  if(!built.validation.valid)throw Error("هندسه معتبر نیست: "+built.validation.errors.join("؛ "));
+  const check=window.SahroudSteelSections.validate(built.model,catalog);
+  if(!check.valid)throw Error("تحلیل به علت نقص مقاطع متوقف شد: "+check.errors.slice(0,8).join("؛ ")+(check.errors.length>8?" و "+(check.errors.length-8)+" مورد دیگر.":""));
+  const resolver=window.SahroudSteelSections.resolve(built.model,catalog);
+  const supports=window.SahroudSteelSections.supports(built.model,field("baseCondition").value);
+  if(!supports.length||supports.length!==built.model.supportNodes.length)throw Error("تکیه‌گاه‌ها ناقص یا نامعتبرند.");
+  const results={};
+  for(const name of ["DEAD_ROOF","LIVE_ROOF"]){
+   const r=window.SahroudSteel3D.analyze(cases[name].model,{
+    sectionResolver:resolver,supports,nodalLoads:[],releasePurlinRafterRotation:true
+   });
+   if(!r.success)throw Error("حل‌گر برای "+name+" موفق نشد.");
+   if(!r.equilibrium||!r.equilibrium.ok)throw Error("کنترل تعادل نیرو یا لنگر در "+name+" ناموفق است.");
+   results[name]=r;
+  }
+  window.SahroudSteelV3AnalysisResults=results;
+  const fmt=v=>Number(v).toExponential(3);
+  const describe=(name,label)=>{
+   const r=results[name],m=r.maxDisplacement;
+   const reactions=r.reactions.length;
+   return label+": بیشینه انتقال "+fmt(r.maxTranslation*1000)+" mm در گره "+(m?m.nodeId:"—")+
+    "؛ تعداد تکیه‌گاه‌های دارای واکنش "+reactions+
+    "؛ خطای نسبی تعادل نیرو "+fmt(r.equilibrium.relativeForceResidual)+
+    " و لنگر "+fmt(r.equilibrium.relativeMomentResidual);
+  };
+  out.textContent="تحلیل خطی هر دو حالت بارگذاری موفق شد. "+describe("DEAD_ROOF","بار مرده")+
+   " | "+describe("LIVE_ROOF","بار زنده")+
+   ". نتایج عددی خام در window.SahroudSteelV3AnalysisResults نگهداری شد. این نتایج بدون ترکیبات آیین‌نامه‌ای، بار برف بام، باد، جرثقیل، P-Delta، کمانش و طراحی مقاومت/اتصالات است و تأیید نهایی سازه محسوب نمی‌شود.";
+ }catch(error){out.textContent="تحلیل بار سقف متوقف شد: "+error.message+" هیچ نتیجه طراحی یا تأیید سازه‌ای صادر نشد.";}
+});
 document.getElementById("saveBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data(),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="sahroud-steel-project.json";a.click();URL.revokeObjectURL(url);setStatus("فایل پشتیبان پروژه آماده شد");});
 document.getElementById("openBtn").addEventListener("click",()=>document.getElementById("fileInput").click());
 document.getElementById("fileInput").addEventListener("change",async e=>{const f=e.target.files?.[0];if(!f)return;try{load(JSON.parse(await f.text()));setStatus("پروژه بارگذاری شد");}catch(err){setStatus("فایل پروژه معتبر نیست");}e.target.value="";});
