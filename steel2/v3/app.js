@@ -51,6 +51,23 @@ document.getElementById("sectionValidateBtn").addEventListener("click",()=>{
   }
  }catch(error){out.textContent="بانک مقاطع قابل اعتبارسنجی نیست: "+error.message;}
 });
+document.getElementById("stabilityScreenBtn").addEventListener("click",()=>{
+ const out=document.getElementById("stabilityScreenResult");
+ try{
+  if(!window.SahroudSteel3D||!window.SahroudSteelSections)throw Error("موتور تحلیل یا بانک مقاطع بارگذاری نشده است.");
+  const catalog=JSON.parse(document.getElementById("sectionCatalogInput").value);
+  const built=window.SahroudSteelGeometry.build(data());
+  if(!built.validation.valid)throw Error("هندسه معتبر نیست: "+built.validation.errors.join("؛ "));
+  const model=built.model;
+  const resolver=window.SahroudSteelSections.resolve(model,catalog);
+  const supports=window.SahroudSteelSections.supports(model,field("baseCondition").value);
+  if(supports.length!==model.supportNodes.length||!supports.length)throw Error("تعداد یا تعریف تکیه‌گاه‌ها معتبر نیست.");
+  const result=window.SahroudSteel3D.analyze(model,{sectionResolver:resolver,supports,nodalLoads:[]});
+  if(!result.success)throw Error("حل‌گر نتیجه موفق اعلام نکرد.");
+  if(!result.equilibrium||!result.equilibrium.ok)throw Error("کنترل تعادل داخلی حل‌گر موفق نبود.");
+  out.textContent="حل ماتریس سختی بدون بارگذاری موفق شد. "+result.nodeCount+" گره، "+result.memberCount+" عضو، "+supports.length+" تکیه‌گاه؛ درجات آزادی آزاد: "+result.equilibrium.freeDofCount+". با این حال این فقط غربال اولیه است و پایداری فیزیکی، مهاربندی واقعی، بارها، آزادسازی‌ها و ضوابط آیین‌نامه‌ای را تأیید نمی‌کند.";
+ }catch(error){out.textContent="غربال اولیه متوقف شد: "+error.message+" هیچ نتیجه طراحی تولید نشد.";}
+});
 document.getElementById("geometryTestBtn").addEventListener("click",()=>{
  const out=document.getElementById("geometryTestResult");
  try{
