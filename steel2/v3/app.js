@@ -32,6 +32,25 @@ document.getElementById("buildGeometryBtn").addEventListener("click",()=>{
    " . "+result.model.scope+(result.validation.errors.length?" خطاها: "+result.validation.errors.join("؛ "):"");
  }catch(error){out.textContent="تولید مدل هندسی متوقف شد: "+error.message;}
 });
+document.getElementById("sectionTemplateBtn").addEventListener("click",()=>{
+ const area=document.getElementById("sectionCatalogInput");
+ area.value=JSON.stringify(window.SahroudSteelSections.template(),null,2);
+ document.getElementById("sectionCatalogResult").textContent="ساختار خالی آماده شد؛ مقادیر واقعی را وارد کنید. هیچ مقطع حدسی درج نشده است.";
+});
+document.getElementById("sectionValidateBtn").addEventListener("click",()=>{
+ const out=document.getElementById("sectionCatalogResult");
+ try{
+  const catalog=JSON.parse(document.getElementById("sectionCatalogInput").value);
+  const model=window.SahroudSteelGeometry.build(data()).model;
+  const result=window.SahroudSteelSections.validate(model,catalog);
+  out.textContent=(result.valid?"خواص تمام گروه‌های استفاده‌شده کامل است. ":"اعتبارسنجی متوقف شد. ")+result.errors.concat(result.warnings).join("؛ ");
+  if(result.valid){
+   window.SahroudSteelV3SectionResolver=window.SahroudSteelSections.resolve(model,catalog);
+   window.SahroudSteelV3SectionCatalog=catalog;
+   out.textContent+=" نگاشت خواص به واحد SI آماده است؛ تحلیل سوله هنوز اجرا نشده است.";
+  }
+ }catch(error){out.textContent="بانک مقاطع قابل اعتبارسنجی نیست: "+error.message;}
+});
 document.getElementById("geometryTestBtn").addEventListener("click",()=>{
  const out=document.getElementById("geometryTestResult");
  try{
