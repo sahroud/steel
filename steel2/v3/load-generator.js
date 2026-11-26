@@ -22,8 +22,10 @@
   });
   const ordered=[...rows.values()].sort((a,b)=>a.x-b.x);
   if(ordered.length<2)throw Error("برای تعیین عرض بارگیر، حداقل دو ردیف پرلین لازم است.");
+  // Roof area loads in the loading code are defined per horizontal plan area.
+  // Therefore tributary width is the horizontal projection, not the sloped roof distance.
   const s=[0];
-  for(let i=1;i<ordered.length;i++)s[i]=s[i-1]+Math.hypot(ordered[i].x-ordered[i-1].x,ordered[i].y-ordered[i-1].y);
+  for(let i=1;i<ordered.length;i++)s[i]=s[i-1]+Math.abs(ordered[i].x-ordered[i-1].x);
   const tributary=new Map();
   ordered.forEach((r,i)=>{
    const left=i===0?0:(s[i]-s[i-1])/2;
