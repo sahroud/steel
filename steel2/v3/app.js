@@ -177,7 +177,7 @@ document.getElementById("roofGravityLoadBtn").addEventListener("click",()=>{
   if(!window.SahroudSteelLoads||!window.SahroudSteelGeometry||!window.SahroudSteel3D)throw Error("ماژول تولید بار، هندسه یا موتور تحلیل بارگذاری نشده است.");
   const built=window.SahroudSteelGeometry.build(data());
   if(!built.validation.valid)throw Error("هندسه معتبر نیست: "+built.validation.errors.join("؛ "));
-  const r=window.SahroudSteelLoads.generate(built.model,{deadLoad:field("deadLoad").value,liveLoad:field("liveLoad").value},window.SahroudSteel3D);
+  const r=window.SahroudSteelLoads.generate(built.model,{deadLoad:field("deadLoad").value,liveLoad:field("liveLoad").value,snowLoad:field("snowLoad").value,snowRegion:field("snowRegion").value,snowImportance:field("snowImportance").value,snowThermal:field("snowThermal").value,roofSurface:field("roofSurface").value,roofSlope:field("roofSlope").value},window.SahroudSteel3D);
   window.SahroudSteelV3LoadCases=r.cases;
   const d=r.cases.DEAD_ROOF.totalVertical_kN,l=r.cases.LIVE_ROOF.totalVertical_kN;
   out.textContent="دو حالت بار مستقل تولید شد. بار مرده سقف: "+d.toFixed(2)+" kN | بار زنده سقف: "+l.toFixed(2)+" kN | ردیف‌های پرلین: "+r.rows.length+". "+r.scope;
@@ -191,7 +191,7 @@ document.getElementById("roofGravityAnalyzeBtn").addEventListener("click",()=>{
   if(!built.validation.valid)throw Error("هندسه معتبر نیست: "+built.validation.errors.join("؛ "));
   // Rebuild load cases from the current form values to prevent stale geometry or loads.
   const generated=window.SahroudSteelLoads.generate(built.model,{
-   deadLoad:field("deadLoad").value,liveLoad:field("liveLoad").value
+   deadLoad:field("deadLoad").value,liveLoad:field("liveLoad").value,snowLoad:field("snowLoad").value,snowRegion:field("snowRegion").value,snowImportance:field("snowImportance").value,snowThermal:field("snowThermal").value,roofSurface:field("roofSurface").value,roofSlope:field("roofSlope").value
   },window.SahroudSteel3D);
   const cases=generated.cases;
   window.SahroudSteelV3LoadCases=cases;
@@ -202,7 +202,7 @@ document.getElementById("roofGravityAnalyzeBtn").addEventListener("click",()=>{
   const supports=window.SahroudSteelSections.supports(built.model,field("baseCondition").value);
   if(!supports.length||supports.length!==built.model.supportNodes.length)throw Error("تکیه‌گاه‌ها ناقص یا نامعتبرند.");
   const results={};
-  for(const name of ["DEAD_ROOF","LIVE_ROOF"]){
+  for(const name of ["DEAD_ROOF","LIVE_ROOF","BALANCED_SNOW_ROOF"]){
    const r=window.SahroudSteel3D.analyze(cases[name].model,{
     sectionResolver:resolver,supports,nodalLoads:[],releasePurlinRafterRotation:true
    });
@@ -220,10 +220,10 @@ document.getElementById("roofGravityAnalyzeBtn").addEventListener("click",()=>{
     " و لنگر "+fmt(r.equilibrium.relativeMomentResidual);
   };
   out.textContent="تحلیل خطی هر دو حالت بارگذاری با داده‌های فعلی فرم انجام شد. "+describe("DEAD_ROOF","بار مرده")+
-   " | "+describe("LIVE_ROOF","بار زنده")+
-   ". بار مرده کل برآوردشده "+generated.cases.DEAD_ROOF.totalVertical_kN.toFixed(2)+
+   " | "+describe("LIVE_ROOF","بار زنده")+" | "+describe("BALANCED_SNOW_ROOF","برف متوازن")+
+   ". بار برف متوازن محاسبه‌شده "+generated.snow.balancedRoof_kN_m2.toFixed(3)+" kN/m² (Cs="+generated.snow.slopeFactor.toFixed(3)+"). بار مرده کل برآوردشده "+generated.cases.DEAD_ROOF.totalVertical_kN.toFixed(2)+
    " kN و بار زنده "+generated.cases.LIVE_ROOF.totalVertical_kN.toFixed(2)+
-   " kN است. نتایج خام در window.SahroudSteelV3AnalysisResults نگهداری شد. این تحلیل بدون ترکیبات آیین‌نامه‌ای، برف بام، باد، جرثقیل، P-Delta، کمانش و طراحی مقاومت/اتصالات است و تأیید نهایی سازه محسوب نمی‌شود.";
+   " kN است. نتایج خام در window.SahroudSteelV3AnalysisResults نگهداری شد. این تحلیل بدون ترکیبات آیین‌نامه‌ای، برف نامتوازن/جزئی/انباشتگی/لغزش، باد، جرثقیل، P-Delta، کمانش و طراحی مقاومت/اتصالات است و تأیید نهایی سازه محسوب نمی‌شود.";
  }catch(error){out.textContent="تحلیل بار سقف متوقف شد: "+error.message+" هیچ نتیجه طراحی یا تأیید سازه‌ای صادر نشد.";}
 });
 document.getElementById("saveBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data(),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="sahroud-steel-project.json";a.click();URL.revokeObjectURL(url);setStatus("فایل پشتیبان پروژه آماده شد");});
