@@ -79,6 +79,8 @@
 <article><b>فونداسیون و نقشه‌ها</b><span>پی، تیرهای رابط، آرماتور و جزئیات اجرایی</span><em>در انتظار طراحی</em></article>
 <article><b>گزارش نهایی</b><span>گزارش محاسبات، منابع، فرضیات و فهرست موارد ناقص</span><em>در انتظار تولید</em></article>
 </div><div class="callout warning">در این مرحله رابط و مدل داده پایه ساخته شده‌اند؛ نتایج مهندسی تا اتصال و اعتبارسنجی موتورهای محاسباتی تولید نمی‌شوند.</div><button type="button" id="engineCheckBtn" class="primary">بررسی آمادگی اتصال موتورهای محاسباتی</button><div id="engineReadiness" class="readiness" aria-live="polite"></div>
+<div class="callout"><b>تولید مدل هندسی مستقل</b><p>مدل هندسی اولیه برای سقف دوشیب یا تک‌شیب، قاب‌ها، پرلین‌ها، قیدها و مهاربندهای پیشنهادی.</p>
+<button type="button" id="buildGeometryBtn" class="primary">تولید مدل هندسی پروژه</button><div id="geometryResult" class="readiness" aria-live="polite"></div></div>
 <div class="callout"><b>آزمون مستقل هسته تحلیل</b><p>این آزمون فقط یک تیر طره‌ای مرجع را بررسی می‌کند و به‌معنای تحلیل پروژه سوله نیست.</p>
 <button type="button" id="solverTestBtn" class="secondary">اجرای آزمون مرجع حل‌گر</button><div id="solverTestResult" class="readiness" aria-live="polite"></div></div></section>
 <div class="form-footer"><button type="button" id="prevBtn" class="secondary">مرحله قبل</button><span id="saveState" role="status">ذخیره خودکار فعال است</span><button type="button" id="nextBtn" class="primary">مرحله بعد</button></div>
@@ -86,7 +88,8 @@
 <footer>SAHROUD STEEL · ابزار کمکی مهندس محاسب · خروجی اجرایی فقط پس از تکمیل کنترل‌ها و تأیید مهندس مسئول</footer>
 </main>
 <script src="engine-core.js?v=1" defer></script>
+<script src="engine-geometry.js?v=1" defer></script>
 <script src="engine-self-test.js?v=1" defer></script>
 <script src="engine-adapter.js?v=2" defer></script>
-<script src="app.js?v=3" defer></script>
+<script src="app.js?v=4" defer></script>
 </body></html>
