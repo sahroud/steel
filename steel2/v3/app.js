@@ -6,7 +6,7 @@ const nav=[...document.querySelectorAll("[data-step]")];
 let index=0,timer=null;
 const key="sahroudSteel.v3.project";
 const field=name=>form.elements.namedItem(name);
-function data(){const out={schema:"sahroud-steel-project",version:3,updatedAt:new Date().toISOString(),inputs:{}};for(const el of form.elements){if(!el.name)continue;out.inputs[el.name]=el.value;}return out;}
+function data(){const out={schema:"sahroud-steel-project",version:3,updatedAt:new Date().toISOString(),inputs:{}};for(const el of form.elements){if(!el.name)continue;out.inputs[el.name]=el.value;}if(window.SahroudEngineAdapter)out.engineBridge=window.SahroudEngineAdapter.toLegacyPayload(out);return out;}
 function setStatus(s){document.getElementById("saveState").textContent=s;}
 function saveLocal(){try{localStorage.setItem(key,JSON.stringify(data()));setStatus("ذخیره خودکار انجام شد");}catch(e){setStatus("ذخیره خودکار در این مرورگر در دسترس نیست؛ فایل JSON بگیرید");}}
 function schedule(){clearTimeout(timer);setStatus("در حال ذخیره…");timer=setTimeout(saveLocal,450);}
@@ -18,6 +18,7 @@ form.addEventListener("input",()=>{updateGeometry();schedule();});form.addEventL
 nav.forEach((b,i)=>b.addEventListener("click",()=>go(i)));
 document.getElementById("prevBtn").addEventListener("click",()=>go(index-1));
 document.getElementById("nextBtn").addEventListener("click",()=>{if(index<pages.length-1)go(index+1);else{saveLocal();setStatus("ورودی‌ها ذخیره شدند؛ موتور محاسباتی در مرحله اتصال قرار دارد.");}});
+document.getElementById("engineCheckBtn").addEventListener("click",()=>{const result=window.SahroudEngineAdapter?.validateForEngine?.(data());const out=document.getElementById("engineReadiness");if(!result){out.textContent="ماژول اتصال موتور بارگذاری نشده است.";return;}out.innerHTML="<h3>"+(result.ready?"ورودی‌های پایه از نظر ساختاری آماده‌اند":"ورودی‌های پایه ناقص‌اند")+"</h3>"+(result.errors.length?("<b>موارد مانع:</b><ul>"+result.errors.map(x=>"<li>"+x+"</li>").join("")+"</ul>"):"")+(result.warnings.length?("<b>هشدارها و محدودیت‌ها:</b><ul>"+result.warnings.map(x=>"<li>"+x+"</li>").join("")+"</ul>"):"")+"<p>این بررسی فقط آمادگی داده‌ها را می‌سنجد و به‌معنای اجرای تحلیل یا تأیید سازه نیست.</p>";});
 document.getElementById("saveBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(data(),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="sahroud-steel-project.json";a.click();URL.revokeObjectURL(url);setStatus("فایل پشتیبان پروژه آماده شد");});
 document.getElementById("openBtn").addEventListener("click",()=>document.getElementById("fileInput").click());
 document.getElementById("fileInput").addEventListener("change",async e=>{const f=e.target.files?.[0];if(!f)return;try{load(JSON.parse(await f.text()));setStatus("پروژه بارگذاری شد");}catch(err){setStatus("فایل پروژه معتبر نیست");}e.target.value="";});
