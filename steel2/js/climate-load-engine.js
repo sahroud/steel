@@ -332,6 +332,31 @@
     }
     updateWindPressureResult();
     updateWindZones();
+    updateWindGeometryAudit();
+  }
+  function updateWindGeometryAudit() {
+    const panel=$("climateLoadCasePanel");
+    if(!panel)return;
+    let out=$("windGeometryAuditStatus");
+    if(!out){
+      out=document.createElement("p");
+      out.id="windGeometryAuditStatus";
+      out.className="notice";
+      out.setAttribute("aria-live","polite");
+      const status=$("windZoneStatus");
+      if(status)status.insertAdjacentElement("afterend",out);
+      else panel.appendChild(out);
+    }
+    const a=getStructuralWindGeometryAudit();
+    if(!a.available){
+      out.textContent="ممیزی هندسه مسیر باد: "+a.note;
+      return;
+    }
+    const g=a.groups;
+    out.textContent="ممیزی هندسه (صرفاً فهرست‌برداری، بدون اعمال بار): پرلین چپ/راست "+g.roofLeft.memberCount+"/"+g.roofRight.memberCount+
+      "؛ لاپه طولی چپ/راست "+g.longWallLeft.memberCount+"/"+g.longWallRight.memberCount+
+      "؛ لاپه انتهایی جلو/عقب "+g.endFront.memberCount+"/"+g.endBack.memberCount+
+      ". ناحیه مثلثی دیوار انتهایی بالای لاپه آخر در بارگذاری توزیعی پوشش داده نشده است. طراحی‌پذیری: خیر.";
   }
   function setData(data) {
     restoredMeta=data&&typeof data==="object"?{
