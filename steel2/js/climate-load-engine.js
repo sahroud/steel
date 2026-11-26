@@ -170,7 +170,30 @@
         status:"manual-code-coefficients-calculated-for-multiple-surfaces-not-applied-to-3d-model",
         formulaExternal:"P = Iw q Ce Ct Cg Cp Cd",
         formulaInternal:"Pi = Iw q Ce Ct Cgi Cpi Cd",
-        netConvention:"Pnet = Pexternal - Pinternal"
+        netConvention:"Pnet = Pexternal - Pinternal",
+        transferAudit:{
+          status:"calculated-not-applied-to-structural-model",
+          pressureUnit:"kN/m2",
+          targetMemberGroups:{
+            "roof-left":"roofPurlin:left",
+            "roof-right":"roofPurlin:right",
+            "long-wall-left":"wallGirt:left",
+            "long-wall-right":"wallGirt:right",
+            "end-wall-front":"endGirt:front",
+            "end-wall-back":"endGirt:back"
+          },
+          requiredConversion:"member line load (kN/m) = signed net surface pressure (kN/m2) × verified tributary width or height (m)",
+          internalPressureCases:["netInternalPositive","netInternalNegative"],
+          outstandingChecks:[
+            "verify wind direction and global-axis sign for each facade",
+            "verify tributary widths/heights and edge-member shares",
+            "split roof and facade into code-required edge, corner and field zones",
+            "include triangular end-wall area above eaves",
+            "verify cladding-to-purlin/girt load path and frame/bracing transfer",
+            "run separate positive and negative internal-pressure structural analyses"
+          ],
+          designEligibility:false
+        }
       },
       climate:{
         city:climate.city||"", customCity:climate.customCity||"",
