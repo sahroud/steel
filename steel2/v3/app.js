@@ -63,8 +63,8 @@ document.getElementById("sectionTemplateBtn").addEventListener("click",()=>{
  const area=document.getElementById("sectionCatalogInput");
  const c=window.SahroudSteelSections.template();
  const grade=field("steelGrade").value;
- c.material.grade=grade==="ST52"?"ST52 / S355":"ST37 / S235";
- c.material.Fy_MPa=grade==="ST52"?355:235;
+ c.material.grade=grade==="ST52"?"ST52 / S355":(grade==="ST44"?"ST44 / S275":"ST37 / S235");
+ c.material.Fy_MPa=grade==="ST52"?355:(grade==="ST44"?275:235);
  field("steelFy").value=String(c.material.Fy_MPa);
  c.material.E_GPa=200;c.material.G_GPa=77;
  area.value=JSON.stringify(c,null,2);
