@@ -59,6 +59,16 @@ function renderProfileAssignments(){
  });
 }
 renderProfileAssignments();
+document.getElementById("coldGenerateBtn").addEventListener("click",()=>{
+ const out=document.getElementById("coldGenerateResult");
+ try{
+  const result=window.SahroudColdFormed.make({type:document.getElementById("coldType").value,h:document.getElementById("coldH").value,b1:document.getElementById("coldB1").value,b2:document.getElementById("coldB2").value,t:document.getElementById("coldT").value,lip:document.getElementById("coldLip").value});
+  document.getElementById("customSectionName").value=result.name;
+  document.getElementById("customSectionPolygon").value=JSON.stringify(result.points);
+  document.getElementById("customSectionResult").textContent="مختصات تولید شد. اکنون «محاسبه خواص هندسی» را بزنید و سپس J معتبر را جداگانه وارد کنید.";
+  out.textContent=result.note+" مختصات به محاسبه‌گر پایین منتقل شد.";
+ }catch(e){out.textContent="ساخت مقطع انجام نشد: "+e.message;}
+});
 function readCustomSection(){
  const points=JSON.parse(document.getElementById("customSectionPolygon").value);
  return window.SahroudSectionGeometry.calculate(points);
