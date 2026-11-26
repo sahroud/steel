@@ -32,10 +32,38 @@ document.getElementById("buildGeometryBtn").addEventListener("click",()=>{
    " . "+result.model.scope+(result.validation.errors.length?" خطاها: "+result.validation.errors.join("؛ "):"");
  }catch(error){out.textContent="تولید مدل هندسی متوقف شد: "+error.message;}
 });
+function renderProfileAssignments(){
+ const host=document.getElementById("sectionProfileAssignments");
+ if(!host||!window.SahroudSteelSections)return;
+ host.innerHTML="";
+ Object.entries(window.SahroudSteelSections.groups).forEach(([key,label])=>{
+  const wrap=document.createElement("label");wrap.textContent=label+" — انتخاب مقطع IPE";
+  const select=document.createElement("select");select.dataset.sectionGroup=key;
+  const empty=document.createElement("option");empty.value="";empty.textContent="انتخاب نشده";select.appendChild(empty);
+  window.SahroudSteelSections.profiles.IPE.forEach(p=>{const o=document.createElement("option");o.value=p.name;o.textContent=p.name+" | A="+p.A_cm2+" cm²";select.appendChild(o);});
+  select.addEventListener("change",()=>{
+   if(!select.value)return;
+   try{
+    const c=JSON.parse(document.getElementById("sectionCatalogInput").value);
+    window.SahroudSteelSections.assignProfile(c,key,select.value);
+    document.getElementById("sectionCatalogInput").value=JSON.stringify(c,null,2);
+    document.getElementById("sectionCatalogResult").textContent=label+": "+select.value+" از جدول مرجع به بانک اضافه شد؛ جهت‌گیری و تناسب کاربرد باید کنترل شود.";
+   }catch(e){document.getElementById("sectionCatalogResult").textContent="ابتدا بانک پایه را بسازید: "+e.message;}
+  });
+  wrap.appendChild(select);host.appendChild(wrap);
+ });
+}
+renderProfileAssignments();
 document.getElementById("sectionTemplateBtn").addEventListener("click",()=>{
  const area=document.getElementById("sectionCatalogInput");
- area.value=JSON.stringify(window.SahroudSteelSections.template(),null,2);
- document.getElementById("sectionCatalogResult").textContent="ساختار خالی آماده شد؛ مقادیر واقعی را وارد کنید. هیچ مقطع حدسی درج نشده است.";
+ const c=window.SahroudSteelSections.template();
+ const grade=field("steelGrade").value;
+ c.material.grade=grade==="ST52"?"ST52 / S355":"ST37 / S235";
+ c.material.Fy_MPa=grade==="ST52"?355:235;
+ c.material.E_GPa=200;c.material.G_GPa=77;
+ area.value=JSON.stringify(c,null,2);
+ document.querySelectorAll("[data-section-group]").forEach(s=>s.value="");
+ document.getElementById("sectionCatalogResult").textContent="بانک پایه بارگذاری شد. E=200 و G=77 گیگاپاسکال؛ Fy اولیه برای ضخامت تا ۱۶ میلی‌متر درج شده است. مقطع هر گروه را جداگانه انتخاب کنید.";
 });
 document.getElementById("sectionValidateBtn").addEventListener("click",()=>{
  const out=document.getElementById("sectionCatalogResult");
