@@ -10,6 +10,20 @@
   function addLine(rows, label, ok, detail) {
     rows.push({label,ok:!!ok,detail:detail||""});
   }
+  function updateProgress(label, percent, detail) {
+    const out=$("steelAutoWorkflowResults");
+    if(!out)return;
+    const safe=s=>String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    const p=Number.isFinite(percent)?Math.max(0,Math.min(100,Math.round(percent))):null;
+    out.innerHTML='<div class="workflow-live-status" role="status" aria-live="polite">'+
+      '<div class="workflow-live-heading"><span>اجرای پروژه در حال انجام</span><span class="workflow-live-percent">'+(p===null?"در حال پردازش":p+"٪")+'</span></div>'+
+      '<div class="workflow-live-step">'+safe(label)+'</div>'+
+      '<progress class="workflow-live-progress"'+(p===null?"":" max=\"100\" value=\""+p+"\"")+'></progress>'+
+      '<div class="workflow-live-step">'+safe(detail||"لطفاً صفحه را نبندید؛ پس از پایان، گزارش مراحل نمایش داده می‌شود.")+'</div></div>';
+  }
+  function paintNow() {
+    return new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+  }
   function setReport(rows, heading) {
     const out=$("steelAutoWorkflowResults"); if(!out)return;
     const pass=rows.filter(x=>x.ok).length;
@@ -113,7 +127,12 @@
     if(busy)return;
     busy=true;
     const rows=[];
+    const button=$("btnSteelAutoWorkflow");
+    const originalButtonText=button?button.textContent:"▶ اجرای خودکار پروژه";
+    if(button){button.disabled=true;button.textContent="در حال اجرای پروژه…";}
+    updateProgress("آماده‌سازی و بررسی داده‌های اقلیمی و بارگذاری",5);
     try {
+      await paintNow();
       const climate=hasUsableClimate();
       addLine(rows,"تخصیص خودکار بار باد و برف شهر",climate.ok,climate.detail);
       const windRegistry=window.SteelClimateLoadEngine?.getData?.();
@@ -126,6 +145,8 @@
       addLine(rows,"همگام‌سازی و کنترل ورودی‌های بار",loadOK,
         loadOK?"بارهای موجود و علامت باد حفظ شدند.":"ورودی‌های بار یا پارامترهای اقلیمی نیازمند اصلاح‌اند.");
 
+      updateProgress("تکمیل خواص مصالح و آماده‌سازی مقاطع",18);
+      await paintNow();
       // خواص مصالح باید پیش از ساخت/اعتبارسنجی مقاطع اولیه آماده شوند.
       const materialOK=prepareMaterial(rows);
       if(!materialOK) {
@@ -139,6 +160,8 @@
         return;
       }
 
+      updateProgress("اعتبارسنجی هندسه و مشخصات پروژه",30);
+      await paintNow();
       const projectError=window.SteelProject?.validate?.()||"";
       if(projectError) {
         addLine(rows,"اعتبارسنجی هندسه و مشخصات پروژه",false,projectError);
@@ -147,6 +170,8 @@
       }
       addLine(rows,"اعتبارسنجی هندسه و مشخصات پروژه",true,"ابعاد اصلی و ورودی‌های اجباری معتبرند.");
 
+      updateProgress("ساخت و ترسیم مدل هندسی سوله",42);
+      await paintNow();
       let fullModelOK=false;
       try {
         const fullModel=window.SteelStructuralModel?.build?.();
@@ -161,6 +186,8 @@
       if(!fullModelOK) window.SteelDrawing?.drawFrame?.();
       // اجرای مستقیم و هم‌زمان محاسبه؛ کلیک دکمه با setTimeout اجرا می‌شود
       // و بررسی فوری نتیجه پس از click باعث گزارش کاذب شکست می‌شد.
+      updateProgress("تحلیل سه‌بعدی ترکیبات بار؛ ممکن است چند لحظه طول بکشد",55);
+      await paintNow();
       let comboRun=null;
       try {
         window.SteelAnalysis.combinationResults=[];
@@ -177,6 +204,8 @@
 
       // کنترل‌های اعضا و گزارش فعلی بر ساختار نتایج قاب دوبعدی متکی‌اند.
       // این تحلیل مستقل، پس از حل سه‌بعدی اجرا می‌شود تا نتایج دو مدل با هم مخلوط نشوند.
+      updateProgress("محاسبه مرجع دوبعدی برای کنترل اعضا و گزارش",68);
+      await paintNow();
       let legacyComboRun=null;
       try {
         const legacyRunner=window.SteelAnalysis?.calculateLegacy2DCombinations;
@@ -204,6 +233,8 @@
           const __draftGravityOnly=combos.some(x=>x.classification==="preliminary-gravity-only"||x.status==="not-code-verified");
           if(__draftGravityOnly) addLine(rows,"وضعیت مجموعه ترکیبات بار",false,"سناریوهای فعلی فقط D، Lr و S را پوشش می‌دهند و فاقد باد، زلزله و سایر ترکیبات لازم‌اند؛ نتیجه آن‌ها تحلیل مقدماتی ثقلی است، نه طراحی نهایی یا کنترل کامل ULS.");
           for(let i=0;i<Math.min(combos.length,3);i++) {
+            updateProgress("تحلیل سه‌بعدی سناریو "+(i+1)+" از "+Math.min(combos.length,3),75+Math.round(15*i/Math.max(1,Math.min(combos.length,3))),"حل‌گر در حال محاسبه این سناریو است؛ این مرحله ممکن است زمان‌بر باشد.");
+            await paintNow();
             try {
               const result=await model3D.analyze3D("combo"+i);
               const equilibriumOK=!!result?.equilibrium?.ok;
@@ -291,6 +322,8 @@
       addLine(rows,"تعیین خودکار خواص هندسی مقاطع",true,
         "خواص هندسی ستون و رفتر در صورت وجود ابعاد معتبر از تیرورق محاسبه می‌شود؛ این کار جایگزین تأیید گرید و خواص مکانیکی فولاد نیست.");
 
+      updateProgress("تجمیع کنترل‌ها و ساخت گزارش نهایی",92);
+      await paintNow();
       // Build the consolidated report only after all preceding calculations.
       // The report module performs its own input/result checks and displays
       // an explicit error instead of creating a misleading partial report.
@@ -310,16 +343,20 @@
           "پنل گزارش نهایی یا دکمه تهیه گزارش در صفحه ایجاد نشده است.");
       }
 
+      updateProgress("مراحل اجرا پایان یافت؛ آماده‌سازی گزارش",99);
+      await paintNow();
       setReport(rows,"گزارش اجرای خودکار پروژه — نتایج مقدماتی");
       if(window.SteelProject?.setStatus)window.SteelProject.setStatus("اجرای خودکار مراحل وابسته انجام شد؛ موارد ناقص در گزارش اجرای خودکار مشخص شده‌اند.");
     } catch (error) {
-      addLine(rows,"خطای پیش‌بینی‌نشده در اجرای خودکار",false,error?.stack||error?.message||String(error));
+      addLine(rows,"خطای پیش‌بینی‌نشده در اجرای خودکار",false,error?.message||String(error));
+      updateProgress("اجرای خودکار با خطا متوقف شد",null,"خطا: "+(error?.message||String(error)));
       try { setReport(rows,"گزارش اجرای خودکار — خطای اجرایی"); }
       catch (reportError) { console.error("SAHROUD STEEL report rendering failed:",reportError); }
       console.error("SAHROUD STEEL auto workflow failed:",error);
       if(window.SteelProject?.setStatus) window.SteelProject.setStatus("اجرای خودکار با خطا متوقف شد؛ جزئیات در گزارش و کنسول ثبت شد.");
     } finally {
       busy=false;
+      if(button){button.disabled=false;button.textContent=originalButtonText;}
     }
   }
   function init() {
