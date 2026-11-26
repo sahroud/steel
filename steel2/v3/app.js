@@ -59,6 +59,29 @@ function renderProfileAssignments(){
  });
 }
 renderProfileAssignments();
+function readCustomSection(){
+ const points=JSON.parse(document.getElementById("customSectionPolygon").value);
+ return window.SahroudSectionGeometry.calculate(points);
+}
+document.getElementById("customSectionCalcBtn").addEventListener("click",()=>{
+ const out=document.getElementById("customSectionResult");
+ try{
+  const p=readCustomSection();
+  out.textContent="مساحت: "+p.A_cm2.toFixed(3)+" cm² | مرکز سطح: ("+p.cx_mm.toFixed(2)+", "+p.cy_mm.toFixed(2)+") mm | I قوی: "+p.Iy_cm4.toFixed(2)+" cm⁴ | I ضعیف: "+p.Iz_cm4.toFixed(2)+" cm⁴. ثابت پیچشی J محاسبه نشده است.";
+ }catch(e){out.textContent="محاسبه انجام نشد: "+e.message;}
+});
+document.getElementById("customSectionApplyBtn").addEventListener("click",()=>{
+ const out=document.getElementById("customSectionResult");
+ try{
+  const p=readCustomSection(),J=Number(document.getElementById("customSectionJ").value);
+  if(!(J>0&&Number.isFinite(J)))throw Error("برای ثبت مقطع در مدل، J معتبر باید جداگانه وارد شود؛ محاسبه‌گر آن را حدس نمی‌زند.");
+  const area=document.getElementById("sectionCatalogInput"),c=JSON.parse(area.value);
+  const group=document.getElementById("customSectionGroup").value;
+  c.groups[group]={profile:document.getElementById("customSectionName").value.trim()||"مقطع سفارشی",A_cm2:p.A_cm2,Iy_cm4:p.Iy_cm4,Iz_cm4:p.Iz_cm4,J_cm4:J};
+  area.value=JSON.stringify(c,null,2);
+  out.textContent="مقطع در گروه انتخابی بانک ثبت شد. توجه: جهت محورهای محلی عضو و مقدار J باید پیش از تحلیل توسط مهندس کنترل شوند.";
+ }catch(e){out.textContent="ثبت انجام نشد: "+e.message;}
+});
 document.getElementById("sectionTemplateBtn").addEventListener("click",()=>{
  const area=document.getElementById("sectionCatalogInput");
  const c=window.SahroudSteelSections.template();
