@@ -37,7 +37,12 @@ function renderProfileAssignments(){
  if(!host||!window.SahroudSteelSections)return;
  host.innerHTML="";
  Object.entries(window.SahroudSteelSections.groups).forEach(([key,label])=>{
-  const wrap=document.createElement("label");wrap.textContent=label+" — انتخاب مقطع IPE";
+  const wrap=document.createElement("label");
+  if(!["column","rafter","endPost","endGirt"].includes(key)){
+   wrap.textContent=label+" — ورود دستی مقطع واقعی Z/C/نبشی/میلگرد در JSON";
+   const note=document.createElement("small");note.textContent="کتابخانه IPE برای این گروه به‌عنوان پیش‌فرض پیشنهاد نمی‌شود.";wrap.appendChild(note);host.appendChild(wrap);return;
+  }
+  wrap.textContent=label+" — انتخاب مقطع IPE";
   const select=document.createElement("select");select.dataset.sectionGroup=key;
   const empty=document.createElement("option");empty.value="";empty.textContent="انتخاب نشده";select.appendChild(empty);
   window.SahroudSteelSections.profiles.IPE.forEach(p=>{const o=document.createElement("option");o.value=p.name;o.textContent=p.name+" | A="+p.A_cm2+" cm²";select.appendChild(o);});
@@ -60,6 +65,7 @@ document.getElementById("sectionTemplateBtn").addEventListener("click",()=>{
  const grade=field("steelGrade").value;
  c.material.grade=grade==="ST52"?"ST52 / S355":"ST37 / S235";
  c.material.Fy_MPa=grade==="ST52"?355:235;
+ field("steelFy").value=String(c.material.Fy_MPa);
  c.material.E_GPa=200;c.material.G_GPa=77;
  area.value=JSON.stringify(c,null,2);
  document.querySelectorAll("[data-section-group]").forEach(s=>s.value="");
