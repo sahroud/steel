@@ -178,6 +178,19 @@
         audit.checked++;
         return audit;
       },{checked:0,mismatch:0,heightMetadataMismatch:0,notAvailable:0});
+      const memberGeometryAudit=faceMembers.reduce((audit,m)=>{
+        const start=nodeById.get(String(m.start)),end=nodeById.get(String(m.end));
+        if(!start||!end){audit.missingNode++;return audit;}
+        const actualWidth=Math.abs(Number(end.x)-Number(start.x));
+        const storedWidth=Number(m.tributaryWidth);
+        if(!Number.isFinite(storedWidth)||storedWidth<=0||
+          Math.abs(actualWidth-storedWidth)>Math.max(0.001,actualWidth*0.001))audit.widthMismatch++;
+        if(Math.abs(Number(start.y)-Number(end.y))>0.001)audit.nonHorizontal++;
+        const storedHeight=Number(m.tributaryHeight);
+        if(!Number.isFinite(storedHeight)||storedHeight<=0)audit.invalidTributaryHeight++;
+        audit.checked++;
+        return audit;
+      },{checked:0,missingNode:0,widthMismatch:0,nonHorizontal:0,invalidTributaryHeight:0});
       const approximateTributaryAreaM2=faceMembers.reduce((sum,m)=>{
         const width=Number(m.tributaryWidth),height=Number(m.tributaryHeight);
         return Number.isFinite(width)&&width>0&&Number.isFinite(height)&&height>0
@@ -198,7 +211,7 @@
       return {girtCount:faceMembers.length,highestHorizontalGirtY_m:highestY,
         estimatedGableAreaAboveHighestGirt_m2:area,
         approximateTributaryAreaM2,grossEndWallAreaM2,approximateCoveragePercent,
-        approximateUnassignedAreaM2,
+        approximateUnassignedAreaM2,memberGeometryAudit,
         pressureToLineLoadAudit:lineLoadAudit};
     };
     // Separate front/rear checks avoid masking a missing or lower girt row on one end.
@@ -419,6 +432,8 @@
       ". مساحت گابلِ بالای لاپه جلو/عقب: "+Number(a.endWall.front.estimatedGableAreaAboveHighestGirt_m2||0).toFixed(2)+"/"+Number(a.endWall.rear.estimatedGableAreaAboveHighestGirt_m2||0).toFixed(2)+" m²"+
       "؛ سطح تقریبی جمع بارگیر لاپه‌های انتهایی جلو/عقب: "+a.endWall.front.approximateTributaryAreaM2.toFixed(2)+"/"+a.endWall.rear.approximateTributaryAreaM2.toFixed(2)+" m²"+
       "؛ درصد پوشش هندسی تقریبی جلو/عقب: "+(a.endWall.front.approximateCoveragePercent===null?"—":a.endWall.front.approximateCoveragePercent.toFixed(1)+"%")+"/"+(a.endWall.rear.approximateCoveragePercent===null?"—":a.endWall.rear.approximateCoveragePercent.toFixed(1)+"%")+
+      "؛ خطای هندسه اعضای لاپه انتهایی جلو/عقب (عرض/گره/افقی‌بودن/ارتفاع): "+
+      [a.endWall.front.memberGeometryAudit,a.endWall.rear.memberGeometryAudit].map(v=>v.widthMismatch+"/"+v.missingNode+"/"+v.nonHorizontal+"/"+v.invalidTributaryHeight).join(" / ")+
       "؛ بالاترین تراز لاپه جلو/عقب: "+Number(a.endWall.front.highestHorizontalGirtY_m||0).toFixed(2)+"/"+Number(a.endWall.rear.highestHorizontalGirtY_m||0).toFixed(2)+" m (برآورد هندسی بر پایه عرض و ارتفاع بارگیر؛ تأیید بارگذاری نیست). طراحی‌پذیری: خیر.";
   }
   function setData(data) {
