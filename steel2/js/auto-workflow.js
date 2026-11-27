@@ -119,11 +119,16 @@
     let acceptedCases=0, rejectedCases=0, acceptedMembers=0;
     (Array.isArray(caseResults)?caseResults:[]).forEach(item=>{
       const result=item?.result;
-      if(!item?.success||!item?.equilibriumOK||!Array.isArray(result?.members)) { rejectedCases++; return; }
+      if(!item?.success||!item?.equilibriumOK||!Array.isArray(result?.members)||!result.members.length) { rejectedCases++; return; }
+      // A case is accepted atomically: one malformed member invalidates the whole case,
+      // otherwise the envelope could silently omit a critical member demand.
+      const validMembers=result.members.filter(member=>Array.isArray(member?.localEndForces)&&
+        member.localEndForces.length===12&&member.localEndForces.every(Number.isFinite)&&
+        member.id!==undefined&&member.id!==null);
+      if(validMembers.length!==result.members.length) { rejectedCases++; return; }
       acceptedCases++;
-      result.members.forEach(member=>{
-        const forces=member?.localEndForces;
-        if(!Array.isArray(forces)||forces.length!==12||!forces.every(Number.isFinite)) return;
+      validMembers.forEach(member=>{
+        const forces=member.localEndForces;
         acceptedMembers++;
         const key=String(member.id);
         if(!envelope.has(key)) {
