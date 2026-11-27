@@ -22,7 +22,7 @@ test("extracts signed component envelopes from successful equilibrated 3D cases"
  assert.equal(out.members.length,1);
  const r=out.members[0];
  assert.equal(r.memberId,"R1");
- assert.deepEqual(r.cases,["ULS-A","ULS-B"]);
+ assert.deepEqual(JSON.parse(JSON.stringify(r.cases)),["ULS-A","ULS-B"]);
  assert.deepEqual(JSON.parse(JSON.stringify(r.values.N)),{min:-15,max:14,maxAbs:15});
  assert.deepEqual(JSON.parse(JSON.stringify(r.values.Mz)),{min:-60,max:61,maxAbs:61});
  assert.equal(out.units.force,"N");
@@ -37,7 +37,7 @@ test("rejects failed or unbalanced cases and malformed force vectors",()=>{
   {success:true,equilibriumOK:true,result:{members:[member("bad3",[1,2,3])]}}
  ]);
  assert.equal(out.acceptedCases,0);
- assert.equal(out.rejectedCases,2);
+ assert.equal(out.rejectedCases,3);
  assert.equal(out.members.length,0);
 });
 
