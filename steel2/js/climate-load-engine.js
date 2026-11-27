@@ -391,9 +391,13 @@
       return;
     }
     const g=a.groups;
+    const front=a.endWall.front.pressureToLineLoadAudit;
+    const rear=a.endWall.rear.pressureToLineLoadAudit;
     out.textContent="ممیزی هندسه (صرفاً فهرست‌برداری، بدون اعمال بار): پرلین چپ/راست "+g.roofLeft.memberCount+"/"+g.roofRight.memberCount+
       "؛ لاپه طولی چپ/راست "+g.longWallLeft.memberCount+"/"+g.longWallRight.memberCount+
       "؛ لاپه انتهایی جلو/عقب "+g.endFront.memberCount+"/"+g.endBack.memberCount+
+      ". کنترل فشار به بار خطی جلو: بررسی‌شده "+front.checked+"، اختلاف "+front.mismatch+"، داده ناکافی "+front.notAvailable+
+      "؛ عقب: بررسی‌شده "+rear.checked+"، اختلاف "+rear.mismatch+"، داده ناکافی "+rear.notAvailable+
       ". مساحت هندسی تقریبی گابل بالای بالاترین لاپه: "+(Number(a.endWall.estimatedGableAreaAboveHighestGirt_m2)||0).toFixed(2)+" m² (صرفاً ممیزی هندسه، نه بارگیر تأییدشده). طراحی‌پذیری: خیر.";
   }
   function setData(data) {
