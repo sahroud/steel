@@ -422,10 +422,16 @@
           const rowLimit=gi===girtHeights.length-1?roofLimit:(y+girtHeights[gi+1])/2;
           const upper=Math.min(roofLimit,rowLimit);
           const tributaryHeight=Math.max(0,upper-lower);
+          const upperStart=Math.min(roofY(x1),rowLimit);
+          const upperEnd=Math.min(roofY(x2),rowLimit);
+          const tributaryHeightStart=Math.max(0,upperStart-lower);
+          const tributaryHeightEnd=Math.max(0,upperEnd-lower);
           const a=addNode(nodes,x1,y,z,"endwall-girt"),b=addNode(nodes,x2,y,z,"endwall-girt");
           addMember(members,a,b,"تیر افقی دیوار انتهایی","endGirt",{
             endFace:face,row:gi+1,tributaryHeight,
             tributaryHeightAtSegmentMidpoint:tributaryHeight,
+            tributaryHeightStart,tributaryHeightEnd,
+            tributaryHeightVariation:Math.abs(tributaryHeightEnd-tributaryHeightStart),
             tributaryWidth:x2-x1,
             gableClipped:true
           });
