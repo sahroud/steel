@@ -85,13 +85,13 @@ function equivalentLinearLoad(qStart,qEnd,L){
  const f=Array(12).fill(0);
  f[0]=L*(2*x0+x1)/6; f[6]=L*(x0+2*x1)/6;
  f[1]=L*(7*y0+3*y1)/20;
- f[5]=L*L*(y0/12+y1/30);
+ f[5]=L*L*(y0/20+y1/30);
  f[7]=L*(3*y0+7*y1)/20;
- f[11]=-L*L*(y0/20+y1/12);
+ f[11]=-L*L*(y0/30+y1/20);
  f[2]=L*(7*z0+3*z1)/20;
- f[4]=-L*L*(z0/12+z1/30);
+ f[4]=-L*L*(z0/20+z1/30);
  f[8]=L*(3*z0+7*z1)/20;
- f[10]=L*L*(z0/20+z1/12);
+ f[10]=L*L*(z0/30+z1/20);
  return f;
 }
 function analyze(model,options){
