@@ -432,6 +432,6 @@
       button.dataset.workflowBound="1";
     }
   }
-  window.SteelAutoWorkflow={run};
+  window.SteelAutoWorkflow={run,build3DMemberDemandEnvelope};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
