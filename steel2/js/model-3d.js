@@ -514,9 +514,8 @@
           : Number.isFinite(resultantCentroidFromStartM)&&
             resultantCentroidFromStartM>=-1e-9&&
             resultantCentroidFromStartM<=segmentLength+1e-9;
-        // The resultant and its centroid reproduce the total force and first
-        // moment of a linearly varying trapezoidal load. They are audit data
-        // only: the solver continues to apply the uniform midpoint load.
+        // The resultant and centroid are retained for independent audit.
+        // The 3D solver receives the actual linearly varying endpoint loads.
         m.lineLoads={
           windEnd:pressure*h,
           windEndStart:windStart,
@@ -529,8 +528,8 @@
           windEndResultantCentroidValid:resultantCentroidValid,
           tributaryHeight:h,tributaryHeightStart:hStart,tributaryHeightEnd:hEnd,
           pressureKPa:pressure,segmentLengthM:segmentLength,
-          distribution:"linear-tributary-height-audit-only",
-          solverApplied:"uniform-midpoint"
+          distribution:"linear-tributary-height",
+          solverApplied:"linear-endpoint-to-3d-solver"
         };
       }
     });
@@ -825,9 +824,13 @@
           // Positive pressure acts inward: +Z on the front face and -Z on the rear face.
           // Preserve the linearly varying tributary-height distribution at the member ends.
           const faceSign=m.endFace==="front"?1:-1;
-          const startPressure=Number(m.lineLoads?.windEndStart);
-          const endPressure=Number(m.lineLoads?.windEndFinish);
-          const hasLinearEndWind=Number.isFinite(startPressure)&&Number.isFinite(endPressure);
+          const rawStartPressure=m.lineLoads?.windEndStart;
+          const rawEndPressure=m.lineLoads?.windEndFinish;
+          const hasLinearEndWind=rawStartPressure!==null&&rawStartPressure!==undefined&&rawStartPressure!==""&&
+            rawEndPressure!==null&&rawEndPressure!==undefined&&rawEndPressure!==""&&
+            Number.isFinite(Number(rawStartPressure))&&Number.isFinite(Number(rawEndPressure));
+          const startPressure=hasLinearEndWind?Number(rawStartPressure):0;
+          const endPressure=hasLinearEndWind?Number(rawEndPressure):0;
           const startGlobal=[global[0],global[1],global[2]+faceSign*startPressure*1000*windFactor*windSign];
           const endGlobal=[global[0],global[1],global[2]+faceSign*endPressure*1000*windFactor*windSign];
           if(hasLinearEndWind){
