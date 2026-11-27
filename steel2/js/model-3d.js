@@ -834,8 +834,8 @@
             m.analysisLoad={
               linearGlobal:{start:startGlobal,end:endGlobal},
               linearLocal:{
-                start:[tr.axes.x,tr.axes.y,tr.axes.z].map(axis=>axis.reduce((sum,v,i)=>sum+v*startGlobal[i],0)),
-                end:[tr.axes.x,tr.axes.y,tr.axes.z].map(axis=>axis.reduce((sum,v,i)=>sum+v*endGlobal[i],0))
+                start:window.SteelFrame3D.globalToLocalVector(startGlobal,tr.axes),
+                end:window.SteelFrame3D.globalToLocalVector(endGlobal,tr.axes)
               },
               globalUniform:global
             };
