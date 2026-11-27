@@ -73,6 +73,27 @@ function equivalentUniformLoad(q,L){
  f[2]=qz*L/2;f[8]=qz*L/2;f[4]=-qz*L*L/12;f[10]=qz*L*L/12;
  return f;
 }
+// Consistent 12-DOF local nodal load vector for linearly varying
+// distributed loads. qStart/qEnd are [qx,qy,qz] in N/m at member ends.
+// Transverse terms use the same Euler-Bernoulli sign convention as
+// equivalentUniformLoad; no solver activation until equilibrium tests pass.
+function equivalentLinearLoad(qStart,qEnd,L){
+ if(!Array.isArray(qStart)||!Array.isArray(qEnd)||qStart.length!==3||qEnd.length!==3||
+    !Number.isFinite(L)||L<=0||qStart.concat(qEnd).some(v=>!Number.isFinite(Number(v))))
+  throw Error("بار خطی متغیر یا طول عضو نامعتبر است.");
+ const [x0,y0,z0]=qStart.map(Number),[x1,y1,z1]=qEnd.map(Number);
+ const f=Array(12).fill(0);
+ f[0]=L*(2*x0+x1)/6; f[6]=L*(x0+2*x1)/6;
+ f[1]=L*(7*y0+3*y1)/20;
+ f[5]=L*L*(y0/12+y1/30);
+ f[7]=L*(3*y0+7*y1)/20;
+ f[11]=-L*L*(y0/20+y1/12);
+ f[2]=L*(7*z0+3*z1)/20;
+ f[4]=-L*L*(z0/12+z1/30);
+ f[8]=L*(3*z0+7*z1)/20;
+ f[10]=L*L*(z0/20+z1/12);
+ return f;
+}
 function analyze(model,options){
  options=options||{};
  if(!model||!Array.isArray(model.nodes)||!Array.isArray(model.members))throw Error("مدل هندسی معتبر ارائه نشده است.");
@@ -226,5 +247,5 @@ function analyze(model,options){
  const reactions=supportReactionsAll.filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
  return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,supportReactionsAll,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
-root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,solve};
+root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,equivalentLinearLoad,solve};
 })(typeof window!=="undefined"?window:globalThis);
