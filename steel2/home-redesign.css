@@ -1,0 +1,67 @@
+/* SAHROUD STEEL — redesigned progressive project workspace */
+:root{--home-ink:#102d40;--home-blue:#145a78;--home-teal:#1d9a91;--home-paper:#f3f7f9;--home-line:#dce6eb}
+body{background:var(--home-paper);color:#193746}
+.header{min-height:76px;padding:12px clamp(14px,3vw,34px);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(115deg,#0c2638 0%,#124b68 58%,#167a86 100%);box-shadow:0 8px 24px #0d31451c}
+.header .brand{display:flex;align-items:center;gap:12px}
+.header .logo{width:44px;height:44px;display:grid;place-items:center;border:1px solid #ffffff66;border-radius:13px;background:#ffffff16;color:#fff;font-size:23px;font-weight:900}
+.header h1{margin:0;color:#fff;letter-spacing:.6px;font-size:19px}
+.header p{margin:0;color:#d3e7ee;font-size:11px}
+.header .version{padding:5px 11px;border:1px solid #ffffff55;border-radius:20px;color:#eaf7fa;font-size:11px}
+main.container{max-width:1120px;margin:18px auto 40px;padding-inline:clamp(12px,2.4vw,24px)}
+.sahroud-home{position:relative;overflow:hidden;margin:0 0 14px;padding:clamp(18px,3vw,30px);border:0;border-radius:20px;background:linear-gradient(125deg,#102f43,#155b75 68%,#178a88);color:#fff;box-shadow:0 14px 30px #12394a24}
+.sahroud-home:after{content:"";position:absolute;width:210px;height:210px;border:1px solid #ffffff20;border-radius:50%;left:-65px;top:-90px;box-shadow:0 0 0 24px #ffffff08,0 0 0 50px #ffffff06}
+.sahroud-home .home-kicker{color:#a9d9df;font-size:11px;font-weight:800;letter-spacing:.3px}
+.sahroud-home h2{position:relative;margin:5px 0 6px;color:#fff;font-size:clamp(20px,3vw,28px)}
+.sahroud-home p{position:relative;max-width:650px;margin:0;color:#e0edf1;font-size:13px;line-height:2}
+.home-steps{position:relative;display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}
+.home-steps span{padding:5px 10px;border:1px solid #ffffff42;border-radius:30px;background:#ffffff0b;color:#fff;font-size:11px}
+.home-project-facts{position:relative;display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
+.home-project-facts span{padding:7px 11px;border-radius:10px;background:#ffffff13;color:#fff;font-size:12px}
+.quick-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border:1px solid var(--home-line);border-radius:14px;background:#fff;box-shadow:0 4px 14px #163c4d0b}
+.quick-actions-title{font-weight:800;color:var(--home-ink)}
+.quick-actions-buttons{display:flex;gap:6px}
+.quick-actions-buttons button{margin:0;min-height:38px}
+.quick-project-status{flex:1 1 220px;font-size:11px;color:#607783}
+.wizard-shell{margin:0 0 16px;padding:16px;border:1px solid #dce7eb;border-radius:18px;background:#fff;box-shadow:0 8px 24px #163c4d0b}
+.wizard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.wizard-top h2{margin:0;color:var(--home-ink);font-size:17px}
+.wizard-top p{margin:3px 0 0;color:#71848e;font-size:11px}
+.wizard-count{white-space:nowrap;padding:5px 9px;border-radius:20px;background:#eaf4f6;color:#176078;font-size:11px;font-weight:800}
+.wizard-track{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:12px 0 16px}
+.wizard-track button{min-width:0;min-height:50px;margin:0;padding:7px 4px;border:1px solid #dce6ea;border-radius:10px;background:#f7fafb;color:#6b7e87;font-size:10px;line-height:1.5}
+.wizard-track button .wizard-n{display:block;margin-bottom:2px;font-size:13px;font-weight:900}
+.wizard-track button[aria-current="step"]{border-color:#168a88;background:#eaf7f5;color:#11615f;box-shadow:inset 0 0 0 1px #168a8822}
+.wizard-track button.done{border-color:#cce5dc;background:#f1faf5;color:#217052}
+.wizard-progress{height:5px;overflow:hidden;margin:0 0 14px;border-radius:9px;background:#edf2f4}
+.wizard-progress span{display:block;width:16.66%;height:100%;border-radius:9px;background:linear-gradient(90deg,#176b87,#1b9c8f);transition:width .2s}
+.wizard-stage-title{display:flex;align-items:center;gap:9px;margin:0 0 10px;color:var(--home-ink);font-size:15px;font-weight:900}
+.wizard-stage-title .stage-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#eaf4f6;color:#176078}
+.wizard-stage-description{margin:0 0 12px;color:#637984;font-size:12px;line-height:1.8}
+.wizard-stage-panels>.panel{margin:9px 0;border:1px solid #e0e9ed;border-radius:13px;box-shadow:none}
+.wizard-stage-panels>.panel:first-child{margin-top:0}
+.wizard-stage-panels>.panel:last-child{margin-bottom:0}
+.wizard-stage-panels>.panel .panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.wizard-stage-panels>.panel .panel-title h3{margin:0;color:#183c50;font-size:14px}
+.wizard-stage-panels>.panel[hidden]{display:none!important}
+.wizard-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid #e8eef1}
+.wizard-nav button{min-width:112px;margin:0}
+.wizard-nav .wizard-next{background:linear-gradient(110deg,#146b78,#168b79)}
+.wizard-nav .wizard-prev{background:#edf3f5;color:#315466}
+.wizard-nav .wizard-finish{background:#173e56}
+.wizard-help{margin:9px 0 0;color:#7a8d96;font-size:10px;line-height:1.7}
+.wizard-hidden{display:none!important}
+#steelAutoWorkflowPanel{border-color:#d4e5e9!important}
+#btnSteelAutoWorkflow{min-height:52px;border-radius:11px}
+footer{margin-top:24px}
+@media(max-width:650px){
+ .header{padding:10px 12px}.header .logo{width:38px;height:38px}.header h1{font-size:16px}
+ main.container{margin:10px auto 28px;padding-inline:10px}
+ .sahroud-home{padding:17px;border-radius:15px}
+ .wizard-shell{padding:11px;border-radius:14px}
+ .wizard-track{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .wizard-track button{min-height:46px;font-size:10px}
+ .wizard-nav button{min-width:0;flex:1}
+ .wizard-stage-panels>.panel{padding:11px}
+ .quick-actions{gap:7px;padding:9px}
+ .quick-actions-buttons{width:100%}.quick-actions-buttons button{flex:1}
+}
