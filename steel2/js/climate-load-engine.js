@@ -281,6 +281,7 @@
         city:climate.city||"", customCity:climate.customCity||"",
         elevation:climate.elevation||"", groundSnow:climate.groundSnow||"",
         basicWind:climate.basicWind||"", basicWindUnit:"km/h",
+        basicWindPressure:finite(climate.basicWind)===null?null:0.000613*Math.pow(Number(climate.basicWind)/3.6,2),
         basicWindPressureReference:finite(climate.basicWindPressure),
         basicWindPressureCalculated:finite(climate.basicWind)===null?null:0.000613*Math.pow(Number(climate.basicWind)/3.6,2),
         basicWindPressureUnit:"kN/m2", groundSnowUnit:"kN/m2",
