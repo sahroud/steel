@@ -160,7 +160,10 @@
       const faceMembers=members.filter(m=>m.sectionKey==="endGirt"&&m.endFace===face);
       const lineLoadAudit=faceMembers.reduce((audit,m)=>{
         const line=m.lineLoads;
-        if(!line||!Number.isFinite(Number(line.pressureKPa))||!Number.isFinite(Number(line.tributaryHeight))||!Number.isFinite(Number(line.windEnd))){
+        if(!line||
+          line.pressureKPa===null||line.pressureKPa===undefined||!Number.isFinite(Number(line.pressureKPa))||
+          line.tributaryHeight===null||line.tributaryHeight===undefined||!Number.isFinite(Number(line.tributaryHeight))||Number(line.tributaryHeight)<=0||
+          line.windEnd===null||line.windEnd===undefined||!Number.isFinite(Number(line.windEnd))){
           audit.notAvailable++;
           return audit;
         }
