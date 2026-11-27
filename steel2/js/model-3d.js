@@ -391,7 +391,13 @@
       for(let i=0;i<row.length-1;i++) addMember(members,row[i],row[i+1],"قید افقی طولی دیوار","wallGirt",{side:si===0?"left":"right",row:gi+1,tributaryHeight:upper-lower});
     }));
     [0,length].forEach((z,endIndex)=>{
-      const count=Math.max(1,Math.ceil(span/endsp)), xs=Array.from({length:count+1},(_,i)=>span*i/count);
+      const count=Math.max(1,Math.ceil(span/endsp));
+      // Always place a segmentation node at the ridge: roofY is piecewise
+      // linear there, so no end-girt segment may straddle the slope break.
+      const xs=[...new Set([
+        ...Array.from({length:count+1},(_,i)=>span*i/count),
+        half
+      ])].sort((a,b)=>a-b);
       const face=endIndex===0?"front":"rear";
       // End-wall posts are split at every girt intersection so the secondary
       // members share actual nodes instead of crossing disconnected lines.
