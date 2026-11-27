@@ -496,8 +496,24 @@
         m.lineLoads={wind:(loads.windWall||0)*h,unit:"kN/m",tributaryHeight:h};
       } else if(m.sectionKey==="endGirt"){
         const h=m.tributaryHeight||0;
+        const hStart=Number.isFinite(Number(m.tributaryHeightStart))?Math.max(0,Number(m.tributaryHeightStart)):h;
+        const hEnd=Number.isFinite(Number(m.tributaryHeightEnd))?Math.max(0,Number(m.tributaryHeightEnd)):h;
         const pressure=m.endFace==="front"?(loads.windEndFront||0):(loads.windEndBack||0);
-        m.lineLoads={windEnd:pressure*h,unit:"kN/m",tributaryHeight:h,pressureKPa:pressure};
+        const windStart=pressure*hStart,windEnd=pressure*hEnd;
+        // For a linearly varying tributary height, the trapezoidal equivalent
+        // line load is exact in total force. The 3D solver still uses the
+        // uniform midpoint value until consistent distributed-load vectors
+        // are implemented and verified.
+        m.lineLoads={
+          windEnd:pressure*h,
+          windEndStart:windStart,
+          windEndFinish:windEnd,
+          windEndEquivalent:(windStart+windEnd)/2,
+          windEndVariation:Math.abs(windEnd-windStart),
+          tributaryHeight:h,tributaryHeightStart:hStart,tributaryHeightEnd:hEnd,
+          pressureKPa:pressure,distribution:"linear-tributary-height-audit-only",
+          solverApplied:"uniform-midpoint"
+        };
       }
     });
     model={version:1,geometry:{span,length,spacing,height,rise,frames,frameTributaryWidths:frameTrib,roofPurlinSpacing:psp,wallGirtSpacing:gsp,endPostSpacing:endsp,braceBays,roofOverhang:0.8,endOverhang:0.8},nodes,members,generatedAt:new Date().toISOString()};
