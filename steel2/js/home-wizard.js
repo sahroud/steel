@@ -42,9 +42,8 @@
  shell.className="wizard-shell";
  shell.id="projectWizard";
  shell.innerHTML='<div class="wizard-top"><div><h2>مراحل آماده‌سازی و طراحی</h2><p>با «ادامه مرحله» فقط به گام بعدی بروید؛ هر زمان خواستید می‌توانید به مرحله قبل بازگردید.</p></div><span class="wizard-count" id="wizardCount">مرحله ۱ از ۶</span></div><nav class="wizard-track" id="wizardTrack" aria-label="مراحل پروژه"></nav><div class="wizard-progress"><span id="wizardProgress"></span></div><div id="wizardStageHeading"></div><div class="wizard-stage-panels" id="wizardStagePanels"></div><div class="wizard-nav"><button type="button" class="wizard-prev" id="wizardPrev">مرحله قبل</button><button type="button" class="wizard-next" id="wizardNext">ادامه مرحله</button></div><p class="wizard-help">توجه: باز شدن یک مرحله به معنی تأیید داده‌ها یا تأیید طراحی نیست. مقادیر آیین‌نامه‌ای و اطلاعات ژئوتکنیک باید با مرجع معتبر کنترل شوند.</p>';
- if(oldWelcome)oldWelcome.insertAdjacentElement("afterend",shell);
+ if(oldWelcome){oldWelcome.insertAdjacentElement("afterend",quick||shell);if(quick)quick.insertAdjacentElement("afterend",shell);}
  else main.insertBefore(shell,quick||main.firstChild);
- if(quick&&quick.parentElement===main)quick.remove();
 
  const track=$("wizardTrack"),container=$("wizardStagePanels");
  stages.forEach((stage,i)=>{
