@@ -827,8 +827,7 @@
           const faceSign=m.endFace==="front"?1:-1;
           const startPressure=Number(m.lineLoads?.windEndStart);
           const endPressure=Number(m.lineLoads?.windEndFinish);
-          const hasLinearEndWind=Number.isFinite(startPressure)&&Number.isFinite(endPressure)&&
-            Number.isFinite(Number(m.length))&&Number(m.length)>0;
+          const hasLinearEndWind=Number.isFinite(startPressure)&&Number.isFinite(endPressure);
           const startGlobal=[global[0],global[1],global[2]+faceSign*startPressure*1000*windFactor*windSign];
           const endGlobal=[global[0],global[1],global[2]+faceSign*endPressure*1000*windFactor*windSign];
           if(hasLinearEndWind){
