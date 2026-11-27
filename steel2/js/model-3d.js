@@ -500,18 +500,27 @@
         const hEnd=Number.isFinite(Number(m.tributaryHeightEnd))?Math.max(0,Number(m.tributaryHeightEnd)):h;
         const pressure=m.endFace==="front"?(loads.windEndFront||0):(loads.windEndBack||0);
         const windStart=pressure*hStart,windEnd=pressure*hEnd;
-        // For a linearly varying tributary height, the trapezoidal equivalent
-        // line load is exact in total force. The 3D solver still uses the
-        // uniform midpoint value until consistent distributed-load vectors
-        // are implemented and verified.
+        const windEquivalent=(windStart+windEnd)/2;
+        const segmentLength=Number(m.length)||0;
+        const centroidDenominator=windStart+windEnd;
+        const resultantKN=windEquivalent*segmentLength;
+        const resultantCentroidFromStartM=Math.abs(centroidDenominator)>1e-12
+          ? segmentLength*(windStart+2*windEnd)/(3*centroidDenominator)
+          : null;
+        // The resultant and its centroid reproduce the total force and first
+        // moment of a linearly varying trapezoidal load. They are audit data
+        // only: the solver continues to apply the uniform midpoint load.
         m.lineLoads={
           windEnd:pressure*h,
           windEndStart:windStart,
           windEndFinish:windEnd,
-          windEndEquivalent:(windStart+windEnd)/2,
+          windEndEquivalent:windEquivalent,
           windEndVariation:Math.abs(windEnd-windStart),
+          windEndResultantKN:resultantKN,
+          windEndResultantCentroidFromStartM:resultantCentroidFromStartM,
           tributaryHeight:h,tributaryHeightStart:hStart,tributaryHeightEnd:hEnd,
-          pressureKPa:pressure,distribution:"linear-tributary-height-audit-only",
+          pressureKPa:pressure,segmentLengthM:segmentLength,
+          distribution:"linear-tributary-height-audit-only",
           solverApplied:"uniform-midpoint"
         };
       }
