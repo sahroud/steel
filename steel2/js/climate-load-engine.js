@@ -404,7 +404,8 @@
       "؛ لاپه انتهایی جلو/عقب "+g.endFront.memberCount+"/"+g.endBack.memberCount+
       ". کنترل جلو: بررسی‌شده "+front.checked+"، اختلاف بار خطی "+front.mismatch+"، اختلاف ارتفاع بارگیر ثبت‌شده با عضو "+front.heightMetadataMismatch+"، داده ناکافی "+front.notAvailable+
       "؛ عقب: بررسی‌شده "+rear.checked+"، اختلاف بار خطی "+rear.mismatch+"، اختلاف ارتفاع بارگیر ثبت‌شده با عضو "+rear.heightMetadataMismatch+"، داده ناکافی "+rear.notAvailable+
-      ". مساحت هندسی تقریبی گابل بالای بالاترین لاپه: "+(Number(a.endWall.estimatedGableAreaAboveHighestGirt_m2)||0).toFixed(2)+" m² (صرفاً ممیزی هندسه، نه بارگیر تأییدشده). طراحی‌پذیری: خیر.";
+      ". مساحت گابلِ بالای لاپه جلو/عقب: "+Number(a.endWall.front.estimatedGableAreaAboveHighestGirt_m2||0).toFixed(2)+"/"+Number(a.endWall.rear.estimatedGableAreaAboveHighestGirt_m2||0).toFixed(2)+" m²"+
+      "؛ بالاترین تراز لاپه جلو/عقب: "+Number(a.endWall.front.highestHorizontalGirtY_m||0).toFixed(2)+"/"+Number(a.endWall.rear.highestHorizontalGirtY_m||0).toFixed(2)+" m (اعداد هندسی، نه بارگیر تأییدشده). طراحی‌پذیری: خیر.";
   }
   function setData(data) {
     restoredMeta=data&&typeof data==="object"?{
