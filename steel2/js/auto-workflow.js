@@ -33,6 +33,32 @@
       rows.map(x=>'<div class="notice"><b>'+(x.ok?"✓ ":"⚠ ")+x.label+
         "</b>"+(x.detail?"<p>"+String(x.detail).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+"</p>":"")+"</div>").join("");
   }
+  function render3DMemberDemandEnvelope() {
+    const data=window.SteelStructuralModel?.last3DMemberDemandEnvelope;
+    const out=$("steelAutoWorkflowResults");
+    if(!out||!data||!Array.isArray(data.members)||!data.members.length)return;
+    const safe=s=>String(s??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+    const fmt=(value,scale)=>Number.isFinite(value)?(value/scale).toFixed(2):"—";
+    const labels={N:"N (kN)",Vy:"Vy (kN)",Vz:"Vz (kN)",T:"T (kN·m)",My:"My (kN·m)",Mz:"Mz (kN·m)"};
+    const columns=Object.keys(labels);
+    const cellRange=(v,key)=>v&&Number.isFinite(v.min)&&Number.isFinite(v.max)
+      ?fmt(v.min,key==="N"||key.startsWith("V")?1000:1000)+" … "+fmt(v.max,1000):"—";
+    const html=data.members.map(member=>{
+      const values=member.values||{};
+      return "<tr><td>"+safe(member.memberId)+"</td><td>"+safe(member.section||"—")+"</td>"+
+        columns.map(key=>"<td dir=\\"ltr\\">"+cellRange(values[key],key)+"</td>").join("")+"</tr>";
+    }).join("");
+    const section=document.createElement("section");
+    section.className="notice";
+    section.innerHTML="<h4>پوش نیروهای استخراج‌شده از تحلیل سه‌بعدی</h4>"+
+      "<p>ترکیب‌های پذیرفته‌شده: "+data.acceptedCases+" | نتایج ترکیب‌های ردشده: "+data.rejectedCases+
+      " | تعداد اعضا: "+data.members.length+"</p>"+
+      "<div style=\\"overflow-x:auto;max-width:100%\\"><table style=\\"min-width:900px;width:100%;border-collapse:collapse\\"><thead><tr><th>عضو</th><th>مقطع</th>"+
+      columns.map(key=>"<th>"+labels[key]+"</th>").join("")+"</tr></thead><tbody>"+html+"</tbody></table></div>"+
+      "<p><b>محدودیت:</b> این جدول فقط پوش نیروهای انتهایی محلی در واحد kN و kN·m است؛ کنترل مقاومت، کمانش، LTB، خیز، ترکیبات کامل آیین‌نامه‌ای و تأیید مقطع هنوز انجام نشده است.</p>";
+    out.appendChild(section);
+  }
+
   function hasUsableClimate() {
     const db=window.SteelClimateDB?.getData?.();
     const id=$("climateCity")?.value;
@@ -406,6 +432,7 @@
       updateProgress("مراحل اجرا پایان یافت؛ آماده‌سازی گزارش",99);
       await paintNow();
       setReport(rows,"گزارش اجرای خودکار پروژه — نتایج مقدماتی");
+      render3DMemberDemandEnvelope();
       if(window.SteelProject?.setStatus)window.SteelProject.setStatus("اجرای خودکار مراحل وابسته انجام شد؛ موارد ناقص در گزارش اجرای خودکار مشخص شده‌اند.");
     } catch (error) {
       addLine(rows,"خطای پیش‌بینی‌نشده در اجرای خودکار",false,error?.message||String(error));
