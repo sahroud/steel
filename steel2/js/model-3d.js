@@ -507,6 +507,13 @@
         const resultantCentroidFromStartM=Math.abs(centroidDenominator)>1e-12
           ? segmentLength*(windStart+2*windEnd)/(3*centroidDenominator)
           : null;
+        const resultantFirstMomentKNm=resultantCentroidFromStartM===null
+          ? 0 : resultantKN*resultantCentroidFromStartM;
+        const resultantCentroidValid=resultantCentroidFromStartM===null
+          ? Math.abs(resultantKN)<1e-10
+          : Number.isFinite(resultantCentroidFromStartM)&&
+            resultantCentroidFromStartM>=-1e-9&&
+            resultantCentroidFromStartM<=segmentLength+1e-9;
         // The resultant and its centroid reproduce the total force and first
         // moment of a linearly varying trapezoidal load. They are audit data
         // only: the solver continues to apply the uniform midpoint load.
@@ -518,6 +525,8 @@
           windEndVariation:Math.abs(windEnd-windStart),
           windEndResultantKN:resultantKN,
           windEndResultantCentroidFromStartM:resultantCentroidFromStartM,
+          windEndResultantFirstMomentKNm:resultantFirstMomentKNm,
+          windEndResultantCentroidValid:resultantCentroidValid,
           tributaryHeight:h,tributaryHeightStart:hStart,tributaryHeightEnd:hEnd,
           pressureKPa:pressure,segmentLengthM:segmentLength,
           distribution:"linear-tributary-height-audit-only",
