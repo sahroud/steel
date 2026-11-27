@@ -414,16 +414,26 @@
       for(let i=0;i<topChord.length-1;i++)
         addMember(members,topChord[i],topChord[i+1],"رفتر قاب دیوار انتهایی","rafter",{endFace:face,axis:"endwall"});
       girtHeights.forEach((y,gi)=>{
-        const active=xs.map((x,i)=>({x,i})).filter(v=>roofY(v.x)>=y-1e-7);
         const lower=gi===0?0:(girtHeights[gi-1]+y)/2;
+        const rowLimit=gi===girtHeights.length-1?Infinity:(y+girtHeights[gi+1])/2;
+        const crossingStations=[];
+        if(Number.isFinite(rowLimit)&&rise>0){
+          const leftCross=half*(rowLimit-height)/rise;
+          const rightCross=span-leftCross;
+          if(leftCross>1e-7&&leftCross<half-1e-7)crossingStations.push(leftCross);
+          if(rightCross>half+1e-7&&rightCross<span-1e-7)crossingStations.push(rightCross);
+        }
+        const rowStations=[...new Set([...xs,...crossingStations])]
+          .filter(x=>roofY(x)>=y-1e-7).sort((a,b)=>a-b);
+        const active=rowStations.map((x,i)=>({x,i}));
         for(let i=0;i<active.length-1;i++){
           const x1=active[i].x,x2=active[i+1].x,midX=(x1+x2)/2;
           const roofLimit=roofY(midX);
-          const rowLimit=gi===girtHeights.length-1?roofLimit:(y+girtHeights[gi+1])/2;
-          const upper=Math.min(roofLimit,rowLimit);
+          const segmentRowLimit=rowLimit;
+          const upper=Math.min(roofLimit,segmentRowLimit);
           const tributaryHeight=Math.max(0,upper-lower);
-          const upperStart=Math.min(roofY(x1),rowLimit);
-          const upperEnd=Math.min(roofY(x2),rowLimit);
+          const upperStart=Math.min(roofY(x1),segmentRowLimit);
+          const upperEnd=Math.min(roofY(x2),segmentRowLimit);
           const tributaryHeightStart=Math.max(0,upperStart-lower);
           const tributaryHeightEnd=Math.max(0,upperEnd-lower);
           const a=addNode(nodes,x1,y,z,"endwall-girt"),b=addNode(nodes,x2,y,z,"endwall-girt");
