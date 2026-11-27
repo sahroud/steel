@@ -66,6 +66,13 @@ function makeTransform(a,b,reference){
  for(let block=0;block<4;block++)for(let i=0;i<3;i++)for(let j=0;j<3;j++)T[block*3+i][block*3+j]=R[i][j];
  return {T,L,axes:{x:ex,y:ey,z:ez}};
 }
+function globalToLocalVector(globalVector,axes){
+ if(!Array.isArray(globalVector)||globalVector.length!==3||
+    globalVector.some(v=>!Number.isFinite(Number(v)))||
+    !axes||![axes.x,axes.y,axes.z].every(axis=>Array.isArray(axis)&&axis.length===3&&axis.every(v=>Number.isFinite(Number(v)))))
+  throw Error("بردار جهانی یا محورهای محلی عضو نامعتبر است.");
+ return [axes.x,axes.y,axes.z].map(axis=>axis.reduce((sum,v,i)=>sum+Number(v)*Number(globalVector[i]),0));
+}
 function equivalentUniformLoad(q,L){
  const [qx,qy,qz]=q, f=Array(12).fill(0);
  f[0]=qx*L/2;f[6]=qx*L/2;
@@ -258,5 +265,5 @@ function analyze(model,options){
  const reactions=supportReactionsAll.filter(x=>x.values.some(v=>Math.abs(v)>1e-8));
  return {success:true,method:"3D linear elastic direct stiffness",units:"N,m,Pa",nodeCount:nodes.length,memberCount:members.length,purlinRafterReleasedBendingRotationEnds:purlinEndRotationDof.size,displacements:nodes.map((n,i)=>({nodeId:n.id,values:D.slice(i*6,i*6+6)})),reactions,supportReactionsAll,members:results,maxTranslation,maxDisplacement,limitations:["تحلیل خطی مرتبه اول","بدون اثر P-Delta و تحلیل کمانش","بدون تغییرشکل برشی و وارپینگ پیچشی","بدون آزادسازی انتهایی عضو","بدون کنترل آیین‌نامه‌ای مقاومت و اتصالات","بار گسترده فقط در قالب مؤلفه‌های یکنواخت محلی عضو پذیرفته می‌شود"],equilibrium};
 }
-root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,equivalentUniformLoad,equivalentLinearLoad,solve};
+root.SteelFrame3D={analyze,frameLocalStiffness,makeTransform,globalToLocalVector,equivalentUniformLoad,equivalentLinearLoad,solve};
 })(typeof window!=="undefined"?window:globalThis);
