@@ -137,11 +137,22 @@ function analyze(model,options){
    if(rj){ids[9]=rj[0];ids[10]=rj[1];}
   }
   addBlock(K,ids,kg);
-  const q=m.analysisLoad&&m.analysisLoad.uniformLocal?m.analysisLoad.uniformLocal.map(Number):[0,0,0];
-  if(q.length!==3||q.some(v=>!Number.isFinite(v)))throw Error("بار گسترده محلی عضو "+m.id+" معتبر نیست.");
-  const fl=equivalentUniformLoad(q,tr.L),fg=mul(transpose(tr.T),fl.map(v=>[v])).map(r=>r[0]);
+  const linear=m.analysisLoad&&m.analysisLoad.linearLocal;
+  let fl,loadType;
+  if(linear){
+   if(!Array.isArray(linear.start)||!Array.isArray(linear.end))
+    throw Error("بار خطی متغیر محلی عضو "+m.id+" باید ابتدا و انتهای مشخص داشته باشد.");
+   fl=equivalentLinearLoad(linear.start,linear.end,tr.L);
+   loadType="linear-local";
+  }else{
+   const q=m.analysisLoad&&m.analysisLoad.uniformLocal?m.analysisLoad.uniformLocal.map(Number):[0,0,0];
+   if(q.length!==3||q.some(v=>!Number.isFinite(v)))throw Error("بار گسترده محلی عضو "+m.id+" معتبر نیست.");
+   fl=equivalentUniformLoad(q,tr.L);
+   loadType="uniform-local";
+  }
+  const fg=mul(transpose(tr.T),fl.map(v=>[v])).map(r=>r[0]);
   ids.forEach((id,i)=>F[id]+=fg[i]);
-  elements.push({member:m,ids,kl,T:tr.T,L:tr.L,axes:tr.axes,fl,props:p});
+  elements.push({member:m,ids,kl,T:tr.T,L:tr.L,axes:tr.axes,fl,loadType,props:p});
  }
  (options.nodalLoads||[]).forEach(load=>{
   const ni=nodeMap.get(load.nodeId);if(ni===undefined)throw Error("گره بارگذاری‌شده یافت نشد: "+load.nodeId);
@@ -232,7 +243,7 @@ function analyze(model,options){
  const results=elements.map(e=>{
   const dg=e.ids.map(i=>D[i]),dl=mul(e.T,dg.map(v=>[v])).map(r=>r[0]),q=mul(e.kl,dl.map(v=>[v])).map(r=>r[0]);
   const end=q.map((v,i)=>v-e.fl[i]);
-  return {id:e.member.id,type:e.member.type,length:e.L,localEndForces:end,localAxes:e.axes,section:e.props};
+  return {id:e.member.id,type:e.member.type,length:e.L,localEndForces:end,appliedLoadType:e.loadType,localAxes:e.axes,section:e.props};
  });
  let maxTranslation=0,maxDisplacement=null;
  nodes.forEach((n,i)=>{
