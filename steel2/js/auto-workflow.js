@@ -110,6 +110,50 @@
     addLine(rows,"تخصیص خودکار خواص اولیه فولاد",valid,detail+(valid?" تخصیص ورودی انجام شد؛ تأیید مهندسی خواص مصالح همچنان الزامی است.":" مقادیر مصالح معتبر نیستند."));
     return valid;
   }
+  // Build member-force envelopes only from successful, equilibrated 3D cases.
+  // Local end-force order follows the 12-DOF frame element: [N,Vy,Vz,T,My,Mz] at i and j.
+  // Units are N and N.m. This is demand extraction, not an AISC/مبحث 10 capacity check.
+  function build3DMemberDemandEnvelope(caseResults) {
+    const components=["N","Vy","Vz","T","My","Mz"];
+    const envelope=new Map();
+    let acceptedCases=0, rejectedCases=0, acceptedMembers=0;
+    (Array.isArray(caseResults)?caseResults:[]).forEach(item=>{
+      const result=item?.result;
+      if(!item?.success||!item?.equilibriumOK||!Array.isArray(result?.members)) { rejectedCases++; return; }
+      acceptedCases++;
+      result.members.forEach(member=>{
+        const forces=member?.localEndForces;
+        if(!Array.isArray(forces)||forces.length!==12||!forces.every(Number.isFinite)) return;
+        acceptedMembers++;
+        const key=String(member.id);
+        if(!envelope.has(key)) {
+          const values={};
+          components.forEach((name,index)=>values[name]={min:Infinity,max:-Infinity,maxAbs:0});
+          envelope.set(key,{memberId:member.id,type:member.type||"",length:Number(member.length)||null,section:member.section?.profile||"",cases:[],values});
+        }
+        const entry=envelope.get(key);
+        entry.cases.push(item.label||("ترکیب "+(item.index+1)));
+        components.forEach((name,index)=>{
+          const pair=entry.values[name];
+          [forces[index],forces[index+6]].forEach(value=>{
+            pair.min=Math.min(pair.min,value);
+            pair.max=Math.max(pair.max,value);
+            pair.maxAbs=Math.max(pair.maxAbs,Math.abs(value));
+          });
+        });
+      });
+    });
+    const members=Array.from(envelope.values()).map(entry=>{
+      Object.keys(entry.values).forEach(name=>{
+        const v=entry.values[name];
+        if(!Number.isFinite(v.min)||!Number.isFinite(v.max)) { v.min=null;v.max=null;v.maxAbs=null; }
+      });
+      entry.cases=[...new Set(entry.cases)];
+      return entry;
+    });
+    return {schema:"sahroud-3d-member-demand-envelope",version:1,units:{force:"N",moment:"N.m"},source:"equilibrated 3D linear-elastic analysis only",acceptedCases,rejectedCases,acceptedMemberResults:acceptedMembers,members,designStatus:"demand-only-not-capacity-checked",limitations:["تحلیل خطی مرتبه اول؛ بدون P-Delta","این پوش نیرو به‌تنهایی کنترل مقاومت، کمانش، LTB، لاغری موضعی یا تغییرمکان آیین‌نامه‌ای نیست.","ترکیبات بار باید کامل و از نظر آیین‌نامه‌ای تأیید شوند."]};
+  }
+
   function stabilityGaps() {
     const labels={Lx:"طول مهارنشده محور قوی",Ly:"طول مهارنشده محور ضعیف",Kx:"ضریب طول مؤثر محور قوی",Ky:"ضریب طول مؤثر محور ضعیف"};
     const gaps=[];
@@ -255,6 +299,12 @@
             }
           }
           model3D.last3DCombinationResults=threeDResults;
+          const memberDemand=build3DMemberDemandEnvelope(threeDResults);
+          model3D.last3DMemberDemandEnvelope=memberDemand;
+          addLine(rows,"استخراج پوش نیروهای اعضا از تحلیل سه‌بعدی",memberDemand.members.length>0,
+            memberDemand.members.length>0
+              ? memberDemand.members.length+" عضو از "+memberDemand.acceptedCases+" ترکیب متعادل دارای پوش نیرو شدند؛ نیروها در دستگاه محلی عضو و با واحد N و N.m ثبت شدند. این مرحله فقط استخراج تقاضاست و هنوز کنترل ظرفیت آیین‌نامه‌ای مقطع نیست."
+              : "از نتایج سه‌بعدیِ موفق و متعادل، پوش نیروی قابل استفاده استخراج نشد؛ کنترل ظرفیت و انتخاب خودکار مقطع مسدود می‌ماند.");
           const __sahroudReactionLedgerCount=threeDResults.filter(item=>item.success&&item.equilibriumOK&&Array.isArray(item.result?.supportReactionLedger)).length;
           const __sahroudSlsLedgerCount=threeDResults.filter(item=>item.success&&item.equilibriumOK&&Array.isArray(item.result?.supportReactionLedger)&&item.result?.serviceabilityCheck==="foundation-bearing"&&typeof item.result?.combinationDefinition==="string"&&item.result.combinationDefinition.trim().length>0).length;
           addLine(rows,"آمادگی واکنش‌ها برای کنترل پی",false,
