@@ -823,15 +823,34 @@
           global[0]+=m.side==="left"?wall:-wall;
         }else if(m.sectionKey==="endGirt"){
           // Positive pressure acts inward: +Z on the front face and -Z on the rear face.
-          const endWall=Number(m.lineLoads?.windEnd||0)*1000*windFactor*windSign;
-          global[2]+=m.endFace==="front"?endWall:-endWall;
+          // Preserve the linearly varying tributary-height distribution at the member ends.
+          const faceSign=m.endFace==="front"?1:-1;
+          const startPressure=Number(m.lineLoads?.windEndStart);
+          const endPressure=Number(m.lineLoads?.windEndFinish);
+          const hasLinearEndWind=Number.isFinite(startPressure)&&Number.isFinite(endPressure)&&
+            Number.isFinite(Number(m.length))&&Number(m.length)>0;
+          const startGlobal=[global[0],global[1],global[2]+faceSign*startPressure*1000*windFactor*windSign];
+          const endGlobal=[global[0],global[1],global[2]+faceSign*endPressure*1000*windFactor*windSign];
+          if(hasLinearEndWind){
+            m.analysisLoad={
+              linearGlobal:{start:startGlobal,end:endGlobal},
+              linearLocal:{
+                start:[tr.axes.x,tr.axes.y,tr.axes.z].map(axis=>axis.reduce((sum,v,i)=>sum+v*startGlobal[i],0)),
+                end:[tr.axes.x,tr.axes.y,tr.axes.z].map(axis=>axis.reduce((sum,v,i)=>sum+v*endGlobal[i],0))
+              },
+              globalUniform:global
+            };
+          }else{
+            const endWall=Number(m.lineLoads?.windEnd||0)*1000*windFactor*windSign;
+            global[2]+=faceSign*endWall;
+          }
         }
       }else{
         global=selected.direction.map(v=>v*totalLineLoad*1000);
       }
       const axes=[tr.axes.x,tr.axes.y,tr.axes.z];
       const local=axes.map(axis=>axis.reduce((sum,v,i)=>sum+v*global[i],0));
-      m.analysisLoad={uniformLocal:local,globalUniform:global};
+      if(!m.analysisLoad?.linearLocal)m.analysisLoad={uniformLocal:local,globalUniform:global};
       m.analysisLoad.selfWeightKNm=selfWeightLineLoad;
     });
     const fixed= $("baseConnection")?.value==="fixed";
