@@ -81,3 +81,25 @@ frontLocal.forEach((v,i)=>close(v,-rearLocal[i],"front/rear sign reversal"));
 assert.throws(()=>solver.globalToLocalVector([1,2],[1,2,3]));
 assert.throws(()=>solver.globalToLocalVector([1,2,3],{x:[1,0,0],y:[0,1,0],z:[0,0,NaN]}));
 console.log("PASS: actual solver global/local transform, 3D axis orthonormality, front/rear sign and invalid-input checks");
+
+
+// End-to-end regression: pass a linearly varying local end-wall load through
+// the real 3D stiffness solver and verify support reactions and global balance.
+const endToEndProps={E:200e9,G:80e9,A:0.01,Iy:1e-5,Iz:1e-5,J:2e-5};
+const cantilever={
+ nodes:[{id:"fixed",x:0,y:0,z:0},{id:"tip",x:5,y:0,z:0}],
+ members:[{id:"end-wall-girt",start:"fixed",end:"tip",type:"beam",sectionKey:"endGirt",
+  analysisLoad:{linearLocal:{start:[0,0,1000],end:[0,0,2000]}}}]
+};
+const endToEnd=solver.analyze(cantilever,{
+ sectionResolver:()=>endToEndProps,
+ supports:[{nodeId:"fixed",fixedDofs:[0,1,2,3,4,5]}]
+});
+assert.equal(endToEnd.success,true);
+assert.equal(endToEnd.members[0].appliedLoadType,"linear-local");
+assert.equal(endToEnd.equilibrium.ok,true,"cantilever global force and moment equilibrium");
+close(endToEnd.equilibrium.appliedForceN[2],7500,"linearly varying wind resultant");
+close(endToEnd.equilibrium.supportReactionN[2],-7500,"support vertical reaction");
+close(endToEnd.equilibrium.appliedMomentNm[1],-20833.333333333332,"wind first moment about global Y");
+close(endToEnd.equilibrium.supportMomentNm[1],20833.333333333332,"support moment about global Y");
+console.log("PASS: real 3D solver end-to-end linear end-wall load, resultant, support reactions and global equilibrium");
