@@ -71,7 +71,9 @@ close(dot(memberTransform.axes.x,memberTransform.axes.y),0,"local x/y orthogonal
 close(dot(memberTransform.axes.x,memberTransform.axes.z),0,"local x/z orthogonal");
 close(dot(memberTransform.axes.y,memberTransform.axes.z),0,"local y/z orthogonal");
 const front=[0,0,1],rear=[0,0,-1];
-assert.ok(solver.globalToLocalVector(front,memberTransform.axes).every((v,i)=>close(v,solver.globalToLocalVector(front,memberTransform.axes)[i],"front pressure transform")===undefined));
+const frontUnit=solver.globalToLocalVector(front,memberTransform.axes);
+const rearUnit=solver.globalToLocalVector(rear,memberTransform.axes);
+frontUnit.forEach((v,i)=>close(v,-rearUnit[i],"front/rear unit pressure sign"));
 const frontGlobal=[0,0,15000],rearGlobal=[0,0,-15000];
 const frontLocal=solver.globalToLocalVector(frontGlobal,memberTransform.axes);
 const rearLocal=solver.globalToLocalVector(rearGlobal,memberTransform.axes);
