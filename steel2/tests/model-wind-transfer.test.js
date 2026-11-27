@@ -21,7 +21,12 @@ test("front and rear end-wall pressure is transferred with opposite global Z sig
   assert.match(source, /m\.sectionKey==="endGirt"/);
   assert.match(source, /loads\.windEndFront/);
   assert.match(source, /loads\.windEndBack/);
-  assert.match(source, /m\.endFace==="front"\?endWall:-endWall/);
+  assert.match(source, /const faceSign=m\.endFace==="front"\?1:-1/);
+  assert.match(source, /startGlobal=\[global\[0\],global\[1\],global\[2\]\+faceSign\*startPressure/);
+  assert.match(source, /endGlobal=\[global\[0\],global\[1\],global\[2\]\+faceSign\*endPressure/);
+  assert.match(source, /linearLocal:\s*\{/);
+  assert.match(source, /globalToLocalVector\(startGlobal,tr\.axes\)/);
+  assert.match(source, /globalToLocalVector\(endGlobal,tr\.axes\)/);
 });
 
 test("wind factor and signed net pressure are applied without silently using climate basic pressure", () => {
