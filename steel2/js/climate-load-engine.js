@@ -168,10 +168,16 @@
           return audit;
         }
         const expected=Number(line.pressureKPa)*Number(line.tributaryHeight);
-        if(Math.abs(expected-Number(line.windEnd))>Math.max(0.001,Math.abs(expected)*0.001))audit.mismatch++;
+        const tolerance=Math.max(0.001,Math.abs(expected)*0.001);
+        if(Math.abs(expected-Number(line.windEnd))>tolerance)audit.mismatch++;
+        const memberHeight=Number(m.tributaryHeight);
+        if(!Number.isFinite(memberHeight)||memberHeight<=0||
+          Math.abs(memberHeight-Number(line.tributaryHeight))>Math.max(0.001,Math.abs(memberHeight)*0.001)){
+          audit.heightMetadataMismatch++;
+        }
         audit.checked++;
         return audit;
-      },{checked:0,mismatch:0,notAvailable:0});
+      },{checked:0,mismatch:0,heightMetadataMismatch:0,notAvailable:0});
       const faceNodes=faceMembers.flatMap(m=>[nodeById.get(String(m.start)),nodeById.get(String(m.end))]).filter(Boolean);
       const highestY=faceNodes.length?Math.max(...faceNodes.map(n=>Number(n.y)||0)):0;
       const peak=eavesHeight+rise;
@@ -396,8 +402,8 @@
     out.textContent="ممیزی هندسه (صرفاً فهرست‌برداری، بدون اعمال بار): پرلین چپ/راست "+g.roofLeft.memberCount+"/"+g.roofRight.memberCount+
       "؛ لاپه طولی چپ/راست "+g.longWallLeft.memberCount+"/"+g.longWallRight.memberCount+
       "؛ لاپه انتهایی جلو/عقب "+g.endFront.memberCount+"/"+g.endBack.memberCount+
-      ". کنترل فشار به بار خطی جلو: بررسی‌شده "+front.checked+"، اختلاف "+front.mismatch+"، داده ناکافی "+front.notAvailable+
-      "؛ عقب: بررسی‌شده "+rear.checked+"، اختلاف "+rear.mismatch+"، داده ناکافی "+rear.notAvailable+
+      ". کنترل جلو: بررسی‌شده "+front.checked+"، اختلاف بار خطی "+front.mismatch+"، اختلاف ارتفاع بارگیر ثبت‌شده با عضو "+front.heightMetadataMismatch+"، داده ناکافی "+front.notAvailable+
+      "؛ عقب: بررسی‌شده "+rear.checked+"، اختلاف بار خطی "+rear.mismatch+"، اختلاف ارتفاع بارگیر ثبت‌شده با عضو "+rear.heightMetadataMismatch+"، داده ناکافی "+rear.notAvailable+
       ". مساحت هندسی تقریبی گابل بالای بالاترین لاپه: "+(Number(a.endWall.estimatedGableAreaAboveHighestGirt_m2)||0).toFixed(2)+" m² (صرفاً ممیزی هندسه، نه بارگیر تأییدشده). طراحی‌پذیری: خیر.";
   }
   function setData(data) {
