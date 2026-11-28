@@ -46,6 +46,55 @@
   form.elements.namedItem("footingMy").value="";
   reactionOutput.textContent="قدر مطلق واکنش قائم "+fmt(Math.abs(vertical))+" kN در N قرار گرفت. لنگرهای پی عمداً منتقل نشدند؛ محورهای محلی پی و ترکیب بار خدمت هنوز تعیین نشده‌اند. از یک حالت بار منفرد برای طراحی نهایی استفاده نکنید.";
  });
+
+ /* User-entered factors only; this module does not prescribe code combinations. */
+ const comboButton=document.getElementById("reactionComboCalculate");
+ const comboOut=document.getElementById("reactionComboResult");
+ const comboCases=["DEAD_ROOF","LIVE_ROOF","BALANCED_SNOW_ROOF","WIND_FROM_LEFT","WIND_FROM_RIGHT"];
+ const comboLabels={DEAD_ROOF:"G",LIVE_ROOF:"Q",BALANCED_SNOW_ROOF:"S",WIND_FROM_LEFT:"W+",WIND_FROM_RIGHT:"W−"};
+ const getCombo=()=>{
+  const selectedNode=nodeSelect?.value;
+  if(!selectedNode)throw Error("ابتدا تحلیل بار را اجرا و گره تکیه‌گاهی را انتخاب کنید.");
+  const factors={};
+  for(const name of comboCases){
+   const el=document.getElementById("factor"+name);
+   if(!el||String(el.value).trim()===""||!Number.isFinite(Number(el.value)))throw Error("ضریب "+comboLabels[name]+" را صریحاً وارد کنید؛ برای ضریب صفر عدد 0 بنویسید.");
+   factors[name]=Number(el.value);
+  }
+  const all=window.SahroudSteelV3AnalysisResults;
+  const total=[0,0,0,0,0,0];
+  const detail=[];
+  for(const name of comboCases){
+   const result=all?.[name];
+   const reaction=result?.supportReactionsAll?.find(x=>String(x.nodeId)===selectedNode);
+   if(!reaction)throw Error("واکنش حالت "+comboLabels[name]+" برای این گره موجود نیست؛ همه پنج حالت باید تحلیل شده باشند.");
+   for(let i=0;i<6;i++)total[i]+=factors[name]*Number(reaction.values[i]||0);
+   detail.push(comboLabels[name]+"="+factors[name]);
+  }
+  return {nodeId:selectedNode,factors,total,name:document.getElementById("reactionComboName")?.value||"ترکیب کاربر",detail};
+ };
+ comboButton?.addEventListener("click",()=>{
+  try{
+   const r=getCombo();
+   window.SahroudSteelV3CombinedReaction=r;
+   comboOut.textContent="ترکیب خطی واکنش‌ها برای گره "+r.nodeId+" ("+r.name+")\\n"+
+    r.detail.join(" ، ")+"\\n"+
+    "Fx="+fmt(r.total[0]/1000)+" kN | Fy="+fmt(r.total[1]/1000)+" kN | Fz="+fmt(r.total[2]/1000)+" kN\\n"+
+    "Mx="+fmt(r.total[3]/1000)+" kN.m | My="+fmt(r.total[4]/1000)+" kN.m | Mz="+fmt(r.total[5]/1000)+" kN.m\\n"+
+    "این فقط جمع جبری حالت‌های خطی با ضرایب دستی است؛ اعتبار آیین‌نامه‌ای، همزمانی حالت‌ها، علامت‌گذاری و ترکیب بار خدمت/مقاومت را کاربر باید از مرجع رسمی کنترل کند.";
+  }catch(e){comboOut.textContent="ترکیب محاسبه نشد: "+e.message;}
+ });
+ document.getElementById("reactionComboTransferN")?.addEventListener("click",()=>{
+  try{
+   const r=getCombo();
+   window.SahroudSteelV3CombinedReaction=r;
+   const n=Math.abs(r.total[1])/1000;
+   if(!(n>0))throw Error("نیروی قائم ترکیبی تقریباً صفر است.");
+   form.elements.namedItem("footingN").value=String(n);
+   comboOut.textContent="قدر مطلق Fy ترکیبی، "+fmt(n)+" kN، به N منتقل شد. لنگرها به دلیل نیاز به تعیین دقیق محورهای پی به‌صورت خودکار منتقل نشدند. ترکیب باید از نظر آیین‌نامه و نوع خدمت/مقاومت جداگانه تأیید شود.";
+  }catch(e){comboOut.textContent="انتقال انجام نشد: "+e.message;}
+ });
+
  button.addEventListener("click",()=>{
   try{
    const B=value("footingWidth"),L=value("footingLength"),qa=value("soilQa");
