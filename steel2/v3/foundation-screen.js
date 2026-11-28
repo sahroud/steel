@@ -205,6 +205,32 @@
    ].join("\\n");
   }catch(e){if(flexOut)flexOut.textContent="محاسبه انجام نشد: "+e.message;}
  });
+
+ const rebarBtn=document.getElementById("foundationRebarCheckBtn");
+ const rebarOut=document.getElementById("foundationRebarCheckResult");
+ rebarBtn?.addEventListener("click",()=>{
+  try{
+   const read=id=>{const e=document.getElementById(id);return e&&String(e.value).trim()!==""?Number(e.value):NaN;};
+   const axes=[
+    {name:"X",req:read("footingAsReqX"),dia:read("footingBarDiaX"),spacing:read("footingBarSpacingX")},
+    {name:"Z",req:read("footingAsReqZ"),dia:read("footingBarDiaZ"),spacing:read("footingBarSpacingZ")}
+   ];
+   const lines=["کنترل سطح مقطع فولاد آرماتور در هر متر عرض — مقایسه هندسی، نه طراحی آیین‌نامه‌ای"];
+   for(const a of axes){
+    if(!(a.req>0))throw Error("As موردنیاز راستای "+a.name+" را از محاسبه معتبر وارد کنید.");
+    if(!(a.dia>=6&&a.dia<=50))throw Error("قطر میلگرد راستای "+a.name+" باید بین 6 تا 50 میلی‌متر باشد.");
+    if(!(a.spacing>0&&a.spacing<=1000))throw Error("فاصله میلگرد راستای "+a.name+" باید بیشتر از صفر و حداکثر 1000 میلی‌متر باشد.");
+    const area=Math.PI*a.dia*a.dia/4;
+    const provided=area*1000/a.spacing;
+    const ratio=provided/a.req;
+    lines.push("راستای "+a.name+": As,req="+fmt(a.req)+" mm²/m | قطر="+fmt(a.dia)+" mm | فاصله="+fmt(a.spacing)+" mm | As,prov="+fmt(provided)+" mm²/m | نسبت تأمین="+fmt(ratio*100)+"%");
+    lines.push(provided+1e-8>=a.req?"مقایسه سطح فولاد: مقدار تأمین‌شده از As ورودی کمتر نیست.":"مقایسه سطح فولاد: مقدار تأمین‌شده از As ورودی کمتر است؛ آرایش باید بازنگری شود.");
+   }
+   lines.push("فرض: میلگردهای مستقیم و یکنواخت با سطح مقطع دایره‌ای؛ As,prov=πϕ²/4×1000/s.");
+   lines.push("این کنترل، حداقل آرماتور، حداکثر فاصله مجاز، پوشش بتن، خوردگی، مهاری، وصله، خم، قطع میلگرد، لنگر دومحوره، ظرفیت خمشی یا ضوابط مبحث نهم را بررسی نمی‌کند. نتیجه جایگزین طراحی و نقشه اجرایی نیست.");
+   rebarOut.textContent=lines.join("\\n");
+  }catch(e){if(rebarOut)rebarOut.textContent="کنترل انجام نشد: "+e.message;}
+ });
  button.addEventListener("click",()=>{
   try{
    const B=value("footingWidth"),L=value("footingLength"),qa=value("soilQa");
