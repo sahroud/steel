@@ -119,7 +119,7 @@
         records.forEach(record => record.addedNodes.forEach(node => {
           if (node.nodeType !== 1) return;
           if (node.matches?.("main .panel:not(.workflow-managed)") ||
-              node.querySelector?.("main .panel:not(.workflow-managed)")) {
+              node.querySelector?.(".panel:not(.workflow-managed)")) {
             hasNewPanel = true;
           }
         }));
