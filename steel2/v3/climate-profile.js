@@ -1,6 +1,6 @@
 /* SAHROUD STEEL V3 - project-wide climate profile binding
- * Shahroud is the initial profile. Other cities deliberately clear Shahroud-only
- * values until a verified city record is entered; no geographic extrapolation.
+ * Shahroud is the initial reference profile. Other cities require user-entered,
+ * sourced values; Shahroud data are never copied to another city.
  */
 (function () {
   "use strict";
@@ -18,12 +18,13 @@
     climateSource: "پروفایل اولیه شاهرود؛ سرعت باد ۹۰ km/h و فشار مبنا حدود ۰٫۳۸۳ kN/m² بر پایه رکورد مبحث ششم ۱۳۹۸؛ بار برف و ارتفاع/مختصات نیازمند تطبیق با مرجع رسمی و محل دقیق پروژه"
   };
   const cityNames = {
-    shahroud: "شاهرود",
-    semnan: "سمنان",
-    tehran: "تهران",
-    mashhad: "مشهد",
-    custom: "شهر سفارشی"
+    shahroud: "شاهرود", semnan: "سمنان", tehran: "تهران",
+    mashhad: "مشهد", custom: "شهر سفارشی"
   };
+  const climateFields = [
+    "snowLoad", "snowRegion", "windSpeed", "windPressure",
+    "climateElevation", "climateLatitude", "climateLongitude"
+  ];
   function set(name, value) {
     const el = field(name);
     if (el) el.value = value;
@@ -32,32 +33,44 @@
     const el = document.getElementById("climateNotice");
     if (el) el.textContent = message;
   }
+  function setEditability(isReferenceCity) {
+    ["snowRegion", "windPressure", "climateLatitude", "climateLongitude"].forEach(name => {
+      const el = field(name);
+      if (el) el.readOnly = !!isReferenceCity;
+    });
+  }
+  function notifyAutosave() {
+    [...climateFields, "climateSource"].forEach(name => {
+      const el = field(name);
+      if (el) el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
   function applyCityProfile() {
     const city = field("city")?.value || "shahroud";
-    if (city === "shahroud") {
-      Object.entries(shahroud).forEach(([k, v]) => set(k, v));
+    const isShahroud = city === "shahroud";
+    setEditability(isShahroud);
+    if (isShahroud) {
+      Object.entries(shahroud).forEach(([key, value]) => set(key, value));
       updateNotice(
         "پروفایل اولیه شاهرود بارگذاری شد: Ps زمین = 1.00 kN/m²، منطقه برف ۳، سرعت مبنای باد = ۹۰ km/h و q ≈ ۰٫۳۸۳ kN/m². این داده‌ها پیش‌فرض پروژه‌اند، نه تأیید نهایی طراحی؛ بار برف بام، ضرایب باد، توپوگرافی، ارتفاع و مختصات باید برای نشانی دقیق پروژه با مرجع رسمی کنترل شوند."
       );
     } else {
-      ["snowLoad", "snowRegion", "windSpeed", "windPressure",
-       "climateElevation", "climateLatitude", "climateLongitude"].forEach(k => set(k, ""));
+      climateFields.forEach(name => set(name, ""));
       set("climateSource", "");
       updateNotice(
         "برای " + (cityNames[city] || "شهر انتخابی") +
-        " پروفایل اقلیمی تأییدشده در این نسخه موجود نیست. مقادیر شاهرود پاک شدند تا به شهر دیگر منتقل نشوند. داده‌های رسمی شهر و محل دقیق پروژه را وارد و منبع آن را ثبت کنید."
+        " پروفایل اقلیمی تأییدشده در این نسخه موجود نیست. مقادیر شاهرود پاک شدند. فیلدهای اقلیمی اکنون برای ورود دستی باز هستند؛ منبع رسمی هر مقدار را ثبت کنید. تا تکمیل داده‌ها، محاسبه بارگذاری نهایی مجاز نیست."
       );
     }
-    ["snowLoad", "snowRegion", "windSpeed", "windPressure",
-     "climateElevation", "climateLatitude", "climateLongitude", "climateSource"]
-      .forEach(k => field(k)?.dispatchEvent(new Event("input", { bubbles: true })));
-    set("snowRegion", city === "shahroud" ? shahroud.snowRegion : "");
+    notifyAutosave();
   }
   field("city")?.addEventListener("change", applyCityProfile);
   window.SahroudV3ClimateProfiles = {
     getSelectedCity: () => field("city")?.value || "shahroud",
     getShahroudReference: () => ({ ...shahroud }),
-    hasVerifiedProfile: city => city === "shahroud" ? false : false,
+    hasVerifiedProfile: () => false,
     applyCityProfile
   };
+  // Apply the selected city on first load as well as on later changes.
+  applyCityProfile();
 })();
