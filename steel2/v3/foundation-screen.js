@@ -131,6 +131,48 @@
   }catch(e){comboOut.textContent="انتقال انجام نشد: "+e.message;}
  });
 
+
+ const shearBtn=document.getElementById("foundationShearDemandBtn");
+ const shearOut=document.getElementById("foundationShearDemandResult");
+ shearBtn?.addEventListener("click",()=>{
+  try{
+   const B=value("footingWidth"),L=value("footingLength"),h=value("footingThickness"),d=value("footingEffectiveDepth");
+   const cx=value("columnWidthX"),cz=value("columnWidthZ"),Pu=value("footingPu");
+   const Mx=value("footingMx"),Mz=value("footingMz");
+   const missing=[];
+   if(!(B>0))missing.push("عرض پی B");
+   if(!(L>0))missing.push("طول پی L");
+   if(!(h>0))missing.push("ضخامت کل پی h");
+   if(!(d>0))missing.push("عمق مؤثر d");
+   if(!(cx>0))missing.push("عرض ستون در X");
+   if(!(cz>0))missing.push("بعد ستون در Z");
+   if(!(Pu>0))missing.push("نیروی محوری ضریب‌دار Pu");
+   if(missing.length)throw Error("ورودی‌های لازم کامل نیست: "+missing.join("، "));
+   if(!Number.isFinite(Mx)||!Number.isFinite(Mz))throw Error("مقادیر لنگرهای Mx و Mz را وارد کنید؛ برای لنگر صفر، عدد 0 بنویسید.");
+   if(Math.abs(Mx)>1e-8||Math.abs(Mz)>1e-8)throw Error("این غربال فقط برای بار محوری مرکزی و فشار یکنواخت است. با وجود لنگر، توزیع فشار و برش باید با تحلیل دومحوره محاسبه شود.");
+   if(d>=h)throw Error("عمق مؤثر d باید از ضخامت کل پی h کمتر باشد.");
+   if(cx>=B||cz>=L)throw Error("ابعاد ستون/پدستال باید از ابعاد پی کوچک‌تر باشد.");
+   if(2*d>=B-cx||2*d>=L-cz)throw Error("برای تشکیل مقطع بحرانی برش یک‌طرفه، ابعاد پی و عمق مؤثر کافی نیست؛ هندسه را بازبینی کنید.");
+   const A=B*L,q=Pu/A;
+   const aX=(B-cx)/2-d,aZ=(L-cz)/2-d;
+   const VuX=q*aX*L,VuZ=q*aZ*B;
+   const inside=(cx+d)*(cz+d);
+   const b0=2*(cx+cz+2*d);
+   const VuPunch=Pu-q*inside;
+   if(!(VuPunch>=0))throw Error("تقاضای پانچ نامعتبر به دست آمد؛ ورودی‌ها را بررسی کنید.");
+   shearOut.textContent=[
+    "غربال تقاضای برش — بدون کنترل ظرفیت بتن",
+    "فرض: بار محوری ضریب‌دار مرکزی، فشار یکنواخت و پی مستطیلی؛ Pu="+fmt(Pu)+" kN",
+    "فشار یکنواخت فرضی: qu=Pu/(B×L)="+fmt(q)+" kPa",
+    "برش یک‌طرفه در راستای X، در فاصله d از وجه ستون: Vu="+fmt(VuX)+" kN",
+    "برش یک‌طرفه در راستای Z، در فاصله d از وجه ستون: Vu="+fmt(VuZ)+" kN",
+    "پانچ در محیط بحرانی d/2 از وجه ستون: b0="+fmt(b0)+" m | مساحت داخل محیط="+fmt(inside)+" m² | Vu,punch="+fmt(VuPunch)+" kN",
+    "عمق مؤثر d="+fmt(d)+" m | ضخامت کل h="+fmt(h)+" m",
+    "این اعداد فقط تقاضای برش تحت فرض‌های فوق‌اند؛ هیچ نتیجه قبول/رد ارائه نمی‌شود.",
+    "ظرفیت برشی بتن، اثر اندازه، نسبت ابعاد ستون، آرماتور، ضریب مقاومت، انتقال لنگر، بارهای خارج از مرکز، وزن پی/خاک و ضوابط مبحث نهم هنوز کنترل نشده‌اند. برای طراحی نهایی باید روابط و ضرایب نسخه معتبر آیین‌نامه اعمال شوند."
+   ].join("\\n");
+  }catch(e){if(shearOut)shearOut.textContent="محاسبه انجام نشد: "+e.message;}
+ });
  button.addEventListener("click",()=>{
   try{
    const B=value("footingWidth"),L=value("footingLength"),qa=value("soilQa");
