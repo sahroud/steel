@@ -112,11 +112,18 @@
     const main = document.querySelector("main");
     if (main && !observer) {
       observer = new MutationObserver(records => {
-        let changed = false;
+        // Only newly inserted project panels require stage assignment.
+        // Workflow controls (especially renderTrack buttons) must not
+        // trigger another full render or the observer will loop forever.
+        let hasNewPanel = false;
         records.forEach(record => record.addedNodes.forEach(node => {
-          if (node.nodeType === 1) changed = true;
+          if (node.nodeType !== 1) return;
+          if (node.matches?.("main .panel:not(.workflow-managed)") ||
+              node.querySelector?.("main .panel:not(.workflow-managed)")) {
+            hasNewPanel = true;
+          }
         }));
-        if (changed) updateVisibility();
+        if (hasNewPanel) updateVisibility();
       });
       observer.observe(main, { childList: true, subtree: true });
     }
