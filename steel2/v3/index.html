@@ -83,6 +83,12 @@
 <label>ضخامت دال کف (cm)<input name="slabThickness" type="number" min="0" value="15"></label>
 <label>عمق پی (m)<input name="footingDepth" type="number" min="0" step=".05" value=".8"></label>
 <label>ابعاد اولیه پی (m)<input name="footingSize" value="1.8 × 1.8" readonly></label>
+<label>عرض پی منفرد B (m)<input name="footingWidth" type="number" min=".1" step=".05" value="1.8"></label>
+<label>طول پی منفرد L (m)<input name="footingLength" type="number" min=".1" step=".05" value="1.8"></label>
+<label>نیروی محوری فشاری خدمت N (kN)<input name="footingN" type="number" min="0" step=".1" placeholder="از واکنش تحلیل/ترکیب خدمت"></label>
+<label>لنگر خدمت حول محور x (kN.m)<input name="footingMx" type="number" step=".1" placeholder="از واکنش تحلیل/ترکیب خدمت"></label>
+<label>لنگر خدمت حول محور y (kN.m)<input name="footingMy" type="number" step=".1" placeholder="از واکنش تحلیل/ترکیب خدمت"></label>
+<div class="wide callout"><b>غربال مقدماتی فشار زیر پی</b><p>با واردکردن واکنش‌های خدمت N و Mx و My، فشارهای تقریبی زیر پی و خروج از مرکزیت محاسبه می‌شوند. بارها باید از ترکیب خدمت معتبر و متناسب با مبنای خالص/ناخالص ظرفیت خاک باشند. این ابزار جایگزین طراحی کامل فونداسیون نیست.</p><button type="button" id="foundationScreenBtn" class="secondary">کنترل مقدماتی فشار زیر پی</button><div id="foundationScreenResult" class="readiness" style="white-space:pre-wrap" aria-live="polite"></div></div>
 <label class="wide">مرجع ژئوتکنیک و شماره صفحه<input name="soilSource" placeholder="مرجع دقیق گزارش؛ بدون آن کنترل خاک معتبر نیست"></label>
 </div><div class="callout warning">ابعاد پی، تیر رابط و آرماتورهای اولیه صرفاً نقطه شروع طراحی هستند. کنترل نشست، لغزش، واژگونی، پانچ، برش و آرماتور باید با واکنش‌های مستند و داده ژئوتکنیک انجام شود.</div></section>
 <section class="page" data-page="results"><h2>خروجی‌های پروژه</h2><p class="hint">پس از اتصال و اجرای موتورهای محاسباتی، خروجی‌ها در این صفحه به‌صورت یک گزارش یکپارچه ارائه می‌شوند.</p><div class="output-list">
@@ -109,5 +115,5 @@
 <script src="geometry-self-test.js?v=1" defer></script>
 <script src="engine-adapter.js?v=2" defer></script>
 <script src="section-profile-generator.js?v=1" defer></script>
-<script src="section-geometry.js?v=2"></script><script src="app.js?v=20" defer></script><script src="climate-profile.js?v=2" defer></script><script src="project-audit.js?v=1" defer></script>
+<script src="section-geometry.js?v=2"></script><script src="app.js?v=20" defer></script><script src="climate-profile.js?v=2" defer></script><script src="project-audit.js?v=1" defer></script><script src="foundation-screen.js?v=1" defer></script>
 </body></html>
