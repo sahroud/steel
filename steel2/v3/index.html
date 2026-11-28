@@ -87,8 +87,8 @@
 <label>طول پی منفرد L (m)<input name="footingLength" type="number" min=".1" step=".05" value="1.8"></label>
 <label>نیروی محوری فشاری خدمت N (kN)<input name="footingN" type="number" min="0" step=".1" placeholder="از واکنش تحلیل/ترکیب خدمت"></label>
 <label>لنگر خدمت حول محور x (kN.m)<input name="footingMx" type="number" step=".1" placeholder="از واکنش تحلیل/ترکیب خدمت"></label>
-<label>لنگر خدمت حول محور y (kN.m)<input name="footingMy" type="number" step=".1" placeholder="از واکنش تحلیل/ترکیب خدمت"></label>
-<div class="wide callout"><b>غربال مقدماتی فشار زیر پی</b><p>با واردکردن واکنش‌های خدمت N و Mx و My، فشارهای تقریبی زیر پی و خروج از مرکزیت محاسبه می‌شوند. بارها باید از ترکیب خدمت معتبر و متناسب با مبنای خالص/ناخالص ظرفیت خاک باشند. این ابزار جایگزین طراحی کامل فونداسیون نیست.</p><button type="button" id="foundationScreenBtn" class="secondary">کنترل مقدماتی فشار زیر پی</button>
+<label>لنگر خدمت حول محور z (kN.m)<input name="footingMz" type="number" step=".1" placeholder="از واکنش تحلیل/ترکیب خدمت"></label>
+<div class="wide callout"><b>غربال مقدماتی فشار زیر پی</b><p>با واردکردن واکنش‌های خدمت N و Mx و Mz، فشارهای تقریبی زیر پی و خروج از مرکزیت محاسبه می‌شوند. بارها باید از ترکیب خدمت معتبر و متناسب با مبنای خالص/ناخالص ظرفیت خاک باشند. این ابزار جایگزین طراحی کامل فونداسیون نیست.</p><button type="button" id="foundationScreenBtn" class="secondary">کنترل مقدماتی فشار زیر پی</button>
 <div class="field-grid" style="margin-top:12px">
 <label>حالت تحلیل<select id="foundationReactionCase"><option value="DEAD_ROOF">بار مرده سقف</option><option value="LIVE_ROOF">بار زنده سقف</option><option value="BALANCED_SNOW_ROOF">برف متوازن</option><option value="WIND_FROM_LEFT">باد از چپ</option><option value="WIND_FROM_RIGHT">باد از راست</option></select></label>
 <label>گره تکیه‌گاهی<select id="foundationReactionNode"><option value="">ابتدا تحلیل بار را اجرا کنید</option></select></label>
@@ -140,5 +140,5 @@
 <script src="geometry-self-test.js?v=1" defer></script>
 <script src="engine-adapter.js?v=2" defer></script>
 <script src="section-profile-generator.js?v=1" defer></script>
-<script src="section-geometry.js?v=2"></script><script src="app.js?v=20" defer></script><script src="climate-profile.js?v=2" defer></script><script src="project-audit.js?v=1" defer></script><script src="foundation-screen.js?v=4" defer></script>
+<script src="section-geometry.js?v=2"></script><script src="app.js?v=20" defer></script><script src="climate-profile.js?v=2" defer></script><script src="project-audit.js?v=1" defer></script><script src="foundation-screen.js?v=5" defer></script>
 </body></html>
