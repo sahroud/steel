@@ -10,6 +10,42 @@
  if(!form||!button||!output)return;
  const value=n=>{const e=form.elements.namedItem(n);if(!e||String(e.value).trim()==="")return NaN;return Number(e.value);};
  const fmt=n=>Number(n).toFixed(2);
+ const caseSelect=document.getElementById("foundationReactionCase");
+ const nodeSelect=document.getElementById("foundationReactionNode");
+ const reactionOutput=document.getElementById("foundationReactionResult");
+ const readReactions=()=>{
+  if(!caseSelect||!nodeSelect||!reactionOutput)return;
+  const all=window.SahroudSteelV3AnalysisResults;
+  const result=all&&all[caseSelect.value];
+  nodeSelect.innerHTML="";
+  if(!result||!Array.isArray(result.supportReactionsAll)||!result.supportReactionsAll.length){
+   nodeSelect.add(new Option("تحلیلی برای این حالت موجود نیست",""));
+   reactionOutput.textContent="ابتدا تحلیل بار سقف را اجرا کنید. فقط واکنش‌های تکیه‌گاهی واقعیِ ذخیره‌شده در همین نشست قابل خواندن‌اند.";
+   return;
+  }
+  result.supportReactionsAll.forEach(r=>nodeSelect.add(new Option("گره "+r.nodeId,""+r.nodeId)));
+  reactionOutput.textContent="واکنش‌های حالت انتخاب‌شده آماده‌اند. گره موردنظر را انتخاب کنید.";
+ };
+ document.getElementById("foundationReactionRefresh")?.addEventListener("click",readReactions);
+ caseSelect?.addEventListener("change",readReactions);
+ nodeSelect?.addEventListener("change",()=>{
+  const r=window.SahroudSteelV3AnalysisResults?.[caseSelect.value]?.supportReactionsAll?.find(x=>String(x.nodeId)===nodeSelect.value);
+  if(!r){reactionOutput.textContent="واکنش گره انتخاب‌شده پیدا نشد.";return;}
+  const v=r.values;
+  reactionOutput.textContent="گره "+r.nodeId+" | نیروها (kN): Fx="+fmt(v[0]/1000)+" ، Fy="+fmt(v[1]/1000)+" ، Fz="+fmt(v[2]/1000)+
+   "\\nلنگرها (kN.m): Mx="+fmt(v[3]/1000)+" ، My="+fmt(v[4]/1000)+" ، Mz="+fmt(v[5]/1000)+
+   "\\nمحور قائم مدل Y است. اینها واکنش یک حالت بار منفردند، نه ترکیب بار خدمت.";
+ });
+ document.getElementById("foundationReactionImport")?.addEventListener("click",()=>{
+  const r=window.SahroudSteelV3AnalysisResults?.[caseSelect?.value]?.supportReactionsAll?.find(x=>String(x.nodeId)===nodeSelect?.value);
+  if(!r){reactionOutput.textContent="ابتدا تحلیل بار را اجرا و گره تکیه‌گاهی را انتخاب کنید.";return;}
+  const vertical=Number(r.values[1])/1000;
+  if(!Number.isFinite(vertical)||Math.abs(vertical)<1e-9){reactionOutput.textContent="واکنش قائم این گره در حالت انتخاب‌شده تقریباً صفر است؛ انتقال انجام نشد.";return;}
+  form.elements.namedItem("footingN").value=String(Math.abs(vertical));
+  form.elements.namedItem("footingMx").value="";
+  form.elements.namedItem("footingMy").value="";
+  reactionOutput.textContent="قدر مطلق واکنش قائم "+fmt(Math.abs(vertical))+" kN در N قرار گرفت. لنگرهای پی عمداً منتقل نشدند؛ محورهای محلی پی و ترکیب بار خدمت هنوز تعیین نشده‌اند. از یک حالت بار منفرد برای طراحی نهایی استفاده نکنید.";
+ });
  button.addEventListener("click",()=>{
   try{
    const B=value("footingWidth"),L=value("footingLength"),qa=value("soilQa");
