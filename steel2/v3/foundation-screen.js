@@ -173,6 +173,35 @@
    ].join("\\n");
   }catch(e){if(shearOut)shearOut.textContent="محاسبه انجام نشد: "+e.message;}
  });
+
+ const flexBtn=document.getElementById("foundationFlexureDemandBtn");
+ const flexOut=document.getElementById("foundationFlexureDemandResult");
+ flexBtn?.addEventListener("click",()=>{
+  try{
+   const B=value("footingWidth"),L=value("footingLength"),cx=value("columnWidthX"),cz=value("columnWidthZ"),Pu=value("footingPu");
+   const Mx=value("footingMx"),Mz=value("footingMz");
+   const missing=[];
+   if(!(B>0))missing.push("عرض پی B");
+   if(!(L>0))missing.push("طول پی L");
+   if(!(cx>0))missing.push("عرض ستون در X");
+   if(!(cz>0))missing.push("بعد ستون در Z");
+   if(!(Pu>0))missing.push("نیروی محوری ضریب‌دار Pu");
+   if(missing.length)throw Error("ورودی‌های لازم کامل نیست: "+missing.join("، "));
+   if(!Number.isFinite(Mx)||!Number.isFinite(Mz))throw Error("مقادیر Mx و Mz را وارد کنید؛ برای لنگر صفر، عدد 0 بنویسید.");
+   if(Math.abs(Mx)>1e-8||Math.abs(Mz)>1e-8)throw Error("این غربال فقط برای بار محوری مرکزی و فشار یکنواخت است؛ برای بار دومحوره باید توزیع فشار و لنگر پی محاسبه شود.");
+   if(cx>=B||cz>=L)throw Error("ابعاد ستون/پدستال باید از ابعاد پی کوچک‌تر باشد.");
+   const q=Pu/(B*L),aX=(B-cx)/2,aZ=(L-cz)/2;
+   const MuX=q*aX*aX/2,MuZ=q*aZ*aZ/2;
+   flexOut.textContent=[
+    "تقاضای خمشی مقدماتی در وجه ستون — بدون کنترل ظرفیت",
+    "فرض: Pu مرکزی، فشار یکنواخت qu="+fmt(q)+" kPa و رفتار طره‌ای پی از وجه ستون",
+    "پیش‌آمدگی طره در راستای X: "+fmt(aX)+" m | Mu,X="+fmt(MuX)+" kN.m به ازای هر متر عرض نوار",
+    "پیش‌آمدگی طره در راستای Z: "+fmt(aZ)+" m | Mu,Z="+fmt(MuZ)+" kN.m به ازای هر متر عرض نوار",
+    "مقادیر، تقاضای لنگر خمشی در وجه ستون‌اند؛ وزن پی و خاک روی آن و اثر لنگرهای ستون منظور نشده است.",
+    "ظرفیت خمشی، As لازم، حداقل/حداکثر آرماتور، فاصله میلگرد، ترک‌خوردگی، طول مهاری و ضوابط لرزه‌ای هنوز محاسبه نشده‌اند. این خروجی برای نقشه اجرایی یا تأیید پی کافی نیست."
+   ].join("\\n");
+  }catch(e){if(flexOut)flexOut.textContent="محاسبه انجام نشد: "+e.message;}
+ });
  button.addEventListener("click",()=>{
   try{
    const B=value("footingWidth"),L=value("footingLength"),qa=value("soilQa");
