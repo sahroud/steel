@@ -16,7 +16,7 @@ function toLegacyPayload(project){
    deadLeft:num(x.deadLoad),deadRight:num(x.deadLoad),liveLeft:num(x.liveLoad),liveRight:num(x.liveLoad),
    snowLeft:num(x.snowLoad),snowRight:num(x.snowLoad),
    windLeft:null,windRight:null,windWall:null,windEndFront:null,windEndBack:null,
-   climate:{city:x.city||"",groundSnow:num(x.snowLoad),basicWind:null,terrain:x.terrain||"",openingState:x.enclosure||"enclosed",source:x.climateSource||""},
+   climate:{city:x.city||"",groundSnow_kN_m2:num(x.snowLoad),snowRegion:num(x.snowRegion),basicWind_kmh:num(x.windSpeed),basicWindPressure_kN_m2:num(x.windPressure),elevation_m:num(x.climateElevation),latitude:num(x.climateLatitude),longitude:num(x.climateLongitude),terrain:x.terrain||"",openingState:x.enclosure||"enclosed",source:x.climateSource||""},
    legacyAverages:{dead:avg(x.deadLoad,x.deadLoad),live:avg(x.liveLoad,x.liveLoad),snow:avg(x.snowLoad,x.snowLoad)}
   },
   foundation:{soilType:x.soilType||"",soilQa:num(x.soilQa),soilQaBasis:x.soilQaBasis||"",soilSource:x.soilSource||""},
@@ -28,8 +28,8 @@ function validateForEngine(project){
  if(!p.geometry.span||!p.geometry.length||!p.geometry.spacing||!p.geometry.height)errors.push("ابعاد اصلی هندسه کامل نیست.");
  if(!p.material.Fy_MPa||!p.material.E_GPa)errors.push("خواص فولاد کامل نیست.");
  if(p.geometry.roofType==="mono")warnings.push("موتور مدل سه‌بعدی قدیمی فقط هندسه دوشیب را پشتیبانی می‌کند؛ تحلیل تک‌شیب تا توسعه هندسه مستقل مسدود است.");
- if(p.loads.climate.basicWind===null)warnings.push("سرعت مبنای باد و منبع معتبر وارد نشده؛ بار باد قابل تولید نیست.");
- if(p.loads.climate.groundSnow===null)warnings.push("بار برف معتبر وارد نشده؛ ترکیبات برف قابل تأیید نیستند.");
+ if(p.loads.climate.basicWind_kmh===null||!p.loads.climate.source)warnings.push("سرعت مبنای باد یا منبع اقلیمی وارد نشده؛ بار باد قابل تولید نیست.");
+ if(p.loads.climate.groundSnow_kN_m2===null||p.loads.climate.snowRegion===null)warnings.push("بار برف زمین یا منطقه برف ثبت نشده؛ بار برف بام و ترکیبات برف قابل تأیید نیستند.");
  if(!p.foundation.soilType||!p.foundation.soilQa)warnings.push("داده ژئوتکنیک ناقص است؛ کنترل نهایی فونداسیون قابل انجام نیست.");
  return {payload:p,errors,warnings,ready:errors.length===0};
 }
