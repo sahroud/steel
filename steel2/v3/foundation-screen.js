@@ -73,6 +73,40 @@
   }
   return {nodeId:selectedNode,factors,total,name:document.getElementById("reactionComboName")?.value||"ترکیب کاربر",detail};
  };
+
+ const comboStore=document.getElementById("reactionComboStore");
+ const comboEnvelope=document.getElementById("reactionComboEnvelope");
+ const comboList=document.getElementById("reactionComboList");
+ const envelopeOut=document.getElementById("reactionComboEnvelopeResult");
+ const storedCombos=[];
+ comboStore?.addEventListener("click",()=>{
+  try{
+   const r=getCombo();
+   if(storedCombos.some(x=>x.nodeId===r.nodeId&&x.name===r.name))throw Error("ترکیبی با همین نام برای این گره قبلاً ثبت شده است.");
+   storedCombos.push({...r,total:[...r.total],createdAt:new Date().toISOString()});
+   window.SahroudSteelV3ReactionCombos=storedCombos;
+   comboList.textContent=storedCombos.map((x,i)=>(i+1)+") "+x.name+" | گره "+x.nodeId+" | "+x.detail.join("، ")).join("\\n");
+   envelopeOut.textContent="ترکیب ثبت شد. برای پوش، حداقل دو ترکیب برای یک گره ثبت کنید.";
+  }catch(e){envelopeOut.textContent="ثبت ترکیب ناموفق: "+e.message;}
+ });
+ comboEnvelope?.addEventListener("click",()=>{
+  try{
+   const node=nodeSelect?.value;
+   const items=storedCombos.filter(x=>x.nodeId===node);
+   if(items.length<2)throw Error("برای محاسبه پوش، حداقل دو ترکیب ثبت‌شده برای گره انتخاب‌شده لازم است.");
+   const labels=["Fx (kN)","Fy (kN)","Fz (kN)","Mx (kN.m)","My (kN.m)","Mz (kN.m)"];
+   const lines=["پوش جبری ترکیبات ثبت‌شده — گره "+node];
+   for(let j=0;j<6;j++){
+    const vals=items.map(x=>({name:x.name,v:x.total[j]/1000}));
+    const min=vals.reduce((a,b)=>b.v<a.v?b:a),max=vals.reduce((a,b)=>b.v>a.v?b:a);
+    lines.push(labels[j]+": حداقل "+fmt(min.v)+" ("+min.name+") | حداکثر "+fmt(max.v)+" ("+max.name+")");
+   }
+   lines.push("تعداد ترکیبات: "+items.length);
+   lines.push("این پوش فقط بین ترکیبات دستیِ ثبت‌شده محاسبه شده و پوش آیین‌نامه‌ای کامل نیست. ترکیبات باید از نظر مبنا، ضرایب، جهت باد، نوع خدمت/مقاومت و همزمانی توسط مهندس کنترل شوند.");
+   envelopeOut.textContent=lines.join("\\n");
+  }catch(e){envelopeOut.textContent="پوش محاسبه نشد: "+e.message;}
+ });
+
  comboButton?.addEventListener("click",()=>{
   try{
    const r=getCombo();
