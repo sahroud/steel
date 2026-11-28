@@ -211,11 +211,15 @@
  rebarBtn?.addEventListener("click",()=>{
   try{
    const read=id=>{const e=document.getElementById(id);return e&&String(e.value).trim()!==""?Number(e.value):NaN;};
+   const B=value("footingWidth"),L=value("footingLength"),cover=read("footingRebarCover");
+   if(!(B>0&&L>0))throw Error("ابعاد معتبر B و L پی را وارد کنید.");
+   if(!(cover>=0&&cover<Math.min(B,L)*500))throw Error("پوشش ورودی نامعتبر است.");
    const axes=[
-    {name:"X",req:read("footingAsReqX"),dia:read("footingBarDiaX"),spacing:read("footingBarSpacingX")},
-    {name:"Z",req:read("footingAsReqZ"),dia:read("footingBarDiaZ"),spacing:read("footingBarSpacingZ")}
+    {name:"X",req:read("footingAsReqX"),dia:read("footingBarDiaX"),spacing:read("footingBarSpacingX"),barLength:B,distribution:L},
+    {name:"Z",req:read("footingAsReqZ"),dia:read("footingBarDiaZ"),spacing:read("footingBarSpacingZ"),barLength:L,distribution:B}
    ];
-   const lines=["کنترل سطح مقطع فولاد آرماتور در هر متر عرض — مقایسه هندسی، نه طراحی آیین‌نامه‌ای"];
+   const lines=["کنترل سطح مقطع فولاد و برآورد هندسی جدول میلگرد — نه طراحی آیین‌نامه‌ای"];
+   let totalWeight=0,totalLength=0;
    for(const a of axes){
     if(!(a.req>0))throw Error("As موردنیاز راستای "+a.name+" را از محاسبه معتبر وارد کنید.");
     if(!(a.dia>=6&&a.dia<=50))throw Error("قطر میلگرد راستای "+a.name+" باید بین 6 تا 50 میلی‌متر باشد.");
@@ -223,11 +227,23 @@
     const area=Math.PI*a.dia*a.dia/4;
     const provided=area*1000/a.spacing;
     const ratio=provided/a.req;
-    lines.push("راستای "+a.name+": As,req="+fmt(a.req)+" mm²/m | قطر="+fmt(a.dia)+" mm | فاصله="+fmt(a.spacing)+" mm | As,prov="+fmt(provided)+" mm²/m | نسبت تأمین="+fmt(ratio*100)+"%");
+    const clearSpan=a.distribution*1000-2*cover;
+    if(!(clearSpan>0))throw Error("پوشش انتخابی در راستای "+a.name+" برای ابعاد پی بیش از حد است.");
+    const count=Math.ceil(clearSpan/a.spacing)+1;
+    const actualSpacing=count>1?clearSpan/(count-1):0;
+    const cutLength=a.barLength*1000-2*cover;
+    if(!(cutLength>0))throw Error("طول برش میلگرد راستای "+a.name+" نامعتبر است.");
+    const totalM=count*cutLength/1000;
+    const kgPerM=a.dia*a.dia/162;
+    const weight=totalM*kgPerM;
+    totalLength+=totalM;totalWeight+=weight;
+    lines.push("راستای "+a.name+": As,req="+fmt(a.req)+" mm²/m | ϕ"+fmt(a.dia)+" @ "+fmt(a.spacing)+" mm | As,prov="+fmt(provided)+" mm²/m | نسبت تأمین="+fmt(ratio*100)+"%");
     lines.push(provided+1e-8>=a.req?"مقایسه سطح فولاد: مقدار تأمین‌شده از As ورودی کمتر نیست.":"مقایسه سطح فولاد: مقدار تأمین‌شده از As ورودی کمتر است؛ آرایش باید بازنگری شود.");
+    lines.push("جدول مقدماتی راستای "+a.name+": تعداد "+count+" شاخه | طول برش هر شاخه "+fmt(cutLength/1000)+" m | فاصله واقعی "+fmt(actualSpacing)+" mm | طول کل "+fmt(totalM)+" m | وزن تقریبی "+fmt(weight)+" kg");
    }
-   lines.push("فرض: میلگردهای مستقیم و یکنواخت با سطح مقطع دایره‌ای؛ As,prov=πϕ²/4×1000/s.");
-   lines.push("این کنترل، حداقل آرماتور، حداکثر فاصله مجاز، پوشش بتن، خوردگی، مهاری، وصله، خم، قطع میلگرد، لنگر دومحوره، ظرفیت خمشی یا ضوابط مبحث نهم را بررسی نمی‌کند. نتیجه جایگزین طراحی و نقشه اجرایی نیست.");
+   lines.push("جمع دو راستا: طول کل "+fmt(totalLength)+" m | وزن نظری تقریبی "+fmt(totalWeight)+" kg (بدون پرت، خم، قلاب، وصله و میلگردهای اضافی).");
+   lines.push("فرض: X موازی عرض B و در طول L توزیع شده؛ Z موازی طول L و در عرض B توزیع شده؛ پوشش از هر دو انتهای طول و عرض کسر شده است. وزن واحد نظری از ϕ²/162 kg/m برآورد شده.");
+   lines.push("این کنترل، حداقل آرماتور، حداکثر فاصله مجاز آیین‌نامه‌ای، پوشش لازم محیطی، خوردگی، مهاری، وصله، خم، قطع میلگرد، لنگر دومحوره، ظرفیت خمشی یا ضوابط مبحث نهم را بررسی نمی‌کند. نتیجه جایگزین طراحی و نقشه اجرایی نیست.");
    rebarOut.textContent=lines.join("\\n");
   }catch(e){if(rebarOut)rebarOut.textContent="کنترل انجام نشد: "+e.message;}
  });
