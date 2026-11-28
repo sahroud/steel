@@ -91,7 +91,7 @@
 <article><b>طراحی اعضا و اتصالات</b><span>مقاطع، لاپه‌ها، جوش، پیچ، ورق‌ها و صفحه‌ستون</span><em>در انتظار طراحی</em></article>
 <article><b>فونداسیون و نقشه‌ها</b><span>پی، تیرهای رابط، آرماتور و جزئیات اجرایی</span><em>در انتظار طراحی</em></article>
 <article><b>گزارش نهایی</b><span>گزارش محاسبات، منابع، فرضیات و فهرست موارد ناقص</span><em>در انتظار تولید</em></article>
-</div><div class="callout warning">در این مرحله رابط و مدل داده پایه ساخته شده‌اند؛ نتایج مهندسی تا اتصال و اعتبارسنجی موتورهای محاسباتی تولید نمی‌شوند.</div><button type="button" id="engineCheckBtn" class="primary">بررسی آمادگی اتصال موتورهای محاسباتی</button><div id="engineReadiness" class="readiness" aria-live="polite"></div>
+</div><div class="callout warning">در این مرحله رابط و مدل داده پایه ساخته شده‌اند؛ نتایج مهندسی تا اتصال و اعتبارسنجی موتورهای محاسباتی تولید نمی‌شوند.</div><div class="callout"><b>ممیزی یکپارچه پروژه</b><p>این گزارش ورودی‌های ناقص، موارد مانع، محدودیت‌های پیاده‌سازی و وضعیت اولیه مقاطع را بررسی می‌کند. گزارش ممیزی به‌معنای طراحی یا تأیید سازه نیست.</p><button type="button" id="projectAuditBtn" class="secondary">تهیه گزارش ممیزی و ذخیره فایل</button><div id="projectAuditResult" class="readiness" style="white-space:pre-wrap" aria-live="polite"></div></div><button type="button" id="engineCheckBtn" class="primary">بررسی آمادگی اتصال موتورهای محاسباتی</button><div id="engineReadiness" class="readiness" aria-live="polite"></div>
 <div class="callout"><b>تولید حالت‌های بار ثقلی سقف</b><p>بار مرده و بار زنده سطحی سقف به‌طور جداگانه و با عرض بارگیر هندسی روی پرلین‌های طولی توزیع می‌شوند. این مرحله هنوز ترکیبات بار آیین‌نامه‌ای، برف بام، باد، جرثقیل یا تحلیل سازه را انجام نمی‌دهد.</p><button type="button" id="roofGravityLoadBtn" class="secondary">تولید بار مرده و زنده سقف</button><div id="roofGravityLoadResult" class="readiness" aria-live="polite"></div></div>
 <div class="callout"><b>تحلیل خطی سه‌بعدی تحت بارهای سقف</b><p>پس از تولید بارهای سقف و تعریف مقاطع معتبر برای تمام گروه‌های اعضا، دو حالت DEAD و LIVE جداگانه تحلیل می‌شوند. این تحلیل خطی مرتبه اول است و جایگزین ترکیبات بار و کنترل‌های آیین‌نامه‌ای نیست.</p><button type="button" id="roofGravityAnalyzeBtn" class="primary">تحلیل دو حالت بار سقف</button><div id="roofGravityAnalysisResult" class="readiness" aria-live="polite"></div></div>
 <div class="callout"><b>تولید مدل هندسی مستقل</b><p>مدل هندسی اولیه برای سقف دوشیب یا تک‌شیب، قاب‌ها، پرلین‌ها، قیدها و مهاربندهای پیشنهادی.</p>
@@ -109,5 +109,5 @@
 <script src="geometry-self-test.js?v=1" defer></script>
 <script src="engine-adapter.js?v=2" defer></script>
 <script src="section-profile-generator.js?v=1" defer></script>
-<script src="section-geometry.js?v=2"></script><script src="app.js?v=20" defer></script><script src="climate-profile.js?v=2" defer></script>
+<script src="section-geometry.js?v=2"></script><script src="app.js?v=20" defer></script><script src="climate-profile.js?v=2" defer></script><script src="project-audit.js?v=1" defer></script>
 </body></html>
