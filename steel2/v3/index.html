@@ -59,14 +59,14 @@
 <label>فشار خالص شیب بادگیر سقف (kN/m²)<input name="windwardRoofNet" type="number" step=".01" required placeholder="فشار مثبت / مکش منفی"></label>
 <label>فشار خالص شیب پشت‌به‌باد سقف (kN/m²)<input name="leewardRoofNet" type="number" step=".01" required placeholder="فشار مثبت / مکش منفی"></label>
 <div class="wide callout warning">این چهار مقدار باید فشار خالص طراحی پس از اعمال ضرایب فشار خارجی و داخلی، ضریب تندباد و ارتفاع مربوط طبق مبحث ششم و برای هر جهت باد باشند. مقدار مثبت برای دیوار یعنی فشار به داخل ساختمان؛ مقدار مثبت برای سقف یعنی فشار به سمت داخل/پایینِ سطح سقف؛ مکش را منفی وارد کنید. این نسخه فقط باد عرضی روی قاب‌های اصلی را توزیع می‌کند و محاسبه خودکار ضرایب باد یا باد طولی را انجام نمی‌دهد.</div>
-<label>فشار مبنای باد q (kN/m²)<input name="windPressure" type="number" min="0" step=".01" value=".38" readonly></label>
+<label>فشار مبنای باد q (kN/m²)<input name="windPressure" type="number" min="0" step=".001" value=".383" readonly></label>
 <label>ارتفاع مبنای ایستگاه (متر)<input name="climateElevation" type="number" min="0" step="1" value="1349"></label>
 <label>عرض جغرافیایی<input name="climateLatitude" type="number" step=".001" value="36.421" readonly></label>
 <label>طول جغرافیایی<input name="climateLongitude" type="number" step=".001" value="54.957" readonly></label>
 <label>رده زمین<select name="terrain"><option value="suburban" selected>شهری / حومه</option><option value="open">باز</option><option value="rough">متراکم</option></select></label>
 <label>وضعیت بازشو<select name="enclosure"><option value="enclosed" selected>بسته</option><option value="partially">نیمه‌باز</option><option value="open">باز</option></select></label>
 <label class="wide">منبع باد و برف<input name="climateSource" value="پیش‌فرض اولیه شاهرود؛ نیازمند تطبیق با نسخه نهایی رسمی مبحث ششم ۱۳۹۸ و محل دقیق پروژه"></label>
-</div><div class="callout warning" id="climateNotice">پیش‌فرض شاهرود: منطقه برف ۳ و Ps=1.00 kN/m²، سرعت مبنای باد ۹۰ km/h و q=0.38 kN/m²؛ ارتفاع ایستگاه ۱۳۴۹ متر. این مقادیر برای شروع ورود اطلاعات‌اند؛ پیش از طراحی نهایی باید با نسخه رسمی لازم‌الاجرای مبحث ششم ۱۳۹۸، نقشه‌های محل دقیق پروژه، توپوگرافی و کاربری تطبیق و تأیید شوند. بار برف بام هنوز باید با ضرایب اهمیت، دما، برف‌گیری و شیب محاسبه شود.</div></section>
+</div><div class="callout warning" id="climateNotice">پیش‌فرض شاهرود: منطقه برف ۳ و Ps=1.00 kN/m²، سرعت مبنای باد ۹۰ km/h و q=0.383 kN/m²؛ ارتفاع ایستگاه ۱۳۴۹ متر. این مقادیر برای شروع ورود اطلاعات‌اند؛ پیش از طراحی نهایی باید با نسخه رسمی لازم‌الاجرای مبحث ششم ۱۳۹۸، نقشه‌های محل دقیق پروژه، توپوگرافی و کاربری تطبیق و تأیید شوند. بار برف بام هنوز باید با ضرایب اهمیت، دما، برف‌گیری و شیب محاسبه شود.</div></section>
 <section class="page" data-page="materials"><h2>مصالح و مقاطع</h2><div class="grid">
 <label>گرید فولاد<select name="steelGrade"><option value="ST37" selected>ST37 / S235</option><option value="ST44">ST44 / S275</option><option value="ST52">ST52 / S355</option><option value="custom">مشخصات سفارشی</option></select></label>
 <label>Fy فولاد (MPa)<input name="steelFy" type="number" min="1" value="235"></label>
