@@ -71,6 +71,21 @@
     hasVerifiedProfile: () => false,
     applyCityProfile
   };
-  // Apply the selected city on first load as well as on later changes.
-  applyCityProfile();
+  // app.js restores a saved project before this file loads. Never overwrite
+  // those saved climate inputs during startup; only set the correct editability
+  // and notice. A fresh project receives the Shahroud defaults.
+  let hasSavedProject = false;
+  try { hasSavedProject = !!localStorage.getItem("sahroudSteel.v3.project"); } catch (_) {}
+  if (hasSavedProject) {
+    const city = field("city")?.value || "shahroud";
+    const isShahroud = city === "shahroud";
+    setEditability(isShahroud);
+    if (isShahroud) {
+      updateNotice("پروژه ذخیره‌شده شاهرود بازیابی شد. مقادیر اقلیمی ذخیره‌شده حفظ شدند؛ پیش از طراحی نهایی، منبع و تطبیق آن‌ها با مرجع رسمی و محل دقیق پروژه را کنترل کنید.");
+    } else {
+      updateNotice("پروژه ذخیره‌شده برای " + (cityNames[city] || "شهر انتخابی") + " بازیابی شد. مقادیر اقلیمی ذخیره‌شده حفظ شدند؛ فیلدها برای ویرایش و ثبت منبع باز هستند.");
+    }
+  } else {
+    applyCityProfile();
+  }
 })();
