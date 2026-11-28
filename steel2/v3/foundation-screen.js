@@ -8,7 +8,7 @@
  const button=document.getElementById("foundationScreenBtn");
  const output=document.getElementById("foundationScreenResult");
  if(!form||!button||!output)return;
- const value=n=>{const e=form.elements.namedItem(n);return e?Number(e.value):NaN;};
+ const value=n=>{const e=form.elements.namedItem(n);if(!e||String(e.value).trim()==="")return NaN;return Number(e.value);};
  const fmt=n=>Number(n).toFixed(2);
  button.addEventListener("click",()=>{
   try{
