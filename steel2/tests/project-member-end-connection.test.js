@@ -16,6 +16,7 @@ function projectHarness() {
     length: "36",
     spacing: "6",
     height: "6",
+    roofSlope: "20",
     rise: "2",
     frames: "",
     dead: "0.3",
