@@ -157,6 +157,7 @@ test("stepwise workflow observer ignores its own navigation controls", () => {
     "utf8"
   );
   assert.match(workflow, /node\.matches\?\.\("main \.panel:not\(\.workflow-managed\)"\)/);
+  assert.match(workflow, /node\.querySelector\?\.\("\.panel:not\(\.workflow-managed\)"\)/);
   assert.match(workflow, /if \(hasNewPanel\) updateVisibility\(\);/);
   assert.doesNotMatch(workflow, /if \(node\.nodeType === 1\) changed = true/);
 });
