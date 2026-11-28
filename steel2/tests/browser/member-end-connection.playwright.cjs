@@ -83,6 +83,10 @@ const watchdog = setTimeout(() => {
     }
 
     stage = "build full shed model";
+    // The stepwise workflow intentionally hides panels outside the active stage.
+    // The full-model controls belong to the model/analysis stage (step 4).
+    await page.locator("#projectName").fill("آزمون واقعی مرورگر");
+    await page.evaluate(() => window.SahroudWorkflow?.goToStep(4));
     try {
       await page.locator("#btnBuildFullModel").waitFor({ state: "visible", timeout: 15000 });
     } catch (error) {
