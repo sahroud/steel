@@ -149,3 +149,14 @@ test("legacy project without brace end settings loads with an empty selection se
   const autosave = JSON.parse(h.storage.get("sahroudSteelProject.autosave.v3"));
   assert.deepEqual(autosave.memberEndConnections, []);
 });
+
+
+test("stepwise workflow observer ignores its own navigation controls", () => {
+  const workflow = fs.readFileSync(
+    path.join(__dirname, "../js/stepwise-workflow.js"),
+    "utf8"
+  );
+  assert.match(workflow, /node\.matches\?\.\("main \.panel:not\(\.workflow-managed\)"\)/);
+  assert.match(workflow, /if \(hasNewPanel\) updateVisibility\(\);/);
+  assert.doesNotMatch(workflow, /if \(node\.nodeType === 1\) changed = true/);
+});
